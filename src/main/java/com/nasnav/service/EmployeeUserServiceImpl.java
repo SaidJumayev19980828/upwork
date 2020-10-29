@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.commons.utils.EntityUtils;
@@ -58,7 +59,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		empUserSvcHelper.isValidRolesList(rolesList);
 		validateEmpEmailAlreadyExists(employeeUserJson);
 		validateCurrentUserCanManageEmpAccount(employeeUserJson.orgId, employeeUserJson.storeId, rolesList);
-		validateStoreForEmployeeCreation(employeeUserJson);
+		validateStoreForEmployeeCreation(employeeUserJson, rolesList);
 
 		EmployeeUserEntity employeeUserEntity = doCreateNewEmpAccount(employeeUserJson, rolesList);
 		return new UserApiResponse(employeeUserEntity.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
@@ -67,11 +68,14 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 
 
-	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> roles) {
 		Long orgId = employeeUserJson.orgId;
 		Long storeId = employeeUserJson.storeId;
-
-		if(!shopRepo.existsByIdAndOrganizationEntity_Id(storeId, orgId)){
+		boolean shopExists = shopRepo.existsByIdAndOrganizationEntity_Id(storeId, orgId);
+		boolean newUserHasStoreRoles =
+				Stream.of(STORE_MANAGER.name(), STORE_EMPLOYEE.name())
+				.anyMatch(roles::contains);
+		if( newUserHasStoreRoles && !shopExists){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0012, storeId);
 		}
 	}
@@ -95,13 +99,14 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 
+
 	private void validateCurrentUserCanManageEmpAccount(Long otherEmpOrgId, Long otherEmpStoreId, List<String> rolesList) {
 		EmployeeUserEntity currentUser = getCurrentUser();
-
-		if (empUserSvcHelper.roleCannotManageUsers(currentUser.getId())) {
+		Long userId = currentUser.getId();
+		if (empUserSvcHelper.roleCannotManageUsers(userId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0008);
 		}
-		if ( empUserSvcHelper.hasInsuffiecentLevel(currentUser.getId(), rolesList)) {
+		if ( empUserSvcHelper.hasInsuffiecentLevel(userId, rolesList)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0009);
 		}
 
@@ -110,7 +115,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0010 );
 			}
 		}
-		if (securityService.currentUserHasRole(STORE_MANAGER)) {
+		if (empUserSvcHelper.hasMaxRoleLevelOf(STORE_MANAGER, userId)) {
 			if (!currentUser.getShopId().equals(otherEmpStoreId)){
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0011 );
 			}

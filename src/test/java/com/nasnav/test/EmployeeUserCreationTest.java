@@ -1,7 +1,7 @@
 package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.util.List;
 
@@ -76,58 +76,73 @@ public class EmployeeUserCreationTest {
 
 	@Test
 	public void createEmployeeUserSuccessTest() {
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"NASNAV_ADMIN\"}";
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("role", "NASNAV_ADMIN")
+				.toString();
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
-		response.getBody().getEntityId();
-
 		Assert.assertEquals(200, response.getStatusCode().value());
+		assertUserCreated(response.getBody());
 	}
 	
 	
 	
 	@Test
 	public void createEmployeeUserNoPrivelageTest() {
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("role", "NASNAV_ADMIN")
+				.toString();
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "yuhjhu");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
 
-
-		
-		Assert.assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatusCode().value());
-		
+		Assert.assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
 	
 	@Test
 	public void createEmployeeUserByNonExistingUserTest() {
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("role", "NASNAV_ADMIN")
+				.toString();
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "InvalidToken");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
 
-
-		
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
-		
 	}
 	
 	
 
 	@Test
 	public void createEmployeeUserInvalidNameTest() {
-		// make an invalid employee user json without a name param
-		String body = "{\"name\":\"Ahmed#&*\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+		String body =
+				json()
+				.put("name", "Ahmed#&*")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("role", "NASNAV_ADMIN")
+				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().contains("U$EMP$0003"));
-		//delete created organization
+		Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		assertTrue(response.getBody().contains("U$EMP$0003"));
 	}
 
 
@@ -140,8 +155,8 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().contains("U$EMP$0003"));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		assertTrue(response.getBody().contains("U$EMP$0003"));
 	}
 
 
@@ -154,35 +169,104 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().contains("U$EMP$0007"));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		assertTrue(response.getBody().contains("U$EMP$0007"));
 	}
 
 
 
 	@Test
-	public void createEmployeeUserOrganizationNoIdTest() {
-		HttpEntity<Object> employeeUserJson = getHttpEntity(
-                "{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 0, \"store_id\": 100, \"role\": \"ORGANIZATION_ADMIN\"}", "abcdefg");
+	public void createEmployeeUserOrganizationNotExistsTest() {
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", -1)
+				.put("store_id", 502)
+				.put("role", "ORGANIZATION_ADMIN")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().contains("U$EMP$0005"));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		assertTrue(response.getBody().contains("U$EMP$0005"));
 	}
 
 
 
 
-	// @Test - Unclear whether store_id can be 0
-	public void createEmployeeUserStoreNoIdTest() {
-		HttpEntity<Object> employeeUserJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 0, \"role\": \"STORE_ADMIN\"}", "abcdefg");
+	@Test
+	public void createEmployeeUserStoreNotExistsTest() {
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("store_id", -1)
+				.put("role", "STORE_MANAGER")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity(
 				"/user/create", employeeUserJson, UserApiResponse.class);
 
-		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getStatus().contains(ResponseStatus.INVALID_STORE));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+	}
+
+
+
+	@Test
+	public void createEmployeeUserStoreNoIdTest() {
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("role", "STORE_MANAGER")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
+		ResponseEntity<UserApiResponse> response = template.postForEntity(
+				"/user/create", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+	}
+
+
+
+	@Test
+	public void createEmployeeUserStoreEmployeeTest() {
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("store_id", 502)
+				.put("role", "STORE_EMPLOYEE")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "131415");
+		ResponseEntity<UserApiResponse> response = template.postForEntity(
+				"/user/create", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertEquals(OK, response.getStatusCode());
+		assertUserCreated(response.getBody());
+	}
+
+
+
+	@Test
+	public void createEmployeeUserStoreEmployeeForAnotherStoreTest() {
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail)
+				.put("org_id", 99001)
+				.put("store_id", 502)
+				.put("role", "STORE_EMPLOYEE")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		ResponseEntity<UserApiResponse> response = template.postForEntity(
+				"/user/create", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
 
@@ -239,31 +323,36 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void createEmployeeUserEmailExistsDifferentCaseTest() {
 		// create employee user with an email
-		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail.toUpperCase() + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"NASNAV_ADMIN\"}";
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", TestUserEmail.toUpperCase())
+				.put("org_id", 99001L)
+				.put("store_id", 502)
+				.put("role", "NASNAV_ADMIN")
+				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
-		response.getBody().getEntityId();
 		// try to create another employee user with the same email
 		ResponseEntity<String> anotherResponse = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), anotherResponse.getStatusCode().value());
-		Assert.assertEquals(true, anotherResponse.getBody().contains("U$EMP$0006"));
+		assertTrue(anotherResponse.getBody().contains("U$EMP$0006"));
 	}
 
 
 
 	@Test
 	public void createEmployeeUserStoreForDifferentOrgTest() {
-		// create employee user with an email
 		String body =
 				json()
 				.put("name", "Ahmed")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001L)
 				.put("store_id", 501)
-				.put("role", "NASNAV_ADMIN")
+				.put("role", "STORE_MANAGER")
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
@@ -294,16 +383,9 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, loginResponse.getBody().contains("U$LOG$0003"));
 	}
 
-	@Test
-	public void createEmployeeUserCreationSuccess() {
-		// nasnav_admin role test
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"NASNAV_ADMIN\"}";
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		response.getBody().getEntityId();
 
-		Assert.assertEquals(200, response.getStatusCode().value());
-	}
+
+
 
 	@Test
 	public void createEmployeeUserAuthTestDifferentRoleSuccess() {
@@ -316,6 +398,8 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
+
+
 	@Test
 	public void createEmployeeUserAuthTestDifferentOrgFail() {
 		// organization_admin role test fail (different organization)
@@ -325,6 +409,8 @@ public class EmployeeUserCreationTest {
 		
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void createEmployeeUserAuthTestFail() {
@@ -344,7 +430,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 		Assert.assertEquals(true, response.getBody().contains("U$EMP$0005"));
 	}
 
@@ -367,8 +453,15 @@ public class EmployeeUserCreationTest {
 
 	@Test
 	public void createStoreManagerByOrganizationAdminSuccess() {
-		// nasnav_admin role test
-		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
+		Long anotherStoreThanAdminStore = 503L;
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", "Adminuser@nasnav.com")
+				.put("org_id", 99001)
+				.put("store_id", anotherStoreThanAdminStore)
+				.put("role", "STORE_MANAGER")
+				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		response.getBody().getEntityId();
@@ -679,6 +772,8 @@ public class EmployeeUserCreationTest {
 
 	// with NASNAV_ADIMN ACCOUNT
 	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void listEmpUsersDifferentFilters() {
 		HttpEntity<Object> header = getHttpEntity( "abcdefg");
 
@@ -712,7 +807,7 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(2, response.getBody().size());
 
 		ResponseEntity<String> failResponse = template.exchange("/user/list?role=invalid_role", HttpMethod.GET,header, String.class);
-		Assert.assertEquals(failResponse.getStatusCode(), HttpStatus.NOT_ACCEPTABLE);
+		Assert.assertEquals(failResponse.getStatusCode(), NOT_ACCEPTABLE);
 
 		response = template.exchange("/user/list?role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
@@ -753,6 +848,8 @@ public class EmployeeUserCreationTest {
 
 
 	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void listEmpUsersDifferentPrelivges() {
 		// ORGANIZATION_ADMIN account with org_id = 99001
 		HttpEntity<Object> header = getHttpEntity("hijkllm");
@@ -952,12 +1049,12 @@ public class EmployeeUserCreationTest {
 		Long shopBefore = empRepository.findById(id).get().getShopId();
 		String body =
 				json()
-					.put("updated_user_id", id)
-					.put("employee", true)
-					.put("store_id", 503)
-					.toString();
+				.put("updated_user_id", id)
+				.put("employee", true)
+				.put("store_id", 503)
+				.toString();
 
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "131415");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 		response.getBody().getEntityId();
 
@@ -991,4 +1088,14 @@ public class EmployeeUserCreationTest {
 		assertNotEquals( shopBefore, shopAfter);
 		assertEquals( newShop, shopAfter);
 	}
+
+
+
+
+	private void assertUserCreated(UserApiResponse apiResponse) {
+		assertNotNull(apiResponse);
+		boolean exists = empRepository.existsById(apiResponse.getEntityId());
+		assertTrue(exists);
+	}
+
 }

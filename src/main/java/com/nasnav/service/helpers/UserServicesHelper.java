@@ -135,8 +135,19 @@ public class UserServicesHelper {
 				.collect(toList());
 		return newUserRoles
 				.stream()
-				.anyMatch(newUserRole -> higherThanAllGivenRoles(newUserRole, currentUserRoles));
+				.anyMatch(newUserRole -> isHigherThanAllGivenRoles(newUserRole, currentUserRoles));
+	}
 
+
+
+	public boolean hasMaxRoleLevelOf(Roles role, Long currentUserId){
+		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
+		boolean hasNoRolesWithHigherLevel =
+				currentUserRoles
+				.stream()
+				.noneMatch(currentUserRole -> currentUserRole.getLevel() < role.getLevel());
+		boolean hasRole = currentUserRoles.contains(role);
+		return hasRole && hasNoRolesWithHigherLevel;
 	}
 
 
@@ -151,7 +162,7 @@ public class UserServicesHelper {
 	}
 
 
-	private boolean higherThanAllGivenRoles(Roles role, Collection<Roles> otherRoles){
+	private boolean isHigherThanAllGivenRoles(Roles role, Collection<Roles> otherRoles){
 		//lower level number gets higher privilege, nasnav has max privilege with
 		//negative level
 		return otherRoles
