@@ -40,4 +40,6 @@ public final class EmailConstants {
     public static final String ORDER_RETURN_RECEIVED_TEMPLATE = "order_return_received_template.html";
 
     public static final String ORDER_RETURN_NOTIFICATION_TEMPLATE = "order_return_notification_template.html";
+
+    public static final String USER_SUBSCRIPTION_TEMPLATE = "mail_templates/user_subscription_template.html";
 }

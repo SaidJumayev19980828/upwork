@@ -130,6 +130,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/extra_attribute"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/shops"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/settings/**"								, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/subscribed_users"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/export/*"												, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/integration/import/shops"								, setOf(ORGANIZATION_MANAGER)),
@@ -161,6 +162,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register")
 						, patternOf("/user/v2/register/activate")
 						, patternOf("/user/v2/register/activate/resend")
+						, patternOf( "/user/subscribe")
+						, patternOf( "/user/subscribe/activate")
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/product/info"					, HttpMethod.GET)

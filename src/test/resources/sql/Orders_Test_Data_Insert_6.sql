@@ -101,13 +101,13 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27
 
 
 --inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, removed) VALUES (1001, 'product_1',101, 201, 99001, now(), now(), 1);
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, removed) VALUES (1002, 'product_2',101, 201, 99001, now(), now(), 1);
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',101, 201, 99001, now(), now());
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id, removed ) values(310001, 'var' 	, 1001, 1);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
 insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
 insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);

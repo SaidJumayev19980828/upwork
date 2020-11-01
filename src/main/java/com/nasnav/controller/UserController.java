@@ -312,4 +312,27 @@ public class UserController {
                                    @RequestParam (defaultValue = "false") Boolean suspend) {
         userService.suspendUserAccount(userId, suspend);
     }
+
+
+    @ApiOperation(value = "subscribe via email", nickname = "subscribeEmail")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "email subscribed"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "subscribe")
+    public void subscribeEmail(@RequestParam String email, @RequestParam("org_id") Long orgId) {
+        userService.subscribeEmail(email, orgId);
+    }
+
+
+    @ApiOperation(value = "activate subscribe via email", nickname = "activateSubscription")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "activated email subscription"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @GetMapping(value = "subscribe/activate")
+    public RedirectView activateSubscribedEmail(@RequestParam String token,
+                                                @RequestParam("org_id") Long orgId) {
+        return userService.activateSubscribedEmail(token, orgId);
+    }
 }

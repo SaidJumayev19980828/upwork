@@ -111,6 +111,8 @@ public class OrganizationService {
     @Autowired
     private ProductRepository productRepo;
     @Autowired
+    private UserSubscriptionRepository subsRepo;
+    @Autowired
     private TagsRepository tagsRepo;
     @Autowired
     private TagGraphNodeRepository tagGraphNodeRepo;
@@ -1049,5 +1051,18 @@ public class OrganizationService {
                 .stream()
                 .map(p -> domain+"/"+entityType+"/"+p.getName()+"/"+p.getId())
                 .forEach(urlList::add);
+    }
+
+
+    public List<String> getSubscribedUsers() {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        return subsRepo.findEmailsByOrganizationAndTokenNull(org);
+
+    }
+
+
+    public void removeSubscribedUser(String email) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        subsRepo.deleteByEmailAndOrganizationAndTokenNull(email, org);
     }
 }

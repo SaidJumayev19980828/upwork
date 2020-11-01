@@ -22,6 +22,7 @@ public enum ErrorCodes {
 	, U$LOG$0006("Expired token!")
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
+	, U$LOG$0009("Email is already subscribed!")
 
 
 	, U$STATUS$0001("Account is already suspended!")

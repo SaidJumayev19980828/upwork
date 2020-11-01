@@ -7,6 +7,7 @@ import static com.nasnav.response.ResponseStatus.INVALID_PARAMETERS;
 import static com.nasnav.test.commons.TestCommons.extractAuthTokenFromCookies;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static io.swagger.models.HttpMethod.POST;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -14,23 +15,25 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
+import com.nasnav.persistence.UserSubscriptionEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -62,9 +65,6 @@ import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
@@ -117,6 +117,9 @@ public class UserRegisterTest {
 	
 	@Autowired
 	private UserTokenRepository userTokenRepo;
+	@Autowired
+	private UserSubscriptionRepository subsRepo;
+
 
 	@Autowired
 	private ObjectMapper mapper;
@@ -1098,6 +1101,91 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response =
 				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
 		assertEquals(423, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void userSubscribeTest(){
+		ResponseEntity<String> response =
+				template.exchange("/user/subscribe?email=email@nasnav.com&org_id=99001", HttpMethod.POST, null, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		UserSubscriptionEntity userSub = subsRepo.findByEmailAndOrganization_Id("email@nasnav.com", 99001L);
+		assertNotNull(userSub.getToken());
+
+
+		ResponseEntity<RedirectView> res =
+				template.getForEntity("/user/subscribe/activate?org_id=99001&token=" + userSub.getToken(), RedirectView.class);
+		assertEquals(302, res.getStatusCodeValue());
+		userSub = subsRepo.findByEmailAndOrganization_Id("email@nasnav.com", 99001L);
+		assertTrue(Objects.isNull(userSub.getToken()));
+	}
+
+
+	@Test
+	public void getSubscribedUsers() throws IOException {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users",GET, req, String.class);
+		List<String> users = mapper.readValue(res.getBody(), List.class);
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(!users.isEmpty());
+	}
+
+
+	@Test
+	public void getSubscribedUsersAuthZ() {
+		HttpEntity req = getHttpEntity("non exist");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users",GET, req, String.class);
+		assertEquals(401, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void getSubscribedUsersAuthN() {
+		HttpEntity req = getHttpEntity("222324");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users",GET, req, String.class);
+		assertEquals(403, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void removeSubscribedUser() {
+		assertTrue(subsRepo.existsByEmailAndOrganization_Id("sub@g.com", 99001L));
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users?email=sub@g.com",DELETE, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		assertFalse(subsRepo.existsByEmailAndOrganization_Id("sub@g.com", 99001L));
+	}
+
+
+	@Test
+	public void removeSubscribedUserInvalidAuthZ() {
+		HttpEntity req = getHttpEntity("nonexist");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users?email=sub@g.com",DELETE, req, String.class);
+		assertEquals(401, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void removeSubscribedUserInvalidAuthN() {
+		HttpEntity req = getHttpEntity("222324");
+		ResponseEntity<String> res = template.exchange("/organization/subscribed_users?email=sub@g.com",DELETE, req, String.class);
+		assertEquals(403, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void activateSubscribedUsersInvalidToken() {
+		ResponseEntity<RedirectView> res =
+				template.getForEntity("/user/subscribe/activate?org_id=99001&token=invalid", RedirectView.class);
+		assertEquals(302, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void userSubscribeTestInvalidEmail(){
+		ResponseEntity<String> response =
+				template.exchange("/user/subscribe?email=invalidmail&org_id=99001", HttpMethod.POST, null, String.class);
+		assertEquals(406, response.getStatusCodeValue());
 	}
 
 

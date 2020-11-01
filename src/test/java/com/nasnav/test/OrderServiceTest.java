@@ -161,31 +161,6 @@ public class OrderServiceTest {
 
 		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
-
-
-	private void assertOrderUserInfo(Long orderId) {
-		assertNotNull(orderId);
-		OrdersEntity order = orderRepository.findById(orderId).get();
-		assertEquals("user1", order.getName());
-		assertNotNull(order.getAddressEntity());
-	}
-
-
-	private StocksEntity prepareStockForTest(Long stockId, Integer stockQuantity, BigDecimal itemPrice) {
-		StocksEntity stocksEntity = stockRepository.findById(stockId).get();
-		stocksEntity.setPrice(itemPrice);
-		stocksEntity.setQuantity(stockQuantity);
-		stocksEntity = stockRepository.save(stocksEntity);
-		return stocksEntity;
-	}
-	
-
-	private StocksEntity createStock() {		
-		return createStock(new BigDecimal("100"), 100);
-	}
-	
-	
-	
 	
 	private StocksEntity createStock(BigDecimal price, Integer Quantity) {		
 		StocksEntity stock = stockRepository.findById(601L).get();
@@ -420,9 +395,7 @@ public class OrderServiceTest {
 
 		assertTrue(400 == response.getStatusCode().value());
 	}
-	
-	
-	
+
 	
 	@Test
 	public void testDateFilteration() {

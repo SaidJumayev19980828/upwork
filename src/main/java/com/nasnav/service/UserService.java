@@ -28,4 +28,8 @@ public interface UserService extends CommonUserServiceInterface{
     void removeUserAddress(Long id);
 
     void suspendUserAccount(Long id, Boolean suspend);
+
+    void subscribeEmail(String email, Long orgId);
+
+    RedirectView activateSubscribedEmail(String token, Long orgId);
 }

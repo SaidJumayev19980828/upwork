@@ -650,4 +650,28 @@ public class OrganizationController {
     public List<ShopRepresentationObject> getAllShops(@RequestHeader (name = "User-Token", required = false) String userToken){
     	return orgService.getOrganizationShops();
     }
+
+
+    @ApiOperation(value = "Get Organization subscribed users", nickname = "getSubscribedUsers", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "subscribed_users", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<String> getSubscribedUsers(@RequestHeader (name = "User-Token", required = false) String userToken){
+        return orgService.getSubscribedUsers();
+    }
+
+    @ApiOperation(value = "Remove Organization subscribed user", nickname = "removeSubscribedUser", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "subscribed_users")
+    public void removeSubscribedUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                     @RequestParam String email){
+         orgService.removeSubscribedUser(email);
+    }
 }

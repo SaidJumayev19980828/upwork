@@ -2,10 +2,7 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
-import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -25,6 +22,7 @@ import java.util.*;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -50,10 +48,6 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
@@ -88,6 +82,8 @@ public class UserServiceImpl implements UserService {
 	private AreaRepository areaRepo;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private UserSubscriptionRepository subsRepo;
 
 	@Autowired
 	AppConfig appConfig;
@@ -356,12 +352,12 @@ public class UserServiceImpl implements UserService {
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
 			Map<String, String> parametersMap = new HashMap<>();
-			parametersMap.put(EmailConstants.USERNAME_PARAMETER, userName);
-			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
+			parametersMap.put(USERNAME_PARAMETER, userName);
+			parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER,
 					appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
 			// send Recovery mail to user
-			this.mailService.send(userEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
-					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+			this.mailService.send(userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
+					CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
 		}
@@ -596,4 +592,78 @@ public class UserServiceImpl implements UserService {
 		return userRepository.findByIdAndOrganizationId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, id));
 	}
+
+
+	@Override
+	@Transactional
+	public void subscribeEmail(String email, Long orgId) {
+		OrganizationEntity org = orgRepo.findById(orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
+
+		if (subsRepo.existsByEmailAndOrganization_Id(email, orgId)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0009);
+		}
+		userServicesHelper.validateEmail(email);
+
+		UserSubscriptionEntity sub = new UserSubscriptionEntity();
+		sub.setEmail(email);
+		sub.setOrganization(org);
+		sub.setToken(generateSubscriptionToken());
+		subsRepo.save(sub);
+
+		sendSubscriptionInvitationMail(email, sub.getToken(), orgId);
+	}
+
+
+	private void sendSubscriptionInvitationMail(String email, String activationToken, Long orgId) {
+		try {
+			String domain = domainService.getBackendUrl();
+			String orgDomain = domainService.getOrganizationDomainAndSubDir(orgId);
+			String orgLogo = domain + "/files/"+ orgService.getOrgLogo(orgId);
+			String orgName = orgRepo.findById(orgId).get().getName();
+			String subscriptionUrl =  domain + "/user/subscribe/activate?org_id="+orgId+"&token=" + activationToken;
+
+			Map<String, String> parametersMap = new HashMap<>();
+			parametersMap.put("subscriptionUrl", subscriptionUrl);
+			parametersMap.put("orgDomain", orgDomain);
+			parametersMap.put("orgLogo", orgLogo);
+			parametersMap.put("orgName", orgName);
+			mailService.send(email, "Subscribe to newsletter",
+					USER_SUBSCRIPTION_TEMPLATE, parametersMap);
+		} catch (Exception e) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
+		}
+	}
+
+
+	private String generateSubscriptionToken() {
+		String generatedToken = generateUUIDToken();
+		boolean existsByToken = subsRepo.existsByToken(generatedToken);
+		if (existsByToken) {
+			return regenerateSubscriptionToken();
+		}
+		return generatedToken;
+	}
+
+
+	private String regenerateSubscriptionToken() {
+		String generatedToken = generateUUIDToken();
+		boolean existsByToken = subsRepo.existsByToken(generatedToken);
+		if (existsByToken) {
+			return regenerateSubscriptionToken();
+		}
+		return generatedToken;
+	}
+
+	public RedirectView activateSubscribedEmail(String token, Long orgId) {
+		String url = domainService.getOrganizationDomainAndSubDir(orgId);
+		if (!subsRepo.existsByToken(token)) {
+			return new RedirectView(url);
+		}
+		UserSubscriptionEntity sub = subsRepo.findByToken(token);
+		sub.setToken(null);
+		subsRepo.save(sub);
+		return new RedirectView(url);
+	}
+
 }

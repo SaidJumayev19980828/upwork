@@ -45,15 +45,24 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 	VALUES (159, 'Walid', 'user2@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (160, 'Walid 2', 'emp.user@nasnav.com', 99001, 't',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
+VALUES (161, 'Walid 3', 'emp.user3@nasnav.com', 99001, 'tt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700009, '875488', NOW() - INTERVAL '29 DAY', 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700010, '101112', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700011, '131415', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700012, '161718', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700013, '192021', now(), 160, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700014, '222324', now(), 161, null);
 
 
 insert into roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_MANAGER', 99001);
+insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_EMPLOYEE', 99001);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 159, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 160, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 161, 3);
+
+
+INSERT INTO public.user_subscriptions VALUES (10001, 'sub@g.com', 99001, null);
+INSERT INTO public.user_subscriptions VALUES (10002, 'seocnd_sub@g.com', 99002, null);
