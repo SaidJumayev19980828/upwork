@@ -15,9 +15,12 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0002;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 
 @Repository
@@ -94,8 +97,11 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 
 	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee) {		
 		if(isEmployee != null && isEmployee) {
-			return empRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+			return empRepo.getByEmailIgnoreCase(email);
 		}else {
+			if (isBlankOrNull(orgId)) {
+				throw new RuntimeBusinessException(UNAUTHORIZED, U$LOG$0002);
+			}
 			return userRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
 		}
 	}

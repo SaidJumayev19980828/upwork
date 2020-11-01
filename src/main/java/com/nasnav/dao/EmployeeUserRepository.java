@@ -42,7 +42,7 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	List<EmployeeUserEntity> findByShopIdAndIdIn(Long shopId, List<Long> employeesIds);
 	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
 
-	EmployeeUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+	EmployeeUserEntity getByEmailIgnoreCase(String email);
 
 
 }

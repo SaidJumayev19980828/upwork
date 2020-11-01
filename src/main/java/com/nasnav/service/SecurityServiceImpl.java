@@ -285,7 +285,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private boolean invalidLoginData(UserLoginObject loginData) {
-		return loginData == null || isBlankOrNull(loginData.email) || isBlankOrNull(loginData.orgId);
+		return loginData == null || isBlankOrNull(loginData.email) ;
 	}
 
 

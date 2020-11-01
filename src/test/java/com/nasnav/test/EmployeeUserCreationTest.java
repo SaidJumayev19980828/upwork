@@ -927,6 +927,26 @@ public class EmployeeUserCreationTest {
 	}
 
 
+	@Test
+	public void testEmployeeLoginWithoutOrgId() {
+		String request = new JSONObject()
+				.put("password", "12345678")
+				.put("email", "user1@nasnav.com")
+				.put("employee", true)
+				.toString();
+
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<UserApiResponse> response =
+				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		String token = response.getBody().getToken();
+		boolean employeeUserLoggedIn = empRepository.existsByAuthenticationToken( token);
+		assertTrue("the logged in user should be the employee user, "
+				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
+	}
+
+
 
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
