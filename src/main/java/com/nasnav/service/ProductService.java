@@ -1098,6 +1098,8 @@ public class ProductService {
 
 			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
 
+			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, null);
+
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
 			List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
@@ -1106,6 +1108,7 @@ public class ProductService {
 
 			stocks.stream()
 					.map(s -> setAdditionalInfo(s, productCoverImages))
+					.map(s -> setProductImages(s, productImages))
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
@@ -1165,6 +1168,14 @@ public class ProductService {
 		Prices prices = pricesMap.get(product.getId());
 		if (product.getProductType().intValue() == 2)
 			product.setPrices(prices);
+		return product;
+	}
+
+
+	private ProductRepresentationObject setProductImages(ProductRepresentationObject product,
+														 Map<Long, List<ProductImageDTO>> imagesMap) {
+		List<ProductImageDTO> images = imagesMap.get(product.getId());
+		product.setImages(images);
 		return product;
 	}
 

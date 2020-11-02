@@ -1532,6 +1532,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
+	@Override
+	public Map<Long, List<ProductImageDTO>> getProductsAllImagesMap(List<Long> productsIdList, List<Long> variantsIdList) {
+		return getProductsAndVariantsImages(productsIdList, variantsIdList)
+				.stream()
+				.filter(Objects::nonNull)
+				.filter(i -> Objects.nonNull(i.getProductId()))
+				.collect(groupingBy(ProductImageDTO::getProductId));
+
+	}
+
+
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
 		String uri = ofNullable(mapEntry.getValue())
 				.map(List::stream)
