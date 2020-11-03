@@ -1031,12 +1031,13 @@ public class ProductService {
 				.flatMap(Set::stream)
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
-
-		Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIdList);
+		Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, variantsIdList);
+		Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productImages);
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
 					  .map(prod -> getProductRepresentation(prod, productCoverImages))
+					  .map(p -> setProductImages(p, productImages))
 					  .collect(toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
@@ -1069,7 +1070,10 @@ public class ProductService {
 							.stream()
 							.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
+			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, variantsIds);
+
+			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productImages);
+
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
@@ -1079,6 +1083,7 @@ public class ProductService {
 
 			stocks.stream()
 					.map(s -> setAdditionalInfo(s, productCoverImages))
+					.map(s -> setProductImages(s, productImages))
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
@@ -1138,6 +1143,14 @@ public class ProductService {
 		Prices prices = pricesMap.get(product.getId());
 		if (product.getProductType().intValue() == 2)
 			product.setPrices(prices);
+		return product;
+	}
+
+
+	private ProductRepresentationObject setProductImages(ProductRepresentationObject product,
+														 Map<Long, List<ProductImageDTO>> imagesMap) {
+		List<ProductImageDTO> images = imagesMap.get(product.getId());
+		product.setImages(images);
 		return product;
 	}
 
@@ -1954,12 +1967,14 @@ public class ProductService {
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
 		List<ProductBaseInfo> productlist = emptyList();
 		if(!productIdList.isEmpty()) {
-			Map<Long, String> 	productCoverImages = imgService.getProductsImagesMap(productIdList, null);
+			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, null);
+			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productImages);
 			productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
-																.stream()
-																.map(prod -> getProductRepresentation(prod, productCoverImages))
-																.map(this::toProductBaseInfo)
-																.collect(toList());
+									.stream()
+									.map(prod -> getProductRepresentation(prod, productCoverImages))
+									.map(p -> setProductImages(p, productImages))
+									.map(this::toProductBaseInfo)
+									.collect(toList());
 		}
 		
 		dto.setProducts( productlist );
