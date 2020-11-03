@@ -3004,7 +3004,7 @@ public class ProductService {
 
 	private ProductCollectionEntity getCollectionById(Long productId) {
 		return productCollectionRepo.findByCollectionId(productId)
-				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, P$PRO$0009, productId));
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, P$PRO$0012, productId));
 	}
 
 
