@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.nasnav.dto.ProductImageDTO;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -960,7 +961,8 @@ public class ProductImageApiTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getProductsCoverImgsTest() {
 		List<Long> productIds = Arrays.asList(1001L, 1002L, 1003L);
-		Map<Long, String> coverImgs = imgService.getProductsImagesMap(productIds, null);
+		Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIds, null);
+		Map<Long, String> coverImgs = imgService.getProductsImagesMap(productImages);
 		Set<String> expectedUris = new HashSet<>( Arrays.asList("99001/cover_img.jpg", "99001/cover_img3.jpg"));
 		
 		assertEquals("Only products 1001, 1002 have images, but 1003 should have the fallback image url", 2, coverImgs.keySet().size());

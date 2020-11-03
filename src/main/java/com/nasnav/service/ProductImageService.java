@@ -59,6 +59,8 @@ public interface ProductImageService {
 
 	Map<Long,String> getProductsImagesMap(List<Long> productsIdList, List<Long> variantsIdList);
 
+	Map<Long,String> getProductsImagesMap(Map<Long,List<ProductImageDTO>> productImages);
+
 	Map<Long,List<ProductImageDTO>> getProductsAllImagesMap(List<Long> productsIdList, List<Long> variantsIdList);
 	
 	Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantIds);

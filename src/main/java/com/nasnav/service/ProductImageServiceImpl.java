@@ -1533,6 +1533,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	@Override
+	public Map<Long, String> getProductsImagesMap(Map<Long, List<ProductImageDTO>> getProductsAllImagesMap) {
+		return 	getProductsAllImagesMap
+				.entrySet()
+				.stream()
+				.map(this::getProductCoverImageUrlMapEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+
+	@Override
 	public Map<Long, List<ProductImageDTO>> getProductsAllImagesMap(List<Long> productsIdList, List<Long> variantsIdList) {
 		return getProductsAndVariantsImages(productsIdList, variantsIdList)
 				.stream()
