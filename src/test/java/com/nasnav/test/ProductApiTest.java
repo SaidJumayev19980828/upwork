@@ -12,9 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -414,7 +412,7 @@ public class ProductApiTest {
 	private void validateErrorResponse(ResponseEntity<String> response) {
 		JSONObject body = new JSONObject(response.getBody());
 
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue(body.has("message"));
 		assertTrue(body.has("error"));
 	}
@@ -535,7 +533,7 @@ public class ProductApiTest {
 		HttpEntity<?> request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
 		ResponseEntity<String> response =
 				template.exchange("/product/bundle?product_id=" + bundleId
-						, HttpMethod.DELETE
+						, DELETE
 						, request
 						, String.class);
 		return response;
@@ -716,7 +714,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
 
@@ -732,7 +730,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/product?product_id=" + productId
-						, HttpMethod.DELETE
+						, DELETE
 						, request
 						, String.class);
 
@@ -788,30 +786,6 @@ public class ProductApiTest {
 
 
 
-
-	@Test
-	public void deleteProductInNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
-
-		Long productId = 1013L;
-		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
-
-		assertNotEquals("assert product had New order items", 0L, basketItemsCountBefore);
-		assertTrue("assert product exists before delete", productRepository.existsById(productId));
-		//---------------------------------------------------------------------
-		ResponseEntity<String> response = deleteProduct(user, productId);
-
-		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
-		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
-
-		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
-		assertNotEquals("assert product item where not deleted", 0L, basketItemsCountAfter);
-	}
-
-
-
-
 	@Test
 	public void deleteProductInBundleTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
@@ -823,7 +797,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
 	}
 
@@ -861,7 +835,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/product?"+ queryParams.substring(1)
-						, HttpMethod.DELETE
+						, DELETE
 						, request
 						, String.class);
 		return response;
@@ -872,7 +846,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/product?product_id=" + productId
-						, HttpMethod.DELETE
+						, DELETE
 						, request
 						, String.class);
 		return response;
@@ -1254,8 +1228,7 @@ public class ProductApiTest {
 		long productCountAfter = productRepository.countByOrganizationId(org);
 		long variantCountAfter = variantRepo.countByProductEntity_organizationId(org);
 		long bundlesCountAfter = bundleRepo.countByOrganizationId(org);
-		long ordersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), org);
-				
+
 		long productCountOtherOrgAfter = productRepository.countByOrganizationId(otherOrg);
 		long variantCountOtherOrgAfter = variantRepo.countByProductEntity_organizationId(otherOrg);
 		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(otherOrg);
@@ -1264,8 +1237,7 @@ public class ProductApiTest {
 		assertEquals(0L, productCountAfter);
 		assertEquals(0L, variantCountAfter);
 		assertEquals(0L, bundlesCountAfter);
-		assertEquals(0L, ordersCountAfter);
-		
+
 		assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
 		assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
 		assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);

@@ -50,6 +50,10 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99002, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode) 
 VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232222');
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode)
+VALUES(200004, 'collection' , now() , now(), 2 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232224');
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode)
+VALUES(200005, 'REAL bundle' , now() , now(), 1 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232225');
 
 
 -- variants for each product

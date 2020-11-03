@@ -12,7 +12,6 @@ import javax.validation.Valid;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
-import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -93,7 +92,7 @@ public class ProductsController {
     public ProductsDeleteResponse deleteProduct(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
-		return productService.deleteProduct(productIds);
+		return productService.deleteProducts(productIds);
     }
 	
 	

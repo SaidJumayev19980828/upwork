@@ -1,9 +1,17 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.List;
+
+import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.util.Collections.singletonList;
 
 
 /**
@@ -28,14 +36,32 @@ public class ProductServiceTransactions {
 
 	@Autowired
 	private StockRepository stockRepo;
+
 	@Autowired
 	private CartItemRepository cartRepo;
 
+	@Autowired
+	private BundleRepository bundleRepo;
 
-	public void deleteProduct(Long productId) {
-		cartRepo.deleteByProductId(productId);
-		stockRepo.setProductStocksQuantityZero(productId);
-		variantRepo.deleteByProductEntity_Id(productId);
-		productRepo.deleteById(productId);
+
+	public void deleteProducts(List<Long> productIds) {
+		if (isBlankOrNull(productIds)){
+			return;
+		}
+		processInBatches(productIds, 500, cartRepo::deleteByProductIdIn);
+		processInBatches(productIds, 500, stockRepo::setProductStocksQuantityZero);
+		processInBatches(productIds, 500, variantRepo::deleteAllByProductIdIn);
+		processInBatches(productIds, 500, productRepo::deleteAllByIdIn);
+	}
+
+
+
+
+	public void deleteBundle(Long bundleId){
+		List<Long> idAsList = singletonList(bundleId);
+		cartRepo.deleteByProductIdIn(idAsList);
+		stockRepo.setProductStocksQuantityZero(idAsList);
+		variantRepo.deleteAllByProductIdIn(idAsList);
+		bundleRepo.deleteById(bundleId);
 	}
 }

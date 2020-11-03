@@ -72,8 +72,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			" LEFT JOIN item.stock stock" +
 			" LEFT JOIN stock.productVariantsEntity variant" +
 			" LEFT JOIN variant.productEntity product" +
-			" WHERE product.id = :productId)")
-	void deleteByProductId(@Param("productId")Long productId);
+			" WHERE product.id in :productIds)")
+	void deleteByProductIdIn(@Param("productIds") List<Long> productIds);
 	
 	@Transactional
 	@Modifying

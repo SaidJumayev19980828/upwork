@@ -82,6 +82,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
 	
 	long countByOrganizationId(long l);
+    long countByOrganizationIdAndProductType(long l, Integer productType);
 	
 	
 
@@ -93,11 +94,11 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	@Transactional
     @Modifying
-    @Query( value = "update public.products set removed = 1 where id in :idList", nativeQuery = true )
+    @Query( value = "update ProductEntity p set p.removed = 1 where p.id in :idList and p.productType = 0" )
 	void deleteAllByIdIn(@Param("idList") List<Long> idList);
 	
 	
-	@Query("select products.id FROM ProductEntity products where products.organizationId = :orgId")
+	@Query("select products.id FROM ProductEntity products where products.organizationId = :orgId and products.productType = 0")
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
@@ -165,6 +166,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductEntity p" +
             "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 2")
     List<IdAndNamePair> getCollectionIdAndNamePairs(@Param("orgId") Long orgId);
+
+    long countByProductType(Integer productType);
 }
 
 
