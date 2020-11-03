@@ -8,8 +8,7 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
-import static com.nasnav.commons.utils.StringUtils.encodeUrl;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
@@ -1059,11 +1058,12 @@ public class ProductService {
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
 
-		Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIdList);
+		Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, variantsIdList);
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
-					  .map(prod -> getProductRepresentation(prod, productCoverImages))
+					  .map(prod -> getProductRepresentation(prod))
+					  .map(p -> setProductImages(p, productImages))
 					  .collect(toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
@@ -1096,9 +1096,7 @@ public class ProductService {
 							.stream()
 							.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
-
-			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, null);
+			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, variantsIds);
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
@@ -1107,7 +1105,6 @@ public class ProductService {
 			Map<Long, List<Long>> product360Shops = getProducts360ShopsList(productIdList);
 
 			stocks.stream()
-					.map(s -> setAdditionalInfo(s, productCoverImages))
 					.map(s -> setProductImages(s, productImages))
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
@@ -1176,30 +1173,22 @@ public class ProductService {
 														 Map<Long, List<ProductImageDTO>> imagesMap) {
 		List<ProductImageDTO> images = imagesMap.get(product.getId());
 		product.setImages(images);
+
+		if (isNotBlankOrNull(images) ) {
+			product.setImageUrl(images.get(0).getImagePath());
+		}else{
+			product.setHidden(true);
+		}
 		return product;
 	}
 
 
 	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
 		if (order.equals("desc")) {
-			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice).reversed() );
+			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice).reversed());
 		} else {
 			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice));
 		}
-	}
-
-
-
-
-	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product,
-														  Map<Long, String> productCoverImgs) {
-		Optional<String> imgUrl = ofNullable(product.getId()).map(productCoverImgs::get);
-		if(imgUrl.isPresent()){
-			product.setImageUrl(imgUrl.get());
-		}else{
-			product.setHidden(true);
-		}
-		return product;
 	}
 
 
@@ -2026,10 +2015,11 @@ public class ProductService {
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
 		List<ProductBaseInfo> productlist = emptyList();
 		if(!productIdList.isEmpty()) {
-			Map<Long, String> 	productCoverImages = imgService.getProductsImagesMap(productIdList, null);
+			Map<Long, List<ProductImageDTO>> productImages = imgService.getProductsAllImagesMap(productIdList, null);
 			productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
 																.stream()
-																.map(prod -> getProductRepresentation(prod, productCoverImages))
+																.map(prod -> getProductRepresentation(prod))
+																.map(prod -> setProductImages(prod, productImages))
 																.map(this::toProductBaseInfo)
 																.collect(toList());
 		}
@@ -2711,16 +2701,6 @@ public class ProductService {
 		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
 		productRep.setHas_360_view(product.getSearch360());
 	}
-
-	
-
-
-	private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
-		ProductRepresentationObject rep = getProductRepresentation(product);
-		setAdditionalInfo(rep, productCoverImgs);
-		return rep;
-	}
-
 
 
 
