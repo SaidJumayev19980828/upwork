@@ -55,6 +55,7 @@ public enum ErrorCodes {
 	,P$PRO$0006("Failed to parse product update json [%s]!")
 	,P$PRO$0007("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!")
 	,P$PRO$0008("No Operation provided! parameter operation should have values in[%s]!")
+	,P$PRO$0009("No collection exists with ID[%d]!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	

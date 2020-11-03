@@ -24,20 +24,7 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0008;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$003;
-import static com.nasnav.exceptions.ErrorCodes.S$0006;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.persistence.ProductTypes.COLLECTION;
 import static com.querydsl.core.types.dsl.Expressions.cases;
@@ -301,12 +288,8 @@ public class ProductService {
 	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants) throws BusinessException{
 		ProductEntity product =
 				productRepository
-					.findById( ofNullable(productId).orElse(-1L))
-					.orElseThrow(() ->
-						new BusinessException(
-								format(ERR_PRODUCT_NOT_EXISTS, productId)
-								, "INVALID PARAM: product_id"
-								, NOT_FOUND));
+					.findByProductId( ofNullable(productId).orElse(-1L))
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productId));
 
 		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants);
 
@@ -3064,14 +3047,14 @@ public class ProductService {
 	}
 
 
-	private ProductCollectionEntity getCollectionByProductId(Long productId) {
-		return productCollectionRepo.findById(productId)
-				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
+	private ProductCollectionEntity getCollectionById(Long productId) {
+		return productCollectionRepo.findByCollectionId(productId)
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, P$PRO$0009, productId));
 	}
 
 
 	public ProductDetailsDTO getCollection(Long id) {
-		ProductCollectionEntity entity = getCollectionByProductId(id);
+		ProductCollectionEntity entity = getCollectionById(id);
 		return toProductDetailsDTO(entity);
 	}
 
