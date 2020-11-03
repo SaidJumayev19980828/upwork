@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
@@ -36,6 +37,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,12 +51,9 @@ import com.nasnav.commons.model.IndexedData;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
@@ -121,15 +120,8 @@ public class DataImportServiceImpl implements DataImportService {
     
     @Autowired
     private ProductRepository productRepo;
-    
     @Autowired
-    private ProductVariantsRepository variantRepo;
-    
-    @Autowired
-    private BasketRepository basketRepo;
-    
-    @Autowired
-    private OrdersRepository orderRepo;
+	private ProductServiceTransactions productServiceTransactions;
     
     private Logger logger = Logger.getLogger(getClass());
     
@@ -158,29 +150,12 @@ public class DataImportServiceImpl implements DataImportService {
         }
         
         if(productImportMetadata.isDeleteOldProducts()) {
-        	Set<Long> productsToDelete = getProductsToDelete(context);		
-        	divideToBatches(productsToDelete, 500)
-        		.forEach(this::deleteProductsData);        		
-        	
+        	Set<Long> productsToDelete = getProductsToDelete(context);
+			processInBatches(productsToDelete, 500, productServiceTransactions::deleteProducts);
         }
 
         return context;
     }
-    
-    
-    
-    
-    
-    private void deleteProductsData(List<Long> productsToDelete) {
-    	Long orgId = security.getCurrentUserOrganizationId();
-    	Set<Long> newOrdersId = orderRepo.findOrderIdByStatusAndProductIdIn(productsToDelete, orgId, NEW.getValue());
-    	basketRepo.deleteByProductIdInAndOrganizationIdAndStatus(productsToDelete, orgId, NEW.getValue());
-    	orderRepo.deleteAllByStatusAndIdIn(newOrdersId, orgId, NEW.getValue());
-    	productRepo.deleteAllByIdIn(productsToDelete);
-    	variantRepo.deleteAllByProductIdIn(productsToDelete);
-    }
-
-
 
 
 

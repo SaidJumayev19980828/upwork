@@ -12,32 +12,13 @@ import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0008;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$003;
-import static com.nasnav.exceptions.ErrorCodes.S$0006;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.persistence.ProductTypes.COLLECTION;
 import static com.querydsl.core.types.dsl.Expressions.cases;
@@ -48,7 +29,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
@@ -105,7 +85,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -158,8 +137,6 @@ import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.Shop360ProductsEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
@@ -1487,24 +1464,13 @@ public class ProductService {
 
 
 
-	public ProductsDeleteResponse deleteProduct(List<Long> productIds) throws BusinessException {
-
-		for(Long productId : productIds) {
-			if(!productRepository.existsById(productId)) {
-				return new ProductsDeleteResponse(true, singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
-			}
-
-			validateProductToDelete(productId);
-
-			try {
-				transactions.deleteProduct(productId);
-			} catch (DataIntegrityViolationException e) {
-				logger.error(e,e);
-				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", NOT_ACCEPTABLE);
-			} catch (Throwable e) {
-				logger.error(e,e);
-				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", INTERNAL_SERVER_ERROR);
-			}
+	public ProductsDeleteResponse deleteProducts(List<Long> productIds) {
+		try {
+			validateProductToDelete(productIds);
+			transactions.deleteProducts(productIds);
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0009);
 		}
 		return new ProductsDeleteResponse(true, productIds);
 	}
@@ -1512,63 +1478,39 @@ public class ProductService {
 
 
 
-	private void validateProductToDelete(Long productId) throws BusinessException {
-		validateUserCanDeleteProduct(productId);
-
-		validateProductIsNotInBundle(productId);
-
-		validateProductNotUsedInNewOrders(productId);
+	private void validateProductToDelete(List<Long> productIds) {
+		validateUserCanDeleteProducts(productIds);
+		validateProductIsNotInBundle(productIds);
 	}
 
 
+	private void validateUserCanDeleteProducts(List<Long> productIds) {
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
+
+		mapInBatches(productIds, 500, productRepository::findByIdIn)
+				.forEach(p -> validateUserCanDeleteProduct(p, userOrgId));
+	}
 
 
-	private void validateProductNotUsedInNewOrders(Long productId) throws BusinessException {
-		Long count = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
-		if(count > 0) {
-			throw new BusinessException(
-							format(ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS, productId)
-							, "INVALID_PARAM:product_id"
-							, HttpStatus.NOT_ACCEPTABLE);
+	private void validateUserCanDeleteProduct(ProductEntity product, Long orgId) {
+		if (!Objects.equals(product.getOrganizationId(), orgId)){
+			throw new RuntimeBusinessException(FORBIDDEN, P$PRO$0010, product.getId(), orgId);
 		}
 	}
 
 
 
-
-	private void validateUserCanDeleteProduct(Long productId) throws BusinessException {
-		Long userOrgId = securityService.getCurrentUserOrganizationId();
-
-		productRepository.findById(productId)
-				.filter(p -> p.getOrganizationId().equals(userOrgId) )
-				.orElseThrow(() -> getUserCannotDeleteProductException(productId, userOrgId));
-	}
-
-
-
-
-	private BusinessException getUserCannotDeleteProductException(Long productId, Long userOrgId) {
-		return new BusinessException(
-				format(ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER, productId, userOrgId)
-				, "INSUFFICIENT_RIGHTS"
-				, HttpStatus.FORBIDDEN);
-	}
-
-
-
-
-	private void validateProductIsNotInBundle(Long productId) throws BusinessException {
-		List<BundleEntity> bundles = bundleRepository.getBundlesHavingItemsWithProductId(productId);
+	private void validateProductIsNotInBundle(List<Long> productIds) {
+		List<BundleEntity> bundles =
+				mapInBatches(productIds, 500, bundleRepository::getBundlesHavingItemsWithProductIds);
 		if(bundles.size() != 0) {
-			String bundleIds = bundles.stream()
-								.map(BundleEntity::getId)
-								.map(String::valueOf)
-								.collect(joining(","));
+			String bundleIds = bundles
+					.stream()
+					.map(BundleEntity::getId)
+					.map(String::valueOf)
+					.collect(joining(","));
 
-			throw new BusinessException(
-					String.format(ERR_CANNOT_DELETE_BUNDLE_ITEM, productId, bundleIds)
-					, "INVALID PARAM:product_id"
-					, HttpStatus.NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0011, bundleIds);
 		}
 	}
 
@@ -1577,7 +1519,8 @@ public class ProductService {
 	public ProductsDeleteResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
 
-		return deleteProduct(Collections.singletonList(bundleId));
+		transactions.deleteBundle(bundleId);
+		return new ProductsDeleteResponse(true, Collections.singletonList(bundleId));
 	}
 
 
@@ -2965,7 +2908,6 @@ public class ProductService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
 		cartRepo.deleteByOrganizationId(orgId);
-		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
 		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
 		productRepository.deleteAllByOrganizationId(orgId);
 	}

@@ -604,7 +604,7 @@ public class DataImportApiTest {
 
 	private ProductDataCount countProductData() {
 		ProductDataCount count = new ProductDataCount();
-		count.product = productRepo.count();
+		count.product = productRepo.countByProductType(0);
 		count.variant = variantRepo.count();
 		count.stocks = stocksRepo.count();
 		return count;
@@ -1013,7 +1013,7 @@ public class DataImportApiTest {
 	private ProductDataDeleteCounts countData(Long orgId, Long otherOrg) {
 		ProductDataDeleteCounts before = new ProductDataDeleteCounts();
 		before.allProductsDataCount = countProductData();
-		before.orgProducts = productRepo.countByOrganizationId(orgId);
+		before.orgProducts = productRepo.countByOrganizationIdAndProductType(orgId, 0);
 		before.orders = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), orgId);
 		before.orgVariants = variantRepo.countByProductEntity_organizationId(orgId);
 		before.otherOrgProducts = productRepo.countByOrganizationId(otherOrg);
@@ -1060,7 +1060,6 @@ public class DataImportApiTest {
 		assertEquals(createdProducts + updatedProducts , after.orgProducts);
 		assertEquals("validate variants deleted , each product has single variant in the test..."
 				, createdProducts + updatedProducts, after.orgVariants);
-		assertEquals(0L, after.orders);
 		
 		assertFalse("assert non updated product deleted.", productRepo.existsById(productToBeDeleted));
 		assertFalse("assert non updated product variant deleted.", variantRepo.existsById(variantToBeDeleted));

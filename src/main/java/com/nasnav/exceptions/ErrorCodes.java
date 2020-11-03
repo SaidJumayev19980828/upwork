@@ -55,6 +55,9 @@ public enum ErrorCodes {
 	,P$PRO$0006("Failed to parse product update json [%s]!")
 	,P$PRO$0007("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!")
 	,P$PRO$0008("No Operation provided! parameter operation should have values in[%s]!")
+	,P$PRO$0009("Failed to delete products!")
+	,P$PRO$0010("Product of ID[%d] cannot be deleted by a user from organization of id [%d]")
+	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	

@@ -22,8 +22,6 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	ProductVariantsEntity findByIdAndProductEntity_Id(Long variantId, Long productId);
 
-	void deleteByProductEntity_Id(Long productId);
-
 	List<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 
 	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
@@ -80,7 +78,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	
 	@Transactional
     @Modifying
-    @Query( value = "update public.product_variants set removed = 1 where product_id in :idList", nativeQuery = true )
+    @Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.productEntity.id in :idList")
 	void deleteAllByProductIdIn(@Param("idList") List<Long> idList);
 	
 	
