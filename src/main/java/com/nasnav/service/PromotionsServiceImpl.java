@@ -22,12 +22,9 @@ import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 
+import com.nasnav.dto.response.PromotionResponse;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
@@ -84,7 +81,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private PromotionsCodesUsedRepository usedPromoRepo;
 	
 	@Override
-	public List<PromotionDTO> getPromotions(PromotionSearchParamDTO searchParams) {
+	public PromotionResponse getPromotions(PromotionSearchParamDTO searchParams) {
 		SearchParams params = createSearchParam(searchParams);
 		
 		CriteriaBuilder builder = entityMgr.getCriteriaBuilder();
@@ -94,19 +91,44 @@ public class PromotionsServiceImpl implements PromotionsService {
 		root.fetch("createdBy", INNER);
 		
 		ArrayList<Predicate> restrictions = createPromotionsQueryPerdicates(builder, root, params);
-		query.select(root).where(restrictions.toArray(new Predicate[0]));
-		
-		return entityMgr
+		query.select(root)
+				.where(restrictions.toArray(new Predicate[0]))
+				.orderBy(builder.desc(root.get("id")));
+		setPromotionDefaultParams(searchParams);
+
+		List<PromotionDTO> promotions = entityMgr
 				.createQuery(query)
+				.setFirstResult(searchParams.getStart())
+				.setMaxResults(searchParams.getCount())
 				.getResultList()
 				.stream()
 				.map(this::createPromotionDTO)
 				.collect(toList());
+		Long total = getPromotionsCount(builder, restrictions.toArray(new Predicate[0]));
+		return new PromotionResponse(total, promotions);
 	}
 
 
-	
-	
+	private void setPromotionDefaultParams(PromotionSearchParamDTO searchParams) {
+		if(searchParams.getStart() == null || searchParams.getStart() < 0){
+			searchParams.setStart(0);
+		}
+		if(searchParams.getCount() == null || (searchParams.getCount() < 1)){
+			searchParams.setCount(10);
+		} else if (searchParams.getCount() > 1000) {
+			searchParams.setCount(1000);
+		}
+	}
+
+
+	private Long getPromotionsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+		countQuery.select(  builder.count(
+				(countQuery.from(PromotionsEntity.class))))
+							.where(predicatesArr);
+		Long count = entityMgr.createQuery(countQuery).getSingleResult();
+		return count;
+	}
 	
 	
 	private PromotionDTO createPromotionDTO(PromotionsEntity entity) {

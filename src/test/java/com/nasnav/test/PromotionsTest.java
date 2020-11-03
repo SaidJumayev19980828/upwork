@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.response.PromotionResponse;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -86,32 +87,48 @@ public class PromotionsTest {
 	public void getPromotionsWithFiltersTest() throws Exception{
 		HttpEntity<?> req = getHttpEntity("hijkllm");
 		String now = formatter.format(now());
-		String url = format("/organization/promotions?status=ACTIVE&start=%s&end=%s",now, now);
-        ResponseEntity<String> res = 
-        		template.exchange(url, GET, req, String.class);
+		String url = format("/organization/promotions?status=ACTIVE&start_date=%s&end_date=%s",now, now);
+        ResponseEntity<PromotionResponse> res =
+        		template.exchange(url, GET, req, PromotionResponse.class);
         
         assertEquals(200, res.getStatusCodeValue());
-        List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+        List<PromotionDTO> promotions = res.getBody().getPromotions();
         assertEquals(2, promotions.size());
         Set<Long> expectedIds = setOf(630002L,630003L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
         assertEquals(expectedIds, ids);
-	} 
-	
-	
-	
-	
-	
+	}
+
+
+	@Test
+	public void getPromotionStartAndCountTest() {
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<PromotionResponse> res =
+				template.exchange("/organization/promotions?count=1", GET, req, PromotionResponse.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		List<PromotionDTO> promotions = res.getBody().getPromotions();
+		assertEquals(5, res.getBody().getTotal().intValue());
+		assertEquals(1, promotions.size());
+
+		res = template.exchange("/organization/promotions?start=4", GET, req, PromotionResponse.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		promotions = res.getBody().getPromotions();
+		assertEquals(630001, promotions.get(0).getId().intValue());
+	}
+
+
 	@Test
 	public void getPromotionsWithStatusFilterTest() throws Exception{
 		HttpEntity<?> req = getHttpEntity("hijkllm");
 		String now = formatter.format(now());
 		String url = format("/organization/promotions?status=INACTIVE",now, now);
-        ResponseEntity<String> res = 
-        		template.exchange(url, GET, req, String.class);
+		ResponseEntity<PromotionResponse> res =
+				template.exchange(url, GET, req, PromotionResponse.class);
         
         assertEquals(200, res.getStatusCodeValue());
-        List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+        List<PromotionDTO> promotions = res.getBody().getPromotions();
         assertEquals(2, promotions.size());
         Set<Long> expectedIds = setOf(630004L, 630005L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
@@ -126,11 +143,11 @@ public class PromotionsTest {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
 		String now = formatter.format(now());
 		String url = format("/organization/promotions",now, now);
-		ResponseEntity<String> res =
-				template.exchange(url, GET, req, String.class);
+		ResponseEntity<PromotionResponse> res =
+				template.exchange(url, GET, req, PromotionResponse.class);
 
 		assertEquals(200, res.getStatusCodeValue());
-		List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+		List<PromotionDTO> promotions = res.getBody().getPromotions();
 		assertEquals(3, promotions.size());
 		Set<Long> expectedIds = setOf(630001L, 630002L, 630003L);
 		Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
@@ -143,11 +160,11 @@ public class PromotionsTest {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
 		String now = formatter.format(now());
 		String url = format("/organization/promotions?id=630001",now, now);
-        ResponseEntity<String> res = 
-        		template.exchange(url, GET, req, String.class);
+		ResponseEntity<PromotionResponse> res =
+				template.exchange(url, GET, req, PromotionResponse.class);
         
         assertEquals(200, res.getStatusCodeValue());
-        List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+        List<PromotionDTO> promotions = res.getBody().getPromotions();
         assertEquals(1, promotions.size());
         Set<Long> expectedIds = setOf(630001L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());

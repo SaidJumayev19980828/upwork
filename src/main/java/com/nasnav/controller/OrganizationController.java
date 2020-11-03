@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.response.PromotionResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -500,13 +501,15 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "promotions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<PromotionDTO> getPromotions(
+    public PromotionResponse getPromotions(
     		@RequestHeader (name = "User-Token", required = false) String userToken
     		,@RequestParam(name="status", required = false)String status
-    		,@RequestParam(name="start", required = false)String startTime
-    		,@RequestParam(name="end", required = false)String endTime
-    		,@RequestParam(name="id", required = false)Long id){
-    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime, id);
+    		,@RequestParam(name="start_date", required = false)String startTime
+    		,@RequestParam(name="end_date", required = false)String endTime
+    		,@RequestParam(name="id", required = false)Long id
+            ,@RequestParam(name="start", required = false)Integer start
+            ,@RequestParam(name="count", required = false)Integer count){
+    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime, id, start, count);
     	return promotionsService.getPromotions(searchParams);
     }
     
@@ -524,7 +527,7 @@ public class OrganizationController {
     @PostMapping(value = "promotion")
     @ResponseStatus(OK)
     public Long addPromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestBody PromotionDTO promotion) throws BusinessException {
+                             @RequestBody PromotionDTO promotion) {
     	return promotionsService.updatePromotion(promotion);
     }
 
@@ -539,7 +542,7 @@ public class OrganizationController {
     @DeleteMapping(value = "promotion")
     @ResponseStatus(OK)
     public void removePromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
-                             @RequestParam("id") Long promotionId) throws BusinessException {
+                             @RequestParam("id") Long promotionId) {
         promotionsService.removePromotion(promotionId);
     }
 

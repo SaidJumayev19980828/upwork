@@ -5,11 +5,12 @@ import java.util.List;
 
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
 
 public interface PromotionsService {
-	List<PromotionDTO> getPromotions(PromotionSearchParamDTO searchParams);
+	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
 
 	Long updatePromotion(PromotionDTO promotion);
 
