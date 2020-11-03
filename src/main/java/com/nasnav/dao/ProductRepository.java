@@ -41,7 +41,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	@Query("SELECT p.id from ProductEntity p where p.organizationId = :orgId")
     List<Long> findProductsIdsByOrganizationId(@Param("orgId") Long orgId);
 
-    @Query("select p from ProductEntity p where p.id = :id and p.productType = 0")
+    @Query("select p from ProductEntity p where p.id = :id and p.productType in (0,1)")
     Optional<ProductEntity> findByProductId(@Param("id") Long id);
 
 	@Query("SELECT products FROM ProductEntity products "
