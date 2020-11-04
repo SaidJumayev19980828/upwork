@@ -33,6 +33,8 @@ public class Caches {
 
 	public static final String FILES = "files";
 
+	public static final String IMGS_RESIZED = "images_resized";
+
 
 	public static final String USERS_BY_TOKENS = "user_tokens";
 }

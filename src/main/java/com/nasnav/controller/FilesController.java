@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.FileService;
 
 import io.swagger.annotations.ApiOperation;
@@ -43,15 +42,10 @@ public class FilesController {
     public String updateShop(
     		@RequestHeader (name = "User-Token", required = false) String userToken,
     		@RequestParam("org_id") @Nullable Long orgId,
-    		@RequestParam("file") MultipartFile file
-    		) throws BusinessException {  
-		
+    		@RequestParam("file") MultipartFile file) {
+
         return fileService.saveFile(file, orgId);
     }
-	
-	
-	
-	
 	
 	
 	
@@ -60,9 +54,17 @@ public class FilesController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping( path="**")
-    public void downloadFile(HttpServletRequest request, HttpServletResponse resp) throws BusinessException, ServletException, IOException {
-        String url = request.getRequestURI().replaceFirst("/files", "");
-		String resourceInternalUrl = fileService.getResourceInternalUrl(url);        
+    public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @RequestParam(required = false) Integer height,
+                             @RequestParam(required = false) Integer width,
+                             @RequestParam(required = false) String type) throws ServletException, IOException {
+        String url = request.getRequestURI().replaceFirst("/files", "");;
+        String resourceInternalUrl;
+        if (height != null || width != null) {
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);
+        } else {
+            resourceInternalUrl = fileService.getResourceInternalUrl(url);
+        }
 		resp.setStatus(HttpStatus.OK.value());
 		
 		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);

@@ -46,6 +46,7 @@ public class CachingConfig extends CachingConfigurerSupport{
     		, ORGANIZATIONS_TAGS
     		, SHOPS_BY_ID
             , USERS_BY_TOKENS
+            , IMGS_RESIZED
     		);
  
        

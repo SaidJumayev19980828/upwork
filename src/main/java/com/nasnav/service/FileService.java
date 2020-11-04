@@ -1,26 +1,43 @@
 package com.nasnav.service;
 
+import static com.google.common.io.Files.getFileExtension;
+import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.nasnav.cache.Caches.FILES;
+import static com.nasnav.cache.Caches.IMGS_RESIZED;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static javassist.bytecode.Descriptor.of;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import javax.annotation.PostConstruct;
 import javax.cache.annotation.CacheResult;
+import javax.imageio.ImageIO;
 
+import com.nasnav.dao.FilesResizedRepository;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.FilesResizedEntity;
+import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +55,8 @@ public class FileService {
 
 	private static Logger logger = Logger.getLogger(FileService.class);
 
+	private static List<String> SUPPORTED_IMAGE_FORMATS = asList("jpg", "jpeg", "png", "webp");
+
 	@Value("${files.basepath}")
 	private String basePathStr;
 
@@ -45,7 +64,8 @@ public class FileService {
 
 	@Autowired
 	private OrganizationRepository orgRepo;
-
+	@Autowired
+	private FilesResizedRepository filesResizedRepo;
 
 	@Autowired
 	private FilesRepository filesRepo;
@@ -66,13 +86,13 @@ public class FileService {
 
 
 
-	public String saveFile(MultipartFile file, Long orgId) throws BusinessException {
+	public String saveFile(MultipartFile file, Long orgId) {
 
 		if(orgId != null && !orgRepo.existsById(orgId)) {
-			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001, orgId);
 		}
-		if(StringUtils.isBlankOrNull(file.getOriginalFilename()) ) {
-			throw new BusinessException("No file name provided!", "INVALID PARAM:file", NOT_ACCEPTABLE);
+		if(isBlankOrNull(file.getOriginalFilename()) ) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
 		}
 
 		String origName = file.getOriginalFilename();
@@ -92,7 +112,7 @@ public class FileService {
 
 
 
-	private void saveToDatabase(String origName, Path location, String url, Long orgId) throws BusinessException {
+	private void saveToDatabase(String origName, Path location, String url, Long orgId) {
 
 		OrganizationEntity org = orgRepo.findOneById(orgId);
 		String mimeType = getMimeType(basePath.resolve(location));
@@ -110,7 +130,7 @@ public class FileService {
 
 
 
-	private String getMimeType(Path file) throws BusinessException {
+	private String getMimeType(Path file) {
 		String mimeType = MediaType.OCTET_STREAM.toString();
 
 		Tika tika = new Tika();
@@ -118,7 +138,7 @@ public class FileService {
 			mimeType = tika.detect(file);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to parse MIME type for the file: "+ file, "INTERNAL ERROR", INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0013, file.toString());
 		}
 
 		return mimeType;
@@ -128,7 +148,7 @@ public class FileService {
 
 
 	private Path getSaveDir(Long orgId) {
-		Path saveDir = Optional.ofNullable(orgId)
+		Path saveDir = ofNullable(orgId)
 				.map(id -> id.toString())
 				.map(basePath::resolve)
 				.orElse(basePath);
@@ -179,7 +199,7 @@ public class FileService {
 
 
 	private String getUrl(String origName, Long orgId) {
-		String url = Optional.ofNullable(orgId)
+		String url = ofNullable(orgId)
 				.map(id -> String.format("%d/%s", id, origName))
 				.orElse(origName);
 		return url;
@@ -189,8 +209,8 @@ public class FileService {
 
 
 	private String getUniqueRandomName(String origName) {
-		String ext = com.google.common.io.Files.getFileExtension(origName);
-		String origNameNoExtension = com.google.common.io.Files.getNameWithoutExtension(origName);
+		String ext = getFileExtension(origName);
+		String origNameNoExtension = getNameWithoutExtension(origName);
 		String uuid = UUID.randomUUID().toString().replace("-", "");
 		return String.format("%s-%s.%s", origNameNoExtension, uuid , ext);
 	}
@@ -198,7 +218,7 @@ public class FileService {
 
 
 
-	private void saveFile(MultipartFile file, String uniqeFileName, Long orgId) throws BusinessException {
+	private void saveFile(MultipartFile file, String uniqeFileName, Long orgId) {
 		Path saveDir = getSaveDir(orgId);
 		createDirIfNotExists(saveDir);
 		Path targetLocation = saveDir.resolve(uniqeFileName);
@@ -206,20 +226,20 @@ public class FileService {
 			file.transferTo(targetLocation);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to save file Organization directory at location : " + saveDir, "FAILED TO SAVE FILE", INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0009, saveDir);
 		}
 	}
 
 
 
 
-	private void createDirIfNotExists(Path saveDir) throws BusinessException {
+	private void createDirIfNotExists(Path saveDir) {
 		if(!Files.exists(saveDir)) {
 			try {
 				Files.createDirectories(saveDir);
 			} catch (IOException e) {
 				logger.error(e,e);
-				throw new BusinessException("Failed to create directory at location : " + saveDir, "FAILED TO CREATE DIRECTORY", INTERNAL_SERVER_ERROR);
+				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0010, saveDir);
 			}
 		}
 	}
@@ -256,12 +276,12 @@ public class FileService {
 
 
 
-	private String reformUrl(String url) throws BusinessException {
-		return Optional.ofNullable(url)
+	private String reformUrl(String url) {
+		return ofNullable(url)
 				.filter(u -> u.length()> 2)
 				.filter(u -> u.startsWith("/"))
 				.map(u -> u.substring(1))
-				.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", NOT_ACCEPTABLE));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url));
 	}
 
 
@@ -277,7 +297,7 @@ public class FileService {
 
 		try {
 			filesRepo.delete(file);
-
+			filesResizedRepo.deleteByOriginalFile(file);
 			Files.deleteIfExists(path);
 		} catch (IOException e) {
 			logger.error(e,e);
@@ -292,13 +312,118 @@ public class FileService {
 	
 	
 	@CacheResult(cacheName = FILES)
-	public String getResourceInternalUrl(String url) throws BusinessException {
+	public String getResourceInternalUrl(String url) {
 		String modUrl = reformUrl(url);
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
 		if(fileInfo == null) {
-			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0011, url);
 		}
 		return STATIC_FILES_URL + "/" + fileInfo.getLocation();
 	}
 
+
+	@CacheResult(cacheName = IMGS_RESIZED)
+	public String getResizedImageInternalUrl(String url, Integer width, Integer height, String type) {
+		String modUrl = reformUrl(url);
+		final String fileType = getImageType(url, type)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
+		FileEntity originalFile = ofNullable(filesRepo.findByUrl(modUrl))
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0011, url));
+
+		FilesResizedEntity resizedFile = getResizedFiles(originalFile, width, height)
+				.stream()
+				.filter(f -> f.getImageUrl().endsWith(fileType))
+				.findFirst()
+				.orElseGet(() -> createResizedImageEntity(originalFile, width, height, fileType));
+
+		return STATIC_FILES_URL + "/" + resizedFile.getImageUrl();
+	}
+
+
+	private FilesResizedEntity createResizedImageEntity(FileEntity originalFile, Integer width, Integer height, String fileType) {
+		try {
+			this.basePath = Paths.get(basePathStr);
+			Path location = basePath.resolve(originalFile.getLocation());
+			File file = location.toFile();
+			BufferedImage image = ImageIO.read(file);
+			if (width != null) {
+				height = calculateHeight(width ,image);
+			} else if (height != null) {
+				width = calculateWidth(height, image);
+			}
+			String resizedFileName = getResizedImageName(file.getName(), width, fileType);
+			MultipartFile multipartFile = resizeImage(image, width, height, fileType, resizedFileName);
+			Long orgId = originalFile.getOrganization().getId();
+			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
+		}catch (Exception e) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0006, e.getMessage());
+		}
+	}
+
+
+	private List<FilesResizedEntity> getResizedFiles(FileEntity originalFile, Integer width, Integer height) {
+		List<FilesResizedEntity> resizedFiles;
+		if (width == null && height == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0007);
+		} else if (width != null) {
+			resizedFiles = filesResizedRepo.findByOriginalFileAndWidth(originalFile, width);
+		} else {
+			resizedFiles = filesResizedRepo.findByOriginalFileAndHeight(originalFile, height);
+		}
+		return resizedFiles;
+	}
+
+
+	private FilesResizedEntity saveResizedFileEntity(FileEntity originalFile, MultipartFile multipartFile,
+													 Integer width, Integer height, Long orgId) {
+		saveFile(multipartFile, multipartFile.getOriginalFilename(), orgId);
+
+		FilesResizedEntity resizedFile = new FilesResizedEntity();
+		resizedFile.setOriginalFile(originalFile);
+		resizedFile.setWidth(width);
+		resizedFile.setHeight(height);
+		resizedFile.setImageUrl(getUrl(multipartFile.getOriginalFilename(), orgId));
+		return filesResizedRepo.save(resizedFile);
+	}
+
+
+	private Integer calculateHeight(Integer targetWidth, BufferedImage image) {
+		return (int)(targetWidth * (image.getHeight() / (image.getWidth() * 1.0)));
+	}
+
+
+
+	private Integer calculateWidth(int targetHeight, BufferedImage image) {
+		return (int)(targetHeight * (image.getWidth() / (image.getHeight() * 1.0)));
+	}
+
+
+
+	private Optional<String> getImageType(String fileName, String type) {
+		if (nonNull(type) && SUPPORTED_IMAGE_FORMATS.contains(type.toLowerCase())) {
+			return ofNullable(type.toLowerCase());
+		}
+		return ofNullable(getFileExtension(fileName));
+	}
+
+
+
+	private String getResizedImageName(String imageName, int size, String type) {
+		return getNameWithoutExtension(imageName) + "-"+ size + "." + type;
+	}
+
+
+
+	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, Integer targetHeight, String fileType,
+									  String resizedFileName) throws IOException {
+		ByteArrayOutputStream outputImageFile = new ByteArrayOutputStream();
+		Thumbnails.of(image)
+				.size(targetWidth, targetHeight)
+				.outputFormat(fileType)
+				.toOutputStream(outputImageFile);
+
+		MultipartFile multipartFile = new MockMultipartFile(resizedFileName,
+				resizedFileName, fileType, outputImageFile.toByteArray());
+		return multipartFile;
+	}
 }
