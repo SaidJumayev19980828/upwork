@@ -3,6 +3,7 @@ package com.nasnav.shipping.services;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.lang.Long.MIN_VALUE;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
@@ -13,13 +14,14 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.nasnav.service.model.common.ParameterType;
 import com.nasnav.shipping.model.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nasnav.commons.utils.EntityUtils;
@@ -34,7 +36,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class PickupFromShop implements ShippingService{
-	
+
+	private final Logger logger = LogManager.getLogger();
 	public static final String SERVICE_ID = "PICKUP"; 
 	public static final String SERVICE_NAME = "Pickup from Shop";
 	public static final String ALLOWED_SHOP_ID_LIST = "ALLOWED_SHOP_ID_LIST";
@@ -48,12 +51,12 @@ public class PickupFromShop implements ShippingService{
 	private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
 	private static final Integer ETA_DAYS_MAX_DEFAULT = 7;
 
-	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
+	private static final List<Parameter> SERVICE_PARAM_DEFINITION =
 			asList(new Parameter(ALLOWED_SHOP_ID_LIST, LONG_ARRAY)
 					, new Parameter(ETA_DAYS_MIN, NUMBER, false)
 					, new Parameter(ETA_DAYS_MAX, NUMBER, false));
 	
-	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
+	private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION =
 			asList(new Parameter(SHOP_ID, NUMBER));
 	
 	private Set<Long> allowedShops;
@@ -77,8 +80,13 @@ public class PickupFromShop implements ShippingService{
 	
 	@Override
 	public ShippingServiceInfo getServiceInfo() {
-		return new ShippingServiceInfo(SERVICE_ID, SERVICE_NAME, true
-				, SERVICE_PARAM_DEFINITION, ADDITIONAL_PARAM_DEFINITION);
+		return new ShippingServiceInfo(
+					SERVICE_ID
+					, SERVICE_NAME
+					, true
+					, SERVICE_PARAM_DEFINITION
+					, ADDITIONAL_PARAM_DEFINITION
+					, PICKUP);
 	}
 
 	
@@ -259,6 +267,18 @@ public class PickupFromShop implements ShippingService{
 	}
 
 
+
+	@Override
+	public Optional<Long> getPickupShop(String additionalParametersJson) {
+		try{
+			return ofNullable(additionalParametersJson)
+					.map(JSONObject::new)
+					.map(json -> json.getLong(SHOP_ID));
+		}catch(Throwable e){
+			logger.error(e,e);
+			return Optional.empty();
+		}
+	}
 
 
 	@Override

@@ -3,6 +3,7 @@ package com.nasnav.shipping.services;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.lang.Long.MIN_VALUE;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -28,7 +29,10 @@ import java.util.stream.StreamSupport;
 import javax.annotation.PostConstruct;
 
 import com.nasnav.shipping.model.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring5.SpringTemplateEngine;
@@ -55,6 +59,7 @@ import reactor.core.publisher.Mono;
 
 public class PickupPointsWithInternalLogistics implements ShippingService{
 
+	private final Logger logger = LogManager.getLogger();
 	public static final String SERVICE_ID = "PICKUP_POINTS"; 
 	public static final String SERVICE_NAME = "Pickup point";
 	public static final String WAREHOUSE_ID = "WAREHOUSE_ID";
@@ -112,8 +117,13 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	@Override
 	public ShippingServiceInfo getServiceInfo() {
-		return new ShippingServiceInfo(SERVICE_ID, SERVICE_NAME, true
-				, SERVICE_PARAM_DEFINITION, ADDITIONAL_PARAM_DEFINITION);
+		return new ShippingServiceInfo(
+					SERVICE_ID
+					, SERVICE_NAME
+					, true
+					, SERVICE_PARAM_DEFINITION
+					, ADDITIONAL_PARAM_DEFINITION
+					, PICKUP);
 	}
 	
 	
@@ -443,6 +453,19 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 				.stream()
 				.map(this::createReturnShipmentTracker)
 				.collect(collectingAndThen(toList(), Flux::fromIterable));
+	}
+
+
+	@Override
+	public Optional<Long> getPickupShop(String additionalParametersJson) {
+		try{
+			return ofNullable(additionalParametersJson)
+					.map(JSONObject::new)
+					.map(json -> json.getLong(SHOP_ID));
+		}catch(Throwable e){
+			logger.error(e,e);
+			return Optional.empty();
+		}
 	}
 
 

@@ -14,5 +14,6 @@ public class ShippingServiceInfo {
 	private String name;
 	private boolean publicService;
 	private List<Parameter> serviceParams;
-	private List<Parameter> additionalDataParams; 
+	private List<Parameter> additionalDataParams;
+	private ShippingServiceType type;
 }

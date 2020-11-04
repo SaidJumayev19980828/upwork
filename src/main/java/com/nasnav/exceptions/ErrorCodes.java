@@ -138,6 +138,7 @@ public enum ErrorCodes {
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
 	,O$SHP$0004("Failed to create a shipment for return request[%d]!")
+	,O$SHP$0005("Meta-order with id [%d], has no sub-orders!")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")

@@ -284,18 +284,18 @@
           <div style="width: 70%;" class="column">
             <h3 th:text="${data.subOrders[0].pickup} ? 'Shop Address' : 'Shipping Address'"/>
             <ul>
-              <li id="name" th:text="${data.subOrders[0].deliveryAddress.firstName} + ' ' + ${data.subOrders[0].deliveryAddress.lastName}"></li>
-              <li id="phone" th:if="${data.subOrders[0].deliveryAddress.phoneNumber != null}" th:text="${data.subOrders[0].deliveryAddress.phoneNumber}"></li>
-              <li id="address_Line_1" th:text="${data.subOrders[0].deliveryAddress.flatNumber} +', '+ ${data.subOrders[0].deliveryAddress.buildingNumber}+ ', ' + ${data.subOrders[0].deliveryAddress.addressLine1}"></li>
-              <li id="area" th:text="${data.subOrders[0].deliveryAddress.area}"></li>
-              <li id="city" th:text="${data.subOrders[0].deliveryAddress.city}"></li>
-              <li id="country" th:text="${data.subOrders[0].deliveryAddress.country}"></li>
+              <li id="name" th:text="${deliveryAddress.firstName} + ' ' + ${deliveryAddress.lastName}"></li>
+              <li id="phone" th:if="${deliveryAddress.phoneNumber != null}" th:text="${deliveryAddress.phoneNumber}"></li>
+              <li id="address_Line_1" th:text="${deliveryAddress.flatNumber} +', '+ ${deliveryAddress.buildingNumber}+ ', ' + ${deliveryAddress.addressLine1}"></li>
+              <li id="area" th:text="${deliveryAddress.area}"></li>
+              <li id="city" th:text="${deliveryAddress.city}"></li>
+              <li id="country" th:text="${deliveryAddress.country}"></li>
             </ul>
           </div>
           <div style="width: 30%;" class="column">
             <h3>Shipping Method</h3>
             <ul>
-              <li><span id="shipping_service" th:text="${data.subOrders[0].shipment.serviceName}"></span></li>
+              <li><span id="shipping_service" th:text="${shipppingServiceName}"></span></li>
             </ul>
           </div>
           <div class="column">

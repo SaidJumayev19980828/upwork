@@ -23,6 +23,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.CommonServiceParameters.CART_OPTIMIZER;
+import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -51,6 +52,8 @@ import javax.transaction.Transactional;
 
 import com.nasnav.AppConfig;
 import com.nasnav.commons.json.jackson.RawObject;
+import com.nasnav.dao.*;
+import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -63,15 +66,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.MapBuilder;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationShippingServiceRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ReturnRequestItemRepository;
-import com.nasnav.dao.ReturnShipmentRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
@@ -107,17 +101,6 @@ import com.nasnav.service.model.common.Parameter;
 import com.nasnav.service.model.common.ParameterType;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -185,6 +168,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Autowired
 	private ReturnRequestItemRepository returnedItemRepo;
+
+	@Autowired
+	private ShopsRepository shopRepo;
 
 
 	@Override
@@ -998,6 +984,42 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 
+
+
+	@Override
+	public Optional<ShopsEntity> getPickupShop(String additionalDataJson, String shippingServiceId, Long orgId) {
+		ShippingService shippingService = getShippingService(shippingServiceId, orgId);
+		return shippingService
+				.getPickupShop(additionalDataJson)
+				.flatMap(shopRepo::findShopFullData);
+	}
+
+
+
+	@Override
+	public Optional<ShopsEntity> getPickupShop(ShipmentEntity shipment) {
+		Long orgId = shipment.getSubOrder().getMetaOrder().getOrganization().getId();
+		return getPickupShop(shipment.getParameters(), shipment.getShippingServiceId(), orgId);
+	}
+
+
+
+	@Override
+	public boolean isPickupService(String shippingServiceId) {
+		return shippingServiceFactory
+				.getServiceInfo(shippingServiceId)
+				.map(ShippingServiceInfo::getType)
+				.map(PICKUP::equals)
+				.orElse(false);
+	}
+
+
+
+	@Override
+	public Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId) {
+		return shippingServiceFactory
+				.getServiceInfo(shippingServiceId);
+	}
 
 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest

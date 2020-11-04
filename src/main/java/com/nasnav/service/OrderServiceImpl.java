@@ -33,6 +33,7 @@ import com.nasnav.service.model.mail.MailAttachment;
 import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -79,6 +80,8 @@ import static java.math.RoundingMode.FLOOR;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
+import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static java.util.stream.IntStream.range;
@@ -275,7 +278,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private OrdersEntity getAndValidateOrdersEntityForStatusUpdate(OrderJsonDto orderJson, EmployeeUserEntity empUser, List<String> employeeUserRoles) {
-		Optional<OrdersEntity> order = Optional.empty();
+		Optional<OrdersEntity> order = empty();
 		Long orderId = orderJson.getId();
 		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name()) )  {
 			Long orgId = empUser.getOrganizationId();
@@ -509,6 +512,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private Map<String, Object> createOrgPropertiesParams(OrganizationEntity org) {
 		String domain = domainService.getBackendUrl();
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
@@ -543,11 +547,87 @@ public class OrderServiceImpl implements OrderService {
 		Order orderResponse = this.getOrderResponse(order);
 		normalizeOrderForEmailTemplate(orderResponse);
 
+		AddressRepObj deliveryAddress = getBillDeliveryAddress(order);
+
+		String shipppingServiceName = getShippingServiceName(orderResponse).orElse("N/A");
+
 		Map<String, Object> params = createOrgPropertiesParams(order.getOrganization());
 		params.put("creation_date", orderTimeStr);
 		params.put("data", orderResponse);
+		params.put("deliveryAddress", deliveryAddress);
+		params.put("shipppingServiceName", shipppingServiceName);
 		return params;
 	}
+
+
+
+	private Optional<String> getShippingServiceName(Order orderResponse) {
+		return ofNullable(orderResponse)
+				.map(Order::getSubOrders)
+				.map(List::stream)
+				.flatMap(Stream::findFirst)
+				.flatMap(this::getShippingServiceName);
+	}
+
+
+
+	private Optional<String> getShippingServiceName(SubOrder subOrder) {
+		return ofNullable(subOrder)
+				.map(SubOrder::getShipment)
+				.map(Shipment::getServiceId)
+				.flatMap(shippingMgrService::getShippingServiceInfo)
+				.map(ShippingServiceInfo::getName);
+	}
+
+
+
+
+	private AddressRepObj getBillDeliveryAddress(MetaOrderEntity metaOrder) {
+		OrdersEntity subOrder =
+				ofNullable(metaOrder)
+				.map(MetaOrderEntity::getSubOrders)
+				.map(Set::stream)
+				.flatMap(Stream::findFirst)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0005, metaOrder.getId()));
+		return getBillDeliveryAddress(subOrder);
+	}
+
+
+
+	private AddressRepObj getBillDeliveryAddress(OrdersEntity order){
+		AddressRepObj userAddress = (AddressRepObj)order.getAddressEntity().getRepresentation();
+		return getPickupShopAddress(order)
+				.orElse(userAddress);
+	}
+
+
+
+	private Optional<AddressRepObj> getPickupShopAddress(OrdersEntity order) {
+		return ofNullable(order)
+				.filter(this::isPickupOrder)
+				.flatMap(this::getPickupShop)
+				.map(this::getPickupShopAdress);
+	}
+
+
+
+	private boolean isPickupOrder(OrdersEntity order){
+		return ofNullable(order)
+				.map(OrdersEntity::getShipment)
+				.map(ShipmentEntity::getShippingServiceId)
+				.map(shippingMgrService::isPickupService)
+				.orElse(false);
+	}
+
+
+
+	private Optional<ShopsEntity> getPickupShop(OrdersEntity order){
+		return ofNullable(order)
+				.map(OrdersEntity::getShipment)
+				.flatMap(shippingMgrService::getPickupShop);
+	}
+
+
 
 
 	private String getOrganizationLogo(OrganizationEntity org) {
@@ -589,15 +669,10 @@ public class OrderServiceImpl implements OrderService {
 		ShopsEntity shop = shopsRepo.findById(subOrder.getShopId()).get();
 
 		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
-		String shopAreaNameString =
-				ofNullable(shop)
-				.map(ShopsEntity::getAddressesEntity)
-				.map(AddressesEntity::getAreasEntity)
-				.map(AreasEntity::getName)
-				.map(areaName -> " - " + areaName)
-				.orElse("");
+		String shopAreaNameString = createShopAreaNameString(shop);
 		Shipment shipment = subOrder.getShipment();
-		if (shipment.getServiceName().equals("PICKUP_POINTS") || shipment.getServiceName().equals("PICKUP")) {
+		String serviceId = shipment.getServiceId();
+		if (shippingMgrService.isPickupService(serviceId)) {
 			shipment.setServiceName("Pickup at " + subOrder.getShopName() + shopAreaNameString);
 			AddressRepObj address = subOrder.getDeliveryAddress();
 			BeanUtils.copyProperties(address, shopAddress);
@@ -605,6 +680,27 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setPickup(true);
 		}
 		subOrder.setShipment(shipment);
+	}
+
+
+
+	private String createShopAreaNameString(ShopsEntity shop) {
+		return ofNullable(shop)
+				.map(ShopsEntity::getAddressesEntity)
+				.map(AddressesEntity::getAreasEntity)
+				.map(AreasEntity::getName)
+				.map(areaName -> " - " + areaName)
+				.orElse("");
+	}
+
+
+
+	private AddressRepObj getPickupShopAdress(ShopsEntity shop){
+		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
+		if(isNull(shopAddress.getFirstName())){
+			shopAddress.setFirstName(shop.getName());
+		}
+		return shopAddress;
 	}
 
 
@@ -748,7 +844,7 @@ public class OrderServiceImpl implements OrderService {
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
-		Optional<OrdersEntity> order = Optional.empty();;
+		Optional<OrdersEntity> order = empty();;
 
 		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
 
@@ -1999,7 +2095,7 @@ public class OrderServiceImpl implements OrderService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
 
-		Optional<MetaOrderEntity> order = Optional.empty();;
+		Optional<MetaOrderEntity> order = empty();;
 
 		if (user instanceof UserEntity) {
 			order = metaOrderRepo.findByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);

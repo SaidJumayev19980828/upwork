@@ -8,15 +8,10 @@ import java.util.Optional;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationShippingServiceEntity;
-import com.nasnav.persistence.ReturnRequestEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.*;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -37,5 +32,8 @@ public interface ShippingManagementService {
 	List<ShippingServiceRegistration> listShippingServices();
 	Optional<String> getShippingServiceCartOptimizer(String shippingServiceId);
 	Flux<ReturnShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest);
-
+	Optional<ShopsEntity> getPickupShop(String additionalDataJson, String shippingServiceId, Long orgId);
+	Optional<ShopsEntity> getPickupShop(ShipmentEntity shipment);
+	boolean isPickupService(String shippingServiceId);
+	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
 }

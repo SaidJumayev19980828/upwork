@@ -6,9 +6,7 @@ import static com.nasnav.shipping.services.DummyShippingService.ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -17,13 +15,22 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.service.ShippingManagementService;
+import com.nasnav.shipping.services.DummyShippingService;
+import com.nasnav.shipping.services.PickupFromShop;
+import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
+import com.nasnav.test.commons.TestCommons;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +45,8 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 
 import net.jcip.annotations.NotThreadSafe;
+
+import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -60,6 +69,9 @@ public class ShippingServiceManagementTest {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+
+	@Autowired
+	private ShippingManagementService shippingMngSrv;
 	
 	@Test
 	public void testRegisterToShippingServiceNoAuthz() {
@@ -182,5 +194,32 @@ public class ShippingServiceManagementTest {
 		
 		OrdersEntity subOrderAfter = orderRepo.findFullDataById(subOrderId).get();
 		assertEquals(DISPATCHED.getValue(), subOrderAfter.getStatus());
+	}
+
+
+
+
+	@Test
+	public void isPickupTest(){
+		assertTrue(shippingMngSrv.isPickupService(PickupFromShop.SERVICE_ID));
+		assertFalse(shippingMngSrv.isPickupService(BostaLevisShippingService.SERVICE_ID));
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getPickupShopTest(){
+		Long orgId = 99001L;
+		Long shopId = 502L;
+		String shippingServiceId = "TEST";
+		String additionalParameters =
+				json().put(DummyShippingService.SHOP_ID, shopId).toString();
+
+		Optional<ShopsEntity> shop = shippingMngSrv.getPickupShop(additionalParameters, shippingServiceId, orgId);
+
+		assertTrue(shop.isPresent());
+		assertEquals(shopId, shop.get().getId());
 	}
 }

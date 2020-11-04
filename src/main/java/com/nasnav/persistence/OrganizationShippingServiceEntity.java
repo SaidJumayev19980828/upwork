@@ -1,15 +1,13 @@
 package com.nasnav.persistence;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Table(name="organization_shipping_service")
@@ -24,8 +22,11 @@ public class OrganizationShippingServiceEntity {
 	@Column(name="shipping_service_id")
 	private String serviceId;
 	
-	@ManyToOne
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name="organization_id", referencedColumnName = "id")
+	@JsonIgnore
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
 	private OrganizationEntity organization;
 	
 	@Column(name="service_parameters")

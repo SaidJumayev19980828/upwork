@@ -160,7 +160,6 @@ public class BostaLevisServiceTest {
 				, new ServiceParameter(ALEXANDRIA_PRICE, "30")
 				, new ServiceParameter(DELTA_CANAL_PRICE, "30")
 				, new ServiceParameter(UPPER_EGYPT_PRICE, "45"));
-//				, new ServiceParameter(SERVER_URL, "https://stg-app.bosta.co/api/v0"));
 	}
 	
 	

@@ -31,6 +31,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.math.RoundingMode.HALF_EVEN;
@@ -90,7 +91,13 @@ public class SallabShippingService implements ShippingService{
 	
 	@Override
 	public ShippingServiceInfo getServiceInfo() {
-		return new ShippingServiceInfo(SERVICE_ID, SERVICE_NAME, false, SERVICE_PARAM_DEFINITION, emptyList());
+		return new ShippingServiceInfo(
+					SERVICE_ID
+					, SERVICE_NAME
+					, false
+					, SERVICE_PARAM_DEFINITION
+					, emptyList()
+					, DELIVERY);
 	}
 
 	
@@ -453,8 +460,15 @@ public class SallabShippingService implements ShippingService{
 		return statusData;
 	}
 
-	
-	
+
+
+
+	@Override
+	public Optional<Long> getPickupShop(String additionalParametersJson) {
+		return Optional.empty();
+	}
+
+
 }
 
 

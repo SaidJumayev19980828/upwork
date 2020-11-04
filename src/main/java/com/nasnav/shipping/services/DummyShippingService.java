@@ -3,6 +3,8 @@ package com.nasnav.shipping.services;
 import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.service.model.common.ParameterType.STRING_ARRAY;
+import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -15,6 +17,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.nasnav.shipping.model.*;
@@ -28,6 +31,7 @@ import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 
 import lombok.Getter;
+import org.json.JSONObject;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -39,7 +43,8 @@ public class DummyShippingService implements ShippingService {
 	private static final String BILL_FILE= "NOT EMPTY";
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
 	public static final String RETURN_EMAIL_MSG = "TEST.. TEST .. YOU WILL GET NOTHING!!!!";
-	
+	public static final String SHOP_ID = "\"Shop Id\"";
+
 	@Getter
 	private List<ServiceParameter> serviceParameters;
 	
@@ -48,8 +53,8 @@ public class DummyShippingService implements ShippingService {
 	public ShippingServiceInfo getServiceInfo() {
 		List<Parameter> serviceParamerters = 
 				asList( new Parameter("Hot Line", NUMBER), new Parameter("Shops", STRING_ARRAY));
-		List<Parameter> additionalData = asList(new Parameter("Shop Id", NUMBER));
-		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData);
+		List<Parameter> additionalData = asList(new Parameter(SHOP_ID, NUMBER));
+		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData, PICKUP);
 	}
 
 	
@@ -106,6 +111,21 @@ public class DummyShippingService implements ShippingService {
 		}
 		return new ShipmentStatusData(serviceId, orgId, body.getId(), body.getStatus(), body.getMessage());
 	}
+
+
+
+	@Override
+	public Optional<Long> getPickupShop(String additionalParametersJson) {
+		try{
+			return ofNullable(additionalParametersJson)
+					.map(JSONObject::new)
+					.map(json -> json.getLong(SHOP_ID));
+		}catch(Throwable e){
+			logger.error(e,e);
+			return Optional.empty();
+		}
+	}
+
 
 
 	private ShippingEta getFlatEta() {

@@ -1,6 +1,7 @@
 package com.nasnav.shipping;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.nasnav.shipping.model.*;
 
@@ -47,4 +48,6 @@ public interface ShippingService {
 	void validateShipment(List<ShippingDetails> items);
 
 	ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params);
+
+	Optional<Long> getPickupShop(String additionalParametersJson);
 }

@@ -118,6 +118,9 @@ INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
 VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
 
+--register the organization to dummy shipping service
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id) VALUES('TEST', 99001, '{"Hot Line": 911, "Shops":["501"]}', 11001);
+
 
 --inserting orders
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
