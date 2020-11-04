@@ -229,6 +229,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0011("Promo code[%s] was already terminated!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
+	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 	;

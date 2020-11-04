@@ -10,12 +10,14 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.request.organization.SettingDTO;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name="settings")
-public class SettingEntity {
+public class SettingEntity implements BaseEntity{
 	
 	@Id
     @GeneratedValue(strategy=IDENTITY)
@@ -27,7 +29,18 @@ public class SettingEntity {
 	@Column(name="setting_value")
 	private String settingValue;
 
+	private Integer type;
+
 	@ManyToOne
 	@JoinColumn(name = "organization_id")
 	private OrganizationEntity organization;
+
+	@Override
+	public BaseRepresentationObject getRepresentation() {
+		SettingDTO dto = new SettingDTO();
+		dto.setName(settingName);
+		dto.setValue(settingValue);
+		dto.setType(type);
+		return dto;
+	}
 }

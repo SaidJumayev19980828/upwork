@@ -25,4 +25,6 @@ public interface SettingRepository extends JpaRepository<SettingEntity, Long> {
 
 	List<SettingEntity> findByOrganization_Id(Long orgId);
 
+	List<SettingEntity> findByOrganization_IdAndType(Long orgId, Integer type);
+
 }

@@ -3,6 +3,7 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,11 +19,14 @@ import java.util.Map;
         "name",
         "description",
         "type",
-        "brands",
-        "social",
+        "currency",
+        "theme_id",
         "ecommerce",
         "google_token",
-        "themes"
+        "brands",
+        "social",
+        "themes",
+        "settings"
 })
 
 @Data
@@ -87,6 +91,8 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private String googleToken;
 
     private String currency;
+
+    private List<SettingDTO> settings;
 
 }
 

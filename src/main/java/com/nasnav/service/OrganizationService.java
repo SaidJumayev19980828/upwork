@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.google.common.base.Objects.equal;
 import static com.nasnav.cache.Caches.BRANDS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
@@ -12,9 +13,11 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
+import static com.nasnav.enumerations.SettingsType.getSettingsType;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -182,12 +185,24 @@ public class OrganizationService {
             orgRepObj.setBrands(repList);
         }
 
-        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+        List <OrganizationImagesEntity> orgImgEntities =
+                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
-            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
+            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities
+                    .stream()
+                    .map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation()))
+                    .collect(toList());
             orgRepObj.setImages(imagesList);
         }
 
+        List<SettingEntity> orgSettingsEntities = settingRepo.findByOrganization_IdAndType(orgRepObj.getId(), 0);
+        if (!isNullOrEmpty(orgSettingsEntities)) {
+            List<SettingDTO> orgSettings = orgSettingsEntities
+                    .stream()
+                    .map(s -> (SettingDTO)s.getRepresentation())
+                    .collect(toList());
+            orgRepObj.setSettings(orgSettings);
+        }
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
 
         return orgRepObj;
@@ -979,6 +994,8 @@ public class OrganizationService {
 		entity.setSettingName(settingDto.getName());
 		entity.setSettingValue(settingDto.getValue());
 		entity.setOrganization(organization);
+		if(nonNull(getSettingsType(settingDto.getType())))
+		    entity.setType(settingDto.getType());
 		return entity;
 	}
 	
