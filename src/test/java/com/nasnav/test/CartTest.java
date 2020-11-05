@@ -160,11 +160,34 @@ public class CartTest {
 
 
 	@Test
-	public void addCartItemWithAdditionalData{
+	public void addCartItemWithAdditionalData(){
 		Long userId = 88L;
 		Long stockId = 606L;
-		Integer quantiy = 1;
-		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);GOO
+		Integer quantity = 1;
+		Long collectionId = 40L;
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
+
+		JSONObject additionalData = json().put("collection_id", collectionId);
+		JSONObject itemJson = createCartItem(stockId, quantity);
+		itemJson.put("additional_data", additionalData);
+
+		HttpEntity<?> request =  getHttpEntity(itemJson.toString(),"123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/item", POST, request, Cart.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(itemsCountBefore + 1 , response.getBody().getItems().size());
+
+		CartItem item =
+				response
+				.getBody()
+				.getItems()
+				.stream()
+				.filter(it -> it.getStockId().equals(stockId))
+				.findFirst()
+				.get();
+
+		assertEquals(additionalData.toMap(), item.getAdditionalData());
 	}
 
 
