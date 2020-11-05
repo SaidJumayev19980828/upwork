@@ -159,6 +159,14 @@ public class CartTest {
 
 
 
+	@Test
+	public void addCartItemWithAdditionalData{
+		Long userId = 88L;
+		Long stockId = 606L;
+		Integer quantiy = 1;
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);GOO
+	}
+
 
 
 	private void addCartItems(Long userId, Long stockId, Integer quantity) {
@@ -281,11 +289,11 @@ public class CartTest {
 	}
 
 
-	private JSONObject createCartItem(Long stockId, Integer qunatity) {
+	private JSONObject createCartItem(Long stockId, Integer quantity) {
 		JSONObject item = new JSONObject();
 		item.put("stock_id", stockId);
 		item.put("cover_img", "img");
-		item.put("quantity", qunatity);
+		item.put("quantity", quantity);
 
 		return item;
 	}
