@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.nasnav.service.CartService;
 import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,7 +69,8 @@ public class PickupFromShop implements ShippingService{
 	@Autowired
 	private OrderService orderService;
 	
-	
+	@Autowired
+	private CartService cartService;
 	
 	public PickupFromShop() {
 		allowedShops = emptySet();
@@ -200,7 +202,7 @@ public class PickupFromShop implements ShippingService{
 
 
 	private List<String> getShopsThatCanProvideWholeCart() {
-		return orderService
+		return cartService
 				.getShopsThatCanProvideWholeCart()
 				.stream()
 				.map(ShopFulfillingCart::getShopId)

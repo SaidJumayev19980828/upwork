@@ -13,6 +13,7 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,7 +69,10 @@ public class CartTest {
 	
 	@Autowired
 	private OrderService orderService;
-	
+
+	@Autowired
+	private CartService cartService;
+
 	@Autowired
 	private OrdersRepository orderRepo;
 	
@@ -741,7 +745,7 @@ public class CartTest {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSameCityTest() {
 		Long userId = 88L;
-		Cart initialCart = orderService.getUserCart(userId);
+		Cart initialCart = cartService.getUserCart(userId);
 		//---------------------------------------------------------------		
 		String requestBody = createCartCheckoutBody().toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
@@ -760,7 +764,7 @@ public class CartTest {
 		assertTrue(res.getBody().getTotalChanged());		
 		
 		//---------------------------------------------------------------
-		Cart cartAfter = orderService.getUserCart(userId);
+		Cart cartAfter = cartService.getUserCart(userId);
 		
 		assertEquals(initialCart, cartAfter);
 	}

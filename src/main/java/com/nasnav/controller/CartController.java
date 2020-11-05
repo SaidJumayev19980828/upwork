@@ -5,6 +5,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.io.IOException;
 import java.math.BigDecimal;
 
+import com.nasnav.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,7 +37,7 @@ import io.swagger.annotations.ApiResponses;
 public class CartController {
 	
 	@Autowired
-	private OrderService orderService;
+	private CartService orderService;
 	
 	@Autowired
 	private PromotionsService promoService;

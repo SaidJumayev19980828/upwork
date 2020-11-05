@@ -22,6 +22,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
@@ -64,14 +65,10 @@ public interface OrderService {
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 	
-	public Cart getCart();
 
-	public Cart addCartItem(CartItem item);
-
-	public Cart deleteCartItem(Long itemId);
 
 	public OrderConfrimResponseDTO confrimOrder(Long orderId);
-	public Order checkoutCart(CartCheckoutDTO dto) throws BusinessException, IOException;
+
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id);
@@ -79,21 +76,15 @@ public interface OrderService {
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId);
 
-	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
-	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
 
 	public void rejectOrder(OrderRejectDTO dto);
-
-	Cart getUserCart(Long userId);
 
 	public void cancelOrder(Long metaOrderId);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
-
-	BigDecimal calculateCartTotal();
 
 	ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params);
 	ReturnRequestDTO getOrderReturnRequest(Long id);
@@ -104,4 +95,8 @@ public interface OrderService {
 	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
 
 	void confirmReturnRequest(Long id);
+
+	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
+
+	Order createOrder(CartCheckoutDTO dto);
 }

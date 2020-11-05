@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.service.CartService;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,6 +54,9 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private CartService cartService;
 	
 	@Autowired
 	private AddressRepository addressRepo;
@@ -70,7 +74,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 		Optional<Long> givenShopId = parameters.map(SameCityCartOptimizerParameters::getShopId);
 		
 		List<ShopFulfillingCart> shopsOrderdByPriority = 
-				orderService
+				cartService
 				.getShopsThatCanProvideCartItems() 
 				.stream()
 				.sorted(createShopPriorityComparator(givenShopId, customerCityId))

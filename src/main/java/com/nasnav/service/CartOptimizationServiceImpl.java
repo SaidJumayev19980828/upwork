@@ -63,6 +63,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private CartService cartService;
 	
 	@Autowired
 	private SecurityService securityService;
@@ -116,7 +119,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 		CartOptimizer<T,P> optimizer = getCartOptimizer(strategy.getValue());
 		Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
-		Cart cart = orderService.getCart();
+		Cart cart = cartService.getCart();
 		
 		return optimizer.createOptimizedCart(parameters, cart);
 		

@@ -135,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private CartItemRepository cartItemRepo;
-	
+
 	@Autowired
 	private ProductService productService;
 	
@@ -1535,133 +1535,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	
-	@Override
-	public Cart getUserCart(Long userId) {
-		return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
-	}
 
-
-	@Override
-	public Cart getCart() {
-		BaseUserEntity user = securityService.getCurrentUser();
-		if(user instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-		}
-
-		return getUserCart(user.getId());
-	}
-
-
-	@Override
-	public Cart addCartItem(CartItem item){
-		BaseUserEntity user = securityService.getCurrentUser();
-		if(user instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-		}
-
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		StocksEntity stock = 
-				ofNullable(item.getStockId())
-				.map(id -> stockRepository.findByIdAndOrganizationId(id, orgId))
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
-		validateCartItem(stock, item);
-
-		CartItemEntity cartItem = 
-				ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
-				.orElse(new CartItemEntity());
-
-		if (item.getQuantity().equals(0)) {
-			if (cartItem.getId() != null) {
-				return deleteCartItem(cartItem.getId());
-			} else {
-				return getUserCart(user.getId());
-			}
-		}
-
-		cartItem.setUser((UserEntity) user);
-		cartItem.setStock(stock);
-		cartItem.setQuantity(item.getQuantity());
-		cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
-		cartItemRepo.save(cartItem);
-
-		return getUserCart(user.getId());
-	}
-
-
-	private String getItemCoverImage(String coverImage, StocksEntity stock) {
-		if (coverImage != null) {
-			return coverImage;
-		}
-		Long productId = stock.getProductVariantsEntity().getProductEntity().getId();
-		Long variantId = stock.getProductVariantsEntity().getId();
-		return ofNullable(imgService.getProductsAndVariantsImages(asList(productId), asList(variantId))
-									.stream()
-									.findFirst())
-				.get()
-				.orElse(new ProductImageDTO())
-				.getImagePath();
-	}
-
-	@Override
-	public Cart deleteCartItem(Long itemId){
-		BaseUserEntity user = securityService.getCurrentUser();
-		if(user instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-		}
-
-		cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
-
-		return getUserCart(user.getId());
-	}
-
-
-	private void validateCartItem(StocksEntity stock, CartItem item) {
-		if (item.getQuantity() == null || item.getQuantity() < 0) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
-		}
-
-		if (item.getQuantity() > stock.getQuantity()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
-		}
-
-	}
-
-	private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
-		return cartItems
-				.stream()
-				.map(this::createCartItemDto)
-				.collect(toList());
-	}
-
-
-
-	
-	
-	private CartItem createCartItemDto(CartItemData itemData) {
-		CartItem itemDto = new CartItem();
-		
-		Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
-		
-		itemDto.setBrandId(itemData.getBrandId());
-		itemDto.setBrandLogo(itemData.getBrandLogo());
-		itemDto.setBrandName(itemData.getBrandName());
-		
-		itemDto.setCoverImg(itemData.getCoverImg());
-		itemDto.setPrice(itemData.getPrice());
-		itemDto.setQuantity(itemData.getQuantity());
-		itemDto.setVariantFeatures(variantFeatures);
-		itemDto.setName(itemData.getProductName());
-		
-		itemDto.setId(itemData.getId());
-		itemDto.setProductId(itemData.getProductId());
-		itemDto.setVariantId(itemData.getVariantId());
-		itemDto.setVariantName(itemData.getVariantName());
-		itemDto.setProductType(itemData.getProductType());
-		itemDto.setStockId(itemData.getStockId());
-		itemDto.setDiscount(itemData.getDiscount());
-		
-		return itemDto;
-	}
 	
 	
 	
@@ -1833,29 +1707,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
 	}
-	
-	
-	
-	
-	
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public Order checkoutCart(CartCheckoutDTO dto) throws IOException {
-		BaseUserEntity user = securityService.getCurrentUser();
-		if(user instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-		}
-		
-		cancelAbandonedOrders();
-
-		validateCartCheckoutDTO(dto);
-
-		MetaOrderEntity order = createMetaOrder(dto);
-		
-		return getOrderResponse(order);
-	}
-
-
 
 
 
@@ -1891,7 +1742,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto) {
+	@Override
+	public MetaOrderEntity createMetaOrder(CartCheckoutDTO dto) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		AddressesEntity userAddress = 
 				addressRepo
@@ -2003,6 +1855,36 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
 		checkoutData.setDiscount(stockData.getDiscount());
 		return checkoutData;
+	}
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public Order createOrder(CartCheckoutDTO dto) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
+
+		cancelAbandonedOrders();
+
+		validateCartCheckoutDTO(dto);
+
+		MetaOrderEntity order = createMetaOrder(dto);
+
+		return getOrderResponse(order);
+	}
+
+
+
+	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
+		if (dto.getAddressId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+		}
+		if (dto.getServiceId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
+		}
 	}
 
 
@@ -2202,14 +2084,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
-		if (dto.getAddressId() == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
-		}
-		if (dto.getServiceId() == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
-		}
-	}
 
 
 	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
@@ -2650,132 +2524,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	
-
-
-	private Cart replaceCart(Cart newCart) {
-		BaseUserEntity user = securityService.getCurrentUser();
-		cartItemRepo.deleteByUser_Id(user.getId());
-		return saveCart(newCart);
-	}
-	
-	
-	
-	
-	
-	
-	//TODO: this implementation should be more efficient in accessing the database and 
-	//addCartItem should be the one depending on it instead.
-	//also it can be the foundation for POST /cart api that saves the whole cart at once.
-	private Cart saveCart(Cart cart) {
-		BaseUserEntity user = securityService.getCurrentUser();
-		return cart
-				.getItems()
-				.stream()
-				.map(this::addCartItem)
-				.reduce((first, second) -> second)
-				.orElseGet(() -> getUserCart(user.getId()));
-	}
-
-
-	
-	
-	@Override
-	public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
-		Long userId = securityService.getCurrentUser().getId();
-		return cartItemRepo
-				.getAllCartStocks(userId)
-				.stream()
-				.collect(groupingBy(CartItemStock::getShopId))
-				.entrySet()
-				.stream()
-				.map(this::createShopFulfillingCart)
-				.collect(toList());
-	}
-	
-	
-	
-	
-	
-	@Override
-	public List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(){
-		//it uses an additional query but gives more insurance than calculating variants from
-		//cartItemsStocks
-		Set<Long> cartItemVariants =
-				getCart()
-				.getItems()
-				.stream()
-				.map(CartItem::getVariantId)
-				.collect(toSet());
-		return getShopsThatCanProvideCartItems()
-				.stream()
-				.filter(shop -> hasAllCartVariants(shop, cartItemVariants))
-				.collect(toList());
-	}
-
-
-
-	private boolean hasAllCartVariants(ShopFulfillingCart shop, Set<Long> cartItemVariants) {
-		List<Long> shopCartVariants =
-				ofNullable(shop)
-				.map(ShopFulfillingCart::getCartItems)
-				.orElse(emptyList())
-				.stream()
-				.map(CartItemStock::getVariantId)
-				.collect(toList());
-		return cartItemVariants
-				.stream()
-				.allMatch(shopCartVariants::contains);
-	}
-
-
-
-
-	@Override
-	public BigDecimal calculateCartTotal() {
-		return  calculateCartTotal(getCart());
-	}
-	
-	
-	
-	
-	
-	private ShopFulfillingCart createShopFulfillingCart(
-				Map.Entry<Long, List<CartItemStock>> shopWithStocks) {
-		Long shopId = shopWithStocks.getKey();
-		List<CartItemStock> itemStocks = shopWithStocks.getValue();
-		Long cityId = 
-				itemStocks
-				.stream()
-				.map(CartItemStock::getShopCityId)
-				.findFirst()
-				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0005));
-		return new ShopFulfillingCart(shopId, cityId, itemStocks); 
-	}
-	
-	
-	
-	
-	private BigDecimal calculateCartTotal(Cart cart) {
-		return ofNullable(cart)
-				.map(Cart::getItems)
-				.map(this::calculateCartTotal)
-				.orElse(ZERO);
-	}
-	
-	
-	
-	
-	private BigDecimal calculateCartTotal(List<CartItem> cartItems) {
-		return  cartItems
-				.stream()
-				.map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-				.reduce(ZERO, BigDecimal::add);
-	}
-
-
-
-
 
 
 
@@ -2823,6 +2571,7 @@ public class OrderServiceImpl implements OrderService {
 			logger.error(e, e);
 		}
 	}
+
 
 
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {

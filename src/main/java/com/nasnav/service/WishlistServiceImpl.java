@@ -42,7 +42,7 @@ public class WishlistServiceImpl implements WishlistService{
 
 
     @Autowired
-    private OrderService cartService;
+    private CartService cartService;
 
     @Override
     @Transactional

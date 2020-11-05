@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.nasnav.service.CartService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +52,9 @@ public class PickupServiceValidationsTest {
 	
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private CartService cartService;
 	
 	@Before
 	public void initMocks() {
@@ -83,7 +87,7 @@ public class PickupServiceValidationsTest {
 
 	
 	private List<CartCheckoutData> getCheckoutDataFromCurrentCart() {
-		return orderService.createCheckoutData(orderService.getCart());
+		return orderService.createCheckoutData(cartService.getCart());
 	}
 
 

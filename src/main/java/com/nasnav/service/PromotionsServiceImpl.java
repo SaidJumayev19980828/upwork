@@ -76,6 +76,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private CartService cartService;
 	
 	@Autowired
 	private PromotionsCodesUsedRepository usedPromoRepo;
@@ -416,7 +419,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public BigDecimal calcPromoDiscountForCart(String promoCode) {
-		BigDecimal cartTotal = orderService.calculateCartTotal();
+		BigDecimal cartTotal = cartService.calculateCartTotal();
 		
 		return calcPromoDiscount(promoCode, cartTotal);
 	}
