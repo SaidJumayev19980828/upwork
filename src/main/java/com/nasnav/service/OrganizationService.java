@@ -17,8 +17,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -27,6 +26,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
@@ -227,11 +227,12 @@ public class OrganizationService {
     private void setPublicSettings(OrganizationRepresentationObject orgRepObj) {
         List<SettingEntity> orgSettingsEntities = settingRepo.findByOrganization_IdAndType(orgRepObj.getId(), PUBLIC.getValue());
         if (!isNullOrEmpty(orgSettingsEntities)) {
-            List<SettingDTO> orgSettings = orgSettingsEntities
+           Map<String,String> settingsMap =
+                   orgSettingsEntities
                     .stream()
                     .map(s -> (SettingDTO)s.getRepresentation())
-                    .collect(toList());
-            orgRepObj.setSettings(orgSettings);
+                    .collect( toMap(SettingDTO::getName, SettingDTO::getValue));
+            orgRepObj.setSettings(settingsMap);
         }
     }
 

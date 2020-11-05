@@ -92,7 +92,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     private String currency;
 
-    private List<SettingDTO> settings;
+    private Map<String,String> settings;
 
 }
 
