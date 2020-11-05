@@ -48,22 +48,22 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrstt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1001, 'abcdefg', now(), 68, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1002, 'hijkllm', now(), 69, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1003, '123', now(), 70, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1004, '456', now(), 71, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1005, '131415', now(), 72, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1006, '161718', now(), 73, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1007, '192021', now(), 74, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1008, '222324', now(), 75, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1009, '252627', now(), 76, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1010, '282930', now(), 77, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1011, '313233', now(), 78, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1012, '343536', now(), 79, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1013, '373839', now(), 80, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1014, '404142', now(), 81, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1015, 'nopqrst', now(), 158, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1016, 'uvwxyz', now(), 159, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100001, 'abcdefg', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100002, 'hijkllm', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100003, '123', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100004, '456', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100005, '131415', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100006, '161718', now(), 73, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100007, '192021', now(), 74, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100008, '222324', now(), 75, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100009, '252627', now(), 76, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100010, '282930', now(), 77, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100011, '313233', now(), 78, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100012, '343536', now(), 79, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100013, '373839', now(), 80, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100014, '404142', now(), 81, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100015, 'nopqrst', now(), 158, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100016, 'uvwxyz', now(), 159, null);
 
 --inserting Users
 INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password)

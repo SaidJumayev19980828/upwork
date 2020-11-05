@@ -75,8 +75,9 @@ public class UserController {
                                   @RequestParam(value = "employee") boolean employee) {
         if (employee) {
             employeeUserService.sendEmailRecovery(email, orgId);
+        } else {
+            userService.sendEmailRecovery(email, orgId);
         }
-        userService.sendEmailRecovery(email, orgId);
     }
 
 
