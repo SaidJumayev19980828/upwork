@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 import com.nasnav.NavBox;
+import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
@@ -32,10 +33,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
@@ -160,11 +158,13 @@ public class CartTest {
 
 
 	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void addCartItemWithAdditionalData(){
 		Long userId = 88L;
 		Long stockId = 606L;
 		Integer quantity = 1;
-		Long collectionId = 40L;
+		int collectionId = 1009;
 		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
 
 		JSONObject additionalData = json().put("collection_id", collectionId);
@@ -178,16 +178,23 @@ public class CartTest {
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(itemsCountBefore + 1 , response.getBody().getItems().size());
 
-		CartItem item =
-				response
+		CartItem item = getCartItemOfStock(stockId, response);
+
+		assertEquals(additionalData.toMap().keySet(), item.getAdditionalData().keySet());
+		assertEquals(new HashSet<>(additionalData.toMap().values()), new HashSet<>(item.getAdditionalData().values()));
+		assertEquals(collectionId, item.getProductId().intValue());
+	}
+
+
+
+	private CartItem getCartItemOfStock(Long stockId, ResponseEntity<Cart> response) {
+		return	response
 				.getBody()
 				.getItems()
 				.stream()
 				.filter(it -> it.getStockId().equals(stockId))
 				.findFirst()
 				.get();
-
-		assertEquals(additionalData.toMap(), item.getAdditionalData());
 	}
 
 

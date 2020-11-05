@@ -26,5 +26,5 @@ public class CartItem {
 	private String name;
 	private Integer productType;
 	private BigDecimal discount;
-	private Map<String,String> additionalData;
+	private Map<String,Object> additionalData;
 }

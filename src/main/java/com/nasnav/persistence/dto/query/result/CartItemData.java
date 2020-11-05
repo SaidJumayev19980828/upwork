@@ -24,4 +24,5 @@ public class CartItemData {
 	private String productName;
 	private Integer productType;
 	private BigDecimal discount;
+	private String additionalData;
 }

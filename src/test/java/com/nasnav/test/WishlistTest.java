@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -315,5 +316,47 @@ public class WishlistTest {
                 template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
 
         assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void addWishlistItemWithAdditionalData(){
+        Long stockId = 606L;
+        int collectionId = 1009;
+
+        JSONObject additionalData = json().put("collection_id", collectionId);
+        JSONObject itemJson =
+                json()
+                .put("stock_id", stockId)
+                .put("additional_data", additionalData);
+
+        HttpEntity<?> request =  getHttpEntity(itemJson.toString(),"123");
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/item", POST, request, Wishlist.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+
+        CartItem item = getCartItemOfStock(stockId, response);
+
+        assertEquals(additionalData.toMap().keySet(), item.getAdditionalData().keySet());
+        assertEquals(new HashSet<>(additionalData.toMap().values()), new HashSet<>(item.getAdditionalData().values()));
+        assertEquals(collectionId, item.getProductId().intValue());
+    }
+
+
+
+
+    private WishlistItem getCartItemOfStock(Long stockId, ResponseEntity<Wishlist> response) {
+        return	response
+                .getBody()
+                .getItems()
+                .stream()
+                .filter(it -> it.getStockId().equals(stockId))
+                .findFirst()
+                .get();
     }
 }

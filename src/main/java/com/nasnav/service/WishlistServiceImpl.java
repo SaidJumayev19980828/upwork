@@ -7,6 +7,7 @@ import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartItemData;
+import com.nasnav.service.helpers.CartServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +41,11 @@ public class WishlistServiceImpl implements WishlistService{
     @Autowired
     private ProductImageService imgService;
 
-
     @Autowired
     private CartService cartService;
+
+    @Autowired
+    private CartServiceHelper cartServiceHelper;
 
     @Override
     @Transactional
@@ -62,10 +65,13 @@ public class WishlistServiceImpl implements WishlistService{
                 ofNullable(wishlistRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
                         .orElse(new WishlistItemEntity());
 
+        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
+
         wishlistItem.setUser((UserEntity) user);
         wishlistItem.setStock(stock);
         wishlistItem.setQuantity(item.getQuantity());
         wishlistItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
+        wishlistItem.setAdditionalData(additionalDataJson);
         wishlistRepo.save(wishlistItem);
 
         return getWishlist();
@@ -109,7 +115,9 @@ public class WishlistServiceImpl implements WishlistService{
     @Override
     public Wishlist getWishlist() {
         Long userId = securityService.getCurrentUser().getId();
-        return new Wishlist(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUser_Id(userId)));
+        Wishlist wishlist = new Wishlist(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUser_Id(userId)));
+        wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithCollectionId);
+        return wishlist;
     }
 
 
@@ -135,6 +143,7 @@ public class WishlistServiceImpl implements WishlistService{
 
 
 
+
     private List<WishlistItem> toCartItemsDto(List<CartItemData> cartItems) {
         return cartItems
                 .stream()
@@ -150,6 +159,7 @@ public class WishlistServiceImpl implements WishlistService{
         WishlistItem itemDto = new WishlistItem();
 
         Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
+        Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
 
         itemDto.setBrandId(itemData.getBrandId());
         itemDto.setBrandLogo(itemData.getBrandLogo());
@@ -168,6 +178,7 @@ public class WishlistServiceImpl implements WishlistService{
         itemDto.setProductType(itemData.getProductType());
         itemDto.setStockId(itemData.getStockId());
         itemDto.setDiscount(itemData.getDiscount());
+        itemDto.setAdditionalData(additionalData);
 
         return itemDto;
     }

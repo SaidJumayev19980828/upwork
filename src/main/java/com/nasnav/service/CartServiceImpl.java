@@ -1,7 +1,5 @@
 package com.nasnav.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductImageDTO;
@@ -13,24 +11,22 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
+import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
@@ -38,7 +34,7 @@ import static org.springframework.http.HttpStatus.*;
 @Service
 public class CartServiceImpl implements CartService{
 
-    private static Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger();
 
     @Autowired
     private SecurityService securityService;
@@ -59,8 +55,7 @@ public class CartServiceImpl implements CartService{
     private OrderService orderService;
 
     @Autowired
-    private ObjectMapper objectMapper;
-
+    private CartServiceHelper cartServiceHelper;
 
     @Override
     public Cart getCart() {
@@ -68,15 +63,17 @@ public class CartServiceImpl implements CartService{
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
-
         return getUserCart(user.getId());
     }
 
 
 
+
     @Override
     public Cart getUserCart(Long userId) {
-        return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+        Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithCollectionId);
+        return cart;
     }
 
 
@@ -109,11 +106,13 @@ public class CartServiceImpl implements CartService{
             }
         }
 
+        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
+
         cartItem.setUser((UserEntity) user);
         cartItem.setStock(stock);
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
-        cartItem.setAdditionalData(getAdditionalData(item));
+        cartItem.setAdditionalData(additionalDataJson);
         cartItemRepo.save(cartItem);
 
         return getUserCart(user.getId());
@@ -122,15 +121,7 @@ public class CartServiceImpl implements CartService{
 
 
 
-    private String getAdditionalData(CartItem item) {
-        try {
-            String additionalDataJson = objectMapper.writeValueAsString(item.getAdditionalData());
-            return additionalDataJson;
-        } catch (JsonProcessingException e) {
-           logger.error(e,e);
-           return "{}";
-        }
-    }
+
 
 
 
@@ -298,6 +289,7 @@ public class CartServiceImpl implements CartService{
         CartItem itemDto = new CartItem();
 
         Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
+        Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
 
         itemDto.setBrandId(itemData.getBrandId());
         itemDto.setBrandLogo(itemData.getBrandLogo());
@@ -316,6 +308,7 @@ public class CartServiceImpl implements CartService{
         itemDto.setProductType(itemData.getProductType());
         itemDto.setStockId(itemData.getStockId());
         itemDto.setDiscount(itemData.getDiscount());
+        itemDto.setAdditionalData(additionalData);
 
         return itemDto;
     }
