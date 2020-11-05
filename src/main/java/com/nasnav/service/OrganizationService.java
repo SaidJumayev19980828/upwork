@@ -1,6 +1,5 @@
 package com.nasnav.service;
 
-import static com.google.common.base.Objects.equal;
 import static com.nasnav.cache.Caches.BRANDS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
@@ -13,11 +12,10 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
-import static com.nasnav.enumerations.SettingsType.getSettingsType;
+import static com.nasnav.enumerations.SettingsType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -33,6 +31,7 @@ import java.util.*;
 import javax.cache.annotation.CacheResult;
 
 import com.nasnav.dao.*;
+import com.nasnav.enumerations.SettingsType;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.IdAndNamePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -168,14 +167,37 @@ public class OrganizationService {
     private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
         OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
 
+        setSocialEntity(orgRepObj);
+        setThemeSettings(orgRepObj);
+        setBrands(orgRepObj);
+        setImages(orgRepObj);
+        setPublicSettings(orgRepObj);
+        orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
+
+        return orgRepObj;
+    }
+
+
+
+    private void setSocialEntity(OrganizationRepresentationObject orgRepObj) {
         SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
-        if (socialEntity != null)
+        if (socialEntity != null){
             orgRepObj.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
+        }
+    }
 
+
+
+    private void setThemeSettings(OrganizationRepresentationObject orgRepObj) {
         OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
-        if (organizationThemeEntity != null)
+        if (organizationThemeEntity != null){
             orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
+        }
+    }
 
+
+
+    private void setBrands(OrganizationRepresentationObject orgRepObj) {
         List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgRepObj.getId(), 0);
         if (!isNullOrEmpty(brandsEntityList)) {
             List<Organization_BrandRepresentationObject> repList = brandsEntityList
@@ -184,7 +206,11 @@ public class OrganizationService {
                     .collect(toList());
             orgRepObj.setBrands(repList);
         }
+    }
 
+
+
+    private void setImages(OrganizationRepresentationObject orgRepObj) {
         List <OrganizationImagesEntity> orgImgEntities =
                 organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
@@ -194,8 +220,12 @@ public class OrganizationService {
                     .collect(toList());
             orgRepObj.setImages(imagesList);
         }
+    }
 
-        List<SettingEntity> orgSettingsEntities = settingRepo.findByOrganization_IdAndType(orgRepObj.getId(), 0);
+
+
+    private void setPublicSettings(OrganizationRepresentationObject orgRepObj) {
+        List<SettingEntity> orgSettingsEntities = settingRepo.findByOrganization_IdAndType(orgRepObj.getId(), PUBLIC.getValue());
         if (!isNullOrEmpty(orgSettingsEntities)) {
             List<SettingDTO> orgSettings = orgSettingsEntities
                     .stream()
@@ -203,10 +233,9 @@ public class OrganizationService {
                     .collect(toList());
             orgRepObj.setSettings(orgSettings);
         }
-        orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
-
-        return orgRepObj;
     }
+
+
 
     private OrgThemeRepObj getOrganizationThemeDTO(OrganizationRepresentationObject orgRepObj) {
         if (orgRepObj.getThemeId() == null)
@@ -234,7 +263,10 @@ public class OrganizationService {
 
         return themeRepObj;
     }
-    
+
+
+
+
     @CacheResult(cacheName = ORGANIZATIONS_EXTRA_ATTRIBUTES)
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
         List<ExtraAttributesEntity> extraAttributes;
@@ -981,21 +1013,41 @@ public class OrganizationService {
 
 
 	private boolean isValidSettingName(SettingDTO settingDto) {
-		return stream(Settings.values())
+        boolean notEmpty =
+                ofNullable(settingDto.getName())
+                        .map(name -> !name.isEmpty())
+                        .orElse(false);
+		boolean existsInSettingEnum =
+                stream(Settings.values())
 				.map(Settings::name)
 				.anyMatch(name -> Objects.equals(name, settingDto.getName()));
+		return notEmpty && (isPublicSetting(settingDto) || existsInSettingEnum);
 	}
 
 
 
-	private SettingEntity createSettingEntity(SettingDTO settingDto) {
+    private boolean isPublicSetting(SettingDTO settingDto) {
+        return ofNullable(settingDto)
+                .map(SettingDTO::getType)
+                .map(type -> Objects.equals(type, PUBLIC.getValue()))
+                .orElse(false);
+    }
+
+
+
+
+    private SettingEntity createSettingEntity(SettingDTO settingDto) {
 		OrganizationEntity organization = securityService.getCurrentUserOrganization();
+        Integer type =
+                ofNullable(settingDto.getType())
+                        .map(SettingsType::getSettingsType)
+                        .orElse(PRIVATE)
+                        .getValue();
 		SettingEntity entity = new SettingEntity();
 		entity.setSettingName(settingDto.getName());
 		entity.setSettingValue(settingDto.getValue());
 		entity.setOrganization(organization);
-		if(nonNull(getSettingsType(settingDto.getType())))
-		    entity.setType(settingDto.getType());
+		entity.setType(type);
 		return entity;
 	}
 	

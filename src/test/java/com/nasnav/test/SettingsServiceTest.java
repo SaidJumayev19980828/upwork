@@ -2,6 +2,8 @@ package com.nasnav.test;
 
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
+import static com.nasnav.enumerations.SettingsType.PRIVATE;
+import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.SAME_CITY;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.enumerations.SettingsType;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,9 +76,12 @@ public class SettingsServiceTest {
 	
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
+
+
+
 	@Test
-	public void postSettingsSuccessTest() {
+	public void postPrivateSettingsSuccessTest() {
 		String settingName = "TEST_SETTING";
 		String settingValue = "ON";
 		String body = 
@@ -93,6 +99,33 @@ public class SettingsServiceTest {
 	    assertTrue(entity.isPresent());
 	    assertEquals(settingName, entity.get().getSettingName());
 	    assertEquals(settingValue, entity.get().getSettingValue());
+		assertEquals(PRIVATE.getValue(), entity.get().getType().intValue());
+	}
+
+
+
+
+	@Test
+	public void postPublicSettingsSuccessTest() {
+		String settingName = "NOT_IN_SETTINGS_ENUM";
+		String settingValue = "YEP";
+		String body =
+				json()
+				.put("name", settingName)
+				.put("value", settingValue)
+				.put("type", PUBLIC.getValue())
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings",POST, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+		assertTrue(entity.isPresent());
+		assertEquals(settingName, entity.get().getSettingName());
+		assertEquals(settingValue, entity.get().getSettingValue());
+		assertEquals(PUBLIC.getValue(), entity.get().getType().intValue());
 	}
 	
 	
