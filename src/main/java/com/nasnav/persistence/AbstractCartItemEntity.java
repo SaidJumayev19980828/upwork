@@ -30,4 +30,7 @@ public class AbstractCartItemEntity {
     @ManyToOne
     @JoinColumn(name="USER_ID")
     private UserEntity user;
+
+    @Column(name="ADDITIONAL_DATA")
+    private String additionalData;
 }

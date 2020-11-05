@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductImageDTO;
@@ -12,6 +14,8 @@ import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +38,8 @@ import static org.springframework.http.HttpStatus.*;
 @Service
 public class CartServiceImpl implements CartService{
 
+    private static Logger logger = LogManager.getLogger();
+
     @Autowired
     private SecurityService securityService;
 
@@ -51,6 +57,9 @@ public class CartServiceImpl implements CartService{
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
 
     @Override
@@ -104,10 +113,25 @@ public class CartServiceImpl implements CartService{
         cartItem.setStock(stock);
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
+        cartItem.setAdditionalData(getAdditionalData(item));
         cartItemRepo.save(cartItem);
 
         return getUserCart(user.getId());
     }
+
+
+
+
+    private String getAdditionalData(CartItem item) {
+        try {
+            String additionalDataJson = objectMapper.writeValueAsString(item.getAdditionalData());
+            return additionalDataJson;
+        } catch (JsonProcessingException e) {
+           logger.error(e,e);
+           return "{}";
+        }
+    }
+
 
 
     private String getItemCoverImage(String coverImage, StocksEntity stock) {
