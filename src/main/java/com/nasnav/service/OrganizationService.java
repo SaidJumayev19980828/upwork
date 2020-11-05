@@ -983,6 +983,8 @@ public class OrganizationService {
 
 
 
+
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
 	public void deleteSetting(String settingName) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		settingRepo.deleteBySettingNameAndOrganization_Id(settingName, orgId);
@@ -990,6 +992,8 @@ public class OrganizationService {
 
 
 
+
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
 	public void updateSetting(SettingDTO settingDto) {
 		validateSetting(settingDto);
 		

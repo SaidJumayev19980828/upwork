@@ -589,7 +589,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "settings")
     @ResponseStatus(OK)
-    public void udpateSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
+    public void updateSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
     								@RequestBody SettingDTO setting){
         orgService.updateSetting(setting);
     }
