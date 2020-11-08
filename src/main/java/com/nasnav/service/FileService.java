@@ -346,9 +346,17 @@ public class FileService {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
 			BufferedImage image = ImageIO.read(file);
-			if (width != null) {
+			if(width != null && width > image.getWidth()) {
+				width = image.getWidth();
+			}
+			if(height != null && height > image.getHeight()) {
+				height = image.getHeight();
+			}
+			if(width != null && height != null && (height/width > 1)) {
+				width = calculateWidth(height, image);
+			} else if (width != null && height == null) {
 				height = calculateHeight(width ,image);
-			} else if (height != null) {
+			} else if (height != null && width == null) {
 				width = calculateWidth(height, image);
 			}
 			String resizedFileName = getResizedImageName(file.getName(), width, fileType);
@@ -365,10 +373,12 @@ public class FileService {
 		List<FilesResizedEntity> resizedFiles;
 		if (width == null && height == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0007);
-		} else if (width != null) {
+		} else if (width != null && height == null) {
 			resizedFiles = filesResizedRepo.findByOriginalFileAndWidth(originalFile, width);
-		} else {
+		} else if (width == null ){
 			resizedFiles = filesResizedRepo.findByOriginalFileAndHeight(originalFile, height);
+		} else {
+			resizedFiles = filesResizedRepo.findByOriginalFileAndHeightAndWidth(originalFile, height, width);
 		}
 		return resizedFiles;
 	}

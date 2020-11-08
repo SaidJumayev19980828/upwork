@@ -12,6 +12,7 @@ import java.util.List;
 
 public interface FilesResizedRepository extends JpaRepository<FilesResizedEntity, Long> {
 
+    List<FilesResizedEntity> findByOriginalFileAndHeightAndWidth(FileEntity file, Integer height, Integer width);
     List<FilesResizedEntity> findByOriginalFileAndHeight(FileEntity file, Integer height);
     List<FilesResizedEntity> findByOriginalFileAndWidth(FileEntity file, Integer width);
 
