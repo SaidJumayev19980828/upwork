@@ -36,6 +36,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
@@ -189,6 +190,44 @@ public class CartTest {
 
 		assertEquals(additionalData.toMap().keySet(), item.getAdditionalData().keySet());
 		assertEquals(new HashSet<>(additionalData.toMap().values()), new HashSet<>(item.getAdditionalData().values()));
+		assertEquals(collectionId, item.getProductId().intValue());
+		assertEquals(productType, item.getProductType().intValue());
+	}
+
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void addCartItemWithAdditionalDataAddedToMainJson(){
+		Long userId = 88L;
+		Long stockId = 606L;
+		Integer quantity = 1;
+		int collectionId = 1009;
+		int productType = 2;
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
+
+		JSONObject additionalData =	json();
+		JSONObject itemJson = createCartItem(stockId, quantity);
+		itemJson
+			.put("additional_data", additionalData)
+			.put("product_id", collectionId)
+			.put("product_type", productType);
+
+		HttpEntity<?> request =  getHttpEntity(itemJson.toString(),"123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/item", POST, request, Cart.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(itemsCountBefore + 1 , response.getBody().getItems().size());
+
+		CartItem item = getCartItemOfStock(stockId, response);
+
+		Set<String> expectedAdditionalDataFields = setOf(ADDITIONAL_DATA_PRODUCT_ID, ADDITIONAL_DATA_PRODUCT_TYPE);
+		Set<Integer> expectedAdditionalDataValues = setOf(collectionId, productType);
+		assertEquals(expectedAdditionalDataFields, item.getAdditionalData().keySet());
+		assertEquals(expectedAdditionalDataValues, new HashSet<>(item.getAdditionalData().values()));
 		assertEquals(collectionId, item.getProductId().intValue());
 		assertEquals(productType, item.getProductType().intValue());
 	}

@@ -356,6 +356,41 @@ public class WishlistTest {
 
 
 
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void addWishlistItemWithAdditionalDataAddedToMainJson(){
+        Long stockId = 606L;
+        int collectionId = 1009;
+        int productType = 2;
+
+        JSONObject additionalData = json();
+        JSONObject itemJson =
+                json()
+                    .put("stock_id", stockId)
+                    .put("additional_data", additionalData)
+                    .put("product_id", collectionId)
+                    .put("product_type", productType);
+
+        HttpEntity<?> request =  getHttpEntity(itemJson.toString(),"123");
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/item", POST, request, Wishlist.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+
+        CartItem item = getCartItemOfStock(stockId, response);
+
+        Set<String> expectedAdditionalDataFields = setOf(ADDITIONAL_DATA_PRODUCT_ID, ADDITIONAL_DATA_PRODUCT_TYPE);
+        Set<Integer> expectedAdditionalDataValues = setOf(collectionId, productType);
+        assertEquals(expectedAdditionalDataFields, item.getAdditionalData().keySet());
+        assertEquals(expectedAdditionalDataValues, new HashSet<>(item.getAdditionalData().values()));
+        assertEquals(collectionId, item.getProductId().intValue());
+        assertEquals(productType, item.getProductType().intValue());
+    }
+
+
+
+
     private WishlistItem getCartItemOfStock(Long stockId, ResponseEntity<Wishlist> response) {
         return	response
                 .getBody()
