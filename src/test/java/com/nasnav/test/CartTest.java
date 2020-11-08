@@ -16,6 +16,7 @@ import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
+import com.nasnav.service.helpers.CartServiceHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
@@ -37,6 +38,8 @@ import java.util.*;
 
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
+import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
+import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -165,9 +168,13 @@ public class CartTest {
 		Long stockId = 606L;
 		Integer quantity = 1;
 		int collectionId = 1009;
+		int productType = 2;
 		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
 
-		JSONObject additionalData = json().put("collection_id", collectionId);
+		JSONObject additionalData =
+				json()
+				.put(ADDITIONAL_DATA_PRODUCT_ID, collectionId)
+				.put(ADDITIONAL_DATA_PRODUCT_TYPE, productType);
 		JSONObject itemJson = createCartItem(stockId, quantity);
 		itemJson.put("additional_data", additionalData);
 
@@ -183,6 +190,7 @@ public class CartTest {
 		assertEquals(additionalData.toMap().keySet(), item.getAdditionalData().keySet());
 		assertEquals(new HashSet<>(additionalData.toMap().values()), new HashSet<>(item.getAdditionalData().values()));
 		assertEquals(collectionId, item.getProductId().intValue());
+		assertEquals(productType, item.getProductType().intValue());
 	}
 
 

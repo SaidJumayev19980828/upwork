@@ -1,6 +1,7 @@
 package com.nasnav.commons.utils;
 
 import static java.util.Arrays.asList;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
 import java.lang.reflect.InvocationTargetException;
@@ -18,9 +19,12 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class EntityUtils {
-	
+
+	private static final Logger logger = LogManager.getLogger();
 	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'"; 
 
 	public static void copyNonNullProperties( Object source, Object destination) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
@@ -182,7 +186,40 @@ public class EntityUtils {
 		try {
 			return Optional.of(Long.parseLong(str));
 		}catch(Throwable e) {
+			logger.error(e,e);
 			return Optional.empty();
+		}
+	}
+
+
+
+
+	public static Optional<Long> parseLongSafely(Object object) {
+		try{
+			if(object == null){
+				return empty();
+			}else {
+				return Optional.of(Long.valueOf(object.toString()));
+			}
+		}catch(Throwable e){
+			logger.error(e,e);
+			return empty();
+		}
+	}
+
+
+
+
+	public static Optional<Integer> parseIntegerSafely(Object object) {
+		try{
+			if(object == null){
+				return empty();
+			}else {
+				return Optional.of(Integer.valueOf(object.toString()));
+			}
+		}catch(Throwable e){
+			logger.error(e,e);
+			return empty();
 		}
 	}
 	

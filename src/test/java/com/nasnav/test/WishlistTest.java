@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
+import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.stream.Collectors.toList;
@@ -327,8 +329,11 @@ public class WishlistTest {
     public void addWishlistItemWithAdditionalData(){
         Long stockId = 606L;
         int collectionId = 1009;
+        int productType = 2;
 
-        JSONObject additionalData = json().put("collection_id", collectionId);
+        JSONObject additionalData = json()
+                .put(ADDITIONAL_DATA_PRODUCT_ID, collectionId)
+                .put(ADDITIONAL_DATA_PRODUCT_TYPE, productType);
         JSONObject itemJson =
                 json()
                 .put("stock_id", stockId)
@@ -345,6 +350,7 @@ public class WishlistTest {
         assertEquals(additionalData.toMap().keySet(), item.getAdditionalData().keySet());
         assertEquals(new HashSet<>(additionalData.toMap().values()), new HashSet<>(item.getAdditionalData().values()));
         assertEquals(collectionId, item.getProductId().intValue());
+        assertEquals(productType, item.getProductType().intValue());
     }
 
 

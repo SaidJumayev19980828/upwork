@@ -116,7 +116,8 @@ public class WishlistServiceImpl implements WishlistService{
     public Wishlist getWishlist() {
         Long userId = securityService.getCurrentUser().getId();
         Wishlist wishlist = new Wishlist(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUser_Id(userId)));
-        wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithCollectionId);
+        wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        wishlist.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         return wishlist;
     }
 

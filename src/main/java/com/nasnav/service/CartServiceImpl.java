@@ -26,7 +26,6 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
@@ -72,7 +71,8 @@ public class CartServiceImpl implements CartService{
     @Override
     public Cart getUserCart(Long userId) {
         Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
-        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithCollectionId);
+        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         return cart;
     }
 

@@ -24,7 +24,6 @@ import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartOptimizationService;
-import com.nasnav.service.OrderService;
 import com.nasnav.service.PromotionsService;
 
 import io.swagger.annotations.Api;
@@ -37,7 +36,7 @@ import io.swagger.annotations.ApiResponses;
 public class CartController {
 	
 	@Autowired
-	private CartService orderService;
+	private CartService cartService;
 	
 	@Autowired
 	private PromotionsService promoService;
@@ -52,7 +51,7 @@ public class CartController {
 	})
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
 	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
-		return orderService.getCart();
+		return cartService.getCart();
 	}
 
 
@@ -65,7 +64,7 @@ public class CartController {
 	})
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
 	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item) {
-		return orderService.addCartItem(item);
+		return cartService.addCartItem(item);
 	}
 
 
@@ -78,7 +77,7 @@ public class CartController {
 	})
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
 	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
-		return orderService.deleteCartItem(itemId);
+		return cartService.deleteCartItem(itemId);
 	}
 
 
@@ -91,7 +90,7 @@ public class CartController {
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
 							  @RequestBody CartCheckoutDTO dto) throws BusinessException, IOException {
-		return orderService.checkoutCart(dto);
+		return cartService.checkoutCart(dto);
 	}
 	
 	
