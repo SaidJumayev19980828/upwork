@@ -4,34 +4,45 @@ import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.nasnav.cache.Caches.FILES;
 import static com.nasnav.cache.Caches.IMGS_RESIZED;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static javassist.bytecode.Descriptor.of;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.cache.annotation.CacheResult;
 import javax.imageio.ImageIO;
 
 import com.nasnav.dao.FilesResizedRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.FilesResizedEntity;
+import com.nasnav.persistence.*;
+import com.univocity.parsers.common.processor.BeanWriterProcessor;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
@@ -46,8 +57,6 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.service.model.FileUrlResource;
 
 @Service
@@ -66,9 +75,13 @@ public class FileService {
 	private OrganizationRepository orgRepo;
 	@Autowired
 	private FilesResizedRepository filesResizedRepo;
-
+	@Autowired
+	private ProductImagesRepository productImgRepo;
 	@Autowired
 	private FilesRepository filesRepo;
+
+	@Autowired
+	private SecurityService securityService;
 
 	@PostConstruct
 	public void setupFileLocation() throws BusinessException {
@@ -435,5 +448,109 @@ public class FileService {
 		MultipartFile multipartFile = new MockMultipartFile(resizedFileName,
 				resizedFileName, fileType, outputImageFile.toByteArray());
 		return multipartFile;
+	}
+
+
+	public ByteArrayOutputStream getImagesInfo(Long orgId) {
+		if (securityService.currentUserHasRole(ORGANIZATION_ADMIN) || orgId == null){
+			orgId = securityService.getCurrentUserOrganizationId();
+		}
+		List<FileEntity> orgImages = filesRepo.findByOrganization_IdAndMimetypeContaining(orgId, "image");
+		List<String> uris = orgImages
+				.stream()
+				.map(FileEntity::getUrl)
+				.collect(Collectors.toList());
+		Map<String, ProductImagesEntity> productsImagesMap =
+				mapInBatches(uris, 500, productImgRepo::findByUriIn)
+				.stream()
+				.collect(toMap(ProductImagesEntity::getUri, i -> i));
+		List<String[]> images = orgImages
+				.stream()
+				.map(i -> toImageInfo(i, productsImagesMap))
+				.sorted(comparing(ImageInfo::getSize).reversed())
+				.map(this::normalizeImageInfoRow)
+				.collect(Collectors.toList());
+
+		return writeImagesInfoToCsv(images);
+	}
+
+
+
+
+	private ByteArrayOutputStream writeImagesInfoToCsv(List<String[]> images) {
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		Writer outputWriter = new OutputStreamWriter(outStream);
+		BeanWriterProcessor<String> rowProcessor = new BeanWriterProcessor<>(String.class);
+		CsvWriterSettings settings = new CsvWriterSettings();
+		settings.setRowWriterProcessor(rowProcessor);
+		CsvWriter writer = new CsvWriter(outputWriter, settings);
+		List<String> headers =
+				asList("name", "width","height","size","id", "product_id", "variant_id", "variant_barcode", "priority", "type");
+		writer.writeHeaders(headers.stream().toArray(String[]::new));
+		writer.writeStringRowsAndClose(images);
+		return outStream;
+	}
+
+
+	private ImageInfo toImageInfo(FileEntity originalFile, Map<String, ProductImagesEntity> productsImagesMap) {
+		try {
+			this.basePath = Paths.get(basePathStr);
+			Path location = basePath.resolve(originalFile.getLocation());
+			File file = location.toFile();
+			BufferedImage image = ImageIO.read(file);
+			ImageInfo info = new ImageInfo(file.getName(), image.getWidth(), image.getHeight(), file.length()/1024 +" KB");
+			if (productsImagesMap.containsKey(originalFile.getUrl())) {
+				ProductImagesEntity prodImg = productsImagesMap.get(originalFile.getUrl());
+				addProductInfo(info, prodImg);
+				if (prodImg.getProductVariantsEntity() != null) {
+					addVariantInfo(info, prodImg.getProductVariantsEntity());
+				}
+			}
+			return info;
+		} catch (Exception e) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0015, e.getMessage());
+		}
+	}
+
+	private void addProductInfo(ImageInfo info, ProductImagesEntity prodImg) {
+		info.setId(prodImg.getId());
+		info.setProductId(prodImg.getProductEntity().getId());
+		info.setPriority(prodImg.getPriority());
+		info.setType(prodImg.getType());
+	}
+
+	private void addVariantInfo(ImageInfo info, ProductVariantsEntity variant) {
+		info.setVariantId(variant.getId());
+		info.setVariantBarcode(variant.getBarcode());
+	}
+
+	private String[] normalizeImageInfoRow(ImageInfo info) {
+		return new String[]{info.getName(),info.getWidth()+"",info.getHeight()+"",info.getSize()+""
+				,info.getId()+"",info.getProductId()+"",info.getVariantId()+"",info.getVariantBarcode(),
+				info.getPriority()+"",info.getType()+""};
+	}
+}
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class ImageInfo {
+	private String name;
+	private Integer width;
+	private Integer height;
+	private String size;
+	private Long id;
+	private Long productId;
+	private Long variantId;
+	private String variantBarcode;
+	private Integer priority;
+	private Integer type;
+
+	ImageInfo(String name, Integer width, Integer height, String size) {
+		this.name = name;
+		this.width = width;
+		this.height = height;
+		this.size = size;
 	}
 }

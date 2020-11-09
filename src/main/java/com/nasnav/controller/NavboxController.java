@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.navbox.VariantsResponse;
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,12 +25,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
-import com.nasnav.service.AddressService;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.CategoryService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ShopService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -49,6 +44,8 @@ public class NavboxController {
 
 	@Autowired
 	private OrganizationService organizationService;
+	@Autowired
+	private FileService fileService;
 
 	@Autowired
 	private ProductService productService;
@@ -345,4 +342,6 @@ public class NavboxController {
 				.header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
 				.body(s.toString());
 	}
+
+
 }

@@ -23,6 +23,15 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	
 	Optional<ProductImagesEntity> findByUri(String uri);
 
+
+	@Query("select i from ProductImagesEntity i " +
+			" left join fetch i.productEntity p " +
+			" left join fetch i.productVariantsEntity v"+
+			" where i.uri in :uris")
+	List<ProductImagesEntity> findByUriIn(@Param("uris") List<String> uris);
+
+	boolean existsByUri(String uri);
+
 	void deleteByProductEntity_Id(Long productId);
 
 	@Transactional

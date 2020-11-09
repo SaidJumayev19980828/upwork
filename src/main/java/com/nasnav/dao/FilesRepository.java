@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.nasnav.persistence.FileEntity;
 
+import java.util.List;
+
 public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 
 	boolean existsByUrl(String url);
@@ -11,6 +13,8 @@ public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 	boolean existsByLocation(String uniqueLocation);
 
 	FileEntity findByUrl(String url);
+
+	List<FileEntity> findByOrganization_IdAndMimetypeContaining(Long id, String mimeType);
 
 	Long countByUrl(String uri);
 	

@@ -3,31 +3,25 @@ package com.nasnav.controller;
 import static com.nasnav.payments.misc.Gateway.COD;
 import static com.nasnav.payments.misc.Gateway.MASTERCARD;
 import static com.nasnav.payments.misc.Gateway.UPG;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.validation.Valid;
 
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.service.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,13 +57,6 @@ import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.CartOptimizationService;
-import com.nasnav.service.CategoryService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.ShippingManagementService;
-import com.nasnav.service.ThemeService;
 import com.nasnav.shipping.services.PickupFromShop;
 
 import io.swagger.annotations.Api;
@@ -99,6 +86,8 @@ public class OrganizationController {
 
     @Autowired
     private BrandService brandService;
+    @Autowired
+    private FileService fileService;
     
     @Autowired
     private ShippingManagementService shippingMngService;
@@ -676,5 +665,19 @@ public class OrganizationController {
     public void removeSubscribedUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                      @RequestParam String email){
          orgService.removeSubscribedUser(email);
+    }
+
+
+    @ApiOperation(value = "Get organization images info", nickname = "getOrgImagesInfo", code = 201)
+    @ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK")})
+    @GetMapping(value = "images_info")
+    @ResponseBody
+    public ResponseEntity<String> getImagesInfo(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                                @RequestParam (value = "org_id", required = false) Long orgId) {
+        ByteArrayOutputStream s =  fileService.getImagesInfo(orgId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(CONTENT_DISPOSITION, "attachment; filename=images-info.csv")
+                .body(s.toString());
     }
 }
