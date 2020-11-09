@@ -42,6 +42,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.constatnts.EntityConstants.Operation;
@@ -732,6 +733,7 @@ public class OrganizationService {
 	}
 
 
+	@Transactional
 	@CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
 	public ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
         if(imgMetaData == null)
@@ -776,8 +778,8 @@ public class OrganizationService {
             throw new BusinessException("No image file provided!", "MISSIG PARAM:image", NOT_ACCEPTABLE);
 
         String mimeType = file.getContentType();
-        if(!mimeType.startsWith("image"))
-            throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+        if(!mimeType.startsWith("image") && !mimeType.startsWith("video"))
+            throw new BusinessException(String.format("Invalid file type[%s]! only MIME ['image','video] types are accepted!", mimeType)
                     , "MISSIG PARAM:image"
                     , NOT_ACCEPTABLE);
         String url = fileService.saveFile(file, imgMetaData.getOrganizationId());
