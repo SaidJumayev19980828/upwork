@@ -6,6 +6,7 @@ import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.response.ReturnRequestsResponse;
+import com.nasnav.service.OrderReturnService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,7 +41,10 @@ public class OrdersController {
 
     @Autowired
     private OrderService orderService;
-    
+
+
+    @Autowired
+	private OrderReturnService returnService;
 	
     @ApiOperation(value = "Update an order status", nickname = "orderStatusUpdate")
     @ApiResponses(value = {
@@ -176,7 +180,7 @@ public class OrdersController {
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			ReturnRequestSearchParams params) {
 
-		return orderService.getOrderReturnRequests(params);
+		return returnService.getOrderReturnRequests(params);
 	}
 
 
@@ -188,7 +192,7 @@ public class OrdersController {
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam Long id) {
 
-		return orderService.getOrderReturnRequest(id);
+		return returnService.getOrderReturnRequest(id);
 	}
 
 	@ApiOperation(value = "reject returned order items ", nickname = "rejectOrderItems")
@@ -200,7 +204,7 @@ public class OrdersController {
 	@PostMapping(value = "return/reject")
 	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestBody ReturnRequestRejectDTO dto) {
-		orderService.rejectReturnRequest(dto);
+		returnService.rejectReturnRequest(dto);
 	}
 
 
@@ -213,7 +217,7 @@ public class OrdersController {
 	@PostMapping(value = "return/received_item")
 	public void receiveItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReceivedItemsDTO itemsList) throws BusinessException {
-		orderService.receiveItems(itemsList);
+		returnService.receiveItems(itemsList);
 	}
 	
 	
@@ -229,7 +233,7 @@ public class OrdersController {
 	@PostMapping(value = "return")
 	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReturnRequestItemsDTO itemsList) throws BusinessException {
-		return orderService.createReturnRequest(itemsList);
+		return returnService.createReturnRequest(itemsList);
 	}
 
 
@@ -243,6 +247,6 @@ public class OrdersController {
 	@PostMapping(value = "return/confirm")
 	public void confirmReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestParam Long id) {
-		orderService.confirmReturnRequest(id);
+		returnService.confirmReturnRequest(id);
 	}
 }

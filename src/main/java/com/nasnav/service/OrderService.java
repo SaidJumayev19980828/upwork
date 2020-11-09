@@ -50,10 +50,6 @@ public interface OrderService {
 
 	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
 	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
-	String ORDER_RETURN_REJECT_SUBJECT = "Sorry! Your Order return has been rejected!";
-	String ORDER_RETURN_CONFIRM_SUBJECT = "Your Order return has been confirmed!";
-	String ORDER_RETURN_RECEIVE_SUBJECT = "Your returned items has been received by the store!";
-	String ORDER_RETURN_NOTIFY_SUBJECT = "New Order return request [%d] has been created!";
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
@@ -64,8 +60,6 @@ public interface OrderService {
 	void finalizeOrder(Long orderId) throws BusinessException;
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
-	
-
 
 	public OrderConfrimResponseDTO confrimOrder(Long orderId);
 
@@ -76,8 +70,6 @@ public interface OrderService {
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId);
 
-
-
 	public void rejectOrder(OrderRejectDTO dto);
 
 	public void cancelOrder(Long metaOrderId);
@@ -85,16 +77,6 @@ public interface OrderService {
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
-
-	ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params);
-	ReturnRequestDTO getOrderReturnRequest(Long id);
-	void rejectReturnRequest(ReturnRequestRejectDTO dto);
-
-	void receiveItems(ReceivedItemsDTO returnedItems);
-
-	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
-
-	void confirmReturnRequest(Long id);
 
 	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
 
