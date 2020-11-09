@@ -27,4 +27,5 @@ public class CartItem {
 	private Integer productType;
 	private BigDecimal discount;
 	private Map<String,Object> additionalData;
+	private Long userId;
 }

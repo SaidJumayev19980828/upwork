@@ -268,7 +268,7 @@ public class CartServiceImpl implements CartService{
     }
 
 
-    private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
+    public List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
         return cartItems
                 .stream()
                 .map(this::createCartItemDto)
@@ -309,7 +309,7 @@ public class CartServiceImpl implements CartService{
         itemDto.setStockId(itemData.getStockId());
         itemDto.setDiscount(itemData.getDiscount());
         itemDto.setAdditionalData(additionalData);
-
+        itemDto.setUserId(itemData.getUserId());
         return itemDto;
     }
 

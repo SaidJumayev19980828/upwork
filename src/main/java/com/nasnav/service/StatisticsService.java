@@ -1,12 +1,12 @@
 package com.nasnav.service;
 
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dto.response.OrderStatisticsInfo;
-import com.nasnav.dto.response.OrderStatisticsResponse;
+import com.nasnav.dto.response.navbox.CartItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +22,12 @@ public class StatisticsService {
     @Autowired
     private SecurityService securityService;
     @Autowired
+    private CartService cartService;
+
+    @Autowired
     private MetaOrderRepository metaOrderRepo;
+    @Autowired
+    private CartItemRepository cartItemRepo;
 
     public Map<Date, List<OrderStatisticsInfo>> getOrderStatistics() {
         Long orgId = securityService.getCurrentUserOrganizationId();
@@ -37,5 +42,13 @@ public class StatisticsService {
                             .collect(Collectors.toList())))
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+    }
+
+
+    public Map<Long, List<CartItem>> getOrganizationCarts() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return cartService.toCartItemsDto(cartItemRepo.findCartsByOrg_Id(orgId))
+                .stream()
+                .collect(groupingBy(CartItem::getUserId));
     }
 }
