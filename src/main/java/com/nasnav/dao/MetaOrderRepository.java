@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.nasnav.dto.MetaOrderBasicInfo;
+import com.nasnav.dto.response.OrderStatisticsInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -152,5 +153,16 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	List<MetaOrderEntity> findByUser_IdAndStatusAndNoPayment(
 			@Param("userId")Long userId
 			, @Param("orderStatus")Integer orderStatus);
+
+
+	@Query("SELECT new com.nasnav.dto.response.OrderStatisticsInfo(DATE_TRUNC('month', meta.createdAt) AS date," +
+			" meta.status," +
+			" COUNT(meta.id) AS count," +
+			" sum(meta.grandTotal) as income) " +
+			" FROM MetaOrderEntity meta " +
+			" where meta.organization.id = :orgId " +
+			" GROUP BY meta.status, DATE_TRUNC('month',meta.createdAt)" +
+			" order by DATE_TRUNC('month',meta.createdAt)")
+	List<OrderStatisticsInfo> getOrderStatisticsPerMonth(@Param("orgId") Long orgId);
 }
 
