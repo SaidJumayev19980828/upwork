@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.persistence.*;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -63,8 +65,7 @@ public class OrderServiceHelper {
             return emptyMap();
         }
         Long orgId = securityService.getCurrentUserOrganizationId();
-        return basketRepository
-                .findByIdIn(ids, orgId)
+        return mapInBatches(ids, 500, batch -> basketRepository.findByIdIn(batch, orgId))
                 .stream()
                 .collect(toMap(BasketsEntity::getId, b -> b));
     }

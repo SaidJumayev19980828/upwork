@@ -4,7 +4,7 @@
         {
             "id": 200005,
             "name": "#Bundle 3",
-            "image_url": "no_img_found.jpg",
+            "image_url": null,
             "p_name": null,
             "price": "10.10",
             "products": [

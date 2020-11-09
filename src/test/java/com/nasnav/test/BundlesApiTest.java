@@ -158,9 +158,7 @@ public class BundlesApiTest {
 								+ "&sort=" + ProductSortOptions.NAME.getValue()
 								+ "&order=" + SortOrder.DESC.getValue();
 		ResponseEntity<String> response = performHttpGet(url); 
-		
-		
-		
+
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
 		String body = response.getBody();
@@ -466,40 +464,7 @@ public class BundlesApiTest {
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());				
 		assertTrue("assert product wasn't deleted", productRepo.existsById(bundleId));
 	}
-	
-	
-	
-	
-	@Test
-	public void bundleDeleteExistsInNewOrdersTest() {
-		Long bundleId = 200007L;
-		
-		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
-		String sql = "select count(*) from public.baskets  b\n" + 
-						"left join public.stocks s\n" + 
-						"on b.stock_id = s.id\n" + 
-						"left join public.product_variants v \n" +
-						"on s.variant_id = v.id\n" + 
-						"left join public.products p \n" +
-						"on v.product_id = p.id\n" + 
-						"where p.id = " + bundleId;			
-		Long count = jdbc.queryForObject(sql, Long.class);
-		
-		assertNotEquals("assert bundle exists in some orders", 0L, count.longValue());
-		assertEquals("assert product count JPQL query works"
-				,  count
-				,  basketRepo.countByProductId(bundleId));
-		
 
-		BaseUserEntity user = empUserRepo.getById(69L); 
-		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
-		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());		
-		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
-	}
-	
-	
-	
 	
 	
 	@Test

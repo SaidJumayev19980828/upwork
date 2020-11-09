@@ -136,6 +136,8 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330038, 88, now(), now(), 99001, 5, 502, 310006, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330039, 88, now(), now(), 99001, 1, 502, 310007, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
+values(330040, 88, now(), now(), 99001, 8, 502, 310006, 12300001);
 
 INSERT INTO public.shipment
 (id, sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, track_number, external_id)
@@ -182,6 +184,7 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330039, 330037, 605, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330040, 330038, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330041, 330039, 604, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330042, 330040, 601, 3, 70.0, 1);
 
 
 

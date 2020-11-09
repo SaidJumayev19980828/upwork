@@ -72,8 +72,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                     + " Your order will be refunded shortly, but the refund operation may take several business days "
                     + "depending on the payment method.";
 
-    private static final Set<OrderStatus> metaOrderAcceptableStatusForReturn =
-            setOf(DELIVERED,STORE_CONFIRMED,STORE_PREPARED,DISPATCHED,FINALIZED);
+    private static final Set<OrderStatus> acceptableStatusForReturn = setOf(DELIVERED);
 
     public static final int MAX_RETURN_TIME_WINDOW = 14;
 
@@ -203,10 +202,10 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     public Long createReturnRequest(ReturnRequestItemsDTO itemsList) {
         List<ReturnRequestBasketItem> returnedItems =
                 itemsList
-                        .getItemList()
-                        .stream()
-                        .map(item -> new ReturnRequestBasketItem(item.getOrderItemId(), item.getReturnedQuantity(), 0))
-                        .collect(toList());
+                    .getItemList()
+                    .stream()
+                    .map(item -> new ReturnRequestBasketItem(item.getOrderItemId(), item.getReturnedQuantity(), 0))
+                    .collect(toList());
         ReturnRequestEntity request = createReturnRequest(returnedItems);
         request = returnRequestRepo.save(request);
 
@@ -858,7 +857,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Map<Long, BasketsEntity> basketsMap = orderServiceHelper.getBasketsMap(returnBasketIds);
 
         MetaOrderEntity metaOrder = getMetaOrderFromBasketItems(returnBasketIds, basketsMap);
-        validateMetaOrderForReturn(metaOrder);
 
         List<ReturnRequestItemEntity> returnItemsEntities =
                 createAndValidateReturnItemEntities(returnedItems, basketsMap, metaOrder);
@@ -873,16 +871,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     }
 
 
-
-    private void validateMetaOrderForReturn(MetaOrderEntity metaOrder) {
-        OrderStatus status = OrderStatus.findEnum(metaOrder.getStatus());
-        boolean hasProperStatus =
-                metaOrderAcceptableStatusForReturn
-                        .contains(status);
-        if(!hasProperStatus){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0021, status.name());
-        }
-    }
 
 
     private MetaOrderEntity getMetaOrderFromBasketItems(List<Long> returnBasketIds, Map<Long, BasketsEntity> basketsMap) {
@@ -907,6 +895,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .map(ReturnRequestBasketItem::getOrderItemId)
                         .collect(toList());
 
+        validateReturnBasketItemsAreReturnable(basketsCache);
         validateReturnBasketItemsIsNew(returnBasketIds);
         validateReturnBasketItemQuantity(basketsCache, returnedItems);
         validateBasketsItemsMetaOrder(basketsCache.values(), metaOrder);
@@ -917,6 +906,21 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                 .map(item -> createReturnRequestItemEntity(item, basketsCache))
                 .collect(toList());
     }
+
+
+
+
+    private void validateReturnBasketItemsAreReturnable(Map<Long, BasketsEntity> basketsCache) {
+        boolean allReturnable =
+                basketsCache
+                .values()
+                .stream()
+                .allMatch(this::isReturnable);
+        if(!allReturnable){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0022);
+        }
+    }
+
 
 
 
@@ -1084,7 +1088,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                 .map(BasketsEntity::getOrdersEntity)
                 .map(OrdersEntity::getStatus)
                 .map(OrderStatus::findEnum)
-                .map(metaOrderAcceptableStatusForReturn::contains)
+                .map(acceptableStatusForReturn::contains)
                 .orElse(false);
     }
 

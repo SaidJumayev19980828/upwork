@@ -554,10 +554,33 @@ public class OrderReturnTest {
                         .put("returned_quantity", 1));
         return json().put("item_list", returnedItems);
 	}
-    
-    
-    
-    
+
+
+
+    @Test
+    public void customerCreateReturnRequestOrderFromFinalizedOrderTest() {
+        JSONObject body = createReturnRequestFromAFinalizedOrderBody();
+
+        HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+        ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+
+
+
+
+    private JSONObject createReturnRequestFromAFinalizedOrderBody() {
+        JSONArray returnedItems =
+                jsonArray()
+                        .put(json()
+                                .put("order_item_id", 330042)
+                                .put("returned_quantity", 1));
+        return json().put("item_list", returnedItems);
+    }
+
+
+
     @Test
     public void customerCreateReturnRequestItemsNotFromSameOrderTest() {
     	JSONObject body = createReturnRequestWithItemsFromDifferentOrdersBody();
@@ -768,6 +791,8 @@ public class OrderReturnTest {
                     , Mockito.anyString()
                     , Mockito.anyMap());
     }
+
+
 
 
 
