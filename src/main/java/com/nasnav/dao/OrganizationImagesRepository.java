@@ -1,14 +1,17 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.OrganizationImagesEntity;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface OrganizationImagesRepository extends CrudRepository<OrganizationImagesEntity, Long> {
+public interface OrganizationImagesRepository extends JpaRepository<OrganizationImagesEntity, Long> {
 
     List<OrganizationImagesEntity> findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(Long id, List<Integer> types);
     List<OrganizationImagesEntity> findByShopsEntityIdAndTypeNot(Long id, Integer type);
+
+
+    List<OrganizationImagesEntity> findByOrganizationEntity_Id(Long id);
 
     List<OrganizationImagesEntity> findByOrganizationEntityIdAndShopsEntityNullAndTypeOrderByIdDesc(Long id, Integer type);
 }

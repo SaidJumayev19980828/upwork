@@ -52,6 +52,14 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
 
+
+	@Query("SELECT img FROM ProductImagesEntity img " +
+			" LEFT JOIN FETCH img.productEntity prod " +
+			" LEFT JOIN FETCH img.productVariantsEntity variant " +
+			" LEFT JOIN variant.productEntity variantProd " +
+			" WHERE prod.organizationId = :orgId OR variantProd.organizationId = :orgId")
+	List<ProductImagesEntity> findByProductEntity_OrganizationId(@Param("orgId")Long orgId);
+
 	
 	@Query(value = "DELETE from Product_Images img where img.product_id in(select id from products product where product.organization_id = :orgId)"
 			, nativeQuery = true)

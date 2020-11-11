@@ -10,14 +10,16 @@ import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.awt.SystemColor.info;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.*;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -32,8 +34,8 @@ import javax.annotation.PostConstruct;
 import javax.cache.annotation.CacheResult;
 import javax.imageio.ImageIO;
 
-import com.nasnav.dao.FilesResizedRepository;
-import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.commons.utils.CollectionUtils;
+import com.nasnav.dao.*;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -46,6 +48,7 @@ import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
@@ -54,8 +57,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.google.common.net.MediaType;
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.model.FileUrlResource;
 
@@ -79,6 +80,8 @@ public class FileService {
 	private ProductImagesRepository productImgRepo;
 	@Autowired
 	private FilesRepository filesRepo;
+	@Autowired
+	private OrganizationImagesRepository orgImagesRepo;
 
 	@Autowired
 	private SecurityService securityService;
@@ -341,7 +344,11 @@ public class FileService {
 		final String fileType = getImageType(url, type)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 		FileEntity originalFile = ofNullable(filesRepo.findByUrl(modUrl))
-				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0011, url));
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
+
+		if (!originalFile.getMimetype().contains("image")) {
+			return STATIC_FILES_URL + "/" + originalFile.getLocation();
+		}
 
 		FilesResizedEntity resizedFile = getResizedFiles(originalFile, width, height)
 				.stream()
@@ -451,27 +458,42 @@ public class FileService {
 	}
 
 
+
 	public ByteArrayOutputStream getImagesInfo(Long orgId) {
 		if (securityService.currentUserHasRole(ORGANIZATION_ADMIN) || orgId == null){
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
-		List<FileEntity> orgImages = filesRepo.findByOrganization_IdAndMimetypeContaining(orgId, "image");
-		List<String> uris = orgImages
+
+		List<OrganizationImagesEntity> orgImages = orgImagesRepo.findByOrganizationEntity_Id(orgId);
+		Map<String, List<OrganizationImagesEntity>> orgImagesMap = orgImages.stream().collect(groupingBy(OrganizationImagesEntity::getUri));
+
+		List<ProductImagesEntity> prodImages = 	productImgRepo.findByProductEntity_OrganizationId(orgId);
+		Map<String, List<ProductImagesEntity>> prodImagesMap = 	prodImages.stream().collect(groupingBy(ProductImagesEntity::getUri));;
+
+		return getImagesFiles(orgImages, prodImages)
 				.stream()
-				.map(FileEntity::getUrl)
-				.collect(Collectors.toList());
-		Map<String, ProductImagesEntity> productsImagesMap =
-				mapInBatches(uris, 500, productImgRepo::findByUriIn)
-				.stream()
-				.collect(toMap(ProductImagesEntity::getUri, i -> i));
-		List<String[]> images = orgImages
-				.stream()
-				.map(i -> toImageInfo(i, productsImagesMap))
+				.map(img -> toImageInfo(img, orgImagesMap, prodImagesMap))
+				.flatMap(List::stream)
 				.sorted(comparing(ImageInfo::getSize).reversed())
 				.map(this::normalizeImageInfoRow)
-				.collect(Collectors.toList());
+				.collect(collectingAndThen(toList(), this::writeImagesInfoToCsv));
+	}
 
-		return writeImagesInfoToCsv(images);
+
+
+
+	private List<FileEntity> getImagesFiles(List<OrganizationImagesEntity> orgImages, List<ProductImagesEntity> prodImages) {
+		List<String> allUrls =
+				orgImages
+				.stream()
+				.map(OrganizationImagesEntity::getUri)
+				.collect(toList());
+		prodImages
+			.stream()
+			.map(ProductImagesEntity::getUri)
+			.forEach(allUrls::add);
+		return mapInBatches(allUrls, 500
+				, batch -> filesRepo.findByUrlInAndMimetypeContaining(batch, "image"));
 	}
 
 
@@ -485,48 +507,121 @@ public class FileService {
 		settings.setRowWriterProcessor(rowProcessor);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
 		List<String> headers =
-				asList("name", "width","height","size","id", "product_id", "variant_id", "variant_barcode", "priority", "type");
+				asList("name", "width","height","size","id", "product_id", "product_name", "variant_id", "variant_name", "variant_barcode", "priority", "type");
 		writer.writeHeaders(headers.stream().toArray(String[]::new));
 		writer.writeStringRowsAndClose(images);
 		return outStream;
 	}
 
 
-	private ImageInfo toImageInfo(FileEntity originalFile, Map<String, ProductImagesEntity> productsImagesMap) {
-		try {
+
+
+	private List<ImageInfo> toImageInfo(FileEntity originalFile, Map<String, List<OrganizationImagesEntity>> orgImages,
+									   Map<String, List<ProductImagesEntity>> productsImages) {
+		String originalFileUrl = originalFile.getUrl();
+		if (productsImages.containsKey(originalFileUrl)) {
+			return toProductImageInfo(originalFile, productsImages);
+		} else if (orgImages.containsKey(originalFileUrl)) {
+			return toOrgImageInfo(originalFile, orgImages);
+		}else {
+			return emptyList();
+		}
+	}
+
+
+
+	private List<ImageInfo> toOrgImageInfo(FileEntity originalFile, Map<String, List<OrganizationImagesEntity>> orgImages) {
+		String originalFileUrl = originalFile.getUrl();
+		return orgImages
+				.get(originalFileUrl)
+				.stream()
+				.map(orgImg -> createOrgImageInfo(originalFile, orgImg))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(toList());
+	}
+
+
+
+	private List<ImageInfo> toProductImageInfo(FileEntity originalFile, Map<String, List<ProductImagesEntity>> productsImages) {
+		String originalFileUrl = originalFile.getUrl();
+		return productsImages
+				.get(originalFileUrl)
+				.stream()
+				.map(prodImg -> createProductImageInfo(originalFile, prodImg))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(toList());
+	}
+
+
+
+	private Optional<ImageInfo> createOrgImageInfo(FileEntity originalFile, OrganizationImagesEntity orgImg){
+		return createNewImageInfo(originalFile)
+				.map(info -> {info.setType(orgImg.getType()); return info;});
+	}
+
+
+
+
+	private Optional<ImageInfo> createProductImageInfo(FileEntity originalFile, ProductImagesEntity prodImg){
+		return createNewImageInfo(originalFile)
+			.map(info -> addProductAndVariantInfo(info, prodImg));
+	}
+
+
+
+	private ImageInfo addProductAndVariantInfo(ImageInfo info, ProductImagesEntity prodImg){
+		addProductInfo(info, prodImg);
+		if (prodImg.getProductVariantsEntity() != null) {
+			addVariantInfo(info, prodImg.getProductVariantsEntity());
+		}
+		return info;
+	}
+
+
+
+
+	private Optional<ImageInfo> createNewImageInfo(FileEntity originalFile) {
+		try{
 			this.basePath = Paths.get(basePathStr);
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
 			BufferedImage image = ImageIO.read(file);
-			ImageInfo info = new ImageInfo(file.getName(), image.getWidth(), image.getHeight(), file.length()/1024 +" KB");
-			if (productsImagesMap.containsKey(originalFile.getUrl())) {
-				ProductImagesEntity prodImg = productsImagesMap.get(originalFile.getUrl());
-				addProductInfo(info, prodImg);
-				if (prodImg.getProductVariantsEntity() != null) {
-					addVariantInfo(info, prodImg.getProductVariantsEntity());
-				}
-			}
-			return info;
-		} catch (Exception e) {
-			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0015, e.getMessage());
+			ImageInfo imgInfo =  new ImageInfo(file.getName(), image.getWidth(), image.getHeight(), file.length()/1024 +" KB");
+			return Optional.of(imgInfo);
+		}catch(Throwable e){
+			logger.error(e,e);
+			return empty();
 		}
 	}
+
+
 
 	private void addProductInfo(ImageInfo info, ProductImagesEntity prodImg) {
 		info.setId(prodImg.getId());
 		info.setProductId(prodImg.getProductEntity().getId());
+		info.setProductName(prodImg.getProductEntity().getName());
 		info.setPriority(prodImg.getPriority());
 		info.setType(prodImg.getType());
 	}
 
+
+
+
 	private void addVariantInfo(ImageInfo info, ProductVariantsEntity variant) {
 		info.setVariantId(variant.getId());
+		info.setVariantName(variant.getName());
 		info.setVariantBarcode(variant.getBarcode());
 	}
 
+
+
+
 	private String[] normalizeImageInfoRow(ImageInfo info) {
-		return new String[]{info.getName(),info.getWidth()+"",info.getHeight()+"",info.getSize()+""
-				,info.getId()+"",info.getProductId()+"",info.getVariantId()+"",info.getVariantBarcode(),
+		return new String[]{info.getName(),info.getWidth()+"",info.getHeight()+"",info.getSize()+"",
+				info.getId()+"",info.getProductId()+"",info.getProductName(),
+				info.getVariantId()+"",info.getVariantName(),info.getVariantBarcode(),
 				info.getPriority()+"",info.getType()+""};
 	}
 }
@@ -542,7 +637,9 @@ class ImageInfo {
 	private String size;
 	private Long id;
 	private Long productId;
+	private String productName;
 	private Long variantId;
+	private String variantName;
 	private String variantBarcode;
 	private Integer priority;
 	private Integer type;

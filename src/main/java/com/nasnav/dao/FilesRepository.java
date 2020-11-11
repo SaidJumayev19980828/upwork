@@ -16,6 +16,8 @@ public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 
 	List<FileEntity> findByOrganization_IdAndMimetypeContaining(Long id, String mimeType);
 
+	List<FileEntity> findByUrlInAndMimetypeContaining(List<String> urls, String mimeType);
+
 	Long countByUrl(String uri);
 	
 }
