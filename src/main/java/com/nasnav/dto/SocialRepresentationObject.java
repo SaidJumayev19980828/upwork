@@ -1,7 +1,6 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,11 +15,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class SocialRepresentationObject extends BaseRepresentationObject{
 
-    @JsonProperty("facebook")
     private String facebook;
-    @JsonProperty("twitter")
     private String twitter;
-    @JsonProperty("instagram")
     private String instagram;
-
+    private String youtube;
+    private String linkedin;
+    private String pinterest;
 }

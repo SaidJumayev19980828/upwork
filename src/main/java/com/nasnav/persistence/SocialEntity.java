@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.SocialRepresentationObject;
 import lombok.Data;
+import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Data
 @Table
@@ -20,6 +20,9 @@ public class SocialEntity implements BaseEntity {
     private String facebook;
     private String twitter;
     private String instagram;
+    private String youtube;
+    private String linkedin;
+    private String pinterest;
     
 
 
@@ -30,11 +33,8 @@ public class SocialEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-
         SocialRepresentationObject socialRepresentationObject = new SocialRepresentationObject();
-        socialRepresentationObject.setFacebook(getFacebook());
-        socialRepresentationObject.setTwitter(getTwitter());
-        socialRepresentationObject.setInstagram(getInstagram());
+        BeanUtils.copyProperties(this, socialRepresentationObject);
         return socialRepresentationObject;
     }
 }

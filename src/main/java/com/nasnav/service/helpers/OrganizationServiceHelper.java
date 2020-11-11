@@ -4,13 +4,18 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.SocialRepository;
 import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SocialEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.util.Optional;
+
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0012;
+import static java.util.Optional.empty;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class OrganizationServiceHelper  {
@@ -22,37 +27,84 @@ public class OrganizationServiceHelper  {
         this.socialRepository = socialRepository;
     }
 
-    public SocialEntity addSocialLinks(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization) throws BusinessException {
-        if (json.socialInstagram == null && json.socialTwitter == null && json.socialFacebook == null)
-            return null;
-
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(json.organizationId);
-        if (socialEntity == null){
-            socialEntity = new SocialEntity();
-            socialEntity.setOrganizationEntity(organization);
+    public Optional<SocialEntity> createSocialEntity(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization) throws BusinessException {
+        if (allIsNull(json.socialInstagram, json.socialTwitter, json.socialFacebook, json.socialYoutube, json.socialLnkedin, json.socialPinterest)){
+            return empty();
         }
-        if (json.socialTwitter != null) {
-            if (StringUtils.validateUrl(json.socialTwitter,
-                    "(http(s)?:\\/\\/)?(www\\.)?twitter\\.com\\/[A-z0-9_\\-\\.]+\\/?.*"))
-                socialEntity.setTwitter(json.socialTwitter);
-            else
-                throw new BusinessException("INVALID_PARAM: social_twitter", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
 
-        }
-        if (json.socialFacebook != null) {
-            if (StringUtils.validateUrl(json.socialFacebook,"(http(s)?:\\/\\/)?(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?.*"))
-                socialEntity.setFacebook(json.socialFacebook);
-            else
-                throw new BusinessException("INVALID_PARAM: social_facebook", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
+        SocialEntity socialEntity =
+                socialRepository
+                        .findOneByOrganizationEntity_Id(organization.getId())
+                        .orElseGet(SocialEntity::new);
+        socialEntity.setOrganizationEntity(organization);
 
-        }
-        if (json.socialInstagram != null) {
-            if (StringUtils.validateUrl(json.socialInstagram,"(http(s)?:\\/\\/)?(www\\.)?instagram\\.com\\/[A-Za-z0-9_\\-\\.]+\\/?.*"))
-                socialEntity.setInstagram(json.socialInstagram);
-            else
-                throw new BusinessException("INVALID_PARAM: social_instagram", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
+        validateAndSetTwitterUrl(json.socialTwitter, socialEntity);
+        validateAndSetFacebookUrl(json.socialFacebook, socialEntity);
+        validateAndSetInstagramUrl(json.socialInstagram, socialEntity);
+        validateAndSetYoutubeUrl(json.socialYoutube, socialEntity);
+        validateAndSetLinkedIn(json.socialLnkedin, socialEntity);
+        validateAndSetPinterest(json.socialPinterest, socialEntity);
 
+        return Optional.of(socialEntity);
+    }
+
+
+
+    private void validateAndSetTwitterUrl(String url, SocialEntity socialEntity) {
+        if (url != null) {
+            if (StringUtils.validateUrl(url,"(http(s)?:\\/\\/)?(www\\.)?twitter\\.com\\/[A-z0-9_\\-\\.]+\\/?.*")){
+                socialEntity.setTwitter(url);
+            }else{
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url);
+            }
         }
-        return socialEntity;
+    }
+
+
+
+    private void validateAndSetFacebookUrl(String url, SocialEntity socialEntity) {
+        if (url != null) {
+            if (StringUtils.validateUrl(url, "(http(s)?:\\/\\/)?(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?.*")){
+                socialEntity.setFacebook(url);
+            }else{
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url);
+            }
+        }
+    }
+
+
+
+    private void validateAndSetInstagramUrl(String url, SocialEntity socialEntity) {
+        if (url != null) {
+            if (StringUtils.validateUrl(url,"(http(s)?:\\/\\/)?(www\\.)?instagram\\.com\\/[A-Za-z0-9_\\-\\.]+\\/?.*")){
+                socialEntity.setInstagram(url);
+            }else{
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url);
+            }
+        }
+    }
+
+
+
+    private void validateAndSetYoutubeUrl(String url, SocialEntity socialEntity) {
+        if (url != null){
+            socialEntity.setYoutube(url);
+        }
+    }
+
+
+
+    private void validateAndSetLinkedIn(String url, SocialEntity socialEntity) {
+        if (url != null){
+            socialEntity.setLinkedin(url);
+        }
+    }
+
+
+
+    private void validateAndSetPinterest(String url, SocialEntity socialEntity) {
+        if (url != null){
+            socialEntity.setPinterest(url);
+        }
     }
 }

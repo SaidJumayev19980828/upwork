@@ -9,17 +9,15 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.persistence.SocialEntity;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,23 +66,46 @@ public class OrganizationManagmentTest {
     private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
+    @Autowired
+    private SocialRepository socialRepository;
     
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
-        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"," +
-                       "\"social_twitter\": \"https://www.twitter.com/fortunestores/\"," +
-                       "\"social_facebook\": \"https://www.facebook.com/fortune.stores11/\"," +
-                       "\"social_instagram\": \"https://www.instagram.com/islamify/\"}";
+        String facebookUrl = "https://www.facebook.com/fortune.stores11/";
+        String twitterUrl = "https://www.twitter.com/fortunestores/";
+        String instagramUrl = "https://www.instagram.com/islamify/";
+        String youtubeUrl = "https://www.youtube.com/";
+        String linkedinUrl = "https://www.linkedin.com/";
+        String pinterestUrl = "https://www.pinterest.com/";
+        String body = json()
+                .put("description", "this company is old and unique")
+                .put("social_twitter", twitterUrl)
+                .put("social_facebook", facebookUrl)
+                .put("social_instagram",instagramUrl)
+                .put("social_youtube", youtubeUrl)
+                .put("social_linkedin", linkedinUrl)
+                .put("social_pinterest", pinterestUrl)
+                .toString();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
+        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(99001L).get();
+        assertEquals(twitterUrl, socialEntity.getTwitter());
+        assertEquals(facebookUrl, socialEntity.getFacebook());
+        assertEquals(instagramUrl, socialEntity.getInstagram());
+        assertEquals(youtubeUrl, socialEntity.getYoutube());
+        assertEquals(linkedinUrl, socialEntity.getLinkedin());
+        assertEquals(pinterestUrl, socialEntity.getPinterest());
     }
+
+
+
 
     //trying to update organization with nasnav_admin user
     @Test
@@ -95,32 +116,9 @@ public class OrganizationManagmentTest {
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"abcdefg", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(403, response.getStatusCode().value());
+        assertEquals(403, response.getStatusCode().value());
     }
 
-
-    @Test
-    public void updateOrganizationInvalidIdTest() {
-        String body = "{\"org_id\":99005,\"description\":\"this company is old and unique\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        map.add("logo", file);
-        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
-        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
-
-    @Test
-    public void updateOrganizationMissingIdTest() {
-        String body = "{\"description\":\"this company is old and unique\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        map.add("logo", file);
-        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
-        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
 
 
     @Test
@@ -132,7 +130,7 @@ public class OrganizationManagmentTest {
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
 
         // invalid facebook link
         body = "{\"org_id\":99005, \"social_facebook\": \"htts://www.faceboo.com/fortune.stores11/\"}";
@@ -141,7 +139,7 @@ public class OrganizationManagmentTest {
         map.add("logo", file);
         json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
 
         // invalid instagram link
         body = "{\"org_id\":99005, \"social_instagram\": \"htps://instgram.com/fortunestores\"}";
@@ -150,7 +148,7 @@ public class OrganizationManagmentTest {
         map.add("logo", file);
         json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -161,7 +159,7 @@ public class OrganizationManagmentTest {
         map.add("logo", databaseCleanup);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
 
@@ -172,7 +170,7 @@ public class OrganizationManagmentTest {
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         organizationRepository.deleteById(response.getBody().getOrganizationId());
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
 
@@ -182,12 +180,12 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
 
         body = "{\"name\":\"Solad Pant\"}";
         json = getHttpEntity(body,"abcdefg");
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
 
@@ -197,12 +195,12 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
 
         body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad_pant#$!^*\"}";
         json = getHttpEntity(body,"abcdefg");
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     //trying to create organization with organization_admin user
@@ -212,7 +210,7 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
-        Assert.assertEquals(403, response.getStatusCode().value());
+        assertEquals(403, response.getStatusCode().value());
     }
 
 
@@ -258,10 +256,10 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
-        Assert.assertEquals("new org name", org.getName());
-        Assert.assertEquals("org-name", org.getPname());
+        assertEquals("new org name", org.getName());
+        assertEquals("org-name", org.getPname());
     }
 
 
@@ -272,9 +270,9 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
-        Assert.assertEquals(1, org.getEcommerce().intValue());
+        assertEquals(1, org.getEcommerce().intValue());
     }
 
 
@@ -285,9 +283,9 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
-        Assert.assertEquals("tokeee-eeee-eeeee-eeen", org.getGoogleToken());
+        assertEquals("tokeee-eeee-eeeee-eeen", org.getGoogleToken());
     }
 
 
@@ -298,9 +296,9 @@ public class OrganizationManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
-        Assert.assertEquals(818, org.getCountry().getIsoCode().intValue());
+        assertEquals(818, org.getCountry().getIsoCode().intValue());
     }
 
 
@@ -376,15 +374,15 @@ public class OrganizationManagmentTest {
     private void checkSuccessResponse(ResponseEntity<String> response) {
         JSONObject json = new JSONObject(response.getBody());
 
-        Assert.assertEquals(200, response.getStatusCode().value());
-        Assert.assertEquals(99001, json.getInt("id"));
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(99001, json.getInt("id"));
     }
 
     private void checkFailResponse(ResponseEntity<String> response) {
         JSONObject json = new JSONObject(response.getBody());
 
-        Assert.assertEquals(200, response.getStatusCode().value());
-        Assert.assertEquals(0, json.getInt("id"));
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(0, json.getInt("id"));
     }
     
     

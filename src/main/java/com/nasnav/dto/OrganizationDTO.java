@@ -2,7 +2,6 @@ package com.nasnav.dto;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModel;
@@ -64,6 +63,15 @@ public class OrganizationDTO {
         @ApiModelProperty(value = "URL to instagram account", example = "https://instagram.com/fortunestores")
         @JsonProperty("social_instagram")
         public String socialInstagram;
+
+        @JsonProperty("social_youtube")
+        public String socialYoutube;
+
+        @JsonProperty("social_linkedin")
+        public String socialLnkedin;
+
+        @JsonProperty("social_pinterest")
+        public String socialPinterest;
 
         @JsonProperty("extra_info")
         public Map<?,?> info;

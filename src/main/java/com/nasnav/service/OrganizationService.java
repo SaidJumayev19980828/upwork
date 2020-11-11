@@ -26,7 +26,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
@@ -127,8 +126,6 @@ public class OrganizationService {
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
     private ShopService shopService;
-    @Autowired
-    private DomainService domainService;
 
     public List<OrganizationRepresentationObject> listOrganizations() {
         return organizationRepository.findAll()
@@ -181,19 +178,21 @@ public class OrganizationService {
 
 
     private void setSocialEntity(OrganizationRepresentationObject orgRepObj) {
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
-        if (socialEntity != null){
-            orgRepObj.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
-        }
+        socialRepository
+                .findOneByOrganizationEntity_Id(orgRepObj.getId())
+                .map(SocialEntity::getRepresentation)
+                .map(SocialRepresentationObject.class::cast)
+                .ifPresent(orgRepObj::setSocial);
     }
 
 
 
     private void setThemeSettings(OrganizationRepresentationObject orgRepObj) {
-        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
-        if (organizationThemeEntity != null){
-            orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
-        }
+        organizationThemeRepository
+                .findOneByOrganizationEntity_Id(orgRepObj.getId())
+                .map(OrganizationThemeEntity::getRepresentation)
+                .map(OrganizationThemesRepresentationObject.class::cast)
+                .ifPresent(orgRepObj::setThemes);
     }
 
 
@@ -374,10 +373,9 @@ public class OrganizationService {
     
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    @Transactional
     public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
-        validateOrganizationUpdateData(json);
-
-        OrganizationEntity organization = organizationRepository.findById(json.organizationId).get();
+        OrganizationEntity organization = securityService.getCurrentUserOrganization();
         if (json.description != null) {
             organization.setDescription(json.description);
         }
@@ -388,44 +386,32 @@ public class OrganizationService {
             organization.setThemeId(json.themeId);
         }
 
-        //logo
-        OrganizationThemeEntity orgTheme = null;
         if (file != null) {
-            orgTheme = organizationThemeRepository.findOneByOrganizationEntity_Id(json.organizationId);
-            if (orgTheme == null) {
-                orgTheme = new OrganizationThemeEntity();
-                orgTheme.setOrganizationEntity(organization);
-            }
+            OrganizationThemeEntity orgTheme =
+                    organizationThemeRepository
+                    .findOneByOrganizationEntity_Id(organization.getId())
+                    .orElseGet(OrganizationThemeEntity::new);
+
+            orgTheme.setOrganizationEntity(organization);
             String mimeType = file.getContentType();
             if(!mimeType.startsWith("image"))
                 throw new BusinessException("INVALID PARAM:image",
                         "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
 
-            orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
-        }
-        SocialEntity socialEntity = helper.addSocialLinks(json, organization);
-
-        if (socialEntity != null)
-            socialRepository.save(socialEntity);
-
-        if (orgTheme != null)
+            orgTheme.setLogo(fileService.saveFile(file, organization.getId()));
             organizationThemeRepository.save(orgTheme);
+        }
+
+        helper
+        .createSocialEntity(json, organization)
+        .ifPresent(socialRepository::save);
 
         organization = organizationRepository.save(organization);
+
         return new OrganizationResponse(organization.getId(), 0);
     }
 
-    private void validateOrganizationUpdateData(OrganizationDTO.OrganizationModificationDTO json) throws BusinessException {
-        if (json.organizationId == null) {
-            throw new BusinessException("MISSING_PARAM: org_id", "Required org_id is missing", NOT_ACCEPTABLE);
-        }
-        if (!organizationRepository.existsById(json.organizationId)) {
-            throw new BusinessException("INVALID_PARAM: org_id", "Provided org_id is not matching any organization", NOT_ACCEPTABLE);
-        }
-        if (!securityService.getCurrentUserOrganizationId().equals(json.organizationId)){
-            throw new BusinessException("INSUFFICIENT_RIGHTS", "EmployeeUser is not admin of organization", NOT_ACCEPTABLE);
-        }
-    }
+
 
 
     public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
