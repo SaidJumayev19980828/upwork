@@ -403,7 +403,7 @@ public class ProductService {
 			return new ArrayList<>();
 		}
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
-		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" ,  (long)bundleProducts.size() );
+		ProductsResponse response = this.getProductsResponseForBundles(bundleProducts,"asc" , "name" ,  (long)bundleProducts.size() );
 		List<ProductRepresentationObject> productRepList = response.getProducts();
 		return productRepList;
 	}
@@ -1018,7 +1018,7 @@ public class ProductService {
 	}
 
 
-	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Long productsCount) {
+	private ProductsResponse getProductsResponseForBundles(List<ProductEntity> products, String order, String sort, Long productsCount) {
 		if(products == null)
 			return new ProductsResponse();
 
