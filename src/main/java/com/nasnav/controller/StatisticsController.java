@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.response.OrderStatisticsInfo;
+import com.nasnav.dto.response.ProductStatisticsInfo;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,5 +30,10 @@ public class StatisticsController {
     @GetMapping("carts")
     public Map<Long, List<CartItem>> getOrganizationCarts(@RequestHeader(name = "User-Token", required = false) String userToken) {
         return statisticsService.getOrganizationCarts();
+    }
+
+    @GetMapping("sold_products")
+    public Map<Date, List<ProductStatisticsInfo>> getProductsStatistics(@RequestHeader(name = "User-Token", required = false) String userToken) {
+        return statisticsService.getProductsStatistics();
     }
 }

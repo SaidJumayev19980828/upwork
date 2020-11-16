@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.OrderPhoneNumberPair;
+import com.nasnav.dto.response.ProductStatisticsInfo;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -150,4 +151,20 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" on payment.metaOrderId = meta.id " +
 			" WHERE ord.id in :orderIds")
     List<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
+
+
+
+
+	@Query("SELECT new com.nasnav.dto.response.ProductStatisticsInfo(" +
+			" product.id, product.name, variant.id, variant.name, COUNT(product.id) as cnt, sum(stock.price), " +
+			" DATE_TRUNC('month', subOrder.creationDate) AS date)" +
+			" FROM OrdersEntity subOrder " +
+			" left join subOrder.basketsEntity basket " +
+			" left join basket.stocksEntity stock " +
+			" left join stock.productVariantsEntity variant " +
+			" left join variant.productEntity product " +
+			" where product.organizationId = :orgId " +
+			" GROUP BY product.id, product.name, variant.id, variant.name, DATE_TRUNC('month',subOrder.creationDate)" +
+			" order by DATE_TRUNC('month',subOrder.creationDate) desc, COUNT(product.id) desc")
+	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId);
 }
