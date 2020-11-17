@@ -269,6 +269,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		offerDto.setServiceName(data.getService().getName());
 		offerDto.setShipments(shipments);
 		offerDto.setTotal(total);
+		offerDto.setType(data.getService().getType().name());
 		return offerDto;
 	}
 
