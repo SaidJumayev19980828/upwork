@@ -526,7 +526,7 @@ public class UserServiceImpl implements UserService {
 		validateActivationEmailResend(accountInfo, baseUser);
 		
 		UserEntity user = (UserEntity)baseUser;
-		if(isUserDeactivated(user) && isNull(user.getResetPasswordToken())) {
+		if(isUserDeactivated(user)) {
 			generateResetPasswordToken(user);
 			userRepository.save(user);
 		}
