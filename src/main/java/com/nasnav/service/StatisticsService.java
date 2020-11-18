@@ -40,12 +40,15 @@ public class StatisticsService {
                 .collect(groupingBy(OrderStatisticsInfo::getDate))
                 .entrySet()
                 .stream()
-                .map(e ->  new SimpleEntry<Date, List<OrderStatisticsInfo>>(e.getKey(), e.getValue()
-                            .stream()
-                            .map(i -> new OrderStatisticsInfo(i.getStatus(), i.getCount(), i.getIncome()))
-                            .collect(Collectors.toList())))
+                .map(this::toOrderStatisticsInfo )
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
 
+    private Map.Entry<Date, List<OrderStatisticsInfo>> toOrderStatisticsInfo(Map.Entry<Date, List<OrderStatisticsInfo>> entry) {
+        return new SimpleEntry<Date, List<OrderStatisticsInfo>>(entry.getKey(), entry.getValue()
+                .stream()
+                .map(i -> new OrderStatisticsInfo(i.getStatus(), i.getCount(), i.getIncome()))
+                .collect(Collectors.toList()));
     }
 
 
