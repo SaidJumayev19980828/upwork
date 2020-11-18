@@ -63,7 +63,6 @@ public class StatisticsService {
         Long orgId = securityService.getCurrentUserOrganizationId();
         return ordersRepo.getProductsStatisticsPerMonth(orgId)
                 .stream()
-                .filter(i -> i.getCount() > 1)
                 .collect(groupingBy(ProductStatisticsInfo::getDate));
     }
 }
