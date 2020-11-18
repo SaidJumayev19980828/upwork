@@ -380,8 +380,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0003);
 		}
-		if(promotion.getEndDate().isBefore(now())
-				|| promotion.getStartDate().isBefore(now())) {
+		if(promotion.getEndDate().isBefore(now())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}
