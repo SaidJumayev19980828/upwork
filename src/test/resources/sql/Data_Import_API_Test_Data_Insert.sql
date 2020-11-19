@@ -50,6 +50,7 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode) 
 VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232222');
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, removed) VALUES(200004, 'removed product' , now() , now(), 0 , 99001, 201, 1);
 
 
 -- variants for each product
@@ -58,6 +59,8 @@ insert into public.product_variants(id, "name" , product_id ,barcode, feature_sp
 insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description, feature_spec)
     values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc', '{}');
 insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310004, 'var', 200002, '910HIJK', '{}');
+insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec, removed) values(310005, 'var', 200002, '4458846', '{}', 1);
+insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310006, 'var', 200004, '4458847', '{}');
 
 
 -- stocks for variants

@@ -167,6 +167,9 @@ public class DataImportApiTest {
 	@Value("classpath:/files/product__list_multitag_different_case_update.csv")
 	private Resource csvMulitagDifferentCaseProductUpdate;
 
+	@Value("classpath:/files/product__list_removed_variant.csv")
+	private Resource csvRemovedVariant;
+
 	
 	@Autowired
 	private  MockMvc mockMvc;
@@ -433,9 +436,22 @@ public class DataImportApiTest {
 		long unitsCountAfter = stockUnitRepo.count();
 		assertEquals("imported two units, one already exists and the other is new"
 				, unitsCountAfter, unitsCountBefore + 1);
+	}
 
-		ExpectedSavedData expected = getExpectedUpdatedDataWithUnits();
-		assertProductDataImported(TEST_IMPORT_SHOP, expected);
+
+	@Test
+	public void uploadProductCSVRemovedVariant() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		long variantsCountBefore = variantRepo.count();
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvRemovedVariant, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long variantsCountAfter = variantRepo.count();
+		assertEquals("imported two variants, one is to removed product and the other is removed itself"
+				, variantsCountAfter, variantsCountBefore + 2);
 	}
 
 

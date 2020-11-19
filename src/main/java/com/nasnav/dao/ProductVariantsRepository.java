@@ -50,7 +50,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
 			+ " where variant.productEntity.organizationId = :orgId "
-			+ " AND variant.barcode in (:barcodeList)")
+			+ " AND variant.barcode in (:barcodeList)"
+			+ " AND variant.productEntity.removed = 0")
 	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
 
 	long countByProductEntity_organizationId(long l);

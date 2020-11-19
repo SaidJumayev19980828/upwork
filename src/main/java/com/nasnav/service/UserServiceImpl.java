@@ -251,6 +251,7 @@ public class UserServiceImpl implements UserService {
 			if (addressDTO.getPrincipal().booleanValue()) {
 				addressRepo.makeAddressNotPrincipal(user.getId());
 				addressRepo.makeAddressPrincipal(user.getId(), newAddress.getId());
+				newAddress.setPrincipal(true);
 			}
 		}
 		return newAddress;

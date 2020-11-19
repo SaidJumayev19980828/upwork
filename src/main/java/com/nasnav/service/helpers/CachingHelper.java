@@ -1,5 +1,6 @@
 package com.nasnav.service.helpers;
 
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.util.Arrays.asList;
@@ -145,7 +146,10 @@ public class CachingHelper {
 			.buffer()
 			.filter(barcodes -> !barcodes.isEmpty())
 			.defaultIfEmpty(asList(randomUUID().toString())) //the list should never be empty
-			.flatMapIterable(barcodes -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcodes));
+			.flatMapIterable(
+							barcodes -> mapInBatches(barcodes,
+											500,
+													 barcode -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcode)));
 	}
 	
 	
