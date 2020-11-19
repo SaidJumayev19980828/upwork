@@ -53,6 +53,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "google_token")
     private String googleToken;
 
+    @Column(name = "matomo")
+    private Integer matomoId;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code", nullable = false)
     @JsonIgnore
@@ -104,6 +107,7 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setThemeId(getThemeId().toString());
         organizationRepresentationObject.setEcommerce((getEcommerce()));
         organizationRepresentationObject.setGoogleToken(getGoogleToken());
+        organizationRepresentationObject.setMatomoSiteId(getMatomoId());
         if(getCountry() != null) {
             organizationRepresentationObject.setCurrency(getCountry().getCurrency());
         }

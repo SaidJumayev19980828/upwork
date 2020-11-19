@@ -94,5 +94,8 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     private Map<String,String> settings;
 
+    @JsonProperty("matomo_site_id")
+    private Integer matomoSiteId;
+
 }
 
