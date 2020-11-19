@@ -29,6 +29,6 @@ public class MastercardAccount extends Account {
         this.scriptUrl = props.getProperty("mcard.script_url");
         super.accountId = "MCARD:" +super.accountId;
         super.dbId = dbId;
-        this.icon = "/icon/mastercard_logo.svg";
+        this.icon = "/icons/mastercard_logo.svg";
     }
 }
