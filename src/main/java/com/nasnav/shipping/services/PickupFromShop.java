@@ -41,6 +41,7 @@ public class PickupFromShop implements ShippingService{
 	private final Logger logger = LogManager.getLogger();
 	public static final String SERVICE_ID = "PICKUP"; 
 	public static final String SERVICE_NAME = "Pickup from Shop";
+	public static final String ICON = "/icons/pickup_from_shop_logo.png";
 	public static final String ALLOWED_SHOP_ID_LIST = "ALLOWED_SHOP_ID_LIST";
 	public static final String SHOP_ID = "SHOP_ID";
 	public static final String RETURN_EMAIL_MSG =
@@ -88,7 +89,8 @@ public class PickupFromShop implements ShippingService{
 					, true
 					, SERVICE_PARAM_DEFINITION
 					, ADDITIONAL_PARAM_DEFINITION
-					, PICKUP);
+					, PICKUP
+					, ICON);
 	}
 
 	

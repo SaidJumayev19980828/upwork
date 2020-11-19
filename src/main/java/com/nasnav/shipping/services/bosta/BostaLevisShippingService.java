@@ -82,6 +82,7 @@ public class BostaLevisShippingService implements ShippingService{
 	private Map<String,String> paramMap;
 	public  static final String SERVICE_ID = "BOSTA_LEVIS" ;
 	public static final String SERVICE_NAME = "Bosta";
+	public static final String ICON = "/icons/bosta_logo.svg";
 	public static final BigDecimal FLAT_RATE = new BigDecimal("25.00");
 	private static final ShippingPeriod DEFUALT_SHIPPING_PERIOD = 
 			new ShippingPeriod(Period.ofDays(1), Period.ofDays(4));
@@ -185,7 +186,8 @@ public class BostaLevisShippingService implements ShippingService{
 						, false
 						, SERVICE_PARAM_DEFINITION
 						, emptyList()
-						, DELIVERY);
+						, DELIVERY
+						, ICON);
 	}
 	
 	

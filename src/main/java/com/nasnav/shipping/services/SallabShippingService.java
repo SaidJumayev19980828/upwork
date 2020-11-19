@@ -50,6 +50,7 @@ public class SallabShippingService implements ShippingService{
 	static final public String TIERS = "TIERS";
 	static final public String SERVICE_ID = "SALLAB_PRICE_PRECENTAGE";
 	static final public String SERVICE_NAME = "Special Shipping";
+	static final public String ICON = "/icons/delivery_logo.jpg";
 	static final public String SUPPORTED_CITIES = "SUPPORTED_CITIES";
 	static final public String MIN_SHIPPING_FEE = "MIN_SHIPPING_FEE";
 	private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
@@ -97,7 +98,8 @@ public class SallabShippingService implements ShippingService{
 					, false
 					, SERVICE_PARAM_DEFINITION
 					, emptyList()
-					, DELIVERY);
+					, DELIVERY
+					, ICON);
 	}
 
 	

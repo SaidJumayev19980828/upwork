@@ -44,6 +44,7 @@ public class DummyShippingService implements ShippingService {
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
 	public static final String RETURN_EMAIL_MSG = "TEST.. TEST .. YOU WILL GET NOTHING!!!!";
 	public static final String SHOP_ID = "\"Shop Id\"";
+	public static final String ICON = "";
 
 	@Getter
 	private List<ServiceParameter> serviceParameters;
@@ -54,7 +55,7 @@ public class DummyShippingService implements ShippingService {
 		List<Parameter> serviceParamerters = 
 				asList( new Parameter("Hot Line", NUMBER), new Parameter("Shops", STRING_ARRAY));
 		List<Parameter> additionalData = asList(new Parameter(SHOP_ID, NUMBER));
-		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData, PICKUP);
+		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData, PICKUP, ICON);
 	}
 
 	

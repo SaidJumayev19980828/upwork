@@ -16,4 +16,5 @@ public class ShippingServiceInfo {
 	private List<Parameter> serviceParams;
 	private List<Parameter> additionalDataParams;
 	private ShippingServiceType type;
+	private String icon;
 }

@@ -9,7 +9,10 @@ import static org.springframework.http.HttpStatus.OK;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 
@@ -18,6 +21,8 @@ import com.nasnav.service.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -68,37 +73,22 @@ import io.swagger.annotations.ApiResponses;
 @Api(description = "Set of endpoints for adding, updating and deleting Dashboard data.")
 @CrossOrigin("*") // allow all origins
 public class OrganizationController {
-
-    @Autowired
-    private AppConfig config;
-
     @Autowired
     private OrganizationService orgService;
-
     @Autowired
     private CategoryService categoryService;
-
-    @Autowired
-    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
-
     @Autowired
     private ThemeService themeService;
-
     @Autowired
     private BrandService brandService;
     @Autowired
     private FileService fileService;
-    
     @Autowired
     private ShippingManagementService shippingMngService;
-    
     @Autowired
     private PromotionsService promotionsService;
-
     @Autowired
 	private CartOptimizationService cartOptimizeService;
-    
-    private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -384,48 +374,9 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
-                                                            @RequestParam(value = "delivery", required = false) String deliveryService) {
-
-        List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
-        if (gateways == null || gateways.size() == 0) {
-            // no specific gateways defined for this org, use the default ones
-            gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
-        }
-        StringBuilder list = new StringBuilder();
-        list.append("{ ");
-        for (OrganizationPaymentGatewaysEntity gateway: gateways) {
-            if (deliveryService != null) {
-                // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
-                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && !PaymentControllerCoD.isCodAvailableForService(deliveryService)) {
-                    continue;
-                }
-            }
-            if (list.length() > 2) {
-                list.append(", ");
-            }
-            list.append('"');
-            list.append(gateway.getGateway());
-            list.append("\": { ");
-
-            if (MASTERCARD.getValue().equalsIgnoreCase(gateway.getGateway())) {
-                list.append("\"script\": \"");
-                MastercardAccount account = new MastercardAccount();
-                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
-                list.append(account.getScriptUrl());
-                list.append('"');
-            } else if (UPG.getValue().equalsIgnoreCase(gateway.getGateway())) {
-                list.append("\"script\": \"");
-                UpgAccount account = new UpgAccount();
-                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
-                list.append(account.getUpgScriptUrl());
-                list.append('"');
-            }
-            list.append("}");
-        }
-        list.append(" }");
-
-        return new ResponseEntity<>(list.toString(), HttpStatus.OK);
+    public LinkedHashMap getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+                                                        @RequestParam(value = "delivery", required = false) String deliveryService) {
+        return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
     }
     
     

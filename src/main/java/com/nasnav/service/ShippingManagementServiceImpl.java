@@ -260,6 +260,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private ShippingOfferDTO createShippingOfferDTO(ShippingOffer data) {
+		String icon = domainService.getBackendUrl() + data.getService().getIcon();
+
 		ShippingOfferDTO offerDto = new ShippingOfferDTO();
 		List<ShippingAdditionalDataDTO> additionalParams = getAdditionalParametersDtoList(data);
 		List<ShipmentDTO> shipments = getShipmentDtoList(data);
@@ -270,6 +272,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		offerDto.setShipments(shipments);
 		offerDto.setTotal(total);
 		offerDto.setType(data.getService().getType().name());
+		offerDto.setIcon(icon);
 		return offerDto;
 	}
 

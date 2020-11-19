@@ -14,6 +14,7 @@ import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.SettingsType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.payments.misc.Gateway.*;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
@@ -29,11 +30,19 @@ import java.util.*;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.AppConfig;
+import com.nasnav.controller.OrganizationController;
+import com.nasnav.controller.PaymentControllerCoD;
 import com.nasnav.dao.*;
 import com.nasnav.enumerations.SettingsType;
+import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.IdAndNamePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +134,15 @@ public class OrganizationService {
     @Autowired
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
+    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+    @Autowired
     private ShopService shopService;
+    @Autowired
+    private DomainService domainService;
+    @Autowired
+    private AppConfig config;
+
+    private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
     public List<OrganizationRepresentationObject> listOrganizations() {
         return organizationRepository.findAll()
@@ -1126,5 +1143,36 @@ public class OrganizationService {
     public void removeSubscribedUser(String email) {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         subsRepo.deleteByEmailAndOrganizationAndTokenNull(email, org);
+    }
+
+    public LinkedHashMap getOrganizationPaymentGateways(Long orgId, String deliveryService) {
+        List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
+        if (gateways == null || gateways.size() == 0) {
+            // no specific gateways defined for this org, use the default ones
+            gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
+        }
+        LinkedHashMap<String, Map> response = new LinkedHashMap();
+        for (OrganizationPaymentGatewaysEntity gateway: gateways) {
+            if (deliveryService != null) {
+                // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
+                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && !PaymentControllerCoD.isCodAvailableForService(deliveryService)) {
+                    continue;
+                }
+            }
+            Map<String, String> body = new HashMap();
+            if (MASTERCARD.getValue().equalsIgnoreCase(gateway.getGateway())) {
+                MastercardAccount account = new MastercardAccount();
+                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                body.put("script", account.getScriptUrl());
+                body.put("icon", domainService.getBackendUrl()+account.getIcon());
+            } else if (UPG.getValue().equalsIgnoreCase(gateway.getGateway())) {
+                UpgAccount account = new UpgAccount();
+                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
+                body.put("script", account.getUpgScriptUrl());
+                body.put("icon", domainService.getBackendUrl()+account.getIcon());
+            }
+            response.put(gateway.getGateway(), body);
+        }
+        return response;
     }
 }

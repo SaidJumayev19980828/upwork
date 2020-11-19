@@ -16,6 +16,7 @@ public class MastercardAccount extends Account {
     protected String apiPassword;
     protected String apiUrl;
     protected String scriptUrl;
+    protected String icon;
 
     public void init(Properties props, int dbId) {
 
@@ -28,5 +29,6 @@ public class MastercardAccount extends Account {
         this.scriptUrl = props.getProperty("mcard.script_url");
         super.accountId = "MCARD:" +super.accountId;
         super.dbId = dbId;
+        this.icon = "/icon/mastercard_logo.svg";
     }
 }

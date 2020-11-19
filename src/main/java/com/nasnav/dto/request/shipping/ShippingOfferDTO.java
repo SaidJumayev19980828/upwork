@@ -17,4 +17,5 @@ public class ShippingOfferDTO {
 	private List<ShipmentDTO> shipments;
 	private BigDecimal total;
 	private String type;
+	private String icon;
 }

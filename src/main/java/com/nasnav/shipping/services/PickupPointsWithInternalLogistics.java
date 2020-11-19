@@ -28,6 +28,7 @@ import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
 
+import com.nasnav.service.DomainService;
 import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,6 +63,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	private final Logger logger = LogManager.getLogger();
 	public static final String SERVICE_ID = "PICKUP_POINTS"; 
 	public static final String SERVICE_NAME = "Pickup point";
+	public static final String ICON = "/icons/pickup_from_shop_logo.png";
 	public static final String WAREHOUSE_ID = "WAREHOUSE_ID";
 	public static final String SHOP_ID = "SHOP_ID";
 	public static final String PICKUP_POINTS_ID_LIST = "PICKUP_POINTS_ID_LIST";
@@ -96,6 +98,8 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	@Autowired
 	SecurityService securityService;
+	@Autowired
+	DomainService domainService;
 	
 	private  SpringTemplateEngine templateEngine;
     
@@ -123,7 +127,8 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 					, true
 					, SERVICE_PARAM_DEFINITION
 					, ADDITIONAL_PARAM_DEFINITION
-					, PICKUP);
+					, PICKUP
+					, ICON);
 	}
 	
 	

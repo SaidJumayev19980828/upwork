@@ -180,6 +180,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/upload/productlist/login")
                         , patternOf("/favicon.ico")
                         , patternOf("/static/**")
+						, patternOf("/icons/**")
                         , patternOf("/js/**")
                         , patternOf("/css/**")
                         , patternOf("/files/**"							, HttpMethod.GET)
