@@ -75,6 +75,8 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private AddressRepository addressRepo;
 	@Autowired
+	private UserAddressRepository userAddressRepo;
+	@Autowired
 	private CommonUserRepository commonUserRepo;
 	@Autowired
 	private OrganizationRepository orgRepo;
@@ -495,7 +497,7 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private List<AddressRepObj> getUserAddresses(Long userId){
-		return addressRepo.findAddressByUserId(userId)
+		return userAddressRepo.findByUser_Id(userId)
 				.stream()
 				.filter(Objects::nonNull)
 				.map(a -> (AddressRepObj) a.getRepresentation())
