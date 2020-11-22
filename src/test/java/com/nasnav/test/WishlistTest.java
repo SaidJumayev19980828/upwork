@@ -260,11 +260,11 @@ public class WishlistTest {
 
         Cart cart = response.getBody();
         Set<Long> ids = getIds(cart);
-        CartItemEntity item = cartRepo.findById(id).get();
-        assertFalse("is_wishlist value will change to 0, which means hibernate will read the record as cart item"
-                ,wishlistRepo.findById(id).isPresent());
+        Long cartItemId = cart.getItems().get(0).getId();
+        assertTrue("new cart item is created with new id", cartRepo.findById(cartItemId).isPresent());
+        CartItemEntity item = cartRepo.findById(cartItemId).get();
+        assertTrue("wishlist item still exists with same id", wishlistRepo.findById(id).isPresent());
         assertEquals(1, cart.getItems().size());
-        assertTrue(setOf(111602L).stream().allMatch(ids::contains));
         assertEquals("default quantity for the new cart items is 1", 1, item.getQuantity().intValue());
     }
 

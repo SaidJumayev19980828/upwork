@@ -29,6 +29,12 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 
+	@Query("select stock.id from WishlistItemEntity item" +
+			" LEFT JOIN item.stock stock " +
+			" LEFT JOIN item.user user"+
+			" where item.id = :itemId and user.id = :userId")
+	Long findWishlistItemStockId(@Param("itemId") Long itemId,
+								 @Param("userId") Long userId);
 
 	@Transactional
 	@Modifying

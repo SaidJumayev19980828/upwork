@@ -1,28 +1,18 @@
 package com.nasnav.controller;
 
-import static com.nasnav.payments.misc.Gateway.COD;
-import static com.nasnav.payments.misc.Gateway.MASTERCARD;
-import static com.nasnav.payments.misc.Gateway.UPG;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.validation.Valid;
 
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.service.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributeDefinitionDTO;
 import com.nasnav.dto.OrganizationDTO;
@@ -53,16 +41,11 @@ import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.mastercard.MastercardAccount;
-import com.nasnav.payments.misc.Tools;
-import com.nasnav.payments.upg.UpgAccount;
-import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
-import com.nasnav.shipping.services.PickupFromShop;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -70,7 +53,7 @@ import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/organization")
-@Api(description = "Set of endpoints for adding, updating and deleting Dashboard data.")
+@Api("Set of endpoints for adding, updating and deleting Dashboard data.")
 @CrossOrigin("*") // allow all origins
 public class OrganizationController {
     @Autowired
@@ -95,7 +78,7 @@ public class OrganizationController {
         this.orgService = orgService;
     }
 
-    @ApiOperation(value = "add or update Organization data", nickname = "OrganizationModification", code = 200)
+    @ApiOperation(value = "add or update Organization data", nickname = "OrganizationModification")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -115,7 +98,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "Get Organization brands data", nickname = "getBrands", code = 200)
+    @ApiOperation(value = "Get Organization brands data", nickname = "getBrands")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -131,7 +114,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "add or update Organization brand", nickname = "BrandModification", code = 200)
+    @ApiOperation(value = "add or update Organization brand", nickname = "BrandModification")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -159,7 +142,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures", code = 200)
+    @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -175,7 +158,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures", code = 200)
+    @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -190,7 +173,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Delete organization extra attribute", nickname = "DeleteOrgExtraAttribute", code = 200)
+    @ApiOperation(value = "Delete organization extra attribute", nickname = "DeleteOrgExtraAttribute")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -203,7 +186,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg", code = 200)
+    @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -238,7 +221,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "Create or update Organization tag", nickname = "orgTagModification", code = 200)
+    @ApiOperation(value = "Create or update Organization tag", nickname = "orgTagModification")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -253,7 +236,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Delete Organization tag", nickname = "orgTagDeletion", code = 200)
+    @ApiOperation(value = "Delete Organization tag", nickname = "orgTagDeletion")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -269,7 +252,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "create a new tag tree", nickname = "createTagTree", code = 200)
+    @ApiOperation(value = "create a new tag tree", nickname = "createTagTree")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -283,7 +266,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Assign category to list of tags", nickname = "assignTagsCategory", code = 200)
+    @ApiOperation(value = "Assign category to list of tags", nickname = "assignTagsCategory")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -298,7 +281,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "get themes assigned a certain organization", nickname = "GetOrgThemes", code = 200)
+    @ApiOperation(value = "get themes assigned a certain organization", nickname = "GetOrgThemes")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -310,7 +293,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "get theme classes assigned a certain organization", nickname = "GetOrgThemeClasses", code = 200)
+    @ApiOperation(value = "get theme classes assigned a certain organization", nickname = "GetOrgThemeClasses")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -323,7 +306,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Assign the organization to a certain theme class", nickname = "assignOrgThemeClass", code = 200)
+    @ApiOperation(value = "Assign the organization to a certain theme class", nickname = "assignOrgThemeClass")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -337,7 +320,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Remove the organization from a certain theme class", nickname = "removeOrgThemeClass", code = 200)
+    @ApiOperation(value = "Remove the organization from a certain theme class", nickname = "removeOrgThemeClass")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -352,7 +335,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Change an organization current theme", nickname = "changeOrgTheme", code = 200)
+    @ApiOperation(value = "Change an organization current theme", nickname = "changeOrgTheme")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -368,7 +351,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "Get list of payment gateways for the organization", nickname = "getGateways", code = 200)
+    @ApiOperation(value = "Get list of payment gateways for the organization", nickname = "getGateways")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
@@ -386,7 +369,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "register the organization to a shipping service", nickname = "registerShippingService", code = 200)
+    @ApiOperation(value = "register the organization to a shipping service", nickname = "registerShippingService")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -395,7 +378,7 @@ public class OrganizationController {
     @PostMapping(value = "shipping/service")
     @ResponseStatus(OK)
     public void registerToShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestBody ShippingServiceRegistration registration) throws BusinessException {
+                                    @RequestBody ShippingServiceRegistration registration) {
     	shippingMngService.registerToShippingService(registration);
     }
     
@@ -403,7 +386,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "list shipping services that the organization is registered to", nickname = "getOrgShippingService", code = 200)
+    @ApiOperation(value = "list shipping services that the organization is registered to", nickname = "getOrgShippingService")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -412,7 +395,7 @@ public class OrganizationController {
     @GetMapping(value = "shipping/service")
     @ResponseStatus(OK)
     public List<ShippingServiceRegistration> listShippingServices(
-    		@RequestHeader (name = "User-Token", required = false) String userToken) throws BusinessException {
+    		@RequestHeader (name = "User-Token", required = false) String userToken) {
     	return shippingMngService.listShippingServices();
     }
     
@@ -420,21 +403,21 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr", code = 200)
+    @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "extra_attribute", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ExtraAttributeDefinitionDTO> getOrgExtraAttibute(@RequestHeader (name = "User-Token", required = false) String userToken) throws Exception {
+    public List<ExtraAttributeDefinitionDTO> getOrgExtraAttibute(@RequestHeader (name = "User-Token", required = false) String userToken) {
         return orgService.getExtraAttributes();
     }
     
     
     
     
-    @ApiOperation(value = "get organization promotions", nickname = "GetPromotions", code = 200)
+    @ApiOperation(value = "get organization promotions", nickname = "GetPromotions")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -458,7 +441,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "add new promotions", nickname = "addPromotion", code = 200)
+    @ApiOperation(value = "add new promotions", nickname = "addPromotion")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -473,7 +456,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "remove/deactivate promotions", nickname = "deletePromotion", code = 200)
+    @ApiOperation(value = "remove/deactivate promotions", nickname = "deletePromotion")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -488,7 +471,7 @@ public class OrganizationController {
 
 
 
-    @ApiOperation(value = "cancelling the registration of an organization into a certain shipping service", nickname = "unregisterShippingService", code = 200)
+    @ApiOperation(value = "cancelling the registration of an organization into a certain shipping service", nickname = "unregisterShippingService")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -505,7 +488,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "delete an organization setting", nickname = "deleteSetting", code = 200)
+    @ApiOperation(value = "delete an organization setting", nickname = "deleteSetting")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -521,7 +504,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "add/udpate an organization setting", nickname = "udpateSetting", code = 200)
+    @ApiOperation(value = "add/udpate an organization setting", nickname = "udpateSetting")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -537,7 +520,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -553,7 +536,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "get cart optimization strategies for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiOperation(value = "get cart optimization strategies for the organization or the shipping service", nickname = "setCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -568,7 +551,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "get all cart optimization strategies", nickname = "getAllCartOptimization", code = 200)
+    @ApiOperation(value = "get all cart optimization strategies", nickname = "getAllCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -582,7 +565,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "get all organization shops including warehouses", nickname = "getAllShops", code = 200)
+    @ApiOperation(value = "get all organization shops including warehouses", nickname = "getAllShops")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -595,7 +578,7 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Get Organization subscribed users", nickname = "getSubscribedUsers", code = 200)
+    @ApiOperation(value = "Get Organization subscribed users", nickname = "getSubscribedUsers")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -606,7 +589,7 @@ public class OrganizationController {
         return orgService.getSubscribedUsers();
     }
 
-    @ApiOperation(value = "Remove Organization subscribed user", nickname = "removeSubscribedUser", code = 200)
+    @ApiOperation(value = "Remove Organization subscribed user", nickname = "removeSubscribedUser")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),

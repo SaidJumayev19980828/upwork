@@ -7,9 +7,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+@NoArgsConstructor
 public class CartItem {
 	private Long id;
 	private Long productId;
@@ -27,4 +29,10 @@ public class CartItem {
 	private Integer productType;
 	private BigDecimal discount;
 	private Map<String,Object> additionalData;
+
+	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {
+		this.stockId = stockId;
+		this.quantity = quantity;
+		this.additionalData = additionalData;
+	}
 }

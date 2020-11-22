@@ -136,10 +136,10 @@ public class WishlistServiceImpl implements WishlistService{
         if(!wishlistRepo.existsByIdAndUser_Id(itemId, user.getId())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE ,O$WISH$0002 ,itemId);
         }
-
+        Long stockId = wishlistRepo.findWishlistItemStockId(itemId, user.getId());
         Integer qty = ofNullable(item.getQuantity()).orElse(1);
-        wishlistRepo.moveToCart(itemId, qty, user.getId());
-        return cartService.getCart();
+        CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData());
+        return cartService.addCartItem(cartItem);
     }
 
 
