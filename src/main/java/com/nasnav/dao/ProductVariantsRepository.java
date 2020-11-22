@@ -42,7 +42,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
-			+ " where variant.id in :idList")
+			+ " where variant.id in :idList and variant.productEntity.removed = 0")
 	List<VariantBasicData> findVariantBasicDataByIdIn(@Param("idList") List<Long> idList);
 	
 	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
