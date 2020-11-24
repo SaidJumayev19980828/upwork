@@ -4,7 +4,6 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.PromotionStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.*;
-import static java.lang.Long.MAX_VALUE;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDateTime.now;
@@ -18,6 +17,8 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 
@@ -25,7 +26,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dto.response.PromotionResponse;
-import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -135,16 +135,17 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	
 	private PromotionDTO createPromotionDTO(PromotionsEntity entity) {
+		ZoneId zoneId = ZoneId.of("UTC");
 		PromotionDTO dto = new PromotionDTO();
 		dto.setCode(entity.getCode());
 		dto.setConstrains(readJsonStrAsMap(entity.getConstrainsJson()));
 		dto.setCreatedOn(entity.getCreatedOn());
 		dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
-		dto.setEndDate(entity.getDateEnd());
+		dto.setEndDate(entity.getDateEnd().atZone(zoneId));
 		dto.setId(entity.getId());
 		dto.setIdentifier(entity.getIdentifier());
 		dto.setOrganizationId(entity.getOrganization().getId());
-		dto.setStartDate(entity.getDateStart());
+		dto.setStartDate(entity.getDateStart().atZone(zoneId));
 		dto.setStatus(getPromotionStatusName(entity.getStatus()));
 		dto.setUserId(entity.getCreatedBy().getId());
 		dto.setUserName(entity.getCreatedBy().getName());
@@ -330,8 +331,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setCode(codeUpperCase);
 		entity.setConstrainsJson(serializeMap(promotion.getConstrains()));
 		entity.setCreatedBy(user);
-		entity.setDateEnd(promotion.getEndDate());
-		entity.setDateStart(promotion.getStartDate());
+		entity.setDateEnd(promotion.getEndDate().toLocalDateTime());
+		entity.setDateStart(promotion.getStartDate().toLocalDateTime());
 		entity.setDiscountJson(serializeMap(promotion.getDiscount()));
 		entity.setIdentifier(promotion.getIdentifier());
 		entity.setOrganization(organization);
@@ -380,7 +381,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0003);
 		}
-		if(promotion.getEndDate().isBefore(now())) {
+		if(promotion.getEndDate().isBefore(ZonedDateTime.now())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}

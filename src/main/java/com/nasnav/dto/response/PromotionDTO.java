@@ -1,11 +1,10 @@
 package com.nasnav.dto.response;
 
-import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -17,12 +16,9 @@ public class PromotionDTO {
 	private Long id;
 	private String identifier;
 	private Long organizationId;
-	
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DEFAULT_TIMESTAMP_PATTERN)
-	private LocalDateTime startDate;
-	
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DEFAULT_TIMESTAMP_PATTERN)
-	private LocalDateTime endDate;
+
+	private ZonedDateTime startDate;
+	private ZonedDateTime endDate;
 	
 	private String status;
 	private String code;

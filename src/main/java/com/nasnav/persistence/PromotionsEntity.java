@@ -11,6 +11,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.Data;
@@ -34,6 +36,8 @@ public class PromotionsEntity {
 
 	@ManyToOne
 	@JoinColumn(name = "organization_id")
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
 	private OrganizationEntity organization;
 	
 	@Column(name="date_start")
@@ -59,6 +63,8 @@ public class PromotionsEntity {
 	
 	@ManyToOne
 	@JoinColumn(name="created_by")
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
 	private EmployeeUserEntity createdBy;
 	
 	@Column(name="created_on")

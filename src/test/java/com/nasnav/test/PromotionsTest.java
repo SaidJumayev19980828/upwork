@@ -14,6 +14,8 @@ import static org.springframework.http.HttpMethod.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -344,9 +346,25 @@ public class PromotionsTest {
         		template.exchange("/organization/promotion", POST, req, String.class);
         assertEquals(406, res.getStatusCodeValue());
 	}
-	
-	
-	
+
+
+	@Test
+	public void createPromotionsUsingZonedDateTimeTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		LocalDateTime startDate = now().withNano(0).plusDays(2);
+		ZoneId utcZone = ZoneId.of("UTC");
+		ZonedDateTime startDateWithZone = startDate.atZone(utcZone);
+		bodyJson.put("start_date", startDateWithZone.format(formatter));
+		String body = bodyJson.toString();
+
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<Long> res =
+				template.exchange("/organization/promotion", POST, req, Long.class);
+		assertEquals(200, res.getStatusCodeValue());
+		LocalDateTime entityStartDate = promoRepo.findById(res.getBody()).get().getDateStart();
+		assertEquals(startDate, entityStartDate);
+		assertPromoUpdated(bodyJson, res);
+	}
 	
 	
 	@Test
