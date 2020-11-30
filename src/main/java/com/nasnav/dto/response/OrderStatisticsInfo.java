@@ -12,6 +12,7 @@ import java.util.Date;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderStatisticsInfo {
     private Date date;
+    private String name;
     private Integer statusInt;
     private String status;
     private Long count;
