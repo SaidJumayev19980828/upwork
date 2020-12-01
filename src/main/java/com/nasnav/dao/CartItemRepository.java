@@ -1,8 +1,9 @@
 package com.nasnav.dao;
 
 import java.util.List;
-import java.util.Optional;
 
+import com.nasnav.dto.Pair;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,19 +31,16 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
-	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
-			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec "
-			+ " , item.coverImage, stock.price, item.quantity"
-			+ " , brand.id, brand.name, brand.logo, product.name, product.productType, stock.discount"
-			+"  , item.additionalData) "
+	@Query("SELECT new com.nasnav.dto.Pair(variant.id, count(user.id)) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
-			+ " LEFT JOIN BrandsEntity brand on product.brandId = brand.id "
-			+ " WHERE product.organizationId = :orgId and product.removed = 0 and variant.removed = 0")
-	List<CartItemData> findCartsByOrg_Id(@Param("orgId") Long orgId);
+			+ " WHERE product.organizationId = :orgId and product.removed = 0 and variant.removed = 0 "
+			+ " group by variant.id order by count(user.id) desc ")
+	List<Pair> findCartVariantsByOrg_Id(@Param("orgId") Long orgId, Pageable pageable);
+
 
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartCheckoutData("
 			+ " item.id, stock.id, stock.currency, stock.price, item.quantity,"

@@ -17,6 +17,6 @@ public class ProductStatisticsInfo {
     private Long variantId;
     private String variantName;
     private Long count;
-    private BigDecimal price;
+    private BigDecimal total;
     private Date date;
 }

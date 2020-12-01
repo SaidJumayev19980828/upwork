@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -167,4 +168,23 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" GROUP BY product.id, product.name, variant.id, variant.name, DATE_TRUNC('month',subOrder.creationDate)" +
 			" order by DATE_TRUNC('month',subOrder.creationDate) desc, COUNT(product.id) desc")
 	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId);
+
+	@Query("SELECT sum(stock.price) " +
+			" FROM OrdersEntity subOrder " +
+			" left join subOrder.basketsEntity basket " +
+			" left join basket.stocksEntity stock " +
+			" left join stock.productVariantsEntity variant " +
+			" left join variant.productEntity product " +
+			" where product.organizationId = :orgId and EXTRACT(MONTH  FROM subOrder.creationDate) = :month")
+	BigDecimal getTotalIncomePerMonth(@Param("orgId") Long orgId, @Param("month") Integer month);
+
+	@Query("SELECT COUNT(basket.quantity) " +
+			" FROM OrdersEntity subOrder " +
+			" left join subOrder.basketsEntity basket " +
+			" left join basket.stocksEntity stock " +
+			" left join stock.productVariantsEntity variant " +
+			" left join variant.productEntity product " +
+			" where product.organizationId = :orgId and (extract('day' from date_trunc('week', subOrder.creationDate) - " +
+			" date_trunc('week', date_trunc('month', subOrder.creationDate))) / 7 + 1) = :week ")
+	Integer getSalesPerWeek(@Param("orgId") Long orgId, @Param("week") Integer week);
 }

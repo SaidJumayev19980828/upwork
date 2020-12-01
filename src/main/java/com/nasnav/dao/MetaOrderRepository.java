@@ -157,12 +157,23 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 
 	@Query("SELECT new com.nasnav.dto.response.OrderStatisticsInfo(DATE_TRUNC('month', meta.createdAt) AS date," +
 			" meta.status," +
-			" COUNT(meta.id) AS count," +
-			" sum(meta.grandTotal) as income) " +
+			" COUNT(meta.id) AS count) " +
 			" FROM MetaOrderEntity meta " +
-			" where meta.organization.id = :orgId " +
+			" where meta.organization.id = :orgId and meta.status in :statuses " +
 			" GROUP BY meta.status, DATE_TRUNC('month',meta.createdAt)" +
 			" order by DATE_TRUNC('month',meta.createdAt)")
-	List<OrderStatisticsInfo> getOrderStatisticsPerMonth(@Param("orgId") Long orgId);
+	List<OrderStatisticsInfo> getOrderIncomeStatisticsPerMonth(@Param("orgId") Long orgId,
+															   @Param("statuses") List<Integer> statuses);
+
+
+	@Query("SELECT new com.nasnav.dto.response.OrderStatisticsInfo(DATE_TRUNC('month', meta.createdAt) AS date," +
+			" meta.status," +
+			" sum(meta.grandTotal) as income) " +
+			" FROM MetaOrderEntity meta " +
+			" where meta.organization.id = :orgId and meta.status in :statuses and meta.grandTotal is not null " +
+			" GROUP BY meta.status, DATE_TRUNC('month',meta.createdAt)" +
+			" order by DATE_TRUNC('month',meta.createdAt)")
+	List<OrderStatisticsInfo> getOrderCountStatisticsPerMonth(@Param("orgId") Long orgId,
+															  @Param("statuses") List<Integer> statuses);
 }
 
