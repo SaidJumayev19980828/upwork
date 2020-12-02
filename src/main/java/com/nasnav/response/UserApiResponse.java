@@ -54,9 +54,15 @@ public class UserApiResponse {
         this.status = statuses;
     }
 
-    public UserApiResponse(Long entityId, String orgUrl) {
+    public UserApiResponse(Long entityId, String orgUrl, String token) {
         this.entityId = entityId;
         this.orgUrl = orgUrl;
+        this.token = token;
+    }
+
+    public UserApiResponse(Long entityId, String token) {
+        this.entityId = entityId;
+        this.token = token;
     }
 
     public UserApiResponse(List<ResponseStatus> statuses) {

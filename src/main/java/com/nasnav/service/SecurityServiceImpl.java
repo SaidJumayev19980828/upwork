@@ -154,9 +154,7 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	@Transactional
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
-	public UserApiResponse logoutAll() {
-		BaseUserEntity user = getCurrentUser();
-
+	public UserApiResponse logoutAll(BaseUserEntity user) {
 		if ( user instanceof EmployeeUserEntity) {
 			userTokenRepo.deleteByEmployeeUserEntity( (EmployeeUserEntity)user);
 		} else {
@@ -165,6 +163,14 @@ public class SecurityServiceImpl implements SecurityService {
 		Cookie c = createCookie(null, true);
 
 		return new UserApiResponse(c);
+	}
+
+	@Override
+	@Transactional
+	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
+	public UserApiResponse logoutAll() {
+		BaseUserEntity user = getCurrentUser();
+		return logoutAll(user);
 	}
 
 

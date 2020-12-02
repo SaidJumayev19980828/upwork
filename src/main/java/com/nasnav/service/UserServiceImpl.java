@@ -397,6 +397,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
 		userServicesHelper.validateNewPassword(data.password);
 		userServicesHelper.validateToken(data.token);
@@ -410,10 +411,19 @@ public class UserServiceImpl implements UserService {
 		userEntity = userRepository.saveAndFlush(userEntity);
 
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
+		String token = resetRecoveredUserTokens(userEntity);
 
-		return new UserApiResponse(userEntity.getId(), orgDomain);
+		return new UserApiResponse(userEntity.getId(), orgDomain, token);
 	}
 
+
+	private String resetRecoveredUserTokens(UserEntity user) {
+		securityService.logoutAll(user);
+		UserTokensEntity tokenEntity = new UserTokensEntity();
+		tokenEntity.setUserEntity(user);
+		tokenEntity.setToken(generateUUIDToken());
+		return userTokenRepo.save(tokenEntity).getToken();
+	}
 	
 
 	@Override
