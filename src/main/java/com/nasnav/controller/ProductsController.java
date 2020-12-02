@@ -474,7 +474,7 @@ public class ProductsController {
                                         @RequestParam(name = "product_id") Long productId,
                                         @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-        return productService.getProduct(productId, shopId, false);
+        return productService.getProduct(productId, shopId, false, true);
     }
 
 

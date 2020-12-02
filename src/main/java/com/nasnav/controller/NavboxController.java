@@ -163,9 +163,11 @@ public class NavboxController {
 			})
 	@GetMapping(value="/product",produces=APPLICATION_JSON_VALUE)
 	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
-										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
+										@RequestParam(name = "shop_id",required=false) Long shopId,
+										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
+			throws BusinessException {
 
-		return productService.getProduct(productId, shopId, true);
+		return productService.getProduct(productId, shopId, true, includeOutOfStock);
 	}
 
 

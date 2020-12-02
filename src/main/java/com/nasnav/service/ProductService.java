@@ -275,13 +275,13 @@ public class ProductService {
 
 
 	@Transactional
-	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants) throws BusinessException{
+	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants, boolean includeOutOfStock) throws BusinessException{
 		ProductEntity product =
 				productRepository
 					.findByProductId( ofNullable(productId).orElse(-1L))
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productId));
 
-		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants);
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants, includeOutOfStock);
 
 		return createProductDetailsDTO(product, shopId, productVariants);
 	}
@@ -383,8 +383,8 @@ public class ProductService {
 	
 	
 	
-	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants) throws BusinessException {
-		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants, boolean includeOutOfStock) throws BusinessException {
+		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId(), includeOutOfStock);
 		if ((productVariants == null || productVariants.isEmpty()) && checkVariants) {
 			throw new BusinessException(
 					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
@@ -622,7 +622,7 @@ public class ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		return getProductResponseFromStocks(result, productsCount);
+		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock.booleanValue());
 	}
 
 
@@ -907,6 +907,10 @@ public class ProductService {
 			predicate.and( stock.price.gt(ZERO));
 		}
 
+		if(!params.include_out_of_stock) {
+			predicate.and( stock.price.gt(ZERO));
+		}
+
 		predicate.and( shop.removed.eq(0) );
 
 		return predicate;
@@ -958,7 +962,10 @@ public class ProductService {
 		params.show_free_products = isShowFreeProductsAllowed(orgSettings);
 		
 		params.hide_empty_stocks = isHideEmptyStocksAllowed(params, orgSettings);
-		
+
+		if (params.include_out_of_stock == null)
+			params.include_out_of_stock = false;
+
 		return params;
 	}
 
@@ -1048,7 +1055,7 @@ public class ProductService {
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks,
-														  Long productsCount) {
+														  Long productsCount, boolean includeOutOfStock) {
 		if(stocks != null && !stocks.isEmpty()) {
 			List<Long> stocksIds = stocks.stream()
 					.map(ProductRepresentationObject::getStockId)
@@ -1061,12 +1068,12 @@ public class ProductService {
 			List<Long> variantsIds = productVariantsRepository.getVariantsIdsByStocksIds(stocksIds);
 
 			Map<Long, Prices> productsPricesMap =
-					mapInBatches(productIdList, 500, stockRepository::getProductsPrices)
+					mapInBatches(productIdList, 500, ids -> stockRepository.getProductsPrices(ids, includeOutOfStock))
 					.stream()
 					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
 			Map<Long, Prices> collectionsPricesMap =
-					mapInBatches(productIdList, 500, stockRepository::getCollectionsPrices)
+					mapInBatches(productIdList, 500, ids -> stockRepository.getCollectionsPrices(ids, includeOutOfStock))
 							.stream()
 							.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 

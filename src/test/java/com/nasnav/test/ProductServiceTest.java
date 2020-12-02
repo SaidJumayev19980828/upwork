@@ -161,7 +161,8 @@ public class ProductServiceTest {
 	public void getProductWithVariantsWithoutStock() {
 		ProductTestData testData = createProductTestDataWithoutStocks();
 		//-----------------------------------------
-		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId(),
+		ResponseEntity<String> response =
+				template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId()+"&include_out_of_stock=true",
 				String.class);
 		//-----------------------------------------
 		System.out.println("product without stocks >>> " + response.getBody());

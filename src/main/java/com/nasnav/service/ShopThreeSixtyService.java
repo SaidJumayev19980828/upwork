@@ -25,13 +25,12 @@ import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import org.apache.tika.io.IOUtils;
-import org.json.JSONObject;
+import lombok.Builder;
+import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +42,6 @@ import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopScenesRequestDTO;
 import com.nasnav.dto.ShopSectionsRequestDTO;
 import com.nasnav.dto.ShopThreeSixtyDTO;
-import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
@@ -599,8 +597,8 @@ public class ShopThreeSixtyService {
     }
 
 
-    public LinkedHashMap getShop360Products(Long shopId, String name, Integer count, Integer productType,
-                                            Short published, boolean has360) throws BusinessException {
+    public LinkedHashMap<String,List<ThreeSixtyProductsDTO>> getShop360Products(Long shopId, String name, Integer count, Integer productType,
+                                            Short published, boolean has360, boolean includeOutOfStock) throws BusinessException {
         if (!shopRepo.existsById(shopId))
             throw new BusinessException("Provided shop_id doesn't match any existing shop!",
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
@@ -610,33 +608,45 @@ public class ShopThreeSixtyService {
         List<ThreeSixtyProductsDTO> collections = new ArrayList<>();
 
         List<Short> publishedFilter = normalizePublishedFilter(published);
-        return fetchProductsAndCollections(shopId, name, productType, has360, count, publishedFilter, products, collections);
+        ProductFetchParams params =
+                ProductFetchParams
+                .builder()
+                .shopId(shopId)
+                .name(name)
+                .productType(productType)
+                .has360(has360)
+                .count(count)
+                .publishedFilter(publishedFilter)
+                .products(products)
+                .collections(collections)
+                .includeOutOfStock(includeOutOfStock)
+                .build();
+        return fetchProductsAndCollections(params);
     }
 
 
-    private LinkedHashMap fetchProductsAndCollections(Long shopId, String name, Integer productType, boolean has360, Integer count,
-                                                      List<Short> publishedFilter, List<ThreeSixtyProductsDTO> products,
-                                                      List<ThreeSixtyProductsDTO> collections) {
-        if (isFindProductsRequired(productType)) {
-            products = productsRepo.find360Products(name, shopId, has360, publishedFilter, PageRequest.of(0, count));
-            if (products.size() > 0) {
-                products = getProductsListAdditionalData(products);
+
+    private LinkedHashMap<String,List<ThreeSixtyProductsDTO>> fetchProductsAndCollections(ProductFetchParams productFetchParams) {
+        if (isFindProductsRequired(productFetchParams.getProductType())) {
+            productFetchParams.setProducts(productsRepo.find360Products(productFetchParams.getName(), productFetchParams.getShopId(), productFetchParams.isHas360(), productFetchParams.getPublishedFilter(), PageRequest.of(0, productFetchParams.getCount())));
+            if (productFetchParams.getProducts().size() > 0) {
+                productFetchParams.setProducts(getProductsListAdditionalData(productFetchParams.getProducts(), productFetchParams.isIncludeOutOfStock()));
             }
         }
 
-        if (isFindCollectionsRequired(productType)) {
-            collections = productsRepo.find360Collections(name, shopId, has360, publishedFilter, PageRequest.of(0, count));
-            if (collections.size() > 0) {
-                collections = getCollectionsListAdditionalData(collections);
+        if (isFindCollectionsRequired(productFetchParams.getProductType())) {
+            productFetchParams.setCollections(productsRepo.find360Collections(productFetchParams.getName(), productFetchParams.getShopId(), productFetchParams.isHas360(), productFetchParams.getPublishedFilter(), PageRequest.of(0, productFetchParams.getCount())));
+            if (productFetchParams.getCollections().size() > 0) {
+                productFetchParams.setCollections(getCollectionsListAdditionalData(productFetchParams.getCollections(), productFetchParams.isIncludeOutOfStock()));
             }
         }
 
-        products.addAll(collections);
-        if (products.size() > count) {
-            products = products.subList(0,count);
+        productFetchParams.getProducts().addAll(productFetchParams.getCollections());
+        if (productFetchParams.getProducts().size() > productFetchParams.getCount()) {
+            productFetchParams.setProducts(productFetchParams.getProducts().subList(0, productFetchParams.getCount()));
         }
-        LinkedHashMap response = new LinkedHashMap();
-        response.put("products", products);
+        LinkedHashMap<String,List<ThreeSixtyProductsDTO>> response = new LinkedHashMap<>();
+        response.put("products", productFetchParams.getProducts());
         return response;
     }
 
@@ -651,10 +661,10 @@ public class ShopThreeSixtyService {
     }
 
 
-    private List<ThreeSixtyProductsDTO> getProductsListAdditionalData(List<ThreeSixtyProductsDTO> products) {
+    private List<ThreeSixtyProductsDTO> getProductsListAdditionalData(List<ThreeSixtyProductsDTO> products, boolean includeOutOfStock) {
         List<Long> productIds = products.stream().map(p -> p.getId()).collect(toList());
         Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
-        Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
+        Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds, includeOutOfStock)
                 .stream()
                 .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
@@ -662,11 +672,11 @@ public class ShopThreeSixtyService {
     }
 
 
-    private List<ThreeSixtyProductsDTO> getCollectionsListAdditionalData(List<ThreeSixtyProductsDTO> collections) {
+    private List<ThreeSixtyProductsDTO> getCollectionsListAdditionalData(List<ThreeSixtyProductsDTO> collections, boolean includeOutOfStock) {
         List<Long> collectionIds = collections.stream().map(p -> p.getId()).collect(toList());
 
         Map<Long, List<ProductImagesEntity>> collectionsImagesMap = productImageService.getProductsImageList(collectionIds);
-        Map<Long, Prices> collectionsPricesMap = stockRepo.getCollectionsPrices(collectionIds)
+        Map<Long, Prices> collectionsPricesMap = stockRepo.getCollectionsPrices(collectionIds, includeOutOfStock)
                 .stream()
                 .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
@@ -821,5 +831,22 @@ public class ShopThreeSixtyService {
         }
 
         scenesRepo.delete(scene.get());
+    }
+
+
+
+
+    @Builder
+    @Data
+    private static class ProductFetchParams {
+        private final Long shopId;
+        private final String name;
+        private final Integer productType;
+        private final boolean has360;
+        private final Integer count;
+        private final List<Short> publishedFilter;
+        private List<ThreeSixtyProductsDTO> products;
+        private List<ThreeSixtyProductsDTO> collections;
+        private final boolean includeOutOfStock;
     }
 }

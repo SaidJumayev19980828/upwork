@@ -16,7 +16,12 @@ import com.nasnav.service.model.VariantBasicData;
 
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
-	List<ProductVariantsEntity> findByProductEntity_Id(Long productId);
+
+	@Query("select v from ProductVariantsEntity v left join fetch v.productEntity p " +
+			" left join fetch v.stocks s" +
+			" where p.id = :id and (:includeOutOfStock = true OR s.quantity > 0)")
+	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId,
+													   @Param("includeOutOfStock") boolean includeOutOfStock);
 
 	List<ProductVariantsEntity> findByProductEntity_IdIn(List<Long> productIdsList);
 

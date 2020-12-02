@@ -107,15 +107,17 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 
 	@Query(value = "select NEW com.nasnav.dto.Prices(p.id, MIN(s.price) , MAX(s.price) )" +
 			" from StocksEntity s join ProductVariantsEntity v on s.productVariantsEntity = v join ProductEntity p on v.productEntity = p" +
-			" where p.id in :productIds group by p.id")
-	List<Prices> getProductsPrices(@Param("productIds") List<Long> productIds);
+			" where p.id in :productIds and (:includeOutOfStock = true OR s.quantity > 0) group by p.id")
+	List<Prices> getProductsPrices(@Param("productIds") List<Long> productIds,
+								   @Param("includeOutOfStock") boolean includeOutOfStock);
 
 
 	@Query(value = "select NEW com.nasnav.dto.Prices(p.id, MIN(s.price) , MAX(s.price) )" +
 			" from ProductCollectionEntity p join p.variants v " +
 			" join v.stocks s" +
-			" where p.id in :productIds group by p.id")
-	List<Prices> getCollectionsPrices(@Param("productIds") List<Long> productIds);
+			" where p.id in :productIds and (:includeOutOfStock = true OR s.quantity > 0) group by p.id")
+	List<Prices> getCollectionsPrices(@Param("productIds") List<Long> productIds,
+									  @Param("includeOutOfStock") boolean includeOutOfStock);
 	
 	
 	@Query("SELECT stock FROM StocksEntity stock "
