@@ -1,10 +1,13 @@
 package com.nasnav.dao;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.nasnav.persistence.UserEntity;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
@@ -52,4 +55,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
 	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
+
+	@Query("select count (u.id) from UserEntity u where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth")
+	Long getNewCustomersCountPerMonth(@Param("orgId") Long orgId,
+									  @Param("minMonth") LocalDateTime minMonth,
+									  @Param("maxMonth") LocalDateTime maxMonth);
 }

@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -175,16 +176,19 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join basket.stocksEntity stock " +
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
-			" where product.organizationId = :orgId and EXTRACT(MONTH  FROM subOrder.creationDate) = :month")
-	BigDecimal getTotalIncomePerMonth(@Param("orgId") Long orgId, @Param("month") Integer month);
+			" where product.organizationId = :orgId and subOrder.creationDate between :minMonth and :maxMonth")
+	BigDecimal getTotalIncomePerMonth(@Param("orgId") Long orgId,
+									  @Param("minMonth") LocalDateTime minMonth,
+									  @Param("maxMonth") LocalDateTime maxMonth);
 
-	@Query("SELECT COUNT(basket.quantity) " +
+	@Query("SELECT sum(basket.quantity) " +
 			" FROM OrdersEntity subOrder " +
 			" left join subOrder.basketsEntity basket " +
 			" left join basket.stocksEntity stock " +
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
-			" where product.organizationId = :orgId and (extract('day' from date_trunc('week', subOrder.creationDate) - " +
-			" date_trunc('week', date_trunc('month', subOrder.creationDate))) / 7 + 1) = :week ")
-	Integer getSalesPerWeek(@Param("orgId") Long orgId, @Param("week") Integer week);
+			" where product.organizationId = :orgId and subOrder.creationDate between :minWeek and :maxWeek")
+	Integer getSalesPerWeek(@Param("orgId") Long orgId,
+							@Param("minWeek") LocalDateTime minWeek,
+							@Param("maxWeek") LocalDateTime maxWeek);
 }

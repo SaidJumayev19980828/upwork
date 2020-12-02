@@ -8,6 +8,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
 @Data
@@ -21,6 +22,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
 	private String name;
 
     @Column(name = "remember_created_at")
+    @CreationTimestamp
     private LocalDateTime rememberCreatedAt;
 
     @Column(name = "created_by")

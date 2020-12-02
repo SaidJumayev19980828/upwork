@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
@@ -31,6 +32,8 @@ public class StatisticsService {
     private MetaOrderRepository metaOrderRepo;
     @Autowired
     private CartItemRepository cartItemRepo;
+    @Autowired
+    private UserRepository userRepo;
 
     public List<OrderStatisticsInfo> getOrderStatistics(List<OrderStatus> statuses, RequestType type) {
         if (type == null || statuses == null || statuses.isEmpty())
@@ -92,14 +95,38 @@ public class StatisticsService {
                 .collect(groupingBy(ProductStatisticsInfo::getDate));
     }
 
-    public Map getSalesStatistics(Integer month, Integer week) {
+    public Map getSalesStatistics(Integer monthNumber, Integer week) {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        BigDecimal income = ordersRepo.getTotalIncomePerMonth(orgId, month);
-        Integer sales = ordersRepo.getSalesPerWeek(orgId, week);
+
+        LocalDateTime maxMonth = getMaxMonth(monthNumber);
+        LocalDateTime minMonth = getMinMonth(maxMonth);
+
+        LocalDateTime minWeek = minMonth.plusWeeks( (week-1) );
+        LocalDateTime maxWeek = minWeek.plusWeeks( 1 );
+
+        BigDecimal income = ordersRepo.getTotalIncomePerMonth(orgId, minMonth, maxMonth);
+        Integer sales = ordersRepo.getSalesPerWeek(orgId, minWeek, maxWeek);
 
         LinkedHashMap map = new LinkedHashMap();
         map.put("monthly_income", income);
         map.put("weekly_sales", sales);
         return map;
+    }
+
+    public Long getNewCustomersPerMonth(Integer monthNumber) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        LocalDateTime maxMonth = getMaxMonth(monthNumber);
+        LocalDateTime minMonth = getMinMonth(maxMonth);
+        return userRepo.getNewCustomersCountPerMonth(orgId, minMonth, maxMonth);
+    }
+
+    private LocalDateTime getMaxMonth(Integer monthNumber) {
+        Integer finalMonthNumber = monthNumber == 12 ? 1 : monthNumber + 1;
+        return (finalMonthNumber == 1 ? LocalDateTime.now().plusYears(1) : LocalDateTime.now() )
+                .withMonth(finalMonthNumber).withDayOfMonth(1).withHour(11).withMinute(59).withSecond(59).minusDays(1);
+    }
+
+    private LocalDateTime getMinMonth(LocalDateTime maxMonth) {
+        return maxMonth.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
     }
 }

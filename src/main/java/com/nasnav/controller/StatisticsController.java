@@ -42,4 +42,10 @@ public class StatisticsController {
         return statisticsService.getSalesStatistics(month, week);
     }
 
+    @GetMapping("new_users")
+    public Long getSalesStatistics(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                  @RequestParam Integer month) {
+        return statisticsService.getNewCustomersPerMonth(month);
+    }
+
 }
