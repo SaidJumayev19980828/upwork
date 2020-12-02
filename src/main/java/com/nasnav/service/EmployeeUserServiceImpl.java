@@ -171,9 +171,15 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				.orElse(currentUser);
 
 		List<String> updatedUserNewRoles = extractRoles(employeeUserJson);
+		if (!updatedUserNewRoles.isEmpty()) {
+			empUserSvcHelper.isValidRolesList(updatedUserNewRoles);
+		}
 		List<String> updatedUserOldRoles = empUserSvcHelper.getEmployeeUserRoles(updatedUserId);
 		List<String> allRolesToCheck = CollectionUtils.concat(updatedUserNewRoles, updatedUserOldRoles);
+
 		validateCurrentUserCanManageEmpAccount(updateUser.getOrganizationId(), updateUser.getShopId(), allRolesToCheck);
+
+		empUserSvcHelper.createRoles(updatedUserNewRoles, updatedUserId, updateUser.getOrganizationId());
 
 		return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
 	}
