@@ -4,10 +4,10 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import com.nasnav.commons.utils.CollectionUtils;
-import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.UserTokensEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,7 @@ import com.nasnav.service.helpers.UserServicesHelper;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
+import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.*;
@@ -49,6 +50,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private UserServicesHelper empUserSvcHelper;
 	@Autowired
 	private ShopsRepository shopRepo;
+	@Autowired
+	private UserTokenRepository userTokenRepo;
 
 	@Override
 	@Transactional
@@ -213,6 +216,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 
 	@Override
+	@Transactional
 	public UserApiResponse recoverUser(PasswordResetObject data) {
 		empUserSvcHelper.validateNewPassword(data.password);
 		empUserSvcHelper.validateToken(data.token);
@@ -220,13 +224,22 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 												.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));
 
 		empUserSvcHelper.checkResetPasswordTokenExpiry(employeeUserEntity.getResetPasswordSentAt());
-
 		employeeUserEntity.setResetPasswordToken(null);
 		employeeUserEntity.setResetPasswordSentAt(null);
 		employeeUserEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
 		employeeUserEntity = employeeUserRepository.saveAndFlush(employeeUserEntity);
 
-		return new UserApiResponse(employeeUserEntity.getId());
+		String token = resetRecoveredUserTokens(employeeUserEntity);
+
+		return new UserApiResponse(employeeUserEntity.getId(), token);
+	}
+
+	private String resetRecoveredUserTokens(EmployeeUserEntity user) {
+		securityService.logoutAll(user);
+		UserTokensEntity tokenEntity = new UserTokensEntity();
+		tokenEntity.setEmployeeUserEntity(user);
+		tokenEntity.setToken(generateUUIDToken());
+		return userTokenRepo.save(tokenEntity).getToken();
 	}
 
 

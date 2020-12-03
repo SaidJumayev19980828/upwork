@@ -35,6 +35,8 @@ public interface SecurityService {
 	
 	UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity token);
 
+    UserApiResponse logoutAll(BaseUserEntity entity);
+
     UserApiResponse logoutAll();
 
 	Optional<BaseUserEntity> getCurrentUserOptional();

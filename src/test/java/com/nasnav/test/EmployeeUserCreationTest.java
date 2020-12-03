@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.json.JSONObject;
@@ -70,6 +71,8 @@ public class EmployeeUserCreationTest {
 	
 	@Autowired
 	EmployeeUserRepository empRepository;
+	@Autowired
+	private UserTokenRepository tokenRepo;
 
 
 	@Before
@@ -1176,6 +1179,30 @@ public class EmployeeUserCreationTest {
 		assertEquals(200, response.getStatusCode().value());
 		EmployeeUserEntity emp = empRepository.findById(68L).get();
 		assertNotNull( emp.getResetPasswordToken());
+	}
+
+	@Test
+	public void testRecoverEmployeeRemovesOldTokens() {
+
+		Long oldTokensCount = tokenRepo.countByEmployeeUserEntity_Id(159L);
+		assertTrue(oldTokensCount.intValue() == 2);
+		String request = new JSONObject()
+				.put("password", "12345678")
+				.put("token", "d67438ac-f3a5-4939-9686-a1fc096f3f4f")
+				.put("employee", true)
+				.put("org_id", 99001)
+				.toString();
+
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<UserApiResponse> response =
+				template.postForEntity("/user/recover", userJson,	UserApiResponse.class);
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		String token = response.getBody().getToken();
+		boolean employeeUserLoggedIn = tokenRepo.existsByToken(token);
+		assertTrue("the recovered user should be logged in ", employeeUserLoggedIn );
+		Long newTokensCount = tokenRepo.countByEmployeeUserEntity_Id(159L);
+		assertTrue(newTokensCount.intValue() == 1);
 	}
 
 

@@ -120,7 +120,6 @@ public class UserRegisterTest {
 	@Autowired
 	private UserSubscriptionRepository subsRepo;
 
-
 	@Autowired
 	private ObjectMapper mapper;
 	
@@ -1186,6 +1185,30 @@ public class UserRegisterTest {
 		ResponseEntity<String> response =
 				template.exchange("/user/subscribe?email=invalidmail&org_id=99001", HttpMethod.POST, null, String.class);
 		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void testRecoverUserRemovesOldTokens() {
+
+		Long oldTokensCount = userTokenRepo.countByUserEntity_Id(88005L);
+		assertTrue(oldTokensCount.intValue() == 4);
+		String request = new JSONObject()
+				.put("password", "12345678")
+				.put("token", "d67438ac-f3a5-4939-9686-a1fc096f3f4f")
+				.put("employee", false)
+				.put("org_id", 99001)
+				.toString();
+
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<UserApiResponse> response =
+				template.postForEntity("/user/recover", userJson,	UserApiResponse.class);
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		String token = response.getBody().getToken();
+		boolean userLoggedIn = userTokenRepo.existsByToken(token);
+		assertTrue("the recovered user should be logged in ", userLoggedIn );
+		Long newTokensCount = userTokenRepo.countByUserEntity_Id(88005L);
+		assertTrue(newTokensCount.intValue() == 1);
 	}
 
 
