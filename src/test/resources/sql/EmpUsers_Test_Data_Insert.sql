@@ -45,8 +45,10 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 	VALUES (81, 'Hussien', 'testuser81@nasnav.com', 99002, '404142',  501);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'Walid', 'testuser3@nasnav.com', 99001, 'nopqrst',  502);
-INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrstt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password
+    , reset_password_token, reset_password_sent_at)
+	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrstt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru'
+	, 'd67438ac-f3a5-4939-9686-a1fc096f3f4f', now());
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100001, 'abcdefg', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100002, 'hijkllm', now(), 69, null);
@@ -64,6 +66,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100014, '404142', now(), 81, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100015, 'nopqrst', now(), 158, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100016, 'uvwxyz', now(), 159, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100017, 'qwerret', now(), 159, null);
 
 --inserting Users
 INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password)
