@@ -28,7 +28,7 @@ import org.springframework.util.MultiValueMap;
 
 public class TestCommons {
 	private static final String PROPERTIES_FILE_PATH = "test.database.properties";
-	
+
 
     public static String BaseURL = "";
     public static String TestUserEmail = "nonexistent@nasnav.com";
@@ -70,72 +70,72 @@ public class TestCommons {
         headers.setContentType(type);
         return new HttpEntity<>(json, headers);
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     /**
      * jdbi is a library for simplifying running sql
      * */
     public static Jdbi getJdbi() {
     	Properties props = getConnectionProps();
-    	
+
     	String url = props.getProperty("db.uri");
 		String username = props.getProperty("db.user");
 		String password = props.getProperty("db.password");
-		 
+
 		return Jdbi.create(url, username, password);
-    } 
-    
-    
-    
-    
-    
+    }
+
+
+
+
+
     private static Properties getConnectionProps() {
 		Properties properties = new Properties();
-			
+
 		try (InputStream in = new ClassPathResource(PROPERTIES_FILE_PATH).getInputStream()) {
 			if(in == null) {
 				String msg = ">>> Failed to read database properties file at [" + PROPERTIES_FILE_PATH + "] ...";
 				throw new IllegalStateException(msg);
 			}
-			
+
 			properties.load(in);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		return properties;
 	}
-    
-    
-    
+
+
+
     public static JSONObject json() {
     	return new JSONObject();
     }
-    
-    
-    
-    
+
+
+
+
     public static JSONArray jsonArray() {
     	return new JSONArray();
     }
-    
-    
-    
-    
+
+
+
+
     public static String readResource(Resource resource) throws IOException {
     	return new String( Files.readAllBytes(resource.getFile().toPath()) );
     }
-    
-    
-    
+
+
+
     public static Optional<String> extractAuthTokenFromCookies(ResponseEntity<?> response) {
-		return 
+		return
 			ofNullable(response)
 			.map(ResponseEntity::getHeaders)
-			.map(headers -> headers.getFirst(SET_COOKIE))						
+			.map(headers -> headers.getFirst(SET_COOKIE))
 			.map(TestCommons::readCookie)
 			.filter(cookie -> Objects.equals(cookie.get().getName(), TOKEN_HEADER))
 			.map(Optional::get)
@@ -143,7 +143,7 @@ public class TestCommons {
 	}
 
 
-	
+
 	private static Optional<Cookie> readCookie(String cookieStr){
 		return ofNullable(cookieStr)
 				.map(allCookieStr -> asList(allCookieStr.split(";")))
@@ -154,4 +154,16 @@ public class TestCommons {
 				.map(parts -> new Cookie(parts[0], parts[1]))
 				.findFirst();
 	}
+
+
+
+    public static String readResourceFileAsString(Resource resource) throws IOException {
+        return new String( readResourceFileBytes(resource) );
+    }
+
+
+
+    public static byte[] readResourceFileBytes(Resource resource) throws IOException {
+        return Files.readAllBytes(resource.getFile().toPath());
+    }
 }
