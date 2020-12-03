@@ -158,17 +158,18 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 
 	@Query("SELECT new com.nasnav.dto.response.ProductStatisticsInfo(" +
-			" product.id, product.name, variant.id, variant.name, COUNT(product.id) as cnt, sum(stock.price), " +
+			" product.id, variant.id, variant.name,variant.barcode,variant.sku, variant.productCode, COUNT(product.id) as cnt, sum(stock.price), " +
 			" DATE_TRUNC('month', subOrder.creationDate) AS date)" +
 			" FROM OrdersEntity subOrder " +
 			" left join subOrder.basketsEntity basket " +
 			" left join basket.stocksEntity stock " +
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
-			" where product.organizationId = :orgId " +
+			" where product.organizationId = :orgId and subOrder.creationDate >= :startDate" +
 			" GROUP BY product.id, product.name, variant.id, variant.name, DATE_TRUNC('month',subOrder.creationDate)" +
 			" order by DATE_TRUNC('month',subOrder.creationDate) desc, COUNT(product.id) desc")
-	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId);
+	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId,
+															  @Param("startDate") LocalDateTime startDate);
 
 	@Query("SELECT sum(stock.price) " +
 			" FROM OrdersEntity subOrder " +

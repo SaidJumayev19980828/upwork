@@ -9,8 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Map;
-import java.text.DateFormatSymbols;
 
 
 @Data
@@ -22,10 +20,6 @@ public class OrderStatisticsInfo {
     private String month;
     private String name;
     private String status;
-    @JsonProperty("count_per_status")
-    private Map<String, Long> statusToCount;
-    @JsonProperty("total_per_status")
-    private Map<String, BigDecimal> statusToTotal;
     private Long count;
     @JsonProperty("total")
     private BigDecimal income;
@@ -34,12 +28,6 @@ public class OrderStatisticsInfo {
         this.date = date;
         this.status = OrderStatus.findEnum(statusInt).name();
         this.income = income;
-    }
-
-    public OrderStatisticsInfo(Date date, Map<String, Long> statusToCount, Map<String, BigDecimal> statusToTotal) {
-        this.month = DateFormatSymbols.getInstance().getMonths()[date.getMonth()-1];
-        this.statusToCount = statusToCount;
-        this.statusToTotal = statusToTotal;
     }
 
     public OrderStatisticsInfo(Date date, Integer statusInt, Long count) {

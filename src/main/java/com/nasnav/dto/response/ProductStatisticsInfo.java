@@ -1,5 +1,6 @@
 package com.nasnav.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
@@ -13,10 +14,13 @@ import java.util.Date;
 @AllArgsConstructor
 public class ProductStatisticsInfo {
     private Long productId;
-    private String productName;
     private Long variantId;
     private String variantName;
-    private Long count;
+    private String barcode;
+    private String sku;
+    private String productCode;
+    private Long quantity;
     private BigDecimal total;
+    @JsonIgnore
     private Date date;
 }

@@ -2,7 +2,7 @@ package com.nasnav.dao;
 
 import java.util.List;
 
-import com.nasnav.dto.Pair;
+import com.nasnav.persistence.dto.query.result.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,10 +11,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.persistence.dto.query.result.CartItemData;
-import com.nasnav.persistence.dto.query.result.CartItemShippingData;
-import com.nasnav.persistence.dto.query.result.CartItemStock;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
@@ -31,15 +27,17 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
-	@Query("SELECT new com.nasnav.dto.Pair(variant.id, count(user.id)) "
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartStatisticsData(" +
+			"variant.id, variant.name, variant.barcode, variant.productCode, variant.sku, sum(item.quantity), count (user.id)) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
 			+ " WHERE product.organizationId = :orgId and product.removed = 0 and variant.removed = 0 "
-			+ " group by variant.id order by count(user.id) desc ")
-	List<Pair> findCartVariantsByOrg_Id(@Param("orgId") Long orgId, Pageable pageable);
+			+ " group by variant.id, variant.id, variant.name, variant.productCode, variant.sku "
+			+ " order by sum(item.quantity) desc , count (user.id) desc ")
+	List<CartStatisticsData> findCartVariantsByOrg_Id(@Param("orgId") Long orgId, Pageable pageable);
 
 
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartCheckoutData("

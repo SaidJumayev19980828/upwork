@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -159,11 +160,12 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			" meta.status," +
 			" COUNT(meta.id) AS count) " +
 			" FROM MetaOrderEntity meta " +
-			" where meta.organization.id = :orgId and meta.status in :statuses " +
+			" where meta.organization.id = :orgId and meta.status in :statuses and meta.createdAt >= :startDate " +
 			" GROUP BY meta.status, DATE_TRUNC('month',meta.createdAt)" +
 			" order by DATE_TRUNC('month',meta.createdAt)")
 	List<OrderStatisticsInfo> getOrderIncomeStatisticsPerMonth(@Param("orgId") Long orgId,
-															   @Param("statuses") List<Integer> statuses);
+															   @Param("statuses") List<Integer> statuses,
+															   @Param("startDate") LocalDateTime startDate);
 
 
 	@Query("SELECT new com.nasnav.dto.response.OrderStatisticsInfo(DATE_TRUNC('month', meta.createdAt) AS date," +
@@ -171,9 +173,11 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			" sum(meta.grandTotal) as income) " +
 			" FROM MetaOrderEntity meta " +
 			" where meta.organization.id = :orgId and meta.status in :statuses and meta.grandTotal is not null " +
+			" and meta.createdAt >= :startDate" +
 			" GROUP BY meta.status, DATE_TRUNC('month',meta.createdAt)" +
 			" order by DATE_TRUNC('month',meta.createdAt)")
 	List<OrderStatisticsInfo> getOrderCountStatisticsPerMonth(@Param("orgId") Long orgId,
-															  @Param("statuses") List<Integer> statuses);
+															  @Param("statuses") List<Integer> statuses,
+															  @Param("startDate") LocalDateTime startDate);
 }
 
