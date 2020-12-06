@@ -3,7 +3,8 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.nasnav.dto.request.organization.SettingDTO;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -31,19 +32,17 @@ import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @ApiModel(value = "Organization")
 public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @ApiModelProperty(value = "ID key identifying the organization", readOnly = true)
-    @JsonProperty("id")
     private Long id;
 
     @ApiModelProperty(value = "Sub dir present in URL (e.g. nasnav.com/myshop/")
-    @JsonProperty("sub_dir")
     private Long subDir = 0L;
 
     @ApiModelProperty(value = "Name of the organization")
-    @JsonProperty("name")
     private String name;
 
     @ApiModelProperty(value = "URL-friendly Name of the organization")
@@ -51,27 +50,21 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private String pname;
 
     @ApiModelProperty(value = "Description")
-    @JsonProperty("description")
     private String description;
 
     @ApiModelProperty(value = "Type of the organization (shop, services, etc.)")
-    @JsonProperty("type")
     private String type;
 
     @ApiModelProperty(value = "theme id used in the organization")
-    @JsonProperty("theme_id")
     private String themeId;
 
     @ApiModelProperty(value = "Brands carried by the organization")
-    @JsonProperty("brands")
     private List<Organization_BrandRepresentationObject> brands = null;
 
     @ApiModelProperty(value = "Social websites (facebook, twitter)")
-    @JsonProperty("social")
     private SocialRepresentationObject social;
 
     @ApiModelProperty(value = "Website theme to use to display organization web pages")
-    @JsonProperty("themes")
     private OrganizationThemesRepresentationObject themes;
 
     @ApiModelProperty(value = "All the images related to the organization")
@@ -83,18 +76,14 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Map info;
 
     @ApiModelProperty(value = "E-commerce functionality of the website")
-    @JsonProperty("ecommerce")
     private Integer ecommerce;
 
     @ApiModelProperty(value = "Token used to identify websites at Google")
-    @JsonProperty("google_token")
     private String googleToken;
 
     private String currency;
-
+    private Integer currencyIso;
     private Map<String,String> settings;
-
-    @JsonProperty("matomo_site_id")
     private Integer matomoSiteId;
 
 }

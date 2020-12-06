@@ -110,6 +110,7 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setMatomoSiteId(getMatomoId());
         if(getCountry() != null) {
             organizationRepresentationObject.setCurrency(getCountry().getCurrency());
+            organizationRepresentationObject.setCurrencyIso(getCountry().getIsoCode());
         }
         if (getExtraInfo() != null) {
             try {
