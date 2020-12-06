@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.UserTokensEntity;
 
+import java.time.LocalDateTime;
+
 public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Long> {
 
     UserTokensEntity findByToken(String token);
@@ -21,6 +23,9 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
     @Query("select t from UserTokensEntity t left join fetch t.userEntity left join fetch t.employeeUserEntity" +
             " where t.token = :token")
     UserTokensEntity getUserEntityByToken(@Param("token") String token);
+
+    @Query("select count(t) from UserTokensEntity t where t.userEntity is not null and t.updateTime >= :startDate")
+    Long countActiveUsers(@Param("startDate") LocalDateTime startDate);
 
 	boolean existsByToken(String token);
 

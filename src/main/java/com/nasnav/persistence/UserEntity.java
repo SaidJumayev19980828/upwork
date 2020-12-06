@@ -13,8 +13,10 @@ import com.nasnav.persistence.listeners.UserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,6 +44,10 @@ public class UserEntity extends BaseUserEntity{
 
     @Column(name="mobile")
     private String mobile;
+
+    @Column(name = "remember_created_at")
+    @CreationTimestamp
+    private LocalDateTime creationTime;
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore

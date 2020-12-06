@@ -29,7 +29,9 @@ public class CartItem {
 	private Integer productType;
 	private BigDecimal discount;
 	private Map<String,Object> additionalData;
-
+	private Long userId;
+	
+	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {
 		this.stockId = stockId;
 		this.quantity = quantity;
