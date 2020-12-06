@@ -28,15 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.cache.annotation.CacheResult;
 import javax.imageio.ImageIO;
 
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.*;
-import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.univocity.parsers.common.processor.BeanWriterProcessor;
@@ -48,7 +45,6 @@ import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
@@ -366,21 +362,9 @@ public class FileService {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
 			BufferedImage image = ImageIO.read(file);
-			if(width != null && width > image.getWidth()) {
-				width = image.getWidth();
-			}
-			if(height != null && height > image.getHeight()) {
-				height = image.getHeight();
-			}
-			if(width != null && height != null && (height/width > 1)) {
-				width = calculateWidth(height, image);
-			} else if (width != null && height == null) {
-				height = calculateHeight(width ,image);
-			} else if (height != null && width == null) {
-				width = calculateWidth(height, image);
-			}
-			String resizedFileName = getResizedImageName(file.getName(), width, fileType);
-			MultipartFile multipartFile = resizeImage(image, width, height, fileType, resizedFileName);
+			int targetWidth = getProperWidth(width, height, image);
+			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
+			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
 		}catch (Exception e) {
@@ -389,14 +373,58 @@ public class FileService {
 	}
 
 
+	private int getProperWidth(Integer width, Integer height, BufferedImage image) {
+		int targetWidth = 10;
+		if (width!= null) {
+			targetWidth = width.intValue();
+		}
+		if(isTargetWidthGreaterThanImageWidth(width, image.getWidth())) {
+			targetWidth = image.getWidth();
+		}
+		if(isTargetHeightGreaterThanImageHeight(height, image.getHeight())) {
+			height = image.getHeight();
+		}
+		if(isWidthAndHeightProvided(width, height)) {
+			if (isWidthRatioLessThanHeightRatio(width, height, image)) {
+				targetWidth = calculateWidth(height, image);
+			}
+		} else if (isOnlyHeightProvided(width, height)) {
+			targetWidth = calculateWidth(height, image);
+		}
+		return targetWidth;
+	}
+
+	private boolean isOnlyHeightProvided(Integer width, Integer height) {
+		return height != null && width == null;
+	}
+
+	private boolean isOnlyWidthProvided(Integer width, Integer height) {
+		return height == null && width != null;
+	}
+
+	private boolean isWidthAndHeightProvided(Integer width, Integer height) {
+		return width != null && height != null;
+	}
+
+	private boolean isTargetWidthGreaterThanImageWidth(Integer width, Integer imageWidth) {
+		return width != null && width > imageWidth;
+	}
+
+	private boolean isTargetHeightGreaterThanImageHeight(Integer height, Integer imageHeight) {
+		return height != null && height > imageHeight;
+	}
+
+	private boolean isWidthRatioLessThanHeightRatio(Integer width, Integer height, BufferedImage image) {
+		return width/(image.getWidth()*1.0) < height/(image.getHeight()*1.0);
+	}
+
+
 	private List<FilesResizedEntity> getResizedFiles(FileEntity originalFile, Integer width, Integer height) {
 		List<FilesResizedEntity> resizedFiles;
-		if (width == null && height == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0007);
-		} else if (width != null && height == null) {
-			resizedFiles = filesResizedRepo.findByOriginalFileAndWidth(originalFile, width);
-		} else if (width == null ){
-			resizedFiles = filesResizedRepo.findByOriginalFileAndHeight(originalFile, height);
+		 if (isOnlyHeightProvided(width, height) ){
+			resizedFiles = filesResizedRepo.findByOriginalFileAndHeightAndWidthIsNull(originalFile, height);
+		} else if (isOnlyWidthProvided(width, height)) {
+			resizedFiles = filesResizedRepo.findByOriginalFileAndWidthAndHeightIsNull(originalFile, width);
 		} else {
 			resizedFiles = filesResizedRepo.findByOriginalFileAndHeightAndWidth(originalFile, height, width);
 		}
@@ -424,7 +452,7 @@ public class FileService {
 
 
 	private Integer calculateWidth(int targetHeight, BufferedImage image) {
-		return (int)(targetHeight * (image.getWidth() / (image.getHeight() * 1.0)));
+		return (int)Math.ceil(targetHeight * (image.getWidth() / (image.getHeight() * 1.0)));
 	}
 
 
@@ -444,11 +472,10 @@ public class FileService {
 
 
 
-	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, Integer targetHeight, String fileType,
-									  String resizedFileName) throws IOException {
+	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName) throws IOException {
 		ByteArrayOutputStream outputImageFile = new ByteArrayOutputStream();
 		Thumbnails.of(image)
-				.size(targetWidth, targetHeight)
+				.width(targetWidth)
 				.outputFormat(fileType)
 				.toOutputStream(outputImageFile);
 
