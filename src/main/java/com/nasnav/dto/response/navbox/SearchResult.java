@@ -7,6 +7,7 @@ import com.nasnav.dto.TagsRepresentationObject;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -17,10 +18,10 @@ public class SearchResult {
 
 
     @Data
-    static class Results{
-        private List<ProductRepresentationObject> products;
-        private List<ProductRepresentationObject> collections;
-        private List<TagsRepresentationObject> tags;
+    public static class Results{
+        private List<Map<String,Object>> products;
+        private List<Map<String,Object>> collections;
+        private List<Map<String,Object>> tags;
     }
 }
 

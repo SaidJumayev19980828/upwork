@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 /**
  * couldn't use spring-data-elastic search.
  * we used elastic search 7.10, which requires spring-data-elasticsearch 4.x, but this is not
@@ -21,8 +24,9 @@ public class ElasticSearchConfiguration {
     private String hostAndPort;
 
     @Bean
-    public RestHighLevelClient client() {
+    public RestHighLevelClient client() throws URISyntaxException {
+        URI uri = new URI(hostAndPort);
         return new RestHighLevelClient(
-                RestClient.builder(new HttpHost(hostAndPort)));
+                RestClient.builder(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme())));
     }
 }

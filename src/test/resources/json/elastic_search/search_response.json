@@ -15,7 +15,7 @@
     "max_score": 7.856356,
     "hits": [
       {
-        "_index": "tags",
+        "_index": "TAGS",
         "_type": "_doc",
         "_id": "0erRInYBUhtJ8aWircV9",
         "_score": 7.856356,
@@ -30,7 +30,7 @@
         }
       },
       {
-        "_index": "product",
+        "_index": "PRODUCTS",
         "_type": "_doc",
         "_id": "TerBInYBUhtJ8aWi1bkO",
         "_score": 6.8002295,
@@ -395,7 +395,7 @@
         }
       },
       {
-        "_index": "product",
+        "_index": "COLLECTIONS",
         "_type": "_doc",
         "_id": "gurRInYBUhtJ8aWijMF1",
         "_score": 6.8002295,
@@ -764,13 +764,17 @@
   "suggest": {
     "suggestions": [
       {
-        "text": "Sneakers",
+        "text": "black",
         "offset": 0,
-        "length": 8,
+        "length": 6,
         "options": [
           {
-            "text": "sneaker",
-            "score": 0.057836484
+            "text": "black",
+            "score": 0.057133198
+          },
+          {
+            "text": "black",
+            "score": 0.043483607
           }
         ]
       }

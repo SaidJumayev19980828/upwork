@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -25,11 +26,13 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.URI;
 
+import static com.google.common.net.MediaType.APPLICATION_BINARY;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.nasnav.test.commons.TestCommons.readResourceFileAsString;
 import static org.junit.Assert.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -51,7 +54,7 @@ public class NavBoxSearchTest {
     @Value("${nasnav.elasticsearch.url}")
     private String mockServerUrl;
 
-    @Rule
+//    @Rule
     public MockServerRule mockServerRule;
 
 
@@ -80,7 +83,7 @@ public class NavBoxSearchTest {
      * */
     @Before
     public void prepareMockServer() throws Exception {
-        prepareMockRequests(mockServerRule);
+//        prepareMockRequests(mockServerRule);
     }
 
 
@@ -88,7 +91,7 @@ public class NavBoxSearchTest {
     @Test
     public void searchTest(){
         ResponseEntity<String> response =
-                template.getForEntity("/navbox/search?org_id=99001&keyword=givemebeefburger", String.class);
+                template.getForEntity("/navbox/search?org_id=99001&keyword=black", String.class);
         assertEquals(OK, response.getStatusCode());
     }
 
@@ -104,12 +107,13 @@ public class NavBoxSearchTest {
         String productsResponse = readResourceFileAsString(searchResponseJson);
         mockServerRule.getClient()
                 .when(
-                        request().withMethod("GET")
+                        request().withMethod("POST")
                                 .withPath("/_search")
                                 )
                 .respond(
                         response().withBody(productsResponse, JSON_UTF_8)
-                                .withStatusCode(200))
+                                .withStatusCode(200)
+                                .withHeader(CONTENT_TYPE, "application/json; charset=UTF-8"))
         ;
     }
 }
