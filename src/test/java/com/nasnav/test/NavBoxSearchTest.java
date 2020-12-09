@@ -2,6 +2,7 @@ package com.nasnav.test;
 
 import com.google.common.net.UrlEscapers;
 import com.nasnav.NavBox;
+import com.nasnav.dto.response.navbox.SearchResult;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Before;
 import org.junit.Rule;
@@ -90,8 +91,8 @@ public class NavBoxSearchTest {
 
     @Test
     public void searchTest(){
-        ResponseEntity<String> response =
-                template.getForEntity("/navbox/search?org_id=99001&keyword=black", String.class);
+        ResponseEntity<SearchResult> response =
+                template.getForEntity("/navbox/search?org_id=43&keyword=Shrt", SearchResult.class);
         assertEquals(OK, response.getStatusCode());
     }
 
