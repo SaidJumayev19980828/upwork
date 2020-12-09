@@ -56,7 +56,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
-	@Query("select count (u.id) from UserEntity u where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth")
+	@Query("select count (u.id) from UserEntity u " +
+			" where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth and u.creationTime is not null ")
 	Long getNewCustomersCountPerMonth(@Param("orgId") Long orgId,
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);

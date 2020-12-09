@@ -24,8 +24,9 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
             " where t.token = :token")
     UserTokensEntity getUserEntityByToken(@Param("token") String token);
 
-    @Query("select count(t) from UserTokensEntity t where t.userEntity is not null and t.updateTime >= :startDate")
-    Long countActiveUsers(@Param("startDate") LocalDateTime startDate);
+    @Query("select count( distinct t.userEntity) from UserTokensEntity t " +
+            " where t.userEntity.organizationId = :orgId and t.updateTime >= :startDate")
+    Long countActiveUsers(@Param("orgId") Long orgId, @Param("startDate") LocalDateTime startDate);
 
 	boolean existsByToken(String token);
 

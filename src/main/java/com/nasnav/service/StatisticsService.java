@@ -127,7 +127,7 @@ public class StatisticsService {
         LocalDateTime minMonth = getMinMonth(maxMonth);
         Map<String, Long> result = new HashMap<>();
         result.put("new_users", userRepo.getNewCustomersCountPerMonth(orgId, minMonth, maxMonth));
-        result.put("active_users", tokenRepo.countActiveUsers(now().minusDays(21)));
+        result.put("active_users", tokenRepo.countActiveUsers(orgId, now().minusDays(21)));
         return result;
     }
 
