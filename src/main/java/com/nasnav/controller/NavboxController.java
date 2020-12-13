@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/navbox")
@@ -55,6 +58,9 @@ public class NavboxController {
 
 	@Autowired
 	private AddressService addressService;
+
+	@Autowired
+	private SearchService searchService;
 
 	@ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -343,6 +349,18 @@ public class NavboxController {
 				.contentType(MediaType.parseMediaType("text/plain"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
 				.body(s.toString());
+	}
+
+
+
+
+	@ApiOperation(value = "search the data", nickname = "search")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK")
+	})
+	@GetMapping(value="/search", produces=MediaType.APPLICATION_JSON_VALUE)
+	public Mono<SearchResult> search(SearchParameters params) {
+		return searchService.search(params);
 	}
 
 

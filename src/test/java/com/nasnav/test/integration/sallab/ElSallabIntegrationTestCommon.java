@@ -1,11 +1,14 @@
 package com.nasnav.test.integration.sallab;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.nasnav.test.commons.TestCommons.readResourceFileAsString;
+import static com.nasnav.test.commons.TestCommons.readResourceFileBytes;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import java.io.IOException;
 import java.nio.file.Files;
 
+import com.nasnav.test.commons.TestCommons;
 import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -96,7 +99,7 @@ public class ElSallabIntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/services/data/v44.0/query"))
 			.respond(
-					response().withBody(productsResponse, JSON_UTF_8) 
+					response().withBody(productsResponse, JSON_UTF_8)
 							  .withStatusCode(200))
 				;
 	}
@@ -181,15 +184,14 @@ public class ElSallabIntegrationTestCommon {
 
 
 	private String readJsonFile(Resource resource) throws IOException {
-		String productsResponse = new String( Files.readAllBytes(resource.getFile().toPath()) );
-		return productsResponse;
+		return readResourceFileAsString(resource);
 	}
 	
 	
 	
 
 	private byte[] readImgFile(Resource resource) throws IOException {
-		return Files.readAllBytes(resource.getFile().toPath());
+		return readResourceFileBytes(resource);
 	}
 	
 	
