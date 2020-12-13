@@ -5,6 +5,7 @@ import java.util.List;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ThemeClassEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 public interface OrganizationRepository extends JpaRepository<OrganizationEntity, Long> {
@@ -26,6 +27,9 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     boolean existsByIdAndThemeId(Long id, Integer themeId);
 
     Integer countByThemeClassesContains(ThemeClassEntity themeClass);
+
+    @Query("SELECT org.id from OrganizationEntity org")
+    List<Long> findAllOrganizations();
 }
 
 
