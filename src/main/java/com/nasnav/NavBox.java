@@ -4,19 +4,13 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchRestHealthIndicatorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration;
-import org.springframework.boot.autoconfigure.elasticsearch.rest.RestClientAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
-@SpringBootApplication(exclude = {
-        ElasticsearchAutoConfiguration.class,
-        ElasticSearchRestHealthIndicatorAutoConfiguration.class,
-        RestClientAutoConfiguration.class})
+@SpringBootApplication
 @EnableCaching
 public class NavBox
 {
