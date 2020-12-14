@@ -2,12 +2,21 @@ package com.nasnav.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SearchType;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.request.ProductSearchParam;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +29,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -33,11 +43,13 @@ import org.elasticsearch.search.suggest.phrase.PhraseSuggestion;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
@@ -45,14 +57,18 @@ import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.SearchType.*;
 import static com.nasnav.exceptions.ErrorCodes.NAVBOX$SRCH$0001;
+import static com.nasnav.exceptions.ErrorCodes.SRCH$SYNC$0001;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.*;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
+import static org.elasticsearch.common.xcontent.XContentType.JSON;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
+import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 
@@ -79,6 +95,12 @@ public class SearchServiceImpl implements SearchService{
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private DataExportService exportService;
+
+    @Autowired
+    private ProductService productService;
 
 
     @Override
@@ -208,7 +230,7 @@ public class SearchServiceImpl implements SearchService{
         IndexRequest request = new IndexRequest(index);
         try {
             String json = objectMapper.writeValueAsString(obj);
-            request.source(json);
+            request.source(json, JSON);
             return Optional.of(request);
         } catch (JsonProcessingException e) {
             logger.error(e,e);
@@ -217,9 +239,91 @@ public class SearchServiceImpl implements SearchService{
     }
 
 
+
     private Mono<Void> sendProductsAndCollectionsData(Long orgId) {
-        Map<Long, >
+        BulkRequest request = new BulkRequest();
+        Map<Long,List<CsvRow>> extraData = getProductsExtraData(orgId);
+        Long totalProducts = getTotalProducts(orgId);
+        double batchSize = 1000;
+        int batches = (int)Math.ceil(totalProducts/batchSize);
+        for(int i=0; i< batches; i++ ){
+            try {
+                List<Product> products = getProductsBatch(orgId, extraData, batchSize, i);
+                addProductsToBulkIndexRequest(request, products);
+                addCollectionsToBulkIndexRequest(request, products);
+            } catch (BusinessException|InvocationTargetException|IllegalAccessException e) {
+                logger.error(e,e);
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0001, orgId);
+            }
+        }
+        return Mono
+                .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> sink.success(), sink::error)))
+                .doOnError(e -> logger.error(e,e));
     }
+
+
+
+    private Map<Long, List<CsvRow>> getProductsExtraData(Long orgId) {
+        return exportService
+                .exportProductsData(orgId, null)
+                .stream()
+                .collect(groupingBy(CsvRow::getProductId));
+    }
+
+
+    private void addCollectionsToBulkIndexRequest(BulkRequest request, List<Product> products) {
+        products
+            .stream()
+            .filter(product -> product.getProductType() == 2)
+            .map(product -> createIndexRequest(COLLECTIONS, product))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .forEach(request::add);
+    }
+
+
+
+    private void addProductsToBulkIndexRequest(BulkRequest request, List<Product> products) {
+        products
+            .stream()
+            .filter(product -> product.getProductType() == 0)
+            .map(product -> createIndexRequest(PRODUCTS, product))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .forEach(request::add);
+    }
+
+
+
+    private List<Product> getProductsBatch(Long orgId, Map<Long, List<CsvRow>> extraData, double batchSize, int i) throws BusinessException, InvocationTargetException, IllegalAccessException {
+        int start = (int)(batchSize * i);
+        ProductSearchParam params = new ProductSearchParam();
+        params.org_id = orgId;
+        params.count = (int) batchSize;
+        params.start = start;
+        return productService
+                .getProducts(params)
+                .getProducts()
+                .stream()
+                .map(prod -> new Product(prod, extraData.get(prod.getId()), orgId))
+                .collect(toList());
+    }
+
+
+
+    private Long getTotalProducts(Long orgId) {
+        ProductSearchParam params = new ProductSearchParam();
+        params.org_id = orgId;
+        params.count = 10;
+        params.start = 0;
+        try {
+            return  productService.getProducts(params).getTotal();
+        } catch (BusinessException|InvocationTargetException|IllegalAccessException e) {
+            logger.error(e,e);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0001, orgId);
+        }
+    }
+
 
 
     private String[] getIndices(SearchParameters parameters) {
@@ -350,11 +454,28 @@ public class SearchServiceImpl implements SearchService{
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class TagsObject extends TagsRepresentationObject{
     private Long organizationId;
 
     TagsObject(TagsRepresentationObject representationObj , Long orgId){
         this.organizationId = orgId;
-        BeanUtils.copyProperties(representationObj, this);
+        copyProperties(representationObj, this);
+    }
+}
+
+
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+class Product extends ProductRepresentationObject{
+    private List<CsvRow> extraData;
+    private Long organizationId;
+
+    public Product(ProductRepresentationObject repObject, List<CsvRow> extraData, Long orgId){
+        this.extraData = extraData;
+        this.organizationId = orgId;
+        copyProperties(repObject, this);
     }
 }

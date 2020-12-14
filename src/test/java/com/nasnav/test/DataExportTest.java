@@ -1,11 +1,11 @@
 package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.eclipse.jetty.http.HttpStatus.NOT_ACCEPTABLE_406;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +49,19 @@ public class DataExportTest {
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
 	}
+
+
+
+	@Test
+	public void testProductExportShopFromAnotherOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products?shop_id=501", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
 
 
 

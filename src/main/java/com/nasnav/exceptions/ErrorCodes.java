@@ -236,6 +236,8 @@ public enum ErrorCodes {
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
+
+	,SRCH$SYNC$0001("Failed to synchronize products data for organization[%d]!")
 	;
 	
 	@Getter

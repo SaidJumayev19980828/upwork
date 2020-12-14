@@ -29,6 +29,7 @@ import java.net.URI;
 
 import static com.google.common.net.MediaType.APPLICATION_BINARY;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.readResourceFileAsString;
 import static org.junit.Assert.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
@@ -42,7 +43,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/ExtraAttributes_Test_Data_Insert.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Search_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @NotThreadSafe
 public class NavBoxSearchTest {
@@ -101,7 +102,16 @@ public class NavBoxSearchTest {
 //    @Test
     public void searchTest(){
         ResponseEntity<SearchResult> response =
-                template.getForEntity("/navbox/search?org_id=99001&keyword=shrt", SearchResult.class);
+                template.getForEntity("/navbox/search?org_id=99001&keyword=tag_1", SearchResult.class);
+        assertEquals(OK, response.getStatusCode());
+    }
+
+
+
+//    @Test
+    public void searchDataSyncTest(){
+        ResponseEntity<String> response =
+                template.postForEntity("/organization/search/data/sync", getHttpEntity("192021"), String.class);
         assertEquals(OK, response.getStatusCode());
     }
 
