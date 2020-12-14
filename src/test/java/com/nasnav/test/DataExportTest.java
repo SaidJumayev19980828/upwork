@@ -42,10 +42,23 @@ public class DataExportTest {
 	@Test
 	public void testProductExport(){		
 		ResponseEntity<String> response = 
-				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("131415"), String.class);
+				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("192021"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
 		
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+
+
+	@Test
+	public void testProductExportForWholeOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
 	}
