@@ -45,7 +45,7 @@ public class DataExportContoller {
 	@ResponseBody
 	public ResponseEntity<String> generateProductsCsv(
 			@RequestHeader(name = "User-Token", required = false) String token
-			, @RequestParam(name = "shop_id", required = true)Long shopId) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
+			, @RequestParam(name = "shop_id", required = false)Long shopId) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
 		ByteArrayOutputStream s = exportService.generateProductsCsv(shopId);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))

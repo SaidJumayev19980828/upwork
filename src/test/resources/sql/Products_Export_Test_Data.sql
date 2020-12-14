@@ -24,10 +24,13 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser3@nasnav.com', 99002, '161718',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (71, 'testuser4@nasnav.com', 99001, '192021',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100001, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100002, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100003, '161718', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100004, '192021', now(), 71, null);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -41,6 +44,7 @@ insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 5);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 2);
 
 
 
@@ -117,7 +121,7 @@ INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'extra data', 310001);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'good info', 310002);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'bla bla', 310001);
-INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'yep!', 310002);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100004, 'yep!', 310002);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100003, 'bla bla', 310007);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100004, 'cool!', 310007);
 

@@ -1,21 +1,27 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.model.querydsl.sql.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -52,17 +58,25 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	@Autowired
 	private SQLQueryFactory queryFactory;
-	
+
+	@Autowired
+	private ShopsRepository shopRepo;
+
+
 	@Override
 	public List<CsvRow> exportProductsData(Long orgId, Long shopId) {
-		SQLQuery<?> stocks = getStocksQuery(orgId, shopId);
+
+		if(shopId != null && !shopRepo.existsByIdAndOrganizationEntity_Id(shopId, orgId)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005, shopId, orgId);
+		}
+
+		SQLQuery<?> stocks = getExportQuery(orgId, shopId);
 
 		List<ProductExportedData> result =
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductExportedData.class));
 		
-		Map<Long, List<VariantExtraAtrribute>> extraAttributes = fetchVariantsExtraAttributes(shopId);
-		
+		Map<Long, List<VariantExtraAtrribute>> extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
 		Map<Long,List<ProductTagsBasicData>> productTags = createProductTagsMap(result);
 		Map<Integer, ProductFeaturesEntity> features = createFeaturesMap();		
 		return result
@@ -70,12 +84,28 @@ public class DataExportServiceImpl implements DataExportService{
 				.map(product -> toCsvRow(product, productTags, features, extraAttributes))
 				.collect(toList());
 	}
-	
-	
-	
-	private Map<Long, List<VariantExtraAtrribute>> fetchVariantsExtraAttributes(Long shopId) {
-		return prodExtraAttributeRepo
-				.findByVariantShopId(shopId)
+
+
+
+	private SQLQuery<?> getExportQuery(Long orgId, Long shopId) {
+		if(shopId == null){
+			return getVariantsQuery(orgId);
+		}else{
+			return  getStocksQuery(orgId, shopId);
+		}
+	}
+
+
+
+
+	private Map<Long, List<VariantExtraAtrribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
+		List<VariantExtraAtrribute> variantAttributes = emptyList();
+		if(shopId != null){
+			variantAttributes =  prodExtraAttributeRepo.findByVariantShopId(shopId);
+		}else{
+			variantAttributes = prodExtraAttributeRepo.findByVariantOrgId(orgId);
+		}
+		return variantAttributes
 				.stream()
 				.collect(groupingBy(VariantExtraAtrribute::getVariantId));
 	}
@@ -261,6 +291,41 @@ public class DataExportServiceImpl implements DataExportService{
 	}
 
 
+
+
+
+	private SQLQuery<?> getVariantsQuery(Long orgId) {
+		QStocks stock = QStocks.stocks;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QBrands brand = QBrands.brands;
+		QUnits unit = QUnits.units;
+
+		SQLQuery<?> fromClause = getOrganizationProductsBaseQuery(queryFactory, orgId);
+		SQLQuery<?> productsQuery = fromClause
+											.distinct()
+											.select(
+											unit.name.as("unit_name"),
+											product.organizationId.as("organization_id"),
+											variant.id.as("variant_id"),
+											variant.featureSpec,
+											variant.barcode.as("barcode"),
+											brand.name.as("brand"),
+											product.description.as("description"),
+											product.name.as("name"),
+											product.id.as("product_id"),
+											variant.sku.as("sku"),
+											variant.productCode.as("product_code"));
+
+		SQLQuery<?> stocks = queryFactory.from(productsQuery.as("total_products"));
+
+		stocks.select((Expressions.template(CsvRow.class,"*")));
+
+		return stocks;
+	}
+
+
+
 	private String toTagsString(List<String> tags) {
 		String tagsString = "";
 		for(String tag : tags) {
@@ -284,6 +349,25 @@ public class DataExportServiceImpl implements DataExportService{
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
 						.and(stock.shopId.eq(shopId))
+						.and(product.removed.eq(0)));
+	}
+
+
+
+	private SQLQuery<?> getOrganizationProductsBaseQuery(SQLQueryFactory query, Long orgId) {
+		QStocks stock = QStocks.stocks;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QBrands brand = QBrands.brands;
+		QUnits unit = QUnits.units;
+
+		return query.from(stock)
+				.distinct()
+				.innerJoin(variant).on(stock.variantId.eq(variant.id))
+				.innerJoin(product).on(variant.productId.eq(product.id))
+				.innerJoin(brand).on(product.brandId.eq(brand.id))
+				.leftJoin(unit).on(stock.unitId.eq(unit.id))
+				.where(product.organizationId.eq(orgId)
 						.and(product.removed.eq(0)));
 	}
 	
