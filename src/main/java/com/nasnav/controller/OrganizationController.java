@@ -50,6 +50,7 @@ import com.nasnav.response.TagResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/organization")
@@ -71,7 +72,9 @@ public class OrganizationController {
     @Autowired
     private PromotionsService promotionsService;
     @Autowired
-	private CartOptimizationService cartOptimizeService;
+    private CartOptimizationService cartOptimizeService;
+    @Autowired
+    private SearchService searchService;
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -86,8 +89,8 @@ public class OrganizationController {
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                 @RequestPart("properties") String jsonString,
-                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+                                                       @RequestPart("properties") String jsonString,
+                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
         return orgService.updateOrganizationData(json, file);
@@ -122,10 +125,10 @@ public class OrganizationController {
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
     public OrganizationResponse updateBrandData(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                 @RequestPart("properties") String jsonString,
-                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
-                                                 @RequestPart(value = "banner", required = false) @Valid MultipartFile banner,
-                                                 @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws Exception {
+                                                @RequestPart("properties") String jsonString,
+                                                @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
+                                                @RequestPart(value = "banner", required = false) @Valid MultipartFile banner,
+                                                @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         return orgService.validateAndUpdateBrand(json, logo, banner, cover);
@@ -168,7 +171,7 @@ public class OrganizationController {
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
-    		                                                 @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
+                                                             @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
         return orgService.updateProductFeature(featureDto);
     }
 
@@ -196,8 +199,8 @@ public class OrganizationController {
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ProductImageUpdateResponse updateOrganizationImage(@RequestHeader(name = "User-Token", required = false) String token,
-                                                           @RequestPart(value = "image", required = false) @Valid MultipartFile file,
-                                                           @RequestPart("properties") @Valid String jsonString) throws Exception {
+                                                              @RequestPart(value = "image", required = false) @Valid MultipartFile file,
+                                                              @RequestPart("properties") @Valid String jsonString) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationImageUpdateDTO imgMetaData = mapper.readValue(jsonString, OrganizationImageUpdateDTO.class);
         return orgService.updateOrganizationImage(file, imgMetaData);
@@ -229,9 +232,9 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public TagResponse updateOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                         @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+                                             @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         tagDTO.setHasCategory(true);
-    	TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
+        TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
         return new TagResponse(tag.getId());
     }
 
@@ -248,10 +251,10 @@ public class OrganizationController {
         return categoryService.deleteOrgTag(tagId);
     }
 
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "create a new tag tree", nickname = "createTagTree")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -275,8 +278,8 @@ public class OrganizationController {
     @PostMapping(value = "tag/category")
     @ResponseStatus(OK)
     public void assignTagsCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                  @RequestParam("category_id") Long categoryId,
-                                  @RequestParam(value = "tags", required = false) List<Long> tagsIds) throws BusinessException {
+                                   @RequestParam("category_id") Long categoryId,
+                                   @RequestParam(value = "tags", required = false) List<Long> tagsIds) throws BusinessException {
         categoryService.assignTagsCategory(categoryId, tagsIds);
     }
 
@@ -344,7 +347,7 @@ public class OrganizationController {
     @PostMapping(value = "themes")
     @ResponseStatus(OK)
     public void changeOrgTheme(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestBody OrganizationThemesSettingsDTO dto) throws BusinessException {
+                               @RequestBody OrganizationThemesSettingsDTO dto) throws BusinessException {
         themeService.changeOrgTheme(dto);
     }
 
@@ -361,14 +364,14 @@ public class OrganizationController {
                                                         @RequestParam(value = "delivery", required = false) String deliveryService) {
         return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
     }
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
     @ApiOperation(value = "register the organization to a shipping service", nickname = "registerShippingService")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -378,14 +381,14 @@ public class OrganizationController {
     @PostMapping(value = "shipping/service")
     @ResponseStatus(OK)
     public void registerToShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestBody ShippingServiceRegistration registration) {
-    	shippingMngService.registerToShippingService(registration);
+                                          @RequestBody ShippingServiceRegistration registration) {
+        shippingMngService.registerToShippingService(registration);
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     @ApiOperation(value = "list shipping services that the organization is registered to", nickname = "getOrgShippingService")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -395,14 +398,14 @@ public class OrganizationController {
     @GetMapping(value = "shipping/service")
     @ResponseStatus(OK)
     public List<ShippingServiceRegistration> listShippingServices(
-    		@RequestHeader (name = "User-Token", required = false) String userToken) {
-    	return shippingMngService.listShippingServices();
+            @RequestHeader (name = "User-Token", required = false) String userToken) {
+        return shippingMngService.listShippingServices();
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -413,10 +416,10 @@ public class OrganizationController {
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttibute(@RequestHeader (name = "User-Token", required = false) String userToken) {
         return orgService.getExtraAttributes();
     }
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "get organization promotions", nickname = "GetPromotions")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -425,22 +428,22 @@ public class OrganizationController {
     })
     @GetMapping(value = "promotions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public PromotionResponse getPromotions(
-    		@RequestHeader (name = "User-Token", required = false) String userToken
-    		,@RequestParam(name="status", required = false)String status
-    		,@RequestParam(name="start_date", required = false)String startTime
-    		,@RequestParam(name="end_date", required = false)String endTime
-    		,@RequestParam(name="id", required = false)Long id
+            @RequestHeader (name = "User-Token", required = false) String userToken
+            ,@RequestParam(name="status", required = false)String status
+            ,@RequestParam(name="start_date", required = false)String startTime
+            ,@RequestParam(name="end_date", required = false)String endTime
+            ,@RequestParam(name="id", required = false)Long id
             ,@RequestParam(name="start", required = false)Integer start
             ,@RequestParam(name="count", required = false)Integer count){
-    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime, id, start, count);
-    	return promotionsService.getPromotions(searchParams);
+        PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime, id, start, count);
+        return promotionsService.getPromotions(searchParams);
     }
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
     @ApiOperation(value = "add new promotions", nickname = "addPromotion")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -451,7 +454,7 @@ public class OrganizationController {
     @ResponseStatus(OK)
     public Long addPromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
                              @RequestBody PromotionDTO promotion) {
-    	return promotionsService.updatePromotion(promotion);
+        return promotionsService.updatePromotion(promotion);
     }
 
 
@@ -465,7 +468,7 @@ public class OrganizationController {
     @DeleteMapping(value = "promotion")
     @ResponseStatus(OK)
     public void removePromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
-                             @RequestParam("id") Long promotionId) {
+                                @RequestParam("id") Long promotionId) {
         promotionsService.removePromotion(promotionId);
     }
 
@@ -483,11 +486,11 @@ public class OrganizationController {
                                               @RequestParam("service_id") String serviceId){
         shippingMngService.unregisterFromShippingService(serviceId);
     }
-    
-    
-    
-    
-    
+
+
+
+
+
     @ApiOperation(value = "delete an organization setting", nickname = "deleteSetting")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -497,13 +500,13 @@ public class OrganizationController {
     @DeleteMapping(value = "settings")
     @ResponseStatus(OK)
     public void deleteSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                              @RequestParam("name") String settingName){
+                              @RequestParam("name") String settingName){
         orgService.deleteSetting(settingName);
     }
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "add/udpate an organization setting", nickname = "udpateSetting")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -513,13 +516,13 @@ public class OrganizationController {
     @PostMapping(value = "settings")
     @ResponseStatus(OK)
     public void updateSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
-    								@RequestBody SettingDTO setting){
+                              @RequestBody SettingDTO setting){
         orgService.updateSetting(setting);
     }
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -529,13 +532,13 @@ public class OrganizationController {
     @PostMapping(value = "settings/cart_optimization/strategy")
     @ResponseStatus(OK)
     public void setCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
-    								@RequestBody CartOptimizationSettingDTO setting){
-    	cartOptimizeService.setCartOptimizationStrategy(setting);
+                                           @RequestBody CartOptimizationSettingDTO setting){
+        cartOptimizeService.setCartOptimizationStrategy(setting);
     }
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "get cart optimization strategies for the organization or the shipping service", nickname = "setCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -545,12 +548,12 @@ public class OrganizationController {
     @GetMapping(value = "settings/cart_optimization/strategy")
     @ResponseStatus(OK)
     public List<CartOptimizationSettingDTO> getCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken){
-    	return cartOptimizeService.getCartOptimizationStrategy();
+        return cartOptimizeService.getCartOptimizationStrategy();
     }
-    
-    
-    
-    
+
+
+
+
     @ApiOperation(value = "get all cart optimization strategies", nickname = "getAllCartOptimization")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -560,11 +563,11 @@ public class OrganizationController {
     @GetMapping(value = "settings/cart_optimization/strategies")
     @ResponseStatus(OK)
     public List<CartOptimizationStrategyDTO> listCartOptmizationStrategies(@RequestHeader (name = "User-Token", required = false) String userToken){
-    	return cartOptimizeService.listAllCartOptimizationStrategies();
+        return cartOptimizeService.listAllCartOptimizationStrategies();
     }
-    
-    
-    
+
+
+
     @ApiOperation(value = "get all organization shops including warehouses", nickname = "getAllShops")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -574,8 +577,11 @@ public class OrganizationController {
     @GetMapping(value = "shops")
     @ResponseStatus(OK)
     public List<ShopRepresentationObject> getAllShops(@RequestHeader (name = "User-Token", required = false) String userToken){
-    	return orgService.getOrganizationShops();
+        return orgService.getOrganizationShops();
     }
+
+
+
 
 
     @ApiOperation(value = "Get Organization subscribed users", nickname = "getSubscribedUsers")
@@ -589,6 +595,9 @@ public class OrganizationController {
         return orgService.getSubscribedUsers();
     }
 
+
+
+
     @ApiOperation(value = "Remove Organization subscribed user", nickname = "removeSubscribedUser")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -598,7 +607,7 @@ public class OrganizationController {
     @DeleteMapping(value = "subscribed_users")
     public void removeSubscribedUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                      @RequestParam String email){
-         orgService.removeSubscribedUser(email);
+        orgService.removeSubscribedUser(email);
     }
 
 
@@ -614,4 +623,21 @@ public class OrganizationController {
                 .header(CONTENT_DISPOSITION, "attachment; filename=images-info.csv")
                 .body(s.toString());
     }
+
+
+
+    @ApiOperation(value = "synchronize data with search server", nickname = "syncSearchData")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "search/data/sync")
+    @ResponseStatus(OK)
+    public Mono<Void> syncSearchData(@RequestHeader (name = "User-Token", required = false) String userToken){
+        return searchService.syncSearchData();
+    }
+
+
+
 }
