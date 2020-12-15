@@ -1,4 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [
+        <!ELEMENT project (modelVersion|groupId|artifactId|version|properties|parent|dependencies|build|dependencyManagement)*>
+        <!ATTLIST project
+                xmlns CDATA #REQUIRED
+                xmlns:xsi CDATA #REQUIRED
+                xsi:schemaLocation CDATA #REQUIRED>
+        <!ELEMENT modelVersion (#PCDATA)>
+        <!ELEMENT groupId (#PCDATA)>
+        <!ELEMENT artifactId (#PCDATA)>
+        <!ELEMENT version (#PCDATA)>
+        <!ELEMENT properties (java.version|spring.boot.version|spring.data.version|hibernate.version|postgresql.version|lombok.version|httpclient.version|start-class|sonar.core.codeCoveragePlugin|sonar.jacoco.reportPath|sonar.language|jacoco.version|surefire.version|querydsl.version|property)*>
+        <!ELEMENT java.version (#PCDATA)>
+        <!ELEMENT spring.boot.version (#PCDATA)>
+        <!ELEMENT spring.data.version (#PCDATA)>
+        <!ELEMENT hibernate.version (#PCDATA)>
+        <!ELEMENT postgresql.version (#PCDATA)>
+        <!ELEMENT lombok.version (#PCDATA)>
+        <!ELEMENT httpclient.version (#PCDATA)>
+        <!ELEMENT start-class (#PCDATA)>
+        <!ELEMENT sonar.core.codeCoveragePlugin (#PCDATA)>
+        <!ELEMENT sonar.jacoco.reportPath (#PCDATA)>
+        <!ELEMENT sonar.language (#PCDATA)>
+        <!ELEMENT jacoco.version (#PCDATA)>
+        <!ELEMENT surefire.version (#PCDATA)>
+        <!ELEMENT querydsl.version (#PCDATA)>
+        <!ELEMENT parent (groupId|artifactId|version)*>
+        <!ELEMENT dependencies (dependency)*>
+        <!ELEMENT dependency (groupId|artifactId|version|optional|scope)*>
+        <!ELEMENT optional (#PCDATA)>
+        <!ELEMENT scope (#PCDATA)>
+        <!ELEMENT build (sourceDirectory|plugins)*>
+        <!ELEMENT sourceDirectory (#PCDATA)>
+        <!ELEMENT plugins (plugin)*>
+        <!ELEMENT plugin (groupId|artifactId|version|configuration|executions|dependencies)*>
+        <!ELEMENT configuration (mainClass|layout|skipAfterFailureCount|properties|append|files|jdbcDriver|jdbcUrl|jdbcUser|jdbcPassword|packageName|sourceFolder|targetFolder)*>
+        <!ELEMENT mainClass (#PCDATA)>
+        <!ELEMENT layout (#PCDATA)>
+        <!ELEMENT executions (execution)*>
+        <!ELEMENT execution (goals|id|phase|configuration)*>
+        <!ELEMENT goals (goal)*>
+        <!ELEMENT goal (#PCDATA)>
+        <!ELEMENT skipAfterFailureCount (#PCDATA)>
+        <!ELEMENT property (name|value)*>
+        <!ELEMENT name (#PCDATA)>
+        <!ELEMENT value (#PCDATA)>
+        <!ELEMENT append (#PCDATA)>
+        <!ELEMENT id (#PCDATA)>
+        <!ELEMENT phase (#PCDATA)>
+        <!ELEMENT files (file)*>
+        <!ELEMENT file (#PCDATA)>
+        <!ELEMENT jdbcDriver (#PCDATA)>
+        <!ELEMENT jdbcUrl (#PCDATA)>
+        <!ELEMENT jdbcUser (#PCDATA)>
+        <!ELEMENT jdbcPassword (#PCDATA)>
+        <!ELEMENT packageName (#PCDATA)>
+        <!ELEMENT sourceFolder (#PCDATA)>
+        <!ELEMENT targetFolder (#PCDATA)>
+        <!ELEMENT dependencyManagement (dependencies)*>
+        ]>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -208,6 +267,21 @@
 		   <artifactId>kryo</artifactId>
 		   <version>5.0.0-RC5</version>
 		</dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>7.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>7.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>7.10.0</version>
+        </dependency>
 
 
         <dependency>
