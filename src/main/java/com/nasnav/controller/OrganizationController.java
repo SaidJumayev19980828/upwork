@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,19 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.ExtraAttributeDefinitionDTO;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationImageUpdateDTO;
-import com.nasnav.dto.OrganizationThemesSettingsDTO;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.PromotionSearchParamDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsTreeCreationDTO;
-import com.nasnav.dto.ThemeClassDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
@@ -75,6 +63,8 @@ public class OrganizationController {
     private CartOptimizationService cartOptimizeService;
     @Autowired
     private SearchService searchService;
+    @Autowired
+    private SeoService seoService;
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -640,4 +630,16 @@ public class OrganizationController {
 
 
 
+    @ApiOperation(value = "update seo keywords for an entity", nickname = "addSeoKeywords")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "seo")
+    @ResponseStatus(OK)
+    public void addSeoKeywords(@RequestHeader (name = "User-Token", required = false) String userToken
+        , @RequestBody SeoKeywordsDTO seoKeywords){
+        seoService.addSeoKeywords(seoKeywords);
+    }
 }

@@ -8,9 +8,7 @@ import static org.springframework.http.HttpHeaders.SET_COOKIE;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import javax.servlet.http.Cookie;
 
@@ -165,5 +163,13 @@ public class TestCommons {
 
     public static byte[] readResourceFileBytes(Resource resource) throws IOException {
         return Files.readAllBytes(resource.getFile().toPath());
+    }
+
+
+
+    public static JSONArray toJsonArray(Collection<?> collection){
+        JSONArray array = jsonArray();
+        collection.forEach(array::put);
+        return array;
     }
 }

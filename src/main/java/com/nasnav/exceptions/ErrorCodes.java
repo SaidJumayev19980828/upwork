@@ -238,6 +238,8 @@ public enum ErrorCodes {
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
 
 	,SRCH$SYNC$0001("Failed to synchronize products data for organization[%d]!")
+
+	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
 	;
 	
 	@Getter

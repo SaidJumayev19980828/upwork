@@ -168,6 +168,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<IdAndNamePair> getCollectionIdAndNamePairs(@Param("orgId") Long orgId);
 
     long countByProductType(Integer productType);
+
+    boolean existsByIdAndOrganizationId(Long productId, Long orgId);
 }
 
 

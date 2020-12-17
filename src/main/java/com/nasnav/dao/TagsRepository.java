@@ -74,4 +74,6 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     @Query(value = "select new com.nasnav.service.model.IdAndNamePair(t.id, t.pname) from TagsEntity t" +
             "  where t.organizationEntity.id = :orgId ")
     List<IdAndNamePair> getTagIdAndNamePairs(@Param("orgId") Long orgId);
+
+    boolean existsByIdAndOrganizationEntity_Id(Long tagId, Long orgId);
 }

@@ -18,6 +18,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
+import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -61,6 +62,9 @@ public class NavboxController {
 
 	@Autowired
 	private SearchService searchService;
+
+	@Autowired
+	private SeoService seoService;
 
 	@ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -361,6 +365,21 @@ public class NavboxController {
 	@GetMapping(value="/search", produces=MediaType.APPLICATION_JSON_VALUE)
 	public Mono<SearchResult> search(SearchParameters params) {
 		return searchService.search(params);
+	}
+
+
+
+
+	@ApiOperation(value = "return seo keywords", nickname = "getSeo")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK")
+	})
+	@GetMapping(value="/seo", produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<SeoKeywordsDTO> search(
+			@RequestParam(value = "org_id", required = true)Long orgId,
+			@RequestParam(value = "type", required = false)SeoEntityType type,
+			@RequestParam(value = "id", required = false)Long entityId) {
+		return seoService.getSeoKeywords(orgId, entityId, type);
 	}
 
 
