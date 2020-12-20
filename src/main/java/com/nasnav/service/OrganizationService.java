@@ -1098,21 +1098,22 @@ public class OrganizationService {
         Long orgId = orgRepo.findById(domain.getFirst())
                 .map(OrganizationEntity::getId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0005, url));
+        String baseUrl = domainService.getOrganizationDomainAndSubDir(orgId);
 
         if(includeProducts) {
-            addPairsAsUrls(url, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
+            addPairsAsUrls(baseUrl, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
         }
         if (includeCollections) {
-            addPairsAsUrls(url, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
+            addPairsAsUrls(baseUrl, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
         }
         if (includeBrands) {
-            addPairsAsUrls(url, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
+            addPairsAsUrls(baseUrl, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
         }
         if (includeTags) {
-            addPairsAsUrls(url, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
+            addPairsAsUrls(baseUrl, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
         }
         if (includeTagsTree) {
-            addPairsAsUrls(url, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
+            addPairsAsUrls(baseUrl, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
         }
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
