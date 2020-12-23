@@ -119,7 +119,7 @@ public class CachingHelper {
 			.buffer()
 			.filter(variantIdList -> !variantIdList.isEmpty())
 			.defaultIfEmpty(asList(-1L))
-			.flatMapIterable(list -> mapInBatches(list, 500, productVariantsRepository::findVariantBasicDataByIdIn));
+			.flatMapIterable(list -> mapInBatches(list, 10000, productVariantsRepository::findVariantBasicDataByIdIn));
 	}
 	
 	
@@ -148,7 +148,7 @@ public class CachingHelper {
 			.defaultIfEmpty(asList(randomUUID().toString())) //the list should never be empty
 			.flatMapIterable(
 							barcodes -> mapInBatches(barcodes,
-											500,
+											5000,
 													 barcode -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcode)));
 	}
 	
@@ -183,7 +183,7 @@ public class CachingHelper {
 		List<Long> idList = new ArrayList<>();
 		idList.add(-1L);//the list should be non-empty
 		idList.addAll(variantIds);
-		return mapInBatches(idList, 500, productVariantsRepository::findVariantBasicDataByIdIn)
+		return mapInBatches(idList, 10000, productVariantsRepository::findVariantBasicDataByIdIn)
 				.stream()
 				.map(variant -> toVariant(localToExtIdMapping, variant))
 				.collect(toList());

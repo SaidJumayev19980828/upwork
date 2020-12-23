@@ -40,9 +40,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(3, 'STORE_MANAGER', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(3, 'STORE_MANAGER', 99001);
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);

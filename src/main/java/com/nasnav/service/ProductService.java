@@ -33,12 +33,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -1508,6 +1503,7 @@ public class ProductService {
 	}
 
 
+
 	private void validateUserCanDeleteProduct(ProductEntity product, Long orgId) {
 		if (!Objects.equals(product.getOrganizationId(), orgId)){
 			throw new RuntimeBusinessException(FORBIDDEN, P$PRO$0010, product.getId(), orgId);
@@ -2186,6 +2182,7 @@ public class ProductService {
 		.distinct()
 		.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
 		.map(this::createNewExtraAttribute)
+		.collect(collectingAndThen(toList(), extraAttrRepo::saveAll))
 		.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
 	}
 
@@ -2534,8 +2531,7 @@ public class ProductService {
 		ExtraAttributesEntity newAttr = new ExtraAttributesEntity();
 		newAttr.setName(name);
 		newAttr.setOrganizationId(orgId);
-
-		return extraAttrRepo.save(newAttr);
+		return newAttr;
 	}
 
 
@@ -2782,7 +2778,7 @@ public class ProductService {
 	private Set<ProductTagPair> getExistingProductTags(Set<Long> prodIds) {
 		return ofNullable(prodIds)
 				.filter(EntityUtils::noneIsEmpty)
-				.map(ids -> mapInBatches(ids, 500, orgTagRepo::getTagsByProductIdIn))
+				.map(ids -> mapInBatches(ids, 5000, orgTagRepo::getTagsByProductIdIn))
 				.orElse(emptyList())
 				.parallelStream()
 				.map(this::toProductTagPair)
@@ -2827,7 +2823,7 @@ public class ProductService {
 
 	private void validateProductIdsExists(Set<Long> productIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Collection<Long> batch =  mapInBatches(productIds, 500, p -> productRepository.getExistingProductIds(productIds, orgId));
+		Collection<Long> batch =  mapInBatches(productIds, 5000, p -> productRepository.getExistingProductIds(new HashSet<>(p), orgId));
 		Set<Long> existingIds = new HashSet<>(batch);
 		productIds
 		.stream()
@@ -2966,7 +2962,7 @@ public class ProductService {
 
 
 	public void deleteAllTagsForProducts(List<Long> products) {
-		processInBatches(products, 500, productRepository::deleteAllTagsForProducts);
+		processInBatches(products, 10000, productRepository::deleteAllTagsForProducts);
 	}
 
 

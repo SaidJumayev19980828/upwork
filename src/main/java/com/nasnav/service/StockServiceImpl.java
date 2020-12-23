@@ -332,7 +332,7 @@ public class StockServiceImpl implements StockService {
 				.collect(toSet());
 		
 		List<StocksEntity> variantStocks = 
-				divideToBatches(variantIdList, 500)
+				divideToBatches(variantIdList, 5000)
 					.stream()
 					.map(stockRepo::findByProductVariantsEntity_IdIn)
 					.flatMap(List::stream)

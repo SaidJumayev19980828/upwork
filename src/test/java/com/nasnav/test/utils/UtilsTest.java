@@ -1,13 +1,16 @@
 package com.nasnav.test.utils;
 
 import static com.nasnav.commons.utils.CollectionUtils.distinctBy;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import org.junit.Test;
 
 import com.nasnav.commons.utils.MapBuilder;
@@ -48,7 +51,30 @@ public class UtilsTest {
 		assertEquals("normal distinct will give 3 items, as each has different num", input.size() ,normalDistinct.size());
 		assertEquals("as the distinct is by characters field, only first object will be inserted", 1, output.size());
 	}
-	
+
+
+
+	@Test
+	public void testMapInBatches(){
+		int size = 100;
+		int batchSize = 20;
+		List<Integer> testIntegers = IntStream. range(0,size).boxed().collect(toList());
+
+		List<Integer> result =
+				mapInBatches(testIntegers, batchSize, batch -> assertBatchSize(batchSize, batch))
+				 .stream()
+				 .map(i -> i+1)
+				.collect(toList());
+		assertEquals(size, result.size());
+	}
+
+
+
+	private List<Integer> assertBatchSize(int batchSize, List<Integer> batch) {
+		assertEquals(batchSize, batch.size());
+		return batch;
+	}
+
 }
 
 
