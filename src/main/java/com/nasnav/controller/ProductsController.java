@@ -423,6 +423,19 @@ public class ProductsController {
     }
 
 
+    @ApiOperation(value = "delete empty collection", nickname = "collection delete", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "collection Deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @DeleteMapping(value = "collection")
+    public void deleteCollection(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long id) {
+        productService.deleteCollection(id);
+    }
+
+
     @ApiOperation(value = "Add or delete a collection item", nickname = "addCollectionItem", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "collection item added"),

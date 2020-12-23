@@ -1,9 +1,6 @@
 package com.nasnav.test;
-import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
-import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static java.lang.Math.random;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -12,7 +9,9 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.json.JSONObject.NULL;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -26,7 +25,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.nasnav.dao.*;
 import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.test.commons.TestCommons;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -39,7 +40,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -50,16 +51,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.Product360ShopsRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
@@ -107,7 +98,7 @@ public class ProductServiceTest {
 	private ProductRepository productRepository;
 
 	@Autowired
-	private Product360ShopsRepository product360ShopsRepo;
+	private ProductCollectionRepository productCollectionRepo;
 
 	@Autowired
 	private ProductVariantsRepository productVariantsRepository;
@@ -1004,6 +995,20 @@ public class ProductServiceTest {
 
 		//-----------------------------------------
 		cleanInsertedData(testData);
+	}
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteCollectionSuccess() {
+		HttpEntity request = getHttpEntity("131415");
+
+		assertTrue(productCollectionRepo.existsById(1004L));
+		ResponseEntity<String> response = template.exchange("/product/collection?id=1004",
+																DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertFalse(productCollectionRepo.existsById(1004L));
 	}
 }
 

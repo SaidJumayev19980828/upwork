@@ -3173,6 +3173,18 @@ public class ProductService {
 				.map(this::getProductRepresentation)
 				.collect(toList());
 	}
+
+	public void deleteCollection(Long collectionId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		ProductCollectionEntity collection = productCollectionRepo.findByIdAndOrganizationId(collectionId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0012, collectionId));
+		if (!collection.getVariants().isEmpty()) {
+			collection.setVariants(new HashSet<>());
+			productCollectionRepo.save(collection);
+		}
+		productCollectionRepo.removeCollection(collectionId, orgId);
+	}
 }
 
 
