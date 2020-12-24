@@ -1154,13 +1154,18 @@ public class OrganizationService {
         }
         LinkedHashMap<String, Map> response = new LinkedHashMap();
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
+            Map<String, String> body = new HashMap();
             if (deliveryService != null) {
                 // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
-                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && !PaymentControllerCoD.isCodAvailableForService(deliveryService)) {
-                    continue;
+                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) ) {
+                    if (PaymentControllerCoD.isCodAvailableForService(deliveryService)) {
+                        body.put("icon", domainService.getBackendUrl()+"/icons/cod.svg");
+                        response.put(gateway.getGateway(), body);
+                    } else {
+                        continue;
+                    }
                 }
             }
-            Map<String, String> body = new HashMap();
             if (MASTERCARD.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 MastercardAccount account = new MastercardAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());

@@ -30,7 +30,7 @@ public class UpgAccount extends Account {
 //        this.upgCallbackUrl = props.getProperty("upg.callback");
         super.accountId = "UPG:" +super.accountId;
         this.upgScriptUrl = props.getProperty("upg.script_url");
-        this.icon = "/icons/meeza_logo.png";
+        this.icon = "/icons/meeza.png";
     }
     
 }
