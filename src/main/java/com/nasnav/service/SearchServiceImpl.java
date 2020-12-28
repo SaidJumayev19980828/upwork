@@ -30,6 +30,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -193,6 +194,13 @@ public class SearchServiceImpl implements SearchService{
 
 
     private Mono<Void> deleteIndexOfNameAndOrganization(String name, Long orgId) {
+        return indexExists(name)
+                .flatMap(exists -> exists? doDeleteIndexOfNameAndOrganization(name, orgId): Mono.empty());
+    }
+
+
+
+    private Mono<Void> doDeleteIndexOfNameAndOrganization(String name, Long orgId) {
         DeleteByQueryRequest request = new DeleteByQueryRequest(name);
         request.setQuery(new TermQueryBuilder("organization_id", orgId));
         return Mono
@@ -200,6 +208,21 @@ public class SearchServiceImpl implements SearchService{
                         , wrap((res)-> sink.success(), sink::error)))
                 .doOnError(e -> logger.error(e,e));
     }
+
+
+
+
+    private Mono<Boolean> indexExists(String indexName) {
+        return Mono
+                .create(sink ->
+                            client
+                                .indices()
+                                .existsAsync(
+                                        new GetIndexRequest(indexName)
+                                        , DEFAULT
+                                        , wrap(sink::success, sink::error)));
+    }
+
 
 
 
