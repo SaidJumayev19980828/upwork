@@ -125,7 +125,7 @@ public class ProductEntity {
     private Integer removed;
     
     @Column(name="hide")
-    private boolean hide;
+    private Boolean hide;
 
     @Column(name="search_360")
     private Boolean search360;

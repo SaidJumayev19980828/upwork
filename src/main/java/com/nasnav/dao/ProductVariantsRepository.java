@@ -38,7 +38,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod " +
-			"where prod.organizationId = :orgId and " +
+			"where prod.organizationId = :orgId and variant.removed = 0 and " +
 			"(variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%) "+
 			"order by variant.name ")
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId,
@@ -102,7 +102,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	@Query("SELECT count(variant.id) FROM ProductVariantsEntity variant " +
 			" INNER JOIN variant.productEntity prod " +
-			" where prod.organizationId = :orgId and " +
+			" where prod.organizationId = :orgId and variant.removed = 0 and " +
 			"(variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%)" +
 			"")
 	Long countByOrganizationId(@Param("orgId") Long orgId,

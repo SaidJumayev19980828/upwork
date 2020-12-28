@@ -276,6 +276,7 @@ public class DataExportServiceImpl implements DataExportService{
 											product.description.as("description"),
 											product.name.as("name"),
 											product.id.as("product_id"),
+											product.hide.as("hide"),
 											variant.sku.as("sku"),
 											variant.productCode.as("product_code"),
 											SQLExpressions.rowNumber()
@@ -314,6 +315,7 @@ public class DataExportServiceImpl implements DataExportService{
 											product.description.as("description"),
 											product.name.as("name"),
 											product.id.as("product_id"),
+											product.hide.as("hide"),
 											variant.sku.as("sku"),
 											variant.productCode.as("product_code"));
 
