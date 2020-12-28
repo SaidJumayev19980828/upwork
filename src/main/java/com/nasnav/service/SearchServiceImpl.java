@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -62,8 +63,8 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.SearchType.*;
-import static com.nasnav.exceptions.ErrorCodes.NAVBOX$SRCH$0001;
-import static com.nasnav.exceptions.ErrorCodes.SRCH$SYNC$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.*;
@@ -195,7 +196,7 @@ public class SearchServiceImpl implements SearchService{
 
     private Mono<Void> deleteIndexOfNameAndOrganization(String name, Long orgId) {
         return indexExists(name)
-                .flatMap(exists -> exists? doDeleteIndexOfNameAndOrganization(name, orgId): Mono.empty());
+                .flatMap(exists -> exists? doDeleteIndexOfNameAndOrganization(name, orgId): Mono.create(MonoSink::success));
     }
 
 
@@ -244,11 +245,23 @@ public class SearchServiceImpl implements SearchService{
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(request::add);
-
-        //TODO: log bulk response failures
        return Mono
-               .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> sink.success(), sink::error)))
+               .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> handleBulkResponse(res, sink, orgId), sink::error)))
                .doOnError(e -> logger.error(e,e));
+    }
+
+
+
+
+    private void handleBulkResponse(BulkResponse response, MonoSink<Void> sink, Long orgId){
+        if(!response.hasFailures()){
+            sink.success();
+        }else{
+            String errMsg = response.buildFailureMessage();
+            Throwable e = new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0002, orgId, errMsg);
+            sink.error(e);
+        }
+
     }
 
 
@@ -268,26 +281,29 @@ public class SearchServiceImpl implements SearchService{
 
 
 
+
     private Mono<Void> sendProductsAndCollectionsData(Long orgId) {
         BulkRequest request = new BulkRequest();
         Map<Long,List<CsvRow>> extraData = getProductsExtraData(orgId);
         Long totalProducts = getTotalProducts(orgId);
         double batchSize = 1000;
         int batches = (int)Math.ceil(totalProducts/batchSize);
+        logger.info(format("Sync search data for org[%d]: sync [%d] product and collections in [%d] batches!", orgId, totalProducts, batches));
         for(int i=0; i< batches; i++ ){
             try {
                 List<Product> products = getProductsBatch(orgId, extraData, batchSize, i);
                 addProductsToBulkIndexRequest(request, products);
                 addCollectionsToBulkIndexRequest(request, products);
-            } catch (BusinessException|InvocationTargetException|IllegalAccessException e) {
+            } catch (Throwable e) {
                 logger.error(e,e);
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0001, orgId);
             }
         }
         return Mono
-                .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> sink.success(), sink::error)))
+                .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> handleBulkResponse(res, sink, orgId), sink::error)))
                 .doOnError(e -> logger.error(e,e));
     }
+
 
 
 
