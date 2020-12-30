@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.util.StringUtils.isEmpty;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -433,7 +434,7 @@ public class CategoryService {
         }else if(Objects.equals(operation, "create")) {
         	if (categoryId == null && hasCategory) {
             	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
-            }else if (tagDTO.getName() == null) {
+            }else if (isEmpty(tagDTO.getName())) {
             	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
             }
             
