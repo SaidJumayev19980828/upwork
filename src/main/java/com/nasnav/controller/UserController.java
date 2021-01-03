@@ -193,9 +193,18 @@ public class UserController {
                                       @RequestParam (value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
-    
-    
-    
+
+
+    @ApiOperation(value = "Get users list", nickname = "usersList")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Customer doesn't have access to view Customers users data"),
+    })
+    @GetMapping(value = "list/customer", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(OK)
+    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken) {
+        return userService.getUserList();
+    }
     
     
     @ApiOperation(value = "Log in user using a social login token, "

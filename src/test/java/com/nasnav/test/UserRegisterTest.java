@@ -16,8 +16,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
@@ -29,6 +28,7 @@ import java.util.Optional;
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
@@ -1208,9 +1208,36 @@ public class UserRegisterTest {
 		boolean userLoggedIn = userTokenRepo.existsByToken(token);
 		assertTrue("the recovered user should be logged in ", userLoggedIn );
 		Long newTokensCount = userTokenRepo.countByUserEntity_Id(88005L);
-		assertTrue(newTokensCount.intValue() == 1);
+		assertEquals(1, newTokensCount.intValue());
 	}
 
+
+	@Test
+	public void listCustomersSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
+		assertFalse(userList.isEmpty());
+	}
+
+
+
+	@Test
+	public void listCustomersNoAuthN() throws IOException {
+		HttpEntity<?> req = getHttpEntity("INVALID-TOKEN");
+		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
+		assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+
+
+
+	@Test
+	public void listCustomersNoAuthZ() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()

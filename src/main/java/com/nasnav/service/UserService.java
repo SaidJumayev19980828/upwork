@@ -9,6 +9,8 @@ import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 
+import java.util.List;
+
 public interface UserService extends CommonUserServiceInterface{
 
     UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
@@ -32,4 +34,6 @@ public interface UserService extends CommonUserServiceInterface{
     void subscribeEmail(String email, Long orgId);
 
     RedirectView activateSubscribedEmail(String token, Long orgId);
+
+    List<UserRepresentationObject> getUserList();
 }

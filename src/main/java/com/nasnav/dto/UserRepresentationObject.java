@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -25,7 +26,8 @@ public class UserRepresentationObject {
     public String firstName;
     public String lastName;
     public Long organizationId;
-    @JsonProperty("store_id")
     public Long shopId;
     public Set<String> roles;
+    public String status;
+    public LocalDateTime creationDate;
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.listeners.UserEntityListener;
 
 import lombok.Data;
@@ -97,6 +98,8 @@ public class UserEntity extends BaseUserEntity{
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
         obj.mobile = this.getMobile();
+        obj.setCreationDate(creationTime);
+        obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
 
         return obj;
     }

@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -55,6 +56,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
 	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
+
+	List<UserEntity> findByOrganizationId(Long orgId);
 
 	@Query("select count (u.id) from UserEntity u " +
 			" where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth and u.creationTime is not null ")

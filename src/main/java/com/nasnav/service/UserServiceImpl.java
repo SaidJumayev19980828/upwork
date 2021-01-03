@@ -679,4 +679,12 @@ public class UserServiceImpl implements UserService {
 		return new RedirectView(url);
 	}
 
+	public List<UserRepresentationObject> getUserList(){
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return userRepository.findByOrganizationId(orgId)
+					.stream()
+					.map(u -> u.getRepresentation())
+					.collect(toList());
+	}
+
 }
