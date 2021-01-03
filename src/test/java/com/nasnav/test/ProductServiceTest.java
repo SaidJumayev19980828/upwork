@@ -1,5 +1,9 @@
 package com.nasnav.test;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.persistence.ProductTypes.COLLECTION;
+import static com.nasnav.persistence.ProductTypes.STOCK_ITEM;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.Math.random;
 import static java.lang.String.format;
@@ -25,8 +29,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
-import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.test.commons.TestCommons;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -51,9 +56,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -1009,6 +1011,72 @@ public class ProductServiceTest {
 																DELETE, request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(productCollectionRepo.existsById(1004L));
+	}
+
+
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testGetProductsOutOfStockProductsHasEmptyPrices() throws JsonParseException, JsonMappingException, IOException {
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99001L;
+		param.name = "code gens";
+
+		ResponseEntity<String> response =
+				template.getForEntity("/navbox/products?org_id=99001", String.class);
+		assertEquals(OK, response.getStatusCode());
+
+		System.out.println(response.getBody());
+		ProductsResponse prodResponse = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
+		});
+		List<ProductRepresentationObject> allProducts = prodResponse.getProducts();
+		List<ProductRepresentationObject> products =
+				allProducts
+						.stream()
+						.filter(p -> p.getProductType() == STOCK_ITEM)
+						.collect(toList());
+		List<ProductRepresentationObject> collections =
+				allProducts
+						.stream()
+						.filter(p -> p.getProductType() == COLLECTION)
+						.collect(toList());
+
+		assertTrue( hasEmptyPrices(collections));
+		assertTrue( isOutOfStkProductsHasEmptyPrices(products) );
+		assertTrue( isProductsWithStockHavePrices(products) );
+	}
+
+
+
+
+	private boolean isProductsWithStockHavePrices(List<ProductRepresentationObject> products) {
+		return products
+				.stream()
+				.filter(p -> p.getId() == 1001L)
+				.anyMatch(p -> noneIsNull(p.getPrices(), p.getPrices().getMinPrice(), p.getPrices().getMaxPrice()));
+	}
+
+
+
+
+	private boolean isOutOfStkProductsHasEmptyPrices(List<ProductRepresentationObject> products) {
+		return products.
+				stream()
+				.filter(p -> p.getId() == 1005L)
+				.map(ProductRepresentationObject::getPrices)
+				.filter(Objects::nonNull)
+				.anyMatch(prices -> allIsNull(prices.getMaxPrice(), prices.getMinPrice()));
+	}
+
+
+
+	private boolean hasEmptyPrices(List<ProductRepresentationObject> collections) {
+		return collections.
+				stream()
+				.map(ProductRepresentationObject::getPrices)
+				.filter(Objects::nonNull)
+				.anyMatch(prices -> allIsNull(prices.getMaxPrice(), prices.getMinPrice()));
 	}
 }
 
