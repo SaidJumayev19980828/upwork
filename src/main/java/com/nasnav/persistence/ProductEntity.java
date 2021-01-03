@@ -79,8 +79,11 @@ import lombok.ToString;
 public class ProductEntity {
 
 	public ProductEntity() {
+	    // these values have non-null constraint and default values in db
+        // but Hibernate sets their value null explicitly if not provided in the code
 		removed = 0;
 		priority = 0;
+        hide = false;
 		tags = new HashSet<>();
 	}
 	
