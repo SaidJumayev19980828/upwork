@@ -184,7 +184,6 @@ public class OrganizationService {
 
         setSocialEntity(orgRepObj);
         setThemeSettings(orgRepObj);
-        setBrands(orgRepObj);
         setImages(orgRepObj);
         setPublicSettings(orgRepObj);
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
@@ -214,27 +213,10 @@ public class OrganizationService {
 
 
 
-    private void setBrands(OrganizationRepresentationObject orgRepObj) {
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgRepObj.getId(), 0);
-        if (!isNullOrEmpty(brandsEntityList)) {
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList
-                    .stream()
-                    .map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation()))
-                    .collect(toList());
-            orgRepObj.setBrands(repList);
-        }
-    }
-
-
-
     private void setImages(OrganizationRepresentationObject orgRepObj) {
-        List <OrganizationImagesEntity> orgImgEntities =
-                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
-        if (!isNullOrEmpty(orgImgEntities)) {
-            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities
-                    .stream()
-                    .map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation()))
-                    .collect(toList());
+        List <OrganizationImagesRepresentationObject> imagesList =
+                organizationImagesRepository.getByOrgIdAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+        if (!isNullOrEmpty(imagesList)) {
             orgRepObj.setImages(imagesList);
         }
     }
