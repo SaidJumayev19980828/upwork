@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
 
+import com.nasnav.shipping.services.clicknship.ClickNShipShippingService;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,8 @@ public class ShippingServiceFactory {
 					,BostaLevisShippingService.class
 					,PickupFromShop.class
 					,PickupPointsWithInternalLogistics.class
-					,SallabShippingService.class);
+					,SallabShippingService.class
+					,ClickNShipShippingService.class);
 	
 	
 	@Autowired

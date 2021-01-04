@@ -72,6 +72,12 @@ public class EntityUtils {
 		List<Object> elementList =  asList(elements);
 		return elementList.stream().allMatch(e -> e == null);
 	}
+
+
+	public static boolean anyIsEmpty(Optional<?>... elements){
+		List<Optional<?>> elementList =  asList(elements);
+		return elementList.stream().anyMatch(opt -> !opt.isPresent());
+	}
 	
 	
 	

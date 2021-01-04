@@ -1,0 +1,255 @@
+package com.nasnav.test.shipping.services.clicknship;
+
+import com.nasnav.NavBox;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.ShippingServiceFactory;
+import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
+import com.nasnav.shipping.services.clicknship.webclient.ClickNshipWebClient;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockserver.junit.MockServerRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import reactor.core.publisher.Mono;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.SERVICE_ID;
+import static java.lang.String.format;
+import static java.time.LocalDate.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@PropertySource("classpath:test.database.properties")
+@DirtiesContext
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_9.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+public class ClicknshipServiceTest {
+
+
+
+    @Autowired
+    private ShippingServiceFactory shippingServiceFactory;
+
+    @Autowired
+    private ClicknshipTestCommon mockService;
+
+    @Rule
+    public MockServerRule mockServerRule = new MockServerRule(this);
+
+
+    private String token = "nBYCv3UXLzxYrO77JTzXc76geUKXU5bqDRuB-JsCc3wMmkweTbR0ZjiIvsDmXA5XNX_yJKh6CEVS1Ag_xioGHZyzuDTDvnygnPj6MRQBusT8EYcJzTJvE2ry1aZs1fCLY_4zD4EjULfXfNVSBVvof5CXOqHlfrYjEA7eiYOTYOd0TZz3v120Gaqjpur6a4HmvMFzY6FYvGRt-ONyIaPoxUvB5HVyI1Q3YZKiXCsAz3G3WRNZC-oO8TO60PNBx8viyhrU5bDNl-yEKkeh9yIoRd2V3rZRtKymcEoj1xYnxjYWu3XBRD_jgVY_65h2Bb3AnSB7j_qSHoZF3i3siyqGUp4OFOs6IFIh5pgLcBz6nha-cBz5W7u-S8pkQlSXPN-0FBAD6-GwpSxztaXKc0BGhUMbgh7ghWrPzSztdiMCVps";
+    private static final String SERVER_URL = "https://api.clicknship.com.ng";
+    private ClickNshipWebClient client;
+
+    private String server = "";
+//    private String server = SERVER_URL;       //uncomment while commenting the above line to run tests against the actual staging server
+
+    @Before
+    public void init() throws Exception {
+        if(isUsingMockServer()){
+            server = mockService.initMockServer(mockServerRule);
+        }else{
+            client = new ClickNshipWebClient(SERVER_URL);
+        }
+    }
+
+
+
+    @Test
+    public void testGetOffer() {
+        ShippingService service = shippingServiceFactory
+                .getShippingService(SERVICE_ID, createServiceParams())
+                .get();
+        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        ShippingOffer offer = service.createShippingOffer(details).block();
+        List<Shipment> shipments = offer.getShipments();
+        assertEquals(1, shipments.size());
+        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
+        assertEquals(now().plusDays(4) , shipments.get(0).getEta().getTo());
+
+        if(isUsingMockServer()){
+            assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("3547.50")));
+        }
+    }
+
+
+
+    @Test
+    public void testCreateDeliveryRequest() {
+        ShippingService service =
+                shippingServiceFactory
+                .getShippingService(SERVICE_ID, createServiceParams())
+                .get();
+        //when running the tests against the staging server, the metaOrder-subOrder combination must be unique
+        Long metaOrderId = isUsingMockServer() ? 11L: randomLong();
+        Long subOrderId = isUsingMockServer() ? 22L: randomLong();
+        List<ShippingDetails> details = createShippingDetails(metaOrderId, subOrderId);
+        ShipmentTracker tracker = service.requestShipment(details).blockFirst();
+        assertEquals(format("%d-%d", metaOrderId, subOrderId), tracker.getShipmentExternalId());
+        if(isUsingMockServer()){
+            assertEquals("SA00712362", tracker.getTracker());
+        }
+        assertFalse(tracker.getAirwayBillFile().isEmpty());
+    }
+
+
+
+    private boolean isUsingMockServer() {
+        return !server.equals(SERVER_URL);
+    }
+
+
+    @Test
+    public void testGetOfferCityOutOfService() {
+        ShippingService service =
+                shippingServiceFactory
+                .getShippingService(SERVICE_ID, createServiceParams())
+                .get();
+
+        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        setOutOfReachCity(details.get(0));
+
+        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        assertFalse(offer.isPresent());
+    }
+
+
+
+    @Test(expected = RuntimeBusinessException.class)
+    public void createDeliveryUnsupportedCityTest() {
+        ShippingService service = shippingServiceFactory
+                .getShippingService(SERVICE_ID, createServiceParams())
+                .get();
+
+        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        setOutOfReachCity(details.get(0));
+
+        service.requestShipment(details).collectList().block().get(0);
+    }
+
+
+
+    private Long randomLong(){
+        return (long)(Math.random()*Long.MAX_VALUE);
+    }
+
+
+
+
+    private void setOutOfReachCity(ShippingDetails details) {
+        ShippingAddress farFarAwayAddr = new ShippingAddress();
+        farFarAwayAddr.setAddressLine1("Frozen Oil st.");
+        farFarAwayAddr.setArea(191919L);
+        farFarAwayAddr.setBuildingNumber("777");
+        farFarAwayAddr.setCity(99999L);
+        farFarAwayAddr.setCountry(99999L);
+        farFarAwayAddr.setId(12300004L);
+        farFarAwayAddr.setName("Nasnav North Pole Branch");
+        details.setDestination(farFarAwayAddr);
+    }
+
+
+
+
+
+    private List<ShippingDetails> createShippingDetails(Long metaOrderId, Long subOrderId) {
+        Map<String, String> additionalData = new HashMap<>();
+        additionalData.put("paymentType", "Pay On Delivery");
+        additionalData.put("deliveryType", "Normal Delivery");
+
+        ShipmentReceiver receiver = new ShipmentReceiver();
+        receiver.setFirstName("John");
+        receiver.setLastName("Smith");
+        receiver.setPhone("08076522536");
+        receiver.setEmail("testemail@yahoo.com");
+
+        ShippingAddress source = new ShippingAddress();
+        source.setName("PETER ADEOGUN");
+        source.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
+        source.setArea(5555L);
+        source.setCity(1001L);
+        ShippingAddress dest = new ShippingAddress();
+        dest.setName("BENSON ADEWALE");
+        dest.setAddressLine1("23 Ikorodu Road, Maryland, Lagos");
+        dest.setArea(4444L);
+        dest.setCity(1002L);
+
+        ShipmentItems item = new ShipmentItems();
+        item.setWeight(new BigDecimal(1.5));
+        item.setName("HAND BAG");
+        item.setQuantity(5);
+        item.setPrice(new BigDecimal(9000));
+        item.setSpecs("Color : BLUE, Size : 23");
+        item.setStockId(310001L);
+
+        ShippingDetails details = new ShippingDetails();
+        details.setReceiver(receiver);
+        details.setMetaOrderId(metaOrderId);
+        details.setSubOrderId(subOrderId);
+        details.setSource(source);
+        details.setDestination(dest);
+        details.setAdditionalData(additionalData);
+        details.setItems(singletonList(item));
+        return singletonList(details);
+    }
+
+    private List<ServiceParameter> createServiceParams() {
+        return asList(new ServiceParameter("SERVER_URL", server)
+                , new ServiceParameter("USER_NAME", "cnsdemoapiacct")
+                , new ServiceParameter("PASSWORD", "ClickNShip$12345")
+                , new ServiceParameter("GRANT_TYPE", "password"));
+    }
+
+    //@Test
+    public void authenticate() throws InterruptedException {
+        Consumer<ClientResponse> c = res -> {
+            assertEquals(200, res.rawStatusCode());
+        };
+        client.authenticateUser("cnsdemoapiacct", "ClickNShip$12345", "password")
+                .subscribe(c);
+        Thread.sleep(1000);
+    }
+
+    ///@Test
+    public void getCities() throws InterruptedException {
+        Consumer<ClientResponse> c = res -> {
+            assertEquals(200, res.rawStatusCode());
+        };
+        client.getCities(token)
+                .subscribe(c);
+        Thread.sleep(1000);
+    }
+
+    //@Test
+    public void getStates() throws InterruptedException {
+        Consumer<ClientResponse> c = res -> {
+            assertEquals(200, res.rawStatusCode());
+        };
+        client.getStates(token)
+                .subscribe(c);
+        Thread.sleep(1000);
+    }
+}

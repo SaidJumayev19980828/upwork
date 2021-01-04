@@ -13,6 +13,7 @@ DELETE FROM public.shipment where id IN (
 	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id
 	WHERE ord.organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.shipping_areas;
 DELETE FROM public.shipping_service;
 DELETE FROM meta_orders_promotions;
 DELETE FROM public.PROMOTIONS_CART_CODES;
@@ -89,6 +90,7 @@ DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
+DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
 DELETE FROM public.cities;
 DELETE FROM public.countries;

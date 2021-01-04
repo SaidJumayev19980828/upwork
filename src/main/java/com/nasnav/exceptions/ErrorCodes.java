@@ -140,6 +140,7 @@ public enum ErrorCodes {
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
 	,O$SHP$0004("Failed to create a shipment for return request[%d]!")
 	,O$SHP$0005("Meta-order with id [%d], has no sub-orders!")
+	,O$SHP$0006("Provided area_id [%d] doesn't map to any existing external area_id")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
@@ -208,6 +209,7 @@ public enum ErrorCodes {
 	,SHP$SRV$0011("Cannot create shipment with the given parameters due to : %s!")
 	,SHP$SRV$0012("Failed to calculate shipping fees for shipping service [%s], with shipment details[%s]!"
 			+ " Make sure there is no missing data , and the destination city is supported by the shipping service!")
+	,SHP$SRV$0013("Missing shipping address for shipping service[%s]!")
 
 	,SHP$PARS$0001("Error while parsing status update request!")
 
