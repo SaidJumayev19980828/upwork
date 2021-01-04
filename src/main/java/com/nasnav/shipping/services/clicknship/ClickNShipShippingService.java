@@ -73,8 +73,7 @@ public class ClickNShipShippingService implements ShippingService {
                     , new Parameter(PASSWORD, STRING)
                     , new Parameter(GRANT_TYPE, STRING));
 
-    private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION =
-            asList(new Parameter(DELIVERY_TYPE, STRING));
+    private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION = emptyList();
 
     private static final Map<Long, City> cityIdMapping =
             ImmutableMap
@@ -382,17 +381,13 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private ShipmentRequest createShipmentRequest(ShippingDetails shipment) {
-        String deliveryType =
-                ofNullable(shipment.getAdditionalData())
-                .map(additionalData -> additionalData.get(DELIVERY_TYPE))
-                .orElse(NORMAL_DELIVERY.getValue());
         ShipmentRequest request = new ShipmentRequest();
         if (Objects.equals(shipment.getCodValue(), null)) {
             request.setPaymentType("prepaid");
         } else {
             request.setPaymentType("pay on delivery");
         }
-        request.setDeliveryType(deliveryType);
+        request.setDeliveryType(NORMAL_DELIVERY.getValue());
         request.setOrderNo(shipment.getMetaOrderId()+"-"+shipment.getSubOrderId());
 
         request = setSenderInfo(shipment, request);
