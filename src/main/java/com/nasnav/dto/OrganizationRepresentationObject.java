@@ -58,6 +58,9 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @ApiModelProperty(value = "theme id used in the organization")
     private String themeId;
 
+    @ApiModelProperty(value = "Brands carried by the organization")
+    private List<Organization_BrandRepresentationObject> brands = null;
+
     @ApiModelProperty(value = "Social websites (facebook, twitter)")
     private SocialRepresentationObject social;
 
