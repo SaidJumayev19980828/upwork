@@ -193,7 +193,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 							@Param("minWeek") LocalDateTime minWeek,
 							@Param("maxWeek") LocalDateTime maxWeek);
 
-	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 2 and subOrder.id = :orderId")
+	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 5 and subOrder.id = :orderId")
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
 											   @Param("userId") Long userId);
 }
