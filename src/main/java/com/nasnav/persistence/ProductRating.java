@@ -46,6 +46,7 @@ public class ProductRating implements BaseEntity{
     public BaseRepresentationObject getRepresentation() {
         ProductRateRepresentationObject obj = new ProductRateRepresentationObject();
         obj.setId(getId());
+        obj.setVariantId(variant.getId());
         obj.setRate(getRate());
         obj.setReview(getReview());
         obj.setSubmissionDate(getSubmissionDate());

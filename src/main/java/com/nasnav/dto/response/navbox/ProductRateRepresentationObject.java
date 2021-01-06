@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductRateRepresentationObject extends BaseRepresentationObject {
     private Long id;
+    private Long variantId;
     private String review;
     private Integer rate;
     private Long userId;

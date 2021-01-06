@@ -523,9 +523,8 @@ public class ProductsController {
     }
 
     @GetMapping(value="/variant_rates", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token,
-                                                                   @RequestParam(value = "variant_id")Long variantId) {
-        return productService.getProductRatings(variantId, false);
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token) {
+        return productService.getProductRatings();
     }
 
     @ApiOperation(value = "approve a product rating", nickname = "approveProductRate", code = 201)

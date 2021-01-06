@@ -3199,6 +3199,9 @@ public class ProductService {
 		UserEntity user = (UserEntity) baseUser;
 		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(dto.getVariantId(), user.getOrganizationId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
+		if (ordersRepository.getStoreConfirmedOrderCountPerUser(dto.getOrderId(), user.getId()) == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$007);
+		}
 		ProductRating rate = productRatingRepo.findByVariant_IdAndUser_Id(variant.getId(), user.getId())
 				.orElse(new ProductRating());
 		rate.setRate(dto.getRate());
@@ -3210,7 +3213,7 @@ public class ProductService {
 	}
 
 	private void validateProductRateDTO(ProductRateDTO dto) {
-		if (anyIsNull(dto.getVariantId(), dto.getRate())) {
+		if (anyIsNull(dto.getVariantId(), dto.getRate(), dto.getOrderId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$004 );
 		}
 		if (dto.getRate() > 5 || dto.getRate() < 0) {
@@ -3227,13 +3230,16 @@ public class ProductService {
 	}
 
 	public List<ProductRateRepresentationObject> getProductRatings(Long variantId, boolean onlyApproved) {
-		List<ProductRating> ratings;
-		if(onlyApproved == true) {
-			ratings = productRatingRepo.findApprovedVariantRatings(variantId);
-		} else {
-			ratings = productRatingRepo.findAllVariantRatings(variantId);
-		}
-		return ratings.stream()
+		return  productRatingRepo.findApprovedVariantRatings(variantId)
+				.stream()
+				.map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
+				.collect(toList());
+	}
+
+	public List<ProductRateRepresentationObject> getProductRatings() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return productRatingRepo.findUnapprovedVariantsRatings(orgId)
+				.stream()
 				.map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
 				.collect(toList());
 	}

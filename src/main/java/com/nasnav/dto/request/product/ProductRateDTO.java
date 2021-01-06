@@ -10,4 +10,5 @@ public class ProductRateDTO {
     private Long variantId;
     private Integer rate;
     private String review;
+    private Long orderId;
 }

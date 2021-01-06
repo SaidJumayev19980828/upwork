@@ -62,3 +62,14 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 insert into public.product_ratings values (10001, 310004, 88, 2, 'review', now(), false);
 insert into public.product_ratings values (10002, 310004, 89, 3, 'review', now(), true);
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
+
+INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 2);
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
+values(330031, 88, now(), now(), 99001, 2, 501, 310001, 12300001);
+
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);

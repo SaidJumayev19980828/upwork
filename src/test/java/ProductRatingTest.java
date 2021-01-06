@@ -91,6 +91,15 @@ public class ProductRatingTest {
     }
 
     @Test
+    public void postReviewInvalidOrderId() {
+        String body = createReviewRequest().put("order_id", 0).toString();
+
+        HttpEntity request = getHttpEntity(body, "123");
+        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        assertEquals(406 , response.getStatusCodeValue());
+    }
+
+    @Test
     public void postReviewMissingRate() {
         JSONObject body = createReviewRequest();
         body.remove("rate");
@@ -157,11 +166,11 @@ public class ProductRatingTest {
     @Test
     public void listVariantRates() throws IOException {
         HttpEntity request = getHttpEntity("131415");
-        ResponseEntity<String> response = template.exchange("/product/variant_rates?variant_id=310004", GET, request, String.class);
+        ResponseEntity<String> response = template.exchange("/product/variant_rates", GET, request, String.class);
         assertEquals(200 , response.getStatusCodeValue());
         List<ProductRateRepresentationObject> body =
                 mapper.readValue(response.getBody(), new TypeReference<List<ProductRateRepresentationObject> >(){});
-        assertTrue(body.size() == 2);
+        assertTrue(body.size() == 1);
     }
 
     @Test
@@ -183,6 +192,7 @@ public class ProductRatingTest {
     private JSONObject createReviewRequest() {
         return json().put("variant_id", 310001)
                 .put("rate", 2)
-                .put("review", "good");
+                .put("review", "good")
+                .put("order_id", 330031);
     }
 }

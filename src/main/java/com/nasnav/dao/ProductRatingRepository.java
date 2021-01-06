@@ -17,12 +17,14 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
     @Query("select r from ProductRating r" +
             " join fetch r.variant v" +
             " join fetch r.user u" +
-            " where v.id = :variantId")
-    List<ProductRating> findAllVariantRatings(@Param("variantId") Long variantId);
+            " where r.approved = false and v.productEntity.organizationId = :orgId" +
+            " order by r.submissionDate desc")
+    List<ProductRating> findUnapprovedVariantsRatings(@Param("orgId") Long orgId);
 
     @Query("select r from ProductRating r" +
             " join fetch r.variant v" +
             " join fetch r.user u" +
-            " where v.id = :variantId and r.approved = true")
+            " where v.id = :variantId and r.approved = true" +
+            " order by r.submissionDate desc")
     List<ProductRating> findApprovedVariantRatings(@Param("variantId") Long variantId);
 }

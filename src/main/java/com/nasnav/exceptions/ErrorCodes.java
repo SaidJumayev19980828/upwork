@@ -46,9 +46,10 @@ public enum ErrorCodes {
 	,P$VAR$0001("No Variant found with id[%s]!")
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
 	,P$VAR$003("No variant id provided!")
-	,P$VAR$004("Missing variant_id or rate value!")
+	,P$VAR$004("Missing variant_id or rate value or order_id!")
 	,P$VAR$005("No Variant rate found with id[%d]!")
 	,P$VAR$006("Rate must be between 0 and 5")
+	,P$VAR$007("User can rate only bought products!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
