@@ -29,6 +29,7 @@ import static com.nasnav.shipping.model.DeliveryType.NORMAL_DELIVERY;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -297,8 +298,10 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private BigDecimal getShipmentItemsWeight(List<ShipmentItems> items) {
-        return items.stream()
+        return items
+                .stream()
                 .map(ShipmentItems::getWeight)
+                .map(weight -> ofNullable(weight).orElse(ZERO))
                 .reduce(ONE, BigDecimal::add);
     }
 

@@ -1,12 +1,18 @@
 package com.nasnav.test.shipping.services.clicknship;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.OrganizationShippingServiceRepository;
+import com.nasnav.dto.request.shipping.ShipmentDTO;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.OrganizationShippingServiceEntity;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
-import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 import com.nasnav.shipping.services.clicknship.webclient.ClickNshipWebClient;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,13 +21,16 @@ import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.ClientResponse;
-import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -30,12 +39,17 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.SERVICE_ID;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.sort;
+import static java.util.Comparator.comparing;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -44,7 +58,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 @DirtiesContext
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_9.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_10.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ClicknshipServiceTest {
 
@@ -55,6 +69,15 @@ public class ClicknshipServiceTest {
 
     @Autowired
     private ClicknshipTestCommon mockService;
+
+    @Autowired
+    private TestRestTemplate template;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private OrganizationShippingServiceRepository serviceParamRepo;
 
     @Rule
     public MockServerRule mockServerRule = new MockServerRule(this);
@@ -67,14 +90,30 @@ public class ClicknshipServiceTest {
     private String server = "";
 //    private String server = SERVER_URL;       //uncomment while commenting the above line to run tests against the actual staging server
 
+
+    private String serviceParams;
+
     @Before
     public void init() throws Exception {
         if(isUsingMockServer()){
             server = mockService.initMockServer(mockServerRule);
+            updateServiceParams();
         }else{
             client = new ClickNshipWebClient(SERVER_URL);
         }
     }
+
+
+
+    private void updateServiceParams() {
+        OrganizationShippingServiceEntity serviceParams =
+                serviceParamRepo.getByOrganization_IdAndServiceId(99001L, SERVICE_ID).get();
+        JSONObject paramsJson = new JSONObject(serviceParams.getServiceParameters());
+        paramsJson.put("SERVER_URL", server);
+        serviceParams.setServiceParameters(paramsJson.toString());
+        serviceParamRepo.save(serviceParams);
+    }
+
 
 
 
@@ -140,7 +179,8 @@ public class ClicknshipServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryUnsupportedCityTest() {
-        ShippingService service = shippingServiceFactory
+        ShippingService service =
+                shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
 
@@ -148,6 +188,29 @@ public class ClicknshipServiceTest {
         setOutOfReachCity(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
+    }
+
+
+
+    @Test
+    public void testGetMinimumOffer() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+
+        sort(shipments, comparing(ShipmentDTO::getShippingFee));
+        assertEquals(1, shipments.size());
+        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
+        assertEquals(now().plusDays(4) , shipments.get(0).getEta().getTo());
+        if(isUsingMockServer()){
+            assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("3547.5")));
+        }
     }
 
 
@@ -189,12 +252,12 @@ public class ClicknshipServiceTest {
         ShippingAddress source = new ShippingAddress();
         source.setName("PETER ADEOGUN");
         source.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
-        source.setArea(5555L);
+        source.setArea(11L);
         source.setCity(1001L);
         ShippingAddress dest = new ShippingAddress();
         dest.setName("BENSON ADEWALE");
         dest.setAddressLine1("23 Ikorodu Road, Maryland, Lagos");
-        dest.setArea(4444L);
+        dest.setArea(22L);
         dest.setCity(1002L);
 
         ShipmentItems item = new ShipmentItems();
