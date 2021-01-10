@@ -177,11 +177,9 @@ public class SallabShippingService implements ShippingService{
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> shippingInfo) {
 
 		Optional<Fee> fee = calcFeeData(shippingInfo);
-		
 		if(!fee.isPresent() ||  !areCitiesSupported(shippingInfo)) {
 			return Mono.empty();
 		}
-
 		Integer shipmentsNum = shippingInfo.size();
 		List<Shipment> shipments =
 				shippingInfo
@@ -424,8 +422,7 @@ public class SallabShippingService implements ShippingService{
 
 	@Override
 	public void validateShipment(List<ShippingDetails> details) {
-		boolean citiesAreSupported = areCitiesSupported(details);
-		if(!citiesAreSupported) {
+		if(!areCitiesSupported(details)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010);
 		}
 	}

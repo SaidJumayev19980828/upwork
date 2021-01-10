@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
 
+import com.nasnav.shipping.services.*;
 import com.nasnav.shipping.services.clicknship.ClickNShipShippingService;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -23,10 +24,6 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShippingServiceInfo;
-import com.nasnav.shipping.services.DummyShippingService;
-import com.nasnav.shipping.services.PickupFromShop;
-import com.nasnav.shipping.services.PickupPointsWithInternalLogistics;
-import com.nasnav.shipping.services.SallabShippingService;
 import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import lombok.AllArgsConstructor;
@@ -50,7 +47,8 @@ public class ShippingServiceFactory {
 					,PickupFromShop.class
 					,PickupPointsWithInternalLogistics.class
 					,SallabShippingService.class
-					,ClickNShipShippingService.class);
+					,ClickNShipShippingService.class
+					,FixedFeeShippingService.class);
 	
 	
 	@Autowired
