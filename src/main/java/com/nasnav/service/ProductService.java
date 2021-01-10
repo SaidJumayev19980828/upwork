@@ -3190,59 +3190,7 @@ public class ProductService {
 	}
 
 
-	public void rateProduct(ProductRateDTO dto) {
-		validateProductRateDTO(dto);
-		BaseUserEntity baseUser = securityService.getCurrentUser();
-		if (baseUser instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, E$USR$0001);
-		}
-		UserEntity user = (UserEntity) baseUser;
-		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(dto.getVariantId(), user.getOrganizationId())
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
-		if (ordersRepository.getStoreConfirmedOrderCountPerUser(dto.getOrderId(), user.getId()) == 0) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$007);
-		}
-		ProductRating rate = productRatingRepo.findByVariant_IdAndUser_Id(variant.getId(), user.getId())
-				.orElse(new ProductRating());
-		rate.setRate(dto.getRate());
-		rate.setVariant(variant);
-		rate.setReview(dto.getReview());
-		rate.setUser(user);
-		rate.setApproved(false);
-		productRatingRepo.save(rate);
-	}
 
-	private void validateProductRateDTO(ProductRateDTO dto) {
-		if (anyIsNull(dto.getVariantId(), dto.getRate(), dto.getOrderId())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$004 );
-		}
-		if (dto.getRate() > 5 || dto.getRate() < 0) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$006 );
-		}
-	}
-
-	public void approveRate(Long rateId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		ProductRating rate = productRatingRepo.findByIdAndVariant_ProductEntity_OrganizationId(rateId, orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$005, rateId));
-		rate.setApproved(true);
-		productRatingRepo.save(rate);
-	}
-
-	public List<ProductRateRepresentationObject> getProductRatings(Long variantId, boolean onlyApproved) {
-		return  productRatingRepo.findApprovedVariantRatings(variantId)
-				.stream()
-				.map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
-				.collect(toList());
-	}
-
-	public List<ProductRateRepresentationObject> getProductRatings() {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return productRatingRepo.findUnapprovedVariantsRatings(orgId)
-				.stream()
-				.map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
-				.collect(toList());
-	}
 }
 
 

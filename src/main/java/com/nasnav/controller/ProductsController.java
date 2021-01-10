@@ -15,6 +15,7 @@ import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
+import com.nasnav.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -63,6 +64,9 @@ public class ProductsController {
 
     @Autowired
     private CsvDataExportService csvDataExportService;
+
+    @Autowired
+    private ReviewService reviewService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -515,16 +519,16 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "rate", consumes = APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "review", consumes = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestBody ProductRateDTO dto) {
-        productService.rateProduct(dto);
+        reviewService.rateProduct(dto);
     }
 
-    @GetMapping(value="/variant_rates", produces=MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token) {
-        return productService.getProductRatings();
+        return reviewService.getProductRatings();
     }
 
     @ApiOperation(value = "approve a product rating", nickname = "approveProductRate", code = 201)
@@ -534,10 +538,10 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "rate/approve")
+    @PostMapping(value = "review/approve")
     @ResponseStatus(HttpStatus.OK)
     public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestParam Long id) {
-        productService.approveRate(id);
+        reviewService.approveRate(id);
     }
 }

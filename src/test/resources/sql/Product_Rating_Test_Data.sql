@@ -1,6 +1,8 @@
 ----------------------------inserting dummy data----------------------------
 
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 
@@ -70,6 +72,6 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 2);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
-values(330031, 88, now(), now(), 99001, 2, 501, 310001, 12300001);
+values(330031, 88, now(), now(), 99001, 5, 501, 310001, 12300001);
 
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);

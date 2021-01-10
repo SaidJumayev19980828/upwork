@@ -56,6 +56,9 @@ public class NavboxController {
 	private ProductService productService;
 
 	@Autowired
+	private ReviewService reviewService;
+
+	@Autowired
 	private CategoryService categoryService;
 
 	@Autowired
@@ -384,8 +387,8 @@ public class NavboxController {
 	}
 
 
-	@GetMapping(value="/variant_rates", produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
-		return productService.getProductRatings(variantId, true);
+		return reviewService.getProductRatings(variantId, true);
 	}
 }

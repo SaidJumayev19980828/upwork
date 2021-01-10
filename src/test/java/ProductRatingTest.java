@@ -49,7 +49,7 @@ public class ProductRatingTest {
     public void postReviewSuccess() {
         String body = createReviewRequest().toString();
         HttpEntity request = getHttpEntity(body, "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
 
         assertEquals(200 , response.getStatusCodeValue());
         assertTrue(ratingRepo.findByVariant_IdAndUser_Id(310001L, 88L).isPresent());
@@ -59,7 +59,7 @@ public class ProductRatingTest {
     public void postReviewAuthZ() {
         String body = createReviewRequest().toString();;
         HttpEntity request = getHttpEntity(body, null);
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(401 , response.getStatusCodeValue());
     }
 
@@ -67,7 +67,7 @@ public class ProductRatingTest {
     public void postReviewAuthN() {
         String body = createReviewRequest().toString();
         HttpEntity request = getHttpEntity(body, "101112");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(403 , response.getStatusCodeValue());
     }
 
@@ -77,7 +77,7 @@ public class ProductRatingTest {
         body.remove("variant_id");
 
         HttpEntity request = getHttpEntity(body.toString(), "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(406 , response.getStatusCodeValue());
     }
 
@@ -86,7 +86,7 @@ public class ProductRatingTest {
         String body = createReviewRequest().put("variant_id", 0).toString();
 
         HttpEntity request = getHttpEntity(body, "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(404 , response.getStatusCodeValue());
     }
 
@@ -95,7 +95,7 @@ public class ProductRatingTest {
         String body = createReviewRequest().put("order_id", 0).toString();
 
         HttpEntity request = getHttpEntity(body, "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(406 , response.getStatusCodeValue());
     }
 
@@ -105,7 +105,7 @@ public class ProductRatingTest {
         body.remove("rate");
 
         HttpEntity request = getHttpEntity(body.toString(), "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(406 , response.getStatusCodeValue());
     }
 
@@ -115,12 +115,12 @@ public class ProductRatingTest {
         body.put("rate", -4);
 
         HttpEntity request = getHttpEntity(body.toString(), "123");
-        ResponseEntity<String> response = template.postForEntity("/product/rate", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
         assertEquals(406 , response.getStatusCodeValue());
 
         body.put("rate", 8);
         request = getHttpEntity(body.toString(), "123");
-        response = template.postForEntity("/product/rate", request, String.class);
+        response = template.postForEntity("/product/review", request, String.class);
         assertEquals(406 , response.getStatusCodeValue());
     }
 
@@ -128,7 +128,7 @@ public class ProductRatingTest {
     @Test
     public void approveReviewSuccess() {
         HttpEntity request = getHttpEntity("131415");
-        ResponseEntity<String> response = template.postForEntity("/product/rate/approve?id=10001", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review/approve?id=10001", request, String.class);
         assertEquals(200 , response.getStatusCodeValue());
         assertTrue(ratingRepo.findByVariant_IdAndUser_Id(310004L, 88L).get().getApproved());
     }
@@ -136,27 +136,27 @@ public class ProductRatingTest {
     @Test
     public void approveReviewAuthZ() {
         HttpEntity request = getHttpEntity(null);
-        ResponseEntity<String> response = template.postForEntity("/product/rate/approve?id=10001", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review/approve?id=10001", request, String.class);
         assertEquals(401 , response.getStatusCodeValue());
     }
 
     @Test
     public void approveReviewAuthN() {
         HttpEntity request = getHttpEntity("101112");
-        ResponseEntity<String> response = template.postForEntity("/product/rate/approve?id=10001", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review/approve?id=10001", request, String.class);
         assertEquals(403 , response.getStatusCodeValue());
     }
 
     @Test
     public void approveReviewInvalidRateId() {
         HttpEntity request = getHttpEntity("131415");
-        ResponseEntity<String> response = template.postForEntity("/product/rate/approve?id=10003", request, String.class);
+        ResponseEntity<String> response = template.postForEntity("/product/review/approve?id=10003", request, String.class);
         assertEquals(404 , response.getStatusCodeValue());
     }
 
     @Test
     public void listApprovedVariantRates() throws IOException {
-        ResponseEntity<String> response = template.getForEntity("/navbox/variant_rates?variant_id=310004", String.class);
+        ResponseEntity<String> response = template.getForEntity("/navbox/review?variant_id=310004", String.class);
         assertEquals(200 , response.getStatusCodeValue());
         List<ProductRateRepresentationObject> body =
                 mapper.readValue(response.getBody(), new TypeReference<List<ProductRateRepresentationObject> >(){});
@@ -166,7 +166,7 @@ public class ProductRatingTest {
     @Test
     public void listVariantRates() throws IOException {
         HttpEntity request = getHttpEntity("131415");
-        ResponseEntity<String> response = template.exchange("/product/variant_rates", GET, request, String.class);
+        ResponseEntity<String> response = template.exchange("/product/review", GET, request, String.class);
         assertEquals(200 , response.getStatusCodeValue());
         List<ProductRateRepresentationObject> body =
                 mapper.readValue(response.getBody(), new TypeReference<List<ProductRateRepresentationObject> >(){});
@@ -176,7 +176,7 @@ public class ProductRatingTest {
     @Test
     public void listVariantRatesAuthZ() {
         HttpEntity request = getHttpEntity(null);
-        ResponseEntity<String> response = template.exchange("/product/variant_rates?variant_id=310004", GET, request, String.class);
+        ResponseEntity<String> response = template.exchange("/product/review?variant_id=310004", GET, request, String.class);
         assertEquals(401 , response.getStatusCodeValue());
     }
 
@@ -184,7 +184,7 @@ public class ProductRatingTest {
     @Test
     public void listVariantRatesAuthN() {
         HttpEntity request = getHttpEntity("101112");
-        ResponseEntity<String> response = template.exchange("/product/variant_rates?variant_id=310004", GET, request, String.class);
+        ResponseEntity<String> response = template.exchange("/product/review?variant_id=310004", GET, request, String.class);
         assertEquals(403 , response.getStatusCodeValue());
     }
 
