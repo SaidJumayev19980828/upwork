@@ -8,6 +8,7 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -209,7 +210,8 @@ public class ProductVariantApiTest {
 		assertEquals(json.getString("features"), saved.getFeatureSpec());
 		assertEquals(json.getString("sku"), saved.getSku());
 		assertEquals(json.getString("product_code"), saved.getProductCode());
-		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());		
+		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
+		assertEquals(new BigDecimal(5.5), saved.getWeight());
 		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
 
@@ -343,6 +345,7 @@ public class ProductVariantApiTest {
 		json.put("extra_attr", "{\"extra\": \"Cool Add-on\", \"Model\": \"D2R2\"}");
 		json.put("sku", "ABC123");
 		json.put("product_code", "111-222");
+		json.put("weight", 5.5);
 		return json;
 	}
 	

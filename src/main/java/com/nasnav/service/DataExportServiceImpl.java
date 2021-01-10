@@ -222,6 +222,7 @@ public class DataExportServiceImpl implements DataExportService{
 		row.setSku(data.getSku());
 		row.setProductCode(data.getProductCode());
 		row.setUnit(data.getUnitName());
+		row.setWeight(data.getWeight());
 		return row;
 	}
 
@@ -279,6 +280,7 @@ public class DataExportServiceImpl implements DataExportService{
 											product.hide.as("hide"),
 											variant.sku.as("sku"),
 											variant.productCode.as("product_code"),
+											variant.weight.as("weight"),
 											SQLExpressions.rowNumber()
 													.over()
 													.partitionBy(product.id)
@@ -317,7 +319,8 @@ public class DataExportServiceImpl implements DataExportService{
 											product.id.as("product_id"),
 											product.hide.as("hide"),
 											variant.sku.as("sku"),
-											variant.productCode.as("product_code"));
+											variant.productCode.as("product_code"),
+											variant.weight.as("weight"));
 
 		SQLQuery<?> stocks = queryFactory.from(productsQuery.as("total_products"));
 

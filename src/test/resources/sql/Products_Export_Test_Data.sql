@@ -68,7 +68,7 @@ INSERT INTO public.products(id, name, p_name, brand_id, category_id, organizatio
 
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code ) values(310001, 'var' 	, 1001, '54852222s' ,'sfasd223' ,'111-111');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code, weight) values(310001, 'var' 	, 1001, '54852222s' ,'sfasd223' ,'111-111', 5.5);
 insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310002, 'var' 	, 1002, '5564688', 'qwe1121' ,'111-112');
 insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310003, 'var' 	, 1003, 'erdsfd587' ,'zxc213' ,'111-113');
 insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310005, 'var' 	, 1005, 'sdfsd5f8' ,'fgh1232' ,'111-114' );

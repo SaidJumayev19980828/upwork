@@ -22,5 +22,6 @@ public class ProductExportedData {
 	protected String sku;
 	protected String productCode;
 	protected String unitName;
+	private BigDecimal weight;
 }
 

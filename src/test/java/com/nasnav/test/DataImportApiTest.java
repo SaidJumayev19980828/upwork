@@ -15,10 +15,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -1165,7 +1162,7 @@ public class DataImportApiTest {
 		Set<String> expectedTemplateHeaders = 
 				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
 						, "variant_id", "external_id", "color", "size", "product_group_key", "discount"
-						, "sku", "product_code", "unit");
+						, "sku", "product_code", "unit", "weight");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 		
@@ -1427,7 +1424,28 @@ public class DataImportApiTest {
 	}
 
 
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVSetWeights() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
 
+		Long variantId = 310003L;
+		ProductVariantsEntity variantBefore = variantRepo.findById(variantId).get();
+		assertEquals(ZERO, variantBefore.getWeight());
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductVariantsEntity variantAfter = variantRepo.findById(variantId).get();
+		assertNotNull(variantAfter.getWeight());
+		assertEquals(new BigDecimal(5.5), variantAfter.getWeight());
+		ProductVariantsEntity newAddedVariant = variantRepo
+				.findByBarcodeAndProductEntity_OrganizationId("87847777EW", 99001L).get(0);
+		assertEquals(new BigDecimal(5.5), newAddedVariant.getWeight());
+	}
 
 
 

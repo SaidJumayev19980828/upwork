@@ -34,6 +34,7 @@ public class CsvRow {
 	protected String sku;
 	protected String productCode;
 	protected String unit;
+	protected BigDecimal weight;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
@@ -63,7 +64,8 @@ public class CsvRow {
 		product.setSku(sku);
 		product.setProductCode(productCode);
 		product.setUnit(unit);
-		
+		product.setWeight(weight);
+
 		return product;
 	}
 

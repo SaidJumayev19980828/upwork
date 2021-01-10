@@ -29,7 +29,7 @@ public class ProductImportDTO {
 	protected String sku;
 	protected String productCode;
 	protected String unit;
-	
+	protected BigDecimal weight;
 	
 	public ProductImportDTO() {
 		features = new HashMap<>();

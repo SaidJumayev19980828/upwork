@@ -981,6 +981,7 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setProductId(product.getProductId());
         variant.setSku(row.getSku());
         variant.setProductCode(row.getProductCode());
+        variant.setWeight(row.getWeight());
         
         if(extraAtrributes != null) {
         	variant.setExtraAttr(extraAtrributes);

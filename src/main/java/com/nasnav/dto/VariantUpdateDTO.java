@@ -13,6 +13,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
@@ -29,6 +31,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String extraAttr;
 	private String sku;
 	private String productCode;
+	private BigDecimal weight;
 	
 	@JsonProperty("p_name")
 	private String pname;
@@ -100,6 +103,12 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	public void setProductCode(String productCode) {
 		setPropertyAsUpdated("productCode");
 		this.productCode = productCode;
+	}
+
+
+	public void setWeight(BigDecimal weight) {
+		setPropertyAsUpdated("weight");
+		this.weight = weight;
 	}
 	
 }

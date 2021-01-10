@@ -2471,6 +2471,10 @@ public class ProductService {
 			entity.setProductCode(variant.getProductCode());
 		}
 
+		if(variant.isUpdated("weight")) {
+			entity.setWeight(variant.getWeight());
+		}
+
 		String pname = getPname(variant, opr);
 		if(!isBlankOrNull(pname)) {
 			entity.setPname(pname);

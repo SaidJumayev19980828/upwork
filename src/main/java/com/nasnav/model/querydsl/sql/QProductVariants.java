@@ -44,6 +44,8 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
 
     public final NumberPath<Integer> removed = createNumber("removed", Integer.class);
 
+    public final NumberPath<java.math.BigDecimal> weight = createNumber("weight", java.math.BigDecimal.class);
+
     public final NumberPath<Long> subProductIdTemp = createNumber("subProductIdTemp", Long.class);
 
     public final com.querydsl.sql.PrimaryKey<QProductVariants> productVariantsPkey = createPrimaryKey(id);
@@ -95,6 +97,7 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
         addMetadata(subProductIdTemp, ColumnMetadata.named("sub_product_id_temp").withIndex(8).ofType(Types.BIGINT).withSize(19));
         addMetadata(sku, ColumnMetadata.named("sku").withIndex(10).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(productCode, ColumnMetadata.named("product_code").withIndex(11).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(weight, ColumnMetadata.named("weight").withIndex(12).ofType(Types.NUMERIC).withSize(10).withDigits(2));
     }
 
 }

@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -93,7 +94,7 @@ public class ProductVariantsEntity {
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
 
-
+    private BigDecimal weight;
 
     public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
         ProductExtraAttributesEntity extraAttr =
