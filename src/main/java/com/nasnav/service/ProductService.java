@@ -69,7 +69,9 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -248,7 +250,8 @@ public class ProductService {
 	private RelatedProductsRepository relatedProductsRepo;
 	@Autowired
 	private CartItemRepository cartRepo;
-
+	@Autowired
+	private ProductRatingRepository productRatingRepo;
 	@Autowired
 	private OrganizationService orgService;
 
@@ -3190,6 +3193,9 @@ public class ProductService {
 		}
 		productCollectionRepo.removeCollection(collectionId, orgId);
 	}
+
+
+
 }
 
 

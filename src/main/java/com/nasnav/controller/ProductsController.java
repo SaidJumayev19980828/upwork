@@ -12,7 +12,10 @@ import javax.validation.Valid;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
+import com.nasnav.service.ReviewServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -61,6 +64,9 @@ public class ProductsController {
 
     @Autowired
     private CsvDataExportService csvDataExportService;
+
+    @Autowired
+    private ReviewServiceImpl reviewService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -503,5 +509,39 @@ public class ProductsController {
     public void updateRelatedItems(@RequestHeader(name = "User-Token", required = false) String token,
                                    @RequestBody RelatedItemsDTO relatedItems) {
         productService.updateRelatedItems(relatedItems);
+    }
+
+
+    @ApiOperation(value = "Rate a product", nickname = "productRate", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "product rate submitted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "review", consumes = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestBody ProductRateDTO dto) {
+        reviewService.rateProduct(dto);
+    }
+
+    @GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token) {
+        return reviewService.getProductsRatings();
+    }
+
+    @ApiOperation(value = "approve a product rating", nickname = "approveProductRate", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "product rate approved"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "review/approve")
+    @ResponseStatus(HttpStatus.OK)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestParam Long id) {
+        reviewService.approveRate(id);
     }
 }

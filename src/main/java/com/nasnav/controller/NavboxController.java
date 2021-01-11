@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.SeoEntityType;
@@ -53,6 +54,9 @@ public class NavboxController {
 
 	@Autowired
 	private ProductService productService;
+
+	@Autowired
+	private ReviewServiceImpl reviewService;
 
 	@Autowired
 	private CategoryService categoryService;
@@ -383,4 +387,8 @@ public class NavboxController {
 	}
 
 
+	@GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
+	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
+		return reviewService.getProductRatings(variantId);
+	}
 }
