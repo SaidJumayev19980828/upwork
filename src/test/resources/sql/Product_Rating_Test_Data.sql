@@ -5,6 +5,7 @@ INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
@@ -47,7 +48,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99001, now(), now(),'123456789');
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 201, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',101, 201, 99001, now(), now());
 
 -- variants for each product
@@ -59,7 +60,7 @@ insert into public.product_variants(id, "name" , product_id ) values(310004, 'va
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 6, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 310002);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 501, 4, 99001, 200.0, 310003);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 501, 4, 99002, 200.0, 310003);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 501, 6, 99001, 700.0, 310004);
 
 insert into public.product_ratings values (10001, 310004, 88, 2, 'review', now(), false);
@@ -73,5 +74,10 @@ INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status)
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
 values(330031, 88, now(), now(), 99001, 5, 501, 310001, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
+values(330032, 88, now(), now(), 99001, 2, 501, 310001, 12300001);
 
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 601, 1, 60.0, 1);
+
+

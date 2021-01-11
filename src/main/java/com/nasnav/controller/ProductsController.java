@@ -15,7 +15,7 @@ import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
-import com.nasnav.service.ReviewService;
+import com.nasnav.service.ReviewServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -66,7 +66,7 @@ public class ProductsController {
     private CsvDataExportService csvDataExportService;
 
     @Autowired
-    private ReviewService reviewService;
+    private ReviewServiceImpl reviewService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -528,7 +528,7 @@ public class ProductsController {
 
     @GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token) {
-        return reviewService.getProductRatings();
+        return reviewService.getProductsRatings();
     }
 
     @ApiOperation(value = "approve a product rating", nickname = "approveProductRate", code = 201)

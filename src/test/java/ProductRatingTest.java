@@ -124,6 +124,27 @@ public class ProductRatingTest {
         assertEquals(406 , response.getStatusCodeValue());
     }
 
+    @Test
+    public void postReviewNotConfirmedOrder() {
+        JSONObject body = createReviewRequest();
+        body.put("order_id", 330032);
+
+        HttpEntity request = getHttpEntity(body.toString(), "123");
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
+
+        assertEquals(406 , response.getStatusCodeValue());
+    }
+
+    @Test
+    public void postReviewDifferentProductOrg() {
+        JSONObject body = createReviewRequest();
+        body.put("variant_id", 310003);
+
+        HttpEntity request = getHttpEntity(body.toString(), "123");
+        ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
+
+        assertEquals(404 , response.getStatusCodeValue());
+    }
 
     @Test
     public void approveReviewSuccess() {
