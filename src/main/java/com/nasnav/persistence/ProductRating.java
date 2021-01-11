@@ -22,14 +22,14 @@ public class ProductRating implements BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private ProductVariantsEntity variant;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
