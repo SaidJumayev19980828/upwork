@@ -1664,6 +1664,7 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setStockId(item.getStockId());
 		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
 		checkoutData.setDiscount(stockData.getDiscount());
+		checkoutData.setWeight(item.getWeight());
 		return checkoutData;
 	}
 

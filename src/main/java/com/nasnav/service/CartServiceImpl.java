@@ -228,6 +228,7 @@ public class CartServiceImpl implements CartService{
                 itemStocks
                         .stream()
                         .map(CartItemStock::getShopCityId)
+                        .filter(Objects::nonNull)
                         .findFirst()
                         .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0005));
         return new ShopFulfillingCart(shopId, cityId, itemStocks);

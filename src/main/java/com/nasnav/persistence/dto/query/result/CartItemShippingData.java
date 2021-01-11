@@ -14,4 +14,5 @@ public class CartItemShippingData {
 	private BigDecimal price;
 	private BigDecimal discount;
 	private Integer quantity;
+	private BigDecimal weight;
 }

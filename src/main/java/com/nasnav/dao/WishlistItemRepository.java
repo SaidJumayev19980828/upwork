@@ -13,7 +13,7 @@ import java.util.List;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
-			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec "
+			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec, variant.weight"
 			+ " , item.coverImage, stock.price, item.quantity"
 			+ " , brand.id, brand.name, brand.logo, product.name, product.productType, stock.discount"
 			+ " , item.additionalData) "

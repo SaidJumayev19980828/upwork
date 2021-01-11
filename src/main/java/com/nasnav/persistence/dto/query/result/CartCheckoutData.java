@@ -23,4 +23,5 @@ public class CartCheckoutData {
     private AddressesEntity shopAddress;
     private Long organizationId;
     private BigDecimal discount;
+    private BigDecimal weight;
 }

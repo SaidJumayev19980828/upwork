@@ -218,7 +218,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		BigDecimal price = itemCheckoutData.getPrice();
 		BigDecimal discount = itemCheckoutData.getDiscount();
 		Integer quantity = itemCheckoutData.getQuantity();
-		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount, quantity);
+		BigDecimal weight = itemCheckoutData.getWeight();
+		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount, quantity, weight);
 	}
 	
 	
@@ -495,6 +496,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShipmentItems shippingItem = new ShipmentItems(data.getStockId());
 		shippingItem.setPrice(data.getPrice().subtract(discount));
 		shippingItem.setQuantity(data.getQuantity());
+		shippingItem.setWeight(data.getWeight());
 		return shippingItem;
 	}
 	
@@ -753,6 +755,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String specs = getVariantSpecs(orderItem);
 		String productCode = getProductCode(orderItem);
 		String sku = getSku(orderItem);
+		BigDecimal weight = getVariantWeight(orderItem);
 
 		shpItem.setStockId(stockId);
 		shpItem.setBarcode(barcode);
@@ -762,6 +765,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shpItem.setProductCode(productCode);
 		shpItem.setSku(sku);
 		shpItem.setPrice(orderItem.getPrice());
+		shpItem.setWeight(weight);
 
 		return shpItem;
 	}
@@ -788,6 +792,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElse(null);
 	}
 
+
+	private BigDecimal getVariantWeight(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getWeight)
+				.orElse(ZERO);
+	}
 
 
 	private String getProductCode(BasketsEntity orderItem) {

@@ -124,12 +124,14 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 		BigDecimal itemDiscount = ofNullable(item.getDiscount()).orElse(ZERO);
 		BigDecimal stkPrice = ofNullable(itemStk.getStockPrice()).orElse(ZERO);
 		BigDecimal stkDiscount = ofNullable(itemStk.getDiscount()).orElse(ZERO);
+		BigDecimal weight = ofNullable(item.getWeight()).orElse(ZERO);
 		boolean priceChanged = 
 				itemPrice.compareTo(stkPrice) != 0 
 					|| itemDiscount.compareTo(stkDiscount) != 0;
 		optimized.setPrice(itemStk.getStockPrice());
 		optimized.setStockId(itemStk.getStockId());
 		optimized.setDiscount(itemStk.getDiscount());
+		optimized.setWeight(weight);
 		return new OptimizedCartItem(optimized, priceChanged);
 	}
 
