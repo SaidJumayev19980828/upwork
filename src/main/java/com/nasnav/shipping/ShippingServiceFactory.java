@@ -48,7 +48,8 @@ public class ShippingServiceFactory {
 					,PickupPointsWithInternalLogistics.class
 					,SallabShippingService.class
 					,ClickNShipShippingService.class
-					,FixedFeeShippingService.class);
+					,FixedFeeShippingService.class
+					,FixedFeeStrictSameCityShippingService.class);
 	
 	
 	@Autowired

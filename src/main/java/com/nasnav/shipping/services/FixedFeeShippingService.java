@@ -46,7 +46,7 @@ public class FixedFeeShippingService implements ShippingService {
     public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
     public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
 
-    private static final List<Parameter> SERVICE_PARAM_DEFINITION =
+    protected static final List<Parameter> SERVICE_PARAM_DEFINITION =
             asList( new Parameter(SUPPORTED_CITIES , LONG_ARRAY)
                     , new Parameter(MIN_SHIPPING_FEE, NUMBER)
                     , new Parameter(ETA_DAYS_MIN, NUMBER, false)
@@ -116,6 +116,13 @@ public class FixedFeeShippingService implements ShippingService {
 
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> shippingInfo) {
+        return doCreateShippingOffer(shippingInfo, getServiceInfo());
+    }
+
+
+
+
+    protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
         if(!areCitiesSupported(shippingInfo)) {
             return Mono.empty();
         }
@@ -128,7 +135,7 @@ public class FixedFeeShippingService implements ShippingService {
 
         correctCalculationError(minFee , shipments);
 
-        return Mono.just(new ShippingOffer(getServiceInfo(), shipments));
+        return Mono.just(new ShippingOffer(serviceInfo, shipments));
     }
 
 
