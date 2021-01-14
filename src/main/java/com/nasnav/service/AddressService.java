@@ -8,6 +8,7 @@ import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0007;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0008;
 import static com.nasnav.exceptions.ErrorCodes.TYP$0001;
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparing;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
@@ -90,12 +91,14 @@ public class AddressService {
     }
 
 
-    private Map getAreasMap(CitiesEntity city) {
-        Map<String, AreasRepObj> areas = city.getAreas()
+    private Map<?,?> getAreasMap(CitiesEntity city) {
+        Map<String, AreasRepObj> areas =
+                city
+                .getAreas()
                 .stream()
-                .collect( toMap(AreasEntity::getName, c-> (AreasRepObj) c.getRepresentation()));
-        TreeMap<String, AreasRepObj> sorted = new TreeMap<>(areas);
-        return sorted;
+                .sorted(comparing(AreasEntity::getId))
+                .collect( toMap(AreasEntity::getName, area-> (AreasRepObj) area.getRepresentation(), (a1,a2) -> a1));
+        return new TreeMap<>(areas);
     }
 
 

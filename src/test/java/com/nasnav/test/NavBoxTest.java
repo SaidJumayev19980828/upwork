@@ -5,6 +5,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 
 import com.gargoylesoftware.htmlunit.javascript.host.Map;
+import com.jayway.jsonpath.JsonPath;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -168,9 +169,23 @@ public class NavBoxTest {
 
     @Test
     public void getCountries() {
-        ResponseEntity<Map> response = template.getForEntity("/navbox/countries", Map.class);
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().get("UK") != null);
+        String name = JsonPath.read(response.getBody(), "$['UK']['name']");
+        assertEquals(name, "UK");
+    }
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Countries_Invalid_Test_Data.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getCountriesWithDuplicateAreas() {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+
+        int id = JsonPath.read(response.getBody(), "$['Egypt']['cities']['Cairo']['areas']['New Cairo']['id']");
+        assertEquals("smaller id should be picked for duplicate areas", 1, id);
     }
 
 }
