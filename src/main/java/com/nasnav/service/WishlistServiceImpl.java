@@ -171,6 +171,8 @@ public class WishlistServiceImpl implements WishlistService{
         itemDto.setQuantity(itemData.getQuantity());
         itemDto.setVariantFeatures(variantFeatures);
         itemDto.setName(itemData.getProductName());
+        itemDto.setWeight(itemData.getWeight());
+        itemDto.setUnit(itemData.getUnit());
 
         itemDto.setId(itemData.getId());
         itemDto.setProductId(itemData.getProductId());

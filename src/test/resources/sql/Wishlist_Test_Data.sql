@@ -62,6 +62,8 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
 
+--insert units
+INSERT INTO PUBLIC.units(id, name)values(18999, 'pcs');
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
@@ -89,12 +91,12 @@ insert into public.product_variants(id, "name" , product_id ) values(310010, 'va
 
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(601, 502, 6, 99002, 600.00, 310001, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(602, 501, 8, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 501, 4, 99002, 200.00, 310003, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(604, 502, 6, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 502, 0, 99001, 700.00, 310009, 0);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 502, 1, 99001, 700.00, 310010, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(601, 502, 6, 99002, 600.00, 310001, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(602, 501, 8, 99001, 1200.0, 310002, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(603, 501, 4, 99002, 200.00, 310003, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(604, 502, 6, 99001, 700.00, 310004, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(605, 502, 0, 99001, 700.00, 310009, 0, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(606, 502, 1, 99001, 700.00, 310010, 1, 18999);
 
 
 --INSERT dummy images
