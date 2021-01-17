@@ -1849,6 +1849,11 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
+		String shippingServiceName = shippingMgrService
+				.getShippingServiceInfo(shipmentDto.getServiceId())
+				.map(ShippingServiceInfo::getName)
+				.orElse("");
+		shipmentDto.setServiceName(shippingServiceName);
 		
 		Long totalQuantity = 
 				items
