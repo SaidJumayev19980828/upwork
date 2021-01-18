@@ -13,8 +13,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.json.JSONObject.NULL;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -249,6 +248,44 @@ public class ProductServiceTest {
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
+
+
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithZeroStocksExcluded() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductDetailsDTO> response =
+				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=false",	ProductDetailsDTO.class);
+
+		assertEquals(OK, response.getStatusCode());
+		ProductDetailsDTO body = response.getBody();
+		assertEquals("all variants are returned regardless of stock", 1, body.getVariants().size());
+		assertNull("No price is returned because all stocks are zero", body.getPrice());
+		assertNull("No price is returned because all stocks are zero", body.getPrices());
+		assertNull("No default stock is returned because all stocks are zero", body.getStockId());
+	}
+
+
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithZeroStocksIncluded() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductDetailsDTO> response =
+				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=true",	ProductDetailsDTO.class);
+
+		assertEquals(OK, response.getStatusCode());
+		ProductDetailsDTO body = response.getBody();
+		assertEquals("all variants are returned regardless of stock", 1, body.getVariants().size());
+		assertEquals("Min price will be returned including zero stock prices", 0,  body.getPrice().compareTo(new BigDecimal("400")) );
+		assertEquals("default stock is returned including zero stocks", 605L,  body.getStockId().longValue());
+	}
+
 
 
 	private void assertValidResponseWithSingleStockReturned(ProductTestData testData, ResponseEntity<String> response, Long shopId) {

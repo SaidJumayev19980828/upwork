@@ -640,7 +640,7 @@ public class ProductApiTest {
 
 
 	private List<Long> getVariantsIdList(Long productId) {
-		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId, true)
+		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId)
 										.stream()
 										.map(ProductVariantsEntity::getId)
 										.collect(toList());

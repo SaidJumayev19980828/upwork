@@ -278,43 +278,66 @@ public class ProductService {
 						.findByProductId( ofNullable(productId).orElse(-1L))
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productId));
 
-		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants, includeOutOfStock);
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants);
 
-		return createProductDetailsDTO(product, shopId, productVariants);
+		return createProductDetailsDTO(product, shopId, productVariants, includeOutOfStock);
 	}
 
 
 
 
 
-	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) {
-		List<ProductImageDTO> productsAndVariantsImages;
-		List<VariantDTO> variantsDTOList = new ArrayList<>();
-		if (!isNullOrEmpty(productVariants)) {
-			productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()),
-					productVariants.stream()
-							.map(ProductVariantsEntity::getId)
-							.collect(toList()));
-
-			variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
-		} else {
-			productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()), null);
-		}
+	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId,
+													  List<ProductVariantsEntity> productVariants,
+													  boolean includeOutOfStock) {
+		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, productVariants);
+		List<VariantDTO> variantsDTOList = createVariantDTOS(shopId, productVariants, productsAndVariantsImages);
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
 		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
-		ProductDetailsDTO productDTO = null;
-		productDTO = toProductDetailsDTO(product);
+
+		ProductDetailsDTO productDTO = toProductDetailsDTO(product, includeOutOfStock);
 		productDTO.setShops(product360Shops);
 		productDTO.setImages(getProductImages(productsAndVariantsImages));
 		productDTO.setVariants(variantsDTOList);
-		if (variantsDTOList != null && variantsDTOList.size() > 1)
-			productDTO.setMultipleVariants(true);
+		productDTO.setMultipleVariants(hasMultipleVariants(variantsDTOList));
 		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
 		productDTO.setBundleItems(getBundleItems(product));
 		productDTO.setTags(tagsDTOList);
 
 		return productDTO;
 	}
+
+
+
+	private List<ProductImageDTO> getProductImageDTOS(ProductEntity product, List<ProductVariantsEntity> productVariants) {
+		List<Long> variantIds =
+				ofNullable(productVariants)
+						.orElse(emptyList())
+						.stream()
+						.map(ProductVariantsEntity::getId)
+						.collect(toList());
+		variantIds = variantIds.isEmpty()? null: variantIds;
+		List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()), variantIds);
+		return productsAndVariantsImages;
+	}
+
+
+
+	private List<VariantDTO> createVariantDTOS(Long shopId, List<ProductVariantsEntity> productVariants, List<ProductImageDTO> productsAndVariantsImages) {
+		List<VariantDTO> variantsDTOList = new ArrayList<>();
+		if (!isNullOrEmpty(productVariants)) {
+			variantsDTOList = getVariantsList(productVariants, shopId, productsAndVariantsImages);
+		}
+		return variantsDTOList;
+	}
+
+
+
+	private boolean hasMultipleVariants(List<VariantDTO> variantsDTOList) {
+		return variantsDTOList != null && variantsDTOList.size() > 1;
+	}
+
+
 
 	private List<TagsRepresentationObject> getProductTagsDTOList(Long productId) {
 		return orgTagRepo.findByIdIn(productRepository.getTagsByProductId(productId)
@@ -325,6 +348,8 @@ public class ProductService {
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
 				.collect(toList());
 	}
+
+
 
 	private Map<Long,List<TagsRepresentationObject>> getProductsTagsDTOList(List<Long> productsIds) {
 		Map<Long,List<TagsRepresentationObject>> result = new HashMap<>();
@@ -380,8 +405,8 @@ public class ProductService {
 
 
 
-	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants, boolean includeOutOfStock) throws BusinessException {
-		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId(), includeOutOfStock);
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants) throws BusinessException {
+		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
 		if ((productVariants == null || productVariants.isEmpty()) && checkVariants) {
 			throw new BusinessException(
 					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
@@ -406,7 +431,7 @@ public class ProductService {
 	}
 
 
-	private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId,
+	private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long shopId,
 											 List<ProductImageDTO> variantsImages) {
 
 		return productVariants.stream()
@@ -529,20 +554,14 @@ public class ProductService {
 
 
 	private List<VariantFeatureDTO> getVariantFeatures(List<ProductVariantsEntity> productVariants) {
-		List<VariantFeatureDTO> features = new ArrayList<>();
-
-		if(productVariants != null ) {
-			features =
-					productVariants
-							.stream()
-							.filter(this::hasFeatures)
-							.map(this::extractVariantFeatures)
-							.flatMap(List::stream)
-							.distinct()
-							.collect(toList());
-		}
-
-		return features;
+		return	ofNullable(productVariants)
+						.orElse(emptyList())
+						.stream()
+						.filter(this::hasFeatures)
+						.map(this::extractVariantFeatures)
+						.flatMap(List::stream)
+						.distinct()
+						.collect(toList());
 	}
 
 
@@ -596,7 +615,7 @@ public class ProductService {
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 		return	stocks
 				.stream()
-				.filter(stock -> stock != null)
+				.filter(Objects::nonNull)
 				.filter(stock -> Objects.equals(stock.getShopsEntity().getRemoved(), 0))
 				.map(StockDTO::new)
 				.collect(toList());
@@ -1187,7 +1206,7 @@ public class ProductService {
 
 
 
-	private Optional<StocksEntity> getDefaultProductStock(ProductEntity product) {
+	private Optional<StocksEntity> getDefaultProductStock(ProductEntity product, boolean includeOutOfStock) {
 		return ofNullable(product)
 				.map(ProductEntity::getProductVariants)
 				.orElseGet(Collections::emptySet)
@@ -1195,7 +1214,13 @@ public class ProductService {
 				.map(ProductVariantsEntity::getStocks)
 				.filter(Objects::nonNull)
 				.flatMap(Set::stream)
+				.filter(s -> checkEmptyStock(s, includeOutOfStock))
 				.min( comparing(StocksEntity::getPrice));
+	}
+
+
+	private boolean checkEmptyStock(StocksEntity stock, boolean includeOutOfStock) {
+		return includeOutOfStock  || stock.getQuantity() > 0;
 	}
 
 
@@ -2611,8 +2636,6 @@ public class ProductService {
 
 
 
-
-
 	private boolean isJSONValid(String test) {
 		try {
 			new JSONObject(test);
@@ -2626,31 +2649,32 @@ public class ProductService {
 		return true;
 	}
 
-	private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
+
+
+	private ProductRepresentationObject getProductRepresentation(ProductEntity product, boolean includeOutOfStock) {
+		boolean isHidden = ofNullable(product.getHide()).orElse(false);
+		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());
+
 		ProductRepresentationObject productRep = new ProductRepresentationObject();
 		setProductProperties(productRep, product);
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
-
-		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());
-
 		productRep.setTags(productTags);
-
-		Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
-		Boolean stockExists = defaultStockOpt.isPresent();
-
-		if(stockExists) {
-			StocksEntity defaultStock = defaultStockOpt.get();
-			productRep.setPrice( defaultStock.getPrice() );
-			productRep.setDiscount( defaultStock.getDiscount() );
-			productRep.setStockId( defaultStock.getId());
-			productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
-			if (defaultStock.getCurrency() != null) {
-				productRep.setCurrency( defaultStock.getCurrency().ordinal() );
-			}
-		}
-		productRep.setHidden(!stockExists);
-
+		productRep.setHidden(isHidden);
+		getDefaultProductStock(product, includeOutOfStock)
+				.ifPresent(stk -> setDefaultStockData(productRep, stk));
 		return productRep;
+	}
+
+
+
+	private void setDefaultStockData(ProductRepresentationObject productRep, StocksEntity defaultStock) {
+		productRep.setPrice( defaultStock.getPrice() );
+		productRep.setDiscount( defaultStock.getDiscount() );
+		productRep.setStockId( defaultStock.getId());
+		productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
+		if (defaultStock.getCurrency() != null) {
+			productRep.setCurrency( defaultStock.getCurrency().getValue());
+		}
 	}
 
 
@@ -2670,7 +2694,7 @@ public class ProductService {
 
 
 	private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
-		ProductRepresentationObject rep = getProductRepresentation(product);
+		ProductRepresentationObject rep = getProductRepresentation(product, true);
 		setAdditionalInfo(rep, productCoverImgs);
 		return rep;
 	}
@@ -2678,9 +2702,9 @@ public class ProductService {
 
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) {
+	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
-		ProductRepresentationObject representationObj = getProductRepresentation(product);
+		ProductRepresentationObject representationObj = getProductRepresentation(product, includeOutOfStock);
 		copyProperties(representationObj, dto);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
@@ -3061,7 +3085,7 @@ public class ProductService {
 		List<ProductDetailsDTO> products = productsEntities
 				.stream()
 				.filter(c -> c.getProductVariants().isEmpty())
-				.map(c -> createProductDetailsDTO(c, null, null))
+				.map(c -> createProductDetailsDTO(c, null, null, true))
 				.collect(toList());
 		return products;
 	}
@@ -3178,7 +3202,7 @@ public class ProductService {
 				.findByProduct_Id(productId)
 				.stream()
 				.map(RelatedProductsEntity::getRelatedProduct)
-				.map(this::getProductRepresentation)
+				.map(p -> getProductRepresentation(p, true))
 				.collect(toList());
 	}
 
