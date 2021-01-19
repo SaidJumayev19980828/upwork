@@ -13,4 +13,7 @@ public interface RoleService {
      */
     List<Role> getRolesOfEmployeeUser(Long integer);
 
+
+    boolean checkRoleOrder(String userRole, String requestedRole);
+
 }

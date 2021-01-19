@@ -20,6 +20,7 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 	boolean existsByEmailIgnoreCase(String email);
 
+	Optional<EmployeeUserEntity> findByIdAndOrganizationId(Long id, Long orgId);
     Optional<EmployeeUserEntity> findByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
     EmployeeUserEntity getOneByEmail(String email);

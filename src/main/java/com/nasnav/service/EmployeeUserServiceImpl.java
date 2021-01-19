@@ -6,8 +6,9 @@ import java.util.stream.Stream;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,6 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.Roles;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.UserStatus.ACCOUNT_SUSPENDED;
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.*;
 import static java.util.Arrays.asList;
@@ -43,7 +45,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	@Autowired
-	private RoleServiceImpl roleServiceImpl;
+	private RoleService roleService;
 	@Autowired
 	private SecurityService securityService;
 	@Autowired
@@ -263,7 +265,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			if (!Enums.getIfPresent(Roles.class, role).isPresent())
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0007,  role);
 			for (String userRole : userRoles)
-				if (roleServiceImpl.checkRoleOrder(userRole, role)) {
+				if (roleService.checkRoleOrder(userRole, role)) {
 					roles.add(role);
 					if (userRole.startsWith("O"))
 						orgId = user.getOrganizationId();
@@ -334,8 +336,58 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
-		return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
+		return user.getUserStatus().equals(NOT_ACTIVATED.getValue());
 	}
-	
+
+
+	@Override
+	public void suspendEmployeeAccount(Long id, Boolean suspend) {
+		EmployeeUserEntity user = getAndValidateEmployeeToSuspend(id);
+
+		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		if (suspend) {
+			if (status.equals(ACCOUNT_SUSPENDED)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);
+			}
+			user.setUserStatus(ACCOUNT_SUSPENDED.getValue());
+			userTokenRepo.deleteByEmployeeUserEntity(user);
+		} else {
+			user.setUserStatus(ACTIVATED.getValue());
+		}
+		employeeUserRepository.save(user);
+	}
+
+
+
+	private EmployeeUserEntity getAndValidateEmployeeToSuspend(Long id) {
+		EmployeeUserEntity user = getEmployeeToSuspend(id);
+		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(user.getId());
+		validateCurrentUserCanManageEmpAccount(user.getOrganizationId(), user.getShopId(), userRoles);
+		validateUserNotSuspendingHimself(user);
+		return user;
+	}
+
+
+
+	private EmployeeUserEntity getEmployeeToSuspend(Long id) {
+		Optional<EmployeeUserEntity> optionalEmployeeUser;
+		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			optionalEmployeeUser = employeeUserRepository.findById(id);
+		} else {
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			optionalEmployeeUser = employeeUserRepository.findByIdAndOrganizationId(id, orgId);
+		}
+		return optionalEmployeeUser
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0002, id));
+	}
+
+
+
+	private void validateUserNotSuspendingHimself(EmployeeUserEntity user) {
+		EmployeeUserEntity currentUser = (EmployeeUserEntity) securityService.getCurrentUser();
+		if (Objects.equals(user.getId(), currentUser.getId())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0002);
+		}
+	}
 
 }

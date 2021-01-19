@@ -40,9 +40,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="image")
     private String image;
 
-    @Column(name="user_status")
-    private Integer userStatus;
-
     @Column(name="mobile")
     private String mobile;
 
@@ -71,7 +68,7 @@ public class UserEntity extends BaseUserEntity{
     public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
 
     public UserEntity() {
-    	userStatus = NOT_ACTIVATED.getValue();
+    	this.setUserStatus(NOT_ACTIVATED.getValue());
     	addresses = new HashSet<>();
     }
 

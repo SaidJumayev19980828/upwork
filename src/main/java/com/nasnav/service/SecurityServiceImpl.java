@@ -278,14 +278,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private boolean isUserDeactivated(BaseUserEntity user) {
-		if(user instanceof EmployeeUserEntity) {
-			return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
-		}else if(user instanceof UserEntity){
-			UserEntity userEntity =  (UserEntity)user;
-			return userEntity.getUserStatus().equals(NOT_ACTIVATED.getValue());
-		}else {
-			return false;
-		}
+		return user.getUserStatus().equals(NOT_ACTIVATED.getValue());
 	}
 
 
@@ -315,12 +308,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	private boolean isAccountLocked(BaseUserEntity userEntity) {
-		if (userEntity instanceof UserEntity) {
-			UserEntity user = (UserEntity) userEntity;
-			return user.getUserStatus().equals(UserStatus.ACCOUNT_SUSPENDED.getValue());
-		}
-		//TODO still need implementation for EmployeeUser account suspend check
-		return false;
+		return userEntity.getUserStatus().equals(UserStatus.ACCOUNT_SUSPENDED.getValue());
 	}
 
 
@@ -443,6 +431,12 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
+	@Override
+	public Boolean userHasRole(BaseUserEntity user, Roles role) {
+		return userRepo.getUserRoles(user)
+				.stream()
+				.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+	}
 
 
 

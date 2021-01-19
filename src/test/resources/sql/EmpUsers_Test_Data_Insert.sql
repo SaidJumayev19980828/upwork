@@ -16,8 +16,8 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  502);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  502, 201);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (70, 'testuser4@nasnav.com', 99001, '123',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)

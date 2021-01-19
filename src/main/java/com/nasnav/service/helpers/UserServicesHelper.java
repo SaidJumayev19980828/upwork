@@ -14,6 +14,7 @@ import com.nasnav.AppConfig;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
@@ -180,6 +181,7 @@ public class UserServicesHelper {
 		employeeUser.setOrganizationId(employeeUserJson.orgId);
 		employeeUser.setShopId(employeeUserJson.storeId);
 		employeeUser.setAvatar(employeeUserJson.getAvatar());
+		employeeUser.setUserStatus(NOT_ACTIVATED.getValue());
 
 		return employeeUserRepository.save(employeeUser);
 	}
