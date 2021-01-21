@@ -53,12 +53,20 @@ public class AddressesEntity implements BaseEntity {
     @Column(name = "postal_code")
     private String postalCode;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "area_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private AreasEntity areasEntity;
+
+
+    @ManyToOne
+    @JoinColumn(name = "sub_area_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private SubAreasEntity subAreasEntity;
 
 
     @ManyToMany(mappedBy = "addresses")

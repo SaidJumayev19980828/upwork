@@ -91,6 +91,7 @@ DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 
 DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.sub_areas where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;

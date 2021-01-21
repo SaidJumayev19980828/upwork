@@ -21,15 +21,22 @@ INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_
 
 
 
-INSERT INTO public.cities values(100001, 100001,'Cairo');
-INSERT INTO public.cities values(100002, 100001,'Giza');
-INSERT INTO public.cities values(100003, 100002,'London');
+INSERT INTO public.cities(id, country_id, name) values(100001, 100001,'Cairo');
+INSERT INTO public.cities(id, country_id, name) values(100002, 100001,'Giza');
+INSERT INTO public.cities(id, country_id, name) values(100003, 100002,'London');
 
-INSERT INTO public.areas values(100001, 'new cairo', 100001);
-INSERT INTO public.areas values(100002, 'Nasr city', 100001);
-INSERT INTO public.areas values(100003, 'Mohandiseen', 100002);
-INSERT INTO public.areas values(100004, 'Dokki', 100002);
-INSERT INTO public.areas values(100005, 'Agoza', 100002);
+INSERT INTO public.areas(id, name, city_id) values(100001, 'new cairo', 100001);
+INSERT INTO public.areas(id, name, city_id) values(100002, 'Nasr city', 100001);
+INSERT INTO public.areas(id, name, city_id) values(100003, 'Mohandiseen', 100002);
+INSERT INTO public.areas(id, name, city_id) values(100004, 'Dokki', 100002);
+INSERT INTO public.areas(id, name, city_id) values(100005, 'Agoza', 100002);
+INSERT INTO public.areas(id, name, city_id) values(100006, 'Yorkshire', 100003);
+
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 100001, 'Badr city', 99001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100001, 'Future City', 99001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888003, 100001, 'WerWer Land', 99001);
+
+
 
 
 --insert employee

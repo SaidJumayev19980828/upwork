@@ -4,7 +4,12 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 
-import com.gargoylesoftware.htmlunit.javascript.host.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.AreasRepObj;
+import com.nasnav.dto.CitiesRepObj;
+import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.dto.SubAreasRepObj;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -33,6 +38,9 @@ import com.nasnav.persistence.ShopsEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
+import java.io.IOException;
+import java.util.Map;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -50,6 +58,9 @@ public class NavBoxTest {
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
     @Autowired  private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Mock
     private NavboxController navboxController;
@@ -167,10 +178,55 @@ public class NavBoxTest {
 
 
     @Test
-    public void getCountries() {
-        ResponseEntity<Map> response = template.getForEntity("/navbox/countries", Map.class);
+    public void getCountries() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().get("UK") != null);
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertNull("If no organization is provided, no sub-areas should be returned", werwerLand);
+    }
+
+
+
+    @Test
+    public void getCountriesWithSubAreas() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99001", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertEquals("WerWer Land", werwerLand.getName());
+    }
+
+
+
+    @Test
+    public void getCountriesForOrgWithNoSubAreas() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99002", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertNull("This organization has no sub-areas", werwerLand);
     }
 
 }
