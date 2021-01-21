@@ -2,6 +2,7 @@ package com.nasnav.test.commons;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.SET_COOKIE;
 
@@ -171,5 +172,10 @@ public class TestCommons {
         JSONArray array = jsonArray();
         collection.forEach(array::put);
         return array;
+    }
+
+
+    public static Object nullableJsonValue(Object value){
+        return isNull(value) ? JSONObject.NULL : value;
     }
 }

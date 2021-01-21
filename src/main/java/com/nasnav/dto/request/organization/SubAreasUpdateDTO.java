@@ -1,16 +1,14 @@
-package com.nasnav.dto;
+package com.nasnav.dto.request.organization;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.SubAreaDTO;
 import lombok.Data;
 
-import java.util.Map;
+import java.util.List;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class AreasRepObj extends BaseRepresentationObject{
-
-    private Long id;
-    private String name;
-    private Map<String, SubAreasRepObj> subAreas;
+public class SubAreasUpdateDTO {
+    private List<SubAreaDTO> subAreas;
 }

@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.nasnav.dto.AddressRepObj;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -90,4 +91,12 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     @Modifying
     @Query(value = " update user_addresses set principal = true where user_id = :userId and address_id = :addrId", nativeQuery = true)
     void makeAddressPrincipal(@Param("userId")Long userId, @Param("addrId")Long addrId);
+
+
+    @Transactional
+    @Modifying
+    @Query(value = " update AddressesEntity addr " +
+            " set addr.subAreasEntity = null " +
+            " where addr.subAreasEntity.id in :subAreas")
+    void clearSubAreasFromAddresses(@Param("subAreas") Set<Long> subAreas);
 }

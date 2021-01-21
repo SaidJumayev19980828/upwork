@@ -11,6 +11,7 @@ import java.util.List;
 import javax.validation.Valid;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,8 @@ public class OrganizationController {
     private SearchService searchService;
     @Autowired
     private SeoService seoService;
+    @Autowired
+    private AddressService addressService;
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -641,5 +644,21 @@ public class OrganizationController {
     public void addSeoKeywords(@RequestHeader (name = "User-Token", required = false) String userToken
         , @RequestBody SeoKeywordsDTO seoKeywords){
         seoService.addSeoKeywords(seoKeywords);
+    }
+
+
+
+
+    @ApiOperation(value = "update organization sub-areas", nickname = "addSeoKeywords")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "sub_areas")
+    @ResponseStatus(OK)
+    public void updateSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken
+            , @RequestBody SubAreasUpdateDTO subAreas){
+        addressService.updateSubAreas(subAreas);
     }
 }

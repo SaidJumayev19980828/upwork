@@ -1,35 +1,28 @@
 package com.nasnav.service;
 
 import static com.google.common.primitives.Longs.asList;
+import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0003;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0006;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0007;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0008;
-import static com.nasnav.exceptions.ErrorCodes.TYP$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.persistence.SubAreasEntity;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AreasEntity;
-import com.nasnav.persistence.CitiesEntity;
-import com.nasnav.persistence.CountriesEntity;
 
 @Service
 public class AddressServiceImpl implements AddressService{
@@ -48,6 +41,9 @@ public class AddressServiceImpl implements AddressService{
 
     @Autowired
     private SubAreaRepository subAreaRepo;
+
+    @Autowired
+    private SecurityService securityService;
 
 
     public Map<String, CountriesRepObj> getCountries(Boolean hideEmptyCities, Long organizationId) {
@@ -253,6 +249,111 @@ public class AddressServiceImpl implements AddressService{
             deleteCity(id);
         } else if (type.equals("area")) {
             deleteArea(id);
+        }
+    }
+
+
+
+    @Override
+    @Transactional
+    public void updateSubAreas(SubAreasUpdateDTO subAreas) {
+        validateSubAreas(subAreas);
+        deleteNonIncludedSubAreas(subAreas);
+        updateExistingAndAddNewAreas(subAreas);
+    }
+
+
+
+    private void updateExistingAndAddNewAreas(SubAreasUpdateDTO subAreas) {
+        ofNullable(subAreas.getSubAreas())
+                .orElse(emptyList())
+                .stream()
+                .map(this::createOrUpdateSubAreaEntity)
+                .collect(
+                    collectingAndThen(
+                        toList()
+                        , subAreaRepo::saveAll
+                ));
+    }
+
+
+    private void deleteNonIncludedSubAreas(SubAreasUpdateDTO subAreas) {
+        Set<Long> currentSubAreas = getOrganizationSubAreasIds();
+        Set<Long> subAreasToKeep =  getSubAreasToKeep(subAreas);
+        Set<Long> subAreasToDelete =
+                currentSubAreas
+                .stream()
+                .filter(id -> !subAreasToKeep.contains(id))
+                .collect(toSet());
+
+        if(!subAreasToDelete.isEmpty()){
+            clearSubAreaFromAddresses(subAreasToDelete);
+            subAreaRepo.deleteByIdIn(subAreasToDelete);
+        }
+    }
+
+
+
+    private void clearSubAreaFromAddresses(Set<Long> subAreasToDelete) {
+        processInBatches(subAreasToDelete, 2000, batch -> addressRepo.clearSubAreasFromAddresses(new HashSet<>(batch)));
+    }
+
+
+
+    private Set<Long> getSubAreasToKeep(SubAreasUpdateDTO subAreas) {
+        return ofNullable(subAreas.getSubAreas())
+                .orElse(emptyList())
+                .stream()
+                .map(SubAreaDTO::getId)
+                .filter(Objects::nonNull)
+                .collect(toSet());
+    }
+
+
+
+    private Set<Long> getOrganizationSubAreasIds() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return subAreaRepo
+                .findByOrganization_Id(orgId)
+                .stream()
+                .map(SubAreasEntity::getId)
+                .collect(toSet());
+    }
+
+
+
+    private SubAreasEntity createOrUpdateSubAreaEntity(SubAreaDTO subArea){
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        AreasEntity area =
+                areaRepo
+                .findById(subArea.getAreaId())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, AREA$001, subArea.getAreaId()));
+        SubAreasEntity entity =
+                subAreaRepo
+                .findByIdAndOrganization_Id(subArea.getId(), org.getId())
+                .orElse(new SubAreasEntity());
+        entity.setName(subArea.getName());
+        entity.setArea(area);
+        entity.setOrganization(org);
+        entity.setLatitude(subArea.getLatitude());
+        entity.setLongitude(subArea.getLongitude());
+        return entity;
+    }
+
+
+
+    private void validateSubAreas(SubAreasUpdateDTO subAreas) {
+        ofNullable(subAreas.getSubAreas())
+                .orElse(emptyList())
+                .forEach(this::validateSubAreaDTO);
+    }
+
+
+
+    private void validateSubAreaDTO(SubAreaDTO subArea){
+        if(anyIsNull(subArea, subArea.getAreaId(), subArea.getName())
+            || subArea.getName().isEmpty()){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, subArea.toString());
         }
     }
 

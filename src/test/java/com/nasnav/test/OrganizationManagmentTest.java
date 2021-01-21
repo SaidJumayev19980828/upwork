@@ -1,22 +1,25 @@
 package com.nasnav.test;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.*;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.nasnav.dao.SocialRepository;
+import com.jayway.jsonpath.JsonPath;
+import com.nasnav.dao.*;
+import com.nasnav.dto.CountriesRepObj;
 import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.SubAreasEntity;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,9 +41,6 @@ import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.OrganizationEntity;
@@ -71,6 +71,9 @@ public class OrganizationManagmentTest {
     
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SubAreaRepository subAreaRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -467,4 +470,144 @@ public class OrganizationManagmentTest {
         		template.exchange("/organization/shops", GET, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
     }
+
+
+
+    @Test
+    public void updateSubAreasNoAuthZ(){
+        HttpEntity<?> req = getHttpEntity("NotExist");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasNoAuthN(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasInvalidArea(){
+        String name = "werwerland";
+        Long areaId = null;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasMissingArea(){
+        String name = "werwerland";
+        Long areaId = -1L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasInvalidName(){
+        String name = "";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasMissingName(){
+        String name = null;
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+
+
+    @Test
+    public void addSubAreasSuccess(){
+        String name = "Fofo compound";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        ResponseEntity<String> countriesResponse =
+                template.exchange("/navbox/countries?org_id=99001", GET, req, String.class);
+        String subAreaSavedName =
+                JsonPath.read(countriesResponse.getBody(), format("$['Egypt']['cities']['Cairo']['areas']['new cairo']['sub_areas']['%s']['name']", name));
+        assertEquals(name, subAreaSavedName);
+
+        //TODO: test old sub-areas were cleared from addresses
+        //TODO: test old sub-areas were deleted
+    }
+
+
+
+
+    @Test
+    public void updateSubAreasSuccess(){
+        Long id = 888001L;
+        String name = "werwerland";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(id, name, areaId);
+
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        SubAreasEntity savedSubArea = subAreaRepo.findByIdAndOrganization_Id(id, 99001L).get();
+        assertEquals(name, savedSubArea.getName());
+    }
+
+
+
+
+    private JSONObject createSubAreaUpdateRequest(String name, Long areaId) {
+        return createSubAreaUpdateRequest(null, name, areaId);
+    }
+
+
+
+
+    private JSONObject createSubAreaUpdateRequest(Long id, String name, Long areaId) {
+        return json()
+                .put("sub_areas",
+                        jsonArray()
+                                .put(json()
+                                        .put("id", nullableJsonValue(id))
+                                        .put("name", nullableJsonValue(name))
+                                        .put("area_id", nullableJsonValue(areaId))
+                                )
+                );
+    }
+
+
+
 }
