@@ -30,13 +30,14 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
 
     @Query(value = "select new com.nasnav.dto.AddressRepObj(a.id, a.firstName, a.lastName, a.flatNumber, a.buildingNumber, a.addressLine1," +
                     " a.addressLine2, a.latitude, a.longitude, a.postalCode, a.phoneNumber, ua.principal, area.id," +
-                    " area.name , city.name , country.name) " +
+                    " area.name , city.name , country.name, subArea.id, subArea.name) " +
                     " from UserEntity usr " +
                     " left join usr.userAddresses ua"+
                     " left join ua.address a " +
                     " left join a.areasEntity area " +
                     " left join area.citiesEntity city " +
-                    " left join city.countriesEntity country "+
+                    " left join city.countriesEntity country " +
+                    " left join a.subAreasEntity subArea "+
                     " where usr.id = :userId order by ua.principal desc")
     List<AddressRepObj> findByUserId(@Param("userId") Long userId);
 
@@ -46,14 +47,12 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
             " left join ua.address a " +
             " left join fetch a.areasEntity area " +
             " left join fetch area.citiesEntity city " +
-            " left join fetch city.countriesEntity country "+
+            " left join fetch city.countriesEntity country " +
+            " left join fetch a.subAreasEntity subArea "+
             " where usr.id = :userId order by ua.principal desc")
     List<AddressesEntity> findAddressByUserId(@Param("userId") Long userId);
 
 
-    @Query(value = "select addr from user_addresses ua left join addresses addr on ua.address_id = addr.id" +
-            " where ua.user_id = :userId limit 1", nativeQuery = true)
-    Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
 
     @Modifying
     @Transactional
@@ -70,7 +69,8 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     @Query("SELECT addr FROM AddressesEntity addr "
             + " LEFT JOIN FETCH addr.areasEntity area "
             + " LEFT JOIN FETCH area.citiesEntity city "
-            + " LEFT JOIN FETCH city.countriesEntity country"
+            + " LEFT JOIN FETCH city.countriesEntity country "
+            + " LEFT JOIN FETCH addr.subAreasEntity subArea "
             + " WHERE addr.id in :ids")
     List<AddressesEntity> findByIdIn(@Param("ids")List<Long> ids);
 
@@ -95,7 +95,7 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
 
     @Transactional
     @Modifying
-    @Query(value = " update AddressesEntity addr " +
+    @Query(" update AddressesEntity addr " +
             " set addr.subAreasEntity = null " +
             " where addr.subAreasEntity.id in :subAreas")
     void clearSubAreasFromAddresses(@Param("subAreas") Set<Long> subAreas);

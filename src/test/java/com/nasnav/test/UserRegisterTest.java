@@ -9,11 +9,7 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static io.swagger.models.HttpMethod.POST;
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.never;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
@@ -830,7 +826,7 @@ public class UserRegisterTest {
 		Assert.assertEquals(exepctedtUrl , activationRes.getHeaders().getLocation().toString());
 		
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
-		Assert.assertNull(user.getResetPasswordToken());
+		assertNull(user.getResetPasswordToken());
 	}
 	
 	
@@ -856,7 +852,7 @@ public class UserRegisterTest {
 		user = userRepository.findById(response.getBody().getEntityId()).get();		
 		
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
-		Assert.assertNull(user.getResetPasswordToken());
+		assertNull(user.getResetPasswordToken());
 		
 		//TODO: add assertion for returned login response 
 	}
@@ -975,9 +971,13 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void updateUserAddressTest() {
-		JSONObject address = json().put("address_line_1", "address line");
+		JSONObject address =
+				json()
+				.put("address_line_1", "address line")
+				.put("sub_area_id", 888001);
 		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
 		//adding address to user
@@ -988,7 +988,8 @@ public class UserRegisterTest {
 		assertTrue(entity.isPresent());
 		AddressRepObj addressResponse = entity.get();
 		assertEquals("address line", addressResponse.getAddressLine1());
-
+		assertEquals(888001L, addressResponse.getSubAreaId().longValue());
+		assertEquals("Badr city", addressResponse.getSubArea());
 
 
 
@@ -1002,8 +1003,40 @@ public class UserRegisterTest {
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(addressRepo.findByIdAndUserId(addressResponse.getId(), 88001L).isPresent());
 		addressRepo.deleteById(addressResponse.getId());
-
 	}
+
+
+
+	@Test
+	public void updateUserAddressInvalidSubAreaTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", "address line")
+				.put("sub_area_id", 888002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+
+	@Test
+	public void updateUserAddressNoSubAreaTest() {
+		JSONObject address = json().put("address_line_1", "address line");
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals("address line", addressResponse.getAddressLine1());
+		assertNull(addressResponse.getSubAreaId());
+		assertNull(addressResponse.getSubArea());
+	}
+
 
 
 	@Test
@@ -1019,6 +1052,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void logoutEmployeeUserTest() {
 		Long userTokensCount = userTokenRepo.countByEmployeeUserEntity_Id(159l);
@@ -1032,6 +1066,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void suspendUserInvalidAuthZ() {
 		HttpEntity req = getHttpEntity("invalid token");
@@ -1039,6 +1074,7 @@ public class UserRegisterTest {
 
 		assertEquals(401, res.getStatusCodeValue());
 	}
+
 
 
 	@Test
@@ -1050,6 +1086,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void suspendUserInAnotherOrg() {
 		HttpEntity req = getHttpEntity("101112");
@@ -1057,6 +1094,7 @@ public class UserRegisterTest {
 
 		assertEquals(404, res.getStatusCodeValue());
 	}
+
 
 
 	@Test
@@ -1073,6 +1111,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void unsuspendUserTest() {
 		HttpEntity req = getHttpEntity("101112");
@@ -1082,6 +1121,7 @@ public class UserRegisterTest {
 		UserEntity user = userRepository.findById(88006L).get();
 		assertEquals(201, user.getUserStatus().intValue());
 	}
+
 
 
 	@Test
@@ -1101,6 +1141,7 @@ public class UserRegisterTest {
 				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
 		assertEquals(423, response.getStatusCodeValue());
 	}
+
 
 
 	@Test

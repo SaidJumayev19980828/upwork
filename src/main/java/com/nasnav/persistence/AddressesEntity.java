@@ -10,7 +10,10 @@ import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.Set;
+
+import static java.util.Objects.nonNull;
 
 
 @Table(name = "addresses")
@@ -97,7 +100,10 @@ public class AddressesEntity implements BaseEntity {
                 }
             }
         }
-
+        if(nonNull(subAreasEntity)){
+            address.setSubAreaId(subAreasEntity.getId());
+            address.setSubArea(subAreasEntity.getName());
+        }
         return address;
     }
 }

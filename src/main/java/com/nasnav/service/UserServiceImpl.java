@@ -12,6 +12,7 @@ import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
@@ -90,6 +91,8 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	AppConfig appConfig;
 
+	@Autowired
+	private SubAreaRepository subAreaRepo;
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -250,7 +253,7 @@ public class UserServiceImpl implements UserService {
 		AddressDTO newAddress = setUserAddresses(addressDTO, user);
 		addressRepo.linkAddressToUser(user.getId(), newAddress.getId());
 		if (addressDTO.getPrincipal() != null) {
-			if (addressDTO.getPrincipal().booleanValue()) {
+			if (addressDTO.getPrincipal()) {
 				addressRepo.makeAddressNotPrincipal(user.getId());
 				addressRepo.makeAddressPrincipal(user.getId(), newAddress.getId());
 				newAddress.setPrincipal(true);
@@ -258,6 +261,7 @@ public class UserServiceImpl implements UserService {
 		}
 		return newAddress;
 	}
+
 
 
 	@Override
@@ -270,25 +274,54 @@ public class UserServiceImpl implements UserService {
 	}
 
 
+
 	private AddressDTO setUserAddresses(AddressDTO addressDTO, UserEntity userEntity) {
-		AddressesEntity address = new AddressesEntity();
 		if (addressDTO.getId() != null) {
-			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0)
+			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0){
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId());
+			}
 			addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 		}
+		persistUserAddress(addressDTO);
+		return addressDTO;
+	}
+
+
+
+	private void persistUserAddress(AddressDTO addressDTO) {
+		AddressesEntity address = new AddressesEntity();
 		BeanUtils.copyProperties(addressDTO, address, new String[] {"id"});
+
+		setArea(addressDTO, address);
+		setSubArea(addressDTO, address);
+
+		addressRepo.save(address);
+
+		BeanUtils.copyProperties(address, addressDTO);
+	}
+
+
+
+	private void setSubArea(AddressDTO addressDTO, AddressesEntity address) {
+		Long subAreaId = addressDTO.getSubAreaId();
+		if(nonNull(subAreaId)){
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			SubAreasEntity subArea =
+					subAreaRepo
+					.findByIdAndOrganization_Id(subAreaId, orgId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
+			address.setSubAreasEntity(subArea);
+		}
+	}
+
+
+
+	private void setArea(AddressDTO addressDTO, AddressesEntity address) {
 		if (addressDTO.getAreaId() != null) {
 			if (areaRepo.existsById(addressDTO.getAreaId())) {
 				address.setAreasEntity(areaRepo.findById(addressDTO.getAreaId()).get());
 			}
 		}
-
-		addressRepo.save(address);
-
-		BeanUtils.copyProperties(address, addressDTO);
-
-		return addressDTO;
 	}
 
 	private void validateName(String name) {
@@ -507,7 +540,8 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private List<AddressRepObj> getUserAddresses(Long userId){
-		return userAddressRepo.findByUser_Id(userId)
+		return userAddressRepo
+				.findByUser_Id(userId)
 				.stream()
 				.filter(Objects::nonNull)
 				.map(a -> (AddressRepObj) a.getRepresentation())
@@ -681,10 +715,11 @@ public class UserServiceImpl implements UserService {
 
 	public List<UserRepresentationObject> getUserList(){
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return userRepository.findByOrganizationId(orgId)
-					.stream()
-					.map(u -> u.getRepresentation())
-					.collect(toList());
+		return userRepository
+				.findByOrganizationId(orgId)
+				.stream()
+				.map(u -> u.getRepresentation())
+				.collect(toList());
 	}
 
 }

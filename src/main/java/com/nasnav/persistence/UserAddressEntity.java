@@ -40,21 +40,8 @@ public class UserAddressEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        AddressRepObj obj = new AddressRepObj();
-        BeanUtils.copyProperties(this.address, obj);
+        AddressRepObj obj = (AddressRepObj)this.address.getRepresentation();
         obj.setPrincipal(this.principal);
-        AreasEntity area = this.address.getAreasEntity();
-        if (area != null) {
-            obj.setAreaId(area.getId());
-            obj.setArea(area.getName());
-            CitiesEntity city = area.getCitiesEntity();
-            if (city != null) {
-                obj.setCity(city.getName());
-                if (city.getCountriesEntity() != null) {
-                    obj.setCountry(city.getCountriesEntity().getName());
-                }
-            }
-        }
         return obj;
     }
 }

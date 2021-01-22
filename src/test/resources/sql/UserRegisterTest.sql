@@ -68,3 +68,16 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23
 
 INSERT INTO public.user_subscriptions VALUES (10001, 'sub@g.com', 99001, null);
 INSERT INTO public.user_subscriptions VALUES (10002, 'seocnd_sub@g.com', 99002, null);
+
+
+
+--inserting countries/ cities/ areas/ sub-areas
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id, country_id, name) values(100001, 1,'Cairo');
+INSERT INTO public.areas(id, name, city_id) values(100001, 'new cairo', 100001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 100001, 'Badr city', 99001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100001, 'Future city', 99002);
+
+
+INSERT INTO public.addresses(id, address_line_1, sub_area_id, area_Id) values(12300003, 'address line', 888001, 100001);
+INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88005, 12300003, false);

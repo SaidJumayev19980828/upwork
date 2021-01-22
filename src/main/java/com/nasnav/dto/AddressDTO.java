@@ -2,6 +2,8 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,6 +14,7 @@ import java.math.BigDecimal;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class AddressDTO extends BaseRepresentationObject {
 
     private Long id;
@@ -47,4 +50,8 @@ public class AddressDTO extends BaseRepresentationObject {
     private Long areaId;
 
     private Boolean principal;
+
+    private Long subAreaId;
+
+
 }
