@@ -1,14 +1,16 @@
 
 ----------------------------inserting dummy data----------------------------
-
-INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
-INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
-INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
-
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 INSERT INTO public.organizations(id, name) VALUES (99003, 'organization_2');
+
+-- insert countries, cities, areas and sub-areas
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 1, 'Badr city', 99001);
+
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -51,9 +53,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 -- insert user addresses
 
 
-INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number, sub_area_id) values(12300001, 'address line', 1, '01111234567', 888001);
 
-INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses(id,user_id, address_id, principal) values(12300001, 88, 12300001, false);
 
 
 -- insert employee addresses
