@@ -52,3 +52,17 @@ INSERT INTO public.products(id, name, brand_id, organization_id, created_at, upd
 
 
 INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);
+
+
+--inserting users
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (89, 'user2@nasnav.com','user2','456', 99002);
+
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 89);
+
+INSERT INTO public.addresses(id, address_line_1, sub_area_id) values(12300003, 'address line', 888001);
+INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88, 12300003, false);

@@ -3,9 +3,7 @@ import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
@@ -18,6 +16,7 @@ import java.util.Set;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
 import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.SubAreasEntity;
 import org.json.JSONObject;
@@ -74,6 +73,9 @@ public class OrganizationManagmentTest {
 
     @Autowired
     private SubAreaRepository subAreaRepo;
+
+    @Autowired
+    private AddressRepository addressRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -549,6 +551,9 @@ public class OrganizationManagmentTest {
 
     @Test
     public void addSubAreasSuccess(){
+
+        assertOldSubAreaExists();
+
         String name = "Fofo compound";
         Long areaId = 100001L;
         JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
@@ -556,15 +561,68 @@ public class OrganizationManagmentTest {
         ResponseEntity<String> res =
                 template.exchange("/organization/sub_areas", POST, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
+        //---------------------------------------
+        assertNewSubAreaInserted(name, req);
 
+        AddressesEntity addressAfter = addressRepo.findById(12300003L).get();
+        assertNull("old sub-areas will be cleared from addresses", addressAfter.getSubAreasEntity());
+
+        assertFalse("test old sub-areas were deleted", subAreaRepo.findById(888001L).isPresent());
+    }
+
+
+
+    private void assertNewSubAreaInserted(String name, HttpEntity<?> req) {
         ResponseEntity<String> countriesResponse =
                 template.exchange("/navbox/countries?org_id=99001", GET, req, String.class);
         String subAreaSavedName =
                 JsonPath.read(countriesResponse.getBody(), format("$['Egypt']['cities']['Cairo']['areas']['new cairo']['sub_areas']['%s']['name']", name));
         assertEquals(name, subAreaSavedName);
+    }
 
-        //TODO: test old sub-areas were cleared from addresses
-        //TODO: test old sub-areas were deleted
+
+    @Test
+    public void addSubAreasWhileKeepingOldOnesSuccess(){
+
+        assertOldSubAreaExists();
+
+        String name = "Fofo compound";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        addOldSubAreaToRequest(requestBody);
+
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        //---------------------------------------
+        assertNewSubAreaInserted(name, req);
+
+        AddressesEntity addressAfter = addressRepo.findById(12300003L).get();
+        assertNotNull("old sub-areas will NOT be cleared from addresses", addressAfter.getSubAreasEntity());
+
+        assertTrue("test old sub-areas are not deleted ", subAreaRepo.findById(888001L).isPresent());
+        assertEquals("test old sub-areas are not deleted ", 2, subAreaRepo.findByOrganization_Id(99001L).size());
+
+    }
+
+
+
+    private void addOldSubAreaToRequest(JSONObject requestBody) {
+        requestBody
+            .getJSONArray("sub_areas")
+            .put(json()
+                    .put("id", nullableJsonValue(888001L))
+                    .put("name", nullableJsonValue("Badr city"))
+                    .put("area_id", nullableJsonValue(100001)));
+    }
+
+
+
+    private void assertOldSubAreaExists() {
+        AddressesEntity addressBefore = addressRepo.findById(12300003L).get();
+        assertNotNull(addressBefore.getSubAreasEntity());
+        assertTrue(subAreaRepo.findById(888001L).isPresent());
     }
 
 
