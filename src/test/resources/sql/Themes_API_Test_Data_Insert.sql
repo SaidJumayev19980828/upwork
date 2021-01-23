@@ -1,6 +1,6 @@
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, theme_id, currency_iso) VALUES (99001, 'organization_1', 5003, 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 INSERT INTO public.theme_classes(id, name)VALUES (990011, 'theme_class_1');
@@ -10,10 +10,10 @@ INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES
 INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES (5002, 'theme_2', 990011, '{"setting" : "value"}', '5002');
 INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES (5003, 'theme_3', 990012, '{"setting" : "value"}', '5003');
 
-INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_id)VALUES (5003, 99001 , 990011);
+INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_id)VALUES (5003, 99001 , 990012);
 
 INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, settings)
-    VALUES (5001, 99001, 5002, '{"setting" : "new value"}');
+    VALUES (5001, 99001, 5003, '{"setting" : "new value"}');
 
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 101, 99001, 0);

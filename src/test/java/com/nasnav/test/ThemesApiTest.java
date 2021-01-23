@@ -2,6 +2,8 @@ package com.nasnav.test;
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
@@ -9,7 +11,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.util.List;
+import java.util.Set;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ThemeClassEntity;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,10 +31,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeSettingsRepository;
-import com.nasnav.dao.ThemeClassRepository;
-import com.nasnav.dao.ThemesRepository;
 import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
@@ -66,9 +68,9 @@ public class ThemesApiTest {
         ResponseEntity<List> response = template.exchange("/admin/themes/class",
                 GET, request, List.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(!response.getBody().isEmpty());
-        Assert.assertEquals(2, response.getBody().size());
+        assertEquals(2, response.getBody().size());
     }
 
 
@@ -80,7 +82,7 @@ public class ThemesApiTest {
         ResponseEntity<ThemeClassResponse> response = template.exchange("/admin/themes/class",
                 POST, request, ThemeClassResponse.class);
 
-        Assert.assertEquals(200,response.getStatusCodeValue());
+        assertEquals(200,response.getStatusCodeValue());
         Assert.assertTrue(themeClassRepo.existsById(response.getBody().getId()));
 
         // get rid of created theme because can't remove it via sql query .. I don't know its id
@@ -97,8 +99,8 @@ public class ThemesApiTest {
         ResponseEntity<ThemeClassResponse> response = template.exchange("/admin/themes/class",
                 POST, request, ThemeClassResponse.class);
 
-        Assert.assertEquals(200,response.getStatusCodeValue());
-        Assert.assertEquals("new name",themeClassRepo.findById(response.getBody().getId()).get().getName());
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals("new name",themeClassRepo.findById(response.getBody().getId()).get().getName());
     }
 
 
@@ -110,7 +112,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes/class",
                 POST, request, String.class);
 
-        Assert.assertEquals(401,response.getStatusCodeValue());
+        assertEquals(401,response.getStatusCodeValue());
     }
 
 
@@ -121,7 +123,7 @@ public class ThemesApiTest {
         ResponseEntity<ThemeClassResponse> response = template.exchange("/admin/themes/class",
                 POST, request, ThemeClassResponse.class);
 
-        Assert.assertEquals(403,response.getStatusCodeValue());
+        assertEquals(403,response.getStatusCodeValue());
     }
 
 
@@ -134,21 +136,24 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes/class",
                 POST, request, String.class);
 
-        Assert.assertEquals(406,response.getStatusCodeValue());
+        assertEquals(406,response.getStatusCodeValue());
     }
 
 
     @Test
     public void deleteThemesAndThemeClass() {
         HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response = template.exchange("/admin/themes?id=5003",
+        template.exchange("/admin/themes?id=5001",
                 DELETE, request, String.class);
 
-        response = template.exchange("/admin/themes/class?id=990012",
+        template.exchange("/admin/themes?id=5002",
                 DELETE, request, String.class);
 
-        Assert.assertTrue(!themesRepo.existsById(5003));
-        Assert.assertTrue(!themeClassRepo.existsById(990012));
+        template.exchange("/admin/themes/class?id=990011",
+                DELETE, request, String.class);
+
+        Assert.assertTrue(!themesRepo.existsById(5001));
+        Assert.assertTrue(!themeClassRepo.existsById(990011));
     }
 
 
@@ -158,7 +163,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes/class?id=990011",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        assertEquals(401, response.getStatusCodeValue());
     }
 
 
@@ -168,7 +173,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes/class?id=990011",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        assertEquals(403, response.getStatusCodeValue());
     }
 
 
@@ -179,7 +184,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes/class?id=990013",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
     }
 
     @Test
@@ -188,9 +193,9 @@ public class ThemesApiTest {
         ResponseEntity<List> response = template.exchange("/admin/themes",
                 GET, request, List.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(!response.getBody().isEmpty());
-        Assert.assertEquals(3, response.getBody().size());
+        assertEquals(3, response.getBody().size());
     }
 
 
@@ -205,7 +210,7 @@ public class ThemesApiTest {
                 POST, request, ThemeResponse.class);
 
         System.out.println(response.getBody());
-        Assert.assertEquals(200,response.getStatusCodeValue());
+        assertEquals(200,response.getStatusCodeValue());
         Assert.assertTrue(themesRepo.existsByUid(response.getBody().getThemeId()));
         ThemeEntity theme = themesRepo.findByUid(response.getBody().getThemeId()).get();
         themesRepo.delete(theme);
@@ -224,14 +229,14 @@ public class ThemesApiTest {
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
                 POST, request, ThemeResponse.class);
 
-        Assert.assertEquals(200,response.getStatusCodeValue());
+        assertEquals(200,response.getStatusCodeValue());
 
         ThemeEntity entity = themesRepo.findByUid(response.getBody().getThemeId()).get();
 
-        Assert.assertEquals("new theme name", entity.getName());
-        Assert.assertEquals("new theme image", entity.getPreviewImage());
-        Assert.assertEquals("new theme settings", entity.getDefaultSettings());
-        Assert.assertEquals(990012, entity.getThemeClassEntity().getId().intValue());
+        assertEquals("new theme name", entity.getName());
+        assertEquals("new theme image", entity.getPreviewImage());
+        assertEquals("new theme settings", entity.getDefaultSettings());
+        assertEquals(990012, entity.getThemeClassEntity().getId().intValue());
     }
 
 
@@ -244,7 +249,7 @@ public class ThemesApiTest {
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
                 POST, request, ThemeResponse.class);
 
-        Assert.assertEquals(401,response.getStatusCodeValue());
+        assertEquals(401,response.getStatusCodeValue());
     }
 
 
@@ -257,7 +262,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes",
                 POST, request, String.class);
 
-        Assert.assertEquals(403,response.getStatusCodeValue());
+        assertEquals(403,response.getStatusCodeValue());
     }
 
 
@@ -270,7 +275,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes",
                 POST, request, String.class);
 
-        Assert.assertEquals(406,response.getStatusCodeValue());
+        assertEquals(406,response.getStatusCodeValue());
     }
 
 
@@ -283,7 +288,7 @@ public class ThemesApiTest {
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
                 POST, request, ThemeResponse.class);
 
-        Assert.assertEquals(406,response.getStatusCodeValue());
+        assertEquals(406,response.getStatusCodeValue());
     }
 
 
@@ -294,7 +299,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes",
                 POST, request, String.class);
 
-        Assert.assertEquals(406,response.getStatusCodeValue());
+        assertEquals(406,response.getStatusCodeValue());
     }
 
 
@@ -304,7 +309,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes?id=5004",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        assertEquals(401, response.getStatusCodeValue());
     }
 
 
@@ -314,7 +319,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes?id=5001",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        assertEquals(403, response.getStatusCodeValue());
     }
 
 
@@ -325,7 +330,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/admin/themes?id=990013",
                 DELETE, request, String.class);
 
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
     }
 
 
@@ -335,9 +340,9 @@ public class ThemesApiTest {
         ResponseEntity<List> response = template.exchange("/organization/themes/class?org_id=99001",
                 GET, request, List.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(!response.getBody().isEmpty());
-        Assert.assertEquals(1, response.getBody().size());
+        assertEquals(1, response.getBody().size());
     }
 
 
@@ -347,7 +352,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/organization/themes/class?org_id=99003",
                 GET, request, String.class);
 
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        assertEquals(404, response.getStatusCodeValue());
     }
 
 
@@ -357,7 +362,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/organization/themes/class?org_id=99003",
                 GET, request, String.class);
 
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        assertEquals(401, response.getStatusCodeValue());
     }
 
 
@@ -367,7 +372,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response = template.exchange("/organization/themes/class?org_id=99003",
                 GET, request, String.class);
 
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        assertEquals(403, response.getStatusCodeValue());
     }
 
 
@@ -379,7 +384,7 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes/class",
                 POST, request, String.class);
 
-        Assert.assertEquals(200,response.getStatusCodeValue());
+        assertEquals(200,response.getStatusCodeValue());
     }
 
 
@@ -391,7 +396,7 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
-        Assert.assertEquals(404,response.getStatusCodeValue());
+        assertEquals(404,response.getStatusCodeValue());
     }
 
 
@@ -403,7 +408,7 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
-        Assert.assertEquals(404,response.getStatusCodeValue());
+        assertEquals(404,response.getStatusCodeValue());
     }
 
 
@@ -414,7 +419,7 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
                         POST, request, String.class);
 
-        Assert.assertEquals(401,response.getStatusCodeValue());
+        assertEquals(401,response.getStatusCodeValue());
     }
 
 
@@ -425,112 +430,66 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
                         POST, request, String.class);
 
-        Assert.assertEquals(403,response.getStatusCodeValue());
+        assertEquals(403,response.getStatusCodeValue());
     }
 
 
     @Test
     public void assignOrganizationThemeClassExistingClass() {
+        String body = json().put("org_id", 99001).put("class_ids", asList(990011, 990012)).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
+        ResponseEntity<String> response =
+                template.exchange("/organization/themes/class",
+                        POST, request, String.class);
+
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(2, themeClassRepo.countByOrganizationId(99001L).intValue());
+    }
+
+
+    @Test
+    public void removeOrgThemeClassUsedThemeInOrgAndNotExistingInAddedThemeClass() {
+        String body = json().put("org_id", 99001).put("class_ids", asList()).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
+        ResponseEntity<String> response =
+                template.exchange("/organization/themes/class",
+                        POST, request, String.class);
+
+        assertEquals(406,response.getStatusCodeValue());
+        Assert.assertTrue(orgThemeSettingsRepo.existsByOrganizationEntity_IdAndThemeId(99001L, 5003));
+    }
+
+
+    @Test
+    public void addAndRemoveOrgThemeClass() {
+        OrganizationEntity org = orgRepo.findById(99001L).get();
+        org.setThemeId(0);
+        orgRepo.save(org);
+
         String body = json().put("org_id", 99001).put("class_ids", asList(990011)).toString();
         HttpEntity<?> request =  getHttpEntity(body, "101112");
         ResponseEntity<String> response =
                 template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
-        Assert.assertEquals(406,response.getStatusCodeValue());
-    }
-    
-    
-    
-
-
-
-    @Test
-    public void deleteOrganizationThemeClass() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990011",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(200, response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassInvalidOrg() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=990013&class_id=990011",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(404, response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassInvalidClass() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=9900131",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(406, response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassInvalid() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990013",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(406, response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassInvalidToken() {
-        HttpEntity<?> request =  getHttpEntity("1011d12");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(401,response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassUnauthenticatedToken() {
-        HttpEntity<?> request =  getHttpEntity("131415");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(403,response.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteOrganizationThemeClassNonExistingLink() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
-                        DELETE, request, String.class);
-
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(200,response.getStatusCodeValue());
     }
 
 
     @Test
     public void changeOrgTheme() {
-        String body = "{\"theme_id\":5001}";
-        HttpEntity<?> request =  getHttpEntity(body,"131415");
+
+        String body = json().put("org_id", 99001).put("class_ids", asList(990011, 990012)).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
+        template.exchange("/organization/themes/class", POST, request, String.class);
+
+        body = "{\"theme_id\":5001}";
+        request =  getHttpEntity(body,"131415");
 
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(orgThemeSettingsRepo.existsByOrganizationEntity_IdAndThemeId(99001L, 5001));
         
         Assert.assertTrue(orgRepo.existsByIdAndThemeId(99001L, 5001));
@@ -539,16 +498,16 @@ public class ThemesApiTest {
 
     @Test
     public void updateOrgThemeSettings() {
-        JSONObject body = json().put("theme_id", 5002)
+        JSONObject body = json().put("theme_id", 5003)
                                 .put("settings", "new settings");
         HttpEntity<?> request =  getHttpEntity(body.toString(),"131415");
 
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
-        Assert.assertEquals("new settings",
-                orgThemeSettingsRepo.findByOrganizationEntity_IdAndThemeId(99001L, 5002).get().getSettings());
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("new settings",
+                orgThemeSettingsRepo.findByOrganizationEntity_IdAndThemeId(99001L, 5003).get().getSettings());
 
     }
 
@@ -561,18 +520,18 @@ public class ThemesApiTest {
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
     }
 
     @Test
     public void changeOrgThemeNotPermittedThemeId() {
-        String body = "{\"theme_id\":5003}";
+        String body = "{\"theme_id\":5002}";
         HttpEntity<?> request =  getHttpEntity(body,"131415");
 
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
     }
 
 
@@ -584,7 +543,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        assertEquals(401, response.getStatusCodeValue());
     }
 
 
@@ -596,7 +555,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        assertEquals(403, response.getStatusCodeValue());
     }
 
 
@@ -608,7 +567,7 @@ public class ThemesApiTest {
         ResponseEntity<String> response =
                 template.exchange("/organization/themes", POST, request, String.class);
 
-        Assert.assertEquals(406, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
     }
 
 
@@ -618,9 +577,9 @@ public class ThemesApiTest {
         ResponseEntity<List> response = template.exchange("/organization/themes",
                 GET, request, List.class);
 
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(!response.getBody().isEmpty());
         System.out.println(response.getBody().toString());
-        Assert.assertEquals(2, response.getBody().size());
+        assertEquals(1, response.getBody().size());
     }
 }

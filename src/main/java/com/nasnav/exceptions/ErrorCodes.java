@@ -106,6 +106,8 @@ public enum ErrorCodes {
 
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 
+	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")

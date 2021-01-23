@@ -316,21 +316,6 @@ public class OrganizationController {
     }
 
 
-    @ApiOperation(value = "Remove the organization from a certain theme class", nickname = "removeOrgThemeClass")
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
-    })
-    @DeleteMapping(value = "themes/class")
-    @ResponseStatus(OK)
-    public void removeOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestParam("org_id") Long orgId,
-                                    @RequestParam(value = "class_id") Integer classId) throws BusinessException {
-        themeService.removeOrgThemeClass(orgId, classId);
-    }
-
-
     @ApiOperation(value = "Change an organization current theme", nickname = "changeOrgTheme")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),

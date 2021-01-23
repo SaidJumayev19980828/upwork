@@ -16,4 +16,6 @@ public interface ThemesRepository extends JpaRepository<ThemeEntity, Integer> {
     boolean existsByUid(String uid);
 
     boolean deleteByUid(String uid);
+
+    boolean existsByUidAndThemeClassEntity_IdIn(String themeUId, List<Integer> classesIds);
 }
