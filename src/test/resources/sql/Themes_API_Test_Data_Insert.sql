@@ -14,6 +14,8 @@ INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_i
 
 INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, settings)
     VALUES (5001, 99001, 5003, '{"setting" : "new value"}');
+INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, settings)
+VALUES (5002, 99002, 5003, '{"setting" : "new value"}');
 
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 101, 99001, 0);

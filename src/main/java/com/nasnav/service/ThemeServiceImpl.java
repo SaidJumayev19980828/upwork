@@ -291,10 +291,13 @@ public class ThemeServiceImpl implements ThemeService{
 
     public List<OrgThemeRepObj> getOrgThemes() {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        List<Integer> organizationThemeClasses = org.getThemeClasses().stream()
-                                                                   .map(ThemeClassEntity::getId)
-                                                                   .collect(toList());
-        return orgThemeSettingsRepo.findByThemeClasses(organizationThemeClasses);
+        List<Integer> organizationThemeClasses =
+                org
+                .getThemeClasses()
+                .stream()
+               .map(ThemeClassEntity::getId)
+               .collect(toList());
+        return orgThemeSettingsRepo.findByThemeClassesAndOrganizationId(organizationThemeClasses, org.getId());
     }
 
 }

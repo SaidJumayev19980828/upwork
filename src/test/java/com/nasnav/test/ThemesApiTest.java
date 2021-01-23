@@ -574,11 +574,11 @@ public class ThemesApiTest {
     @Test
     public void getOrganizationThemes() {
         HttpEntity<?> request =  getHttpEntity("131415");
-        ResponseEntity<List> response = template.exchange("/organization/themes",
-                GET, request, List.class);
+        ResponseEntity<List> response =
+                template.exchange("/organization/themes", GET, request, List.class);
 
         assertEquals(200, response.getStatusCodeValue());
-        Assert.assertTrue(!response.getBody().isEmpty());
+        assertFalse(response.getBody().isEmpty());
         System.out.println(response.getBody().toString());
         assertEquals(1, response.getBody().size());
     }
