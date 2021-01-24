@@ -49,7 +49,8 @@ public class ShippingServiceFactory {
 					,SallabShippingService.class
 					,ClickNShipShippingService.class
 					,FixedFeeShippingService.class
-					,FixedFeeStrictSameCityShippingService.class);
+					,FixedFeeStrictSameCityShippingService.class
+					,FixedFeeSelectedAreasShippingService.class);
 	
 	
 	@Autowired
