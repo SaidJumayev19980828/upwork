@@ -7,6 +7,7 @@ import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0016;
 import static com.nasnav.exceptions.ErrorCodes.TAG$TREE$0001;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -16,9 +17,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.util.StringUtils.isEmpty;
 
 import java.lang.reflect.InvocationTargetException;
@@ -758,6 +757,13 @@ public class CategoryService {
     		orgTagsRepo.setAllTagsCategory(categortId, orgId);
 		else
 			orgTagsRepo.setTagsListCategory(categortId, orgId, tagsIds);
+	}
+
+
+	public void setTagsListCategory(Long categoryId, List<Long> tagsIds) {
+    	CategoriesEntity category = categoryRepository.findById(categoryId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0016, categoryId));
+    	orgTagsRepo.setTagsListCategory(category, tagsIds);
 	}
 
 

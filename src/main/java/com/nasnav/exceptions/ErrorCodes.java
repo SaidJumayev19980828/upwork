@@ -85,6 +85,7 @@ public enum ErrorCodes {
 	,GEN$0013("Failed to parse MIME type for the file:  %s")
 	,GEN$0014("Failed to parse type for the file:  %s")
 	,GEN$0015("Couldn't read image [%s]")
+	,GEN$0016("Provided category_id[%d] doesn't match any existing category!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")

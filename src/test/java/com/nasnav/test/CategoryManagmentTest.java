@@ -14,7 +14,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -901,5 +901,50 @@ public class CategoryManagmentTest {
         List<TagsEntity> tagsWithAssignedCategory = 
     			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(categoryId, 99001L);
         assertEquals("Only tags with no categories were assigned to the new category",tagNoCategory.size() , tagsWithAssignedCategory.size());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdmin() {
+        HttpEntity<Object> json = getHttpEntity("abcdefg");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(OK, response.getStatusCode());
+
+        List<Long> tags = orgTagsRepo.findByCategoryId(201L);
+        assertEquals(4, tags.size());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminMissingCategoryId() {
+        HttpEntity<Object> json = getHttpEntity("abcdefg");
+        String url = "/admin/tag/category?tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminInvalidToken() {
+        HttpEntity<Object> json = getHttpEntity("invalid");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminInvalidAuthN() {
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(FORBIDDEN, response.getStatusCode());
     }
 }

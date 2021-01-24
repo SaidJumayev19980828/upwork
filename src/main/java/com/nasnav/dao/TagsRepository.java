@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -52,6 +53,11 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     void setTagsListCategory(@Param("categoryId") Long categoryId,
                              @Param("orgId") Long orgId,
                              @Param("ids") List<Long> ids);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update TagsEntity t set t.categoriesEntity = :category where t.id in :ids")
+    void setTagsListCategory(@Param("category") CategoriesEntity categoryId, @Param("ids") List<Long> ids);
     
     
     @Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData(product.id , tags.id, tags.name) "
