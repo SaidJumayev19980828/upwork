@@ -41,7 +41,6 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
@@ -248,10 +247,18 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
+	@Transactional
 	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		AddressDTO newAddressEntity = doUpdateUserAddressesImmutably(addressDTO);
+		setAsPrincipleAddressIfNeeded(addressDTO, newAddressEntity);
+		return newAddressEntity;
+	}
+
+
+
+
+	private void setAsPrincipleAddressIfNeeded(AddressDTO addressDTO, AddressDTO newAddress) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
-		AddressDTO newAddress = setUserAddresses(addressDTO, user);
-		addressRepo.linkAddressToUser(user.getId(), newAddress.getId());
 		if (addressDTO.getPrincipal() != null) {
 			if (addressDTO.getPrincipal()) {
 				addressRepo.makeAddressNotPrincipal(user.getId());
@@ -259,36 +266,55 @@ public class UserServiceImpl implements UserService {
 				newAddress.setPrincipal(true);
 			}
 		}
-		return newAddress;
 	}
-
 
 
 	@Override
 	public void removeUserAddress(Long id) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
-		if (addressRepo.countByUserIdAndAddressId(id, user.getId()) == 0)
+		if (addressRepo.countByUserIdAndAddressId(id, user.getId()) == 0){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, id);
-
+		}
 		addressRepo.unlinkAddressFromUser(id, user.getId());
 	}
 
 
 
-	private AddressDTO setUserAddresses(AddressDTO addressDTO, UserEntity userEntity) {
+	/**
+	 * we use a immutable approach for addresses, as they are referenced by orders.
+	 * and orders will need the address original data when the order was made.
+	 * so, updating an existing address actually creates a totally new address entity and
+	 * the existing entity is just being unlinked from the user instead of modifying it.
+	 * */
+	private AddressDTO doUpdateUserAddressesImmutably(AddressDTO addressDTO) {
+		unlinkExistingAddressEntityFromUser(addressDTO);
+		persistNewUserAddressEntity(addressDTO);
+		linkNewAddressEntityToUser(addressDTO);
+		return addressDTO;
+	}
+
+
+
+	private void linkNewAddressEntityToUser(AddressDTO addressDTO) {
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
+		addressRepo.linkAddressToUser(userEntity.getId(), addressDTO.getId());
+	}
+
+
+
+	private void unlinkExistingAddressEntityFromUser(AddressDTO addressDTO) {
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
 		if (addressDTO.getId() != null) {
 			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0){
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId());
 			}
 			addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 		}
-		persistUserAddress(addressDTO);
-		return addressDTO;
 	}
 
 
 
-	private void persistUserAddress(AddressDTO addressDTO) {
+	private void persistNewUserAddressEntity(AddressDTO addressDTO) {
 		AddressesEntity address = new AddressesEntity();
 		BeanUtils.copyProperties(addressDTO, address, new String[] {"id"});
 
@@ -304,31 +330,58 @@ public class UserServiceImpl implements UserService {
 
 	private void setSubArea(AddressDTO addressDTO, AddressesEntity address) {
 		Long subAreaId = addressDTO.getSubAreaId();
-		if(nonNull(subAreaId)){
-			Long orgId = securityService.getCurrentUserOrganizationId();
-			SubAreasEntity subArea =
-					subAreaRepo
-					.findByIdAndOrganization_Id(subAreaId, orgId)
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
-			address.setSubAreasEntity(subArea);
+		if(isNull(subAreaId)){
+			return;
+		}
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		SubAreasEntity subArea =
+				subAreaRepo
+				.findByIdAndOrganization_Id(subAreaId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
+		address.setSubAreasEntity(subArea);
+		if(isNull(addressDTO.getAreaId())){
+			address.setAreasEntity(subArea.getArea());
+		}else{
+			validateSubAreaMatchesGivenArea(addressDTO, address, subAreaId, subArea);
+		}
+	}
+
+
+
+
+	private void validateSubAreaMatchesGivenArea(AddressDTO addressDTO, AddressesEntity address, Long subAreaId, SubAreasEntity subArea) {
+		Long givenAreaId =
+				ofNullable(address.getAreasEntity())
+				.map(AreasEntity::getId)
+				.orElse(addressDTO.getAreaId());
+		Long subAreaParentId =
+				ofNullable(subArea.getArea())
+						.map(AreasEntity::getId)
+				.orElse(null);
+		if(!Objects.equals(givenAreaId, subAreaParentId)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$002, subAreaId, givenAreaId);
 		}
 	}
 
 
 
 	private void setArea(AddressDTO addressDTO, AddressesEntity address) {
-		if (addressDTO.getAreaId() != null) {
+		if (nonNull(addressDTO.getAreaId())) {
 			if (areaRepo.existsById(addressDTO.getAreaId())) {
 				address.setAreasEntity(areaRepo.findById(addressDTO.getAreaId()).get());
 			}
 		}
 	}
 
+
+
 	private void validateName(String name) {
 		if (!StringUtils.validateName(name)) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
 		}
 	}
+
+
 
 	private void validateEmail(String email) {
 		if (!StringUtils.validateEmail(email)) {

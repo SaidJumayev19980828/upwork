@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
@@ -121,6 +122,8 @@ public class UserRegisterTest {
 	
 	@MockBean
 	private MailService mailService;
+
+	private String uniqueAddress = "630f3256-59bb-4b87-9600-60e64d028d68";
 
 	@Before
 	public void setup() {
@@ -976,7 +979,7 @@ public class UserRegisterTest {
 	public void updateUserAddressTest() {
 		JSONObject address =
 				json()
-				.put("address_line_1", "address line")
+				.put("address_line_1", uniqueAddress)
 				.put("sub_area_id", 888001);
 		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
@@ -987,7 +990,7 @@ public class UserRegisterTest {
 		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
 		AddressRepObj addressResponse = entity.get();
-		assertEquals("address line", addressResponse.getAddressLine1());
+		assertEquals(uniqueAddress, addressResponse.getAddressLine1());
 		assertEquals(888001L, addressResponse.getSubAreaId().longValue());
 		assertEquals("Badr city", addressResponse.getSubArea());
 
@@ -1008,10 +1011,10 @@ public class UserRegisterTest {
 
 
 	@Test
-	public void updateUserAddressInvalidSubAreaTest() {
+	public void updateUserAddressSubAreaNotPerOrganizationTest() {
 		JSONObject address =
 				json()
-				.put("address_line_1", "address line")
+				.put("address_line_1", uniqueAddress)
 				.put("sub_area_id", 888002);
 		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
@@ -1022,8 +1025,65 @@ public class UserRegisterTest {
 
 
 	@Test
+	public void updateUserAddressSubAreaNotProvidingAreaTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888003);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals(addressResponse.getSubAreaId().longValue(), 888003L);
+		assertEquals("area will be assigned automatically", addressResponse.getAreaId().longValue(), 100002L);
+	}
+
+
+
+
+	@Test
+	public void updateUserAddressUpdateBothAreaAndSubAreaSuccessTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888003)
+				.put("area_id", 100002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals(addressResponse.getSubAreaId().longValue(), 888003L);
+		assertEquals(addressResponse.getAreaId().longValue(), 100002L);
+	}
+
+
+
+
+	@Test
+	public void updateUserAddressUpdateBothAreaAndSubAreaFailedTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888001)
+				.put("area_id", 100002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+
+
+	@Test
 	public void updateUserAddressNoSubAreaTest() {
-		JSONObject address = json().put("address_line_1", "address line");
+		JSONObject address = json().put("address_line_1", uniqueAddress);
 		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
 		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
@@ -1032,7 +1092,7 @@ public class UserRegisterTest {
 		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
 		AddressRepObj addressResponse = entity.get();
-		assertEquals("address line", addressResponse.getAddressLine1());
+		assertEquals(uniqueAddress, addressResponse.getAddressLine1());
 		assertNull(addressResponse.getSubAreaId());
 		assertNull(addressResponse.getSubArea());
 	}

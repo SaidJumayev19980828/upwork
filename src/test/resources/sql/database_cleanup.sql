@@ -72,7 +72,7 @@ DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.addresses where id between 12300001 and 12300100;
+DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 = '630f3256-59bb-4b87-9600-60e64d028d68';
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges
 WHERE child_id IN (

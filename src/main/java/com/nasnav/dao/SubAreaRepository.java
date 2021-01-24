@@ -14,11 +14,17 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface SubAreaRepository extends JpaRepository<SubAreasEntity, Long> {
+
     List<SubAreasEntity> findByAreaAndOrganization_Id(AreasEntity area, Long organizationId);
 
-    Optional<SubAreasEntity> findByIdAndOrganization_Id(Long id, Long org);
+    @Query("SELECT subArea FROM SubAreasEntity subArea " +
+            " LEFT JOIN FETCH subArea.area area " +
+            " LEFT JOIN subArea.organization org " +
+            " WHERE org.id = :orgId " +
+            " AND subArea.id = :id")
+    Optional<SubAreasEntity> findByIdAndOrganization_Id(@Param("id")Long id, @Param("orgId")Long orgId);
 
-    List<SubAreasEntity> findByOrganization_Id(Long orgId);
+    List<SubAreasEntity> findByOrganization_Id(@Param("orgId")Long orgId);
 
     @Transactional
     @Modifying

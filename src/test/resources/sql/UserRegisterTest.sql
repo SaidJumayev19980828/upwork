@@ -75,8 +75,10 @@ INSERT INTO public.user_subscriptions VALUES (10002, 'seocnd_sub@g.com', 99002, 
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 INSERT INTO public.cities(id, country_id, name) values(100001, 1,'Cairo');
 INSERT INTO public.areas(id, name, city_id) values(100001, 'new cairo', 100001);
+INSERT INTO public.areas(id, name, city_id) values(100002, 'Nasr City', 100001);
 insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 100001, 'Badr city', 99001);
 insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100001, 'Future city', 99002);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888003, 100002, '10th District', 99001);
 
 
 INSERT INTO public.addresses(id, address_line_1, sub_area_id, area_Id) values(12300003, 'address line', 888001, 100001);
