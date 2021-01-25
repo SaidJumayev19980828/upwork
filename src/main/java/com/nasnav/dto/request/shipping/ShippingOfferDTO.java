@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -18,4 +19,6 @@ public class ShippingOfferDTO {
 	private BigDecimal total;
 	private String type;
 	private String icon;
+	private boolean available;
+	private String message;
 }

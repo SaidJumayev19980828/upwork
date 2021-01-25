@@ -10,6 +10,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.FixedFeeShippingService;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.nasnav.shipping.services.FixedFeeShippingService.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -77,7 +79,8 @@ public class FixedFeeShippingServiceTest {
 
         List<ShippingOfferDTO> offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+        ShippingOfferDTO offer = offers.get(0);
+        List<ShipmentDTO> shipments = offer.getShipments();
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(3, shipments.size());
@@ -86,6 +89,8 @@ public class FixedFeeShippingServiceTest {
         assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
         assertEquals(now().plusDays(2) , shipments.get(0).getEta().getTo());
+        assertTrue(offer.isAvailable());
+        assertNull(offer.getMessage());
     }
 
 
@@ -135,8 +140,9 @@ public class FixedFeeShippingServiceTest {
         List<ShippingDetails> details = createShippingsDetails();
         setOutOfReachCity(details.get(0));
 
-        Mono<ShippingOffer> offer = service.createShippingOffer(details);
-        assertFalse(offer.blockOptional().isPresent());
+        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        assertFalse(offer.get().isAvailable());
+        assertEquals( ERR_CITY_NOT_SUPPORTED, offer.get().getMessage());
     }
 
 

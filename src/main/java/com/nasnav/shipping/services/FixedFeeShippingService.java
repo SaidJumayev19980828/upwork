@@ -46,6 +46,8 @@ public class FixedFeeShippingService implements ShippingService {
     public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
     public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
 
+    public static final String ERR_CITY_NOT_SUPPORTED = "Sorry! Our delivery service doesn't cover this city!";
+
     protected static final List<Parameter> SERVICE_PARAM_DEFINITION =
             asList( new Parameter(SUPPORTED_CITIES , LONG_ARRAY)
                     , new Parameter(MIN_SHIPPING_FEE, NUMBER)
@@ -124,7 +126,7 @@ public class FixedFeeShippingService implements ShippingService {
 
     protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
         if(!areCitiesSupported(shippingInfo)) {
-            return Mono.empty();
+            return Mono.just(new ShippingOffer(serviceInfo, ERR_CITY_NOT_SUPPORTED));
         }
         Integer shipmentsNum = shippingInfo.size();
         List<Shipment> shipments =
