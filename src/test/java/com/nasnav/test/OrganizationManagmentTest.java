@@ -125,35 +125,31 @@ public class OrganizationManagmentTest {
     }
 
 
-
     @Test
-    public void updateOrganizationInvalidSocialLinksTest() {
-        // invalid twitter link
-        String body = "{\"org_id\":99005, \"social_twitter\": \"htps://www.twitte.com/fortunestores\"}";
+    public void deleteOrganizationSocialLinksTest() {
+        // insert social link first
+        String body = json()
+                .put("social_twitter", "htps://www.twitte.com/fortunestores")
+                .toString();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("htps://www.twitte.com/fortunestores", socialRepository.findOneByOrganizationEntity_Id(99001L).get().getTwitter());
 
-        // invalid facebook link
-        body = "{\"org_id\":99005, \"social_facebook\": \"htts://www.faceboo.com/fortune.stores11/\"}";
+        // try to remove social link
+        body = json()
+                .put("social_twitter", "")
+                .toString();
         map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
         json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
-
-        // invalid instagram link
-        body = "{\"org_id\":99005, \"social_instagram\": \"htps://instgram.com/fortunestores\"}";
-        map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        map.add("logo", file);
-        json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
-        response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
+        assertNull(socialRepository.findOneByOrganizationEntity_Id(99001L).get().getTwitter());
     }
 
     @Test
