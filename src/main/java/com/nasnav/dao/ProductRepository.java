@@ -82,7 +82,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
 
-    @Query(value = "update ProductEntity p set p.categoryId = :categoryId where p.id in :productsIds")
+    @Query(value = "update ProductEntity p set p.categoryId = :categoryId where p.id in :productsIds and p.removed in (0,1)")
     @Transactional
     @Modifying
     void setProductsListCategory(@Param("categoryId") Long categoryId,
