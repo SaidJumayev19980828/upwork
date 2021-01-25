@@ -38,6 +38,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
 
+	@Query("select p.id from ProductEntity p where p.categoryId = :categoryId")
+    List<Long> findProductsIdsByCategoryId(@Param("categoryId") Long categoryId);
+
 	@Query("SELECT p.id from ProductEntity p where p.organizationId = :orgId")
     List<Long> findProductsIdsByOrganizationId(@Param("orgId") Long orgId);
 
@@ -78,6 +81,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Transactional
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
+
+    @Query(value = "update ProductEntity p set p.categoryId = :categoryId where p.id in :productsIds")
+    @Transactional
+    @Modifying
+    void setProductsListCategory(@Param("categoryId") Long categoryId,
+                                 @Param("productsIds") List<Long> productsIds);
 
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
 	

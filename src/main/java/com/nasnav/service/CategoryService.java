@@ -7,8 +7,7 @@ import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0016;
-import static com.nasnav.exceptions.ErrorCodes.TAG$TREE$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -206,24 +205,23 @@ public class CategoryService {
 		if (categoryId == null ){
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
 		}
-        if (!categoryRepository.findById(categoryId).isPresent()){
-            throw new BusinessException("EntityNotFound: category",
-                    "No category entity found with provided ID", NOT_ACCEPTABLE);
-        }
-        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
+
+        CategoriesEntity categoriesEntity = getCategoryById(categoryId);
 
         List<Long> tagsIds = orgTagsRepo.findByCategoryId(categoryId);
         if (tagsIds.size() > 0){
-            throw new BusinessException("NOT_EMPTY: tags",
-                    "There are still tags "+tagsIds.toString()+" assigned to this category", CONFLICT);
+			throw new RuntimeBusinessException(CONFLICT, GEN$0017, "tags", tagsIds.toString());
         }
 
-        List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryId.intValue());
-        if (childrenCategories.size() > 0){
-            List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(toList());
-            throw new BusinessException("NOT_EMPTY: Category children ",
-                    "There are still children " +childrenCategoriesIds+" assigned to this category", CONFLICT);
+        List<Long> childrenCategoriesIds = categoryRepository.findCategoriesIdsByParentId(categoryId.intValue());
+        if (childrenCategoriesIds.size() > 0){
+            throw new RuntimeBusinessException(CONFLICT, GEN$0017, "children categories", childrenCategoriesIds.toString());
         }
+
+		List<Long> productsIds = productRepository.findProductsIdsByCategoryId(categoryId);
+		if (productsIds.size() > 0){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0017, "products", productsIds.toString());
+		}
         categoryRepository.delete(categoriesEntity);
         return new CategoryResponse(categoriesEntity.getId());
     }
@@ -761,9 +759,18 @@ public class CategoryService {
 
 
 	public void setTagsListCategory(Long categoryId, List<Long> tagsIds) {
-    	CategoriesEntity category = categoryRepository.findById(categoryId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0016, categoryId));
+    	CategoriesEntity category = getCategoryById(categoryId);
     	orgTagsRepo.setTagsListCategory(category, tagsIds);
+	}
+
+	public void setProductsListCategory(Long categoryId, List<Long> productsIds) {
+		getCategoryById(categoryId);
+		productRepository.setProductsListCategory(categoryId, productsIds);
+	}
+
+	private CategoriesEntity getCategoryById(Long categoryId) {
+		return categoryRepository.findById(categoryId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0016, categoryId));
 	}
 
 

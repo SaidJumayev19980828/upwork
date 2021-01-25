@@ -93,11 +93,25 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
 			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
 	})
-	@PostMapping(value = "tag/category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@PostMapping(value = "tag/category")
 	public void setTagsListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
 									@RequestParam (value = "category_id") Long categoryId,
 									@RequestParam(value = "tags") List<Long> tagsIds) {
 		categoryService.setTagsListCategory(categoryId, tagsIds);
+	}
+
+
+	@ApiOperation(value = "change category for product list")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
+	})
+	@PostMapping(value = "product/category")
+	public void setProductListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
+									@RequestParam (value = "category_id") Long categoryId,
+									@RequestParam(value = "products") List<Long> productsIds) {
+		categoryService.setProductsListCategory(categoryId, productsIds);
 	}
 
 
