@@ -22,14 +22,13 @@
 //                    integrity_hash: "",
                     onclose: function() {},
                     callback: function(response) {
-                        var flw_ref = response.tx.flwRef; // collect flwRef returned and pass to a server page to complete status check.
                         console.log("This is the response returned after a charge", response);
                         if (
                             response.tx.chargeResponseCode == "00" ||
                             response.tx.chargeResponseCode == "0"
                         ) {
                             // redirect to a success page
-                            window.location.href = "$success_url" + "?ref=" + flw_ref;
+                            window.location.href = "$success_url" + "?ref=" + response.tx.flwRef + "&uid=" + response.tx.txRef;
                         } else {
                             // redirect to a failure page.
                         }
@@ -53,6 +52,14 @@
 <form>
     <button type="button" style="cursor:pointer;" value="Pay Now" id="submit">Pay Now</button>
 </form>
+
+<div>
+    <strong>Test card:</strong> (<a href="https://developer.flutterwave.com/docs/test-cards">Source</a>)<br/>
+    Card number: 4751 7632 3669 9647<br/>
+    Expiry: 09/35<br/>
+    CVV: 123<br/>
+
+</div>
 
 </body>
 </html>

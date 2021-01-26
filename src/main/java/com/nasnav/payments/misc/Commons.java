@@ -5,10 +5,11 @@ import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.Account;
 import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.rave.RaveAccount;
+import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
@@ -19,16 +20,16 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Properties;
-
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import java.util.stream.Collectors;
 
 @Service
 public class Commons {
-
-	public static TransactionCurrency DEFAULT_CURRENCY_IF_NOT_SPECIFIED = EGP;
 
 	private static final Logger classLogger = LogManager.getLogger("Payment:COMMONS");
 
@@ -86,7 +87,12 @@ public class Commons {
 					MastercardAccount acc = new MastercardAccount();
 					acc.init(props, gatewayEntity.getId());
 					return acc;
-				default:
+				case UPG:
+					UpgAccount acc2 = new UpgAccount();
+					acc2.init(props);
+					return acc2;
+				case RAVE:
+					return new RaveAccount(props, gatewayEntity.getId());
 			}
 		}
 		return null;
@@ -114,4 +120,13 @@ public class Commons {
 	public OrderService.OrderValue getMetaOrderValue(long metaOrderId) {
 		return orderService.getMetaOrderTotalValue(metaOrderId);
 	}
+
+
+    public String readInputStream(InputStream stream) {
+        BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+        return br.lines().collect(Collectors.joining(System.lineSeparator()));
+    }
+
+
+
 }

@@ -62,7 +62,7 @@ public class MastercardService {
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
 
 
-    public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
+    public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository) {
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
     }

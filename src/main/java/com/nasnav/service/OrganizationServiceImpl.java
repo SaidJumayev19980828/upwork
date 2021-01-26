@@ -37,6 +37,7 @@ import com.nasnav.dao.*;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.IdAndNamePair;
@@ -1196,6 +1197,10 @@ public class OrganizationServiceImpl implements OrganizationService {
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
                 body.put("script", account.getScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
+            } else if (RAVE.getValue().equalsIgnoreCase(gateway.getGateway())) {
+                RaveAccount raveAccount = new RaveAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                body.put("script", raveAccount.getScriptUrl());
+                body.put("icon", domainService.getBackendUrl()+raveAccount.getIcon());
             } else if (UPG.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 UpgAccount account = new UpgAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
