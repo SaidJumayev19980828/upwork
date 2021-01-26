@@ -2,14 +2,14 @@ package com.nasnav.service;
 
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
-import static java.util.Map.Entry.comparingByKey;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.util.*;
 
@@ -258,10 +258,29 @@ public class AddressServiceImpl implements AddressService{
     @Transactional
     public void updateSubAreas(SubAreasUpdateDTO subAreas) {
         validateSubAreas(subAreas);
-        deleteNonIncludedSubAreas(subAreas);
         updateExistingAndAddNewAreas(subAreas);
     }
 
+
+    @Override
+    @Transactional
+    public void deleteSubAreas(Set<Long> subAreas) {
+        validateProvidedSubAreasExisting(new HashSet<>(subAreas));
+
+        clearSubAreaFromAddresses(subAreas);
+        subAreaRepo.deleteByIdIn(subAreas);
+    }
+
+
+    private void validateProvidedSubAreasExisting(Set<Long> nonExistingSubAreas) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        Set<Long> currentSubAreas = getOrganizationSubAreasIds(orgId);
+
+        nonExistingSubAreas.removeAll(currentSubAreas);
+        if (nonExistingSubAreas.size() > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$003, nonExistingSubAreas.toString(), orgId);
+        }
+    }
 
 
     private void updateExistingAndAddNewAreas(SubAreasUpdateDTO subAreas) {
@@ -277,22 +296,6 @@ public class AddressServiceImpl implements AddressService{
     }
 
 
-    private void deleteNonIncludedSubAreas(SubAreasUpdateDTO subAreas) {
-        Set<Long> currentSubAreas = getOrganizationSubAreasIds();
-        Set<Long> subAreasToKeep =  getSubAreasToKeep(subAreas);
-        Set<Long> subAreasToDelete =
-                currentSubAreas
-                .stream()
-                .filter(id -> !subAreasToKeep.contains(id))
-                .collect(toSet());
-
-        if(!subAreasToDelete.isEmpty()){
-            clearSubAreaFromAddresses(subAreasToDelete);
-            subAreaRepo.deleteByIdIn(subAreasToDelete);
-        }
-    }
-
-
 
     private void clearSubAreaFromAddresses(Set<Long> subAreasToDelete) {
         processInBatches(subAreasToDelete, 2000, batch -> addressRepo.clearSubAreasFromAddresses(new HashSet<>(batch)));
@@ -300,19 +303,8 @@ public class AddressServiceImpl implements AddressService{
 
 
 
-    private Set<Long> getSubAreasToKeep(SubAreasUpdateDTO subAreas) {
-        return ofNullable(subAreas.getSubAreas())
-                .orElse(emptyList())
-                .stream()
-                .map(SubAreaDTO::getId)
-                .filter(Objects::nonNull)
-                .collect(toSet());
-    }
 
-
-
-    private Set<Long> getOrganizationSubAreasIds() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    private Set<Long> getOrganizationSubAreasIds(Long orgId) {
         return subAreaRepo
                 .findByOrganization_Id(orgId)
                 .stream()
@@ -324,16 +316,22 @@ public class AddressServiceImpl implements AddressService{
 
     private SubAreasEntity createOrUpdateSubAreaEntity(SubAreaDTO subArea){
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        AreasEntity area =
-                areaRepo
-                .findById(subArea.getAreaId())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, AREA$001, subArea.getAreaId()));
         SubAreasEntity entity =
-                subAreaRepo
-                .findByIdAndOrganization_Id(subArea.getId(), org.getId())
-                .orElse(new SubAreasEntity());
-        entity.setName(subArea.getName());
-        entity.setArea(area);
+                isNullOrZero(subArea.getId()) ?
+                        new SubAreasEntity() :
+                        subAreaRepo
+                        .findByIdAndOrganization_Id(subArea.getId(), org.getId())
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SUBAREA$001, subArea.getId(), org.getId()));
+        if (!isNullOrZero(subArea.getAreaId())) {
+            AreasEntity area =
+                    areaRepo
+                            .findById(subArea.getAreaId())
+                            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, AREA$001, subArea.getAreaId()));
+            entity.setArea(area);
+        }
+        if (subArea.isUpdated("name")) {
+            entity.setName(subArea.getName());
+        }
         entity.setOrganization(org);
         entity.setLatitude(subArea.getLatitude());
         entity.setLongitude(subArea.getLongitude());
@@ -351,10 +349,29 @@ public class AddressServiceImpl implements AddressService{
 
 
     private void validateSubAreaDTO(SubAreaDTO subArea){
-        if(anyIsNull(subArea, subArea.getAreaId(), subArea.getName())
-            || subArea.getName().isEmpty()){
+        if(isNullOrZero(subArea.getId())
+                && (anyIsNull(subArea.getAreaId(), subArea.getName()) || subArea.getName().isEmpty())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, subArea.toString());
         }
+    }
+
+    @Override
+    public List<SubAreasRepObj> getOrgSubAreas(Long areaId, Long cityId, Long countryId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        List<SubAreasEntity> subAreasEntities = new ArrayList<>();
+        if (areaId != null) {
+            subAreasEntities = subAreaRepo.findByOrganization_IdAndArea_Id(orgId, areaId);
+        } else if (cityId != null) {
+            subAreasEntities = subAreaRepo.findByOrganization_IdAndArea_CitiesEntity_Id(orgId, cityId);
+        } else if (countryId != null) {
+            subAreasEntities = subAreaRepo.findByOrganization_IdAndArea_CitiesEntity_CountriesEntity_Id(orgId, countryId);
+        } else {
+            subAreasEntities = subAreaRepo.findByOrganization_Id(orgId);
+        }
+        return subAreasEntities
+                .stream()
+                .map(subArea -> (SubAreasRepObj) subArea.getRepresentation())
+                .collect(toList());
     }
 
 

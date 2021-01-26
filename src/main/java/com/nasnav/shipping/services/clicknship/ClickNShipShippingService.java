@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -372,11 +372,12 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private Mono<ShipmentResponseWithAwb> getAirwayBill(ClickNshipWebClient client, ShipmentResponse response) {
+        Base64.Encoder encoder = Base64.getEncoder();
         return client
                 .printWaybill(AUTH_TOKEN, response.getWaybillNumber())
                 .flatMap(this::throwExceptionIfNotOk)
                 .flatMap(res -> res.bodyToMono(byte[].class))
-                .map(fileDataBytes -> new BASE64Encoder().encode(fileDataBytes))
+                .map(fileDataBytes -> encoder.encodeToString(fileDataBytes))
                 .map(airwayBill -> new ShipmentResponseWithAwb(response, airwayBill));
     }
 

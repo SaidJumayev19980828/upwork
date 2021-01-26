@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Set;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
 import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.dto.SubAreasRepObj;
 import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.SubAreasEntity;
@@ -559,11 +561,7 @@ public class OrganizationManagmentTest {
         assertEquals(200, res.getStatusCodeValue());
         //---------------------------------------
         assertNewSubAreaInserted(name, req);
-
-        AddressesEntity addressAfter = addressRepo.findById(12300003L).get();
-        assertNull("old sub-areas will be cleared from addresses", addressAfter.getSubAreasEntity());
-
-        assertFalse("test old sub-areas were deleted", subAreaRepo.findById(888001L).isPresent());
+        assertOldSubAreaExists();
     }
 
 
@@ -598,7 +596,7 @@ public class OrganizationManagmentTest {
         assertNotNull("old sub-areas will NOT be cleared from addresses", addressAfter.getSubAreasEntity());
 
         assertTrue("test old sub-areas are not deleted ", subAreaRepo.findById(888001L).isPresent());
-        assertEquals("test old sub-areas are not deleted ", 2, subAreaRepo.findByOrganization_Id(99001L).size());
+        assertEquals("test old sub-areas are not deleted ", 3, subAreaRepo.findByOrganization_Id(99001L).size());
 
     }
 
@@ -641,7 +639,99 @@ public class OrganizationManagmentTest {
     }
 
 
+    @Test
+    public void deleteSubAreasSuccess(){
+        Long subAreaId = 888001L;
+        assertTrue(subAreaRepo.existsById(subAreaId));
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertFalse(subAreaRepo.existsById(subAreaId));
+    }
 
+
+    @Test
+    public void deleteSubAreasNonExistingId(){
+        Long subAreaId = 988001L;
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteSubAreasInvalidToken(){
+        Long subAreaId = 888001L;
+        HttpEntity<?> req = getHttpEntity("invalid");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteSubAreasInvalidAuthZ(){
+        Long subAreaId = 888001L;
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getOrgSubAreasWithFilters() throws IOException {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+
+        // get all sub_areas with no filters
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        List<SubAreasRepObj> subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(2, subareasList.size());
+
+        // filter by area_id
+        res = template.exchange("/organization/sub_areas?area_id=100001", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+
+        // filter by city_id
+        res = template.exchange("/organization/sub_areas?city_id=100001", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+
+        // filter by city_id
+        res = template.exchange("/organization/sub_areas?country_id=1", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+    }
+
+
+    @Test
+    public void getSubAreasInvalidToken(){
+        HttpEntity<?> req = getHttpEntity("invalid");
+
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getSubAreasInvalidAuthZ(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    private List<SubAreasRepObj> parseGetSubareasResponse(String res) throws IOException {
+        return objectMapper.readValue(res, new TypeReference<List<SubAreasRepObj>>(){});
+    }
 
     private JSONObject createSubAreaUpdateRequest(String name, Long areaId) {
         return createSubAreaUpdateRequest(null, name, areaId);

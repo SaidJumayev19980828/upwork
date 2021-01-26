@@ -49,7 +49,9 @@ public class SubAreasEntity implements BaseEntity{
         SubAreasRepObj obj = new SubAreasRepObj();
         obj.setId(getId());
         obj.setName(getName());
-
+        obj.setLatitude(getLatitude());
+        obj.setLongitude(getLongitude());
+        obj.setAreaId(getArea().getId());
         return obj;
     }
 }

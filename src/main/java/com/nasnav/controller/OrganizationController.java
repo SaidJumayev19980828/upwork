@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import javax.validation.Valid;
 
@@ -645,5 +646,33 @@ public class OrganizationController {
     public void updateSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken
             , @RequestBody SubAreasUpdateDTO subAreas){
         addressService.updateSubAreas(subAreas);
+    }
+
+
+    @ApiOperation(value = "delete organization sub-areas")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "sub_areas")
+    @ResponseStatus(OK)
+    public void deleteSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestParam("sub_areas") Set<Long> subAreas){
+        addressService.deleteSubAreas(subAreas);
+    }
+
+
+    @ApiOperation(value = "get organization sub-areas")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "sub_areas")
+    public List<SubAreasRepObj> getOrgSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                               @RequestParam(value = "area_id", required = false) Long areaId,
+                                               @RequestParam(value = "city_id", required = false) Long cityId,
+                                               @RequestParam(value = "country_id", required = false) Long countryId){
+        return addressService.getOrgSubAreas(areaId, cityId, countryId);
     }
 }

@@ -1,8 +1,8 @@
---inserting organizations
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
-
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(3,'Nigeria', 556, 'NGN');
+--inserting organizations
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 556);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 556);
+
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
