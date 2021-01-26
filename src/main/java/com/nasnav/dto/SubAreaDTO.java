@@ -9,10 +9,18 @@ import java.math.BigDecimal;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class SubAreaDTO {
+public class SubAreaDTO extends BaseJsonDTO{
     private Long id;
     private String name;
     private Long areaId;
     private BigDecimal latitude;
     private BigDecimal longitude;
+
+    @Override
+    protected void initRequiredProperties() {}
+
+    void setName(String name) {
+        setPropertyAsUpdated("name");
+        this.name = name;
+    }
 }

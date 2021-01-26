@@ -113,6 +113,7 @@ public enum ErrorCodes {
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
 	,SUBAREA$002("Sub-Area with ID:[%d] doesn't match area with id[%d]!")
+	,SUBAREA$003("Provided Sub-Areas %s doesn't match any existing sub-areas for organization[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	,ADDR$ADDR$0003("Must provide id of parent %s")

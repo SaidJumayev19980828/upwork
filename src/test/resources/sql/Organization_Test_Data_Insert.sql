@@ -1,12 +1,16 @@
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(2,'United States', 819, 'USD');
 --inserting organizations
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'fortune');
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting countries/ cities/ areas/ sub-areas
 INSERT INTO public.cities(id, country_id, name) values(100001, 1,'Cairo');
+INSERT INTO public.cities(id, country_id, name) values(100002, 2,'NW');
 INSERT INTO public.areas(id, name, city_id) values(100001, 'new cairo', 100001);
+INSERT INTO public.areas(id, name, city_id) values(100002, 'Manhattan', 100002);
 insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 100001, 'Badr city', 99001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100002, 'Downtown', 99001);
 
 --inserting organization domain
 INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'fortune.nasnav.com', 99001);

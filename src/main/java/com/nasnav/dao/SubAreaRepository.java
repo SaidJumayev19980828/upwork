@@ -16,6 +16,10 @@ import java.util.Set;
 public interface SubAreaRepository extends JpaRepository<SubAreasEntity, Long> {
 
     List<SubAreasEntity> findByAreaAndOrganization_Id(AreasEntity area, Long organizationId);
+    List<SubAreasEntity> findByOrganization_Id(Long organizationId);
+    List<SubAreasEntity> findByOrganization_IdAndArea_Id(Long organizationId, Long areaId);
+    List<SubAreasEntity> findByOrganization_IdAndArea_CitiesEntity_Id(Long organizationId, Long cityId);
+    List<SubAreasEntity> findByOrganization_IdAndArea_CitiesEntity_CountriesEntity_Id(Long organizationId, Long countryId);
 
     @Query("SELECT subArea FROM SubAreasEntity subArea " +
             " LEFT JOIN FETCH subArea.area area " +
@@ -23,8 +27,6 @@ public interface SubAreaRepository extends JpaRepository<SubAreasEntity, Long> {
             " WHERE org.id = :orgId " +
             " AND subArea.id = :id")
     Optional<SubAreasEntity> findByIdAndOrganization_Id(@Param("id")Long id, @Param("orgId")Long orgId);
-
-    List<SubAreasEntity> findByOrganization_Id(@Param("orgId")Long orgId);
 
     @Transactional
     @Modifying
