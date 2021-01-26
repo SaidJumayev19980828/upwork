@@ -27,10 +27,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class ThemeServiceImpl implements ThemeService{
@@ -184,34 +181,25 @@ public class ThemeServiceImpl implements ThemeService{
     }
 
 
-    
+    @Transactional
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void assignOrgThemeClass(OrganizationThemeClass orgThemeClassDTO) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgThemeClassDTO.getOrgId());
         checkOrgExistence(optionalOrg, orgThemeClassDTO.getOrgId());
         OrganizationEntity org = optionalOrg.get();
-
-        List<ThemeClassEntity> newThemeClasses = themeClassRepo.findByIdIn(orgThemeClassDTO.getClassIds());
+        List<Integer> classIds = new ArrayList<>(orgThemeClassDTO.getClassIds());
+        List<ThemeClassEntity> newThemeClasses = themeClassRepo.findByIdIn(classIds);
         checkThemeClassesExist(orgThemeClassDTO.getClassIds(), newThemeClasses);
 
         Set<ThemeClassEntity> orgClasses = org.getThemeClasses();
 
-        Set<ThemeClassEntity> addedOrgClasses = new HashSet<>(newThemeClasses);
-        addedOrgClasses.removeAll(orgClasses);
-        List<Integer> addedClassesIds = addedOrgClasses.stream().map(ThemeClassEntity::getId).collect(toList());
+        boolean themeExistInNewClasses = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", classIds);
 
-        Set<ThemeClassEntity> deletedOrgClasses = new HashSet<>(orgClasses);
-        deletedOrgClasses.removeAll(newThemeClasses);
-        List<Integer> deletedClassesIds = deletedOrgClasses.stream().map(ThemeClassEntity::getId).collect(toList());
-
-        boolean themeExistInDeletedClass = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", deletedClassesIds);
-        boolean themeExistInAddedClass = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", addedClassesIds);
-
-        if (themeExistInDeletedClass && !themeExistInAddedClass) {
+        if (!themeExistInNewClasses) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0001, org.getThemeId(), org.getId());
         }
-        orgClasses.removeAll(deletedOrgClasses);
-        orgClasses.addAll(addedOrgClasses);
+        orgClasses.clear();
+        orgClasses.addAll(newThemeClasses);
         orgRepo.save(org);
     }
 
