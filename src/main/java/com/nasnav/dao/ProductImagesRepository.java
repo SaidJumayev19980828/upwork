@@ -46,8 +46,9 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	List<ProductImagesEntity> findByProductEntity_IdInOrderByPriority(List<Long> productIds);
 
-	@Query(value = "select i.id, i.uri, i.type, i.priority, i.product_id, i.variant_id from Product_Images i left join product_variants v on i.variant_id = v.id"+
-			" where i.product_id in :productIds or v.product_id in :productIds order by i.priority", nativeQuery = true)
+	@Query(value = "select i from ProductImagesEntity i" +
+			" left join fetch i.productVariantsEntity v left join fetch i.productEntity p"+
+			" where p.id in :productIds or v.productEntity.id in :productIds order by i.priority")
 	List<ProductImagesEntity> findByProductsIds(@Param("productIds") List<Long> productIds);
 
 	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
