@@ -47,6 +47,8 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, removed) VALUES (1009, 'product_8',102, 207, 99002, now(), now(), 1);
+
 
 
 insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5001,'tag_1', 'tag_1', 201, 99001, '', 99001);

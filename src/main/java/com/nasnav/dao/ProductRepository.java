@@ -38,7 +38,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
 
-	@Query("select p.id from ProductEntity p where p.categoryId = :categoryId and p.removed in (0,1)")
+	@Query(value = "select p.id from Products p where p.category_id = :categoryId", nativeQuery = true)
     List<Long> findProductsIdsByCategoryId(@Param("categoryId") Long categoryId);
 
 	@Query("SELECT p.id from ProductEntity p where p.organizationId = :orgId")
@@ -82,7 +82,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
 
-    @Query(value = "update ProductEntity p set p.categoryId = :categoryId where p.id in :productsIds and p.removed in (0,1)")
+    @Query(value = "update Products set category_id = :categoryId where id in :productsIds", nativeQuery = true)
     @Transactional
     @Modifying
     void setProductsListCategory(@Param("categoryId") Long categoryId,

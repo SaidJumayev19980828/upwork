@@ -295,7 +295,15 @@ public class CategoryManagmentTest {
     }
 
 
-    
+    @Test
+    public void deleteCategoryUsedCategoryInProductsTest() {
+
+
+        HttpHeaders header = getHeaders("abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=207",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        assertTrue(406 == deleteResponse.getStatusCode().value());
+    }
    
 
     @SuppressWarnings("rawtypes")
@@ -957,8 +965,8 @@ public class CategoryManagmentTest {
         ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
         assertEquals(OK, response.getStatusCode());
 
-        List<Long> tags = productRepo.findProductsIdsByCategoryId(202L);
-        assertEquals(5, tags.size());
+        List<Long> products = productRepo.findProductsIdsByCategoryId(202L);
+        assertEquals(5, products.size());
     }
 
     @Test
