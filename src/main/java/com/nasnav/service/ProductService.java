@@ -705,6 +705,7 @@ public class ProductService {
 				product.description.as("description"),
 				product.name.as("name"),
 				product.pName.as("pname"),
+				product.description.as("description"),
 				product.search_360.as("has_360_view"),
 				product.createdAt.as("creation_date"),
 				product.updatedAt.as("update_date"),
