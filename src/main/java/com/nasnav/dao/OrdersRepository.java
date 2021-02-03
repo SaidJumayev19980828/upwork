@@ -103,6 +103,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
 	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
 	
@@ -121,6 +124,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId "
 			+ " and user.id = :userId" )
     Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("userId")Long userId, @Param("orgId")Long orgId);
@@ -139,6 +145,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId " )
 	Optional<OrdersEntity> findFullDataById(@Param("orderId")Long orderId);
 

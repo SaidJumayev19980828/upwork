@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,9 +30,14 @@ public class OrderServiceHelper {
 
 
     public Map<Long, Optional<String>> getVariantsImagesList(MetaOrderEntity order) {
+        Set<OrdersEntity> orders = order.getSubOrders();
+        return getVariantsImagesList(orders);
+    }
+
+
+    public Map<Long, Optional<String>> getVariantsImagesList(Set<OrdersEntity> orders) {
         List<Long> variantsIds =
-                order
-                .getSubOrders()
+                orders
                 .stream()
                 .map(OrdersEntity::getBasketsEntity)
                 .flatMap(Set::stream)
@@ -44,20 +47,6 @@ public class OrderServiceHelper {
                 .collect(toList());
         return imgService.getVariantsCoverImages(variantsIds);
     }
-
-
-
-
-    public Map<Long, Optional<String>> getVariantsImagesList(List<BasketItemDetails> basketItems) {
-        List<Long> variantsIds =
-                basketItems
-                .stream()
-                .map(BasketItemDetails::getVariantId)
-                .collect(toList());
-        return imgService.getVariantsCoverImages(variantsIds);
-    }
-
-
 
 
     public Map<Long, BasketsEntity> getBasketsMap(List<Long> ids) {
