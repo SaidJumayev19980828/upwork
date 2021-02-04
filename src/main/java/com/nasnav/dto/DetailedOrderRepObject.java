@@ -31,6 +31,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private String paymentOperator;
     private BigDecimal total;
     private String currency;
+    private String notes;
     
     @JsonProperty("creation_date")
     private LocalDateTime createdAt;

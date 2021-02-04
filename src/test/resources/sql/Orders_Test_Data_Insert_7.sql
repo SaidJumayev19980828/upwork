@@ -56,20 +56,20 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 
 -- insert employee addresses
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  504);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (72, 'testuser6@nasnav.com', 99001, 'sdrf8s',  501);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (73, 'testuser7@nasnav.com', 99001, 'sdfe47',  502);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (158, 'testuser3@nasnav.com', 99001, '222324',  506);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  504, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (72, 'testuser6@nasnav.com', 99001, 'sdrf8s',  501, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (73, 'testuser7@nasnav.com', 99001, 'sdfe47',  502, 201);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (158, 'testuser3@nasnav.com', 99001, '222324', 506, 201);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (103, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (104, '131415', now(), 69, null);

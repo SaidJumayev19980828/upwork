@@ -62,6 +62,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class CartTest {
 
+	public static final String USELESS_NOTE = "Wait for me! I am not coming!";
 	@Autowired
     private TestRestTemplate template;
 
@@ -580,6 +581,7 @@ public class CartTest {
 		assertEquals(0 ,order.getShipping().compareTo(subOrderShippingSum));
 		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubtTotalSum));
 		assertEquals(0 ,order.getTotal().compareTo(subOrderTotalSum));
+		assertEquals(USELESS_NOTE, order.getNotes());
 		return order;
 	}
 
@@ -715,12 +717,13 @@ public class CartTest {
 		body.put("customer_address", 12300001);
 		body.put("shipping_service_id", "TEST");
 		body.put("additional_data", additionalData);
+		body.put("notes", USELESS_NOTE);
 
 		return body;
 	}
-	
-	
-	
+
+
+
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
@@ -1100,7 +1103,7 @@ public class CartTest {
 		body.put("customer_address", 12300001);
 		body.put("shipping_service_id", SERVICE_ID);
 		body.put("additional_data", additionalData);
-
+		body.put("notes", "come after dinner");
 		return body;
 	}
 	

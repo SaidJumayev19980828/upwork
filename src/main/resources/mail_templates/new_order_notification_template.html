@@ -91,9 +91,9 @@
 			margin-right: 0.5rem;
 		}
 
-
-
-
+		.notes {
+			font-weight: bold;
+		}
 
 		.itemContainer{
 			display: flex;
@@ -308,6 +308,10 @@
 				</tr>
 				</tbody>
 			</table>
+		</div>
+		<div th:if="${notes != null}">
+			<p class="notes">Notes</p>
+			<span id="notes" th:text="${notes}"></span>
 		</div>
 		<div class="pricePanel">
 			<div class="container">

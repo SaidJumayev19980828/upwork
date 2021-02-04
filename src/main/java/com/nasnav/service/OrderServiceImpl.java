@@ -399,11 +399,13 @@ public class OrderServiceImpl implements OrderService {
 		String orderPageUrl =
 				domainService
 				.buildDashboardOrderPageUrl(order.getId(), order.getOrganizationEntity().getId());
+		String notes = order.getMetaOrder().getNotes();
 
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", orderPageUrl);
 		params.put("sub", subOrder);
 		params.put("operator", operator);
+		params.put("notes", notes);
 		return params;
 	}
 	
@@ -875,6 +877,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
+		obj.setNotes(entity.getMetaOrder().getNotes());
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
@@ -1685,6 +1688,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
+		order.setNotes(metaOrder.getNotes());
 
 		String status = ofNullable(findEnum(metaOrder.getStatus()))
 						.orElse(NEW)
@@ -1844,6 +1848,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
 		order.setDiscounts(discounts);
+		order.setNotes(dto.getNotes());
 		subOrders.forEach(order::addSubOrder);
 		promotion.ifPresent(order::addPromotion);
 		

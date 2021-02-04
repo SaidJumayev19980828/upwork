@@ -59,6 +59,8 @@ public class MetaOrderEntity implements BaseEntity {
     @Column(name = "shipping_total")
     private BigDecimal shippingTotal;
 
+    private String notes;
+
     @JsonIgnore
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "user_id", nullable = false)
