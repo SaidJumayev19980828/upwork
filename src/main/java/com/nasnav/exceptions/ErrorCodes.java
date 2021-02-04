@@ -87,6 +87,7 @@ public enum ErrorCodes {
 	,GEN$0015("Couldn't read image [%s]")
 	,GEN$0016("Provided category_id[%d] doesn't match any existing category!")
 	,GEN$0017("There are still %s [%s] assigned to this category!")
+	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")

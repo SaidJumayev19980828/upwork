@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.nasnav.service.model.IdAndNamePair;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
+    Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
 	boolean existsByIdAndRemoved(Long brandId, Integer removed);

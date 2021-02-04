@@ -5,6 +5,7 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
@@ -453,13 +454,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo,
-                                                           MultipartFile banner, MultipartFile cover) throws BusinessException {
+                                                           MultipartFile banner, MultipartFile cover) {
         BrandsEntity brand = entity;
 
         if (json.pname != null) {
             if (!encodeUrl(json.pname).equals(json.pname)) {
-                throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
-                        NOT_ACCEPTABLE);
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0002, "name");
             }
             brand.setPname(json.pname);
         } else if (json.name != null) {
@@ -472,47 +472,41 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         Long orgId = securityService.getCurrentUserOrganizationId();
         if (logo != null) {
-            String mimeType = logo.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM: logo",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            validateImageMimetype(logo);
             brand.setLogo(fileService.saveFile(logo, orgId));
         }
         if (banner != null) {
-            String mimeType = banner.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM: banner",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            validateImageMimetype(banner);
             brand.setBannerImage(fileService.saveFile(banner, orgId));
         }
 
         if (cover != null) {
-            String mimeType = cover.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM: cover",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            validateImageMimetype(cover);
             brand.setCoverUrl(fileService.saveFile(cover, orgId));
         }
 
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
     }
-    
+
+
+    private void validateImageMimetype(MultipartFile image) {
+        String mimeType = image.getContentType();
+        if(!mimeType.startsWith("image"))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0018, mimeType);
+    }
     
     
     @Override
     @CacheEvict(allEntries = true, cacheNames = {BRANDS ,ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
-        if (json.operation != null) {
-            if (json.operation.equals("create"))
-                return createOrganizationBrand(json, logo, banner, cover);
-            else if (json.operation.equals("update"))
-                return updateOrganizationBrand(json, logo, banner, cover);
-            else
-                throw new BusinessException("INVALID_PARAM: operation", "", NOT_ACCEPTABLE);
+    public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) {
+        if (isBlankOrNull(json.operation) || !setOf("create", "update").contains(json.operation)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
         }
-        else
-            throw new BusinessException("MISSING_PARAM: operation", "", NOT_ACCEPTABLE);
+        if (json.operation.equals("create")) {
+            return createOrganizationBrand(json, logo, banner, cover);
+        }
+        return updateOrganizationBrand(json, logo, banner, cover);
     }
     
     
@@ -520,11 +514,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     
 
     @Override
-    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
+    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) {
         BrandsEntity brand = new BrandsEntity();
 
         if (json.name == null)
-            throw new BusinessException("MISSING_PARAM: name", "'name' field can't be empty", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0002, "name");
 
         brand.setName(json.name);
 
@@ -533,14 +527,14 @@ public class OrganizationServiceImpl implements OrganizationService {
         return modifyBrandAdditionalData(brand, json, logo, banner, cover);
     }
 
-    private OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
+    private OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
         if (json.id == null) {
-            throw new BusinessException("MISSING_PARAM: brand_id", "'brand_id' property can't be empty", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0005);
         }
-        if (!brandsRepository.existsById(json.id)) {
-            throw new BusinessException("ENTITY NOT FOUND", "No Brand entity found with given id", NOT_FOUND);
-        }
-        BrandsEntity brand = brandsRepository.findById(json.id).get();
+
+        BrandsEntity brand = brandsRepository.findByIdAndOrganizationEntity_Id(json.id, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$BRA$0001, json.id));
 
         if (json.name != null) {
             brand.setName(json.name);

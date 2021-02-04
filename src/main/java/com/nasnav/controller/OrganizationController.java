@@ -4,6 +4,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -122,7 +123,7 @@ public class OrganizationController {
                                                 @RequestPart("properties") String jsonString,
                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                 @RequestPart(value = "banner", required = false) @Valid MultipartFile banner,
-                                                @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws Exception {
+                                                @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         return orgService.validateAndUpdateBrand(json, logo, banner, cover);
