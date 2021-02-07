@@ -79,17 +79,9 @@ public class ShopService {
     		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouse(organizationId, 0, 0);	
     	}
 
-        if(shopsEntities==null || shopsEntities.isEmpty())
-            throw new RuntimeBusinessException(NOT_FOUND, S$0003);
-
         return shopsEntities
         		.stream()
-        		.map(shopsEntity -> {
-			            ShopRepresentationObject shopRepresentationObject = ((ShopRepresentationObject) shopsEntity.getRepresentation());
-			            //TODO why working days won't be returned from the API unlike getShopById API
-			            shopRepresentationObject.setOpenWorkingDays(null);
-			            return shopRepresentationObject;
-        		})
+        		.map(shopsEntity -> (ShopRepresentationObject) shopsEntity.getRepresentation())
         		.collect(toList());
     }
     

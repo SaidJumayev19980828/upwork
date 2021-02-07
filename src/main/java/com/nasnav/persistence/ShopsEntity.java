@@ -78,6 +78,7 @@ public class ShopsEntity implements BaseEntity{
         if (getAddressesEntity() != null) {
             shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
         }
+        //TODO why working days won't be returned from the API unlike getShopById API
         //TODO database to support from to time as multiple duration through day
         shopRepresentationObject.setOpenWorkingDays(null);
         return shopRepresentationObject;

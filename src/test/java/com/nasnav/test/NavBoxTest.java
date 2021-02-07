@@ -6,10 +6,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.AreasRepObj;
-import com.nasnav.dto.CitiesRepObj;
-import com.nasnav.dto.CountriesRepObj;
-import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -39,6 +36,7 @@ import com.nasnav.persistence.ShopsEntity;
 import net.jcip.annotations.NotThreadSafe;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(SpringRunner.class)
@@ -95,7 +93,7 @@ public class NavBoxTest {
     
     
     @Test
-    public void testShops() {
+    public void testShops() throws IOException {
         // TODO: no support for opening times yet
         ShopsEntity shop = shopsRepository.findById(100001L).get();
         long orgId = 99001L;
@@ -126,7 +124,9 @@ public class NavBoxTest {
 
         // test non-existent org_id
         orgResponse =  template.getForEntity("/navbox/shops?org_id=" + 1243124312341243L, String.class);
-        assertEquals(404, orgResponse.getStatusCodeValue());
+        assertEquals(200, orgResponse.getStatusCodeValue());
+        List<ShopRepresentationObject> shopsList = objectMapper.readValue(orgResponse.getBody(), new TypeReference<List<ShopRepresentationObject>>(){});
+        assertEquals(0, shopsList.size());
 
         // test non-existent shop_id
         shopResponse =  template.getForEntity("/navbox/shop?shop_id=" + 1243124312341243L, String.class);
