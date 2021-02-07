@@ -1,13 +1,11 @@
 package com.nasnav.controller;
 
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -20,6 +18,7 @@ import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.SeoEntityType;
+import com.nasnav.request.SitemapParams;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -343,21 +342,12 @@ public class NavboxController {
 
 
 
-	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
+	@ApiOperation(value = "Get organization sitemap", nickname = "getOrgSitemap", code = 201)
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK")})
 	@GetMapping(value = "organization/sitemap", produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> getOrgSiteMap(@RequestParam String url,
-									  @RequestParam(value = "include_products", required = false) boolean includeProducts,
-									  @RequestParam(value = "include_collections", required = false) boolean includeCollections,
-									  @RequestParam(value = "include_brands", required = false) boolean includeBrands,
-									  @RequestParam(value = "include_tags", required = false) boolean includeTags,
-									  @RequestParam(value = "include_tags_tree", required = false) boolean includeTagsTree) throws IOException {
-		ByteArrayOutputStream s =  organizationService.getOrgSiteMap(url, includeProducts, includeCollections, includeBrands,
-																	 includeTags, includeTagsTree);
-		return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType("text/plain"))
-				.header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
-				.body(s.toString());
+	public ResponseEntity<?> getOrgSiteMap(
+			@RequestHeader(name = "User-Token", required = false) String userToken, SitemapParams params) throws IOException {
+		return organizationService.getOrgSiteMap(userToken, params);
 	}
 
 

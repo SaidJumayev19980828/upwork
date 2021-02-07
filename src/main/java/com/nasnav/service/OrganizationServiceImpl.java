@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -41,6 +42,7 @@ import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
+import com.nasnav.request.SitemapParams;
 import com.nasnav.service.model.IdAndNamePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -49,6 +51,8 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -137,6 +141,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+    @Autowired UserTokenRepository userTokenRepo;
     @Autowired
     private ShopService shopService;
     @Autowired
@@ -1107,32 +1112,29 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     @Override
-    public ByteArrayOutputStream getOrgSiteMap(String url, boolean includeProducts, boolean includeCollections,
-                                               boolean includeBrands, boolean includeTags, boolean includeTagsTree) throws IOException {
-        List<String> allUrls = new ArrayList<>();
-        Pair domain = getOrganizationAndSubdirsByUrl(url);
+    public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
+        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl());
+        Long orgId = domain.getFirst();
+        validateOrgExistenceAndUserAuthZ(userToken, orgId);
+        return createSiteMapResponse(orgId, params);
+    }
 
-        Long orgId = orgRepo.findById(domain.getFirst())
-                .map(OrganizationEntity::getId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0005, url));
-        String baseUrl = domainService.getOrganizationDomainAndSubDir(orgId);
 
-        if(includeProducts) {
-            addPairsAsUrls(baseUrl, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
+    private void validateOrgExistenceAndUserAuthZ(String userToken, Long orgId) {
+        if (orgId.intValue() == 0) {
+            createEmptyResponseEntity();
         }
-        if (includeCollections) {
-            addPairsAsUrls(baseUrl, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
+        if (!isBlankOrNull(userToken)) {
+            Long userOrgId = userTokenRepo.findEmployeeOrgIdByToken(userToken);
+            if (userOrgId == null || !userOrgId.equals(orgId)) {
+                createEmptyResponseEntity();
+            }
         }
-        if (includeBrands) {
-            addPairsAsUrls(baseUrl, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
-        }
-        if (includeTags) {
-            addPairsAsUrls(baseUrl, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
-        }
-        if (includeTagsTree) {
-            addPairsAsUrls(baseUrl, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
-        }
+    }
 
+
+    private ResponseEntity<?> createSiteMapResponse(Long orgId, SitemapParams params) throws IOException {
+        List<String> allUrls = createSiteMap(orgId, params);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Writer outputWriter = new OutputStreamWriter(outStream);
         for(String u : allUrls) {
@@ -1140,7 +1142,38 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
         outputWriter.flush();
         outputWriter.close();
-        return outStream;
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/plain"))
+                .header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
+                .body(outStream.toString());
+    }
+
+
+    private ResponseEntity<?> createEmptyResponseEntity() {
+        //throw new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, 0L);
+        return ResponseEntity.notFound().build();
+    }
+
+
+    private List<String> createSiteMap(Long orgId, SitemapParams params) {
+        List<String> allUrls = new ArrayList<>();
+        String baseUrl = domainService.getOrganizationDomainAndSubDir(orgId);
+        if(params.isInclude_products()) {
+            addPairsAsUrls(baseUrl, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
+        }
+        if (params.isInclude_collections()) {
+            addPairsAsUrls(baseUrl, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
+        }
+        if (params.isInclude_brands()) {
+            addPairsAsUrls(baseUrl, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
+        }
+        if (params.isInclude_tags()) {
+            addPairsAsUrls(baseUrl, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
+        }
+        if (params.isInclude_tags_tree()) {
+            addPairsAsUrls(baseUrl, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
+        }
+        return allUrls;
     }
 
     private void addPairsAsUrls(String domain, List<IdAndNamePair> idAndNamePairs, String entityType, List<String> urlList) {

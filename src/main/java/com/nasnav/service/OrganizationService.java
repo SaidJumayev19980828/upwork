@@ -3,21 +3,17 @@ package com.nasnav.service;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.SitemapParams;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.cache.annotation.CacheResult;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.nasnav.cache.Caches.*;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
@@ -62,8 +58,7 @@ public interface OrganizationService {
 
     String getOrgLogo(Long orgId);
 
-    ByteArrayOutputStream getOrgSiteMap(String url, boolean includeProducts, boolean includeCollections,
-                                        boolean includeBrands, boolean includeTags, boolean includeTagsTree) throws IOException;
+    ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException;
 
     List<String> getSubscribedUsers();
 
