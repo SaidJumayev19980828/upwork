@@ -466,7 +466,7 @@ public class ProductsController {
     @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public List<ProductDetailsDTO> getCollections(@RequestHeader(name = "User-Token", required = false) String token) {
-        return productService.getCollections();
+        return productService.getEmptyCollections();
     }
 
 

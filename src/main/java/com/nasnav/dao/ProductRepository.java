@@ -127,7 +127,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description, p.productType)"+
-            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
+            " from ProductCollectionEntity p " +
+            " left join p.items item " +
+            " join item.item v " +
+            " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
             " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +

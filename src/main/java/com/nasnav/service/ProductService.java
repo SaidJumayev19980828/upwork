@@ -1,21 +1,16 @@
 package com.nasnav.service;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
-import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
-import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
-import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
+import static com.nasnav.constatnts.EntityConstants.Operation.*;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
-import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -45,18 +40,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -69,9 +55,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
-import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
-import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -254,6 +238,9 @@ public class ProductService {
 	private ProductRatingRepository productRatingRepo;
 	@Autowired
 	private OrganizationService orgService;
+
+	@Autowired
+	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -2040,7 +2027,7 @@ public class ProductService {
 	public void updateBundleElement(BundleElementUpdateDTO element) throws BusinessException {
 		validateBundleElementUpdateReq(element);
 
-		if(element.getOperation().equals( Operation.DELETE)) {
+		if(element.getOperation().equals( DELETE)) {
 			deleteBundleElement(element);
 		}else if(element.getOperation().equals( Operation.ADD)){
 			addBundleElement(element);
@@ -2096,7 +2083,7 @@ public class ProductService {
 
 		Operation opr = element.getOperation();
 		if( !( opr.equals(Operation.ADD)
-				||opr.equals(Operation.DELETE) ) ) {
+				||opr.equals(DELETE) ) ) {
 			throw new BusinessException(
 					String.format("Invalid Operation  [%s]", opr.getValue())
 					, "INVALID PARAM:operation"
@@ -2999,6 +2986,8 @@ public class ProductService {
 	}
 
 
+
+	@Transactional
 	public void updateCollection(CollectionItemDTO elements) {
 		validateCollectionItems(elements);
 		updateCollectionItems(elements);
@@ -3006,8 +2995,8 @@ public class ProductService {
 
 
 	private void validateCollectionItems(CollectionItemDTO element) {
-		if(!(element.getOperation().equals(Operation.DELETE) || element.getOperation().equals( Operation.ADD))) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0008, "add, delete");
+		if(!setOf(DELETE, UPDATE).contains(element.getOperation())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0008, "update, delete");
 		}
 		if (Objects.equals(element.getProductId(), null))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
@@ -3021,17 +3010,58 @@ public class ProductService {
 
 		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
 
-		List<ProductVariantsEntity> variantsEntities = productVariantsRepository.findByIdInAndProductEntity_OrganizationId(element.getVariantIds(), orgId);
+		List<ProductVariantsEntity> variantsEntities =
+				productVariantsRepository.findByIdInAndProductEntity_OrganizationId(element.getVariantIds(), orgId);
 
 		validateVariantsExistence(variantsEntities, element.getVariantIds());
 
-		if(element.getOperation().equals( Operation.DELETE)) {
-			entity.getVariants().removeAll(variantsEntities);
-		}else if(element.getOperation().equals( Operation.ADD)){
-			entity.getVariants().addAll(variantsEntities);
+		if(element.getOperation().equals( DELETE)) {
+			removeCollectionItems(new HashSet<>(element.getVariantIds()), entity);
+		}else if(element.getOperation().equals( UPDATE)){
+			updateCollectionItems(entity, variantsEntities, element);
 		}
-
 		productCollectionRepo.save(entity);
+	}
+
+
+
+	private void updateCollectionItems(ProductCollectionEntity collection
+			, List<ProductVariantsEntity> variantsEntities, CollectionItemDTO element) {
+		List<ProductCollectionItemEntity> itemEntities = createCollectionItems(collection, variantsEntities);
+		Set<ProductCollectionItemEntity> oldItems = collection.getItems();
+		collectionItemRepo.deleteItems(oldItems);
+		oldItems.clear();
+		itemEntities.forEach(collection::addItem);
+	}
+
+
+
+	private void removeCollectionItems(Set<Long> variantIds, ProductCollectionEntity entity) {
+		entity
+			.getItems()
+				.removeIf(item -> variantIds.contains(item.getItem().getId()));
+	}
+
+
+
+	private List<ProductCollectionItemEntity> createCollectionItems(ProductCollectionEntity collection
+			,List<ProductVariantsEntity> variants){
+		return IntStream
+				.range(0, variants.size())
+				.mapToObj(i -> createCollectionItem(collection, variants.get(i), i))
+				.collect(toList());
+	}
+
+
+
+
+	private ProductCollectionItemEntity createCollectionItem(ProductCollectionEntity collection
+			,ProductVariantsEntity variant, Integer priority){
+		ProductCollectionItemEntity item = new ProductCollectionItemEntity();
+		item.setCollection(collection);
+		item.setItem(variant);
+		item.setPriority(priority);
+		return item;
 	}
 
 
@@ -3054,79 +3084,88 @@ public class ProductService {
 
 
 	private ProductCollectionEntity getCollectionById(Long productId) {
-		return productCollectionRepo.findByCollectionId(productId)
+		return productCollectionRepo
+				.findByCollectionId(productId)
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, P$PRO$0012, productId));
 	}
 
 
+
 	public ProductDetailsDTO getCollection(Long id) {
 		ProductCollectionEntity entity = getCollectionById(id);
-		return toProductDetailsDTO(entity);
+		return toCollectionDetailsDTO(entity);
 	}
 
 
-	public List<ProductDetailsDTO> getCollections() {
+	public List<ProductDetailsDTO> getEmptyCollections() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		List<ProductCollectionEntity> collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
 
-		List<ProductDetailsDTO> collections = collectionsEntities
+		return collectionsEntities
 				.stream()
-				.filter(c -> c.getVariants().isEmpty())
-				.map(c -> toProductDetailsDTO(c))
+				.filter(c -> c.getItems().isEmpty())
+				.map(c -> toCollectionDetailsDTO(c))
 				.collect(toList());
-
-		return collections;
 	}
+
 
 
 	public List<ProductDetailsDTO> getProducts()  {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		List<ProductEntity> productsEntities = productRepository.findByOrganizationIdAndProductType(orgId, 0);
 
-		List<ProductDetailsDTO> products = productsEntities
+		return productsEntities
 				.stream()
 				.filter(c -> c.getProductVariants().isEmpty())
 				.map(c -> createProductDetailsDTO(c, null, null, true))
 				.collect(toList());
-		return products;
 	}
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductCollectionEntity entity) {
+
+	private ProductDetailsDTO toCollectionDetailsDTO(ProductCollectionEntity entity) {
+		String coverImg = imgService.getProductCoverImage( entity.getId() );
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
+		List<ProductImageDTO> collectionImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), null);
+		List<Long> collection360Shops = product360ShopsRepo.findShopsByProductId(entity.getId());
+
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		copyProperties(entity, dto, new String[] {"variants"});
 
 		dto.setCreationDate(entity.getCreationDate().toString());
 		dto.setUpdateDate(entity.getUpdateDate().toString());
 		dto.setHas_360_view(entity.getSearch360());
-		String coverImg = imgService.getProductCoverImage( entity.getId() );
-		if (coverImg != null)
+		if (coverImg != null){
 			dto.setImageUrl( coverImg );
-
-		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
+		}
 		dto.setTags(tagsDTOList);
-
-		List<ProductImageDTO> collectionImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), null);
 		dto.setImages(getProductImages(collectionImages));
-
-		List<Long> collection360Shops = product360ShopsRepo.findShopsByProductId(entity.getId());
 		dto.setShops(collection360Shops);
 
 		if(!entity.getVariants().isEmpty()) {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
 			List<Long> variantsIds = getVariantsIds(variantsList);
-
 			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), variantsIds);
 
-			dto.setVariants(entity.getVariants()
-					.stream()
-					.map(v -> createVariantDto(null, v, productsAndVariantsImages))
-					.collect(toList()));
+			dto.setVariants(getItemsDtoList(entity, productsAndVariantsImages));
 			dto.setVariantFeatures( getVariantFeatures(variantsList) );
 			dto.setImages(getProductImages(productsAndVariantsImages));
 		}
 		return dto;
 	}
+
+	
+
+	private List<VariantDTO> getItemsDtoList(ProductCollectionEntity entity, List<ProductImageDTO> productsAndVariantsImages) {
+		return entity
+				.getItems()
+				.stream()
+				.sorted(comparing(ProductCollectionItemEntity::getPriority))
+				.map(ProductCollectionItemEntity::getItem)
+				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
+				.collect(toList());
+	}
+
 
 
 	private List<Long> getVariantsIds(List<ProductVariantsEntity> variants) {
@@ -3141,7 +3180,6 @@ public class ProductService {
 		if (isBlankOrNull(start) || start < 0) {
 			start = 0;
 		}
-
 		if (isBlankOrNull(count) || count < 0) {
 			count = 10;
 		}
@@ -3212,8 +3250,8 @@ public class ProductService {
 
 		ProductCollectionEntity collection = productCollectionRepo.findByIdAndOrganizationId(collectionId, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0012, collectionId));
-		if (!collection.getVariants().isEmpty()) {
-			collection.setVariants(new HashSet<>());
+		if (!collection.getItems().isEmpty()) {
+			collection.setItems(new HashSet<>());
 			productCollectionRepo.save(collection);
 		}
 		productCollectionRepo.removeCollection(collectionId, orgId);

@@ -136,7 +136,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);
 
@@ -196,7 +196,7 @@ public class ProductApiTest {
 
 		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, ProductUpdateResponse.class);
 
@@ -228,7 +228,7 @@ public class ProductApiTest {
 
 		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, ProductUpdateResponse.class);
 		return response;
@@ -424,12 +424,11 @@ public class ProductApiTest {
 
 		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 
-		ResponseEntity<String> response =
-				template.exchange("/product/info"
-						, HttpMethod.POST
-						, request
-						, String.class);
-		return response;
+		return template
+				.exchange("/product/info"
+					, POST
+					, request
+					, String.class);
 	}
 
 
@@ -1079,7 +1078,7 @@ public class ProductApiTest {
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/tag"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);
 		return response;

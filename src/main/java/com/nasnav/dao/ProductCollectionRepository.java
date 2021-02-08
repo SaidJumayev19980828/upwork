@@ -12,11 +12,26 @@ import java.util.Optional;
 
 public interface ProductCollectionRepository extends JpaRepository<ProductCollectionEntity, Long> {
 
-    Optional<ProductCollectionEntity> findByIdAndOrganizationId(Long id, Long orgId);
+    @Query("select c from ProductCollectionEntity c " +
+            " left join fetch c.items items " +
+            " left join fetch items.item item " +
+            " where c.organizationId = :orgId " +
+            " and c.productType = 2 " +
+            " and c.id = :id")
+    Optional<ProductCollectionEntity> findByIdAndOrganizationId(@Param("id")Long id, @Param("orgId")Long orgId);
 
-    List<ProductCollectionEntity> findByOrganizationId(Long orgId);
+    @Query("select c from ProductCollectionEntity c " +
+            " left join fetch c.items items " +
+            " left join fetch items.item item " +
+            " where c.organizationId = :orgId and c.productType = 2")
+    List<ProductCollectionEntity> findByOrganizationId(@Param("orgId")Long orgId);
 
-    @Query("select c from ProductCollectionEntity c where c.id = :id and c.productType = 2")
+
+    @Query("select c from ProductCollectionEntity c " +
+            " Left join fetch c.items collectionItem " +
+            " Left join fetch collectionItem.item variant " +
+            " where c.id = :id " +
+            " and c.productType = 2")
     Optional<ProductCollectionEntity> findByCollectionId(@Param("id") Long id);
 
     @Transactional
