@@ -3070,10 +3070,19 @@ public class ProductService {
 	}
 
 
-	private void removeCollectionItems(Set<Long> variantIds, ProductCollectionEntity entity) {
-		entity
-			.getItems()
-				.removeIf(item -> variantIds.contains(item.getItem().getId()));
+	private void removeCollectionItems(Set<Long> variantIds, ProductCollectionEntity collection) {
+				collection
+				.getItems()
+				.stream()
+				.filter(item -> variantIds.contains(item.getItem().getId()))
+				.collect(
+						collectingAndThen(
+								toSet()
+								, toDelete -> {
+										collectionItemRepo.deleteItems(toDelete);
+										collection.getItems().removeAll(toDelete);
+										return toDelete;
+								}));
 	}
 
 

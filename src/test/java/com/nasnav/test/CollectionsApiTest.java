@@ -121,6 +121,39 @@ public class CollectionsApiTest {
 
 
     @Test
+    public void deleteElementsFromCollection(){
+        ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
+        List<Long> expectedOldItems = asList(310003L, 310002L);
+        assertEquals(expectedOldItems, variantsBefore);
+
+        List<Long> itemsToDelete = asList(310003L);
+        String requestJson =
+                json()
+                    .put("product_id", 1001L)
+                    .put("operation", "delete")
+                    .put("variant_ids", itemsToDelete)
+                    .toString();
+
+        HttpEntity<?> request =  getHttpEntity(requestJson , "131415");
+
+        ResponseEntity<String> response =
+                template.exchange("/product/collection/element"
+                        , POST
+                        , request
+                        , String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        ProductCollectionEntity collectionAfter = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsAfter = getItemsIdsSortedByPriority(collectionAfter);
+        List<Long> expectedNewItems = asList(310002L);
+        assertEquals( expectedNewItems, variantsAfter);
+    }
+
+
+
+    @Test
     public void addElementsToCollections(){
         ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
         List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
