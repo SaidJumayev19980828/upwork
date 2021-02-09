@@ -1,14 +1,12 @@
 package com.nasnav.test;
 
 import com.nasnav.NavBox;
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.ProductCollectionRepository;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.VariantDTO;
 import com.nasnav.persistence.ProductCollectionEntity;
 import com.nasnav.persistence.ProductCollectionItemEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,23 +16,23 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.concat;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.test.commons.TestCommons.*;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
@@ -100,6 +98,24 @@ public class CollectionsApiTest {
         List<Long> retrievedItems = response.getBody().getVariants().stream().map(VariantDTO::getId).collect(toList());
 
         assertEquals("collection items should be sorted by priority", expectedItemsSorted, retrievedItems);
+    }
+
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Collection_Test_Data_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getCollectionsWithNullPriorityItems(){
+        ResponseEntity<ProductDetailsDTO> response =
+                template.getForEntity("/navbox/collection?id=1001", ProductDetailsDTO.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<Long> expectedItemsSorted = asList(310003L, 310002L);
+        List<Long> retrievedItems = response.getBody().getVariants().stream().map(VariantDTO::getId).collect(toList());
+
+        assertEquals("collection items should be sorted by priority, null priorities are set to 0", expectedItemsSorted, retrievedItems);
     }
 
 

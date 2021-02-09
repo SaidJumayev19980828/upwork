@@ -7,6 +7,9 @@ import lombok.ToString;
 
 import javax.persistence.*;
 
+import java.util.Optional;
+
+import static java.util.Optional.ofNullable;
 import static javax.persistence.FetchType.LAZY;
 
 @Entity
@@ -30,4 +33,10 @@ public class ProductCollectionItemEntity {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "variant_id")
     private ProductVariantsEntity item;
+
+
+
+    public Integer getPriority(){
+        return ofNullable(priority).orElse(0);
+    }
 }
