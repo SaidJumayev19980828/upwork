@@ -31,7 +31,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
 
-	List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
+	List<ProductVariantsEntity> findDistinctByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 
 
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")

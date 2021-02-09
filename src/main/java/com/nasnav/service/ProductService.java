@@ -24,6 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
@@ -54,10 +55,12 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -2994,46 +2997,77 @@ public class ProductService {
 	}
 
 
+
 	private void validateCollectionItems(CollectionItemDTO element) {
-		if(!setOf(DELETE, UPDATE).contains(element.getOperation())) {
+		if(!setOf(DELETE, UPDATE, ADD).contains(element.getOperation())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0008, "update, delete");
 		}
-		if (Objects.equals(element.getProductId(), null))
+		if (isNull(element.getProductId()))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
-		if (Objects.equals(element.getVariantIds(), null) || element.getVariantIds().isEmpty())
+		if (isNull(element.getVariantIds()) || element.getVariantIds().isEmpty())
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$003);
 	}
 
 
+
 	private void updateCollectionItems(CollectionItemDTO element) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+		ProductCollectionEntity collection = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
 
-		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
-
+		List<Long> givenItemsIds = element.getVariantIds();
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByIdInAndProductEntity_OrganizationId(element.getVariantIds(), orgId);
+				productVariantsRepository.findDistinctByIdInAndProductEntity_OrganizationId(givenItemsIds, orgId);
+		Map<Long,Integer> itemsOrder =	getCollectionItemsOrder(givenItemsIds);
 
-		validateVariantsExistence(variantsEntities, element.getVariantIds());
+		validateVariantsExistence(variantsEntities, givenItemsIds);
 
-		if(element.getOperation().equals( DELETE)) {
-			removeCollectionItems(new HashSet<>(element.getVariantIds()), entity);
-		}else if(element.getOperation().equals( UPDATE)){
-			updateCollectionItems(entity, variantsEntities, element);
+		Operation operation = element.getOperation();
+		if(Objects.equals(operation, DELETE)) {
+			removeCollectionItems(new HashSet<>(givenItemsIds), collection);
+		}else if(Objects.equals(operation, UPDATE)){
+			recreateCollectionItems(collection, variantsEntities, itemsOrder);
+		}else if(Objects.equals(operation, ADD)){
+			appendCollectionItems(collection, variantsEntities, itemsOrder);
 		}
-		productCollectionRepo.save(entity);
+		productCollectionRepo.save(collection);
 	}
 
 
 
-	private void updateCollectionItems(ProductCollectionEntity collection
-			, List<ProductVariantsEntity> variantsEntities, CollectionItemDTO element) {
-		List<ProductCollectionItemEntity> itemEntities = createCollectionItems(collection, variantsEntities);
+	private Map<Long, Integer> getCollectionItemsOrder(List<Long> givenItemsIds) {
+		return IntStream
+				.range(0, givenItemsIds.size())
+				.mapToObj(i -> new ImmutablePair<>(givenItemsIds.get(i), i))
+				.collect(toMap(ImmutablePair::getKey, ImmutablePair::getValue, FunctionalUtils::getFirst));
+	}
+
+
+
+
+	private void appendCollectionItems(ProductCollectionEntity collection, List<ProductVariantsEntity> variants
+						,Map<Long,Integer> itemsOrder) {
+		Integer currentMaxPriority = getCollectionItemsCurrentMaxPriority(collection);
+		List<ProductVariantsEntity> newItems = getOnlyNewCollectionItems(variants, collection);
+		createCollectionItemsWithPriority(collection, newItems, itemsOrder, currentMaxPriority)
+			.forEach(collection::addItem);
+	}
+
+
+
+	private void recreateCollectionItems(ProductCollectionEntity collection
+			, List<ProductVariantsEntity> variants, Map<Long,Integer> itemsOrder) {
+		clearCollectionItems(collection);
+		createCollectionItemsWithPriority(collection, variants, itemsOrder, -1)
+			.forEach(collection::addItem);
+	}
+
+
+
+	private void clearCollectionItems(ProductCollectionEntity collection) {
 		Set<ProductCollectionItemEntity> oldItems = collection.getItems();
 		collectionItemRepo.deleteItems(oldItems);
 		oldItems.clear();
-		itemEntities.forEach(collection::addItem);
 	}
-
 
 
 	private void removeCollectionItems(Set<Long> variantIds, ProductCollectionEntity entity) {
@@ -3044,12 +3078,49 @@ public class ProductService {
 
 
 
-	private List<ProductCollectionItemEntity> createCollectionItems(ProductCollectionEntity collection
-			,List<ProductVariantsEntity> variants){
-		return IntStream
-				.range(0, variants.size())
-				.mapToObj(i -> createCollectionItem(collection, variants.get(i), i))
+	private List<ProductCollectionItemEntity> createCollectionItemsWithPriority(ProductCollectionEntity collection
+			, List<ProductVariantsEntity> variants, Map<Long,Integer> itemsOrder, Integer currentMaxPriority){
+		return variants
+				.stream()
+				.map(variant -> createCollectionItem(collection, variant, getPriorityForNewItem(itemsOrder, currentMaxPriority, variant)))
 				.collect(toList());
+	}
+
+
+
+	private int getPriorityForNewItem(Map<Long, Integer> itemsOrder, Integer currentMaxPriority, ProductVariantsEntity variant) {
+		return currentMaxPriority + 1 + itemsOrder.get(variant.getId());
+	}
+
+
+
+	private List<ProductVariantsEntity> getOnlyNewCollectionItems(List<ProductVariantsEntity> variants, ProductCollectionEntity collection) {
+		Set<Long> currentItems = getCollectionItemsIds(collection);
+		return variants
+				.stream()
+				.filter(variant -> !currentItems.contains(variant.getId()))
+				.collect(toList());
+	}
+
+
+
+	private Integer getCollectionItemsCurrentMaxPriority(ProductCollectionEntity collection) {
+		return collection
+				.getItems()
+				.stream()
+				.map(ProductCollectionItemEntity::getPriority)
+				.max(Integer::compareTo)
+				.orElse(-1);
+	}
+
+
+
+	private Set<Long> getCollectionItemsIds(ProductCollectionEntity collection) {
+		return collection
+				.getVariants()
+				.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toSet());
 	}
 
 
@@ -3066,15 +3137,18 @@ public class ProductService {
 
 
 	private void validateVariantsExistence(List<ProductVariantsEntity> variantsEntities, List<Long> variantsIds) {
-		List<Long> fetchedVariantsIds = variantsEntities.stream()
+		Set<Long> fetchedVariantsIds =
+				variantsEntities
+				.stream()
 				.map(ProductVariantsEntity::getId)
-				.collect(toList());
-
-		if (fetchedVariantsIds.size() != variantsIds.size()) {
-			variantsIds.removeAll(fetchedVariantsIds);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, variantsIds.toString());
+				.collect(toSet());
+		Set<Long> givenVariantIds = new HashSet<>(variantsIds);
+		if (!Objects.equals(fetchedVariantsIds, givenVariantIds)) {
+			givenVariantIds.removeAll(fetchedVariantsIds);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, givenVariantIds.toString());
 		}
 	}
+
 
 
 	private ProductCollectionEntity getCollectionByProductIdAndOrgId(Long productId, Long orgId) {

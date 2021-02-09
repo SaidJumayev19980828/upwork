@@ -25,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.*;
 
+import static com.nasnav.commons.utils.CollectionUtils.concat;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
@@ -35,6 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -55,7 +57,7 @@ public class CollectionsApiTest {
 
 
     @Test
-    public void addElementsToCollections(){
+    public void updateCollectionElements(){
         ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
         Set<Long> variantsBefore = getItemsIds(collectionBefore);
         assertTrue(setOf(310002L, 310003L).containsAll(variantsBefore));
@@ -102,7 +104,138 @@ public class CollectionsApiTest {
 
 
 
+    @Test
+    public void addElementsToCollections(){
+        ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
+        List<Long> expectedOldItems = asList(310003L, 310002L);
+        assertEquals(expectedOldItems, variantsBefore);
 
+        List<Long> newItems = asList(310006L, 310005L);
+        String requestJson =
+                json()
+                    .put("product_id", 1001L)
+                    .put("operation", "add")
+                    .put("variant_ids", newItems)
+                    .toString();
+
+        HttpEntity<?> request =  getHttpEntity(requestJson , "131415");
+
+        ResponseEntity<String> response =
+                template.exchange("/product/collection/element"
+                        , POST
+                        , request
+                        , String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        ProductCollectionEntity collectionAfter = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsAfter = getItemsIdsSortedByPriority(collectionAfter);
+        List<Long> expectedNewItems = concat(expectedOldItems, newItems);
+        assertEquals("new added item will be appended after the other items", expectedNewItems, variantsAfter);
+    }
+
+
+
+
+    @Test
+    public void addExistingElementsToCollections(){
+        ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
+        List<Long> expectedOldItems = asList(310003L, 310002L);
+        assertEquals(expectedOldItems, variantsBefore);
+
+        List<Long> newItems = asList(310006L, 310005L);
+        List<Long> newItemsWithExistingItem = concat(newItems, expectedOldItems);
+        String requestJson =
+                json()
+                    .put("product_id", 1001L)
+                    .put("operation", "add")
+                    .put("variant_ids", newItemsWithExistingItem)
+                    .toString();
+
+        HttpEntity<?> request =  getHttpEntity(requestJson , "131415");
+
+        ResponseEntity<String> response =
+                template.exchange("/product/collection/element"
+                        , POST
+                        , request
+                        , String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        ProductCollectionEntity collectionAfter = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsAfter = getItemsIdsSortedByPriority(collectionAfter);
+        List<Long> expectedNewItems = concat(expectedOldItems, newItems);
+        assertEquals("old items will be ignored", expectedNewItems, variantsAfter);
+    }
+
+
+
+    @Test
+    public void addRepeatedElementsToCollections(){
+        ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
+        List<Long> expectedOldItems = asList(310003L, 310002L);
+        assertEquals(expectedOldItems, variantsBefore);
+
+        List<Long> newItems = asList(310006L, 310005L);
+        List<Long> newItemsWithRepeatedItems = concat(newItems, newItems);
+        String requestJson =
+                json()
+                    .put("product_id", 1001L)
+                    .put("operation", "add")
+                    .put("variant_ids", newItemsWithRepeatedItems)
+                    .toString();
+
+        HttpEntity<?> request =  getHttpEntity(requestJson , "131415");
+
+        ResponseEntity<String> response =
+                template.exchange("/product/collection/element"
+                        , POST
+                        , request
+                        , String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        ProductCollectionEntity collectionAfter = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsAfter = getItemsIdsSortedByPriority(collectionAfter);
+        List<Long> expectedNewItems = concat(expectedOldItems, newItems);
+        assertEquals("new repeated items will be ignored", expectedNewItems, variantsAfter);
+    }
+
+
+
+
+    @Test
+    public void addNonExistentElementsToCollections(){
+        ProductCollectionEntity collectionBefore = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsBefore = getItemsIdsSortedByPriority(collectionBefore);
+        List<Long> expectedOldItems = asList(310003L, 310002L);
+        assertEquals(expectedOldItems, variantsBefore);
+
+        List<Long> newItems = asList(-1L, 310005L);
+        String requestJson =
+                json()
+                    .put("product_id", 1001L)
+                    .put("operation", "add")
+                    .put("variant_ids", newItems)
+                    .toString();
+
+        HttpEntity<?> request =  getHttpEntity(requestJson , "131415");
+
+        ResponseEntity<String> response =
+                template.exchange("/product/collection/element"
+                        , POST
+                        , request
+                        , String.class);
+
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+
+        ProductCollectionEntity collectionAfter = collectionRepo.findByCollectionId(1001L).get();
+        List<Long> variantsAfter = getItemsIdsSortedByPriority(collectionAfter);
+        assertEquals("no changes happens to the collection", expectedOldItems, variantsAfter);
+    }
 
 
 
@@ -115,6 +248,7 @@ public class CollectionsApiTest {
                 .map(ProductVariantsEntity::getId)
                 .collect(toSet());
     }
+
 
 
     private List<Long> getItemsIdsSortedByPriority(ProductCollectionEntity collectionBefore) {
