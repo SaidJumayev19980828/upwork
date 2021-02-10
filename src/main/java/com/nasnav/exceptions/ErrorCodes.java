@@ -224,6 +224,7 @@ public enum ErrorCodes {
 			+ " Make sure there is no missing data , and the destination city is supported by the shipping service!")
 	,SHP$SRV$0013("Missing shipping address for shipping service[%s]!")
 	,SHP$SRV$0014("Delivery is only supported in the same city!")
+	,SHP$SRV$0015("Delivery is only available for items value starting from %s!")
 
 	,SHP$PARS$0001("Error while parsing status update request!")
 

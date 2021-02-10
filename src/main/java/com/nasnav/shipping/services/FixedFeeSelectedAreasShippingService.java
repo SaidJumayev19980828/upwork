@@ -22,8 +22,7 @@ import java.util.Optional;
 import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
-import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
-import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
@@ -48,12 +47,15 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
     public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
     public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
+    public static final String APOLOGY_MSG = "APOLOGY_MSG";
+    public static final String DEFAULT_ERR_AREA_NOT_SUPPORTED = "We are very sorry! It seems we don't support shipping to your area!";
 
     protected static final List<Parameter> SERVICE_PARAM_DEFINITION =
             asList( new Parameter(SUPPORTED_AREAS , LONG_ARRAY)
                     , new Parameter(MIN_SHIPPING_FEE, NUMBER)
                     , new Parameter(ETA_DAYS_MIN, NUMBER, false)
-                    , new Parameter(ETA_DAYS_MAX, NUMBER, false));
+                    , new Parameter(ETA_DAYS_MAX, NUMBER, false)
+                    , new Parameter(APOLOGY_MSG, STRING, false));
 
     private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
     private static final Integer ETA_DAYS_MAX_DEFAULT = 1;
@@ -62,6 +64,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     private BigDecimal minFee;
     private Integer etaDaysMin;
     private Integer etaDaysMax;
+    private String apologyMsg;
 
 
     @Autowired
@@ -73,6 +76,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     public FixedFeeSelectedAreasShippingService() {
         etaDaysMin = ETA_DAYS_MIN_DEFAULT;
         etaDaysMax = ETA_DAYS_MAX_DEFAULT;
+        apologyMsg = DEFAULT_ERR_AREA_NOT_SUPPORTED;
     }
 
 
@@ -109,6 +113,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
             validateSupportedAreas(supportedAreas);
             setEtaDaysMin(serviceParameters);
             setEtaDaysMax(serviceParameters);
+            setApologyMsg(serviceParameters);
         } catch (Throwable e) {
             logger.error(e,e);
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID);
@@ -127,7 +132,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
     protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
         if(!areAreasSupported(shippingInfo)) {
-            return Mono.empty();
+            return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }
         Integer shipmentsNum = shippingInfo.size();
         List<Shipment> shipments =
@@ -249,6 +254,12 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
                 .flatMap(EntityUtils::parseLongSafely)
                 .map(Long::intValue)
                 .ifPresent(val -> etaDaysMax = val);
+    }
+
+
+    private void setApologyMsg(Map<String, String> serviceParams) {
+        ofNullable(serviceParams.get(APOLOGY_MSG))
+                .ifPresent(val -> apologyMsg = val);
     }
 
 

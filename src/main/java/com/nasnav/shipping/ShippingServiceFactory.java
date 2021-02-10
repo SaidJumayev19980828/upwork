@@ -50,7 +50,8 @@ public class ShippingServiceFactory {
 					,ClickNShipShippingService.class
 					,FixedFeeShippingService.class
 					,FixedFeeStrictSameCityShippingService.class
-					,FixedFeeSelectedAreasShippingService.class);
+					,FixedFeeSelectedAreasShippingService.class
+					,FixedFeeSelectedAreasMinOrderShippingService.class);
 	
 	
 	@Autowired
