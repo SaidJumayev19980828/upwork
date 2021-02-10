@@ -45,7 +45,7 @@ public class FixedFeeSelectedAreasMinOrderShippingService extends FixedFeeSelect
                     , new Parameter(ETA_DAYS_MAX, NUMBER, false)
                     , new Parameter(APOLOGY_MSG, STRING, false)
                     , new Parameter(MIN_ORDER_VALUE, NUMBER, false)
-                    , new Parameter(INVALID_ORDER_MSG, NUMBER, false));
+                    , new Parameter(INVALID_ORDER_MSG, STRING, false));
 
     private BigDecimal minOrderValue;
     private String invalidOrderMsg;
