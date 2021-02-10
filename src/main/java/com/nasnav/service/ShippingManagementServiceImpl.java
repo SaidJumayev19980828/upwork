@@ -594,20 +594,31 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private void validateServiceParameter(Parameter param, JSONObject paramsJson, String serviceId) {
+		String name = param.getName();
 		try {
-			Object paramVal = ofNullable(paramsJson.get(param.getName())).orElse("null");
-			if(isNull(paramVal)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			Optional<?> paramVal =
+					ofNullable(paramsJson)
+					.filter(json -> json.has(name))
+					.map(json -> json.get(name));
+			if(param.isRequired() && !paramVal.isPresent()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, name, serviceId);
 			}
-			if(!param.getType().getJavaType().isInstance(paramVal)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.toString(), param.getName(), serviceId);
+			if(!isValidType(param.getType(), paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.get().toString(), name, serviceId);
 			}
 		}catch(JSONException e) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, name, serviceId);
 		}
 	}
 
 
+
+	private Boolean isValidType(ParameterType type, Optional<?> paramVal) {
+		return paramVal
+				.map(val -> type.getJavaType().isInstance(val))
+				.orElse(true);
+	}
 
 
 	@Override
