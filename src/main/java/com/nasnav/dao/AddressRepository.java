@@ -78,7 +78,8 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     @Query(value = "select DISTINCT country " +
             " from CountriesEntity country " +
             " left JOIN FETCH country.cities city " +
-            " left JOIN FETCH city.areas area ")
+            " left JOIN FETCH city.areas area " +
+            " order by country.name")
     List<CountriesEntity> getCountries();
 
     @Transactional

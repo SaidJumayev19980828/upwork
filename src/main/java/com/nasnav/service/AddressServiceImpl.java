@@ -135,7 +135,7 @@ public class AddressServiceImpl implements AddressService{
 
 
     private void createOrUpdateCountryData(CountryDTO country){
-        CountriesEntity countryEntity = getOrCreateCountry(new CountryInfoDTO(country.getId(), country.getName()));
+        CountriesEntity countryEntity = getOrCreateCountry(new CountryInfoDTO(country.getId(), country.getName(), country.getIsoCode(), country.getCurrency()));
         ofNullable(country.getCities())
                 .orElse(emptyList())
                 .forEach(city -> createOrUpdateCityData(city, countryEntity.getId()));
@@ -182,15 +182,20 @@ public class AddressServiceImpl implements AddressService{
         }
     	return countryRepo
     			.findByNameIgnoreCase(name.toUpperCase())
-				.orElseGet(() -> createNewCountry(dto.getId(), name));
+				.orElseGet(() -> createNewCountry(dto.getId(), name, dto.getIsoCode(), dto.getCurrency()));
     }
     
     
     
-    private CountriesEntity createNewCountry(Long id, String name) {
+    private CountriesEntity createNewCountry(Long id, String name, Integer isoCode, String currency) {
+        if(anyIsNull(id, name, isoCode, currency)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "id, name, iso_code, currency");
+        }
     	CountriesEntity country = new CountriesEntity();
         country.setId(id);
         country.setName(name);
+        country.setIsoCode(isoCode);
+        country.setCurrency(currency);
         return countryRepo.save(country);
     }
 

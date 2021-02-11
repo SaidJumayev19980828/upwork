@@ -2,16 +2,17 @@ package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Map;
 
+import com.nasnav.dao.CountryRepository;
 import com.nasnav.dto.AreasRepObj;
 import com.nasnav.dto.CitiesRepObj;
 import com.nasnav.service.AddressService;
 import com.nasnav.test.commons.TestCommons;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dto.CountriesRepObj;
 import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.service.AddressServiceImpl;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -46,6 +46,8 @@ public class AdminApiTest {
 	 
 	 @Autowired
 	 private OrganizationDomainsRepository domainRepo;
+	@Autowired
+	private CountryRepository countryRepo;
 	 
 	 @Autowired
 	 private AddressService addressService;
@@ -103,5 +105,64 @@ public class AdminApiTest {
         AreasRepObj abuKir = alex.getAreas().get("Abu Kir");
 		assertNotNull(abuKir);
 	 }
-	
+
+
+	@Test
+	public void createCountryMissingValues() {
+		//missing iso_code
+		String requestBody = createCountryJsonBody()
+				.put("iso_code", JSONObject.NULL)
+				.toString();
+
+		HttpEntity<?> json = getHttpEntity(requestBody,"abcdefg");
+		ResponseEntity<Void> response = template.postForEntity("/admin/country", json, Void.class);
+		assertEquals(406, response.getStatusCodeValue());
+
+		//missing id
+		requestBody = createCountryJsonBody()
+				.put("id", JSONObject.NULL)
+				.toString();
+
+		json = getHttpEntity(requestBody,"abcdefg");
+		response = template.postForEntity("/admin/country", json, Void.class);
+		assertEquals(406, response.getStatusCodeValue());
+
+		//missing name
+		requestBody = createCountryJsonBody()
+				.put("name", JSONObject.NULL)
+				.toString();
+
+		json = getHttpEntity(requestBody,"abcdefg");
+		response = template.postForEntity("/admin/country", json, Void.class);
+		assertEquals(406, response.getStatusCodeValue());
+
+		//missing currency
+		requestBody = createCountryJsonBody()
+				.put("currency", JSONObject.NULL)
+				.toString();
+
+		json = getHttpEntity(requestBody,"abcdefg");
+		response = template.postForEntity("/admin/country", json, Void.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	private JSONObject createCountryJsonBody() {
+		return json()
+				.put("id", 3)
+				.put("name", "Ireland")
+				.put("currency", "IR")
+				.put("type", "country")
+				.put("iso_code", 111);
+	}
+
+	@Test
+	public void createCountrySuccess() {
+		String requestBody = createCountryJsonBody()
+				.toString();
+
+		HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+		ResponseEntity<Void> response = template.postForEntity("/admin/country", json, Void.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertTrue(countryRepo.findById(3L).isPresent());
+	}
 }
