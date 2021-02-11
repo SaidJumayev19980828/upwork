@@ -462,6 +462,22 @@ public class ThemesApiTest {
         assertEquals(1, orgRepo.countThemeClassesByOrganizationId(99001L, 990011).intValue());
     }
 
+    @Test
+    public void addOrgThemeClassOrgHasNoThemeClassBefore() {
+        OrganizationEntity org = orgRepo.findById(99002L).get();
+        org.setThemeId(0);
+        orgRepo.save(org);
+
+        String body = json().put("org_id", 99002).put("class_ids", asList(990011)).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
+        ResponseEntity<String> response =
+                template.exchange("/organization/themes/class",
+                        POST, request, String.class);
+
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(1, orgRepo.countThemeClassesByOrganizationId(99002L, 990011).intValue());
+    }
+
 
     @Test
     public void changeOrgTheme() {

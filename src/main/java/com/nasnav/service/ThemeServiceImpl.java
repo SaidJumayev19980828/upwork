@@ -192,15 +192,27 @@ public class ThemeServiceImpl implements ThemeService{
         checkThemeClassesExist(orgThemeClassDTO.getClassIds(), newThemeClasses);
 
         Set<ThemeClassEntity> orgClasses = org.getThemeClasses();
+        checkThemeExistenceInOrg(org, classIds, orgClasses, newThemeClasses);
 
-        boolean themeExistInNewClasses = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", classIds);
-
-        if (!themeExistInNewClasses) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0001, org.getThemeId(), org.getId());
-        }
         orgClasses.clear();
         orgClasses.addAll(newThemeClasses);
         orgRepo.save(org);
+    }
+
+
+    private void checkThemeExistenceInOrg(OrganizationEntity org, List<Integer> classIds,
+                                          Set<ThemeClassEntity> orgClasses, List<ThemeClassEntity> newThemeClasses) {
+
+        boolean themeExistInNewClasses = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", classIds);
+        if (!themeExistInNewClasses) {
+            List<ThemeClassEntity> deletedThemeClasses = new ArrayList<>(orgClasses);
+            deletedThemeClasses.removeAll(newThemeClasses);
+            List<Integer> deletedClassIds = deletedThemeClasses.stream().map(ThemeClassEntity::getId).collect(toList());
+            boolean themeExistInDeletedClasses = themesRepo.existsByUidAndThemeClassEntity_IdIn(org.getThemeId()+"", deletedClassIds);
+            if (themeExistInDeletedClasses) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0001, org.getThemeId(), org.getId());
+            }
+        }
     }
 
 
