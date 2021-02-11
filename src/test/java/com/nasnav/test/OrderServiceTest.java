@@ -500,9 +500,7 @@ public class OrderServiceTest {
 
 		DetailedOrderRepObject body = getOrderListDetailedObject(response).get(0);
 		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L, ZERO);
-
 		assertEquals(expectedBody, body);
-
 
 		response = template.exchange("/order/list?start=2&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
@@ -510,9 +508,7 @@ public class OrderServiceTest {
 		body = getOrderListDetailedObject(response).get(0);
 
 		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
-
 		assertEquals(expectedBody, body);
-
 
 		response = template.exchange("/order/list?start=3&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
@@ -520,7 +516,6 @@ public class OrderServiceTest {
 		body = getOrderListDetailedObject(response).get(0);
 
 		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("50.00"));
-
 		assertEquals(expectedBody, body);
 
 	}
@@ -635,6 +630,7 @@ public class OrderServiceTest {
 		order.setPaymentStatus(entity.getPaymentStatus().toString());
 		order.setMetaOrderId(310001L);
 		order.setDiscount(ZERO);
+		order.setPaymentOperator("S.C.A.M");
 		return order;
 	}
 	

@@ -117,6 +117,10 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 --inserting meta orders
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
 
+INSERT INTO public.payments(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+    VALUES(null, 'S.C.A.M', 'ssss', 2, now(), 980, 2, 'dfdfdd', 88, 310001);
+INSERT INTO public.payments(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+    VALUES(null, 'S.C.A.M', 'ssss', 2, now(), 980, 2, 'dfdfddd', 88, 310001);
 
 --inserting orders
 INSERT INTO public.orders

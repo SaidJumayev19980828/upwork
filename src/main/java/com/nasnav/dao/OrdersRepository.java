@@ -161,7 +161,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" LEFT JOIN PaymentEntity payment " +
 			" on payment.metaOrderId = meta.id " +
 			" WHERE ord.id in :orderIds")
-    List<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
+    Set<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
 
 
 
