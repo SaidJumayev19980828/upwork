@@ -8,4 +8,6 @@ public interface SearchService {
     Mono<SearchResult> search(SearchParameters parameters);
 
     Mono<Void> syncSearchData();
+
+    Mono<Void> deleteAllIndices();
 }

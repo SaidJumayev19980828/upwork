@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "name": {
+      "type": "completion",
+      "contexts": [
+        {
+          "name": "organization_id",
+          "type": "category",
+          "path": "organization_id"
+        }
+      ]
+    },
+    "organization_id": {
+      "type" : "keyword"
+    }
+  }
+}

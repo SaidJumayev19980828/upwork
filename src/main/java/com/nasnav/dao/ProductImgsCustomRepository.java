@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import static com.nasnav.commons.utils.SpringUtils.readOptionalResource;
 import static com.nasnav.commons.utils.SpringUtils.readResource;
 import static java.util.Collections.emptyList;
 import static java.util.logging.Level.SEVERE;
@@ -36,12 +37,8 @@ public class ProductImgsCustomRepository {
 	 * with the minimum id.
 	 * */
 	public List<VariantWithNoImagesDTO> getProductsWithNoImages(Long orgId){
-		try {
-			String sql = readResource(productWithNoImgsSqlFile);
-			return jdbc.query(sql,  new BeanPropertyRowMapper<>(VariantWithNoImagesDTO.class), orgId, orgId, orgId, orgId);
-		} catch (IOException e) {
-			log.log(SEVERE, e.getMessage(), e);
-			return emptyList();
-		}
+			return readOptionalResource(productWithNoImgsSqlFile)
+					.map(sql -> jdbc.query(sql,  new BeanPropertyRowMapper<>(VariantWithNoImagesDTO.class), orgId, orgId, orgId, orgId))
+					.orElse(emptyList());
 	}
 }

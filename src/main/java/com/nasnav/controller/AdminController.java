@@ -29,6 +29,7 @@ import com.nasnav.response.ThemeResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/admin")
@@ -53,6 +54,9 @@ public class AdminController {
 
 	@Autowired
 	private AdminService adminService;
+
+	@Autowired
+	private SearchService searchService;
 
     @ApiOperation(value = "Create/update an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
@@ -300,5 +304,19 @@ public class AdminController {
 	public String getOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
 									  @RequestParam Long id) {
 		return domainService.getOrganizationDomainAndSubDir(id);
+	}
+
+
+
+	@ApiOperation(value = "delete all indices on elastic search", nickname = "deleteElasticSearch", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@ResponseStatus(OK)
+	@DeleteMapping(value = "search/indices")
+	public Mono<Void> deleteSearchIndices(@RequestHeader (name = "User-Token", required = false) String userToken) {
+		return searchService.deleteAllIndices();
 	}
 }

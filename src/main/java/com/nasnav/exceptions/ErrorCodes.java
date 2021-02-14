@@ -88,6 +88,7 @@ public enum ErrorCodes {
 	,GEN$0016("Provided category_id[%d] doesn't match any existing category!")
 	,GEN$0017("There are still %s [%s] assigned to this category!")
 	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
+	,GEN$0019("Failed to read resource[%s]!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -253,9 +254,11 @@ public enum ErrorCodes {
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
+	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")
 
 	,SRCH$SYNC$0001("Failed to synchronize products data for organization[%d]!")
 	,SRCH$SYNC$0002("Failed to synchronize products data for organization[%d]!\nError details: %s")
+
 
 	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
 	;
