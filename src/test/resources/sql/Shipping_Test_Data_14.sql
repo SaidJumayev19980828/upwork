@@ -57,7 +57,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 
 
-INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses(id, user_id, address_id, principal) values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses(id, user_id, address_id, principal) values(12300002, 89, 12300001, false);
+INSERT INTO public.User_addresses(id, user_id, address_id, principal) values(12300003, 89, 12300001, false);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -108,13 +110,20 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 
--- insert cart
+-- insert carts
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
 VALUES(601, '99001/img2.jpg', '{"Color":"Blue"}', 3, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
 VALUES(602, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
 VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
+
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id)
+VALUES(602, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 89);
+
+
+
+
 
 INSERT INTO public.organization_shipping_service values('FIXED_FEE_SELECTED_AREAS_MIN_ORDER', 99001, '{
         "SUPPORTED_AREAS": [1,2],

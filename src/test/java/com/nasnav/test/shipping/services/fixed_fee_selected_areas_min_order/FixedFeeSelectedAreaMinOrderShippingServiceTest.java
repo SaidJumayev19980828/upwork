@@ -35,8 +35,7 @@ import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -65,6 +64,41 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+
+
+    @Test
+    public void testGetOrderUnderMinValueOffer() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("456");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300002", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        ShippingOfferDTO offer = offers.get(0);
+
+        assertFalse(offer.isAvailable());
+        assertNotNull(offer.getMessage());
+    }
+
+
+
+    @Test
+    public void testGetOrderUnderMinValueAndOutOfServiceOffer() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("456");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        ShippingOfferDTO offer = offers.get(0);
+
+        assertFalse(offer.isAvailable());
+        assertNotNull(offer.getMessage());
+    }
 
 
 
@@ -133,6 +167,23 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
         List<ShippingDetails> details = createShippingsDetails();
         reduceQuantities(details.get(0));
+
+        service.requestShipment(details).collectList().block().get(0);
+    }
+
+
+
+
+    @Test(expected = RuntimeBusinessException.class)
+    public void createDeliveryWithTooLowValueAndOutOfServiceTest() {
+        ShippingService service =
+                shippingServiceFactory
+                        .getShippingService(SERVICE_ID, createServiceParams())
+                        .get();
+
+        List<ShippingDetails> details = createShippingsDetails();
+        reduceQuantities(details.get(0));
+        setOutOfReachCity(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
     }

@@ -101,11 +101,19 @@ public class FixedFeeSelectedAreasMinOrderShippingService extends FixedFeeSelect
 
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> shippingDetails) {
-        if(isOrderValueTooLow(shippingDetails)) {
+        return super.doCreateShippingOffer(shippingDetails, getServiceInfo())
+                .map(offer -> checkOrderValue(offer, shippingDetails));
+    }
+
+
+
+    private ShippingOffer checkOrderValue(ShippingOffer offer, List<ShippingDetails> shippingDetails){
+        if(offer.isAvailable() && isOrderValueTooLow(shippingDetails)){
             String msg = createInvalidOrderMessage();
-            return Mono.just(new ShippingOffer(getServiceInfo(), msg));
+            return new ShippingOffer(getServiceInfo(), msg);
+        }else {
+            return offer;
         }
-        return doCreateShippingOffer(shippingDetails, getServiceInfo());
     }
 
 
