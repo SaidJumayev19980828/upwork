@@ -37,8 +37,7 @@ import org.elasticsearch.common.TriFunction;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.*;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -51,12 +50,8 @@ import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.FuzzyOptions;
-import org.elasticsearch.search.suggest.completion.context.CategoryContextMapping;
 import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
-import org.elasticsearch.search.suggest.phrase.DirectCandidateGeneratorBuilder;
-import org.elasticsearch.search.suggest.phrase.PhraseSuggestion;
-import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
-import org.json.JSONObject;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -65,14 +60,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.function.BiFunction;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.SpringUtils.readOptionalResource;
-import static com.nasnav.commons.utils.SpringUtils.readResource;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.SearchType.*;
@@ -89,8 +81,7 @@ import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.client.RequestOptions.DEFAULT;
 import static org.elasticsearch.common.unit.Fuzziness.AUTO;
 import static org.elasticsearch.common.xcontent.XContentType.JSON;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -103,7 +94,6 @@ public class SearchServiceImpl implements SearchService{
 
     private static final int MAX_PG_SIZE = 100;
     private static final int DEFAULT_PG_SIZE = 10;
-    private static final String SUGGESTION_NAME = "suggestions";
     private static final String COMMON_MAPPING_JSON = "classpath:/json/search/common_index_mapping.json";
 
     @Autowired
@@ -137,21 +127,51 @@ public class SearchServiceImpl implements SearchService{
         }
 
         SearchParameters normalizedParams = createNormalizedParams(parameters);
-        SuggestBuilder suggestBuilder = buildSuggestionQuery(normalizedParams);
-        SearchSourceBuilder searchSourceBuilder = getSearchSourceBuilder(normalizedParams, suggestBuilder);
+        SearchSourceBuilder searchSourceBuilder = getSearchSourceBuilder(normalizedParams);
+        SearchSourceBuilder searchSuggestionBuilder = getSuggestionSourceBuilder(normalizedParams);
 
         String[] indices = getIndices(normalizedParams);
+        SearchRequest searchRequest = getSearchRequest(searchSourceBuilder, indices);
+        SearchRequest suggestionRequest = getSearchRequest(searchSuggestionBuilder, indices);
+        return Mono
+                .<SearchResult>create(sink -> searchAsync(sink, searchRequest))
+                .flatMap(response -> addSuggestionToResponse(response, suggestionRequest))
+                .doOnError(e -> logger.error(e,e));
+    }
+
+
+
+    private Mono<SearchResult> addSuggestionToResponse(SearchResult response, SearchRequest suggestionRequest) {
+        return Mono
+                .create(sink -> getSuggestionAsync(sink, suggestionRequest, response));
+    }
+
+
+
+
+    private SearchRequest getSearchRequest(SearchSourceBuilder searchSourceBuilder, String[] indices) {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.source(searchSourceBuilder);
         if(indices.length > 0){
             searchRequest.indices(indices);
         }
-        return Mono
-                .<SearchResult>create(sink -> searchAsync(sink, searchRequest))
-                .doOnError(e -> logger.error(e,e));
+        return searchRequest;
     }
 
 
+    private SearchSourceBuilder getSuggestionSourceBuilder(SearchParameters params) {
+        return new SearchSourceBuilder()
+                .query( QueryBuilders
+                        .boolQuery()
+                        .must(
+                                QueryBuilders.fuzzyQuery("name", params.keyword)
+                        )
+                        .filter(matchQuery("organization_id", params.org_id))
+                )
+                .fetchSource(new String[]{"name"}, new String[]{})
+                .from(params.start)
+                .size(params.count);
+    }
 
 
     @Override
@@ -160,7 +180,7 @@ public class SearchServiceImpl implements SearchService{
         return Flux
                 .fromIterable(organizationsToSync)
                 .flatMap(this::doSyncSearchData)
-                .reduce((res1, res2) -> {return res2;});
+                .reduce((res1, res2) -> res2);
     }
 
 
@@ -181,7 +201,7 @@ public class SearchServiceImpl implements SearchService{
 
     private SearchParameters createNormalizedParams(SearchParameters parameters) {
         SearchParameters normalized = new SearchParameters();
-        normalized.keyword = parameters.keyword;
+        normalized.keyword = ofNullable(parameters.keyword).orElse("").toLowerCase();
         normalized.org_id = parameters.org_id;
         normalized.type = parameters.type;
         normalized.start = ofNullable(parameters.start).orElse(0);
@@ -415,6 +435,8 @@ public class SearchServiceImpl implements SearchService{
     }
 
 
+
+
     private void addCollectionsToBulkIndexRequest(BulkRequest request, List<Product> products) {
         products
             .stream()
@@ -481,7 +503,7 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private SearchSourceBuilder getSearchSourceBuilder(SearchParameters parameters, SuggestBuilder suggestBuilder) {
+    private SearchSourceBuilder getSearchSourceBuilder(SearchParameters parameters) {
         return new SearchSourceBuilder()
                 .query( QueryBuilders
                         .boolQuery()
@@ -491,68 +513,47 @@ public class SearchServiceImpl implements SearchService{
                                 .field("name", 3) //give priority to field "name"
                                 .field("*"))
                         .filter(matchQuery("organization_id", parameters.org_id)))
-                .suggest(suggestBuilder)
                 .from(parameters.start)
                 .size(parameters.count);
     }
 
 
 
-    private SuggestBuilder buildSuggestionQuery(SearchParameters parameters) {
-        CompletionSuggestionBuilder suggestionBuilder = new CompletionSuggestionBuilder("name");
-        suggestionBuilder
-                .regex(format(".*%s.*", parameters.keyword))
-                .skipDuplicates(true)
-                .size(parameters.count);
-        if(nonNull(parameters.org_id)){
-            Map<String, List<? extends ToXContent>> context = createCompletionContext(parameters);
-            suggestionBuilder.contexts(context);
-        }
-
-        SuggestBuilder suggestBuilder = new SuggestBuilder();
-        suggestBuilder.addSuggestion(SUGGESTION_NAME, suggestionBuilder);
-        suggestBuilder.setGlobalText(parameters.keyword);
-        return suggestBuilder;
-    }
-
-
-    private Map<String, List<? extends ToXContent>> createCompletionContext(SearchParameters parameters) {
-        CategoryQueryContext mapping =
-                CategoryQueryContext
-                        .builder()
-                        .setCategory(String.valueOf(parameters.org_id))
-                        .build();
-        return MapBuilder
-                .<String, List<? extends ToXContent>>map()
-                .put("organization_id", asList(mapping))
-                .getMap();
-    }
-
-
-
-    private void searchAsync(MonoSink<SearchResult> sink, SearchRequest searchRequest ){
+    private void searchAsync(MonoSink<SearchResult> sink, SearchRequest searchRequest){
         client.searchAsync(
                 searchRequest
                 , DEFAULT
-                , ActionListener.wrap((res)-> emitResponse(sink, res), sink::error));
+                , ActionListener.wrap((res)-> emitSearchResponse(sink, res), sink::error));
     }
 
 
 
-    private void emitResponse(MonoSink<SearchResult> sink, SearchResponse response){
+    private void getSuggestionAsync(MonoSink<SearchResult> sink, SearchRequest suggestionSearchRequest, SearchResult searchResult){
+        client.searchAsync(
+                suggestionSearchRequest
+                , DEFAULT
+                , ActionListener.wrap(
+                        (res)->  {
+                            sink.success(addSuggestionResultsToResponse(searchResult, res));
+                        }
+                        , sink::error));
+    }
+
+
+
+    private void emitSearchResponse(MonoSink<SearchResult> sink, SearchResponse response){
         sink.success(createSearchResult(response));
     }
+
 
 
 
     private SearchResult createSearchResult(SearchResponse response) {
         SearchHits hits = response.getHits();
         SearchResult.Results results = createResults(hits);
-        List<String> suggestions =  getSuggestions(response);
 
         SearchResult result = new SearchResult();
         result.setTotal(hits.getTotalHits().value);
-        result.setSuggestions(suggestions);
         result.setResults(results);
         return result;
     }
@@ -560,20 +561,27 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private List<String> getSuggestions(SearchResponse response) {
-        return of(response)
-                .map(SearchResponse::getSuggest)
-                .map(suggest -> suggest.<CompletionSuggestion>getSuggestion(SUGGESTION_NAME))
-                .map(Suggest.Suggestion::getEntries)
-                .orElse(emptyList())
-                .stream()
-                .map(Suggest.Suggestion.Entry::getOptions)
-                .flatMap(List::stream)
-                .filter(Objects::nonNull)
-                .map(Suggest.Suggestion.Entry.Option::getText)
-                .map(Text::toString)
+    private SearchResult addSuggestionResultsToResponse(SearchResult searchResult, SearchResponse suggestionResponse){
+        List<String> suggestions = createSuggestionResult(suggestionResponse);
+        SearchResult searchResultCpy = new SearchResult();
+        copyProperties(searchResult, searchResultCpy);
+        searchResultCpy.setSuggestions(suggestions);
+        return searchResultCpy;
+    }
+
+
+    private List<String> createSuggestionResult(SearchResponse response) {
+        return Arrays
+                .stream(response.getHits().getHits())
+                .map(SearchHit::getSourceAsMap)
+                .map(Map::entrySet)
+                .flatMap(Set::stream)
+                .filter(entry -> Objects.equals(entry.getKey(), "name"))
+                .map(Map.Entry::getValue)
+                .map(Object::toString)
                 .collect(toList());
     }
+
 
 
     private SearchResult.Results createResults(SearchHits hits) {
