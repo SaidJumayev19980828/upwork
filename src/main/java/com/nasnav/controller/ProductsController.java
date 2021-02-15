@@ -437,8 +437,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(value = "collection")
-    public void deleteCollection(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long id) {
-        productService.deleteCollection(id);
+    public void deleteCollection(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("id") List<Long> ids) {
+        productService.deleteCollection(ids);
     }
 
 

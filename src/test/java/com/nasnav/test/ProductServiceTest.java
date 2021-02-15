@@ -100,6 +100,8 @@ public class ProductServiceTest {
 
 	@Autowired
 	private ProductCollectionRepository productCollectionRepo;
+	@Autowired
+	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
 	private ProductVariantsRepository productVariantsRepository;
@@ -1048,6 +1050,43 @@ public class ProductServiceTest {
 																DELETE, request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(productCollectionRepo.existsById(1004L));
+		assertFalse(collectionItemRepo.existsById(1004L));
+	}
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteCollectionsSuccess() {
+		HttpEntity request = getHttpEntity("131415");
+
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1008L));
+		ResponseEntity<String> response = template.exchange("/product/collection?id=1004,1008",
+				DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertFalse(productCollectionRepo.existsById(1004L));
+		assertFalse(productCollectionRepo.existsById(1008L));
+		assertFalse(collectionItemRepo.existsById(1004L));
+		assertFalse(collectionItemRepo.existsById(1008L));
+	}
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteCollectionsBelongToDifferentOrg() {
+		HttpEntity request = getHttpEntity("131415");
+
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1007L));
+		ResponseEntity<String> response = template.exchange("/product/collection?id=1004,1007",
+				DELETE, request, String.class);
+		assertEquals(404, response.getStatusCodeValue());
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1007L));
+		assertTrue(collectionItemRepo.existsById(1004L));
+		assertTrue(collectionItemRepo.existsById(1007L));
 	}
 
 

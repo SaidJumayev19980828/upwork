@@ -64,6 +64,7 @@ public enum ErrorCodes {
 	,P$PRO$0010("Product of ID[%d] cannot be deleted by a user from organization of id [%d]")
 	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
 	,P$PRO$0012("No collection exists with ID[%d]!")
+	,P$PRO$0013("No collections exists with ID %s!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	

@@ -26,6 +26,14 @@ public interface ProductCollectionRepository extends JpaRepository<ProductCollec
             " where c.organizationId = :orgId and c.productType = 2")
     List<ProductCollectionEntity> findByOrganizationId(@Param("orgId")Long orgId);
 
+    @Query("select c from ProductCollectionEntity c " +
+            " left join fetch c.items items " +
+            " left join fetch items.item item " +
+            " where c.organizationId = :orgId " +
+            " and c.productType = 2 " +
+            " and c.id in :ids")
+    List<ProductCollectionEntity> findByIdInAndOrganizationId(@Param("ids")List<Long> ids, @Param("orgId")Long orgId);
+
 
     @Query("select c from ProductCollectionEntity c " +
             " Left join fetch c.items collectionItem " +
@@ -36,6 +44,6 @@ public interface ProductCollectionRepository extends JpaRepository<ProductCollec
 
     @Transactional
     @Modifying
-    @Query("update ProductCollectionEntity c set c.removed = 1 where c.id = :id and c.organizationId = :orgId")
-    void removeCollection(@Param("id") Long id, @Param("orgId") Long orgId);
+    @Query("update ProductCollectionEntity c set c.removed = 1 where c in :collections and c.organizationId = :orgId")
+    void removeCollections(@Param("collections") List<ProductCollectionEntity> collections, @Param("orgId") Long orgId);
 }

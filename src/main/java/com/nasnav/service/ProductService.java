@@ -3319,6 +3319,7 @@ public class ProductService {
 
 	}
 
+
 	public List<ProductRepresentationObject> getRelatedProducts(Long productId) {
 		return relatedProductsRepo
 				.findByProduct_Id(productId)
@@ -3328,18 +3329,33 @@ public class ProductService {
 				.collect(toList());
 	}
 
-	public void deleteCollection(Long collectionId) {
+	public void deleteCollection(List<Long> ids) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
-		ProductCollectionEntity collection = productCollectionRepo.findByIdAndOrganizationId(collectionId, orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0012, collectionId));
-		if (!collection.getItems().isEmpty()) {
-			collection.setItems(new HashSet<>());
-			productCollectionRepo.save(collection);
-		}
-		productCollectionRepo.removeCollection(collectionId, orgId);
+		List<ProductCollectionEntity> collections = productCollectionRepo.findByIdInAndOrganizationId(ids, orgId);
+		validateCollectionDeletion(ids, collections);
+
+		Set<ProductCollectionItemEntity> collectionItems = collections
+				.stream()
+				.map(ProductCollectionEntity::getItems)
+				.flatMap(Set::stream)
+				.collect(toSet());
+
+		collectionItemRepo.deleteItems(collectionItems);
+		productCollectionRepo.removeCollections(collections, orgId);
 	}
 
+
+	private void validateCollectionDeletion(List<Long> ids, List<ProductCollectionEntity> collections) {
+		if (ids.size() != collections.size()) {
+			List<Long> collectionsIds = collections
+					.stream()
+					.map(ProductCollectionEntity::getId)
+					.collect(toList());
+			ids.removeAll(collectionsIds);
+			throw new RuntimeBusinessException(NOT_FOUND, P$PRO$0013, ids.toString());
+		}
+	}
 
 
 }
