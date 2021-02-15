@@ -1496,12 +1496,12 @@ public class ProductService {
 
 
 	public ProductsDeleteResponse deleteProducts(List<Long> productIds) {
+		validateProductToDelete(productIds);
 		try {
-			validateProductToDelete(productIds);
 			transactions.deleteProducts(productIds);
 		} catch (Throwable e) {
 			logger.error(e,e);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0009);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0009, e.getMessage());
 		}
 		return new ProductsDeleteResponse(true, productIds);
 	}

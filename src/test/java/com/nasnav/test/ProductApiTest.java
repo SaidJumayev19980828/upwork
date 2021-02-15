@@ -713,7 +713,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
-		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 
 
