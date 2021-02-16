@@ -47,6 +47,7 @@ import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -298,7 +299,7 @@ public class FileService {
 
 
 
-
+	@CacheEvict(cacheNames = {FILES})
 	public void deleteFileByUrl(String url) throws BusinessException{
 		FileEntity file = filesRepo.findByUrl(url);
 
