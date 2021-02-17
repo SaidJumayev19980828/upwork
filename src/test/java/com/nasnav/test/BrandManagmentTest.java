@@ -275,6 +275,17 @@ public class BrandManagmentTest {
 
 
     @Test
+    public void deleteBrandLinkedProducts() {
+        Long brandId = 104L;
+        Assert.assertTrue(brandRepo.existsById(brandId));
+        HttpEntity<?> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/brand?brand_id="+ brandId, DELETE, request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
     public void deleteBrandInvalidId() {
         HttpEntity<?> request = getHttpEntity("hijkllm");
         ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=-1", DELETE,

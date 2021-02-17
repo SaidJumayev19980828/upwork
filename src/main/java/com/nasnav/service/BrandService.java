@@ -3,8 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.cache.Caches.BRANDS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -12,6 +11,7 @@ import java.util.List;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -26,6 +26,8 @@ public class BrandService {
 
     @Autowired
     private BrandsRepository brandsRepository;
+    @Autowired
+    private ProductRepository productRepo;
 
     @Autowired
     private SecurityService securityService;
@@ -49,6 +51,11 @@ public class BrandService {
         if (!brandsRepository.existsByIdAndOrganizationEntity_IdAndRemoved(brandId, orgId, 0)) {
             throw new BusinessException(String.format("Provided brand_id %d doesn't match any existing brand!", brandId),
                     "INVALID_PARAM: brand_id", NOT_ACCEPTABLE);
+        }
+
+        Long linkedProductsCount = productRepo.countByBrandId(brandId);
+        if (linkedProductsCount > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0003, brandId, linkedProductsCount);
         }
 
         brandsRepository.setBrandHidden(brandId);

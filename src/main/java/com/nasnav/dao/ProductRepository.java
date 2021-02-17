@@ -59,6 +59,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Query(value = "SELECT t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
     List<Long> getProductIdsByTagsList(@Param("tagsIds") List<Long> tagsIds);
 
+    Long countByBrandId(Long brandId);
+
 
     @Query(nativeQuery = true)
     List<Pair> getProductTags(@Param("productsIds") List<Long> productsIds, @Param("tagsIds") List<Long> tagsIds);
