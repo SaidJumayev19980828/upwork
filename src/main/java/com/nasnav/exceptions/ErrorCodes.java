@@ -51,6 +51,7 @@ public enum ErrorCodes {
 	,P$VAR$005("No Variant rate found with id[%d]!")
 	,P$VAR$006("Rate must be between 0 and 5")
 	,P$VAR$007("User can rate only bought products!")
+	,P$VAR$008("Missing Extra Attribute name!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")

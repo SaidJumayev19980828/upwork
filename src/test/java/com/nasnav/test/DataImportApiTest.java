@@ -1,6 +1,8 @@
 package com.nasnav.test;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
+import static com.nasnav.enumerations.ExtraAttributeType.STRING;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
@@ -39,6 +41,7 @@ import java.util.stream.Stream;
 import javax.servlet.http.Cookie;
 
 import com.nasnav.dao.*;
+import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -166,6 +169,9 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_removed_variant.csv")
 	private Resource csvRemovedVariant;
+
+	@Value("classpath:/files/product__list_update_invisible_attributes.csv")
+	private Resource csvInvisibleAttributes;
 
 	
 	@Autowired
@@ -853,6 +859,33 @@ public class DataImportApiTest {
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
 	}
+
+
+
+
+	@Test
+	public void uploadProductCSVUpdateWithInvisibleExtraAttributesTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+
+		ProductDataCount before = countProductData();
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvInvisibleAttributes, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductDataCount after = countProductData();
+		assertExpectedRowNumInserted(before, after, 1);
+
+		assertDataSavedWithInvisibleExtraAttributes();
+
+		ImportProductContext report = readImportReport(result);
+		assertEquals(1, report.getCreatedProducts().size());
+		assertEquals(1, report.getUpdatedProducts().size());
+		assertTrue(report.getErrors().isEmpty());
+	}
 	
 	
 	
@@ -961,6 +994,14 @@ public class DataImportApiTest {
 		ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();
+	}
+
+
+
+	private void assertDataSavedWithInvisibleExtraAttributes() {
+		ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithInvisibleAttributes();
+		assertProductDataImported(TEST_UPDATE_SHOP, expected);
+		assertProductUpdatedDataSavedWithStock();
 	}
 	
 	
@@ -1579,7 +1620,7 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getProductCode, expected.getProductCodes()) );
         assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
         assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
-        
+        assertEquals( expected.getExtraAttributesTypes(), getExtraAttributesTypes(variants));
         
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
@@ -1587,10 +1628,20 @@ public class DataImportApiTest {
         assertTrue( propertyMultiValuesIn(products, this::getTags, expected.getTags()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
 	}
-	
-	
-	
-	
+
+
+
+	private Set<String> getExtraAttributesTypes(List<ProductVariantsEntity> variants) {
+		return variants
+				.stream()
+				.map(ProductVariantsEntity::getExtraAttributes)
+				.flatMap(Set::stream)
+				.map(ProductExtraAttributesEntity::getExtraAttribute)
+				.map(ExtraAttributesEntity::getType)
+				.collect(toSet());
+	}
+
+
 	private String getExtraAtrributesStr(ProductVariantsEntity variant){		
 		return variant
 				.getExtraAttributes()
@@ -1739,6 +1790,7 @@ public class DataImportApiTest {
 		data.setFeatureSpecs(  createNewVariantsExpectedFeautreSpec());
 		data.setExtraAttributes(  createNewVaraintsExpectedExtraAttr());
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -1805,7 +1857,35 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createExpectedExtraAttr());
 		data.setStocksNum(2);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
+		return data;
+	}
+
+
+
+
+
+	private ExpectedSavedData getExpectedNewAndUpdatedDataWithInvisibleAttributes() {
+		ExpectedSavedData data = new ExpectedSavedData();
+
+		data.setQuantities( setOf(101,102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(TransactionCurrency.EGP));
+
+		data.setBarcodes( setOf("TT232222", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "u_shoe") );
+		data.setProductPNames(setOf("u_shoe", "hard-shoes") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setTags( setOf("squishy things", "mountain equipment") );
+		data.setBrands( setOf(101L, 102L) );
+		data.setFeatureSpecs(  createExpectedFeautreSpec());
+		data.setExtraAttributes(  createExpectedInvisibleExtraAttr());
+		data.setStocksNum(2);
+		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue(), INVISIBLE.getValue()));
+
 		return data;
 	}
 	
@@ -1830,6 +1910,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createExpectedExtraAttrUpdatedProduct());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -1883,6 +1964,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createExpectedExtraAttrForOnlyUpdatedProduct());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -1908,6 +1990,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createExpectedExtraAttrForOnlyUpdatedProduct());
 		data.setStocksNum(3);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 
 		return data;
 	}
@@ -1968,6 +2051,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createExpectedExtraAttr());
 		data.setStocksNum(2);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -1985,6 +2069,19 @@ public class DataImportApiTest {
 					 .put("extra", "ext1")
 					 .put("not-feature-col", "no")
 				);
+	}
+
+
+	private Set<JSONObject> createExpectedInvisibleExtraAttr() {
+		return setOf(
+				json()
+					.put("extra", "ext2")
+					.put("$not-feature-col", "ok")
+				,
+				json()
+					.put("extra", "ext1")
+					.put("$not-feature-col", "no")
+		);
 	}
 	
 	
@@ -2076,6 +2173,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createNewProductOnlyExpectedExtraAttr());
 		data.setStocksNum(2);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -2102,6 +2200,7 @@ public class DataImportApiTest {
 		data.setExtraAttributes(  createNewProductOnlyExpectedExtraAttr());
 		data.setStocksNum(2);
 		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf(STRING.getValue()));
 		
 		return data;
 	}
@@ -2256,6 +2355,7 @@ class ExpectedSavedData{
 	private Set<String> productCodes;
 	private Integer stocksNum;
 	private Set<String> units;
+	private Set<String> extraAttributesTypes;
 	
 	public ExpectedSavedData() {
 		extraAttributes = new HashSet<>();
@@ -2266,6 +2366,7 @@ class ExpectedSavedData{
 		sku = new HashSet<>();
 		productCodes = new HashSet<>();
 		units = new HashSet<>();
+		extraAttributesTypes = new HashSet<>();
 	}
 	
 	

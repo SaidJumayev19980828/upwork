@@ -1,4 +1,5 @@
 package com.nasnav.test;
+import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -12,11 +13,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
 import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
 import com.nasnav.dto.SubAreasRepObj;
 import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.SocialEntity;
@@ -727,6 +730,46 @@ public class OrganizationManagmentTest {
         ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
         assertEquals(403, res.getStatusCodeValue());
     }
+
+
+
+    @Test
+    public void getExtraAttributesInvalidAuthN(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void getExtraAttributesInvalidAuthZ(){
+        HttpEntity<?> req = getHttpEntity("invalid");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void getExtraAttributes() throws IOException {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        List<ExtraAttributeDefinitionDTO> body = objectMapper.readValue(res.getBody(), new TypeReference<List<ExtraAttributeDefinitionDTO>>(){});
+
+        assertEquals(2, body.size());
+
+        ExtraAttributeDefinitionDTO invisibleAttr =
+                body.stream().filter(ExtraAttributeDefinitionDTO::getInvisible).findFirst().get();
+        assertEquals(INVISIBLE , invisibleAttr.getType());
+    }
+
 
 
     private List<SubAreasRepObj> parseGetSubareasResponse(String res) throws IOException {

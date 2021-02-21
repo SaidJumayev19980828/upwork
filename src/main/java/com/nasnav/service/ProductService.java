@@ -11,6 +11,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
+import static com.nasnav.enumerations.ExtraAttributeType.*;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -58,6 +59,7 @@ import javax.persistence.criteria.Root;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
+import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -465,13 +467,18 @@ public class ProductService {
 
 
 	private ExtraAttributeDTO toExtraAttributeDTO(ProductExtraAttributesEntity entity) {
-		ExtraAttributeDTO dto = new ExtraAttributeDTO();
 		ExtraAttributesEntity extraAttrEntity = entity.getExtraAttribute();
+		ExtraAttributeType type =
+				getExtraAttributeType(extraAttrEntity.getType())
+						.orElse(STRING);
+		Boolean invisible = Objects.equals(INVISIBLE, type);
+		ExtraAttributeDTO dto = new ExtraAttributeDTO();
 		dto.setId(extraAttrEntity.getId());
 		dto.setIconUrl(extraAttrEntity.getIconUrl());
 		dto.setName(extraAttrEntity.getName());
-		dto.setType(extraAttrEntity.getType());
+		dto.setType(type);
 		dto.setValue(entity.getValue());
+		dto.setInvisible(invisible);
 		return dto;
 	}
 
@@ -2193,17 +2200,17 @@ public class ProductService {
 	private void createAndAddNewExtraAttributes(List<? extends VariantUpdateDTO> variants,
 												Map<String, ExtraAttributesEntity> orgExtraAttributes) {
 		variants
-				.stream()
-				.map(VariantUpdateDTO::getExtraAttr)
-				.filter(Objects::nonNull)
-				.map(JSONObject::new)
-				.map(JSONObject::keySet)
-				.flatMap(Set::stream)
-				.distinct()
-				.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
-				.map(this::createNewExtraAttribute)
-				.collect(collectingAndThen(toList(), extraAttrRepo::saveAll))
-				.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
+			.stream()
+			.map(VariantUpdateDTO::getExtraAttr)
+			.filter(Objects::nonNull)
+			.map(JSONObject::new)
+			.map(JSONObject::keySet)
+			.flatMap(Set::stream)
+			.distinct()
+			.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
+			.map(this::createNewExtraAttribute)
+			.collect(collectingAndThen(toList(), extraAttrRepo::saveAll))
+			.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
 	}
 
 
@@ -2280,9 +2287,9 @@ public class ProductService {
 	private List<ProductVariantsEntity> saveVariantsToDb(List<? extends VariantUpdateDTO> variants, VariantUpdateCache cache) {
 		List<ProductVariantsEntity> entities =
 				variants
-						.stream()
-						.map(variant -> createVariantEntity(variant, cache))
-						.collect(toList());
+					.stream()
+					.map(variant -> createVariantEntity(variant, cache))
+					.collect(toList());
 		return productVariantsRepository.saveAll(entities);
 	}
 
@@ -2516,7 +2523,7 @@ public class ProductService {
 			extraAttrJson
 					.keySet()
 					.stream()
-					.map(attrName -> createVariantExtraAttribute(attrName, extraAttrJson.getString(attrName), cache))
+					.map(attrName -> createVariantExtraAttributeEntity(attrName, extraAttrJson.getString(attrName), cache))
 					.forEach(entity::addExtraAttribute);
 		}catch(Throwable t) {
 			throw new RuntimeBusinessException(
@@ -2529,7 +2536,7 @@ public class ProductService {
 
 
 
-	private ProductExtraAttributesEntity createVariantExtraAttribute(String name, String value, VariantUpdateCache cache) {
+	private ProductExtraAttributesEntity createVariantExtraAttributeEntity(String name, String value, VariantUpdateCache cache) {
 		ExtraAttributesEntity extraAttrEntity = getExtraAttribute(name, cache);
 
 		ProductExtraAttributesEntity variantExtraAttr = new ProductExtraAttributesEntity();
@@ -2552,13 +2559,26 @@ public class ProductService {
 
 	private ExtraAttributesEntity createNewExtraAttribute(String name) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+		String type = getExtraAttributeTypeFromName(name);
 		ExtraAttributesEntity newAttr = new ExtraAttributesEntity();
 		newAttr.setName(name);
 		newAttr.setOrganizationId(orgId);
+		newAttr.setType(type);
 		return newAttr;
 	}
 
 
+
+	private String getExtraAttributeTypeFromName(String name){
+		if(isNull(name) || name.isEmpty()){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008);
+		}
+		if(name.startsWith("$")){
+			return INVISIBLE.getValue();
+		}else{
+			return STRING.getValue();
+		}
+	}
 
 
 	private String getPname(VariantUpdateDTO variantDto, Operation opr) {

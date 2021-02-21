@@ -13,6 +13,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
+import static com.nasnav.enumerations.ExtraAttributeType.*;
 import static com.nasnav.enumerations.SettingsType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.payments.misc.Gateway.*;
@@ -36,6 +37,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.controller.OrganizationController;
 import com.nasnav.controller.PaymentControllerCoD;
 import com.nasnav.dao.*;
+import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -994,11 +996,16 @@ public class OrganizationServiceImpl implements OrganizationService {
 	
 	
 	private ExtraAttributeDefinitionDTO createExtraAttributeDTO(ExtraAttributesEntity entity) {
+        ExtraAttributeType type =
+                getExtraAttributeType(entity.getType())
+                .orElse(STRING);
+        Boolean invisible = Objects.equals(type, INVISIBLE);
 		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
 		dto.setIconUrl(entity.getIconUrl());
 		dto.setId(entity.getId());
 		dto.setName(entity.getName());
-		dto.setType(entity.getType());
+		dto.setType(type);
+		dto.setInvisible(invisible);
 		return dto;
 	}
 
