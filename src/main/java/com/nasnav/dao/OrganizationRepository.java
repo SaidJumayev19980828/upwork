@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ThemeClassEntity;
@@ -20,7 +21,8 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
 
     OrganizationEntity findByPname(String pname);
 
-    List<OrganizationEntity> findByThemeId(Integer themeId);
+    @Query("select o.id from OrganizationEntity o where o.themeId = :themeId")
+    Set<Long> findByThemeId(@Param("themeId") Integer themeId);
 
     OrganizationEntity findByIdAndThemeId(Long id, Integer themeId);
 

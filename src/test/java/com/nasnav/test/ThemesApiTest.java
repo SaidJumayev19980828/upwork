@@ -154,6 +154,16 @@ public class ThemesApiTest {
 
 
     @Test
+    public void deleteThemeUsedByOrganization() {
+        HttpEntity<?> request =  getHttpEntity("101112");
+        ResponseEntity<String> response = template.exchange("/admin/themes?id=5003",
+                DELETE, request, String.class);
+
+        assertEquals(406,response.getStatusCodeValue());
+    }
+
+
+    @Test
     public void deleteThemesClassInvalidToken() {
         HttpEntity<?> request =  getHttpEntity("1011122");
         ResponseEntity<String> response = template.exchange("/admin/themes/class?id=990011",

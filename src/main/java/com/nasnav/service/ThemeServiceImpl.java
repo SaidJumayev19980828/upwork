@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static com.nasnav.exceptions.ErrorCodes.ORG$THEME$0001;
+import static com.nasnav.exceptions.ErrorCodes.ORG$THEME$0002;
 import static java.lang.String.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -160,13 +161,11 @@ public class ThemeServiceImpl implements ThemeService{
 
         checkThemeExistence(entity, id);
 
-        Set<Long> orgIds = orgThemeSettingsRepo.findOrganizationIdByThemeIdIn(entity.get().getId());
+        Set<Long> orgIds = orgRepo.findByThemeId(Integer.parseInt(id));
         if (!orgIds.isEmpty()) {
-            throw new BusinessException("Theme is used by organization : " + orgIds.toString(),
-                    "INVALID_PARAM: id", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0002, orgIds.toString());
         }
         themesRepo.delete(entity.get());
-
     }
 
 
