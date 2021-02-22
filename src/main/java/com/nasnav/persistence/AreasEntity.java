@@ -8,6 +8,9 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.Set;
+
+import static javax.persistence.FetchType.LAZY;
 
 
 @Table(name = "areas")
@@ -27,6 +30,7 @@ public class AreasEntity implements BaseEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private CitiesEntity citiesEntity;
+
 
     @Override
     public BaseRepresentationObject getRepresentation() {

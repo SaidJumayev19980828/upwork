@@ -27,6 +27,7 @@ public class Caches {
 
 	public static final String ORGANIZATIONS_BY_NAME = "organizations_by_name";
 
+	public static final String COUNTRIES = "countries";
 
 	public static final String BRANDS = "brands";
 

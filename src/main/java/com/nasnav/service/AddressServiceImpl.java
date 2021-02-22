@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.google.common.primitives.Longs.asList;
+import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -19,10 +20,13 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.exceptions.RuntimeBusinessException;
+
+import javax.cache.annotation.CacheResult;
 
 @Service
 public class AddressServiceImpl implements AddressService{
@@ -46,16 +50,28 @@ public class AddressServiceImpl implements AddressService{
     private SecurityService securityService;
 
 
+    @CacheResult(cacheName = COUNTRIES)
     public Map<String, CountriesRepObj> getCountries(Boolean hideEmptyCities, Long organizationId) {
+        Long orgId = ofNullable(organizationId).orElse(0L);
+        Map<Long, List<SubAreasRepObj>> orgSubareas = getOrganizationSubAreas(orgId);
         return addressRepo
                 .getCountries()
                 .stream()
-                .collect( toMap(CountriesEntity::getName, country -> getCountriesRepObj(country, hideEmptyCities,organizationId)));
+                .collect( toMap(CountriesEntity::getName, country -> getCountriesRepObj(country, hideEmptyCities, orgSubareas)));
     }
 
 
-    private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity, Boolean hideEmptyCities, Long organizationId) {
-        Map<String, CitiesRepObj> cities = getCities(countriesEntity, hideEmptyCities, organizationId);
+    private Map<Long, List<SubAreasRepObj>> getOrganizationSubAreas(Long orgId) {
+        return subAreaRepo.findByOrganization_Id(orgId)
+                .stream()
+                .map(sub -> (SubAreasRepObj)sub.getRepresentation())
+                .collect(groupingBy(SubAreasRepObj::getAreaId));
+    }
+
+
+    private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity, Boolean hideEmptyCities,
+                                               Map<Long, List<SubAreasRepObj>> orgSubareas) {
+        Map<String, CitiesRepObj> cities = getCities(countriesEntity, hideEmptyCities, orgSubareas);
 
         CountriesRepObj country = new CountriesRepObj();
         country.setId(countriesEntity.getId());
@@ -66,60 +82,61 @@ public class AddressServiceImpl implements AddressService{
 
 
 
-    private Map<String, CitiesRepObj> getCities(CountriesEntity countriesEntity, Boolean hideEmptyCities, Long organizationId) {
+    private Map<String, CitiesRepObj> getCities(CountriesEntity countriesEntity, Boolean hideEmptyCities,
+                                                Map<Long, List<SubAreasRepObj>> orgSubareas) {
         return countriesEntity
                 .getCities()
                 .stream()
                 .filter(city -> !(city.getAreas().isEmpty() && hideEmptyCities))
                 .collect(
                         collectingAndThen(
-                            toMap(CitiesEntity::getName, city -> getCitiesRepObj(city, organizationId), FunctionalUtils::getFirst),
+                            toMap(CitiesEntity::getName, city -> getCitiesRepObj(city, orgSubareas), FunctionalUtils::getFirst),
                             TreeMap::new
                 ));
     }
 
 
 
-    private CitiesRepObj getCitiesRepObj(CitiesEntity city, Long organizationId) {
+    private CitiesRepObj getCitiesRepObj(CitiesEntity city, Map<Long, List<SubAreasRepObj>> orgSubareas) {
         CitiesRepObj obj = new CitiesRepObj();
         obj.setId(city.getId());
         obj.setName(city.getName());
-        obj.setAreas(getAreasMap(city, organizationId));
+        obj.setAreas(getAreasMap(city, orgSubareas));
         return obj;
     }
 
 
 
-    private Map<String, AreasRepObj> getAreasMap(CitiesEntity city, Long organizationId) {
+    private Map<String, AreasRepObj> getAreasMap(CitiesEntity city, Map<Long, List<SubAreasRepObj>> orgSubareas) {
         return city
                 .getAreas()
                 .stream()
                 .collect(
                         collectingAndThen(
-                                toMap(AreasEntity::getName, area -> getAreasRepObj(area, organizationId), FunctionalUtils::getFirst),
+                                toMap(AreasEntity::getName, area -> getAreasRepObj(area, orgSubareas), FunctionalUtils::getFirst),
                                 TreeMap::new
                         ));
     }
 
 
 
-    private AreasRepObj getAreasRepObj(AreasEntity area, Long organizationId){
+    private AreasRepObj getAreasRepObj(AreasEntity area, Map<Long, List<SubAreasRepObj>> orgSubareas){
         AreasRepObj obj = new AreasRepObj();
         obj.setId(area.getId());
         obj.setName(area.getName());
-        obj.setSubAreas(getSubAreasMap(area, organizationId));
+        obj.setSubAreas(getSubAreasMap(area, orgSubareas));
         return obj;
     }
 
 
 
-    private Map<String, SubAreasRepObj> getSubAreasMap(AreasEntity area, Long organizationId) {
-        return subAreaRepo
-                .findByAreaAndOrganization_Id(area, organizationId)
+    private Map<String, SubAreasRepObj> getSubAreasMap(AreasEntity area, Map<Long, List<SubAreasRepObj>> orgSubareas) {
+        return ofNullable(orgSubareas.get(area.getId()))
+                .orElse(emptyList())
                 .stream()
                 .collect(
                         collectingAndThen(
-                            toMap(SubAreasEntity::getName, sub -> (SubAreasRepObj)sub.getRepresentation(), FunctionalUtils::getFirst),
+                            toMap(SubAreasRepObj::getName, sub -> sub, FunctionalUtils::getFirst),
                             TreeMap::new
                         ));
     }
@@ -128,6 +145,7 @@ public class AddressServiceImpl implements AddressService{
 
 
     @Transactional
+    @CacheEvict(cacheNames = COUNTRIES)
     public void addCountries(List<CountryDTO> dto) {
         dto.forEach(this::createOrUpdateCountryData);
     }
@@ -159,6 +177,7 @@ public class AddressServiceImpl implements AddressService{
     
 
     @Transactional
+    @CacheEvict(cacheNames = COUNTRIES)
     public void addCountry(CountryInfoDTO dto) {
         if(isBlankOrNull(dto.getType()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, TYP$0001, "country, city, area");
@@ -247,6 +266,7 @@ public class AddressServiceImpl implements AddressService{
 
 
     @Transactional
+    @CacheEvict(cacheNames = COUNTRIES)
     public void removeCountry(Long id, String type) {
         if (type.equals("country")) {
             deleteCountry(id);
@@ -261,6 +281,7 @@ public class AddressServiceImpl implements AddressService{
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = COUNTRIES)
     public void updateSubAreas(SubAreasUpdateDTO subAreas) {
         validateSubAreas(subAreas);
         updateExistingAndAddNewAreas(subAreas);
@@ -269,6 +290,7 @@ public class AddressServiceImpl implements AddressService{
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = COUNTRIES)
     public void deleteSubAreas(Set<Long> subAreas) {
         validateProvidedSubAreasExisting(new HashSet<>(subAreas));
 
