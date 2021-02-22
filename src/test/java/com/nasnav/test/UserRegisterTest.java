@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
-import com.nasnav.persistence.UserSubscriptionEntity;
+import com.nasnav.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -63,9 +63,6 @@ import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
@@ -102,7 +99,8 @@ public class UserRegisterTest {
 
 	@Autowired
 	private UserRepository userRepository;
-
+	@Autowired
+	private EmployeeUserRepository employeeUserRepo;
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
@@ -1339,6 +1337,27 @@ public class UserRegisterTest {
 		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
 		assertEquals(FORBIDDEN, res.getStatusCode());
 	}
+
+
+	@Test
+	public void recoverEmployeeUser() {
+		Long userId = 162L;
+		EmployeeUserEntity user = employeeUserRepo.findById(userId).get();
+		assertEquals(NOT_ACTIVATED.getValue(), user.getUserStatus());
+
+		String body = json()
+				.put("token", "d67438ac-f3a5-4939-9686-a1fc096f3f4e")
+				.put("password", "password")
+				.put("org_id", 99001)
+				.put("employee", true)
+				.toString();
+		HttpEntity request = getHttpEntity(body, null);
+		ResponseEntity<String> res = template.postForEntity("/user/recover", request, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		user = employeeUserRepo.findById(userId).get();
+		assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+	}
+
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()

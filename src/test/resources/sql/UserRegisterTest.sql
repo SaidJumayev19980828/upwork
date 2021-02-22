@@ -49,6 +49,10 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 	VALUES (160, 'Walid 2', 'emp.user@nasnav.com', 99001, 't',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 VALUES (161, 'Walid 3', 'emp.user3@nasnav.com', 99001, 'tt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password, user_status,
+    reset_password_token, reset_password_sent_at)
+VALUES (162, 'Walid 4', 'emp.user4@nasnav.com', 99001, 'ttt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru',
+        200, 'd67438ac-f3a5-4939-9686-a1fc096f3f4e', now());
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700009, '875488', NOW() - INTERVAL '29 DAY', 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700010, '101112', now(), 159, null);

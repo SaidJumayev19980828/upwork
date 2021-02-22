@@ -229,6 +229,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		employeeUserEntity.setResetPasswordToken(null);
 		employeeUserEntity.setResetPasswordSentAt(null);
 		employeeUserEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+		employeeUserEntity.setUserStatus(ACTIVATED.getValue());
 		employeeUserEntity = employeeUserRepository.saveAndFlush(employeeUserEntity);
 
 		String token = resetRecoveredUserTokens(employeeUserEntity);
