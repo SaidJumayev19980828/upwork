@@ -1,11 +1,14 @@
 package com.nasnav.controller;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -302,7 +305,11 @@ public class ProductsController {
             @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
-
+        if(nonNull(metaData.getFeatureId())){
+            SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
+            productImgService.updateSwatchImagesBulk(zip, csv, swatchMetaData);
+            return emptyList();
+        }
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
 	

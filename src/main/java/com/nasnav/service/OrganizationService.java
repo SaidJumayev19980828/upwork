@@ -2,7 +2,9 @@ package com.nasnav.service;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
@@ -65,4 +68,10 @@ public interface OrganizationService {
     void removeSubscribedUser(String email);
 
     LinkedHashMap getOrganizationPaymentGateways(Long orgId, String deliveryService);
+
+    List<ProductFeatureType> getProductFeatureTypes();
+
+    String getAdditionalDataExtraAttrName(ProductFeaturesEntity feature);
+
+    Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature);
 }

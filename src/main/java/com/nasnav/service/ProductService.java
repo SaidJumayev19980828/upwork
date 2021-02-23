@@ -12,6 +12,7 @@ import static com.nasnav.constatnts.EntityConstants.Operation.*;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.enumerations.ExtraAttributeType.*;
+import static com.nasnav.enumerations.ProductFeatureType.STRING;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -60,6 +61,7 @@ import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.enumerations.ExtraAttributeType;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -470,7 +472,7 @@ public class ProductService {
 		ExtraAttributesEntity extraAttrEntity = entity.getExtraAttribute();
 		ExtraAttributeType type =
 				getExtraAttributeType(extraAttrEntity.getType())
-						.orElse(STRING);
+						.orElse(ExtraAttributeType.STRING);
 		Boolean invisible = Objects.equals(INVISIBLE, type);
 		ExtraAttributeDTO dto = new ExtraAttributeDTO();
 		dto.setId(extraAttrEntity.getId());
@@ -574,14 +576,30 @@ public class ProductService {
 				.map(productFeaturesRepository::findById)
 				.filter(optionalFeature -> optionalFeature != null && optionalFeature.isPresent())
 				.map(Optional::get)
-				.map(VariantFeatureDTO::new)
+				.map(this::createVariantFeatureDTO)
 				.collect(toList());
 	}
 
 
 
-
-
+	private VariantFeatureDTO createVariantFeatureDTO(ProductFeaturesEntity entity) {
+		ProductFeatureType type =
+				ofNullable(entity.getType())
+				.flatMap(ProductFeatureType::getProductFeatureType)
+				.orElse(STRING);
+		Map<String,?> extraData = emptyMap();
+		try{
+			extraData = new JSONObject(entity.getExtraData()).toMap();
+		}catch(Throwable e){
+			logger.error(e,e);
+		}
+		VariantFeatureDTO dto = new VariantFeatureDTO();
+		dto.setName(entity.getName());
+		dto.setLabel(entity.getPname());
+		dto.setType(type.name());
+		dto.setExtraData(extraData);
+		return dto;
+	}
 
 
 	private boolean hasFeatures(ProductVariantsEntity variant) {
@@ -2576,7 +2594,7 @@ public class ProductService {
 		if(name.startsWith("$")){
 			return INVISIBLE.getValue();
 		}else{
-			return STRING.getValue();
+			return ExtraAttributeType.STRING.getValue();
 		}
 	}
 

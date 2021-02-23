@@ -58,6 +58,7 @@ INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_
 INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
     VALUES (744236, '$s-size$IMG_SWATCH', 'Invisible', 99002, '/uploads/category/fearutes/feature1.jpg');
 
+
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99001, now(), now(),'ABCDEFG123');
@@ -103,3 +104,12 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODU
 
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310001', '5', 99001) ;
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310002', '6', 99001) ;
+
+
+-- insert attributes values
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11003, 744234, 'OLD_SWATCH', 310001);
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11004, 744235, 'OLD_COLOR', 310001);
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11005, 744234, 'OLD_SWATCH', 310002);
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11006, 744235, 'OLD_COLOR', 310002);
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11007, 744234, 'OLD_SWATCH', 310007);
+INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11008, 744234, 'OLD_SWATCH', 310003);

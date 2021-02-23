@@ -21,4 +21,5 @@ public interface ExtraAttributesRepository extends CrudRepository<ExtraAttribute
     @Modifying
     void deleteByIdAndOrganizationId(Integer attrId, Long orgId);
 
+    Optional<ExtraAttributesEntity> findByIdAndOrganizationId(Integer id, Long orgId);
 }

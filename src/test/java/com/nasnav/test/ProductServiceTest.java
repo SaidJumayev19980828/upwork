@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.test.commons.TestCommons;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -93,6 +94,7 @@ public class ProductServiceTest {
 	public static final int TEST_BUNDLE_ORG_ID = 99001;
 	public static final int TEST_BUNDLE_PRODUCTS_NUM = 4;
 	public static final int TEST_BUNDLE_NUM = 2;
+	public static final String PRODUCT_FEATURE_EXTRA_DATA = "{'extra_attribute_id': 7}";
 
 
 	@Autowired
@@ -362,11 +364,18 @@ public class ProductServiceTest {
 		JSONArray stocks = getStocksJsonArray(variant);
 
 
-		assertProductDetailsRetrieved(response, productDetails);
+		assertProductDetailsWithFeaturesWithExtraDataRetrieved(response, productDetails);
 		assertVariantDetailRetrievedWithInvisibleExtraAttr(variant);
 		assertTrue(stocks.similar(expectedStocks));
 	}
 
+
+
+
+	private boolean featureHasExpectedData(JSONObject feature) {
+		return ProductFeatureType.STRING.name().equals(feature.getString("type"))
+				&& feature.getJSONObject("extra_data").similar(new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+	}
 
 
 	private void assertValidResponseWithoutStocks(ProductTestData testData, ResponseEntity<String> response) {
@@ -425,8 +434,8 @@ public class ProductServiceTest {
 		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
-		testData.productFeaturesEntity_1 = createDummyFeature1(org);
-		testData.productFeaturesEntity_2 = createDummyFeature2(org);
+		testData.productFeaturesEntity_1 = createDummyFeature1WithExtraData(org);
+		testData.productFeaturesEntity_2 = createDummyFeature2WithExtraData(org);
 		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariantWithInvisibleExtraAttributes(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
@@ -471,6 +480,7 @@ public class ProductServiceTest {
 	}
 
 
+
 	private ProductTestData createProductTestDataWithZeroDiscountStocks() {
 		ProductTestData testData = new ProductTestData();
 
@@ -489,9 +499,18 @@ public class ProductServiceTest {
 	}
 
 
+
 	private void assertFeatureArrayRetrieved(JSONObject body) {
 		JSONArray features = body.getJSONArray("variant_features");
 		JSONArray expectedFeatures = createExpectedFeaturesJson();
+		assertTrue(features.similar(expectedFeatures));
+	}
+
+
+
+	private void assertFeatureWithExtraDataArrayRetrieved(JSONObject body) {
+		JSONArray features = body.getJSONArray("variant_features");
+		JSONArray expectedFeatures = createExpectedFeaturesWithExtraDataJson();
 		assertTrue(features.similar(expectedFeatures));
 	}
 
@@ -556,6 +575,32 @@ public class ProductServiceTest {
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
 		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2.setLevel(0);
+		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
+		return productFeaturesEntity_2;
+	}
+
+
+
+	private ProductFeaturesEntity createDummyFeature1WithExtraData(OrganizationEntity org) {
+		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
+		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
+		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganization(org);
+		productFeaturesEntity_1.setLevel(0);
+		productFeaturesEntity_1.setExtraData(PRODUCT_FEATURE_EXTRA_DATA);
+		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
+		return productFeaturesEntity_1;
+	}
+
+
+
+	private ProductFeaturesEntity createDummyFeature2WithExtraData(OrganizationEntity org) {
+		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
+		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
+		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganization(org);
+		productFeaturesEntity_2.setLevel(0);
+		productFeaturesEntity_2.setExtraData(PRODUCT_FEATURE_EXTRA_DATA);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 		return productFeaturesEntity_2;
 	}
@@ -763,6 +808,21 @@ public class ProductServiceTest {
 	}
 
 
+	private void assertProductDetailsWithFeaturesWithExtraDataRetrieved(ResponseEntity<String> response, JSONObject product) {
+		assertEquals(OK, response.getStatusCode());
+		assertEquals(PRODUCT_NAME, product.getString("name"));
+		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
+		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));
+		assertEquals(PRODUCT_DESC, product.getString("description"));
+		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
+		assertTrue(product.has("variant_features"));
+		assertTrue(product.has("variants"));
+		assertFeatureWithExtraDataArrayRetrieved(product);
+	}
+
+
+
+
 	private JSONArray createExpectedStocks(List<StocksEntity> expectedStocks) {
 		JSONArray expectedStocksJson = new JSONArray();
 
@@ -802,13 +862,34 @@ public class ProductServiceTest {
 		JSONObject expectedFeature1 = new JSONObject();
 		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
 		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
+		expectedFeature1.put("type", ProductFeatureType.STRING.name());
+		expectedFeature1.put("extra_data", new JSONObject());
 
 		JSONObject expectedFeature2 = new JSONObject();
 		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
 		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
+		expectedFeature2.put("type", ProductFeatureType.STRING.name());
+		expectedFeature2.put("extra_data", new JSONObject());
 
-		JSONArray expectedFeatures = new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
-		return expectedFeatures;
+		return new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
+	}
+
+
+
+	private JSONArray createExpectedFeaturesWithExtraDataJson() {
+		JSONObject expectedFeature1 = new JSONObject();
+		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
+		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
+		expectedFeature1.put("type", ProductFeatureType.STRING.name());
+		expectedFeature1.put("extra_data", new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+
+		JSONObject expectedFeature2 = new JSONObject();
+		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
+		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
+		expectedFeature2.put("type", ProductFeatureType.STRING.name());
+		expectedFeature2.put("extra_data", new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+
+		return new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
 	}
 
 

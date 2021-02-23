@@ -108,4 +108,5 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	Long countByOrganizationId(@Param("orgId") Long orgId,
 													 @Param("name") String name);
 
+    List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 }

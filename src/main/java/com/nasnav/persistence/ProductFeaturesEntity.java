@@ -7,10 +7,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.print.DocFlavor;
 
+import com.nasnav.enumerations.ProductFeatureType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+
+import static com.nasnav.enumerations.ProductFeatureType.STRING;
 
 @Table(name="product_features")
 @Entity
@@ -32,10 +36,22 @@ public class ProductFeaturesEntity {
 	private String description;
 
 	@Column(name="level")
-	private Integer level = 0;
+	private Integer level;
+
+	@Column(name = "type")
+	private Integer type;
+
+	@Column(name = "extra_data")
+	private String extraData;
 
 	@ManyToOne
 	@ToString.Exclude
     @EqualsAndHashCode.Exclude
 	private OrganizationEntity organization;
+
+
+	public ProductFeaturesEntity(){
+		this.type = STRING.getValue();
+		this.level = 0;
+	}
 }

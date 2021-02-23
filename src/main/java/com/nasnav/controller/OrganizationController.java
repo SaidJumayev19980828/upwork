@@ -15,6 +15,7 @@ import javax.validation.Valid;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -149,6 +150,20 @@ public class OrganizationController {
     @GetMapping(value = "products_features", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) {
         return orgService.getProductFeatures(orgId);
+    }
+
+
+
+
+    @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "products_features/types", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ProductFeatureType> getOrganizationFeaturesTypes(@RequestHeader(name = "User-Token", required = false) String token) {
+        return orgService.getProductFeatureTypes();
     }
 
 

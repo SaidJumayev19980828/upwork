@@ -14,11 +14,15 @@ import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.ExtraAttributeType.*;
+import static com.nasnav.enumerations.ProductFeatureType.*;
 import static com.nasnav.enumerations.SettingsType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.payments.misc.Gateway.*;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptyMap;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
@@ -38,6 +42,7 @@ import com.nasnav.controller.OrganizationController;
 import com.nasnav.controller.PaymentControllerCoD;
 import com.nasnav.dao.*;
 import com.nasnav.enumerations.ExtraAttributeType;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -91,6 +96,8 @@ import com.nasnav.service.helpers.OrganizationServiceHelper;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
+    public static final String EXTRA_ATTRIBUTE_ID = "extra_attribute_id";
+    public static final Set<Integer> FEATURE_TYPE_WITH_EXTRA_DATA = setOf(IMG_SWATCH.getValue(), COLOR.getValue());
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -324,7 +331,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.id != null) {
             organization = orgRepo.findOneById(json.id);
             if (organization == null)
-                throw new BusinessException(String.format("Provided id (%d) doesn't match any existing org!", json.id),
+                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.id),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
             if (json.name != null) {
                 validateOrganizationName(json);
@@ -557,35 +564,119 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	@Override
     public List<ProductFeatureDTO> getProductFeatures(Long orgId) {
-		List<ProductFeaturesEntity> entities = featureRepo.findByOrganizationId(orgId);
-		return entities.stream()
-					.map(ProductFeatureDTO::new)
-					.collect(toList());
+		return featureRepo
+                .findByOrganizationId(orgId)
+                .stream()
+                .map(this::toProductFeatureDTO)
+                .collect(toList());
 	}
-	
-	
-	
-	
 
-	@Override
+
+    private ProductFeatureDTO toProductFeatureDTO(ProductFeaturesEntity entity) {
+        ProductFeatureType type =
+                ProductFeatureType
+                .getProductFeatureType(entity.getType())
+                .orElse(ProductFeatureType.STRING);
+        Map<String, ?> extraData =
+                ofNullable(entity.getExtraData())
+                .map(JSONObject::new)
+                .map(JSONObject::toMap)
+                .orElse(emptyMap());
+        ProductFeatureDTO dto = new ProductFeatureDTO();
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setPname(entity.getPname());
+        dto.setDescription(entity.getDescription());
+        dto.setLevel(entity.getLevel());
+        dto.setType(type);
+        dto.setExtraData(extraData);
+        return dto;
+    }
+
+
+
+    @Override
+    @Transactional
     public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		Long orgId = user.getOrganizationId();
-		
-		
+
 		validateProductFeature(featureDto, orgId);
-		
-		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, orgId);		
-		
+		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, orgId);
+        entity = featureRepo.save(entity);
+
 		return new ProductFeatureUpdateResponse(entity.getId());
 	}
-	
-	
-	
-	
 
-	private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
+
+
+    private Optional<ExtraAttributesEntity> createExtraAttributesIfNeeded(ProductFeaturesEntity entity) {
+        Integer type = entity.getType();
+       if(nonNull(type) && FEATURE_TYPE_WITH_EXTRA_DATA.contains(type)){
+           ExtraAttributesEntity attr =
+                   getOptionalExtraAttributesEntity(entity)
+                    .orElse(doCreateExtraAttribute(entity));
+           return Optional.of(attr);
+       }
+       return Optional.empty();
+    }
+
+
+
+    private Optional<ExtraAttributesEntity> getOptionalExtraAttributesEntity(ProductFeaturesEntity entity) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getAdditionalDataExtraAttrId(entity)
+                .flatMap(id -> extraAttributesRepository.findByIdAndOrganizationId(id, orgId));
+    }
+
+
+
+    private ExtraAttributesEntity doCreateExtraAttribute(ProductFeaturesEntity entity) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        String name = getAdditionalDataExtraAttrName(entity);
+
+        ExtraAttributesEntity attr = new ExtraAttributesEntity();
+        attr.setType(INVISIBLE.getValue());
+        attr.setName(name);
+        attr.setOrganizationId(orgId);
+        return extraAttributesRepository.save(attr);
+    }
+
+
+
+    private void addExtraAttrToFeatureExtraData(ProductFeaturesEntity entity, ExtraAttributesEntity attr) {
+        String featureExtraDataBefore = ofNullable(entity.getExtraData()).orElse("{}");
+        String featureExtraDataAfter =
+                new JSONObject(featureExtraDataBefore)
+                        .put(EXTRA_ATTRIBUTE_ID, attr.getId())
+                        .toString();
+        entity.setExtraData(featureExtraDataAfter);
+    }
+
+
+
+    @Override
+    public String getAdditionalDataExtraAttrName(ProductFeaturesEntity feature) {
+        String typeName =
+                ofNullable(feature.getType())
+                .flatMap(ProductFeatureType::getProductFeatureType)
+                .map(ProductFeatureType::name)
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$FTR$0001, feature.getType()));
+        return format("$%s$%s", feature.getPname(), typeName);
+    }
+
+
+
+    @Override
+    public Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature){
+        return ofNullable(feature.getExtraData())
+                .map(JSONObject::new)
+                .map(json -> json.getInt(EXTRA_ATTRIBUTE_ID));
+    }
+
+
+    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
 		ProductFeaturesEntity entity = new ProductFeaturesEntity();
 		entity.setOrganization( orgRepo.findById(orgId).get() );
 		
@@ -594,8 +685,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 		if( opr.equals( Operation.UPDATE)) {			
 			entity = featureRepo.findById( featureDto.getFeatureId()).get();
 		}
-		
-		
 		if(featureDto.isUpdated("name")){
 			entity.setName( featureDto.getName()); 
 		}
@@ -605,13 +694,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 		if(featureDto.isUpdated("description")) {
 			entity.setDescription( featureDto.getDescription() );
 		}
-
         if(featureDto.isUpdated("level")) {
             entity.setLevel( featureDto.getLevel() );
         }
-		
-		entity = featureRepo.save(entity);
-		
+        if(featureDto.isUpdated("type")) {
+            Integer type = ofNullable(featureDto.getType()).orElse(ProductFeatureType.STRING).getValue();
+            entity.setType(type);
+            Optional<ExtraAttributesEntity> attr = createExtraAttributesIfNeeded(entity);
+            if(attr.isPresent()){
+                addExtraAttrToFeatureExtraData(entity, attr.get());
+            }
+        }
+
 		return entity;
 	}
 	
@@ -667,7 +761,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		if(!opr.equals(Operation.CREATE) &&
 				!opr.equals(Operation.UPDATE)) {
 			throw new BusinessException(
-					String.format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue()) 
+					format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue())
 					, "INVALID PARAM:operation"
 					, NOT_ACCEPTABLE);
 		}
@@ -690,7 +784,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		
 		if( !featureOptional.isPresent()) {
 			throw new BusinessException(
-					String.format("Invalid parameters [feature_id], no feature exists with id [%d]!", id) 
+					format("Invalid parameters [feature_id], no feature exists with id [%d]!", id)
 					, "INVALID PARAM:feature_id"
 					, NOT_ACCEPTABLE);
 		}	
@@ -699,7 +793,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 										   .map(OrganizationEntity::getId)
 										   .orElseThrow(
 												   () -> new BusinessException(
-															String.format("Feature of id[%d], Doesn't follow any organization!", id) 
+															format("Feature of id[%d], Doesn't follow any organization!", id)
 															, "INTERNAL SERVER ERROR"
 															, INTERNAL_SERVER_ERROR)
 												   );
@@ -707,7 +801,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		
 		if(!Objects.equals(featureOrgId, userOrgId)) {
 			throw new BusinessException(
-					String.format("Feature of id[%d], can't be changed a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId) 
+					format("Feature of id[%d], can't be changed a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId)
 					, "INVALID PARAM:feature_id"
 					, FORBIDDEN);
 		}
@@ -735,7 +829,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 		
 		if(!organizationRepository.existsById( orgId )) {
 			throw new BusinessException(
-					String.format("Invalid parameters [organization_id], no organization exists with id [%d]!", orgId) 
+					format("Invalid parameters [organization_id], no organization exists with id [%d]!", orgId)
 									, "INVALID PARAM:organization_id"
 									, NOT_ACCEPTABLE);
 		}
@@ -785,7 +879,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private ProductImageUpdateResponse createNewOrganizationImg(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
         if(!imgMetaData.areRequiredForCreatePropertiesProvided()) {
             throw new BusinessException(
-                    String.format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
+                    format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
                     , "MISSING PARAM", NOT_ACCEPTABLE);
         }
 
@@ -796,7 +890,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         String mimeType = file.getContentType();
         if(!mimeType.startsWith("image") && !mimeType.startsWith("video"))
-            throw new BusinessException(String.format("Invalid file type[%s]! only MIME ['image','video] types are accepted!", mimeType)
+            throw new BusinessException(format("Invalid file type[%s]! only MIME ['image','video] types are accepted!", mimeType)
                     , "MISSIG PARAM:image"
                     , NOT_ACCEPTABLE);
         String url = fileService.saveFile(file, imgMetaData.getOrganizationId());
@@ -827,7 +921,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     private ProductImageUpdateResponse UpdatedOrganizationImg(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
         if(!imgMetaData.areRequiredForUpdatePropertiesProvided())
-            throw new BusinessException(String.format("Missing required parameters! required parameters for updating existing image are: %s",
+            throw new BusinessException(format("Missing required parameters! required parameters for updating existing image are: %s",
                     imgMetaData.getRequiredPropertyNamesForDataUpdate()), "MISSING PARAM", NOT_ACCEPTABLE);
 
         validateOrganizationImageUpdateData(imgMetaData);
@@ -836,12 +930,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         if( !organizationImagesRepository.existsById(imgId))
             throw new BusinessException(
-                    String.format("No organization image exists with id: %d !", imgId), "INVALID PARAM:image_id", NOT_ACCEPTABLE);
+                    format("No organization image exists with id: %d !", imgId), "INVALID PARAM:image_id", NOT_ACCEPTABLE);
 
         if(file != null) {
             String mimeType = file.getContentType();
             if (!mimeType.startsWith("image"))
-                throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+                throw new BusinessException(format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
                         , "MISSING PARAM:image", NOT_ACCEPTABLE);
         }
 
@@ -862,7 +956,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             Long shopId = imgMetaData.getShopId();
             Optional<ShopsEntity> shopEntity = shopsRepository.findById( shopId );
             if (!shopEntity.isPresent())
-                throw new BusinessException(String.format("No shop exists with id: %d !", shopId), "INVALID PARAM: shop_id", NOT_ACCEPTABLE);
+                throw new BusinessException(format("No shop exists with id: %d !", shopId), "INVALID PARAM: shop_id", NOT_ACCEPTABLE);
             if (!shopEntity.get().getOrganizationEntity().getId().equals(imgMetaData.getOrganizationId()))
                 throw new BusinessException("shop_id doesn't match current organization", "INVALID PARAM: shop_id", NOT_ACCEPTABLE);
             entity.setShopsEntity(shopEntity.get());
@@ -914,7 +1008,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         if(!user.getOrganizationId().equals(orgId)) {
             throw new BusinessException(
-                    String.format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
+                    format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
                     , "UNAUTHRORIZED", FORBIDDEN);
         }
     }
@@ -998,7 +1092,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 	private ExtraAttributeDefinitionDTO createExtraAttributeDTO(ExtraAttributesEntity entity) {
         ExtraAttributeType type =
                 getExtraAttributeType(entity.getType())
-                .orElse(STRING);
+                .orElse(ExtraAttributeType.STRING);
         Boolean invisible = Objects.equals(type, INVISIBLE);
 		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
 		dto.setIconUrl(entity.getIconUrl());
@@ -1244,5 +1338,12 @@ public class OrganizationServiceImpl implements OrganizationService {
             response.put(gateway.getGateway(), body);
         }
         return response;
+    }
+
+
+
+    @Override
+    public List<ProductFeatureType> getProductFeatureTypes() {
+        return asList(ProductFeatureType.values());
     }
 }

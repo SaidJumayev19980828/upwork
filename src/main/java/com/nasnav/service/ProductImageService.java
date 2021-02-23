@@ -7,14 +7,11 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
-import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.*;
 import com.nasnav.persistence.ProductImagesEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -64,4 +61,10 @@ public interface ProductImageService {
 	Map<Long,List<ProductImageDTO>> getProductsAllImagesMap(List<Long> productsIdList, List<Long> variantsIdList);
 	
 	Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantIds);
+
+	void saveSwatchImagesBulk(Set<ImportedSwatchImage> importedImgs, SwatchImageBulkUpdateDTO metaData);
+
+	void updateSwatchImagesBulk(@Valid MultipartFile zip
+			,@Valid MultipartFile csv
+			,@Valid SwatchImageBulkUpdateDTO metaData);
 }

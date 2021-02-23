@@ -73,6 +73,18 @@ public enum ErrorCodes {
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 	,P$BRA$0003("Brand with id [%d] linked to %d products!")
 
+	,P$FTR$0001("No Product Feature type exists with code[%d]!")
+
+	,P$IMG$0001("Provided Zip file has no data!")
+	,P$IMG$0002("Provided images archive is not ZIP file!")
+	,P$IMG$0003("No feature provided for swatch images!")
+	,P$IMG$0004("No feature exists with id[%d]!")
+	,P$IMG$0005("Failed to read zip file!")
+	,P$IMG$0006("Failed To parse CSV file!")
+	,P$IMG$0007("Failed to prepare images for import due to errors!\nerrors:[%s]")
+	,P$IMG$0008("Feature is not of the type %s!")
+	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
+
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
 	,GEN$0003("Couldn't send mail, reason[%s]")
