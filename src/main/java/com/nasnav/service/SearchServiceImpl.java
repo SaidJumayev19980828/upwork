@@ -411,7 +411,11 @@ public class SearchServiceImpl implements SearchService{
             }
         }
         return Mono
-                .<Void>create(sink -> client.bulkAsync(request, DEFAULT, wrap((res)-> handleBulkResponse(res, sink, orgId), sink::error)))
+                .just(request)
+                .filter(req -> req.numberOfActions() > 0)
+                .flatMap(req ->
+                        Mono.<Void>create(sink -> client.bulkAsync(req, DEFAULT, wrap((res)-> handleBulkResponse(res, sink, orgId), sink::error)))
+                )
                 .doOnError(e -> logger.error(e,e));
     }
 
