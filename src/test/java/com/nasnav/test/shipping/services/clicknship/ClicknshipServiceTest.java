@@ -46,8 +46,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -119,19 +118,38 @@ public class ClicknshipServiceTest {
 
     @Test
     public void testGetOffer() {
-        ShippingService service = shippingServiceFactory
+        ShippingService service =
+                shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
         List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
         ShippingOffer offer = service.createShippingOffer(details).block();
         List<Shipment> shipments = offer.getShipments();
-        assertEquals(1, shipments.size());
+        assertTrue(offer.isAvailable());
+        assertEquals(2, shipments.size());
         assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
         assertEquals(now().plusDays(4) , shipments.get(0).getEta().getTo());
 
         if(isUsingMockServer()){
             assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("3547.50")));
         }
+    }
+
+
+
+    @Test
+    public void testGetOfferWithErrorFromServer() {
+        ShippingService service =
+                shippingServiceFactory
+                        .getShippingService(SERVICE_ID, createServiceParams())
+                        .get();
+
+        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        setCityTheReturnsError(details.get(0));
+
+        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        assertTrue(offer.isPresent());
+        assertFalse(offer.get().isAvailable());
     }
 
 
@@ -172,7 +190,8 @@ public class ClicknshipServiceTest {
         setOutOfReachCity(details.get(0));
 
         Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
-        assertFalse(offer.isPresent());
+        assertTrue(offer.isPresent());
+        assertFalse(offer.get().isAvailable());
     }
 
 
@@ -215,6 +234,21 @@ public class ClicknshipServiceTest {
 
 
 
+    @Test
+    public void testGetFailingOffer() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        assertFalse(offers.get(0).isAvailable());
+    }
+
+
+
     private Long randomLong(){
         return (long)(Math.random()*Long.MAX_VALUE);
     }
@@ -236,24 +270,38 @@ public class ClicknshipServiceTest {
 
 
 
+    private void setCityTheReturnsError(ShippingDetails details) {
+        ShippingAddress addr = new ShippingAddress();
+        addr.setName("PETER ADEOGUN");
+        addr.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
+        addr.setArea(11L);
+        addr.setCity(1005L);
+        details.setSource(addr);
+    }
+
+
+
 
 
     private List<ShippingDetails> createShippingDetails(Long metaOrderId, Long subOrderId) {
-        Map<String, String> additionalData = new HashMap<>();
-        additionalData.put("paymentType", "Pay On Delivery");
-        additionalData.put("deliveryType", "Normal Delivery");
-
         ShipmentReceiver receiver = new ShipmentReceiver();
         receiver.setFirstName("John");
         receiver.setLastName("Smith");
         receiver.setPhone("08076522536");
         receiver.setEmail("testemail@yahoo.com");
 
-        ShippingAddress source = new ShippingAddress();
-        source.setName("PETER ADEOGUN");
-        source.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
-        source.setArea(11L);
-        source.setCity(1001L);
+        ShippingAddress source1 = new ShippingAddress();
+        source1.setName("PETER ADEOGUN");
+        source1.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
+        source1.setArea(11L);
+        source1.setCity(1001L);
+
+        ShippingAddress source2 = new ShippingAddress();
+        source2.setName("PETER ADEOGUN");
+        source2.setAddressLine1("32 KOMOMBO STREET, VICTORIA ISLAND, LAGOS");
+        source2.setArea(11L);
+        source2.setCity(1001L);
+
         ShippingAddress dest = new ShippingAddress();
         dest.setName("BENSON ADEWALE");
         dest.setAddressLine1("23 Ikorodu Road, Maryland, Lagos");
@@ -261,23 +309,32 @@ public class ClicknshipServiceTest {
         dest.setCity(1002L);
 
         ShipmentItems item = new ShipmentItems();
-        item.setWeight(new BigDecimal(1.5));
+        item.setWeight(new BigDecimal("1.5"));
         item.setName("HAND BAG");
         item.setQuantity(5);
         item.setPrice(new BigDecimal(9000));
         item.setSpecs("Color : BLUE, Size : 23");
         item.setStockId(310001L);
 
-        ShippingDetails details = new ShippingDetails();
-        details.setReceiver(receiver);
-        details.setMetaOrderId(metaOrderId);
-        details.setSubOrderId(subOrderId);
-        details.setSource(source);
-        details.setDestination(dest);
-        details.setAdditionalData(additionalData);
-        details.setItems(singletonList(item));
-        return singletonList(details);
+        ShippingDetails details1 = new ShippingDetails();
+        details1.setReceiver(receiver);
+        details1.setMetaOrderId(metaOrderId);
+        details1.setSubOrderId(subOrderId);
+        details1.setSource(source1);
+        details1.setDestination(dest);
+        details1.setItems(singletonList(item));
+
+        ShippingDetails details2 = new ShippingDetails();
+        details2.setReceiver(receiver);
+        details2.setMetaOrderId(metaOrderId);
+        details2.setSubOrderId(subOrderId);
+        details2.setSource(source2);
+        details2.setDestination(dest);
+        details2.setItems(singletonList(item));
+        return asList(details1, details2);
     }
+
+
 
     private List<ServiceParameter> createServiceParams() {
         return asList(new ServiceParameter("SERVER_URL", server)
@@ -285,6 +342,7 @@ public class ClicknshipServiceTest {
                 , new ServiceParameter("PASSWORD", "ClickNShip$12345")
                 , new ServiceParameter("GRANT_TYPE", "password"));
     }
+
 
     //@Test
     public void authenticate() throws InterruptedException {
@@ -296,6 +354,8 @@ public class ClicknshipServiceTest {
         Thread.sleep(1000);
     }
 
+
+
     ///@Test
     public void getCities() throws InterruptedException {
         Consumer<ClientResponse> c = res -> {
@@ -305,6 +365,8 @@ public class ClicknshipServiceTest {
                 .subscribe(c);
         Thread.sleep(1000);
     }
+
+
 
     //@Test
     public void getStates() throws InterruptedException {

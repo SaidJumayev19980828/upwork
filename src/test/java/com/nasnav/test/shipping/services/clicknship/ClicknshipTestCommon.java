@@ -2,6 +2,9 @@ package com.nasnav.test.shipping.services.clicknship;
 
 import com.google.common.net.MediaType;
 import org.mockserver.junit.MockServerRule;
+import org.mockserver.matchers.MatchType;
+import org.mockserver.model.Body;
+import org.mockserver.model.JsonBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -11,8 +14,10 @@ import java.nio.file.Files;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.nasnav.test.commons.TestCommons.readResource;
+import static org.mockserver.matchers.MatchType.ONLY_MATCHING_FIELDS;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static org.mockserver.model.JsonBody.json;
 
 @Component
 public class ClicknshipTestCommon {
@@ -26,7 +31,11 @@ public class ClicknshipTestCommon {
         return mockServerUrl + ":" + mockServerRule.getPort();
     }
 
+
+
     private void prepareMockRequests(MockServerRule mockServerRule) throws Exception {
+        mockCreateDeliveryReturningErrorRequest(mockServerRule);
+        mockCreateDeliveryReturningErrorRequest2(mockServerRule);
         mockAuthenticationRequest(mockServerRule);
         mockCreateOfferRequest(mockServerRule);
         mockCreateDeliveryRequest(mockServerRule);
@@ -67,6 +76,36 @@ public class ClicknshipTestCommon {
                                 .withStatusCode(200));
 
     }
+
+
+
+    private void mockCreateDeliveryReturningErrorRequest(MockServerRule mockServerRule) throws IOException {
+        mockServerRule.getClient()
+                .when(
+                        request().withMethod("POST")
+                                .withHeader("Authorization", ".+")
+                                .withBody(
+                                        json("{'Origin': 'ADO EKITI'}"
+                                            , ONLY_MATCHING_FIELDS))
+                                .withPath("/clicknship/Operations/DeliveryFee"))
+                .respond(response().withStatusCode(500));
+    }
+
+
+
+    private void mockCreateDeliveryReturningErrorRequest2(MockServerRule mockServerRule) throws IOException {
+        mockServerRule.getClient()
+                .when(
+                        request().withMethod("POST")
+                                .withHeader("Authorization", ".+")
+                                .withBody(
+                                        json("{'Destination': 'ADO EKITI'}"
+                                                , ONLY_MATCHING_FIELDS))
+                                .withPath("/clicknship/Operations/DeliveryFee"))
+                .respond(response().withStatusCode(500));
+    }
+
+
 
     private void mockCreateAirwayBillRequest(MockServerRule mockServerRule) throws IOException {
         mockServerRule.getClient()

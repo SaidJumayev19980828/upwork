@@ -43,8 +43,8 @@ import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
 public class ClickNShipShippingService implements ShippingService {
-
     private Logger logger = LogManager.getLogger(getClass());
+    private static final String ERR_OUT_OF_SERVICE = "Sorry! We are currently unable to ship to your area!";
 
     @Autowired
     private ShippingAreaRepository shippingAreaRepo;
@@ -203,15 +203,15 @@ public class ClickNShipShippingService implements ShippingService {
                 .fromIterable(items)
                 .flatMap(this::createShipmentOffer)
                 .collectList()
-                .flatMap(this::doCreateShippingOffer);
+                .flatMap(shipments -> doCreateShippingOffer(shipments, items.size()));
     }
 
 
 
-    private Mono<ShippingOffer> doCreateShippingOffer(List<Shipment> shipments){
+    private Mono<ShippingOffer> doCreateShippingOffer(List<Shipment> shipments, Integer ordersNum){
         ShippingServiceInfo serviceInfo = createServiceInfoWithDeliveryOptions();
-        if(isNull(shipments) || shipments.isEmpty()){
-            return Mono.empty();
+        if(isAnyOrderHadNoShipment(shipments, ordersNum)){
+            return Mono.just(new ShippingOffer(serviceInfo, ERR_OUT_OF_SERVICE));
         }else{
             return Mono.just(new ShippingOffer(serviceInfo, shipments));
         }
@@ -219,12 +219,17 @@ public class ClickNShipShippingService implements ShippingService {
 
 
 
+    private boolean isAnyOrderHadNoShipment(List<Shipment> shipments, Integer ordersNum) {
+        return isNull(shipments) || !Objects.equals(shipments.size(), ordersNum);
+    }
+
+
     private Mono<Shipment> createShipmentOffer(ShippingDetails details) {
         Mono<ShippingEta> etaMono = getShippingEta();
         List<Long> stocks = getStocks(details);
         String serverUrl = getServiceParam(SERVER_URL);
         ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
-        Optional<DeliveryFeeRequest> request = createDeliveryRequest(details);
+        Optional<DeliveryFeeRequest> request = createDeliveryFeeRequest(details);
         if (!request.isPresent()) {
             return Mono.empty();
         }
@@ -248,7 +253,7 @@ public class ClickNShipShippingService implements ShippingService {
 
 
 
-    private Optional<DeliveryFeeRequest> createDeliveryRequest(ShippingDetails details) {
+    private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(ShippingDetails details) {
         ShippingAddress originAddr = getSourceAddress(details);
         ShippingAddress destAddr = getDestinationAddress(details);
         Optional<String> originCity = getCityNameOptional(originAddr);
@@ -302,7 +307,7 @@ public class ClickNShipShippingService implements ShippingService {
                 .stream()
                 .map(ShipmentItems::getWeight)
                 .map(weight -> ofNullable(weight).orElse(ZERO))
-                .reduce(ONE, BigDecimal::add);
+                .reduce(ZERO, BigDecimal::add);
     }
 
 

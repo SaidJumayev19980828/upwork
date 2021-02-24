@@ -15,17 +15,21 @@ INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 INSERT INTO public.cities(id,country_id, "name") VALUES(1001, 3, 'ABA');
 INSERT INTO public.cities(id,country_id, "name") VALUES(1002, 3, 'ABAKALIKI');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1005, 3, 'ADO EKITI');
 
 INSERT INTO public.areas(id, "name", city_id)VALUES(11, 'AGBARAGWU', 1001);
 INSERT INTO public.areas(id, "name", city_id)VALUES(22, 'ABA', 1002);
+INSERT INTO public.areas(id, "name", city_id)VALUES(33, 'ADO EKITI', 1005);
 
 INSERT INTO public.shipping_service(id)VALUES('CLICKNSHIP');
 
 INSERT into shipping_areas values(11, 'CLICKNSHIP', '2335');
 INSERT into shipping_areas values(22, 'CLICKNSHIP', '2331');
+INSERT into shipping_areas values(33, 'CLICKNSHIP', '2331');
 
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 11, '01111234567');
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 22, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300003, 'address line', 33, '01111234567');
 
 
 --inserting shops
