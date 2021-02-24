@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.TagsRepresentationObject;
@@ -34,10 +33,6 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.TriFunction;
-import org.elasticsearch.common.text.Text;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.xcontent.*;
-import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -45,13 +40,6 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.search.suggest.SuggestBuilder;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
-import org.elasticsearch.search.suggest.completion.FuzzyOptions;
-import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -70,10 +58,8 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.SearchType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.*;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -187,16 +173,21 @@ public class SearchServiceImpl implements SearchService{
 
     @Override
     public Mono<Void> deleteAllIndices() {
-        DeleteIndexRequest tagDeleteRequest = new DeleteIndexRequest(getIndex(TAGS));
-        DeleteIndexRequest productDeleteRequest = new DeleteIndexRequest(getIndex(PRODUCTS));
-        DeleteIndexRequest collectionDeleteRequest = new DeleteIndexRequest(getIndex(COLLECTIONS));
-        return runWithDefaultParams(client.indices()::deleteAsync, tagDeleteRequest ,AcknowledgedResponse.class)
-                .then(runWithDefaultParams(client.indices()::deleteAsync, productDeleteRequest ,AcknowledgedResponse.class))
-                .then(runWithDefaultParams(client.indices()::deleteAsync, collectionDeleteRequest ,AcknowledgedResponse.class));
+        return deleteIndex(TAGS)
+                .then(deleteIndex(PRODUCTS))
+                .then(deleteIndex(COLLECTIONS));
     }
 
 
 
+    private Mono<Void> deleteIndex(SearchType index) {
+        String indexName = getIndex(index);
+        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indexName);
+        return indexExists(indexName)
+                .flatMap(exists ->
+                        exists? runWithDefaultParams(client.indices()::deleteAsync, deleteRequest, AcknowledgedResponse.class)
+                                : Mono.create(MonoSink::success));
+    }
 
 
     private SearchParameters createNormalizedParams(SearchParameters parameters) {
