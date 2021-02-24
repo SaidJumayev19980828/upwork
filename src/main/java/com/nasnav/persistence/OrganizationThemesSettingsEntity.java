@@ -24,8 +24,10 @@ public class OrganizationThemesSettingsEntity extends AbstractPersistable<Intege
     @JsonIgnore
     private OrganizationEntity organizationEntity;
 
-    @Column(name = "theme_id")
-    private Integer themeId;
+    @ManyToOne
+    @JoinColumn(name = "theme_id", referencedColumnName = "id")
+    @JsonIgnore
+    private ThemeEntity theme;
 
     @Column(name = "settings")
     private String settings;
@@ -36,7 +38,7 @@ public class OrganizationThemesSettingsEntity extends AbstractPersistable<Intege
 
         themesDTO.setId(getId());
         themesDTO.setSettings(getSettings());
-        themesDTO.setThemeId(getThemeId()+"");
+        themesDTO.setThemeId(getTheme().getId()+"");
 
         return themesDTO;
     }

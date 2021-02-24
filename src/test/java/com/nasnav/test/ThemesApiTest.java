@@ -595,4 +595,18 @@ public class ThemesApiTest {
         System.out.println(response.getBody().toString());
         assertEquals(1, response.getBody().size());
     }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Themes_API_Test_Data_2.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrganizationThemesDifferentCases() {
+        HttpEntity<?> request =  getHttpEntity("131415");
+        ResponseEntity<List> response =
+                template.exchange("/organization/themes", GET, request, List.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertFalse(response.getBody().isEmpty());
+        System.out.println(response.getBody().toString());
+        assertEquals(3, response.getBody().size());
+    }
 }

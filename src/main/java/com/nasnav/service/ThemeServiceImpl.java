@@ -14,6 +14,9 @@ import com.nasnav.persistence.ThemeClassEntity;
 import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import java.util.*;
 @Service
 public class ThemeServiceImpl implements ThemeService{
 
+    private static final Logger logger = LogManager.getLogger();
     @Autowired
     private ThemesRepository themesRepo;
     @Autowired
@@ -273,7 +277,7 @@ public class ThemeServiceImpl implements ThemeService{
         			.orElse(new OrganizationThemesSettingsEntity());
 
         orgThemeSetting.setOrganizationEntity(org);
-        orgThemeSetting.setThemeId(theme.get().getId());
+        orgThemeSetting.setTheme(theme.get());
 
         if (dto.getSettings() != null) {
             orgThemeSetting.setSettings(dto.getSettings());
@@ -290,13 +294,36 @@ public class ThemeServiceImpl implements ThemeService{
 
     public List<OrgThemeRepObj> getOrgThemes() {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        List<Integer> organizationThemeClasses =
-                org
+
+        Map<String, String> orgThemesSettings = orgThemeSettingsRepo
+                .findByOrganizationEntity_Id(org.getId())
+                .stream()
+                .collect(toMap(s -> s.getTheme().getUid(), s -> s.getSettings()));
+
+        return org
                 .getThemeClasses()
                 .stream()
-               .map(ThemeClassEntity::getId)
-               .collect(toList());
-        return orgThemeSettingsRepo.findByThemeClassesAndOrganizationId(organizationThemeClasses, org.getId());
+                .map(ThemeClassEntity::getThemes)
+                .flatMap(Set::stream)
+                .map(theme -> new OrgThemeRepObj(theme))
+                .map(t -> setThemeSettings(t, orgThemesSettings) )
+                .collect(toList());
     }
+
+    private OrgThemeRepObj setThemeSettings(OrgThemeRepObj theme, Map<String, String> orgThemesSettings) {
+        try {
+            Map defaultSettings = new JSONObject(theme.getDefaultSettingsString()).toMap();
+            theme.setDefaultSettings(defaultSettings);
+            if(orgThemesSettings.get(theme.getUid()) != null) {
+                Map settings = new JSONObject(orgThemesSettings.get(theme.getUid())).toMap();
+                theme.setSettings(settings);
+            }
+        } catch (Exception e) {
+            logger.error(e,e);
+        }
+
+        return theme;
+    }
+
 
 }

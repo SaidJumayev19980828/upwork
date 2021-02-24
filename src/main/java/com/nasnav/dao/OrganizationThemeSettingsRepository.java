@@ -12,26 +12,17 @@ import java.util.Set;
 
 public interface OrganizationThemeSettingsRepository extends JpaRepository<OrganizationThemesSettingsEntity, Integer> {
 
-    List<OrganizationThemesSettingsEntity> findByThemeId(Integer themeId);
-
-    @Query("select orgThemeSetting.organizationEntity.id from OrganizationThemesSettingsEntity orgThemeSetting where orgThemeSetting.themeId in :themeId")
+    @Query("select orgThemeSetting.organizationEntity.id from OrganizationThemesSettingsEntity orgThemeSetting where orgThemeSetting.theme.id in :themeId")
     Set<Long> findOrganizationIdByThemeIdIn(@Param("themeId") Integer themeId);
 
-    @Query(value = "select new com.nasnav.dto.response.OrgThemeRepObj( t.uid, t.name, t.previewImage, t.defaultSettings, ots.settings, t.themeClassEntity.id) " +
-            " from ThemeEntity t " +
-            " left join fetch OrganizationThemesSettingsEntity ots on ots.themeId = t.id" +
+    @Query(value = "select ots " +
+            " from OrganizationThemesSettingsEntity ots " +
+            " left join fetch ots.theme t " +
+            " left join fetch t.themeClassEntity themeClass " +
             " where ots.organizationEntity.id = :orgId")
-    List<OrgThemeRepObj> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
+    List<OrganizationThemesSettingsEntity> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
 
     Optional<OrganizationThemesSettingsEntity> findByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
 
     boolean existsByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
-
-    @Query(value = "select new com.nasnav.dto.response.OrgThemeRepObj( t.uid, t.name, t.previewImage, t.defaultSettings," +
-            " COALESCE(ots.settings, '{}'), t.themeClassEntity.id) " +
-            " from ThemeEntity t " +
-            " left join fetch OrganizationThemesSettingsEntity ots on ots.themeId = t.id " +
-            " where t.themeClassEntity.id in :themeClasses " +
-            " and ots.organizationEntity.id = :orgId")
-    List<OrgThemeRepObj> findByThemeClassesAndOrganizationId(@Param("themeClasses") List<Integer> themeClasses, @Param("orgId")Long orgId);
 }
