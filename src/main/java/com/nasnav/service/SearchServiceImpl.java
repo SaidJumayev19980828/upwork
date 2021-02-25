@@ -33,6 +33,8 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.TriFunction;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -145,19 +147,21 @@ public class SearchServiceImpl implements SearchService{
     }
 
 
+
     private SearchSourceBuilder getSuggestionSourceBuilder(SearchParameters params) {
         return new SearchSourceBuilder()
                 .query( QueryBuilders
                         .boolQuery()
-                        .must(
-                                QueryBuilders.fuzzyQuery("name", params.keyword)
-                        )
-                        .filter(matchQuery("organization_id", params.org_id))
+                        .should( regexpQuery("name", ".*"+params.keyword+".*"))
+                        .should( fuzzyQuery("name", params.keyword))
+                        .filter( matchQuery("organization_id", params.org_id))
+                        .minimumShouldMatch(1)      //at least one condition should be met
                 )
                 .fetchSource(new String[]{"name"}, new String[]{})
                 .from(params.start)
                 .size(params.count);
     }
+
 
 
     @Override
