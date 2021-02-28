@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static java.math.BigDecimal.ZERO;
@@ -250,7 +251,10 @@ public class CartServiceImpl implements CartService{
     private BigDecimal calculateCartTotal(List<CartItem> cartItems) {
         return  cartItems
                 .stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .map(item ->
+                        item.getPrice()
+                        .subtract(nullableBigDecimal(item.getDiscount()))
+                        .multiply(new BigDecimal(item.getQuantity())))
                 .reduce(ZERO, BigDecimal::add);
     }
 
