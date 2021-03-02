@@ -5,8 +5,10 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.exceptions.ErrorCodes.P$STO$0002;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -33,6 +35,7 @@ import javax.persistence.Query;
 import javax.transaction.Transactional;
 
 import com.nasnav.dao.*;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -235,8 +238,19 @@ public class StockServiceImpl implements StockService {
 
 		return stock;
 	}
+
+	private StocksEntity checkTotalStockValue(StocksEntity stock) {
+		if (getTotalStockValue(stock) < 0){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0002);
+		}
+		return stock;
+	}
 	
-	
+	private int getTotalStockValue(StocksEntity stock) {
+    	BigDecimal price = stock.getPrice();
+		BigDecimal discount = ofNullable(stock.getDiscount()).orElse(ZERO);
+		return price.subtract(discount).intValue();
+	}
 	
 	
 	@Override
@@ -304,6 +318,7 @@ public class StockServiceImpl implements StockService {
 				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
 				.filter(stk -> isNotSeenBefore(seen, stk))
 				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache, unitsCache))
+				.map(stk -> checkTotalStockValue(stk))
 				.collect(toList());
 	}
 
@@ -561,7 +576,7 @@ public class StockServiceImpl implements StockService {
 
 	private void validateStockPrice(StockUpdateDTO req) throws BusinessException {
 		BigDecimal price = req.getPrice();
-		if( price != null &&  price.compareTo(BigDecimal.ZERO) < 0) {
+		if( price != null &&  price.compareTo(ZERO) < 0) {
 			throw new BusinessException(
 					String.format("Invalid Price value [%s]!", price.toString())
 					, "INVALID_PARAM:currency" 
