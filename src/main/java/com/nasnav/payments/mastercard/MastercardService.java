@@ -243,7 +243,7 @@ public class MastercardService {
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
-
+            classLogger.debug("Attempting to call: " + request.getURI().toString()) ;
             HttpResponse response = client.execute(request);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
