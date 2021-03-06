@@ -26,7 +26,12 @@ public class PromotionsEntity {
 	public final static String DISCOUNT_AMOUNT_MAX = "discount_value_max";
 	public final static String DISCOUNT_PERCENT = "percentage";
 	public final static String DISCOUNT_AMOUNT = "amount";
-	
+	public final static String ALLOWED_BRANDS = "applied_to_brands";
+	public final static String ALLOWED_TAGS = "applied_to_tags";
+	public final static String ALLOWED_PRODUCTS = "applied_to_products";
+	public final static String REQUIRED_IN_GROUP = "required";
+	public final static String USE_LIMIT = "use_limit";
+
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
@@ -51,6 +56,12 @@ public class PromotionsEntity {
 	
 	@Column(name="user_restricted")
 	private Integer userRestricted;
+
+	@Column(name="class_id")
+	private Integer classId;
+
+	@Column(name="type_id")
+	private Integer typeId;
 	
 	@Column(name="code")
 	private String code;
