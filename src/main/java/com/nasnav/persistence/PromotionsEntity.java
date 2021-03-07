@@ -30,7 +30,8 @@ public class PromotionsEntity {
 	public final static String ALLOWED_TAGS = "applied_to_tags";
 	public final static String ALLOWED_PRODUCTS = "applied_to_products";
 	public final static String REQUIRED_IN_GROUP = "required";
-	public final static String USE_LIMIT = "use_limit";
+	public final static String USAGE_LIMIT = "usage_limit";
+	public final static String USAGE_LIMIT_PER_ORDER = "usage_limit_per_order";
 
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -26,6 +26,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.enumerations.PromotionType;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -149,6 +150,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setStatus(getPromotionStatusName(entity.getStatus()));
 		dto.setUserId(entity.getCreatedBy().getId());
 		dto.setUserName(entity.getCreatedBy().getName());
+		dto.setTypeId(entity.getTypeId());
+		dto.setClassId(entity.getClassId());
 		return dto;
 	}
 	
@@ -371,11 +374,16 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private void validatePromotion(PromotionDTO promotion) {
 		
-		if(anyIsNull(promotion, promotion.getCode(), promotion.getDiscount()
+		if(anyIsNull(promotion, promotion.getDiscount()
 				, promotion.getEndDate(), promotion.getIdentifier()
-				, promotion.getStartDate(), promotion.getStatus())) {
+				, promotion.getStartDate(), promotion.getStatus()
+				, promotion.getTypeId(), promotion.getClassId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0002, promotion.toString());
+		}
+		if (promotion.getCode() == null &&
+				Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
 		}
 		if(promotion.getEndDate().isBefore(promotion.getStartDate())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE

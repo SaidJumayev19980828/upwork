@@ -1,5 +1,6 @@
 package com.nasnav.dto.response.navbox;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -15,4 +16,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Cart {
 	private List<CartItem> items;
+	//private BigDecimal discount;
 }
