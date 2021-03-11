@@ -159,6 +159,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private OrderService orderService;
+	@Autowired
+	private PromotionsService promotionsService;
 	
 	@Autowired
 	private PaymentsRepository paymentRepo;
@@ -252,12 +254,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.map(Optional::get)
 				.flatMap(service -> service.createShippingOffer(shippingDetails))
 				.map(this::createShippingOfferDTO)
+				.map(this::setShippingPromoDiscount)
 				.collectList()
 				.blockOptional()
 				.orElse(emptyList());
 	}
 	
-	
+	private ShippingOfferDTO setShippingPromoDiscount(ShippingOfferDTO dto) {
+		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getTotal());
+		dto.setTotal(dto.getTotal().subtract(discount));
+		return dto;
+	}
 	
 	
 	private ShippingOfferDTO createShippingOfferDTO(ShippingOffer data) {

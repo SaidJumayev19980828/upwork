@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.nasnav.persistence.dto.query.result.*;
@@ -106,6 +107,13 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN shop.addressesEntity addr"
 			+ " WHERE user.id = :user_id")
 	List<CartItemShippingData> findCartItemsShippingDataByUser_Id(@Param("user_id") Long userId);
+
+	@Query("select sum( (COALESCE(stock.price, 0.0) - COALESCE(stock.discount, 0.0)) * COALESCE (item.quantity, 0) )"
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.stock stock "
+			+ "	LEFT JOIN item.user user "
+			+ " WHERE user.id = :user_id")
+	BigDecimal findTotalCartValueByUser_Id(@Param("user_id") Long userId);
 	
 	
 

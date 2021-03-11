@@ -1876,11 +1876,16 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(OrdersEntity::getShipment)
 				.map(ShipmentEntity::getShippingFee)
+				.map(this::subtractShippingDiscount)
 				.reduce(ZERO, BigDecimal::add);
 	}
 
 
-
+	private BigDecimal subtractShippingDiscount(BigDecimal totalShippingValue) {
+		BigDecimal discount = promoService.calculateShippingPromoDiscount(totalShippingValue);
+		totalShippingValue = totalShippingValue.subtract(discount);
+		return totalShippingValue;
+	}
 
 
 	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
@@ -2037,6 +2042,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal shippingFee = 
 				ofNullable(subOrder.getShipment())
 				.map(ShipmentEntity::getShippingFee)
+				.map(this::subtractShippingDiscount)
 				.orElse(ZERO);
 		BigDecimal subTotal = ofNullable(subOrder.getAmount()).orElse(ZERO);
 		BigDecimal discount = ofNullable(subOrder.getDiscounts()).orElse(ZERO);

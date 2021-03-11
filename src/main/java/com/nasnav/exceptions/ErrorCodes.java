@@ -266,6 +266,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0011("Promo code[%s] was already terminated!")
 	,PROMO$PARAM$0012("Invalid promo type_id[%d]!")
 	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
+	,PROMO$PARAM$0014("Usage limit exceeded max value!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")

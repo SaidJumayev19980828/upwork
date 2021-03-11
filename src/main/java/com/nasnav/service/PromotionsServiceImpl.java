@@ -2,11 +2,15 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.PromotionStatus.*;
+import static com.nasnav.enumerations.PromotionType.BUY_X_GET_Y;
+import static com.nasnav.enumerations.PromotionType.SHIPPING;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.*;
+import static java.math.BigDecimal.ONE;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDateTime.now;
+import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -25,7 +29,10 @@ import java.util.AbstractMap.SimpleEntry;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
@@ -83,6 +90,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	@Autowired
 	private PromotionsCodesUsedRepository usedPromoRepo;
+	@Autowired
+	private CartItemRepository cartRepo;
 	
 	@Override
 	public PromotionResponse getPromotions(PromotionSearchParamDTO searchParams) {
@@ -326,6 +335,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.map(PromotionStatus::getValue)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
 										, PROMO$PARAM$0001, promotion.getStatus()));
+
+		Integer type = PromotionType.getPromotionType(promotion.getTypeId()).getValue();
+
 		String codeUpperCase = 
 				ofNullable(promotion.getCode())
 				.map(String::toUpperCase)
@@ -341,6 +353,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setOrganization(organization);
 		entity.setStatus(status);
 		entity.setUserRestricted(0);
+		entity.setTypeId(type);
+		entity.setClassId(promotion.getClassId());
 		return entity;
 	}
 
@@ -381,10 +395,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0002, promotion.toString());
 		}
-		if (promotion.getCode() == null &&
-				Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
-		}
 		if(promotion.getEndDate().isBefore(promotion.getStartDate())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0003);
@@ -393,9 +403,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}
-		if(isCodeRepeated(promotion)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE
-					, PROMO$PARAM$0006, promotion.getCode());
+		if (Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
+			if (promotion.getCode() == null) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
+			}
+			if (isCodeRepeated(promotion)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0006, promotion.getCode());
+			}
 		}
 	}
 
@@ -591,6 +606,56 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private boolean isStartDateInFuture(PromotionsEntity promo) {
 		return promo.getDateStart().isAfter(now());
 	}
+
+	@Override
+	public BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items) {
+		BigDecimal discount = ZERO;
+		List<PromotionsEntity> promoList = promoRepo.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(BUY_X_GET_Y.getValue()));
+
+
+
+
+		return discount;
+	}
+
+	@Override
+	public BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue){
+		BigDecimal discount = ZERO;
+		BigDecimal totalCartValue = cartRepo.findTotalCartValueByUser_Id(securityService.getCurrentUser().getId());
+		List<PromotionsEntity> promoList = promoRepo
+				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(SHIPPING.getValue()));
+		for(PromotionsEntity promo : promoList) {
+			validateShippingPromo(promo, totalCartValue);
+			calcDiscount(promo, totalShippingValue);
+			Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+			discount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+					.orElse(calcDiscount(promo, totalShippingValue));
+			if (discount.compareTo(ZERO) > 0)
+				break;
+		}
+		return discount;
+	}
+
+	private void validateShippingPromo(PromotionsEntity promo, BigDecimal totalCartValue) {
+		if(!isPromoValidForTheCart(promo, totalCartValue)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0009, promo.getIdentifier());
+		}
+	}
+
+	private void decreasePromoUsageLimit(PromotionsEntity promo) {
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		BigDecimal newUsageLimit = ofNullable(constrains.get(USAGE_LIMIT))
+				.map(BigDecimal.class::cast)
+				.orElse(ZERO);
+		if (newUsageLimit.compareTo(ZERO) == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0009);
+		}
+		newUsageLimit = newUsageLimit.subtract(ONE);
+		constrains.put(USAGE_LIMIT, newUsageLimit);
+		promo.setConstrainsJson(serializeMap(constrains));
+	}
+
+
 
 }
 

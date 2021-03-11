@@ -16,5 +16,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Cart {
 	private List<CartItem> items;
-	//private BigDecimal discount;
+	private BigDecimal discount;
+
+	public Cart(List<CartItem> items) {
+		this.items = items;
+	}
 }
