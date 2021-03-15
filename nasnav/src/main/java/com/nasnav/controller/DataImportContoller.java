@@ -8,6 +8,19 @@ import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import javax.validation.Valid;
+
+import com.nasnav.commons.utils.FilesUtils;
+import com.nasnav.service.CsvDataImportServiceImpl;
+import com.nasnav.service.ExcelDataImportServiceImpl;
+import io.swagger.annotations.ApiResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -53,8 +66,13 @@ public class DataImportContoller {
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException, ImportProductException {
-		ImportProductContext importResult = excelDataImportService.importProductList(file, importMetaData);
-		if(importResult.isSuccess()) {
+		ImportProductContext importResult = null;
+		if(FilesUtils.isExcel(file)){
+			importResult = excelDataImportService.importProductList(file, importMetaData);
+		} else if(FilesUtils.isCsv(file)){
+			importResult = csvImportService.importProductList(file, importMetaData);
+		}
+		if(importResult != null && importResult.isSuccess()) {
 			return ResponseEntity.ok(importResult);
 		}else {
 			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
