@@ -36,7 +36,7 @@ public class DataImportContoller {
 	private CsvDataImportServiceImpl csvImportService;
 
 	@Autowired
-	private ExcelDataImportServiceImpl excelImportService;
+	private ExcelDataImportServiceImpl excelDataImportService;
 
 	@ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "Products data verified/imported"),
@@ -53,7 +53,7 @@ public class DataImportContoller {
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException, ImportProductException {
-		ImportProductContext importResult = csvImportService.importProductList(file, importMetaData);
+		ImportProductContext importResult = excelDataImportService.importProductList(file, importMetaData);
 		if(importResult.isSuccess()) {
 			return ResponseEntity.ok(importResult);
 		}else {
