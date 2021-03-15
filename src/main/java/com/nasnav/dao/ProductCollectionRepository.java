@@ -26,7 +26,7 @@ public interface ProductCollectionRepository extends JpaRepository<ProductCollec
             " where c.organizationId = :orgId and c.productType = 2")
     List<ProductCollectionEntity> findByOrganizationId(@Param("orgId")Long orgId);
 
-    @Query("select c from ProductCollectionEntity c " +
+    @Query("select distinct c from ProductCollectionEntity c " +
             " left join fetch c.items items " +
             " left join fetch items.item item " +
             " where c.organizationId = :orgId " +
