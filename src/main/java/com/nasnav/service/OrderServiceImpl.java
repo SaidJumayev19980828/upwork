@@ -1876,7 +1876,6 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(OrdersEntity::getShipment)
 				.map(ShipmentEntity::getShippingFee)
-				.map(this::subtractShippingDiscount)
 				.reduce(ZERO, BigDecimal::add);
 	}
 
@@ -1952,7 +1951,7 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
 				.collect(collectingAndThen(toList(), shippingMgrService::getOffersFromOrganizationShippingServices));
-		
+
 		addPromoDiscounts(dto, subOrders);
 		
 		for(OrdersEntity subOrder : subOrders) {
@@ -1978,7 +1977,9 @@ public class OrderServiceImpl implements OrderService {
 				.map(CartCheckoutDTO::getPromoCode)
 				.map(promo -> promoService.calcPromoDiscount(promo, subTotal))
 				.orElse(ZERO);
-		
+
+		promoDiscount = promoService.calculateTotalCartDiscount().add(promoDiscount);
+
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
 		}
@@ -2042,7 +2043,6 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal shippingFee = 
 				ofNullable(subOrder.getShipment())
 				.map(ShipmentEntity::getShippingFee)
-				.map(this::subtractShippingDiscount)
 				.orElse(ZERO);
 		BigDecimal subTotal = ofNullable(subOrder.getAmount()).orElse(ZERO);
 		BigDecimal discount = ofNullable(subOrder.getDiscounts()).orElse(ZERO);

@@ -2,8 +2,7 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.PromotionStatus.*;
-import static com.nasnav.enumerations.PromotionType.BUY_X_GET_Y;
-import static com.nasnav.enumerations.PromotionType.SHIPPING;
+import static com.nasnav.enumerations.PromotionType.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.*;
 import static java.math.BigDecimal.ONE;
@@ -19,6 +18,7 @@ import static javax.persistence.criteria.JoinType.INNER;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -30,7 +30,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
+import com.nasnav.dto.PromosConstraints;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
@@ -522,7 +522,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 
-
+	private Optional<Long> getOptionalLong(Map<String, Object> map, String key) {
+		return ofNullable(map.get(key))
+				.map(val -> val.toString())
+				.map(Long::parseLong);
+	}
 
 
 
@@ -608,12 +612,50 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	@Override
-	public BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items) {
+	public BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items) throws IOException {
 		BigDecimal discount = ZERO;
-		List<PromotionsEntity> promoList = promoRepo.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(BUY_X_GET_Y.getValue()));
+		PromotionsEntity promo = promoRepo
+				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(BUY_X_GET_Y.getValue()))
+				.stream()
+				.findFirst()
+				.orElse(null);
+		if (promo == null)
+			return discount;
 
+		PromosConstraints constraints = objectMapper.readValue(promo.getConstrainsJson(), PromosConstraints.class);
+		if ( constraints.getBrands() != null) {
+			List<Long> allowedBrands = constraints.getBrands().getIds();
+			Integer productQuantityMin = constraints.getProductQuantityMin();
+			Integer productToGive = constraints.getProductToGive();
+			discount = items
+					.stream()
+					.filter(i -> allowedBrands.contains(i.getBrandId()))
+					.filter(i -> i.getQuantity() >= productQuantityMin)
+					.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
+					.reduce(ZERO, BigDecimal::add);
+		}
+		else if (constraints.getTags() != null) {
 
-
+		}
+		else if (constraints.getProducts() != null) {
+			List<Long> allowedProducts = constraints.getProducts().getIds();
+			Integer productQuantityMin = constraints.getProductQuantityMin();
+			Integer productToGive = constraints.getProductToGive();
+			discount = items
+					.stream()
+					.filter(i -> allowedProducts.contains(i.getProductId()))
+					.filter(i -> i.getQuantity() >= productQuantityMin)
+					.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
+					.reduce(ZERO, BigDecimal::add);
+		}  else {
+			Integer productQuantityMin = constraints.getProductQuantityMin();
+			Integer productToGive = constraints.getProductToGive();
+			discount = items
+					.stream()
+					.filter(i -> i.getQuantity() >= productQuantityMin)
+					.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
+					.reduce(ZERO, BigDecimal::add);
+		}
 
 		return discount;
 	}
@@ -621,25 +663,21 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Override
 	public BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue){
 		BigDecimal discount = ZERO;
+		BigDecimal tmpDiscount;
 		BigDecimal totalCartValue = cartRepo.findTotalCartValueByUser_Id(securityService.getCurrentUser().getId());
 		List<PromotionsEntity> promoList = promoRepo
 				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(SHIPPING.getValue()));
 		for(PromotionsEntity promo : promoList) {
-			validateShippingPromo(promo, totalCartValue);
-			calcDiscount(promo, totalShippingValue);
-			Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-			discount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-					.orElse(calcDiscount(promo, totalShippingValue));
-			if (discount.compareTo(ZERO) > 0)
-				break;
+			if (isPromoValidForTheCart(promo, totalCartValue)) {
+				Map<String, Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+				tmpDiscount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+						.orElse(calcDiscount(promo, totalShippingValue));
+				if (tmpDiscount.compareTo(discount) > 0) {
+					discount = tmpDiscount;
+				}
+			}
 		}
 		return discount;
-	}
-
-	private void validateShippingPromo(PromotionsEntity promo, BigDecimal totalCartValue) {
-		if(!isPromoValidForTheCart(promo, totalCartValue)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0009, promo.getIdentifier());
-		}
 	}
 
 	private void decreasePromoUsageLimit(PromotionsEntity promo) {
@@ -648,14 +686,41 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.map(BigDecimal.class::cast)
 				.orElse(ZERO);
 		if (newUsageLimit.compareTo(ZERO) == 0) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0009);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0014);
 		}
 		newUsageLimit = newUsageLimit.subtract(ONE);
 		constrains.put(USAGE_LIMIT, newUsageLimit);
 		promo.setConstrainsJson(serializeMap(constrains));
 	}
 
+	@Override
+	public BigDecimal calculateTotalCartDiscount() {
+		BigDecimal discount = ZERO;
+		BigDecimal tmpDiscount;
+		BigDecimal totalCartValue = cartRepo.findTotalCartValueByUser_Id(securityService.getCurrentUser().getId());
+		Long totalCartQuantity = cartRepo.findTotalCartQuantityByUser_Id(securityService.getCurrentUser().getId());
+		List<PromotionsEntity> promoList = promoRepo
+				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()));
+		for(PromotionsEntity promo : promoList) {
+			if (promo.getTypeId().equals(TOTAL_CART_ITEMS_VALUE.getValue()) && !isPromoValidForTheCart(promo, totalCartValue) ||
+				promo.getTypeId().equals(TOTAL_CART_ITEMS_QUANTITY.getValue()) && !isValidPromoForCartQuantity(promo, totalCartQuantity)) {
+				continue;
+			}
+			Map<String, Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+			tmpDiscount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+					.orElse(calcDiscount(promo, totalCartValue));
+			if (tmpDiscount.compareTo(discount) > 0) {
+				discount = tmpDiscount;
+			}
+		}
+		return discount;
+	}
 
+	private boolean isValidPromoForCartQuantity(PromotionsEntity promo, Long totalCartQuantity) {
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		Long minAmount = getOptionalLong(constrains, MIN_QUANTITY_PROP).orElse(0L);
+		return totalCartQuantity.compareTo(minAmount) >= 0;
+	}
 
 }
 

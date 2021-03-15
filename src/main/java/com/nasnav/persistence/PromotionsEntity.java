@@ -23,12 +23,14 @@ import lombok.Data;
 public class PromotionsEntity {
 	
 	public final static String MIN_AMOUNT_PROP = "cart_amount_min";
+	public final static String MIN_QUANTITY_PROP = "cart_quantity_min";
 	public final static String DISCOUNT_AMOUNT_MAX = "discount_value_max";
 	public final static String DISCOUNT_PERCENT = "percentage";
 	public final static String DISCOUNT_AMOUNT = "amount";
 	public final static String ALLOWED_BRANDS = "applied_to_brands";
 	public final static String ALLOWED_TAGS = "applied_to_tags";
 	public final static String ALLOWED_PRODUCTS = "applied_to_products";
+	public final static String IDS = "ids";
 	public final static String REQUIRED_IN_GROUP = "required";
 	public final static String USAGE_LIMIT = "usage_limit";
 	public final static String USAGE_LIMIT_PER_ORDER = "usage_limit_per_order";

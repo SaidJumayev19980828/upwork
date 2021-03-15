@@ -254,15 +254,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.map(Optional::get)
 				.flatMap(service -> service.createShippingOffer(shippingDetails))
 				.map(this::createShippingOfferDTO)
-				.map(this::setShippingPromoDiscount)
 				.collectList()
 				.blockOptional()
 				.orElse(emptyList());
 	}
 	
-	private ShippingOfferDTO setShippingPromoDiscount(ShippingOfferDTO dto) {
-		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getTotal());
-		dto.setTotal(dto.getTotal().subtract(discount));
+	private ShipmentDTO setShippingPromoDiscount(ShipmentDTO dto) {
+		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getShippingFee());
+		dto.setShippingFee(dto.getShippingFee().subtract(discount));
 		return dto;
 	}
 	
@@ -305,6 +304,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.getShipments()
 				.stream()
 				.map(this::createShipmentDTO)
+				.map(this::setShippingPromoDiscount)
 				.collect(toList());
 	}
 

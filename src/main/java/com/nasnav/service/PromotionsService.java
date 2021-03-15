@@ -1,10 +1,10 @@
 package com.nasnav.service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
 import com.nasnav.dto.PromotionSearchParamDTO;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -29,6 +29,7 @@ public interface PromotionsService {
 
     void removePromotion(Long promotionId);
 
-	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items);
+	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items) throws IOException;
 	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue);
+	BigDecimal calculateTotalCartDiscount();
 }

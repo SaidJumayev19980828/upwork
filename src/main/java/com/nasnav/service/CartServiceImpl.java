@@ -76,8 +76,6 @@ public class CartServiceImpl implements CartService{
         Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
-        BigDecimal discount = promotionsService.calculateBuyXGetYPromoDiscount(cart.getItems());
-        cart.setDiscount(discount);
         return cart;
     }
 

@@ -114,8 +114,13 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ "	LEFT JOIN item.user user "
 			+ " WHERE user.id = :user_id")
 	BigDecimal findTotalCartValueByUser_Id(@Param("user_id") Long userId);
-	
-	
+
+	@Query("select count(stock.id)"
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.stock stock "
+			+ "	LEFT JOIN item.user user "
+			+ " WHERE user.id = :user_id")
+	Long findTotalCartQuantityByUser_Id(@Param("user_id") Long userId);
 
 	@Transactional
 	@Modifying
