@@ -186,6 +186,22 @@ public class OrganizationController {
     }
 
 
+
+    @ApiOperation(value = "removed product features for organization, making it unavailable for usage", nickname = "PostOrgProductFeatures")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "products_feature"
+            , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+            , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
+                                                             @RequestParam("id") Integer featureId) throws Exception {
+        orgService.removeProductFeature(featureId);
+    }
+
+
     @ApiOperation(value = "Delete organization extra attribute", nickname = "DeleteOrgExtraAttribute")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),

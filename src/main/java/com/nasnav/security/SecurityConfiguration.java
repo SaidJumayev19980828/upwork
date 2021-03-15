@@ -123,6 +123,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/image"				,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/image"				,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/products_feature"	,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/tag/**"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/tags"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/shipping/**"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
