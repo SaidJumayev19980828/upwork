@@ -130,24 +130,6 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 		return mapping;
 	}
 
-	private CsvWriterSettings createWritingSettings() {
-		CsvWriterSettings settings = new CsvWriterSettings();
-		return settings;
-	}
-
-	private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
-		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
-		Writer outputWriter = new OutputStreamWriter(csvResult);
-
-		CsvWriter writer = new CsvWriter(outputWriter, createWritingSettings());
-
-		writer.writeHeaders(headers);
-		writer.close();
-		csvResult.close();
-
-		return csvResult;
-	}
-
 }
 
 @Data

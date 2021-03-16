@@ -12,6 +12,8 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,8 @@ import javax.validation.Valid;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -199,4 +203,28 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
         return baseHeaders;
     }
 
+    @Override
+    public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException {
+        List<String> baseHeaders = getProductImportTemplateHeaders();
+
+        return writeCsvHeaders(baseHeaders);
+    }
+
+    private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
+        ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
+        Writer outputWriter = new OutputStreamWriter(csvResult);
+
+        CsvWriter writer = new CsvWriter(outputWriter, createWritingSettings());
+
+        writer.writeHeaders(headers);
+        writer.close();
+        csvResult.close();
+
+        return csvResult;
+    }
+
+    private CsvWriterSettings createWritingSettings() {
+        CsvWriterSettings settings = new CsvWriterSettings();
+        return settings;
+    }
 }
