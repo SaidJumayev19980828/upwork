@@ -674,7 +674,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void suspendUserAccount(Long id, Boolean suspend) {
 		UserEntity user = getUserEntityById(id);
-		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		UserStatus status = userServicesHelper.checkUserStatusForSuspension(user);
 		if (suspend) {
 			if (status.equals(ACCOUNT_SUSPENDED)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);

@@ -27,6 +27,8 @@ public enum ErrorCodes {
 
 	, U$STATUS$0001("Account is already suspended!")
 	, U$STATUS$0002("User can't suspend/activates himself!")
+	, U$STATUS$0003("Couldn't suspend/activate user account, invalid user status!")
+	, U$STATUS$0004("Couldn't get user status!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 

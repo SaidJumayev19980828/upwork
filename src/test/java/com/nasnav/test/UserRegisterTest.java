@@ -1180,6 +1180,26 @@ public class UserRegisterTest {
 		assertEquals(201, user.getUserStatus().intValue());
 	}
 
+	@Test
+	public void suspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=true", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
+	}
+
+	@Test
+	public void unsuspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=false", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
+	}
+
 
 
 	@Test
