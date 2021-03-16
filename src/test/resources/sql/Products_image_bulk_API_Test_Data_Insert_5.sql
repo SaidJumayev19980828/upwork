@@ -24,13 +24,10 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser3@nasnav.com', 99001, 'ssErf33',  502);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (71, 'testuser4@nasnav.com', 99001, 'erereres',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, 'ssErf33', now(), 70, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'erereres', now(), 71, null);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -44,8 +41,22 @@ insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 5);
 
+--inserting product features
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001, 1, '{"extra_attribute_id": 744234}');
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001, 2, '{"extra_attribute_id": 744235}');
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002, 1, '{"extra_attribute_id": 744236}');
+
+----inserting in extra_attributes table
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744234, '$s-size$IMG_SWATCH', 'Invisible', 99001, '/uploads/category/fearutes/feature1.jpg');
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744235, '$s-color$COLOR', 'Invisible', 99001, '/uploads/category/fearutes/feature1.jpg');
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744236, '$s-size$IMG_SWATCH', 'Invisible', 99002, '/uploads/category/fearutes/feature1.jpg');
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
@@ -87,29 +98,21 @@ INSERT INTO public.integration_param(id, param_type, organization_id, param_valu
 INSERT INTO public.integration_param(id, param_type, organization_id, param_value)VALUES(2, 2, 99001, '10');
 insert into public.integration_param(id, param_type, organization_id, param_value)values(55001, 3, 99001, 'old_val');
 
-
--- insert image for products  which should be deleted in tests
-INSERT INTO public.files(organization_id, url, location)
-VALUES(99001, 'img1.jpg', 'img1.jpg');
-INSERT INTO public.files(organization_id, url, location)
-VALUES(99001, 'img2.jpg', 'img2.jpg');
-INSERT INTO public.files(organization_id, url, location)
-VALUES(99001, 'img3.jpg', 'img3.jpg');
-INSERT INTO public.files(organization_id, url, location)
-VALUES(99002, 'img4.jpg', 'img4.jpg');
-
-INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1001, null, 0, 1, 'img1.jpg');
-INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1003, null, 0, 1, 'img2.jpg');
-INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1004, null, 0, 1, 'img3.jpg');
-INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1008, null, 0, 1, 'img4.jpg');
-
-
 -- integration Mapping types
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODUCT_VARIANT');
 
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310001', '5', 99001) ;
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310002', '6', 99001) ;
+
+
+-- insert image for products  which should be deleted in tests
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99001, 'img2.jpg', 'img2.jpg');
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99001, 'img3.jpg', 'img3.jpg');
+
+INSERT INTO public.product_images(id, product_id, variant_id, "type", priority, uri)
+VALUES(66601, 1003, null, 0, 1, 'img2.jpg');
+INSERT INTO public.product_images(id, product_id, variant_id, "type", priority, uri)
+VALUES(66602, 1004, null, 0, 1, 'img3.jpg');
+

@@ -62,7 +62,11 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	List<ProductImagesEntity> findByProductEntity_OrganizationId(@Param("orgId")Long orgId);
 
 	
-	@Query(value = "DELETE from Product_Images img where img.product_id in(select id from products product where product.organization_id = :orgId)"
+	@Query(value = "DELETE from Product_Images img " +
+			" where img.product_id in(" +
+			"	select id from products product " +
+			"	where product.organization_id = :orgId" +
+			"	and coalesce(product.product_type,0) in (0,1))"
 			, nativeQuery = true)
 	@Transactional
     @Modifying

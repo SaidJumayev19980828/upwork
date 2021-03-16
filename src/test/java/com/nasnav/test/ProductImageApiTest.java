@@ -1001,6 +1001,8 @@ public class ProductImageApiTest {
 	public void deleteAllImages() {
 		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
 		assertNotEquals(0L,  countBefore.longValue());
+		int countCollectionImgsBefore = imgRepo.findByProductEntity_Id(1003L).size();
+		assertEquals(1, countCollectionImgsBefore);
 		
 		HttpEntity<?> request =  getHttpEntity("" , "101112");
 		ResponseEntity<String> response = 
@@ -1011,7 +1013,10 @@ public class ProductImageApiTest {
 		
 		assertEquals(OK, response.getStatusCode());
 		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
-		assertEquals(0L,  countAfter.longValue());
+		assertEquals("Collection Images are not deleted",1L,  countAfter.longValue());
+
+		int countCollectionImgsAfter = imgRepo.findByProductEntity_Id(1003L).size();
+		assertEquals(1, countCollectionImgsAfter);
 	}
 	
 	
