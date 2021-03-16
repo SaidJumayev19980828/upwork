@@ -113,13 +113,6 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		return 	PRODUCT_DATA_SPECIAL_MAPPING.get(headerName);
 	}
 
-	@Override
-	public ByteArrayOutputStream generateProductsCsvTemplate(){
-		List<String> baseHeaders = getProductImportTemplateHeaders();
-
-		return null;
-	}
-
 	private static Object getCellValue(Cell cell ){
 		switch (cell.getCellType())
 		{

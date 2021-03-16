@@ -148,12 +148,6 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 		return csvResult;
 	}
 
-	@Override
-	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{		
-		List<String> baseHeaders = getProductImportTemplateHeaders();
-
-		return writeCsvHeaders(baseHeaders);
-	}
 }
 
 @Data
