@@ -31,6 +31,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 
@@ -119,9 +120,15 @@ public class StockServiceImpl implements StockService {
      * */
     @Transactional
     public Integer getStockQuantity(StocksEntity stock){
-        ProductEntity product = ofNullable(stock.getProductVariantsEntity())
-        								.map(ProductVariantsEntity::getProductEntity)
-        								.orElse(null);
+		ProductEntity product;
+    	try {
+			product = ofNullable(stock.getProductVariantsEntity())
+					.map(ProductVariantsEntity::getProductEntity)
+					.orElse(null);
+		} catch (EntityNotFoundException ex) {
+    		return stock.getQuantity();
+		}
+
         if(product == null){
             return stock.getQuantity();
         }

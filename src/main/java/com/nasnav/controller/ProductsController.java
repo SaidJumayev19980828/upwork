@@ -99,9 +99,9 @@ public class ProductsController {
     @DeleteMapping(
             produces = APPLICATION_JSON_UTF8_VALUE)
     public ProductsDeleteResponse deleteProduct(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestParam("product_id") List<Long> productIds)
-            		throws BusinessException {
-		return productService.deleteProducts(productIds);
+                                                @RequestParam("product_id") List<Long> productIds,
+                                                @RequestParam(value = "force_delete_collection_items", required = false, defaultValue = "false") Boolean forceDeleteCollectionItems){
+		return productService.deleteProducts(productIds, forceDeleteCollectionItems);
     }
 	
 	

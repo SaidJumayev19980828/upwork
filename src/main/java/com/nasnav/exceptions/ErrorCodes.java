@@ -66,6 +66,7 @@ public enum ErrorCodes {
 	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
 	,P$PRO$0012("No collection exists with ID[%d]!")
 	,P$PRO$0013("No collections exists with ID %s!")
+	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
