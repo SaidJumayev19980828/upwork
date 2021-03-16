@@ -615,7 +615,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Throwable.class)
     public void removeProductFeature(Integer  featureId){
         Long orgId = securityService.getCurrentUserOrganizationId();
         featureRepo

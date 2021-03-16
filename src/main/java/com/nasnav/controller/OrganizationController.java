@@ -193,9 +193,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @DeleteMapping(value = "products_feature"
-            , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
-            , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "products_feature")
     public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                                              @RequestParam("id") Integer featureId) throws Exception {
         orgService.removeProductFeature(featureId);
