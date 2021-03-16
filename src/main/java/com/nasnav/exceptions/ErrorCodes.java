@@ -68,12 +68,14 @@ public enum ErrorCodes {
 	,P$PRO$0013("No collections exists with ID %s!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
+	,P$STO$0002("Stock total value can't be negative!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 	,P$BRA$0003("Brand with id [%d] linked to %d products!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
+	,P$FTR$0002("Feature is still used by some products!")
 
 	,P$IMG$0001("Provided Zip file has no data!")
 	,P$IMG$0002("Provided images archive is not ZIP file!")
@@ -176,6 +178,8 @@ public enum ErrorCodes {
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
 	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+
+	,O$NEW$0001("Failed to create order! Please try again!")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")

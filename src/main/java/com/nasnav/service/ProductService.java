@@ -3396,6 +3396,10 @@ public class ProductService {
 	}
 
 
+
+    public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
+		return productVariantsRepository.findByFeature(feature.getId(), feature.getOrganization().getId());
+    }
 }
 
 

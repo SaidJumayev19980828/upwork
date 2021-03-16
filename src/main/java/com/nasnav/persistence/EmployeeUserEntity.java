@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import javax.persistence.*;
 
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.UserStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -45,6 +46,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
         obj.setImage(this.avatar);
+        obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
         obj.id = this.getId();
 
         return obj;

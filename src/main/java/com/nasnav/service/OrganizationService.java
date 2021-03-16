@@ -74,4 +74,6 @@ public interface OrganizationService {
     String getAdditionalDataExtraAttrName(ProductFeaturesEntity feature);
 
     Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature);
+
+    void removeProductFeature(Integer featureId);
 }

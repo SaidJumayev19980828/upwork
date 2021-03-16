@@ -1,28 +1,25 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.commons.utils.CollectionUtils;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.helpers.CartServiceHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.http.client.utils.CloneUtils;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -46,7 +44,7 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
@@ -84,6 +82,12 @@ public class CartTest {
 	
 	@Autowired
 	private OrganizationCartOptimizationRepository orgOptimizerRepo;
+
+	@Autowired
+	private BasketRepository basketRepo;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 	
 	@Test
 	public void getCartNoAuthz() {
@@ -582,10 +586,67 @@ public class CartTest {
 		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubtTotalSum));
 		assertEquals(0 ,order.getTotal().compareTo(subOrderTotalSum));
 		assertEquals(USELESS_NOTE, order.getNotes());
+		assertItemDataJsonCreated(order);
 		return order;
 	}
 
 
+
+	private void assertItemDataJsonCreated(Order order) {
+		Set<BasketItem> returnedItems = getBasketItemFromResponse(order);
+		Set<BasketItem> savedItemsData = parseItemsDataJson(order);
+		assertEquals(savedItemsData, returnedItems);
+	}
+
+
+
+	private Set<BasketItem> getBasketItemFromResponse(Order order) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.map(this::cloneBasketItem)
+				.peek(clone -> clone.setThumb(null)) //save item data json don't include the thumbnail
+				.peek(clone -> clone.setId(null)) //save item data json don't include the basket Item Id
+				.collect(toSet());
+	}
+
+
+
+	private Set<BasketItem> parseItemsDataJson(Order order) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.map(BasketItem::getId)
+				.collect(
+						collectingAndThen(toList(), ids -> basketRepo.findByIdIn(ids, 99001L)))
+				.stream()
+				.map(BasketsEntity::getItemData)
+				.map(this::parseAsBasketItem)
+				.collect(toSet());
+	}
+
+
+
+	private BasketItem cloneBasketItem(BasketItem source){
+		BasketItem target = new BasketItem();
+		BeanUtils.copyProperties(source, target);
+		return target;
+	}
+
+
+
+	private BasketItem parseAsBasketItem(String itemData){
+		try {
+			return objectMapper.readValue(itemData, BasketItem.class);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return new BasketItem();
+		}
+	}
 
 
 

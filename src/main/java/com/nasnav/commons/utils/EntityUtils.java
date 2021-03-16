@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeanUtils;
 
 public class EntityUtils {
 
@@ -253,6 +254,8 @@ public class EntityUtils {
 		return ofNullable(time)
 				.map(t -> DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN).format(t));
 	}
+
+
 }
 
 

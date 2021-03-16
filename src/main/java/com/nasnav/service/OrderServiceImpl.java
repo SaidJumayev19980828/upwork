@@ -1,15 +1,11 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
-import com.nasnav.dto.request.order.returned.ReceivedItem;
-import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
-import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -27,10 +23,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.helpers.UserServicesHelper;
-import com.nasnav.service.model.mail.MailAttachment;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +62,6 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
-import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
@@ -87,7 +78,6 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static java.util.stream.IntStream.range;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
 @Service
@@ -187,6 +177,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private OrderReturnService orderReturnService;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
@@ -899,56 +892,125 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BasketItem toBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
+
+	private BasketItem readBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages){
+		String itemDataStr = ofNullable(entity.getItemData()).orElse("{}");
+		if(itemDataStr.equals("{}")){
+			return createBasketItemWithThumbnail(entity, variantsCoverImages);
+		}
+		try {
+			BasketItem item = parseItemData(itemDataStr);
+			//before item data json , only price, discount, and some other stocks data - at the time of purchase-
+			//were saved in the BASKETS table. to stay consistent with this older design, we set these basic
+			//data from the BASKETS table directly and consider it the source of truth, while ignoring their saved
+			// values in item data json.
+			//as some other part of the code may be depending on the old assumptions
+			setBasketItemStockData(entity, item);
+			addThumbnailToBasketItem(variantsCoverImages, item, entity);
+			return item;
+		} catch (Throwable e) {
+			logger.error(e,e);
+			return createBasketItemWithThumbnail(entity, variantsCoverImages);
+		}
+	}
+
+
+
+	private BasketItem parseItemData(String itemData) throws IOException {
+		return objectMapper.readValue(itemData, BasketItem.class);
+	}
+
+
+	private BasketItem createBasketItemWithThumbnail(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
+		BasketItem item = createBasketItemEntity(entity);
+		addThumbnailToBasketItem(variantsCoverImages, item, entity);
+		return item;
+	}
+
+
+
+	private BasketItem createBasketItemEntity(BasketsEntity entity) {
+		BasketItem item = createBasketItemWithBasicData(entity);
+		return addProductDataToBasketItem(entity, item);
+	}
+
+
+
+	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
+		BasketItem item = new BasketItem();
+		BeanUtils.copyProperties(originalItem, item);
+
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
-		BigDecimal price = entity.getPrice();
-		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
-		BigDecimal totalPrice = price.multiply(entity.getQuantity());
-		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
-		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
-		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
-		String currencyValue = "";
-		if (country != null) {
-			currencyValue = country.getCurrency();
-		}
-		Boolean isReturnable = orderReturnService.isReturnable(entity);
-		String unitName =
-				ofNullable(entity)
-						.map(BasketsEntity::getStocksEntity)
-						.map(StocksEntity::getUnit)
-						.map(StockUnitEntity::getName)
-						.orElse("");
 
-		BasketItem item = new BasketItem();
-		item.setId(entity.getId());
-		item.setOrderId(entity.getOrdersEntity().getId());
 		item.setProductId(product.getId());
 		item.setName(product.getName());
 		item.setPname(product.getPname());
+		item.setProductType(product.getProductType());
+		item.setBrandId(product.getBrandId());
+
+		item.setVariantId(variant.getId());
+		item.setVariantName(variant.getName());
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
+		item.setSku(variant.getSku());
+		item.setProductCode(variant.getProductCode());
+
+		return item;
+	}
+
+
+
+	private void addThumbnailToBasketItem(Map<Long, Optional<String>> variantsCoverImages, BasketItem item, BasketsEntity entity) {
+		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
+		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
+		item.setThumb(thumb);
+	}
+
+
+
+	private BasketItem createBasketItemWithBasicData(BasketsEntity entity) {
+		BasketItem item = new BasketItem();
+		setBasketItemStockData(entity, item);
+		return item;
+	}
+
+
+
+	private void setBasketItemStockData(BasketsEntity entity, BasketItem item) {
+		BigDecimal price = entity.getPrice();
+		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = price.multiply(entity.getQuantity());
+		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
+		String currencyValue = ofNullable(country).map(CountriesEntity::getCurrency).orElse("");
+		Boolean isReturnable = orderReturnService.isReturnable(entity);
+		String unitName = getUnit(entity);
+
+		item.setId(entity.getId());
+		item.setUnit(unitName);
+		item.setOrderId(entity.getOrdersEntity().getId());
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
 		item.setTotalPrice(totalPrice);
 		item.setPrice(price);
 		item.setDiscount(discount);
-		item.setBrandId(product.getBrandId());
-		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
-		item.setThumb(thumb);
 		item.setCurrency(currency);
-		item.setProductType(product.getProductType());
-		item.setVariantId(variant.getId());
-		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		item.setSku(variant.getSku());
-		item.setProductCode(variant.getProductCode());
-		item.setUnit(unitName);
-
-		return item;
 	}
-	
-	
-	
+
+
+
+	private String getUnit(BasketsEntity entity) {
+		return ofNullable(entity)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getUnit)
+				.map(StockUnitEntity::getName)
+				.orElse("");
+	}
+
+
+
 	@Override
 	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException {
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
@@ -1012,7 +1074,7 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(OrdersEntity::getBasketsEntity)
 				.flatMap(Set::stream)
-				.map(basket -> toBasketItem(basket, getVariantsImagesList))
+				.map(basket -> readBasketItem(basket, getVariantsImagesList))
 				.collect( groupingBy(BasketItem::getOrderId));
 	}
 
@@ -1020,7 +1082,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<OrdersEntity> orders) {
-		List<BasketsEntity> basketsEntities = orders
+		List<BasketsEntity> basketsEntities =
+				orders
 				.stream()
 				.map(OrdersEntity::getBasketsEntity)
 				.flatMap(Set::stream)
@@ -2066,7 +2129,7 @@ public class OrderServiceImpl implements OrderService {
 		cartItems
 		.getCheckOutData()
 		.stream()
-		.map(data -> createBasketItem(data, subOrder, stocksCache))
+		.map(data -> createBasketItemEntity(data, subOrder, stocksCache))
 		.forEach(subOrder::addBasketItem);
 	}
 
@@ -2130,7 +2193,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
+	private BasketsEntity createBasketItemEntity(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
 		StocksEntity stock = 
 				ofNullable(data)
 				.map(CartCheckoutData::getStockId)
@@ -2142,6 +2205,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = data.getPrice().subtract(discount);
+
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
 		basket.setPrice(totalPrice);
@@ -2149,8 +2213,19 @@ public class OrderServiceImpl implements OrderService {
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
-
+		basket.setItemData(serializeItemData(basket));
 		return basket;
+	}
+
+	
+
+	private String serializeItemData(BasketsEntity basket) {
+		try {
+			return objectMapper.writeValueAsString(createBasketItemEntity(basket));
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$NEW$0001);
+		}
 	}
 
 

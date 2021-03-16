@@ -370,9 +370,25 @@ public class ShopStockUpdateTest {
 		
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
-	
-	
+
+
+	@Test
+	public void createStockInvalidDiscountTest() {
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER);
+
+		JSONObject updateReq = createStockUpdateReq();
+		updateReq.put("discount", 1001);
+
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+
+		ResponseEntity<String> response =
+				template.exchange("/shop/stock"
+						, POST
+						, request
+						, String.class);
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
 	
 	
 	@Test
