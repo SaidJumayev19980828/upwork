@@ -10,6 +10,7 @@ import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartItemData;
 
 public interface PromotionsService {
 	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
@@ -29,7 +30,7 @@ public interface PromotionsService {
 
     void removePromotion(Long promotionId);
 
-	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItem> items) throws IOException;
+	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItemData> items) ;
 	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue);
 	BigDecimal calculateTotalCartDiscount();
 }

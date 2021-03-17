@@ -50,7 +50,7 @@ public class CartController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
+	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) {
 		return cartService.getCart();
 	}
 

@@ -1978,7 +1978,9 @@ public class OrderServiceImpl implements OrderService {
 				.map(promo -> promoService.calcPromoDiscount(promo, subTotal))
 				.orElse(ZERO);
 
-		promoDiscount = promoService.calculateTotalCartDiscount().add(promoDiscount);
+		promoDiscount = promoService.calculateTotalCartDiscount()
+				.add(promoService.calculateBuyXGetYPromoDiscount(cartItemRepo.findCurrentCartItemsByUser_Id(securityService.getCurrentUser().getId())))
+				.add(promoDiscount);
 
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;

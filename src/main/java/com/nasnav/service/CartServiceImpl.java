@@ -73,7 +73,21 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public Cart getUserCart(Long userId) {
-        Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+        List<CartItemData> cartItemData = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
+        Cart cart = new Cart(toCartItemsDto(cartItemData));
+        BigDecimal subTotal = cart
+                .getItems()
+                .stream()
+                .map(item -> (item.getPrice()
+                        .subtract(item.getDiscount()))
+                        .multiply(new BigDecimal(item.getQuantity())))
+                .reduce(ZERO, BigDecimal::add);
+        BigDecimal discount = promotionsService.calculateBuyXGetYPromoDiscount(cartItemData)
+                .add(promotionsService.calculateTotalCartDiscount());
+        BigDecimal total = subTotal.subtract(discount);
+        cart.setSubTotal(subTotal);
+        cart.setDiscount(discount);
+        cart.setTotal(total);
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         return cart;

@@ -505,7 +505,9 @@ public class PromotionsTest {
 				.put("status", "ACTIVE")
 				.put("code", "GIVE-YOUR-MONEY-OR-ELSE-...")
 				.put("constrains", json().put("amount_max", 1000))
-				.put("discount", json().put("percentage", 20));
+				.put("discount", json().put("percentage", 20))
+				.put("class_id", 0)
+				.put("type_id", 0);
 	}
 
 

@@ -1,5 +1,6 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
@@ -16,8 +17,11 @@ public class PromosConstraints {
     private BigDecimal discountMaxValue;
     private BigDecimal percentage;
     private BigDecimal amount;
+    @JsonProperty("applied_to_brands")
     private AppliedTo brands;
+    @JsonProperty("applied_to_tags")
     private AppliedTo tags;
+    @JsonProperty("applied_to_products")
     private AppliedTo products;
     private Long useLimit;
     private Long useLimitPerOrder;
