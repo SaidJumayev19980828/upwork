@@ -1292,7 +1292,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     private List<String> createSiteMap(Long orgId, SitemapParams params) {
         List<String> allUrls = new ArrayList<>();
-        String baseUrl = domainService.getOrganizationDomainAndSubDir(orgId);
+        String baseUrl = params.getUrl();
         if(params.isInclude_products()) {
             addPairsAsUrls(baseUrl, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
         }
