@@ -17,6 +17,7 @@ public class MastercardAccount extends Account {
     protected String apiUrl;
     protected String scriptUrl;
     protected String icon;
+    protected int flavor = MastercardService.FLAVOR_BASIC;
 
     public void init(Properties props, int dbId) {
 
@@ -30,5 +31,11 @@ public class MastercardAccount extends Account {
         super.accountId = "MCARD:" +super.accountId;
         super.dbId = dbId;
         this.icon = "/icons/mastercard.svg";
+        try {
+            this.flavor = Integer.parseInt(props.getProperty("mcard.flavor"));
+        } catch (Exception ex) { ; }
+        if (this.flavor <= 0) {
+            this.flavor = MastercardService.FLAVOR_BASIC;
+        }
     }
 }
