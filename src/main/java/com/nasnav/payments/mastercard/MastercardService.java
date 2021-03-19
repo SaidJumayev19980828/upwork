@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,9 @@ import com.nasnav.service.OrderService;
 
 @Service
 public class MastercardService {
+
+    public static final int FLAVOR_BASIC = 1;
+    public static final int FLAVOR_NBE = 2;
 
     private Logger classLogger = LogManager.getLogger("Payment:MCARD");
 
@@ -195,7 +199,6 @@ public class MastercardService {
             throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
-//            payment.setUid("CFM-" + payment.getUid());
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             payment.setObject(json.toString());
@@ -208,7 +211,7 @@ public class MastercardService {
 
     public PaymentEntity initialize(MastercardAccount merchantAccount, Long metaOrderId) throws BusinessException {
 
-
+        int flavor = merchantAccount.getFlavor();
         ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 
     	if(Objects.isNull(orders)) {
@@ -222,25 +225,43 @@ public class MastercardService {
         }
 
         long userId = orders.get(0).getUserId();
+        String responseContent = null;
+        StringEntity requestEntity;
 
-        JSONObject order = new JSONObject();
-        order.put("id", orderUid);
-        order.put("currency", orderValue.currency);
-        order.put("amount", orderValue.amount);
+        if (flavor == FLAVOR_NBE) {
+            String alahlyRequest = "apiOperation=CREATE_CHECKOUT_SESSION"
+                    + "&apiPassword=" + merchantAccount.getApiPassword()
+                    + "&apiUsername=" + merchantAccount.getApiUsername()
+                    + "&merchant=" + merchantAccount.getMerchantId()
+                    + "&interaction.operation=PURCHASE"
+                    + "&order.id=" + orderUid
+                    + "&order.amount=" + orderValue.amount
+                    + "&order.currency=" + orderValue.currency;
+            requestEntity = new StringEntity(alahlyRequest, ContentType.APPLICATION_FORM_URLENCODED);
+        } else {
+            JSONObject order = new JSONObject();
+            order.put("id", orderUid);
+            order.put("currency", orderValue.currency);
+            order.put("amount", orderValue.amount);
 
-        JSONObject interaction = new JSONObject();
-        interaction.put("operation", "PURCHASE");
+            JSONObject interaction = new JSONObject();
+            interaction.put("operation", "PURCHASE");
 
-        JSONObject data = new JSONObject();
-        data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
-        data.put("order", order);
-        data.put("interaction", interaction);
+            JSONObject data = new JSONObject();
+            data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
+            data.put("order", order);
+            data.put("interaction", interaction);
+            requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
+        }
 
         try {
             HttpClient client= HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost(merchantAccount.getApiUrl()
-                    + "/merchant/" + merchantAccount.getMerchantId() +"/session");
-            StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
+            String sessionUrl = merchantAccount.getApiUrl() + "/merchant/" + merchantAccount.getMerchantId() +"/session";
+            if (flavor == FLAVOR_NBE) {
+                // Al-Ahly uses different URL schema
+                sessionUrl = merchantAccount.getApiUrl();
+            }
+            HttpPost request = new HttpPost(sessionUrl);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
 
@@ -251,11 +272,36 @@ public class MastercardService {
                 classLogger.error("Attempt to set up hosted session resulted in {}. Error provided: {}", status, errorResponse);
                 return null;
             }
-            JSONObject jsonResult = new JSONObject(readInputStream(response.getEntity().getContent()));
-            String result = jsonResult.getString("result");
-            String indicator = jsonResult.getString("successIndicator");
-            JSONObject jsonSession = jsonResult.getJSONObject("session");
-            String updateStatus = jsonSession.getString("updateStatus");
+            responseContent = readInputStream(response.getEntity().getContent());
+
+            String result = "";
+            String updateStatus = "";
+            String sessionId = "";
+            String indicator = "";
+            if (flavor == FLAVOR_NBE) {
+                String[] pairs = responseContent.split("&");
+                for (String pair : pairs) {
+                    int idx = pair.indexOf("=");
+                    String param = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
+                    String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+                    if ("result".equals(param)) {
+                        result = value;
+                    } else if ("session.updateStatus".equals(param)) {
+                        updateStatus = value;
+                    } else if ("session.id".equals(param)) {
+                        sessionId = value;
+                    } else if ("successIndicator".equals(param)) {
+                        indicator = value;
+                    }
+                }
+            } else {
+                JSONObject jsonResult = new JSONObject(responseContent);
+                result = jsonResult.getString("result");
+                indicator = jsonResult.getString("successIndicator");
+                JSONObject jsonSession = jsonResult.getJSONObject("session");
+                updateStatus = jsonSession.getString("updateStatus");
+                sessionId = jsonSession.getString("id");
+            }
             if ("SUCCESS".equalsIgnoreCase(result) && "SUCCESS".equalsIgnoreCase(updateStatus)) {
                 PaymentEntity payment = new PaymentEntity();
                 payment.setOperator(merchantAccount.getAccountId());
@@ -265,16 +311,16 @@ public class MastercardService {
                 payment.setAmount(orderValue.amount);
                 payment.setCurrency(orderValue.currency);
                 payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
-                payment.setSessionId(jsonSession.getString("id"));
+                payment.setSessionId(sessionId);
                 payment.setUserId(userId);
                 payment.setMetaOrderId(metaOrderId);
                 payment.setOrgPaymentId(merchantAccount.getDbId());
                 paymentsRepository.saveAndFlush(payment);
                 return payment;
             }
-            classLogger.error("Unable to set up hosted session, response: {}", jsonResult.toString());
+            classLogger.error("Unable to set up hosted session, response: {}", responseContent);
 
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             classLogger.error("Unable to set up hosted session", ex);
         }
         return null;
