@@ -8,6 +8,7 @@ import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -83,9 +84,9 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
 
-    protected void validateProductImportCsvFile(@Valid MultipartFile file) throws BusinessException {
+    protected void validateProductImporFile(@Valid MultipartFile file) throws RuntimeBusinessException {
         if(file == null || file.isEmpty()) {
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     ERR_NO_FILE_UPLOADED
                     , "INVALID PARAM"
                     , HttpStatus.NOT_ACCEPTABLE);
@@ -94,13 +95,13 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     }
 
 
-    protected void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws BusinessException{
+    protected void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws RuntimeBusinessException{
         Long shopId = metaData.getShopId();
         String encoding = metaData.getEncoding();
         Integer currency = metaData.getCurrency();
 
         if( anyIsNull(shopId, encoding, currency)) {
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     ERR_PRODUCT_IMPORT_MISSING_PARAM
                     , "MISSING PARAM"
                     , HttpStatus.NOT_ACCEPTABLE);
@@ -117,14 +118,14 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
 
-    private void validateEncodingCharset(String encoding) throws BusinessException {
+    private void validateEncodingCharset(String encoding) throws RuntimeBusinessException {
         try {
             if( !Charset.isSupported(encoding)) {
                 throw new IllegalStateException();
             }
         }catch(Exception e) {
             logger.error(e,e);
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     String.format(ERR_INVALID_ENCODING, encoding)
                     , "MISSING PARAM:encoding"
                     , HttpStatus.NOT_ACCEPTABLE);
@@ -135,9 +136,9 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
 
-    private void validateShopId(Long shopId) throws BusinessException {
+    private void validateShopId(Long shopId) throws RuntimeBusinessException {
         if( !shopRepo.existsById( shopId ) ) {
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     String.format(ERR_SHOP_ID_NOT_EXIST, shopId)
                     , "MISSING PARAM:shop_id"
                     , HttpStatus.NOT_ACCEPTABLE);
@@ -152,7 +153,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
         Long shopOrgId = shop.getOrganizationEntity().getId();
 
         if(!Objects.equals(shopOrgId, userOrgId)) {
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     String.format(ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP, userOrgId, shopOrgId)
                     , "MISSING PARAM:shop_id"
                     , HttpStatus.NOT_ACCEPTABLE);
@@ -163,14 +164,14 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
 
-    private void validateStockCurrency(Integer currency) throws BusinessException {
+    private void validateStockCurrency(Integer currency) throws RuntimeBusinessException {
         boolean invalidCurrency = Arrays.asList( TransactionCurrency.values() )
                 .stream()
                 .map(TransactionCurrency::getValue)
                 .map(Integer::valueOf)
                 .noneMatch(val -> Objects.equals(currency, val));
         if(invalidCurrency ) {
-            throw new BusinessException(
+            throw new RuntimeBusinessException(
                     String.format("Invalid Currency code [%d]!", currency)
                     , "INVALID_PARAM:currency"
                     , HttpStatus.NOT_ACCEPTABLE);

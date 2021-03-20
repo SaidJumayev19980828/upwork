@@ -1,5 +1,19 @@
 package com.nasnav.service;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.jboss.logging.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
@@ -16,8 +30,7 @@ import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
+
 import lombok.Data;
 import org.jboss.logging.Logger;
 import org.springframework.stereotype.Service;
@@ -39,11 +52,12 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 
 	private Logger logger = Logger.getLogger(getClass());
 
+	@Transactional(rollbackFor = Throwable.class)
 	@Override
 	public ImportProductContext importProductList(@Valid MultipartFile file,
 												  @Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
-		validateProductImportCsvFile(file);
+		validateProductImporFile(file);
 
 		ProductImportMetadata importMetadata = getImportMetaData(importMetaData);
 		ImportProductContext initialContext = new ImportProductContext(emptyList(), importMetadata);

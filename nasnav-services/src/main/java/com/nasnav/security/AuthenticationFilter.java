@@ -1,6 +1,18 @@
 package com.nasnav.security;
 
-import org.elasticsearch.common.Strings;
+
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+
+import java.io.IOException;
+import java.util.Objects;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.nasnav.commons.utils.StringUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -46,8 +58,8 @@ public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter
                 }
             }
         }
-        if(Strings.isEmpty(token)) {
-            token = httpServletRequest.getHeader(TOKEN_HEADER);
+        if(StringUtils.isEmpty(token)){
+			token = httpServletRequest.getHeader(TOKEN_HEADER);
         }
         UsernamePasswordAuthenticationToken requestAuthentication = new UsernamePasswordAuthenticationToken(token, token);
         return getAuthenticationManager().authenticate(requestAuthentication);

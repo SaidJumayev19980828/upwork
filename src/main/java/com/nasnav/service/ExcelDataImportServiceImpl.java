@@ -3,7 +3,6 @@ package com.nasnav.service;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -14,9 +13,12 @@ import javax.validation.Valid;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.apache.poi.ss.usermodel.*;
 import org.jboss.logging.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductImportMetadata;
@@ -32,10 +34,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	private Logger logger = Logger.getLogger(getClass());
 
+	@Transactional(rollbackFor = Throwable.class)
 	@Override
-	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException {
+	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws RuntimeBusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
-		validateProductImportCsvFile(file);
+		validateProductImporFile(file);
 
 		ProductImportMetadata importMetadata = getImportMetaData(importMetaData);
 		ImportProductContext initialContext = new ImportProductContext(emptyList(), importMetadata);
@@ -47,7 +50,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 						.stream()
 						.map(CsvRow::toProductImportDto)
 						.collect(toList());
-		return dataImportService.importProducts(productsData, importMetadata);
+		try {
+			return dataImportService.importProducts(productsData, importMetadata);
+		} catch (BusinessException e) {
+			throw new RuntimeBusinessException(e);
+		}
 
 	}
 
@@ -61,7 +68,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 			wb.close();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger .error(e.getMessage());
 			throw  new ImportProductException(e, initialContext);
 		}
 
@@ -76,7 +83,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		List<String> originalHeaders = getProductImportTemplateHeaders();
 		String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
 		if(headerNotFound != null && !headerNotFound.isEmpty()){
-			throw new Exception(" Could not find fields : ["+headerNotFound+"]");
+			throw new BusinessException(" Could not find fields : ["+headerNotFound+"]", "", HttpStatus.NOT_ACCEPTABLE);
 		}
 
 	}
@@ -90,18 +97,14 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				rowIterator++;
 				continue; // skip header row
 			}
-			System.out.print(" row -->> "+ rowIterator+"\t");
 			int cellIterator = 0;
 			for (Cell cell : row) {
 				String headerName = sheet.getRow(0).getCell(cellIterator).getStringCellValue();
 				String headerMapped = getColumnHeaderMapping(headerName);
 				headerName = StringUtils.isEmpty(headerMapped) ? headerName: headerMapped;
-				System.out.print(" cell -->> "+ headerName +"\t");
 				Object value = getCellValue(cell);
-				System.out.print(" value -->> "+ value +"\t");
 				ReflectUtils.set(line, headerName, value);
 				cellIterator++;
-				System.out.println();
 			}
 			lines.add(line);
 			rowIterator++;
