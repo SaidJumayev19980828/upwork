@@ -68,7 +68,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 			wb.close();
 		} catch (Exception e) {
-			logger .error(e.getMessage());
+			logger.error(e);
 			throw  new ImportProductException(e, initialContext);
 		}
 
