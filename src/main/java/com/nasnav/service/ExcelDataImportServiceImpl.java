@@ -39,6 +39,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	private final Logger logger = Logger.getLogger(getClass());
 
+	@Transactional(rollbackFor = Throwable.class)
 	@Override
 	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws RuntimeBusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
