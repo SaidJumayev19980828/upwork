@@ -7,11 +7,13 @@ import static com.nasnav.enumerations.PromotionStatus.TERMINATED;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ROUND_HALF_EVEN;
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -629,4 +632,31 @@ public class PromotionsTest {
 		assertEquals(406, res.getStatusCodeValue());
 		assertTrue( res.getBody().contains("PROMO$PARAM$0011"));
 	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getShippingOfferWithShippingPromo() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req);
+		ResponseEntity<String> res =
+				template.exchange("/shipping/offers?customer_address=12300001", GET, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		List<ShippingOfferDTO> offers = objectMapper.readValue(res.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+		//actual shipping value is 25.5 and discount is 75% = 19.125 then total shipping 6.375 -> 6.38
+		BigDecimal expectedTotalValue = new BigDecimal(6.38).setScale(2, ROUND_HALF_EVEN);
+		assertEquals(expectedTotalValue, offers.get(0).getTotal());
+	}
+
+	private void createCartForUser(HttpEntity<?> req) {
+		String body = json()
+			.put("stock_id", 601)
+			.put("quantity", 6)
+			.toString();
+		req = new HttpEntity<>(body, req.getHeaders());
+		ResponseEntity<String> res = template.postForEntity("/cart/item",  req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+	}
+
 }
