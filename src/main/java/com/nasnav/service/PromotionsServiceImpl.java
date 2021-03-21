@@ -618,57 +618,67 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Override
 	public BigDecimal calculateBuyXGetYPromoDiscount( List<CartItemData> items) {
 		BigDecimal discount = ZERO;
+		List<Long> includedItems = new ArrayList<>();
 		List<PromotionsEntity> promosList = promoRepo
 				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(BUY_X_GET_Y.getValue()));
 
 		PromosConstraints constraints;
 		for(PromotionsEntity promo : promosList) {
-            try {
-                constraints = objectMapper.readValue(promo.getConstrainsJson(), PromosConstraints.class);
-            } catch (IOException e) {
-                logger.error(e,e);
-                return discount;
-            }
-            if ( constraints.getBrands() != null) {
-                List<Long> allowedBrands = constraints.getBrands().getIds();
-                Integer productQuantityMin = constraints.getProductQuantityMin();
-                Integer productToGive = constraints.getProductToGive();
-                discount.add(items
-                        .stream()
-                        .filter(i -> allowedBrands.contains(i.getBrandId()))
-                        .filter(i -> i.getQuantity() >= productQuantityMin)
-                        .map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
-                        .reduce(ZERO, BigDecimal::add));
-            }
-            else if (constraints.getTags() != null) {
-                List<Long> allowedTags = constraints.getTags().getIds();
-                List<Long> allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
-                discount.add(getDiscountBasedOnProductsList(constraints, items, allowedProducts));
-            }
-            else if (constraints.getProducts() != null) {
-                List<Long> allowedProducts = constraints.getProducts().getIds();
-                discount.add(getDiscountBasedOnProductsList(constraints, items, allowedProducts));
-            }  else {
-                Integer productQuantityMin = constraints.getProductQuantityMin();
-                Integer productToGive = constraints.getProductToGive();
-                discount.add(items
-                        .stream()
-                        .filter(i -> i.getQuantity() >= productQuantityMin)
-                        .map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
-                        .reduce(ZERO, BigDecimal::add));
-            }
+			try {
+				constraints = objectMapper.readValue(promo.getConstrainsJson(), PromosConstraints.class);
+			} catch (IOException e) {
+				logger.error(e, e);
+				return discount;
+			}
+			if (constraints.getBrands() != null) {
+				List<Long> allowedBrands = constraints.getBrands().getIds();
+				Integer productQuantityMin = constraints.getProductQuantityMin();
+				Integer productToGive = constraints.getProductToGive();
+				discount = discount.add(items
+						.stream()
+						.filter(i -> allowedBrands.contains(i.getBrandId()))
+						.filter(i -> i.getQuantity() >= productQuantityMin)
+						.filter(i -> !includedItems.contains(i.getProductId()))
+						.map(i -> markItemAsIncluded(i, includedItems))
+						.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
+						.reduce(ZERO, BigDecimal::add));
+			} else if (constraints.getTags() != null) {
+				List<Long> allowedTags = constraints.getTags().getIds();
+				List<Long> allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
+				discount = discount.add(getDiscountBasedOnProductsList(constraints, items, allowedProducts, includedItems));
+			} else if (constraints.getProducts() != null) {
+				List<Long> allowedProducts = constraints.getProducts().getIds();
+				discount = discount.add(getDiscountBasedOnProductsList(constraints, items, allowedProducts, includedItems));
+			} else {
+				Integer productQuantityMin = constraints.getProductQuantityMin();
+				Integer productToGive = constraints.getProductToGive();
+				discount = discount.add(items
+						.stream()
+						.filter(i -> !includedItems.contains(i.getProductId()))
+						.map(i -> markItemAsIncluded(i, includedItems))
+						.filter(i -> i.getQuantity() >= productQuantityMin)
+						.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
+						.reduce(ZERO, BigDecimal::add));
+			}
 		}
 		return discount;
 	}
 
+	private CartItemData markItemAsIncluded(CartItemData item, List<Long> includedItems) {
+		includedItems.add(item.getProductId());
+		return item;
+	}
+
 	private BigDecimal getDiscountBasedOnProductsList(PromosConstraints constraints, List<CartItemData> items,
-													  List<Long> allowedProducts) {
+													  List<Long> allowedProducts, List<Long> includedItems) {
 		Integer productQuantityMin = constraints.getProductQuantityMin();
 		Integer productToGive = constraints.getProductToGive();
 		return items
 				.stream()
 				.filter(i -> allowedProducts.contains(i.getProductId()))
 				.filter(i -> i.getQuantity() >= productQuantityMin)
+				.filter(i -> !includedItems.contains(i.getProductId()))
+				.map(i -> markItemAsIncluded(i, includedItems))
 				.map(i -> new BigDecimal((i.getQuantity() / productQuantityMin) * productToGive).multiply(i.getPrice()))
 				.reduce(ZERO, BigDecimal::add);
 	}

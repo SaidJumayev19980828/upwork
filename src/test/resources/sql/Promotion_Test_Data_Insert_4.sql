@@ -73,19 +73,24 @@ INSERT INTO public.promotions
 VALUES(630001, 'Shipping promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":10}', '{"percentage":50}', 69, now(), 1);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(6300011, 'Shipping promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":100}', '{"percentage":75}', 69, now(), 1);
+VALUES(6300011, 'Shipping promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":200}', '{"percentage":75}', 69, now(), 1);
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
+VALUES(630002, 'Total cart value promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100, "cart_amount_min":800}', '{"percentage":10}', 69, now(), 3);
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
+VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_quantity_min":2}', '{"percentage":10}', 69, now(), 4);
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
+VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null,
+        '{"discount_value_max":100,
+         "cart_quantity_min":2,
+         "applied_to_products":{"required": 0,"ids":[1001]},
+         "product_quantity_min" : 3,
+         "product_to_give": 1}', null, 69, now(), 2);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630002, 'Total cart value promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
-INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"cart_amount_min":4000}', '{"percentage":10}', 69, now());
-INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 0, 0, null, '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
-INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630005, 'promo code', 99001, now(), now() + INTERVAL '200 DAY', 0, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
+VALUES(630005, 'promo code', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
@@ -102,13 +107,9 @@ insert into public.product_variants(id, "name" , product_id, feature_spec ) valu
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(601, 501, 50, 99001, 100.00, 310001, 1);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(602, 501, 50, 99001, 100.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 501, 50, 99002, 100.00, 310003, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 501, 50, 99001, 100.00, 310003, 1);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(604, 501, 50, 99001, 100.00, 310004, 1);
 
-
--- insert cart
---INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(601, '99001/img2.jpg', '{"Color":"Blue"}', 5, 88);
---INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
 
 
 

@@ -26,6 +26,7 @@ import java.util.Set;
 
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.Cart;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -638,7 +639,7 @@ public class PromotionsTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getShippingOfferWithShippingPromo() throws IOException {
 		HttpEntity<?> req = getHttpEntity("123");
-		createCartForUser(req);
+		createCartForUser(req, 601L, 3);
 		ResponseEntity<String> res =
 				template.exchange("/shipping/offers?customer_address=12300001", GET, req, String.class);
 		assertEquals(200, res.getStatusCodeValue());
@@ -649,14 +650,72 @@ public class PromotionsTest {
 		assertEquals(expectedTotalValue, offers.get(0).getTotal());
 	}
 
-	private void createCartForUser(HttpEntity<?> req) {
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getShippingOfferWithLowerShippingPromo() throws IOException {
+        HttpEntity<?> req = getHttpEntity("123");
+        createCartForUser(req, 601L, 1);
+        ResponseEntity<String> res =
+                template.exchange("/shipping/offers?customer_address=12300001", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        List<ShippingOfferDTO> offers = objectMapper.readValue(res.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        //actual shipping value is 25.5 and discount is 50% = 12.75 then total shipping 12.75
+        BigDecimal expectedTotalValue = new BigDecimal(12.75).setScale(2, ROUND_HALF_EVEN);
+        assertEquals(expectedTotalValue, offers.get(0).getTotal());
+    }
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCartWithBuyXGetYPromo() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 3);
+		Cart res = createCartForUser(req, 601L, 3);
+
+		assertEquals(100, res.getDiscount().intValue());
+		assertEquals(300, res.getSubTotal().intValue());
+		assertEquals(200, res.getTotal().intValue());
+	}
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCartWithTotalCartValuePromo() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		Cart res = createCartForUser(req, 602L, 8);
+
+		assertEquals(80, res.getDiscount().intValue());
+		assertEquals(800, res.getSubTotal().intValue());
+		assertEquals(720, res.getTotal().intValue());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCartWithTotalCartQuantitiesPromo() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 602L, 1);
+		createCartForUser(req, 603L, 1);
+		Cart res = createCartForUser(req, 604L, 1);
+
+		assertEquals(30, res.getDiscount().intValue());
+		assertEquals(300, res.getSubTotal().intValue());
+		assertEquals(270, res.getTotal().intValue());
+	}
+
+
+	private Cart createCartForUser(HttpEntity<?> req, Long stockId, Integer quantity) {
 		String body = json()
-			.put("stock_id", 601)
-			.put("quantity", 6)
+			.put("stock_id", stockId)
+			.put("quantity", quantity)
 			.toString();
 		req = new HttpEntity<>(body, req.getHeaders());
-		ResponseEntity<String> res = template.postForEntity("/cart/item",  req, String.class);
+		ResponseEntity<Cart> res = template.postForEntity("/cart/item",  req, Cart.class);
 		assertEquals(200, res.getStatusCodeValue());
+		return res.getBody();
 	}
 
 }
