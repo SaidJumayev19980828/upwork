@@ -2,21 +2,23 @@ package com.nasnav.service;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.nasnav.AppConfig;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.ReturnRequestEntity;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,132 +30,148 @@ import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.persistence.OrganizationEntity;
 
 @Service
 public class DomainServiceImpl implements DomainService{
-	
+
 	private static Logger logger = LogManager.getLogger();
-	
+
 	@Autowired
-	private SecurityService securityService; 
-	
-	
+	private SecurityService securityService;
+
 	@Autowired
 	private OrganizationDomainsRepository domainRepo;
-	
+
 	@Autowired
 	private OrganizationRepository orgRepo;
 
 	@Autowired
 	private AppConfig appConfig;
-	
-	
+
 	@Override
 	public String getOrganizationDomainAndSubDir() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return getOrganizationDomainAndSubDir(orgId);
 	}
-	
-	
-	
+
 	@Override
 	public String getOrganizationDomainAndSubDir(Long orgId) {
+		orgId = validateAndReturnAdminOrgId(orgId);
 		return domainRepo
-				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+				.findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
 				.stream()
 				.findFirst()
 				.flatMap(this::getDomainAndSubDir)
 				.map(this::addProtocolIfNeeded)
 				.orElse("");
 	}
-	
-	
-	
+
+	@Override
+	public List<DomainUpdateDTO> getOrganizationDomains(Long orgId) {
+		orgId = validateAndReturnAdminOrgId(orgId);
+		return domainRepo
+				.findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
+				.stream()
+				.map(this::toDomainDTO)
+				.collect(toList());
+	}
+
+	private DomainUpdateDTO toDomainDTO(OrganizationDomainsEntity domainsEntity) {
+		String domain = addProtocolIfNeeded(domainsEntity.getDomain());
+		DomainUpdateDTO dto = new DomainUpdateDTO();
+		dto.setId(domainsEntity.getId());
+		dto.setDomain(domain);
+		dto.setSubDirectroy(domainsEntity.getSubdir());
+		dto.setPriority(domainsEntity.getPriority());
+		return dto;
+	}
+
+	@Override
+	public void deleteOrgDomain(Long id, Long orgId) {
+		domainRepo.deleteByIdAndOrganizationEntity_Id(id, orgId);
+	}
+
+	private Long validateAndReturnAdminOrgId(Long orgId) {
+		if (!securityService.userHasRole(NASNAV_ADMIN)) {
+			return securityService.getCurrentUserOrganizationId();
+		}
+		return orgId;
+	}
+
 	@Override
 	public List<String> getOrganizationDomainOnly(Long orgId) {
 		return domainRepo
-				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+				.findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
 				.stream()
 				.map(OrganizationDomainsEntity::getDomain)
 				.map(this::addProtocolIfNeeded)
 				.collect(toList());
 	}
 
-
-
-	
-	
-	
 	@Override
 	public String getCurrentServerDomain() {
 		String baseUrl = "";
 		try{
 			baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
 		}catch(Throwable t) {
-			logger.error(t,t);					
+			logger.error(t,t);
 			try {
 				baseUrl = InetAddress.getLocalHost().getHostName();
 			} catch (UnknownHostException e) {
-				logger.error(e,e);	
+				logger.error(e,e);
 			}
 		}
 		return ofNullable(baseUrl)
 				.map(this::addProtocolIfNeeded)
 				.orElse("");
 	}
-	
-	
-	
-	
-	
-	private Optional<String> getDomainAndSubDir(OrganizationDomainsEntity orgDomain) {		
-		Optional<String> domain  = 
+
+	private Optional<String> getDomainAndSubDir(OrganizationDomainsEntity orgDomain) {
+		Optional<String> domain  =
 				ofNullable(orgDomain)
-				.map(OrganizationDomainsEntity::getDomain);
-		Optional<String> subDir = 
+						.map(OrganizationDomainsEntity::getDomain);
+		Optional<String> subDir =
 				ofNullable(orgDomain)
-				.map(OrganizationDomainsEntity::getSubdir);
+						.map(OrganizationDomainsEntity::getSubdir);
 		return domain
-				.map(d -> 
-					subDir
-					.map(s -> format("%s/%s", d, s))
-					.orElse(d) );		
+				.map(d ->
+						subDir
+								.map(s -> format("%s/%s", d, s))
+								.orElse(d) );
 	}
-	
-	
-	
-	
-	
+
 	private String addProtocolIfNeeded(String domain) {
 		return domain.startsWith("http://") || domain.startsWith("https://") ? domain : "https://"+domain;
 	}
-
-
 
 	@Override
 	@CacheEvict(cacheNames = {ORGANIZATIONS_DOMAINS})
 	public void updateDomain(DomainUpdateDTO dto) {
 		validateDomain(dto);
-		
+
+		Long id = ofNullable(dto.getId()).orElse(-1L);
 		Long orgId = dto.getOrganizationId();
-		OrganizationDomainsEntity domainEntity = 
+		OrganizationDomainsEntity domainEntity =
 				domainRepo
-				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
-				.stream()
-				.findFirst()
-				.orElse(new OrganizationDomainsEntity());
-		
-		OrganizationEntity organizationEntity = 
+						.findByIdAndOrganizationEntity_Id(id, orgId)
+						.orElse(new OrganizationDomainsEntity());
+
+		OrganizationEntity organizationEntity =
 				orgRepo
-				.findById(dto.getOrganizationId())
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
-		
+						.findById(dto.getOrganizationId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
+
+		if (dto.getPriority() != null && dto.getPriority() == 1) {
+			domainRepo.resetOrganizationDomainsCanonical(orgId);
+		}
+
+		Integer priority = ofNullable(dto.getPriority()).orElse(0);
+
 		domainEntity.setDomain(dto.getDomain());
 		domainEntity.setSubdir(dto.getSubDirectroy());
 		domainEntity.setOrganizationEntity(organizationEntity);
-		
+		domainEntity.setPriority(priority);
+
 		domainRepo.save(domainEntity);
 	}
 
@@ -161,7 +179,7 @@ public class DomainServiceImpl implements DomainService{
 	@Override
 	public String getBackendUrl() {
 		String backendUrl = ofNullable(appConfig.environmentHostName)
-							.orElse(getCurrentServerDomain());
+				.orElse(getCurrentServerDomain());
 		return addProtocolIfNeeded(backendUrl);
 	}
 
@@ -171,13 +189,13 @@ public class DomainServiceImpl implements DomainService{
 	public String buildDashboardOrderPageUrl(Long orderId, Long orgId) {
 		String domain =
 				getOrganizationDomainOnly(orgId)
-				.stream()
-				.findFirst()
-				.orElse("");
+						.stream()
+						.findFirst()
+						.orElse("");
 		String orderIdString =
 				ofNullable(orderId)
-				.map(id -> id.toString())
-				.orElse("null");
+						.map(id -> id.toString())
+						.orElse("null");
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", orderIdString);
 		return format("%s/%s", domain, path);
 	}
@@ -188,8 +206,8 @@ public class DomainServiceImpl implements DomainService{
 	public String buildDashboardReturnRequestPageUrl(Long returnRequestId, Long orgId) {
 		String domain =
 				getOrganizationDomainOnly(orgId).stream()
-				.findFirst()
-				.orElse("");
+						.findFirst()
+						.orElse("");
 		String path = "dashboard/return-requests";
 		return format("%s/%s/%d", domain, path, returnRequestId);
 	}

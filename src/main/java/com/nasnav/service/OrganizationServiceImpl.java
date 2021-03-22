@@ -1063,7 +1063,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
 
         String domain = ofNullable(url.getHost()).orElse("");
-	    domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
 
 	    String subDir = null;
 	    if (url.getPath() != null && url.getPath().length() > 1) {
@@ -1292,7 +1291,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     private List<String> createSiteMap(Long orgId, SitemapParams params) {
         List<String> allUrls = new ArrayList<>();
-        String baseUrl = params.getUrl();
+        String baseUrl = domainService.getOrganizationDomainAndSubDir(orgId);
         if(params.isInclude_products()) {
             addPairsAsUrls(baseUrl, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
         }

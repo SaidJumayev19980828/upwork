@@ -3,6 +3,8 @@ package com.nasnav.controller;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
+import java.util.Map;
+
 import com.nasnav.dto.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -297,16 +299,35 @@ public class AdminController {
 
 
 
-	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
+	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain")
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
 	@GetMapping(value = "organization/domain", produces = MediaType.TEXT_PLAIN_VALUE )
 	public String getOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
-									  @RequestParam Long id) {
+							   @RequestParam Long id) {
 		return domainService.getOrganizationDomainAndSubDir(id);
 	}
 
+	@ApiOperation(value = "Get organization domains", nickname = "getOrgDomains")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "organization/domains", produces = MediaType.APPLICATION_JSON_VALUE )
+	public List<DomainUpdateDTO> getOrgDomains(@RequestHeader(name = "User-Token", required = false) String userToken,
+										   @RequestParam("org_id") Long id) {
+		return domainService.getOrganizationDomains(id);
+	}
 
+	@ApiOperation(value = "delete organization domain", nickname = "deleteOrgDomain")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@DeleteMapping(value = "organization/domain")
+	public void deleteOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
+											@RequestParam Long id,
+										    @RequestParam("org_id") Long orgId) {
+		domainService.deleteOrgDomain(id, orgId);
+	}
 
 	@ApiOperation(value = "delete all indices on elastic search", nickname = "deleteElasticSearch", code = 200)
 	@ApiResponses(value = {

@@ -31,6 +31,9 @@ public class OrganizationDomainsEntity implements BaseEntity{
     @Column(name="subdir")
     private String subdir;
 
+    @Column(name="canonical")
+    private Integer priority;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         return null;
