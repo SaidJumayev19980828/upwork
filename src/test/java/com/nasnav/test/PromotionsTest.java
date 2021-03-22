@@ -27,6 +27,7 @@ import java.util.Set;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -669,7 +670,7 @@ public class PromotionsTest {
 	@Test
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCartWithBuyXGetYPromo() throws IOException {
+	public void getCartWithBuyXGetYPromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 601L, 3);
 		Cart res = createCartForUser(req, 601L, 3);
@@ -683,7 +684,7 @@ public class PromotionsTest {
 	@Test
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCartWithTotalCartValuePromo() throws IOException {
+	public void getCartWithTotalCartValuePromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		Cart res = createCartForUser(req, 602L, 8);
 
@@ -695,7 +696,7 @@ public class PromotionsTest {
 	@Test
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCartWithTotalCartQuantitiesPromo() throws IOException {
+	public void getCartWithTotalCartQuantitiesPromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 602L, 1);
 		createCartForUser(req, 603L, 1);
@@ -718,4 +719,86 @@ public class PromotionsTest {
 		return res.getBody();
 	}
 
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithShippingPromo() throws IOException {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 1);
+		String requestBody = createCheckoutDTO().toString();
+		req = new HttpEntity<>(requestBody, req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		BigDecimal expectedTotal = new BigDecimal(112.75).setScale(2, ROUND_HALF_EVEN);
+		assertEquals(expectedTotal, order.getTotal());
+		BigDecimal expectedSubtotal = new BigDecimal(100).setScale(2, ROUND_HALF_EVEN);
+		assertEquals(expectedSubtotal, order.getSubtotal());
+		BigDecimal expectedShipping = new BigDecimal(12.75).setScale(2, ROUND_HALF_EVEN);
+		assertEquals(expectedShipping, order.getShipping());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithBuyXGetYPromo() {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 3);
+		String requestBody = createCheckoutDTO().toString();
+		req = new HttpEntity<>(requestBody, req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertTrue(100 == order.getDiscount().intValue());
+		assertTrue(300 == order.getSubtotal().intValue());
+		assertTrue(6.38 == order.getShipping().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 206.38 == order.getTotal().doubleValue());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithTotalCartValuePromo() {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 602L, 8);
+		String requestBody = createCheckoutDTO().toString();
+		req = new HttpEntity<>(requestBody, req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertTrue(80 == order.getDiscount().intValue());
+		assertTrue(800 == order.getSubtotal().intValue());
+		assertTrue(6.38 == order.getShipping().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 726.38 == order.getTotal().doubleValue());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithTotalCartQuantitiesPromo() {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 602L, 1);
+		createCartForUser(req, 603L, 1);
+		createCartForUser(req, 604L, 1);
+		String requestBody = createCheckoutDTO().toString();
+		req = new HttpEntity<>(requestBody, req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertTrue(30 == order.getDiscount().intValue());
+		assertTrue(300 == order.getSubtotal().intValue());
+		assertTrue(6.38 == order.getShipping().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 276.38 == order.getTotal().doubleValue());
+	}
+
+	private JSONObject createCheckoutDTO() {
+		return json()
+				.put("customer_address", 12300001)
+				.put("shipping_service_id", "TEST");
+	}
 }
