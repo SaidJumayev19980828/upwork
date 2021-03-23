@@ -13,9 +13,9 @@ insert into public.sub_areas ("id",area_id, "name", organization_id) values (888
 insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100002, 'Downtown', 99001);
 
 --inserting organization domain
-INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'fortune.nasnav.com', 99001);
-INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'fortune-egypt.com', 99001);
-INSERT INTO public.organization_domains (id, "domain", organization_id, subdir) VALUES(3, 'nasnav.com', 99001, 'fortune');
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'www.fortune.nasnav.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'www.fortune-egypt.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id, subdir) VALUES(3, 'www.nasnav.com', 99001, 'fortune');
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
