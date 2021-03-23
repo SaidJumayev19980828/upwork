@@ -56,7 +56,6 @@ public class DomainServiceImpl implements DomainService{
 
 	@Override
 	public String getOrganizationDomainAndSubDir(Long orgId) {
-		orgId = validateAndReturnAdminOrgId(orgId);
 		return domainRepo
 				.findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
 				.stream()
