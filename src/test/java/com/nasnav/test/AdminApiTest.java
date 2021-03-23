@@ -86,6 +86,59 @@ public class AdminApiTest {
     }
 
     @Test
+    public void createDomainInvalidUrl() {
+        String newDomain = "{new.com";
+        Long orgId = 99001L;
+        String requestBody =
+                json()
+                        .put("domain", newDomain)
+                        .put("organization_id", orgId)
+                        .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
+
+        assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createDomainWithProtocol() {
+        String newDomain = "https://www.new.com";
+        Long orgId = 99001L;
+        String requestBody =
+                json()
+                        .put("domain", newDomain)
+                        .put("organization_id", orgId)
+                        .put("priority", 1)
+                        .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
+        OrganizationDomainsEntity domainAfter =
+                domainRepo
+                        .findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
+                        .stream()
+                        .findFirst()
+                        .get();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("www.new.com", domainAfter.getDomain());
+    }
+
+    @Test
+    public void createDomainRepeatedDomainAndSubdir() {
+        String newDomain = "fortune.nasnav.com";
+        Long orgId = 99001L;
+        String requestBody =
+                json()
+                        .put("domain", newDomain)
+                        .put("organization_id", orgId)
+                        .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
+
+        assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
     public void updateDomainTest() {
         String newDomain = "new.com";
         Long orgId = 99001L;

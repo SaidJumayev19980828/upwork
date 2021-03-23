@@ -12,6 +12,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 import com.nasnav.AppConfig;
 import com.nasnav.persistence.*;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -154,15 +156,14 @@ public class DomainServiceImpl implements DomainService{
 				domainRepo
 						.findByIdAndOrganizationEntity_Id(id, orgId)
 						.orElse(new OrganizationDomainsEntity());
+		if (domainRepo.existsByDomainAndSubdir(dto.getDomain(), dto.getSubDirectroy()) && domainEntity.equals(new OrganizationDomainsEntity())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0021, dto.getDomain()+","+ dto.getSubDirectroy());
+		}
 
 		OrganizationEntity organizationEntity =
 				orgRepo
 						.findById(dto.getOrganizationId())
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
-
-		if (dto.getPriority() != null && dto.getPriority() == 1) {
-			domainRepo.resetOrganizationDomainsCanonical(orgId);
-		}
 
 		Integer priority = ofNullable(dto.getPriority()).orElse(0);
 
@@ -216,6 +217,17 @@ public class DomainServiceImpl implements DomainService{
 	private void validateDomain(DomainUpdateDTO dto) {
 		if(anyIsNull(dto.getOrganizationId(), dto.getDomain())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, dto.toString());
+		}
+		if (dto.getPriority() != null && dto.getPriority() == 1) {
+			domainRepo.resetOrganizationDomainsCanonical(dto.getOrganizationId());
+		}
+		try {
+			String domain = dto.getDomain().startsWith("http") ? dto.getDomain(): "http://" + dto.getDomain();
+			String subDir = ofNullable(dto.getSubDirectroy()).orElse("");
+			URIBuilder url = new URIBuilder(domain +"/"+ subDir);
+			dto.setDomain(url.getHost());
+		} catch (URISyntaxException e) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0005);
 		}
 	}
 }

@@ -16,6 +16,7 @@ public interface OrganizationDomainsRepository extends JpaRepository<Organizatio
     Optional<OrganizationDomainsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
     OrganizationDomainsEntity findByDomain(String domain);
     OrganizationDomainsEntity findByDomainAndSubdir(String domain, String subdir);
+    boolean existsByDomainAndSubdir(String domain, String subdir);
 
     @Transactional
     @Modifying

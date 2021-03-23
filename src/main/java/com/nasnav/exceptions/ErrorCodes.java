@@ -109,6 +109,7 @@ public enum ErrorCodes {
 	,GEN$0017("There are still %s [%s] assigned to this category!")
 	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
 	,GEN$0019("Failed to read resource[%s]!")
+	,GEN$0021(" Domain and subdir already exist[%s]!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
