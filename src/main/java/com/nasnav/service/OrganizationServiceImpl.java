@@ -1053,14 +1053,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
     public Pair getOrganizationAndSubdirsByUrl(String urlString) {
-        URIBuilder url = null;
-
-        try {
-            urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
-            url = new URIBuilder(urlString);
-        } catch (URISyntaxException e) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0005);
-        }
+        urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
+        URIBuilder url = domainService.validateDomainCharacters(urlString);
 
         String domain = ofNullable(url.getHost()).orElse("");
 

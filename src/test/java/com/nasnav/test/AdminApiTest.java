@@ -86,6 +86,24 @@ public class AdminApiTest {
     }
 
     @Test
+    public void createDomainWithProtocolTwice() {
+        String newDomain = "https://www.new.com";
+        Long orgId = 99001L;
+        String requestBody =
+                json()
+                        .put("domain", newDomain)
+                        .put("organization_id", orgId)
+                        .put("priority", 1)
+                        .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+
+        response = template.postForEntity("/admin/organization/domain", json, Void.class);
+        assertEquals(406, response.getStatusCodeValue());
+    }
+
+    @Test
     public void createDomainInvalidUrl() {
         String newDomain = "{new.com";
         Long orgId = 99001L;

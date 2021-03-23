@@ -1,9 +1,9 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.request.DomainUpdateDTO;
+import org.apache.http.client.utils.URIBuilder;
 
 import java.util.List;
-import java.util.Map;
 
 public interface DomainService {
 
@@ -26,5 +26,7 @@ public interface DomainService {
 	List<String> getOrganizationDomainOnly(Long orgId);
 
 	void updateDomain(DomainUpdateDTO dto);
+
+	URIBuilder validateDomainCharacters(String inputUrl);
 
 }

@@ -5,10 +5,8 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.net.InetAddress;
@@ -152,11 +150,14 @@ public class DomainServiceImpl implements DomainService{
 
 		Long id = ofNullable(dto.getId()).orElse(-1L);
 		Long orgId = dto.getOrganizationId();
+		String domain = dto.getDomain().startsWith("http") ? dto.getDomain(): "http://" + dto.getDomain();
+		String subDir = ofNullable(dto.getSubDirectroy()).orElse("");
+		domain = validateDomainCharacters(domain + "/" + subDir).getHost();
 		OrganizationDomainsEntity domainEntity =
 				domainRepo
 						.findByIdAndOrganizationEntity_Id(id, orgId)
 						.orElse(new OrganizationDomainsEntity());
-		if (domainRepo.existsByDomainAndSubdir(dto.getDomain(), dto.getSubDirectroy()) && domainEntity.equals(new OrganizationDomainsEntity())) {
+		if (domainRepo.existsByDomainAndSubdir(domain, dto.getSubDirectroy()) && domainEntity.getId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0021, dto.getDomain()+","+ dto.getSubDirectroy());
 		}
 
@@ -167,7 +168,7 @@ public class DomainServiceImpl implements DomainService{
 
 		Integer priority = ofNullable(dto.getPriority()).orElse(0);
 
-		domainEntity.setDomain(dto.getDomain());
+		domainEntity.setDomain(domain);
 		domainEntity.setSubdir(dto.getSubDirectroy());
 		domainEntity.setOrganizationEntity(organizationEntity);
 		domainEntity.setPriority(priority);
@@ -221,11 +222,12 @@ public class DomainServiceImpl implements DomainService{
 		if (dto.getPriority() != null && dto.getPriority() == 1) {
 			domainRepo.resetOrganizationDomainsCanonical(dto.getOrganizationId());
 		}
+	}
+
+	public URIBuilder validateDomainCharacters(String inputUrl) {
 		try {
-			String domain = dto.getDomain().startsWith("http") ? dto.getDomain(): "http://" + dto.getDomain();
-			String subDir = ofNullable(dto.getSubDirectroy()).orElse("");
-			URIBuilder url = new URIBuilder(domain +"/"+ subDir);
-			dto.setDomain(url.getHost());
+			URIBuilder url = new URIBuilder(inputUrl);
+			return url;
 		} catch (URISyntaxException e) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0005);
 		}
