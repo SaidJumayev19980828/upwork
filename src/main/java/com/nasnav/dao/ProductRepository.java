@@ -117,7 +117,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
             " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p " +
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
+            " where s.shopsEntity.id = :shopId and p.productType = 0" +
+            " and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%" +
             " or LOWER(v.sku) like %:name% or LOWER(v.productCode) like %:name%)")
@@ -134,7 +135,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " join item.item v " +
             " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
+            " where s.shopsEntity.id = :shopId and p.productType = 2" +
+            " and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%" +
             " or LOWER(v.sku) like %:name% or LOWER(v.productCode) like %:name%)")
