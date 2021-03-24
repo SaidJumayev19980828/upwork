@@ -3,6 +3,8 @@ package com.nasnav.controller;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
+import java.util.Map;
+
 import com.nasnav.dto.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import com.nasnav.response.ThemeResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/admin")
@@ -53,6 +56,9 @@ public class AdminController {
 
 	@Autowired
 	private AdminService adminService;
+
+	@Autowired
+	private SearchService searchService;
 
     @ApiOperation(value = "Create/update an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
@@ -84,6 +90,34 @@ public class AdminController {
 			else if (categoryJson.getOperation().equals("create"))
 				return categoryService.createCategory(categoryJson);
 		throw new BusinessException("INVAILD_PARAM: operation","No correct operation provided", HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+	@ApiOperation(value = "change category for tags list")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
+	})
+	@PostMapping(value = "tag/category")
+	public void setTagsListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
+									@RequestParam (value = "category_id") Long categoryId,
+									@RequestParam(value = "tags") List<Long> tagsIds) {
+		categoryService.setTagsListCategory(categoryId, tagsIds);
+	}
+
+
+	@ApiOperation(value = "change category for product list")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
+	})
+	@PostMapping(value = "product/category")
+	public void setProductListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
+									@RequestParam (value = "category_id") Long categoryId,
+									@RequestParam(value = "products") List<Long> productsIds) {
+		categoryService.setProductsListCategory(categoryId, productsIds);
 	}
 
 
@@ -265,12 +299,45 @@ public class AdminController {
 
 
 
-	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
+	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain")
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
 	@GetMapping(value = "organization/domain", produces = MediaType.TEXT_PLAIN_VALUE )
 	public String getOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
-									  @RequestParam Long id) {
+							   @RequestParam Long id) {
 		return domainService.getOrganizationDomainAndSubDir(id);
+	}
+
+	@ApiOperation(value = "Get organization domains", nickname = "getOrgDomains")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "organization/domains", produces = MediaType.APPLICATION_JSON_VALUE )
+	public List<DomainUpdateDTO> getOrgDomains(@RequestHeader(name = "User-Token", required = false) String userToken,
+										   @RequestParam("org_id") Long id) {
+		return domainService.getOrganizationDomains(id);
+	}
+
+	@ApiOperation(value = "delete organization domain", nickname = "deleteOrgDomain")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@DeleteMapping(value = "organization/domain")
+	public void deleteOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
+											@RequestParam Long id,
+										    @RequestParam("org_id") Long orgId) {
+		domainService.deleteOrgDomain(id, orgId);
+	}
+
+	@ApiOperation(value = "delete all indices on elastic search", nickname = "deleteElasticSearch", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@ResponseStatus(OK)
+	@DeleteMapping(value = "search/indices")
+	public Mono<Void> deleteSearchIndices(@RequestHeader (name = "User-Token", required = false) String userToken) {
+		return searchService.deleteAllIndices();
 	}
 }

@@ -9,11 +9,7 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static io.swagger.models.HttpMethod.POST;
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.never;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
@@ -24,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
@@ -33,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
-import com.nasnav.persistence.UserSubscriptionEntity;
+import com.nasnav.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -66,9 +63,6 @@ import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
@@ -105,7 +99,8 @@ public class UserRegisterTest {
 
 	@Autowired
 	private UserRepository userRepository;
-
+	@Autowired
+	private EmployeeUserRepository employeeUserRepo;
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
@@ -125,6 +120,8 @@ public class UserRegisterTest {
 	
 	@MockBean
 	private MailService mailService;
+
+	private String uniqueAddress = "630f3256-59bb-4b87-9600-60e64d028d68";
 
 	@Before
 	public void setup() {
@@ -830,7 +827,7 @@ public class UserRegisterTest {
 		Assert.assertEquals(exepctedtUrl , activationRes.getHeaders().getLocation().toString());
 		
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
-		Assert.assertNull(user.getResetPasswordToken());
+		assertNull(user.getResetPasswordToken());
 	}
 	
 	
@@ -856,7 +853,7 @@ public class UserRegisterTest {
 		user = userRepository.findById(response.getBody().getEntityId()).get();		
 		
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
-		Assert.assertNull(user.getResetPasswordToken());
+		assertNull(user.getResetPasswordToken());
 		
 		//TODO: add assertion for returned login response 
 	}
@@ -975,9 +972,13 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void updateUserAddressTest() {
-		JSONObject address = json().put("address_line_1", "address line");
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888001);
 		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
 		//adding address to user
@@ -987,8 +988,9 @@ public class UserRegisterTest {
 		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
 		AddressRepObj addressResponse = entity.get();
-		assertEquals("address line", addressResponse.getAddressLine1());
-
+		assertEquals(uniqueAddress, addressResponse.getAddressLine1());
+		assertEquals(888001L, addressResponse.getSubAreaId().longValue());
+		assertEquals("Badr city", addressResponse.getSubArea());
 
 
 
@@ -1002,8 +1004,97 @@ public class UserRegisterTest {
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(addressRepo.findByIdAndUserId(addressResponse.getId(), 88001L).isPresent());
 		addressRepo.deleteById(addressResponse.getId());
-
 	}
+
+
+
+	@Test
+	public void updateUserAddressSubAreaNotPerOrganizationTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+
+	@Test
+	public void updateUserAddressSubAreaNotProvidingAreaTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888003);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals(addressResponse.getSubAreaId().longValue(), 888003L);
+		assertEquals("area will be assigned automatically", addressResponse.getAreaId().longValue(), 100002L);
+	}
+
+
+
+
+	@Test
+	public void updateUserAddressUpdateBothAreaAndSubAreaSuccessTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888003)
+				.put("area_id", 100002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals(addressResponse.getSubAreaId().longValue(), 888003L);
+		assertEquals(addressResponse.getAreaId().longValue(), 100002L);
+	}
+
+
+
+
+	@Test
+	public void updateUserAddressUpdateBothAreaAndSubAreaFailedTest() {
+		JSONObject address =
+				json()
+				.put("address_line_1", uniqueAddress)
+				.put("sub_area_id", 888001)
+				.put("area_id", 100002);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+
+
+	@Test
+	public void updateUserAddressNoSubAreaTest() {
+		JSONObject address = json().put("address_line_1", uniqueAddress);
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
+
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		assertTrue(entity.isPresent());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals(uniqueAddress, addressResponse.getAddressLine1());
+		assertNull(addressResponse.getSubAreaId());
+		assertNull(addressResponse.getSubArea());
+	}
+
 
 
 	@Test
@@ -1019,6 +1110,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void logoutEmployeeUserTest() {
 		Long userTokensCount = userTokenRepo.countByEmployeeUserEntity_Id(159l);
@@ -1032,6 +1124,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void suspendUserInvalidAuthZ() {
 		HttpEntity req = getHttpEntity("invalid token");
@@ -1039,6 +1132,7 @@ public class UserRegisterTest {
 
 		assertEquals(401, res.getStatusCodeValue());
 	}
+
 
 
 	@Test
@@ -1050,6 +1144,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void suspendUserInAnotherOrg() {
 		HttpEntity req = getHttpEntity("101112");
@@ -1057,6 +1152,7 @@ public class UserRegisterTest {
 
 		assertEquals(404, res.getStatusCodeValue());
 	}
+
 
 
 	@Test
@@ -1073,6 +1169,7 @@ public class UserRegisterTest {
 	}
 
 
+
 	@Test
 	public void unsuspendUserTest() {
 		HttpEntity req = getHttpEntity("101112");
@@ -1082,6 +1179,27 @@ public class UserRegisterTest {
 		UserEntity user = userRepository.findById(88006L).get();
 		assertEquals(201, user.getUserStatus().intValue());
 	}
+
+	@Test
+	public void suspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=true", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
+	}
+
+	@Test
+	public void unsuspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=false", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
+	}
+
 
 
 	@Test
@@ -1101,6 +1219,7 @@ public class UserRegisterTest {
 				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
 		assertEquals(423, response.getStatusCodeValue());
 	}
+
 
 
 	@Test
@@ -1238,6 +1357,27 @@ public class UserRegisterTest {
 		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
 		assertEquals(FORBIDDEN, res.getStatusCode());
 	}
+
+
+	@Test
+	public void recoverEmployeeUser() {
+		Long userId = 162L;
+		EmployeeUserEntity user = employeeUserRepo.findById(userId).get();
+		assertEquals(NOT_ACTIVATED.getValue(), user.getUserStatus());
+
+		String body = json()
+				.put("token", "d67438ac-f3a5-4939-9686-a1fc096f3f4e")
+				.put("password", "password")
+				.put("org_id", 99001)
+				.put("employee", true)
+				.toString();
+		HttpEntity request = getHttpEntity(body, null);
+		ResponseEntity<String> res = template.postForEntity("/user/recover", request, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		user = employeeUserRepo.findById(userId).get();
+		assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+	}
+
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()

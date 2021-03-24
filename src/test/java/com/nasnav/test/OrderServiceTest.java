@@ -1,4 +1,5 @@
 package com.nasnav.test;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
@@ -32,8 +33,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import javax.mail.MessagingException;
 
@@ -500,9 +500,7 @@ public class OrderServiceTest {
 
 		DetailedOrderRepObject body = getOrderListDetailedObject(response).get(0);
 		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L, ZERO);
-
 		assertEquals(expectedBody, body);
-
 
 		response = template.exchange("/order/list?start=2&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
@@ -510,9 +508,7 @@ public class OrderServiceTest {
 		body = getOrderListDetailedObject(response).get(0);
 
 		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
-
 		assertEquals(expectedBody, body);
-
 
 		response = template.exchange("/order/list?start=3&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
@@ -520,7 +516,6 @@ public class OrderServiceTest {
 		body = getOrderListDetailedObject(response).get(0);
 
 		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("50.00"));
-
 		assertEquals(expectedBody, body);
 
 	}
@@ -635,6 +630,7 @@ public class OrderServiceTest {
 		order.setPaymentStatus(entity.getPaymentStatus().toString());
 		order.setMetaOrderId(310001L);
 		order.setDiscount(ZERO);
+		order.setPaymentOperator("S.C.A.M");
 		return order;
 	}
 	
@@ -886,6 +882,60 @@ public class OrderServiceTest {
 		Order order = res.getBody();
 		assertEquals(2,order.getSubOrders().size());
 	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_14.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderTestWithChangedProductData() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<Order> res =
+				template.exchange("/order/meta_order/info?id=310001", GET, request, Order.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		Order order = res.getBody();
+		assertEquals(2,order.getSubOrders().size());
+		assertOriginalItemDataReturned(order);
+	}
+
+
+
+	private void assertOriginalItemDataReturned(Order order) {
+		Set<String> originalNames = setOf("original", "so original");
+		Set<String> originalFeatures = setOf("shiny", "brownie");
+		boolean hasOriginalName = hasOriginal(order, originalNames);
+		boolean hasOriginalFeatures = hasOriginalFeatures(order, originalFeatures);
+		assertTrue(hasOriginalFeatures && hasOriginalName);
+	}
+
+
+
+	private boolean hasOriginal(Order order, Set<String> originalNames) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.map(BasketItem::getName)
+				.allMatch(originalNames::contains);
+	}
+
+
+
+	private boolean hasOriginalFeatures(Order order, Set<String> originalFeatures) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.map(BasketItem::getVariantFeatures)
+				.map(Map::values)
+				.flatMap(Collection::stream)
+				.allMatch(originalFeatures::contains);
+	}
+
 
 
 

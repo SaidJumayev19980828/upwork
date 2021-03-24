@@ -3,12 +3,17 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.Loader;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
+import static javax.persistence.CascadeType.ALL;
 
 @DiscriminatorValue("2")
 @Entity
@@ -20,10 +25,29 @@ import java.util.Set;
 @Where(clause = "removed = 0")
 public class ProductCollectionEntity extends ProductEntity{
 
-    @ManyToMany
-    @JoinTable(name = "product_collections"
-            ,joinColumns = {@JoinColumn(name="product_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="variant_id")})
-    private Set<ProductVariantsEntity> variants;
+
+    @OneToMany(mappedBy = "collection", cascade = ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ProductCollectionItemEntity> items;
+
+
+    public ProductCollectionEntity(){
+        items = new HashSet<>();
+    }
+
+
+    public Set<ProductVariantsEntity> getVariants(){
+        return items
+                .stream()
+                .map(ProductCollectionItemEntity::getItem)
+                .collect(toSet());
+    };
+
+
+    public void addItem(ProductCollectionItemEntity item){
+        items.add(item);
+        item.setCollection(this);
+    }
 
 }

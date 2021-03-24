@@ -17,11 +17,11 @@ import com.nasnav.service.model.VariantBasicData;
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
 
-	@Query("select v from ProductVariantsEntity v left join fetch v.productEntity p " +
-			" left join fetch v.stocks s" +
-			" where p.id = :id and (:includeOutOfStock = true OR s.quantity > 0)")
-	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId,
-													   @Param("includeOutOfStock") boolean includeOutOfStock);
+	@Query("select distinct v from ProductVariantsEntity v" +
+			" left join fetch v.productEntity p " +
+			" left join fetch v.stocks s " +
+			" where p.id = :id")
+	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId);
 
 	List<ProductVariantsEntity> findByProductEntity_IdIn(List<Long> productIdsList);
 
@@ -31,7 +31,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
 
-	List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
+	List<ProductVariantsEntity> findDistinctByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 
 
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
@@ -108,4 +108,22 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	Long countByOrganizationId(@Param("orgId") Long orgId,
 													 @Param("name") String name);
 
+    List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
+
+
+    @Query(value =
+			"with org_variants as (\n" +
+			"    select \n" +
+			"    (json_each(public.text_to_json(variant.feature_spec))).key::::int8 as feature_Id\n" +
+			"    ,variant.id \n" +
+			"    from public.product_variants variant\n" +
+			"    inner join public.products prod\n" +
+			"    on variant.product_id = prod.id\n" +
+			"    and prod.organization_id = :orgId\n" +
+			"    and prod.removed = 0\n" +
+			"    where variant.removed = 0\n" +
+			")\n" +
+			"select id from org_variants \n" +
+			"where feature_id = :featureId", nativeQuery = true)
+    List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
 }

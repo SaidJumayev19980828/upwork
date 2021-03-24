@@ -408,7 +408,7 @@ public class PromotionsTest {
         ResponseEntity<BigDecimal> res = 
         		template.exchange(url, GET, req, BigDecimal.class);
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(0, res.getBody().compareTo(new BigDecimal("310")));
+        assertEquals(0, res.getBody().compareTo(new BigDecimal("270")));
 	}
 	
 	

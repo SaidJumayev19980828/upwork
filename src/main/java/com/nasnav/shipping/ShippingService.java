@@ -20,7 +20,9 @@ public interface ShippingService {
 	 * @return a shipping service offer. the offer may suggest several shipments to do the service, in case the
 	 * items will be picked up from several locations.
 	 * The offer should return the shipments fee, estimated time of arrival as well.
-	 * If the shipping service can't provide a service for the provided addresses, it should return Mono.empty().
+	 * If the shipping service can't provide a service for the provided addresses, it may either :
+	 * - return Mono.empty(), in this case, it wont be returned in GET /shipping/offers response
+	 * - return an offer with ShippingOffer.available flag = false, and provide a message in ShippingOffer.message
 	 * */
 	Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items);
 	

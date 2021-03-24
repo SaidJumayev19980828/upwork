@@ -16,6 +16,7 @@ public class ProductImageBulkUpdateDTO{
 	private Integer priority;
 	private boolean ignoreErrors;
 	private boolean deleteOldImages;
+	private Long featureId;
 	
 	public ProductImageBulkUpdateDTO() {
 		//TODO: return this to false after the option is implemented on the dashboard

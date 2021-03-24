@@ -50,7 +50,7 @@ public class SallabShippingService implements ShippingService{
 	static final public String TIERS = "TIERS";
 	static final public String SERVICE_ID = "SALLAB_PRICE_PRECENTAGE";
 	static final public String SERVICE_NAME = "Special Shipping";
-	static final public String ICON = "/icons/delivery_logo.jpg";
+	static final public String ICON = "/icons/delivery_logo.svg";
 	static final public String SUPPORTED_CITIES = "SUPPORTED_CITIES";
 	static final public String MIN_SHIPPING_FEE = "MIN_SHIPPING_FEE";
 	private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
@@ -177,11 +177,9 @@ public class SallabShippingService implements ShippingService{
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> shippingInfo) {
 
 		Optional<Fee> fee = calcFeeData(shippingInfo);
-		
 		if(!fee.isPresent() ||  !areCitiesSupported(shippingInfo)) {
 			return Mono.empty();
 		}
-
 		Integer shipmentsNum = shippingInfo.size();
 		List<Shipment> shipments =
 				shippingInfo
@@ -424,8 +422,7 @@ public class SallabShippingService implements ShippingService{
 
 	@Override
 	public void validateShipment(List<ShippingDetails> details) {
-		boolean citiesAreSupported = areCitiesSupported(details);
-		if(!citiesAreSupported) {
+		if(!areCitiesSupported(details)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010);
 		}
 	}

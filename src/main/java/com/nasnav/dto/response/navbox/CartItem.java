@@ -30,6 +30,8 @@ public class CartItem {
 	private BigDecimal discount;
 	private Map<String,Object> additionalData;
 	private Long userId;
+	private BigDecimal weight;
+	private String unit;
 	
 	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {

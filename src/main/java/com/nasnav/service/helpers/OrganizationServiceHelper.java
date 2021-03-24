@@ -52,10 +52,11 @@ public class OrganizationServiceHelper  {
 
     private void validateAndSetTwitterUrl(String url, SocialEntity socialEntity) {
         if (url != null) {
-            if (StringUtils.validateUrl(url,"(http(s)?:\\/\\/)?(www\\.)?twitter\\.com\\/[A-z0-9_\\-\\.]+\\/?.*")){
+            if (url.equals("")) {
+                socialEntity.setTwitter(null);
+            }
+            else {
                 socialEntity.setTwitter(url);
-            }else{
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url);
             }
         }
     }
@@ -64,10 +65,11 @@ public class OrganizationServiceHelper  {
 
     private void validateAndSetFacebookUrl(String url, SocialEntity socialEntity) {
         if (url != null) {
-            if (StringUtils.validateUrl(url, "(http(s)?:\\/\\/)?(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?.*")){
+            if (url.equals("")) {
+                socialEntity.setFacebook(null);
+            }
+            else {
                 socialEntity.setFacebook(url);
-            }else{
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url);
             }
         }
     }
@@ -88,7 +90,12 @@ public class OrganizationServiceHelper  {
 
     private void validateAndSetYoutubeUrl(String url, SocialEntity socialEntity) {
         if (url != null){
-            socialEntity.setYoutube(url);
+            if (url.equals("")) {
+                socialEntity.setYoutube(null);
+            }
+            else {
+                socialEntity.setYoutube(url);
+            }
         }
     }
 
@@ -96,7 +103,12 @@ public class OrganizationServiceHelper  {
 
     private void validateAndSetLinkedIn(String url, SocialEntity socialEntity) {
         if (url != null){
-            socialEntity.setLinkedin(url);
+            if (url.equals("")) {
+                socialEntity.setLinkedin(null);
+            }
+            else {
+                socialEntity.setLinkedin(url);
+            }
         }
     }
 
@@ -104,7 +116,12 @@ public class OrganizationServiceHelper  {
 
     private void validateAndSetPinterest(String url, SocialEntity socialEntity) {
         if (url != null){
-            socialEntity.setPinterest(url);
+            if (url.equals("")) {
+                socialEntity.setPinterest(null);
+            }
+            else {
+                socialEntity.setPinterest(url);
+            }
         }
     }
 }

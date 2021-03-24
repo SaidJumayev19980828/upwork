@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -18,4 +19,11 @@ public interface ProductFeaturesRepository extends CrudRepository<ProductFeature
 			+ " WHERE shop.id = :shopId")
 	List<ProductFeaturesEntity> findByShopId(@Param("shopId") Long shopId);
 
+    boolean existsByIdAndOrganization_Id(Integer featureId, Long orgId);
+
+
+	@Query("SELECT f FROM ProductFeaturesEntity f "
+			+ " LEFT JOIN FETCH f.organization org "
+			+ " WHERE f.id = :featureId AND org.id = :orgId ")
+	Optional<ProductFeaturesEntity> findByIdAndOrganization_Id(Integer featureId, Long orgId);
 }

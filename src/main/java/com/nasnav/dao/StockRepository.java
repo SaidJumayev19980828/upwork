@@ -96,12 +96,16 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 	Optional<Integer> getStockProductType(@Param("stockId") Long id);
 
 
-	@Query("select product.items from StocksEntity bundleStock"
-			+ " left join bundleStock.productVariantsEntity variant "
-			+ " left join variant.productEntity product"
-//			+ " left join bundle.items itemsStocks"
-			+ " where bundleStock.id = :stockId "
-			+ " and TYPE(product) = BundleEntity")
+//	@Query("select treat(product AS BundleEntity).items from StocksEntity bundleStock"
+//			+ " left join bundleStock.productVariantsEntity variant "
+//			+ " left join variant.productEntity product"
+////			+ " left join bundle.items itemsStocks"
+//			+ " where bundleStock.id = :stockId "
+//			+ " and TYPE(product) = BundleEntity")
+	@Query("select bundle.items from BundleEntity bundle " +
+			" left join bundle.productVariants variants " +
+			" left join variants.stocks bundleStocks " +
+			" where bundleStocks.id = :stockId")
 	List<StocksEntity> findByBundleStockId(@Param("stockId")Long bundleStockId);
 
 
@@ -113,7 +117,9 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 
 
 	@Query(value = "select NEW com.nasnav.dto.Prices(p.id, MIN(s.price) , MAX(s.price) )" +
-			" from ProductCollectionEntity p join p.variants v " +
+			" from ProductCollectionEntity p " +
+			" left join p.items item " +
+			" join item.item v " +
 			" join v.stocks s" +
 			" where p.id in :productIds and (:includeOutOfStock = true OR s.quantity > 0) group by p.id")
 	List<Prices> getCollectionsPrices(@Param("productIds") List<Long> productIds,

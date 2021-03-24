@@ -83,7 +83,7 @@ public class UpgLightbox {
 		}
 
 		JSONObject result = new JSONObject();
-		result.put("PaymentMethodFromLightBox", "null");
+		result.put("PaymentMethodFromLightBox", "2");
 //		result.put("Currency", Integer.toString(818));     // only EGP support right now
 		result.put("AmountTrxn", orderValue.amount.multiply(new BigDecimal(100)).intValue()); // amount in cents
 //		result.put("OrderId", "");  // Gateway fails on sending orderId

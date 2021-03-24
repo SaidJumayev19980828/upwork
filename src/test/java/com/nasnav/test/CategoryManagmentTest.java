@@ -14,12 +14,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+import com.nasnav.dao.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -48,10 +49,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
-import com.nasnav.dao.CategoryRepository;
-import com.nasnav.dao.TagGraphEdgesRepository;
-import com.nasnav.dao.TagGraphNodeRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.persistence.TagsEntity;
@@ -89,6 +86,8 @@ public class CategoryManagmentTest {
     
     @Autowired
     private TagGraphNodeRepository tagNodesRepo;
+    @Autowired
+    private ProductRepository productRepo;
 
     @Before
     public void setup() {
@@ -256,7 +255,7 @@ public class CategoryManagmentTest {
         assertTrue(200 == response.getStatusCode().value());
         //delete created category
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
-        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=" + response.getBody().getCategoryId(),
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=" + response.getBody().getCategoryId().intValue(),
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         assertTrue(200 == deleteResponse.getStatusCode().value());
     }
@@ -281,7 +280,7 @@ public class CategoryManagmentTest {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=209",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
-        assertTrue(406 == deleteResponse.getStatusCode().value());
+        assertTrue(404 == deleteResponse.getStatusCodeValue());
     }
 
     
@@ -296,7 +295,15 @@ public class CategoryManagmentTest {
     }
 
 
-    
+    @Test
+    public void deleteCategoryUsedCategoryInProductsTest() {
+
+
+        HttpHeaders header = getHeaders("abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=207",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        assertTrue(406 == deleteResponse.getStatusCode().value());
+    }
    
 
     @SuppressWarnings("rawtypes")
@@ -901,5 +908,84 @@ public class CategoryManagmentTest {
         List<TagsEntity> tagsWithAssignedCategory = 
     			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(categoryId, 99001L);
         assertEquals("Only tags with no categories were assigned to the new category",tagNoCategory.size() , tagsWithAssignedCategory.size());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdmin() {
+        HttpEntity<Object> json = getHttpEntity("abcdefg");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(OK, response.getStatusCode());
+
+        List<Long> tags = orgTagsRepo.findByCategoryId(201L);
+        assertEquals(4, tags.size());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminMissingCategoryId() {
+        HttpEntity<Object> json = getHttpEntity("abcdefg");
+        String url = "/admin/tag/category?tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminInvalidToken() {
+        HttpEntity<Object> json = getHttpEntity("invalid");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryByNasnavAdminInvalidAuthN() {
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(FORBIDDEN, response.getStatusCode());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignProductCategoryByNasnavAdmin() {
+        HttpEntity<Object> json = getHttpEntity("abcdefg");
+        String url = "/admin/product/category?category_id=202&products=1001&products=1002";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(OK, response.getStatusCode());
+
+        List<Long> products = productRepo.findProductsIdsByCategoryId(202L);
+        assertEquals(5, products.size());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignProductCategoryByNasnavAdminInvalidToken() {
+        HttpEntity<Object> json = getHttpEntity("invalid");
+        String url = "/admin/product/category?category_id=202&products=1001&products=1002";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignProductCategoryByNasnavAdminInvalidAuthZ() {
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        String url = "/admin/product/category?category_id=202&products=1001&products=1002";
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(FORBIDDEN, response.getStatusCode());
     }
 }

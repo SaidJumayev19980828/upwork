@@ -103,6 +103,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
 	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
 	
@@ -121,6 +124,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId "
 			+ " and user.id = :userId" )
     Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("userId")Long userId, @Param("orgId")Long orgId);
@@ -139,6 +145,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId " )
 	Optional<OrdersEntity> findFullDataById(@Param("orderId")Long orderId);
 
@@ -152,7 +161,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" LEFT JOIN PaymentEntity payment " +
 			" on payment.metaOrderId = meta.id " +
 			" WHERE ord.id in :orderIds")
-    List<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
+    Set<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
 
 
 
@@ -192,4 +201,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Integer getSalesPerWeek(@Param("orgId") Long orgId,
 							@Param("minWeek") LocalDateTime minWeek,
 							@Param("maxWeek") LocalDateTime maxWeek);
+
+	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 5 and subOrder.id = :orderId")
+	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
+											   @Param("userId") Long userId);
 }

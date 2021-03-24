@@ -30,4 +30,5 @@ public class Order {
     private String paymentStatus;
     private String status;
     private Boolean isCancelable;
+    private String notes;
 }

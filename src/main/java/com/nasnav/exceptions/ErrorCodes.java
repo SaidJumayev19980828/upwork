@@ -26,6 +26,9 @@ public enum ErrorCodes {
 
 
 	, U$STATUS$0001("Account is already suspended!")
+	, U$STATUS$0002("User can't suspend/activates himself!")
+	, U$STATUS$0003("Couldn't suspend/activate user account, invalid user status!")
+	, U$STATUS$0004("Couldn't get user status!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 
@@ -46,6 +49,11 @@ public enum ErrorCodes {
 	,P$VAR$0001("No Variant found with id[%s]!")
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
 	,P$VAR$003("No variant id provided!")
+	,P$VAR$004("Missing variant_id or rate value or order_id!")
+	,P$VAR$005("No Variant rate found with id[%d]!")
+	,P$VAR$006("Rate must be between 0 and 5")
+	,P$VAR$007("User can rate only bought products!")
+	,P$VAR$008("Missing Extra Attribute name!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
@@ -55,15 +63,32 @@ public enum ErrorCodes {
 	,P$PRO$0006("Failed to parse product update json [%s]!")
 	,P$PRO$0007("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!")
 	,P$PRO$0008("No Operation provided! parameter operation should have values in[%s]!")
-	,P$PRO$0009("Failed to delete products!")
+	,P$PRO$0009("Failed to delete products [%s]!")
 	,P$PRO$0010("Product of ID[%d] cannot be deleted by a user from organization of id [%d]")
 	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
 	,P$PRO$0012("No collection exists with ID[%d]!")
+	,P$PRO$0013("No collections exists with ID %s!")
+	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
+	,P$STO$0002("Stock total value can't be negative!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
+	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+
+	,P$FTR$0001("No Product Feature type exists with code[%d]!")
+	,P$FTR$0002("Feature is still used by some products!")
+
+	,P$IMG$0001("Provided Zip file has no data!")
+	,P$IMG$0002("Provided images archive is not ZIP file!")
+	,P$IMG$0003("No feature provided for swatch images!")
+	,P$IMG$0004("No feature exists with id[%d]!")
+	,P$IMG$0005("Failed to read zip file!")
+	,P$IMG$0006("Failed To parse CSV file!")
+	,P$IMG$0007("Failed to prepare images for import due to errors!\nerrors:[%s]")
+	,P$IMG$0008("Feature is not of the type %s!")
+	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
@@ -80,6 +105,11 @@ public enum ErrorCodes {
 	,GEN$0013("Failed to parse MIME type for the file:  %s")
 	,GEN$0014("Failed to parse type for the file:  %s")
 	,GEN$0015("Couldn't read image [%s]")
+	,GEN$0016("Provided category_id[%d] doesn't match any existing category!")
+	,GEN$0017("There are still %s [%s] assigned to this category!")
+	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
+	,GEN$0019("Failed to read resource[%s]!")
+	,GEN$0021(" Domain and subdir already exist[%s]!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -101,7 +131,13 @@ public enum ErrorCodes {
 
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 
+	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
+	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
+	,SUBAREA$002("Sub-Area with ID:[%d] doesn't match area with id[%d]!")
+	,SUBAREA$003("Provided Sub-Areas %s doesn't match any existing sub-areas for organization[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	,ADDR$ADDR$0003("Must provide id of parent %s")
@@ -140,11 +176,14 @@ public enum ErrorCodes {
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
 	,O$SHP$0004("Failed to create a shipment for return request[%d]!")
 	,O$SHP$0005("Meta-order with id [%d], has no sub-orders!")
+	,O$SHP$0006("Provided area_id [%d] doesn't map to any existing external area_id")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
 	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+
+	,O$NEW$0001("Failed to create order! Please try again!")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
@@ -208,6 +247,9 @@ public enum ErrorCodes {
 	,SHP$SRV$0011("Cannot create shipment with the given parameters due to : %s!")
 	,SHP$SRV$0012("Failed to calculate shipping fees for shipping service [%s], with shipment details[%s]!"
 			+ " Make sure there is no missing data , and the destination city is supported by the shipping service!")
+	,SHP$SRV$0013("Missing shipping address for shipping service[%s]!")
+	,SHP$SRV$0014("Delivery is only supported in the same city!")
+	,SHP$SRV$0015("Delivery is only available for items value starting from %s!")
 
 	,SHP$PARS$0001("Error while parsing status update request!")
 
@@ -236,9 +278,11 @@ public enum ErrorCodes {
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
+	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")
 
 	,SRCH$SYNC$0001("Failed to synchronize products data for organization[%d]!")
 	,SRCH$SYNC$0002("Failed to synchronize products data for organization[%d]!\nError details: %s")
+
 
 	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
 	;

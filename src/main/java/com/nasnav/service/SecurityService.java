@@ -25,6 +25,7 @@ public interface SecurityService {
     Long getCurrentUserShopId();
     OrganizationEntity getCurrentUserOrganization();
 
+    Boolean userHasRole(BaseUserEntity user, Roles role);
     Boolean userHasRole(Roles role);
     Boolean currentUserHasRole(Roles role);
     Boolean currentUserIsCustomer();

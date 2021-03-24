@@ -4,14 +4,18 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import javax.validation.Valid;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -65,6 +69,8 @@ public class OrganizationController {
     private SearchService searchService;
     @Autowired
     private SeoService seoService;
+    @Autowired
+    private AddressService addressService;
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -118,7 +124,7 @@ public class OrganizationController {
                                                 @RequestPart("properties") String jsonString,
                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                 @RequestPart(value = "banner", required = false) @Valid MultipartFile banner,
-                                                @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws Exception {
+                                                @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         return orgService.validateAndUpdateBrand(json, logo, banner, cover);
@@ -149,6 +155,20 @@ public class OrganizationController {
 
 
 
+    @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "products_features/types", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ProductFeatureType> getOrganizationFeaturesTypes(@RequestHeader(name = "User-Token", required = false) String token) {
+        return orgService.getProductFeatureTypes();
+    }
+
+
+
+
 
 
     @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures")
@@ -163,6 +183,20 @@ public class OrganizationController {
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                                              @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
         return orgService.updateProductFeature(featureDto);
+    }
+
+
+
+    @ApiOperation(value = "removed product features for organization, making it unavailable for usage", nickname = "PostOrgProductFeatures")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "products_feature")
+    public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
+                                                             @RequestParam("id") Integer featureId) throws Exception {
+        orgService.removeProductFeature(featureId);
     }
 
 
@@ -310,21 +344,6 @@ public class OrganizationController {
     public void assignOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
                                     @RequestBody OrganizationThemeClass orgThemeClassDTO) throws BusinessException {
         themeService.assignOrgThemeClass(orgThemeClassDTO);
-    }
-
-
-    @ApiOperation(value = "Remove the organization from a certain theme class", nickname = "removeOrgThemeClass")
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
-    })
-    @DeleteMapping(value = "themes/class")
-    @ResponseStatus(OK)
-    public void removeOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                    @RequestParam("org_id") Long orgId,
-                                    @RequestParam(value = "class_id") Integer classId) throws BusinessException {
-        themeService.removeOrgThemeClass(orgId, classId);
     }
 
 
@@ -641,5 +660,49 @@ public class OrganizationController {
     public void addSeoKeywords(@RequestHeader (name = "User-Token", required = false) String userToken
         , @RequestBody SeoKeywordsDTO seoKeywords){
         seoService.addSeoKeywords(seoKeywords);
+    }
+
+
+
+
+    @ApiOperation(value = "update organization sub-areas", nickname = "addSeoKeywords")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "sub_areas")
+    @ResponseStatus(OK)
+    public void updateSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken
+            , @RequestBody SubAreasUpdateDTO subAreas){
+        addressService.updateSubAreas(subAreas);
+    }
+
+
+    @ApiOperation(value = "delete organization sub-areas")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "sub_areas")
+    @ResponseStatus(OK)
+    public void deleteSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestParam("sub_areas") Set<Long> subAreas){
+        addressService.deleteSubAreas(subAreas);
+    }
+
+
+    @ApiOperation(value = "get organization sub-areas")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "sub_areas")
+    public List<SubAreasRepObj> getOrgSubAreas(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                               @RequestParam(value = "area_id", required = false) Long areaId,
+                                               @RequestParam(value = "city_id", required = false) Long cityId,
+                                               @RequestParam(value = "country_id", required = false) Long countryId){
+        return addressService.getOrgSubAreas(areaId, cityId, countryId);
     }
 }

@@ -151,7 +151,8 @@ public class DataImportServiceImpl implements DataImportService {
         
         if(productImportMetadata.isDeleteOldProducts()) {
         	Set<Long> productsToDelete = getProductsToDelete(context);
-			processInBatches(productsToDelete, 500, productServiceTransactions::deleteProducts);
+			productServiceTransactions
+				.deleteProducts(new ArrayList<>(productsToDelete), true);
         }
 
         return context;
@@ -981,6 +982,7 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setProductId(product.getProductId());
         variant.setSku(row.getSku());
         variant.setProductCode(row.getProductCode());
+        variant.setWeight(row.getWeight());
         
         if(extraAtrributes != null) {
         	variant.setExtraAttr(extraAtrributes);

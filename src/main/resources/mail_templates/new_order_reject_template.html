@@ -279,6 +279,7 @@
                     <li id="name" th:text="${sub.deliveryAddress.firstName} + ' ' + ${sub.deliveryAddress.lastName}"></li>
                     <li id="phone" th:if="${sub.deliveryAddress.phoneNumber != null}" th:text="${sub.deliveryAddress.phoneNumber}"></li>
                     <li id="address_Line_1" th:text="${sub.deliveryAddress.flatNumber} +', '+ ${sub.deliveryAddress.buildingNumber}+ ', ' +${sub.deliveryAddress.addressLine1}"></li>
+                    <li id="sub_area" th:if="${sub.deliveryAddress.subArea != null}" th:text="${sub.deliveryAddress.subArea}">subArea</li>
                     <li id="area" th:text="${sub.deliveryAddress.area}"></li>
                     <li id="city" th:text="${sub.deliveryAddress.city}"></li>
                     <li id="country" th:text="${sub.deliveryAddress.country}"></li>

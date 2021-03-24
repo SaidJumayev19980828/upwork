@@ -1,6 +1,8 @@
 package com.nasnav.test;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
+import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -8,8 +10,12 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
+import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Objects;
 
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -201,7 +207,14 @@ public class ProductVariantApiTest {
 		
 		ProductVariantsEntity saved = helper.getVariantFullData(id);
 		JSONObject extraAtrrJson = new JSONObject(json.getString("extra_attr"));
-		
+
+		assertVariantDataIsPersisted(json, saved, extraAtrrJson);
+		assertInvisibleExtraAttributeIsCreated(saved);
+	}
+
+
+
+	private void assertVariantDataIsPersisted(JSONObject json, ProductVariantsEntity saved, JSONObject extraAtrrJson) {
 		assertEquals(json.getString("name"), saved.getName());
 		assertEquals(json.getString("barcode"), saved.getBarcode());
 		assertEquals(json.getLong("product_id"), saved.getProductEntity().getId().longValue() );
@@ -209,13 +222,27 @@ public class ProductVariantApiTest {
 		assertEquals(json.getString("features"), saved.getFeatureSpec());
 		assertEquals(json.getString("sku"), saved.getSku());
 		assertEquals(json.getString("product_code"), saved.getProductCode());
-		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());		
+		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
+		assertEquals(new BigDecimal(5.5), saved.getWeight());
 		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
 
-	
-	
-	
+
+
+	private void assertInvisibleExtraAttributeIsCreated(ProductVariantsEntity saved) {
+		boolean isInvisible =
+				saved
+				.getExtraAttributes()
+				.stream()
+				.map(ProductExtraAttributesEntity::getExtraAttribute)
+				.filter(attr -> attr.getName().startsWith("$"))
+				.allMatch(attr -> Objects.equals(INVISIBLE.getValue(), attr.getType()));
+		assertTrue(isInvisible);
+	}
+
+
+
+
 	private JSONObject getExtraAttributesAsJson(ProductVariantsEntity saved) {
 		Map<String,String> extraAttrNameValuePair = 
 				saved.getExtraAttributes()
@@ -330,8 +357,14 @@ public class ProductVariantApiTest {
 	
 
 	private JSONObject createProductVariantRequest() {
+		JSONObject extraAttributes =
+				json()
+				.put("extra", "Cool Add-on")
+				.put("Model", "D2R2")
+				.put("$INV", "you can't see me!");
+		JSONObject features = json().put("234", 37).put("235", "Black");
+
 		JSONObject json = new JSONObject();
-		
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", JSONObject.NULL);
 		json.put("operation", Operation.CREATE.getValue());
@@ -339,10 +372,11 @@ public class ProductVariantApiTest {
 		json.put("p_name", JSONObject.NULL);
 		json.put("description", "my description");
 		json.put("barcode", "ABC12345");
-		json.put("features", "{\"234\": 37, \"235\": \"BLack\"}");
-		json.put("extra_attr", "{\"extra\": \"Cool Add-on\", \"Model\": \"D2R2\"}");
+		json.put("features", features.toString());
+		json.put("extra_attr", extraAttributes.toString());
 		json.put("sku", "ABC123");
 		json.put("product_code", "111-222");
+		json.put("weight", 5.5);
 		return json;
 	}
 	

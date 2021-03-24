@@ -319,8 +319,13 @@ public class UserController {
     @PostMapping(value = "suspend")
     public void suspendUserAccount(@RequestHeader (name = "User-Token", required = false) String token,
                                    @RequestParam (value = "user_id")Long userId,
-                                   @RequestParam (defaultValue = "false") Boolean suspend) {
-        userService.suspendUserAccount(userId, suspend);
+                                   @RequestParam (defaultValue = "false") Boolean suspend,
+                                   @RequestParam (name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        if (isEmployee) {
+            employeeUserService.suspendEmployeeAccount(userId, suspend);
+        } else {
+            userService.suspendUserAccount(userId, suspend);
+        }
     }
 
 

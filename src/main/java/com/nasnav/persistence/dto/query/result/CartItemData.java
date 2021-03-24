@@ -15,6 +15,7 @@ public class CartItemData {
 	private String variantName;
 	private Long stockId;
 	private String featureSpec;
+	private BigDecimal weight;
 	private String coverImg;
 	private BigDecimal price;
 	private Integer quantity;	
@@ -25,4 +26,5 @@ public class CartItemData {
 	private Integer productType;
 	private BigDecimal discount;
 	private String additionalData;
+	private String unit;
 }

@@ -218,7 +218,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		BigDecimal price = itemCheckoutData.getPrice();
 		BigDecimal discount = itemCheckoutData.getDiscount();
 		Integer quantity = itemCheckoutData.getQuantity();
-		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount, quantity);
+		BigDecimal weight = itemCheckoutData.getWeight();
+		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount, quantity, weight);
 	}
 	
 	
@@ -273,6 +274,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		offerDto.setTotal(total);
 		offerDto.setType(data.getService().getType().name());
 		offerDto.setIcon(icon);
+		offerDto.setAvailable(data.isAvailable());
+		offerDto.setMessage(data.getMessage());
 		return offerDto;
 	}
 
@@ -495,6 +498,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShipmentItems shippingItem = new ShipmentItems(data.getStockId());
 		shippingItem.setPrice(data.getPrice().subtract(discount));
 		shippingItem.setQuantity(data.getQuantity());
+		shippingItem.setWeight(data.getWeight());
 		return shippingItem;
 	}
 	
@@ -590,20 +594,31 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private void validateServiceParameter(Parameter param, JSONObject paramsJson, String serviceId) {
+		String name = param.getName();
 		try {
-			Object paramVal = ofNullable(paramsJson.get(param.getName())).orElse("null");
-			if(isNull(paramVal)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			Optional<?> paramVal =
+					ofNullable(paramsJson)
+					.filter(json -> json.has(name))
+					.map(json -> json.get(name));
+			if(param.isRequired() && !paramVal.isPresent()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, name, serviceId);
 			}
-			if(!param.getType().getJavaType().isInstance(paramVal)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.toString(), param.getName(), serviceId);
+			if(!isValidType(param.getType(), paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.get().toString(), name, serviceId);
 			}
 		}catch(JSONException e) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, name, serviceId);
 		}
 	}
 
 
+
+	private Boolean isValidType(ParameterType type, Optional<?> paramVal) {
+		return paramVal
+				.map(val -> type.getJavaType().isInstance(val))
+				.orElse(true);
+	}
 
 
 	@Override
@@ -753,6 +768,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String specs = getVariantSpecs(orderItem);
 		String productCode = getProductCode(orderItem);
 		String sku = getSku(orderItem);
+		BigDecimal weight = getVariantWeight(orderItem);
 
 		shpItem.setStockId(stockId);
 		shpItem.setBarcode(barcode);
@@ -762,6 +778,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shpItem.setProductCode(productCode);
 		shpItem.setSku(sku);
 		shpItem.setPrice(orderItem.getPrice());
+		shpItem.setWeight(weight);
 
 		return shpItem;
 	}
@@ -788,6 +805,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElse(null);
 	}
 
+
+	private BigDecimal getVariantWeight(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getWeight)
+				.orElse(ZERO);
+	}
 
 
 	private String getProductCode(BasketsEntity orderItem) {

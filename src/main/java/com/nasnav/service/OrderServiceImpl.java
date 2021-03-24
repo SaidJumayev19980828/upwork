@@ -1,15 +1,11 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
-import com.nasnav.dto.request.order.returned.ReceivedItem;
-import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
-import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -27,10 +23,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.helpers.UserServicesHelper;
-import com.nasnav.service.model.mail.MailAttachment;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +62,6 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
-import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
@@ -87,7 +78,6 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static java.util.stream.IntStream.range;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
 @Service
@@ -187,6 +177,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private OrderReturnService orderReturnService;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
@@ -385,12 +378,8 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-
-		List<BasketItemDetails> basketItemsDetails = 
-				getBasketItemsDetailsMap( setOf(order.getId()) )
-				.get(order.getId());
 		
-		SubOrder subOrder = getSubOrder(order, orderServiceHelper.getVariantsImagesList(basketItemsDetails));
+		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
 
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(order.getMetaOrder().getId());
@@ -403,11 +392,13 @@ public class OrderServiceImpl implements OrderService {
 		String orderPageUrl =
 				domainService
 				.buildDashboardOrderPageUrl(order.getId(), order.getOrganizationEntity().getId());
+		String notes = order.getMetaOrder().getNotes();
 
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", orderPageUrl);
 		params.put("sub", subOrder);
 		params.put("operator", operator);
+		params.put("notes", notes);
 		return params;
 	}
 	
@@ -419,11 +410,7 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(rejectionReason)
 				.orElse(DEFAULT_REJECTION_MESSAGE);
 
-		List<BasketItemDetails> basketItemsDetails =
-				getBasketItemsDetailsMap( setOf(order.getId()) )
-						.get(order.getId());
-
-		SubOrder subOrder = getSubOrder(order, orderServiceHelper.getVariantsImagesList(basketItemsDetails));
+		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
 
 		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
@@ -785,7 +772,7 @@ public class OrderServiceImpl implements OrderService {
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
-		Optional<OrdersEntity> order = empty();;
+		Optional<OrdersEntity> order = empty();
 
 		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
 
@@ -797,14 +784,11 @@ public class OrderServiceImpl implements OrderService {
 			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
 		}
 
-		if (order.isPresent()) {
-			return getDetailedOrderInfo(order.get(), finalDetailsLevel);
-		}
-
-		throwInvalidOrderException( INVALID_ORDER.toString() );
-		
-		return null;
+		return order
+				.map(o -> getDetailedOrderInfo(o, finalDetailsLevel))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, O$0001, orderId));
 	}
+
 	
 	private Integer getFinalDetailsLevel(Integer detailsLevel) {
 		return (detailsLevel == null || detailsLevel < 0 || detailsLevel > 3) ? ORDER_FULL_DETAILS_LEVEL : detailsLevel;
@@ -813,11 +797,11 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel) {
-	    Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap( setOf(order.getId()) );
-		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order.getId()) );
-		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, setOf(order.getId()));
+	    Map<Long, List<BasketItem>> basketItemsMap = getBasketItemsDetailsMap( setOf(order) );
+		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order) );
+		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, setOf(order));
 		String phoneNumber = userRepo.findById(order.getUserId()).get().getPhoneNumber();
-	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, phoneNumber ,paymentOperator);
+	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsMap, phoneNumber ,paymentOperator);
 	}
 	
 	
@@ -825,44 +809,27 @@ public class OrderServiceImpl implements OrderService {
 
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
 														Map<Long, BigDecimal> orderItemsQuantity,
-														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap,
+														Map<Long, List<BasketItem>> basketItemsMap,
 														String phoneNumber,
 														Map<Long, String> paymentOperator) {
-		DetailedOrderRepObject representation = new DetailedOrderRepObject();
-
-		List<BasketItemDetails> basketItemsDetails = 
-				ofNullable(basketItemsDetailsMap)
+		List<BasketItem> basketItems =
+				ofNullable(basketItemsMap)
 				.map(map -> map.get(order.getId()) )
 				.orElse(new ArrayList<>());
-		Map<Long, Optional<String>> variantsImagesList = orderServiceHelper.getVariantsImagesList(basketItemsDetails);
-		
-		BeanUtils.copyProperties(getOrderSummary(order), representation);
-		if (detailsLevel == null){
-			detailsLevel = 0;
-		}
+
+		DetailedOrderRepObject representation = new DetailedOrderRepObject();
+		setOrderSummary(order, representation);
 
         if (detailsLevel >= 1){
-			BeanUtils.copyProperties(
-					getOrderDetails(order, phoneNumber, paymentOperator)
-					, representation
-					, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId", "discount"});
+        	setOrderDetails(order, phoneNumber, paymentOperator, representation);
 		}
 
-        if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null){
+        if (detailsLevel >= 2 && orderItemsQuantity.get(order.getId()) != null){
 			representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
 		}
 
 		if (detailsLevel == 3) {
-			List<BasketItem> itemsList = getBasketItems(basketItemsDetails, variantsImagesList);
-			representation.setItems(itemsList);
-			
-			if (itemsList.size() > 0) {
-				Integer totalQuantity = itemsList.stream()
-												 .map(BasketItem::getQuantity)
-												 .reduce(0, Integer::sum);
-				representation.setCurrency(itemsList.get(0).getCurrency());
-				representation.setTotalQuantity( totalQuantity);
-			}
+			representation.setItems(basketItems);
 		}
 		
 		return representation;
@@ -872,14 +839,13 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private DetailedOrderRepObject getOrderSummary(OrdersEntity entity) {
+	private void setOrderSummary(OrdersEntity entity, DetailedOrderRepObject obj) {
 		Long metaOrderId = 
 				ofNullable(entity)
 				.map(OrdersEntity::getMetaOrder)
 				.map(MetaOrderEntity::getId)
 				.orElse(null);
-		
-		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+
 		obj.setOrderId(entity.getId() );
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
@@ -889,18 +855,22 @@ public class OrderServiceImpl implements OrderService {
 		obj.setTotal(entity.getAmount());
 		obj.setMetaOrderId(metaOrderId);
 		obj.setDiscount(entity.getDiscounts());
-		return obj;
+
+		CountriesEntity country = entity.getOrganizationEntity().getCountry();
+		if (country != null) {
+			obj.setCurrency(country.getCurrency());
+		}
 	}
 
 
 
-	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator) {
-		DetailedOrderRepObject obj = new DetailedOrderRepObject();
-
+	private void setOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator,
+												   DetailedOrderRepObject obj) {
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
+		obj.setNotes(entity.getMetaOrder().getNotes());
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
@@ -919,94 +889,128 @@ public class OrderServiceImpl implements OrderService {
 			}
 			obj.setShippingAddress(address);
 		}
-
-		return obj;
 	}
-	
-	
 
-	private List<BasketItem> getBasketItems(List<BasketItemDetails> itemsDetailsList, Map<Long, Optional<String>> variantsImagesList) {
-		return itemsDetailsList.stream()
-							.map(basket -> toBasketItem(basket, variantsImagesList))
-							.collect(toList());
+
+
+	private BasketItem readBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages){
+		String itemDataStr = ofNullable(entity.getItemData()).orElse("{}");
+		if(itemDataStr.equals("{}")){
+			return createBasketItemWithThumbnail(entity, variantsCoverImages);
+		}
+		try {
+			BasketItem item = parseItemData(itemDataStr);
+			//before item data json , only price, discount, and some other stocks data - at the time of purchase-
+			//were saved in the BASKETS table. to stay consistent with this older design, we set these basic
+			//data from the BASKETS table directly and consider it the source of truth, while ignoring their saved
+			// values in item data json.
+			//as some other part of the code may be depending on the old assumptions
+			setBasketItemStockData(entity, item);
+			addThumbnailToBasketItem(variantsCoverImages, item, entity);
+			return item;
+		} catch (Throwable e) {
+			logger.error(e,e);
+			return createBasketItemWithThumbnail(entity, variantsCoverImages);
+		}
 	}
-	
-	
-	
-	
 
-	private BasketItem toBasketItem(BasketItemDetails itemDetails, Map<Long, Optional<String>> variantsCoverImages) {
-		BigDecimal price = itemDetails.getPrice();
-		BigDecimal discount = ofNullable(itemDetails.getDiscount()).orElse(ZERO);
-		BigDecimal totalPrice = price.multiply(itemDetails.getQuantity());
 
+
+	private BasketItem parseItemData(String itemData) throws IOException {
+		return objectMapper.readValue(itemData, BasketItem.class);
+	}
+
+
+	private BasketItem createBasketItemWithThumbnail(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
+		BasketItem item = createBasketItemEntity(entity);
+		addThumbnailToBasketItem(variantsCoverImages, item, entity);
+		return item;
+	}
+
+
+
+	private BasketItem createBasketItemEntity(BasketsEntity entity) {
+		BasketItem item = createBasketItemWithBasicData(entity);
+		return addProductDataToBasketItem(entity, item);
+	}
+
+
+
+	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
 		BasketItem item = new BasketItem();
-		item.setProductId(itemDetails.getProductId());
-		item.setName(itemDetails.getProductName());
-		item.setPname(itemDetails.getProductPname());
-		item.setStockId(itemDetails.getStockId());
-		item.setQuantity(itemDetails.getQuantity().intValue());
-		item.setTotalPrice(totalPrice);
-		item.setPrice(price);
-		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).orElse(null));
-		item.setCurrency(ofNullable(getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
-		item.setUnit(itemDetails.getUnit());
-		item.setProductCode(itemDetails.getProductCode());
-		item.setSku(itemDetails.getSku());
+		BeanUtils.copyProperties(originalItem, item);
+
+		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
+
+		item.setProductId(product.getId());
+		item.setName(product.getName());
+		item.setPname(product.getPname());
+		item.setProductType(product.getProductType());
+		item.setBrandId(product.getBrandId());
+
+		item.setVariantId(variant.getId());
+		item.setVariantName(variant.getName());
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
+		item.setSku(variant.getSku());
+		item.setProductCode(variant.getProductCode());
 
 		return item;
 	}
 
 
 
-	private BasketItem toBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
+	private void addThumbnailToBasketItem(Map<Long, Optional<String>> variantsCoverImages, BasketItem item, BasketsEntity entity) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
-		ProductEntity product = variant.getProductEntity();
+		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
+		item.setThumb(thumb);
+	}
+
+
+
+	private BasketItem createBasketItemWithBasicData(BasketsEntity entity) {
+		BasketItem item = new BasketItem();
+		setBasketItemStockData(entity, item);
+		return item;
+	}
+
+
+
+	private void setBasketItemStockData(BasketsEntity entity, BasketItem item) {
 		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = price.multiply(entity.getQuantity());
-		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
 		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
 		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
-		String currencyValue = "";
-		if (country != null) {
-			currencyValue = country.getCurrency();
-		}
+		String currencyValue = ofNullable(country).map(CountriesEntity::getCurrency).orElse("");
 		Boolean isReturnable = orderReturnService.isReturnable(entity);
-		String unitName =
-				ofNullable(entity)
-						.map(BasketsEntity::getStocksEntity)
-						.map(StocksEntity::getUnit)
-						.map(StockUnitEntity::getName)
-						.orElse("");
+		String unitName = getUnit(entity);
 
-		BasketItem item = new BasketItem();
 		item.setId(entity.getId());
-		item.setProductId(product.getId());
-		item.setName(product.getName());
-		item.setPname(product.getPname());
+		item.setUnit(unitName);
+		item.setOrderId(entity.getOrdersEntity().getId());
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
 		item.setTotalPrice(totalPrice);
 		item.setPrice(price);
-		item.setBrandId(product.getBrandId());
-		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
-		item.setThumb(thumb);
+		item.setDiscount(discount);
 		item.setCurrency(currency);
-		item.setProductType(product.getProductType());
-		item.setVariantId(variant.getId());
-		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		item.setSku(variant.getSku());
-		item.setProductCode(variant.getProductCode());
-		item.setUnit(unitName);
-
-		return item;
 	}
-	
-	
-	
+
+
+
+	private String getUnit(BasketsEntity entity) {
+		return ofNullable(entity)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getUnit)
+				.map(StockUnitEntity::getName)
+				.orElse("");
+	}
+
+
+
 	@Override
 	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException {
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
@@ -1017,18 +1021,18 @@ public class OrderServiceImpl implements OrderService {
 												.setMaxResults(finalParams.getCount())
 												.getResultList();
 		
-		Set<Long> ordersIds = new HashSet<>();
+		Set<OrdersEntity> orders = new HashSet<>();
 
 		if ( detailsLevel >= 2) {
-			ordersIds = ordersEntityList.stream().map(OrdersEntity::getId).collect(toSet());
+			orders = ordersEntityList.stream().collect(toSet());
 		}
 
-		Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap(detailsLevel == 3 ? ordersIds : new HashSet<>() );
+		Map<Long, List<BasketItem>> basketItemsDetailsMap = getBasketItemsDetailsMap(orders);
 
-		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
+		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel >= 2 ? orders : new HashSet<>());
 
-		Map<Long, String> orderPhones = getCustomerPhones(ordersIds);
-		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, ordersIds);
+		Map<Long, String> orderPhones = getCustomerPhones(orders);
+		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, orders);
 		return ordersEntityList
 				.stream()
 				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId()), paymentOperator))
@@ -1037,21 +1041,23 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<Long> ordersIds) {
-		if(detailsLevel < 2 || ordersIds.isEmpty()){
+	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
+		if(detailsLevel < 2 || orders.isEmpty()){
 			return emptyMap();
 		}
+		Set<Long> ordersIds = orders.stream().map(OrdersEntity::getId).collect(toSet());
 		return ordersRepository
 				.findPaymentOperatorByOrderIdIn(ordersIds)
 				.stream()
 				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
-				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator));
+				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator, (p1, p2) -> p1));
 	}
 
 
 
-	private Map<Long, String> getCustomerPhones(Set<Long> ordersIds) {
-		return !ordersIds.isEmpty() ?
+	private Map<Long, String> getCustomerPhones(Set<OrdersEntity> orders) {
+		Set<Long> ordersIds = orders.stream().map(OrdersEntity::getId).collect(toSet());
+		return !orders.isEmpty() ?
 					ordersRepository
 					.findUsersPhoneNumber(ordersIds)
 					.stream()
@@ -1062,29 +1068,26 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, List<BasketItemDetails>> getBasketItemsDetailsMap(Set<Long> ordersIds) {
-		Set<Long> nonEmptyOrdersIds = ofNullable(ordersIds)
-											.filter(set -> !set.isEmpty())
-											.orElse( setOf(NON_EXISTING_ORDER_ID) );
-		
-		List<BasketItemDetails> basketData = em.createNamedQuery("Basket", BasketItemDetails.class)
-												.setParameter("orderId", nonEmptyOrdersIds)
-												.getResultList();
-		return  basketData
+	private Map<Long, List<BasketItem>> getBasketItemsDetailsMap(Set<OrdersEntity> orders) {
+		Map<Long, Optional<String>> getVariantsImagesList = orderServiceHelper.getVariantsImagesList(orders);
+		return orders
 				.stream()
-				.filter(Objects::nonNull)
-				.collect( groupingBy(BasketItemDetails::getOrderId));
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
+				.map(basket -> readBasketItem(basket, getVariantsImagesList))
+				.collect( groupingBy(BasketItem::getOrderId));
 	}
 
 
 	
 	
-	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<Long> orderIds) {
-		List<BasketsEntity> basketsEntities = 
-				basketRepository
-				.findByOrdersEntity_IdIn(orderIds)
+	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<OrdersEntity> orders) {
+		List<BasketsEntity> basketsEntities =
+				orders
 				.stream()
-				.collect( toList());
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
+				.collect(toList());
 
 		Map<Long, BigDecimal> ordersQuantities = new HashMap<>();
 		for(BasketsEntity basket: basketsEntities) {
@@ -1180,6 +1183,15 @@ public class OrderServiceImpl implements OrderService {
 		Root<OrdersEntity> root = query.from(OrdersEntity.class);
 		root.fetch("metaOrder", LEFT);
 		root.fetch("shipment", LEFT);
+		root.fetch("addressEntity", LEFT)
+				.fetch("areasEntity", LEFT)
+				.fetch("citiesEntity", LEFT)
+				.fetch("countriesEntity", LEFT);
+		root.fetch("basketsEntity", LEFT)
+				.fetch("stocksEntity", LEFT)
+				.fetch("productVariantsEntity", LEFT)
+				.fetch("productEntity", LEFT);
+		root.fetch("organizationEntity", LEFT);
 		
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 
@@ -1664,6 +1676,7 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setStockId(item.getStockId());
 		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
 		checkoutData.setDiscount(stockData.getDiscount());
+		checkoutData.setWeight(item.getWeight());
 		return checkoutData;
 	}
 
@@ -1700,11 +1713,9 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
-		Map<Long, Optional<String>> variantsCoverImages = orderServiceHelper.getVariantsImagesList(order);
-
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsCoverImages);
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order);
 		Boolean isCancelable = isCancelable(order);
 
 		orderDto.setSubOrders(subOrders);
@@ -1723,11 +1734,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, Optional<String>> variantsCoverImages) {
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, variantsCoverImages))
+		.map(subOrder -> getSubOrder(subOrder))
 		.collect(toList());
 	}
 
@@ -1740,6 +1751,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
+		order.setNotes(metaOrder.getNotes());
 
 		String status = ofNullable(findEnum(metaOrder.getStatus()))
 						.orElse(NEW)
@@ -1833,21 +1845,19 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, Optional<String>> variantsCoverImages) {
-
-		String status = 
-				ofNullable(findEnum(order.getStatus()))
+	private SubOrder getSubOrder(OrdersEntity order) {
+		String status = ofNullable(findEnum(order.getStatus()))
 				.orElse(NEW)
 				.name();
-		
-		List<BasketItem> items =
-				order
-				.getBasketsEntity()
-				.stream()
-				.map(b -> toBasketItem(b, variantsCoverImages))
-				.collect(toList());
+
+		List<BasketItem> items = getBasketItemsDetailsMap( setOf(order) ).get(order.getId());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
+		String shippingServiceName = shippingMgrService
+				.getShippingServiceInfo(shipmentDto.getServiceId())
+				.map(ShippingServiceInfo::getName)
+				.orElse("");
+		shipmentDto.setServiceName(shippingServiceName);
 		
 		Long totalQuantity = 
 				items
@@ -1901,6 +1911,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
 		order.setDiscounts(discounts);
+		order.setNotes(dto.getNotes());
 		subOrders.forEach(order::addSubOrder);
 		promotion.ifPresent(order::addPromotion);
 		
@@ -2118,7 +2129,7 @@ public class OrderServiceImpl implements OrderService {
 		cartItems
 		.getCheckOutData()
 		.stream()
-		.map(data -> createBasketItem(data, subOrder, stocksCache))
+		.map(data -> createBasketItemEntity(data, subOrder, stocksCache))
 		.forEach(subOrder::addBasketItem);
 	}
 
@@ -2182,7 +2193,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
+	private BasketsEntity createBasketItemEntity(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
 		StocksEntity stock = 
 				ofNullable(data)
 				.map(CartCheckoutData::getStockId)
@@ -2194,6 +2205,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = data.getPrice().subtract(discount);
+
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
 		basket.setPrice(totalPrice);
@@ -2201,8 +2213,19 @@ public class OrderServiceImpl implements OrderService {
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
-
+		basket.setItemData(serializeItemData(basket));
 		return basket;
+	}
+
+	
+
+	private String serializeItemData(BasketsEntity basket) {
+		try {
+			return objectMapper.writeValueAsString(createBasketItemEntity(basket));
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$NEW$0001);
+		}
 	}
 
 
@@ -2407,11 +2430,7 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getUpdateDate());
 
-		List<BasketItemDetails> basketItemsDetails =
-				getBasketItemsDetailsMap( setOf(order.getId()) )
-						.get(order.getId());
-
-		SubOrder subOrder = getSubOrder(order, orderServiceHelper.getVariantsImagesList(basketItemsDetails));
+		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
 
 		String domain = domainService.getCurrentServerDomain();

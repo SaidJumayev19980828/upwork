@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "Egypt",
+    "cities": [
+      {
+        "id": 2,
+        "name": "Alexandria",
+        "areas": [
+          {
+            "id": 144,
+            "name": "Abu Kir"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -4,11 +4,15 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 
-import com.gargoylesoftware.htmlunit.javascript.host.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.nasnav.cache.Caches;
+import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -17,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +39,10 @@ import com.nasnav.persistence.ShopsEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -48,12 +57,25 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
+    @Autowired
+    private CacheManager cacheMgr;
+
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
     @Autowired  private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Mock
     private NavboxController navboxController;
+
+    @Before
+    public void clearCache(){
+        cacheMgr.getCache(Caches.COUNTRIES).clear();
+    }
+
+
 
     @Test
     public void testBrands() {
@@ -85,7 +107,7 @@ public class NavBoxTest {
     
     
     @Test
-    public void testShops() {
+    public void testShops() throws IOException {
         // TODO: no support for opening times yet
         ShopsEntity shop = shopsRepository.findById(100001L).get();
         long orgId = 99001L;
@@ -116,7 +138,9 @@ public class NavBoxTest {
 
         // test non-existent org_id
         orgResponse =  template.getForEntity("/navbox/shops?org_id=" + 1243124312341243L, String.class);
-        assertEquals(404, orgResponse.getStatusCodeValue());
+        assertEquals(200, orgResponse.getStatusCodeValue());
+        List<ShopRepresentationObject> shopsList = objectMapper.readValue(orgResponse.getBody(), new TypeReference<List<ShopRepresentationObject>>(){});
+        assertEquals(0, shopsList.size());
 
         // test non-existent shop_id
         shopResponse =  template.getForEntity("/navbox/shop?shop_id=" + 1243124312341243L, String.class);
@@ -186,6 +210,60 @@ public class NavBoxTest {
 
         int id = JsonPath.read(response.getBody(), "$['Egypt']['cities']['Cairo']['areas']['New Cairo']['id']");
         assertEquals("smaller id should be picked for duplicate areas", 1, id);
+    }
+
+
+
+    @Test
+    public void getCountriesNoOrgProvided() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertNull("If no organization is provided, no sub-areas should be returned", werwerLand);
+    }
+
+
+
+    @Test
+    public void getCountriesWithSubAreas() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99001", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertEquals("WerWer Land", werwerLand.getName());
+    }
+
+
+
+    @Test
+    public void getCountriesForOrgWithNoSubAreas() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99002", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        CountriesRepObj egypt = body.get("Egypt");
+        assertTrue(egypt != null);
+        CitiesRepObj cairo = egypt.getCities().get("Cairo");
+        assertEquals("Cairo", cairo.getName());
+        AreasRepObj newCairo = cairo.getAreas().get("new cairo");
+        assertEquals("new cairo", newCairo.getName());
+        SubAreasRepObj werwerLand = newCairo.getSubAreas().get("WerWer Land");
+        assertNull("This organization has no sub-areas", werwerLand);
     }
 
 }

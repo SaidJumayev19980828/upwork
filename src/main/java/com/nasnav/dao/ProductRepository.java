@@ -38,6 +38,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
 
+	@Query(value = "select p.id from Products p where p.category_id = :categoryId", nativeQuery = true)
+    List<Long> findProductsIdsByCategoryId(@Param("categoryId") Long categoryId);
+
 	@Query("SELECT p.id from ProductEntity p where p.organizationId = :orgId")
     List<Long> findProductsIdsByOrganizationId(@Param("orgId") Long orgId);
 
@@ -55,6 +58,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Query(value = "SELECT t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
     List<Long> getProductIdsByTagsList(@Param("tagsIds") List<Long> tagsIds);
+
+    Long countByBrandId(Long brandId);
 
 
     @Query(nativeQuery = true)
@@ -78,6 +83,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Transactional
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
+
+    @Query(value = "update Products set category_id = :categoryId where id in :productsIds", nativeQuery = true)
+    @Transactional
+    @Modifying
+    void setProductsListCategory(@Param("categoryId") Long categoryId,
+                                 @Param("productsIds") List<Long> productsIds);
 
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
 	
@@ -118,7 +129,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description, p.productType)"+
-            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
+            " from ProductCollectionEntity p " +
+            " left join p.items item " +
+            " join item.item v " +
+            " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
             " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +

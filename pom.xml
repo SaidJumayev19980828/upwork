@@ -128,25 +128,25 @@
             <version>${spring.data.version}</version>
         </dependency>
         <dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-devtools</artifactId>
-		    <version>${spring.data.version}</version>
-		</dependency>
-		<dependency>
-	        <groupId>org.springframework.boot</groupId>
-	        <artifactId>spring-boot-starter-thymeleaf</artifactId>
-	        <version>${spring.data.version}</version>
-  		</dependency>
-  		<dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-cache</artifactId>
-		</dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <version>${spring.data.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <version>${spring.data.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
 
 
-		<dependency>
-		    <groupId>javax.cache</groupId>
-		    <artifactId>cache-api</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.json</groupId>
@@ -205,68 +205,68 @@
             <version>1.22</version>
         </dependency>
         <dependency>
-		    <groupId>com.google.guava</groupId>
-		    <artifactId>guava</artifactId>
-		    <version>24.1.1-jre</version>
-		</dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>24.1.1-jre</version>
+        </dependency>
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
-		<dependency>
-		    <groupId>com.univocity</groupId>
-		    <artifactId>univocity-parsers</artifactId>
-		    <version>2.8.3</version>
-		</dependency>
-		<dependency>
-		    <groupId>commons-fileupload</groupId>
-		    <artifactId>commons-fileupload</artifactId>
-		    <version>1.4</version>
-		</dependency>
-		
-		<dependency>
-		    <groupId>org.springframework.security</groupId>
-		    <artifactId>spring-security-oauth2-client</artifactId>
-		</dependency>
-		<dependency>
-		    <groupId>org.springframework.security</groupId>
-		    <artifactId>spring-security-oauth2-jose</artifactId>
-		</dependency>
-		
-		<dependency>
-		  <groupId>io.jsonwebtoken</groupId>
-		  <artifactId>jjwt</artifactId>
-		  <version>0.5.1</version>
-		</dependency>
-		
+        <dependency>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
+            <version>2.8.3</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.4</version>
+        </dependency>
 
-		<dependency>
-	        <groupId>io.projectreactor</groupId>
-	        <artifactId>reactor-core</artifactId>
-	        <version>3.3.0.RELEASE</version>
-	        <scope>compile</scope>
-	      </dependency>	      
-	    <dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.5.1</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.3.0.RELEASE</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
             <version>${spring.boot.version}</version>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>org.projectreactor</groupId>
             <artifactId>reactor-spring</artifactId>
             <version>1.0.1.RELEASE</version>
         </dependency>
         <dependency>
-		    <groupId>org.ehcache</groupId>
-		    <artifactId>ehcache</artifactId>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
             <version>3.8.1</version>
-		</dependency>
-		<dependency>
-		   <groupId>com.esotericsoftware</groupId>
-		   <artifactId>kryo</artifactId>
-		   <version>5.0.0-RC5</version>
-		</dependency>
+        </dependency>
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>5.0.0-RC5</version>
+        </dependency>
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
@@ -290,34 +290,34 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-		    <groupId>com.github.stephenc.jcip</groupId>
-		    <artifactId>jcip-annotations</artifactId>
-		    <version>1.0-1</version>
-		    <scope>test</scope>
-		</dependency>
-	    <dependency>
-	        <groupId>org.jdbi</groupId>
-	        <artifactId>jdbi3-core</artifactId>
-	        <version>3.1.0</version>
-	        <scope>test</scope>
-	    </dependency>
+            <groupId>com.github.stephenc.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>1.0-1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jdbi</groupId>
+            <artifactId>jdbi3-core</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
-	<dependency>
-	    <groupId>net.jodah</groupId>
-	    <artifactId>concurrentunit</artifactId>
-	    <version>0.4.6</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>org.mock-server</groupId>
-	    <artifactId>mockserver-netty</artifactId>
-	    <version>5.4.1</version>
-	</dependency>
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>concurrentunit</artifactId>
+            <version>0.4.6</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty</artifactId>
+            <version>5.4.1</version>
+        </dependency>
 
         <dependency>
             <groupId>org.jgrapht</groupId>
@@ -347,14 +347,14 @@
             <version>${querydsl.version}</version>
         </dependency>
         <dependency>
-		  <groupId>com.querydsl</groupId>
-		  <artifactId>querydsl-sql-spring</artifactId>
-		  <version>${querydsl.version}</version>
-		</dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-sql-spring</artifactId>
+            <version>${querydsl.version}</version>
+        </dependency>
         <dependency>
-	        <groupId>com.zaxxer</groupId>
-	        <artifactId>HikariCP</artifactId>
-       </dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
 
 
         <dependency>
@@ -415,14 +415,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
                 <configuration>
-                  <skipAfterFailureCount>1</skipAfterFailureCount>
-			      <properties>
-			        <property>
-			          <name>listener</name>
-			          <value>com.nasnav.test.listners.TestEnvironmentInitializer</value>
-			        </property>
-			      </properties>
-			    </configuration>
+                    <skipAfterFailureCount>1</skipAfterFailureCount>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>com.nasnav.test.listners.TestEnvironmentInitializer</value>
+                        </property>
+                    </properties>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -464,7 +464,7 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
             <plugin>
                 <groupId>com.querydsl</groupId>
                 <artifactId>querydsl-maven-plugin</artifactId>
@@ -485,7 +485,7 @@
                     <jdbcPassword>${db.password}</jdbcPassword>
                     <packageName>com.nasnav.model.querydsl.sql</packageName>
                     <sourceFolder>${project.basedir}/src/main/java</sourceFolder>
-                    <targetFolder>${project.basedir}/src/main/java</targetFolder>                    
+                    <targetFolder>${project.basedir}/src/main/java</targetFolder>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -505,12 +505,12 @@
     </build>
 
     <dependencyManagement>
-    	<dependencies>
-    		<dependency>
-    			<groupId>commons-io</groupId>
-    			<artifactId>commons-io</artifactId>
-    			<version>2.6</version>
-    		</dependency>
-    	</dependencies>
+        <dependencies>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.6</version>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
 </project>

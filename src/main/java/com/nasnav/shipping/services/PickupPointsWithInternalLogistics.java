@@ -63,7 +63,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	private final Logger logger = LogManager.getLogger();
 	public static final String SERVICE_ID = "PICKUP_POINTS"; 
 	public static final String SERVICE_NAME = "Pickup point";
-	public static final String ICON = "/icons/pickup_from_shop_logo.png";
+	public static final String ICON = "/icons/pickup_from_shop_logo.svg";
 	public static final String WAREHOUSE_ID = "WAREHOUSE_ID";
 	public static final String SHOP_ID = "SHOP_ID";
 	public static final String PICKUP_POINTS_ID_LIST = "PICKUP_POINTS_ID_LIST";

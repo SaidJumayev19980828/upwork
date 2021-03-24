@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "name": {
+      "type": "search_as_you_type"
+    },
+    "organization_id": {
+      "type" : "keyword"
+    }
+  }
+}

@@ -10,6 +10,8 @@ import org.springframework.data.jpa.domain.AbstractPersistable;
 import javax.persistence.*;
 import java.util.Set;
 
+import static javax.persistence.FetchType.LAZY;
+
 @Table(name = "theme_classes")
 @Entity
 @Data
@@ -22,6 +24,12 @@ public class ThemeClassEntity extends AbstractPersistable<Integer> implements Ba
 
     @Column(name = "name")
     private String name;
+
+    @OneToMany(mappedBy = "themeClassEntity", fetch = LAZY)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<ThemeEntity> themes;
 /*
     @ManyToMany(mappedBy = "theme_classes")
     @JsonIgnore

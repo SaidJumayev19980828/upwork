@@ -15,7 +15,8 @@ public interface UserAddressRepository extends JpaRepository<UserAddressEntity, 
             " left join fetch ua.address a " +
             " left join fetch a.areasEntity area " +
             " left join fetch area.citiesEntity city " +
-            " left join fetch city.countriesEntity country "+
+            " left join fetch city.countriesEntity country " +
+            " left join fetch a.subAreasEntity subArea "+
             " where usr.id = :userId order by ua.principal desc")
     List<UserAddressEntity> findByUser_Id(@Param("userId") Long userId);
 }

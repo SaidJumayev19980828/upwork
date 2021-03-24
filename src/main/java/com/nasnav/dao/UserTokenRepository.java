@@ -47,4 +47,6 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
     @Query(value = "delete from UserTokensEntity t where t.userEntity = :usr")
     void deleteByUserEntity(@Param("usr") UserEntity usr);
 
+    @Query("select e.organizationId from UserTokensEntity t inner join t.employeeUserEntity e where t.token = :token")
+    Long findEmployeeOrgIdByToken(@Param("token") String token);
 }

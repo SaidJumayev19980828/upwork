@@ -1,5 +1,5 @@
-barcode,product_name,p_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount,sku,product_code,unit
-1354ABN,Squishy shoes,s_shoe,squishy,squish,squishy things101,invalid,10.25,,,,,,
-87847777EW,hard shoes,h_shoe,too hard,hardy,mountain equipment12,invalid,88.6,,,,,,
-88787JKL,Mickey mouse,m_shoe,black,disney,mindwash,84,88.6,,,,,,
-8875936ew,red shoes,r_shoe,too red,reddy,casual,invalid,88.6,,,,,,
+barcode,product_name,p_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount,sku,product_code,unit,weight
+1354ABN,Squishy shoes,s_shoe,squishy,squish,squishy things101,invalid,10.25,,,,,,,
+87847777EW,hard shoes,h_shoe,too hard,hardy,mountain equipment12,invalid,88.6,,,,,,,
+88787JKL,Mickey mouse,m_shoe,black,disney,mindwash,84,88.6,,,,,,,
+8875936ew,red shoes,r_shoe,too red,reddy,casual,invalid,88.6,,,,,,,

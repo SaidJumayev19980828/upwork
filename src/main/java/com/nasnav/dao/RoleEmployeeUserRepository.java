@@ -27,7 +27,7 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     		+ " FROM RoleEmployeeUser roleEmp "
     		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
     		+ " WHERE roleEmp.roleId = (select id from Role roles where roles.name = :roleName) "
-    		+ "   AND emp.shopId = :shopId")
+    		+ "   AND emp.shopId = :shopId AND emp.userStatus = 201")
     List<String> findEmailOfEmployeeWithRoleAndShop(@Param("roleName") String roleName, @Param("shopId")Long shopId);
     
     
@@ -35,6 +35,6 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     		+ " FROM RoleEmployeeUser roleEmp "
     		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
     		+ " WHERE roleEmp.roleId = (select id from Role roles where roles.name = :roleName) "
-    		+ "   AND emp.organizationId = :orgId")
+    		+ "   AND emp.organizationId = :orgId AND emp.userStatus = 201")
     List<String> findEmailOfEmployeeWithRoleAndOrganization(@Param("roleName") String roleName, @Param("orgId")Long orgId);
 }

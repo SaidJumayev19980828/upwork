@@ -2,6 +2,8 @@ package com.nasnav.test;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
+import static com.nasnav.enumerations.ExtraAttributeType.STRING;
 import static com.nasnav.persistence.ProductTypes.COLLECTION;
 import static com.nasnav.persistence.ProductTypes.STOCK_ITEM;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -13,8 +15,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.json.JSONObject.NULL;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -29,10 +30,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.test.commons.TestCommons;
+import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.persistence.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -56,17 +57,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.ProductSearchParam;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -81,6 +71,7 @@ public class ProductServiceTest {
 	private static final BigDecimal DISCOUNT = new BigDecimal("20");
 	private static final String DUMMY_EXTRA_ATTR_VALUE = "Indeed";
 	private static final String DUMMY_EXTRA_ATTR_NAME = "Very Cool Special feature";
+	private static final String INVISIBLE_EXTRA_ATTR_NAME = "You cannot see me";
 	private static final String DUMMY_EXTRA_ATTR_ICON = "cool_icon.png";
 	private static final String PRODUCT_IMG_URL = "my_cool_img.jpg";
 	private static final String PRODUCT_DESC = "Some description";
@@ -91,6 +82,7 @@ public class ProductServiceTest {
 	public static final int TEST_BUNDLE_ORG_ID = 99001;
 	public static final int TEST_BUNDLE_PRODUCTS_NUM = 4;
 	public static final int TEST_BUNDLE_NUM = 2;
+	public static final String PRODUCT_FEATURE_EXTRA_DATA = "{'extra_attribute_id': 7}";
 
 
 	@Autowired
@@ -101,6 +93,8 @@ public class ProductServiceTest {
 
 	@Autowired
 	private ProductCollectionRepository productCollectionRepo;
+	@Autowired
+	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
 	private ProductVariantsRepository productVariantsRepository;
@@ -251,6 +245,44 @@ public class ProductServiceTest {
 	}
 
 
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithZeroStocksExcluded() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductDetailsDTO> response =
+				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=false",	ProductDetailsDTO.class);
+
+		assertEquals(OK, response.getStatusCode());
+		ProductDetailsDTO body = response.getBody();
+		assertEquals("all variants are returned regardless of stock", 1, body.getVariants().size());
+		assertNull("No price is returned because all stocks are zero", body.getPrice());
+		assertNull("No price is returned because all stocks are zero", body.getPrices());
+		assertNull("No default stock is returned because all stocks are zero", body.getStockId());
+	}
+
+
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithZeroStocksIncluded() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductDetailsDTO> response =
+				template.getForEntity("/navbox/product?product_id=1001&include_out_of_stock=true",	ProductDetailsDTO.class);
+
+		assertEquals(OK, response.getStatusCode());
+		ProductDetailsDTO body = response.getBody();
+		assertEquals("all variants are returned regardless of stock", 1, body.getVariants().size());
+		assertEquals("Min price will be returned including zero stock prices", 0,  body.getPrice().compareTo(new BigDecimal("400")) );
+		assertEquals("default stock is returned including zero stocks", 605L,  body.getStockId().longValue());
+	}
+
+
+
 	private void assertValidResponseWithSingleStockReturned(ProductTestData testData, ResponseEntity<String> response, Long shopId) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
@@ -311,6 +343,29 @@ public class ProductServiceTest {
 	}
 
 
+
+
+	private void assertValidResponseWithInvisibleExtraAttr(ProductTestData testData, ResponseEntity<String> response) {
+		JSONObject productDetails = new JSONObject(response.getBody());
+		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
+		JSONArray expectedStocks = createExpectedStocks(testData.stocksEntities);
+		JSONArray stocks = getStocksJsonArray(variant);
+
+
+		assertProductDetailsWithFeaturesWithExtraDataRetrieved(response, productDetails);
+		assertVariantDetailRetrievedWithInvisibleExtraAttr(variant);
+		assertTrue(stocks.similar(expectedStocks));
+	}
+
+
+
+
+	private boolean featureHasExpectedData(JSONObject feature) {
+		return ProductFeatureType.STRING.name().equals(feature.getString("type"))
+				&& feature.getJSONObject("extra_data").similar(new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+	}
+
+
 	private void assertValidResponseWithoutStocks(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONArray variantList = productDetails.getJSONArray("variants");
@@ -358,6 +413,26 @@ public class ProductServiceTest {
 	}
 
 
+
+	private ProductTestData createProductTestDataWithInvisibleExtraAttr() {
+		ProductTestData testData = new ProductTestData();
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
+		testData.productFeaturesEntity_1 = createDummyFeature1WithExtraData(org);
+		testData.productFeaturesEntity_2 = createDummyFeature2WithExtraData(org);
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
+		testData.productVariantsEntity = createDummyVariantWithInvisibleExtraAttributes(testData.productEntity, testData.spec);
+		testData.shopEntities = createDummyShops(org, 1);
+		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
+
+		return testData;
+	}
+
+
 	private ProductTestData createProductTestDataWithoutStocks() {
 		ProductTestData testData = new ProductTestData();
 
@@ -393,6 +468,7 @@ public class ProductServiceTest {
 	}
 
 
+
 	private ProductTestData createProductTestDataWithZeroDiscountStocks() {
 		ProductTestData testData = new ProductTestData();
 
@@ -411,9 +487,18 @@ public class ProductServiceTest {
 	}
 
 
+
 	private void assertFeatureArrayRetrieved(JSONObject body) {
 		JSONArray features = body.getJSONArray("variant_features");
 		JSONArray expectedFeatures = createExpectedFeaturesJson();
+		assertTrue(features.similar(expectedFeatures));
+	}
+
+
+
+	private void assertFeatureWithExtraDataArrayRetrieved(JSONObject body) {
+		JSONArray features = body.getJSONArray("variant_features");
+		JSONArray expectedFeatures = createExpectedFeaturesWithExtraDataJson();
 		assertTrue(features.similar(expectedFeatures));
 	}
 
@@ -483,6 +568,32 @@ public class ProductServiceTest {
 	}
 
 
+
+	private ProductFeaturesEntity createDummyFeature1WithExtraData(OrganizationEntity org) {
+		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
+		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
+		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganization(org);
+		productFeaturesEntity_1.setLevel(0);
+		productFeaturesEntity_1.setExtraData(PRODUCT_FEATURE_EXTRA_DATA);
+		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
+		return productFeaturesEntity_1;
+	}
+
+
+
+	private ProductFeaturesEntity createDummyFeature2WithExtraData(OrganizationEntity org) {
+		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
+		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
+		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganization(org);
+		productFeaturesEntity_2.setLevel(0);
+		productFeaturesEntity_2.setExtraData(PRODUCT_FEATURE_EXTRA_DATA);
+		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
+		return productFeaturesEntity_2;
+	}
+
+
 	private String createDummySpecValues(ProductFeaturesEntity productFeaturesEntity_1,
 										 ProductFeaturesEntity productFeaturesEntity_2) {
 		return FEATURE_SEPC_TEMPLATE
@@ -512,6 +623,15 @@ public class ProductServiceTest {
 	}
 
 
+	private ProductVariantsEntity createDummyVariantWithInvisibleExtraAttributes(ProductEntity productEntity, String spec) {
+		ProductVariantsEntity variant = createDummyVariant(productEntity, spec);
+		Set<ProductExtraAttributesEntity> extraAttributes = createInvisibleDummyExtraAttr(variant);
+		extraAttributes.forEach(variant::addExtraAttribute);
+		return productVariantsRepository.save(variant);
+	}
+
+
+
 	private Set<ProductExtraAttributesEntity> createDummyExtraAttr(ProductVariantsEntity variant) {
 		ProductExtraAttributesEntity productExtraAttr = new ProductExtraAttributesEntity();
 		ExtraAttributesEntity extraAttr = createDummyExtraAttrDef(variant);
@@ -522,12 +642,36 @@ public class ProductServiceTest {
 	}
 
 
+
+
+	private Set<ProductExtraAttributesEntity> createInvisibleDummyExtraAttr(ProductVariantsEntity variant) {
+		ProductExtraAttributesEntity productExtraAttr = new ProductExtraAttributesEntity();
+		ExtraAttributesEntity extraAttr = createInvisibleDummyExtraAttrDef(variant);
+		productExtraAttr.setExtraAttribute(extraAttr);
+		productExtraAttr.setVariant(variant);
+		productExtraAttr.setValue(DUMMY_EXTRA_ATTR_VALUE);
+		return setOf(productExtraAttr);
+	}
+
+
+
 	private ExtraAttributesEntity createDummyExtraAttrDef(ProductVariantsEntity variant) {
 		ExtraAttributesEntity extraAttr = new ExtraAttributesEntity();
 		extraAttr.setIconUrl(DUMMY_EXTRA_ATTR_ICON);
 		extraAttr.setName(DUMMY_EXTRA_ATTR_NAME);
 		extraAttr.setOrganizationId(variant.getProductEntity().getOrganizationId());
 		extraAttr.setType(null);
+		return extraAttributeRepository.save(extraAttr);
+	}
+
+
+
+	private ExtraAttributesEntity createInvisibleDummyExtraAttrDef(ProductVariantsEntity variant) {
+		ExtraAttributesEntity extraAttr = new ExtraAttributesEntity();
+		extraAttr.setIconUrl(DUMMY_EXTRA_ATTR_ICON);
+		extraAttr.setName(INVISIBLE_EXTRA_ATTR_NAME);
+		extraAttr.setOrganizationId(variant.getProductEntity().getOrganizationId());
+		extraAttr.setType(INVISIBLE.getValue());
 		return extraAttributeRepository.save(extraAttr);
 	}
 
@@ -609,6 +753,7 @@ public class ProductServiceTest {
 	}
 
 
+
 	private void assertVariantDetailRetrievedWithExtraAttr(JSONObject variant) {
 		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
 		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
@@ -616,10 +761,26 @@ public class ProductServiceTest {
 
 		JSONObject extraAttr = variant.getJSONArray("extra_attributes").getJSONObject(0);
 		assertEquals(DUMMY_EXTRA_ATTR_NAME, extraAttr.getString("name"));
-		assertEquals(NULL, extraAttr.get("type"));
+		assertEquals(STRING.name(), extraAttr.get("type"));
 		assertEquals(DUMMY_EXTRA_ATTR_VALUE, extraAttr.getString("value"));
 		assertEquals(DUMMY_EXTRA_ATTR_ICON, extraAttr.getString("icon_url"));
 	}
+
+
+
+	private void assertVariantDetailRetrievedWithInvisibleExtraAttr(JSONObject variant) {
+		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
+		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
+		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
+
+		JSONObject extraAttr = variant.getJSONArray("extra_attributes").getJSONObject(0);
+		assertEquals(INVISIBLE_EXTRA_ATTR_NAME, extraAttr.getString("name"));
+		assertEquals(INVISIBLE.name(), extraAttr.get("type"));
+		assertEquals(true, extraAttr.get("invisible"));
+		assertEquals(DUMMY_EXTRA_ATTR_VALUE, extraAttr.getString("value"));
+		assertEquals(DUMMY_EXTRA_ATTR_ICON, extraAttr.getString("icon_url"));
+	}
+
 
 
 	private void assertProductDetailsRetrieved(ResponseEntity<String> response, JSONObject product) {
@@ -633,6 +794,21 @@ public class ProductServiceTest {
 		assertTrue(product.has("variants"));
 		assertFeatureArrayRetrieved(product);
 	}
+
+
+	private void assertProductDetailsWithFeaturesWithExtraDataRetrieved(ResponseEntity<String> response, JSONObject product) {
+		assertEquals(OK, response.getStatusCode());
+		assertEquals(PRODUCT_NAME, product.getString("name"));
+		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
+		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));
+		assertEquals(PRODUCT_DESC, product.getString("description"));
+		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
+		assertTrue(product.has("variant_features"));
+		assertTrue(product.has("variants"));
+		assertFeatureWithExtraDataArrayRetrieved(product);
+	}
+
+
 
 
 	private JSONArray createExpectedStocks(List<StocksEntity> expectedStocks) {
@@ -674,13 +850,34 @@ public class ProductServiceTest {
 		JSONObject expectedFeature1 = new JSONObject();
 		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
 		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
+		expectedFeature1.put("type", ProductFeatureType.STRING.name());
+		expectedFeature1.put("extra_data", new JSONObject());
 
 		JSONObject expectedFeature2 = new JSONObject();
 		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
 		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
+		expectedFeature2.put("type", ProductFeatureType.STRING.name());
+		expectedFeature2.put("extra_data", new JSONObject());
 
-		JSONArray expectedFeatures = new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
-		return expectedFeatures;
+		return new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
+	}
+
+
+
+	private JSONArray createExpectedFeaturesWithExtraDataJson() {
+		JSONObject expectedFeature1 = new JSONObject();
+		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
+		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
+		expectedFeature1.put("type", ProductFeatureType.STRING.name());
+		expectedFeature1.put("extra_data", new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+
+		JSONObject expectedFeature2 = new JSONObject();
+		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
+		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
+		expectedFeature2.put("type", ProductFeatureType.STRING.name());
+		expectedFeature2.put("extra_data", new JSONObject(PRODUCT_FEATURE_EXTRA_DATA));
+
+		return new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
 	}
 
 
@@ -994,10 +1191,28 @@ public class ProductServiceTest {
 		System.out.println("product with extra attributes >>> " + response.getBody());
 
 		assertValidResponseWithExtraAttr(testData, response);
+	}
+
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getProductWithVariantsWithInvisibleExtraAttributes() {
+
+		ProductTestData testData = createProductTestDataWithInvisibleExtraAttr();
 
 		//-----------------------------------------
-		cleanInsertedData(testData);
+		ResponseEntity<String> response = template.getForEntity(
+				format("/navbox/product?product_id=%d&shop_id=%d"
+						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				String.class);
+		//-----------------------------------------
+		System.out.println("product with extra attributes >>> " + response.getBody());
+
+		assertValidResponseWithInvisibleExtraAttr(testData, response);
 	}
+
 
 
 	@Test
@@ -1011,6 +1226,43 @@ public class ProductServiceTest {
 																DELETE, request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(productCollectionRepo.existsById(1004L));
+		assertFalse(collectionItemRepo.existsById(1004L));
+	}
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteCollectionsSuccess() {
+		HttpEntity request = getHttpEntity("131415");
+
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1008L));
+		ResponseEntity<String> response = template.exchange("/product/collection?id=1004,1008",
+				DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertFalse(productCollectionRepo.existsById(1004L));
+		assertFalse(productCollectionRepo.existsById(1008L));
+		assertFalse(collectionItemRepo.existsById(1004L));
+		assertFalse(collectionItemRepo.existsById(1008L));
+	}
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteCollectionsBelongToDifferentOrg() {
+		HttpEntity request = getHttpEntity("131415");
+
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1007L));
+		ResponseEntity<String> response = template.exchange("/product/collection?id=1004,1007",
+				DELETE, request, String.class);
+		assertEquals(404, response.getStatusCodeValue());
+		assertTrue(productCollectionRepo.existsById(1004L));
+		assertTrue(productCollectionRepo.existsById(1007L));
+		assertTrue(collectionItemRepo.existsById(1004L));
+		assertTrue(collectionItemRepo.existsById(1007L));
 	}
 
 
@@ -1047,7 +1299,33 @@ public class ProductServiceTest {
 		assertTrue( isProductsWithStockHavePrices(products) );
 	}
 
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteProductsWithVariantsLinkedToCollection() {
+		HttpEntity<?> request =  getHttpEntity("131415");
 
+		ResponseEntity<String> response =
+				template.exchange("/product?product_id=1006", DELETE, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteProductsWithVariantsLinkedToCollectionAndForceFlagTrue() {
+		ProductCollectionEntity collection = productCollectionRepo.findByIdAndOrganizationId(1008L, 99002L).get();
+		assertFalse(collection.getVariants().isEmpty());
+
+		HttpEntity<?> request =  getHttpEntity("131415");
+
+		ResponseEntity<String> response =
+				template.exchange("/product?product_id=1006&force_delete_collection_items=true", DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		collection = productCollectionRepo.findByIdAndOrganizationId(1008L, 99002L).get();
+		assertTrue(collection.getVariants().isEmpty());
+	}
 
 
 	private boolean isProductsWithStockHavePrices(List<ProductRepresentationObject> products) {

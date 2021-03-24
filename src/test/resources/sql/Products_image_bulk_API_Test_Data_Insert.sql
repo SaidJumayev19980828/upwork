@@ -42,6 +42,21 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
 
+--inserting product features
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001, 1, '{"extra_attribute_id": 744234}');
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001, 2, '{"extra_attribute_id": 744235}');
+INSERT INTO public.product_features(id, name, p_name, description, organization_id, type, extra_data)
+VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002, 1, '{"extra_attribute_id": 744236}');
+
+----inserting in extra_attributes table
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744234, '$s-size$IMG_SWATCH', 'Invisible', 99001, '/uploads/category/fearutes/feature1.jpg');
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744235, '$s-color$COLOR', 'Invisible', 99001, '/uploads/category/fearutes/feature1.jpg');
+INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_id, icon)
+    VALUES (744236, '$s-size$IMG_SWATCH', 'Invisible', 99002, '/uploads/category/fearutes/feature1.jpg');
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());

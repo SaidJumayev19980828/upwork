@@ -1,22 +1,29 @@
 package com.nasnav.test;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
+import static com.nasnav.test.commons.TestCommons.*;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.GET;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
-import com.nasnav.dao.SocialRepository;
+import com.jayway.jsonpath.JsonPath;
+import com.nasnav.dao.*;
+import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
+import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.SubAreasEntity;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,9 +45,6 @@ import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.OrganizationEntity;
@@ -71,6 +75,12 @@ public class OrganizationManagmentTest {
     
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SubAreaRepository subAreaRepo;
+
+    @Autowired
+    private AddressRepository addressRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -120,35 +130,31 @@ public class OrganizationManagmentTest {
     }
 
 
-
     @Test
-    public void updateOrganizationInvalidSocialLinksTest() {
-        // invalid twitter link
-        String body = "{\"org_id\":99005, \"social_twitter\": \"htps://www.twitte.com/fortunestores\"}";
+    public void deleteOrganizationSocialLinksTest() {
+        // insert social link first
+        String body = json()
+                .put("social_twitter", "htps://www.twitte.com/fortunestores")
+                .toString();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("htps://www.twitte.com/fortunestores", socialRepository.findOneByOrganizationEntity_Id(99001L).get().getTwitter());
 
-        // invalid facebook link
-        body = "{\"org_id\":99005, \"social_facebook\": \"htts://www.faceboo.com/fortune.stores11/\"}";
+        // try to remove social link
+        body = json()
+                .put("social_twitter", "")
+                .toString();
         map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
         json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
-
-        // invalid instagram link
-        body = "{\"org_id\":99005, \"social_instagram\": \"htps://instgram.com/fortunestores\"}";
-        map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        map.add("logo", file);
-        json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
-        response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
-        assertEquals(406, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
+        assertNull(socialRepository.findOneByOrganizationEntity_Id(99001L).get().getTwitter());
     }
 
     @Test
@@ -467,4 +473,328 @@ public class OrganizationManagmentTest {
         		template.exchange("/organization/shops", GET, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
     }
+
+
+
+    @Test
+    public void updateSubAreasNoAuthZ(){
+        HttpEntity<?> req = getHttpEntity("NotExist");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasNoAuthN(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasInvalidArea(){
+        String name = "werwerland";
+        Long areaId = null;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasMissingArea(){
+        String name = "werwerland";
+        Long areaId = -1L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasInvalidName(){
+        String name = "";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void updateSubAreasMissingName(){
+        String name = null;
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+
+
+    @Test
+    public void addSubAreasSuccess(){
+
+        assertOldSubAreaExists();
+
+        String name = "Fofo compound";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        //---------------------------------------
+        assertNewSubAreaInserted(name, req);
+        assertOldSubAreaExists();
+    }
+
+
+
+    private void assertNewSubAreaInserted(String name, HttpEntity<?> req) {
+        ResponseEntity<String> countriesResponse =
+                template.exchange("/navbox/countries?org_id=99001", GET, req, String.class);
+        String subAreaSavedName =
+                JsonPath.read(countriesResponse.getBody(), format("$['Egypt']['cities']['Cairo']['areas']['new cairo']['sub_areas']['%s']['name']", name));
+        assertEquals(name, subAreaSavedName);
+    }
+
+
+    @Test
+    public void addSubAreasWhileKeepingOldOnesSuccess(){
+
+        assertOldSubAreaExists();
+
+        String name = "Fofo compound";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(name, areaId);
+        addOldSubAreaToRequest(requestBody);
+
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        //---------------------------------------
+        assertNewSubAreaInserted(name, req);
+
+        AddressesEntity addressAfter = addressRepo.findById(12300003L).get();
+        assertNotNull("old sub-areas will NOT be cleared from addresses", addressAfter.getSubAreasEntity());
+
+        assertTrue("test old sub-areas are not deleted ", subAreaRepo.findById(888001L).isPresent());
+        assertEquals("test old sub-areas are not deleted ", 3, subAreaRepo.findByOrganization_Id(99001L).size());
+
+    }
+
+
+
+    private void addOldSubAreaToRequest(JSONObject requestBody) {
+        requestBody
+            .getJSONArray("sub_areas")
+            .put(json()
+                    .put("id", nullableJsonValue(888001L))
+                    .put("name", nullableJsonValue("Badr city"))
+                    .put("area_id", nullableJsonValue(100001)));
+    }
+
+
+
+    private void assertOldSubAreaExists() {
+        AddressesEntity addressBefore = addressRepo.findById(12300003L).get();
+        assertNotNull(addressBefore.getSubAreasEntity());
+        assertTrue(subAreaRepo.findById(888001L).isPresent());
+    }
+
+
+
+
+    @Test
+    public void updateSubAreasSuccess(){
+        Long id = 888001L;
+        String name = "werwerland";
+        Long areaId = 100001L;
+        JSONObject requestBody = createSubAreaUpdateRequest(id, name, areaId);
+
+        HttpEntity<?> req = getHttpEntity( requestBody.toString(), "hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas", POST, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        SubAreasEntity savedSubArea = subAreaRepo.findByIdAndOrganization_Id(id, 99001L).get();
+        assertEquals(name, savedSubArea.getName());
+    }
+
+
+    @Test
+    public void deleteSubAreasSuccess(){
+        Long subAreaId = 888001L;
+        assertTrue(subAreaRepo.existsById(subAreaId));
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertFalse(subAreaRepo.existsById(subAreaId));
+    }
+
+
+    @Test
+    public void deleteSubAreasNonExistingId(){
+        Long subAreaId = 988001L;
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteSubAreasInvalidToken(){
+        Long subAreaId = 888001L;
+        HttpEntity<?> req = getHttpEntity("invalid");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteSubAreasInvalidAuthZ(){
+        Long subAreaId = 888001L;
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+        ResponseEntity<String> res =
+                template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getOrgSubAreasWithFilters() throws IOException {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+
+        // get all sub_areas with no filters
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        List<SubAreasRepObj> subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(2, subareasList.size());
+
+        // filter by area_id
+        res = template.exchange("/organization/sub_areas?area_id=100001", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+
+        // filter by city_id
+        res = template.exchange("/organization/sub_areas?city_id=100001", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+
+        // filter by city_id
+        res = template.exchange("/organization/sub_areas?country_id=1", GET, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        subareasList = parseGetSubareasResponse(res.getBody());
+        assertEquals(1, subareasList.size());
+    }
+
+
+    @Test
+    public void getSubAreasInvalidToken(){
+        HttpEntity<?> req = getHttpEntity("invalid");
+
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getSubAreasInvalidAuthZ(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+
+        ResponseEntity<String> res = template.exchange("/organization/sub_areas", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void getExtraAttributesInvalidAuthN(){
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void getExtraAttributesInvalidAuthZ(){
+        HttpEntity<?> req = getHttpEntity("invalid");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void getExtraAttributes() throws IOException {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        List<ExtraAttributeDefinitionDTO> body = objectMapper.readValue(res.getBody(), new TypeReference<List<ExtraAttributeDefinitionDTO>>(){});
+
+        assertEquals(2, body.size());
+
+        ExtraAttributeDefinitionDTO invisibleAttr =
+                body.stream().filter(ExtraAttributeDefinitionDTO::getInvisible).findFirst().get();
+        assertEquals(INVISIBLE , invisibleAttr.getType());
+    }
+
+
+
+    private List<SubAreasRepObj> parseGetSubareasResponse(String res) throws IOException {
+        return objectMapper.readValue(res, new TypeReference<List<SubAreasRepObj>>(){});
+    }
+
+    private JSONObject createSubAreaUpdateRequest(String name, Long areaId) {
+        return createSubAreaUpdateRequest(null, name, areaId);
+    }
+
+
+
+
+    private JSONObject createSubAreaUpdateRequest(Long id, String name, Long areaId) {
+        return json()
+                .put("sub_areas",
+                        jsonArray()
+                                .put(json()
+                                        .put("id", nullableJsonValue(id))
+                                        .put("name", nullableJsonValue(name))
+                                        .put("area_id", nullableJsonValue(areaId))
+                                )
+                );
+    }
+
+
+
 }

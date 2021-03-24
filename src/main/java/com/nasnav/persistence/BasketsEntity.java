@@ -9,42 +9,6 @@ import lombok.ToString;
 import javax.persistence.*;
 import java.math.BigDecimal;
 
-@NamedNativeQuery(
-        name = "Basket",
-        query ="select b.order_id, p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
-                " s.unit_id as unit, b.id as basket_id , b.quantity, b.price, b.currency, b.discount, v.sku, v.product_code" +
-                " from products p "+
-                " join product_variants v on p.id = v.product_id " + 
-                " join stocks s ON v.id = s.variant_id " +
-                " join baskets b ON s.id = b.stock_id " +
-                " WHERE b.order_id in :orderId ",
-        resultClass = com.nasnav.dto.BasketItemDetails.class,
-        resultSetMapping = "Basket"
-)
-@SqlResultSetMapping(
-        name = "Basket",
-        classes={
-                @ConstructorResult(
-                        targetClass=com.nasnav.dto.BasketItemDetails.class,
-                        columns={
-                                @ColumnResult(name="order_id", type = Long.class),
-                                @ColumnResult(name="product_id", type = Long.class),
-                                @ColumnResult(name="product_name", type = String.class),
-                                @ColumnResult(name="product_pname", type = String.class),
-                                @ColumnResult(name="variant_id", type = Long.class),
-                                @ColumnResult(name="stock_id", type = Long.class),
-                                @ColumnResult(name="unit", type = String.class),
-                                @ColumnResult(name="basket_id", type = Long.class),
-                                @ColumnResult(name="quantity", type = BigDecimal.class),
-                                @ColumnResult(name="price", type = BigDecimal.class),
-                                @ColumnResult(name="currency", type = Integer.class),
-                                @ColumnResult(name="discount", type = BigDecimal.class),
-                                @ColumnResult(name="sku", type = String.class),
-                                @ColumnResult(name="product_code", type = String.class)
-                        }
-                )
-        }
-)
 @Entity
 @Table(name="baskets")
 @Data
@@ -73,6 +37,9 @@ public class BasketsEntity implements BaseEntity{
     private StocksEntity stocksEntity;
     
     private BigDecimal discount;
+
+    @Column(name = "item_data")
+    private String itemData;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

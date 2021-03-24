@@ -1206,6 +1206,82 @@ public class EmployeeUserCreationTest {
 	}
 
 
+	@Test
+	public void suspendEmpAccountByNasnavAdmin() {
+		assertEquals(201, employeeUserService.getUserById(69L).getUserStatus().intValue());
+		HttpEntity request = getHttpEntity("", "abcdefg");
+		String params = "user_id=69&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(202, employeeUserService.getUserById(69L).getUserStatus().intValue());
+
+		params = "user_id=69&is_employee=true&suspend=false";
+		response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(201, employeeUserService.getUserById(69L).getUserStatus().intValue());
+	}
+
+	@Test
+	public void suspendEmpAccountByOrgAdmin() {
+		HttpEntity request = getHttpEntity("", "hijkllm");
+		String params = "user_id=70&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(202, employeeUserService.getUserById(70L).getUserStatus().intValue());
+	}
+
+	@Test
+	public void suspendEmpAccountInvalidStatus() {
+		HttpEntity request = getHttpEntity("", "hijkllm");
+		String params = "user_id=71&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+		assertEquals(0, employeeUserService.getUserById(71L).getUserStatus().intValue());
+	}
+
+	@Test
+	public void suspendSelfAccount() {
+		HttpEntity request = getHttpEntity("", "hijkllm");
+		String params = "user_id=69&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void suspendNasnavAdminByOrgAdmin() {
+		HttpEntity request = getHttpEntity("", "hijkllm");
+		String params = "user_id=68&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void suspendEmpAccountCustomer() {
+		HttpEntity request = getHttpEntity("", "yuhjhu");
+		String params = "user_id=69&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(403, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void suspendEmpAccountNotActivatedAccount() {
+		HttpEntity request = getHttpEntity("", "abcdefg");
+		String params = "user_id=82&is_employee=true&suspend=true";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+		assertEquals(200, employeeUserService.getUserById(82L).getUserStatus().intValue());
+	}
+
+	@Test
+	public void unsuspendEmpAccountNotActivatedAccount() {
+		HttpEntity request = getHttpEntity("", "abcdefg");
+		String params = "user_id=82&is_employee=true&suspend=false";
+		ResponseEntity<String> response = template.postForEntity("/user/suspend?"+params, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+		assertEquals(200, employeeUserService.getUserById(82L).getUserStatus().intValue());
+	}
+
+
 	private void assertUserCreated(UserApiResponse apiResponse) {
 		assertNotNull(apiResponse);
 		boolean exists = empRepository.existsById(apiResponse.getEntityId());

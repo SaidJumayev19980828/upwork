@@ -84,7 +84,7 @@ public class BostaLevisShippingService implements ShippingService{
 	public static final String SERVICE_NAME = "Bosta";
 	public static final String ICON = "/icons/bosta.svg";
 	public static final BigDecimal FLAT_RATE = new BigDecimal("25.00");
-	private static final ShippingPeriod DEFUALT_SHIPPING_PERIOD = 
+	private static final ShippingPeriod DEFAULT_SHIPPING_PERIOD =
 			new ShippingPeriod(Period.ofDays(1), Period.ofDays(4));
 	public static final String RETURN_EMAIL_MSG =
 			"Thanks for patience! " +
@@ -372,7 +372,7 @@ public class BostaLevisShippingService implements ShippingService{
 		receiver.setPhone(getPhone(user));
 		receiver.setCountry(user.getCountry());
 		return receiver;
-	};
+	}
 
 	
 	
@@ -460,7 +460,7 @@ public class BostaLevisShippingService implements ShippingService{
 				.map(cityIdMapping::get)
 				.map(BostaCity::getShippingAndPriceInfo)
 				.map(ShippingPeriodAndPrice::getShippingPeriod)
-				.orElse(DEFUALT_SHIPPING_PERIOD);
+				.orElse(DEFAULT_SHIPPING_PERIOD);
 	}
 
 
@@ -487,7 +487,7 @@ public class BostaLevisShippingService implements ShippingService{
 		if( !isSupportedCity(details)) {
 			return empty();
 		}
-		//curstomer pay for only first shipment, rest are free
+		//customer pay for only first shipment, rest are free
 		BigDecimal fee = getCityShippingFee(details);
 		return Objects.equals(details.getIndex(), 0)? 
 					Optional.of(fee) : Optional.of(ZERO);

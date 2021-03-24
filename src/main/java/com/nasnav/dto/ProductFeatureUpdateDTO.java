@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.constatnts.EntityConstants.Operation;
 
+import com.nasnav.enumerations.ProductFeatureType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,8 @@ public class ProductFeatureUpdateDTO extends BaseJsonDTO{
 	private String pname;
 
 	private Integer level;
+
+	private ProductFeatureType type;
 	
 	
 	@Override
@@ -73,6 +76,12 @@ public class ProductFeatureUpdateDTO extends BaseJsonDTO{
 	public void setLevel(Integer level) {
 		setPropertyAsUpdated("level");
 		this.level = level;
+	}
+
+
+	public void setType(ProductFeatureType type) {
+		setPropertyAsUpdated("type");
+		this.type = type;
 	}
 	
 

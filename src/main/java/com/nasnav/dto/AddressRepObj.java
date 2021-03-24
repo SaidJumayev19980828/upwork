@@ -39,4 +39,6 @@ public class AddressRepObj extends BaseRepresentationObject {
     private String area;
     private String city;
     private String country;
+    private Long subAreaId;
+    private String subArea;
 }

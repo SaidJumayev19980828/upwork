@@ -89,7 +89,7 @@ public class CartController {
 	})
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestBody CartCheckoutDTO dto) throws BusinessException, IOException {
+							  @RequestBody CartCheckoutDTO dto) {
 		return cartService.checkoutCart(dto);
 	}
 	

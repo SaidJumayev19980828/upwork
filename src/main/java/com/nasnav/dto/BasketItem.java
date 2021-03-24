@@ -15,6 +15,8 @@ import java.util.Map;
 public class BasketItem {
 
     private Long id;
+    @JsonIgnore
+    private Long orderId;
     private Long productId;
     private String name;
     @JsonProperty("p_name")
@@ -28,13 +30,12 @@ public class BasketItem {
     private String unit;
     private String thumb;
     private BigDecimal price;
+    private BigDecimal discount;
     private Long variantId;
     private String variantName;
     private Boolean isReturnable;
     private String currencyValue;
     private String sku;
     private String productCode;
-
-    @JsonIgnore
     private String currency;
 }

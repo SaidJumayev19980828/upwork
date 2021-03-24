@@ -14,13 +14,14 @@ import com.nasnav.persistence.CartItemEntity;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
-			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec "
+			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec, variant.weight "
 			+ " , item.coverImage, stock.price, item.quantity"
 			+ " , brand.id, brand.name, brand.logo, product.name, product.productType, stock.discount"
-			+"  , item.additionalData) "
+			+ " , item.additionalData, unit.name) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"			
 			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.unit unit "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
 			+ " LEFT JOIN BrandsEntity brand on product.brandId = brand.id "
@@ -38,21 +39,6 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " group by variant.id, variant.id, variant.name, variant.productCode, variant.sku "
 			+ " order by sum(item.quantity) desc , count (user.id) desc ")
 	List<CartStatisticsData> findCartVariantsByOrg_Id(@Param("orgId") Long orgId, Pageable pageable);
-
-
-	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartCheckoutData("
-			+ " item.id, stock.id, stock.currency, stock.price, item.quantity,"
-			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address"
-			+ ", product.organizationId, stock.discount) "
-			+ " FROM CartItemEntity item "
-			+ "	LEFT JOIN item.user user"
-			+ " LEFT JOIN item.stock stock "
-			+ " LEFT JOIN stock.productVariantsEntity variant "
-			+ " LEFT JOIN variant.productEntity product "
-			+ " LEFT JOIN stock.shopsEntity shop "
-			+ " LEFT JOIN shop.addressesEntity address"
-			+ " WHERE user.id = :user_id AND product.hide = false and product.removed = 0 And variant.removed = 0")
-	List<CartCheckoutData> getCheckoutCartByUser_Id(@Param("user_id") Long userId);
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 	CartItemEntity findByStock_IdAndUser_Id(Long stockId, Long userId);
@@ -111,9 +97,10 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	Long countByUser_Id(Long userId);
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemShippingData( "
-			+ " stock.id, shop.id, addr.id, stock.price, stock.discount, item.quantity)"
+			+ " stock.id, shop.id, addr.id, stock.price, stock.discount, item.quantity, variant.weight)"
 			+ " FROM CartItemEntity item "
 			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ "	LEFT JOIN item.user user "
 			+ " LEFT JOIN stock.shopsEntity shop "
 			+ " LEFT JOIN shop.addressesEntity addr"

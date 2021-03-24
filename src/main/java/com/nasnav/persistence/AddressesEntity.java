@@ -10,7 +10,10 @@ import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.Set;
+
+import static java.util.Objects.nonNull;
 
 
 @Table(name = "addresses")
@@ -53,12 +56,20 @@ public class AddressesEntity implements BaseEntity {
     @Column(name = "postal_code")
     private String postalCode;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "area_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private AreasEntity areasEntity;
+
+
+    @ManyToOne
+    @JoinColumn(name = "sub_area_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private SubAreasEntity subAreasEntity;
 
 
     @ManyToMany(mappedBy = "addresses")
@@ -89,7 +100,10 @@ public class AddressesEntity implements BaseEntity {
                 }
             }
         }
-
+        if(nonNull(subAreasEntity)){
+            address.setSubAreaId(subAreasEntity.getId());
+            address.setSubArea(subAreasEntity.getName());
+        }
         return address;
     }
 }

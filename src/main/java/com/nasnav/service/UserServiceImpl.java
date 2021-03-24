@@ -12,6 +12,7 @@ import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
@@ -40,7 +41,6 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
@@ -90,6 +90,8 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	AppConfig appConfig;
 
+	@Autowired
+	private SubAreaRepository subAreaRepo;
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -245,57 +247,141 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
+	@Transactional
 	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		AddressDTO newAddressEntity = doUpdateUserAddressesImmutably(addressDTO);
+		setAsPrincipleAddressIfNeeded(addressDTO, newAddressEntity);
+		return newAddressEntity;
+	}
+
+
+
+
+	private void setAsPrincipleAddressIfNeeded(AddressDTO addressDTO, AddressDTO newAddress) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
-		AddressDTO newAddress = setUserAddresses(addressDTO, user);
-		addressRepo.linkAddressToUser(user.getId(), newAddress.getId());
 		if (addressDTO.getPrincipal() != null) {
-			if (addressDTO.getPrincipal().booleanValue()) {
+			if (addressDTO.getPrincipal()) {
 				addressRepo.makeAddressNotPrincipal(user.getId());
 				addressRepo.makeAddressPrincipal(user.getId(), newAddress.getId());
 				newAddress.setPrincipal(true);
 			}
 		}
-		return newAddress;
 	}
 
 
 	@Override
 	public void removeUserAddress(Long id) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
-		if (addressRepo.countByUserIdAndAddressId(id, user.getId()) == 0)
+		if (addressRepo.countByUserIdAndAddressId(id, user.getId()) == 0){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, id);
-
+		}
 		addressRepo.unlinkAddressFromUser(id, user.getId());
 	}
 
 
-	private AddressDTO setUserAddresses(AddressDTO addressDTO, UserEntity userEntity) {
-		AddressesEntity address = new AddressesEntity();
+
+	/**
+	 * we use a immutable approach for addresses, as they are referenced by orders.
+	 * and orders will need the address original data when the order was made.
+	 * so, updating an existing address actually creates a totally new address entity and
+	 * the existing entity is just being unlinked from the user instead of modifying it.
+	 * */
+	private AddressDTO doUpdateUserAddressesImmutably(AddressDTO addressDTO) {
+		unlinkExistingAddressEntityFromUser(addressDTO);
+		persistNewUserAddressEntity(addressDTO);
+		linkNewAddressEntityToUser(addressDTO);
+		return addressDTO;
+	}
+
+
+
+	private void linkNewAddressEntityToUser(AddressDTO addressDTO) {
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
+		addressRepo.linkAddressToUser(userEntity.getId(), addressDTO.getId());
+	}
+
+
+
+	private void unlinkExistingAddressEntityFromUser(AddressDTO addressDTO) {
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
 		if (addressDTO.getId() != null) {
-			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0)
+			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0){
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId());
+			}
 			addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 		}
+	}
+
+
+
+	private void persistNewUserAddressEntity(AddressDTO addressDTO) {
+		AddressesEntity address = new AddressesEntity();
 		BeanUtils.copyProperties(addressDTO, address, new String[] {"id"});
-		if (addressDTO.getAreaId() != null) {
-			if (areaRepo.existsById(addressDTO.getAreaId())) {
-				address.setAreasEntity(areaRepo.findById(addressDTO.getAreaId()).get());
-			}
-		}
+
+		setArea(addressDTO, address);
+		setSubArea(addressDTO, address);
 
 		addressRepo.save(address);
 
 		BeanUtils.copyProperties(address, addressDTO);
-
-		return addressDTO;
 	}
+
+
+
+	private void setSubArea(AddressDTO addressDTO, AddressesEntity address) {
+		Long subAreaId = addressDTO.getSubAreaId();
+		if(isNull(subAreaId)){
+			return;
+		}
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		SubAreasEntity subArea =
+				subAreaRepo
+				.findByIdAndOrganization_Id(subAreaId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
+		address.setSubAreasEntity(subArea);
+		if(isNull(addressDTO.getAreaId())){
+			address.setAreasEntity(subArea.getArea());
+		}else{
+			validateSubAreaMatchesGivenArea(addressDTO, address, subAreaId, subArea);
+		}
+	}
+
+
+
+
+	private void validateSubAreaMatchesGivenArea(AddressDTO addressDTO, AddressesEntity address, Long subAreaId, SubAreasEntity subArea) {
+		Long givenAreaId =
+				ofNullable(address.getAreasEntity())
+				.map(AreasEntity::getId)
+				.orElse(addressDTO.getAreaId());
+		Long subAreaParentId =
+				ofNullable(subArea.getArea())
+						.map(AreasEntity::getId)
+				.orElse(null);
+		if(!Objects.equals(givenAreaId, subAreaParentId)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$002, subAreaId, givenAreaId);
+		}
+	}
+
+
+
+	private void setArea(AddressDTO addressDTO, AddressesEntity address) {
+		if (nonNull(addressDTO.getAreaId())) {
+			if (areaRepo.existsById(addressDTO.getAreaId())) {
+				address.setAreasEntity(areaRepo.findById(addressDTO.getAreaId()).get());
+			}
+		}
+	}
+
+
 
 	private void validateName(String name) {
 		if (!StringUtils.validateName(name)) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
 		}
 	}
+
+
 
 	private void validateEmail(String email) {
 		if (!StringUtils.validateEmail(email)) {
@@ -507,7 +593,8 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private List<AddressRepObj> getUserAddresses(Long userId){
-		return userAddressRepo.findByUser_Id(userId)
+		return userAddressRepo
+				.findByUser_Id(userId)
 				.stream()
 				.filter(Objects::nonNull)
 				.map(a -> (AddressRepObj) a.getRepresentation())
@@ -587,7 +674,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void suspendUserAccount(Long id, Boolean suspend) {
 		UserEntity user = getUserEntityById(id);
-		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		UserStatus status = userServicesHelper.checkUserStatusForSuspension(user);
 		if (suspend) {
 			if (status.equals(ACCOUNT_SUSPENDED)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);
@@ -681,10 +768,11 @@ public class UserServiceImpl implements UserService {
 
 	public List<UserRepresentationObject> getUserList(){
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return userRepository.findByOrganizationId(orgId)
-					.stream()
-					.map(u -> u.getRepresentation())
-					.collect(toList());
+		return userRepository
+				.findByOrganizationId(orgId)
+				.stream()
+				.map(u -> u.getRepresentation())
+				.collect(toList());
 	}
 
 }

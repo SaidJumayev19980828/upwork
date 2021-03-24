@@ -1,13 +1,21 @@
-
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(2,'United States', 819, 'USD');
 --inserting organizations
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'fortune');
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
+--inserting countries/ cities/ areas/ sub-areas
+INSERT INTO public.cities(id, country_id, name) values(100001, 1,'Cairo');
+INSERT INTO public.cities(id, country_id, name) values(100002, 2,'NW');
+INSERT INTO public.areas(id, name, city_id) values(100001, 'new cairo', 100001);
+INSERT INTO public.areas(id, name, city_id) values(100002, 'Manhattan', 100002);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888001, 100001, 'Badr city', 99001);
+insert into public.sub_areas ("id",area_id, "name", organization_id) values (888002, 100002, 'Downtown', 99001);
+
 --inserting organization domain
-INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'fortune.nasnav.com', 99001);
-INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'fortune-egypt.com', 99001);
-INSERT INTO public.organization_domains (id, "domain", organization_id, subdir) VALUES(3, 'nasnav.com', 99001, 'fortune');
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'www.fortune.nasnav.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'www.fortune-egypt.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id, subdir) VALUES(3, 'www.nasnav.com', 99001, 'fortune');
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -48,3 +56,17 @@ INSERT INTO public.products(id, name, brand_id, organization_id, created_at, upd
 
 
 INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);
+
+
+--inserting users
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (89, 'user2@nasnav.com','user2','456', 99002);
+
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 89);
+
+INSERT INTO public.addresses(id, address_line_1, sub_area_id) values(12300003, 'address line', 888001);
+INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88, 12300003, false);

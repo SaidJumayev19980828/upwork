@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import com.nasnav.dao.*;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,15 +48,6 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsFiltersResponse;
@@ -98,7 +90,8 @@ public class ProductApiTest {
 
 	@Autowired
 	private ProductVariantsRepository variantRepo;
-
+	@Autowired
+	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
 	private StockRepository stockRepo;
@@ -136,7 +129,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);
 
@@ -196,7 +189,7 @@ public class ProductApiTest {
 
 		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, ProductUpdateResponse.class);
 
@@ -228,7 +221,7 @@ public class ProductApiTest {
 
 		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
-						, HttpMethod.POST
+						, POST
 						, request
 						, ProductUpdateResponse.class);
 		return response;
@@ -424,12 +417,11 @@ public class ProductApiTest {
 
 		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 
-		ResponseEntity<String> response =
-				template.exchange("/product/info"
-						, HttpMethod.POST
-						, request
-						, String.class);
-		return response;
+		return template
+				.exchange("/product/info"
+					, POST
+					, request
+					, String.class);
 	}
 
 
@@ -640,7 +632,7 @@ public class ProductApiTest {
 
 
 	private List<Long> getVariantsIdList(Long productId) {
-		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId, true)
+		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId)
 										.stream()
 										.map(ProductVariantsEntity::getId)
 										.collect(toList());
@@ -714,7 +706,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
-		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 
 
@@ -1079,7 +1071,7 @@ public class ProductApiTest {
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/tag"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);
 		return response;
@@ -1153,6 +1145,7 @@ public class ProductApiTest {
 		long variantCountOtherOrgBefore = variantRepo.countByProductEntity_organizationId(otherOrg);
 		long bundlesCountOtherOrgBefore = bundleRepo.countByOrganizationId(otherOrg);
 		long ordersCountOtherOrgBefore = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+		long collectionItemsCountOtherOrgBefore = collectionItemRepo.countByItem_ProductEntity_OrganizationIdIn(otherOrg);
 
 		assertTestDataExists(org, productCountOtherOrgBefore, variantCountOtherOrgBefore, bundlesCountOtherOrgBefore,
 				ordersCountOtherOrgBefore);
@@ -1167,7 +1160,7 @@ public class ProductApiTest {
 
 		//----------------------------------------------------------
 		assertDataDeleted(org, otherOrg, productCountOtherOrgBefore, variantCountOtherOrgBefore,
-				bundlesCountOtherOrgBefore, ordersCountOtherOrgBefore);
+				bundlesCountOtherOrgBefore, ordersCountOtherOrgBefore, collectionItemsCountOtherOrgBefore);
 	}
 	
 	
@@ -1224,24 +1217,29 @@ public class ProductApiTest {
 
 
 	private void assertDataDeleted(Long org, Long otherOrg, long productCountOtherOrgBefore,
-			long variantCountOtherOrgBefore, long bundlesCountOtherOrgBefore, long ordersCountOtherOrgBefore) {
+			long variantCountOtherOrgBefore, long bundlesCountOtherOrgBefore, long ordersCountOtherOrgBefore,
+		    long collectionItemsCountOtherOrgBefore) {
 		long productCountAfter = productRepository.countByOrganizationId(org);
 		long variantCountAfter = variantRepo.countByProductEntity_organizationId(org);
 		long bundlesCountAfter = bundleRepo.countByOrganizationId(org);
+		long collectionItemsAfter = collectionItemRepo.countByItem_ProductEntity_OrganizationIdIn(org);
 
 		long productCountOtherOrgAfter = productRepository.countByOrganizationId(otherOrg);
 		long variantCountOtherOrgAfter = variantRepo.countByProductEntity_organizationId(otherOrg);
+		long collectionItemsCountOtherOrgAfter = collectionItemRepo.countByItem_ProductEntity_OrganizationIdIn(otherOrg);
 		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(otherOrg);
 		long ordersCountOtherOrgAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
 		
 		assertEquals(0L, productCountAfter);
 		assertEquals(0L, variantCountAfter);
+		assertEquals(0L, collectionItemsAfter);
 		assertEquals(0L, bundlesCountAfter);
 
 		assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
 		assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
 		assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);
 		assertEquals(ordersCountOtherOrgBefore, ordersCountOtherOrgAfter);
+		assertEquals(collectionItemsCountOtherOrgBefore, collectionItemsCountOtherOrgAfter);
 	}
 
 

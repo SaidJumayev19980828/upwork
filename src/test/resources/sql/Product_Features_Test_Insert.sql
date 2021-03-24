@@ -5,7 +5,9 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
-
+--inserting categories
+INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
+INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 -- dummy shop
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'Bundle Shop'  , 99002);
@@ -43,11 +45,11 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (8, '222324', now(), 158, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_MANAGER', 99001);
-insert into roles(id, name,  organization_id) values(5, 'STORE_MANAGER', 99001);
-insert into roles(id, name,  organization_id) values(3, 'STORE_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_MANAGER', 99001);
+insert into public.roles(id, name,  organization_id) values(5, 'STORE_MANAGER', 99001);
+insert into public.roles(id, name,  organization_id) values(3, 'STORE_EMPLOYEE', 99001);
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
@@ -61,4 +63,20 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
+
+
+-- insert products
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+
+
+-- variants for each product
+INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)
+VALUES(80001,1001, '{"235": "white"}', 'orginal variant', 'orginal_variant', 'has the feature', 'BCF559354');
+INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode, removed)
+VALUES(80002,1001, '{"234": "45"}', 'orginal variant', 'orginal_variant', 'removed', 'AFDSSDF214', 1);
+
+
+--inserting product features
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 6, 99001, 600.0, 80001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 80002);
 

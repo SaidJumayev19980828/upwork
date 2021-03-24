@@ -14,7 +14,8 @@ import lombok.Getter;
 public enum CartOptimizationStrategy {
 	SAME_CITY(OptimizationStratigiesNames.SAME_CITY)
 	, DEFAULT_OPTIMIZER(OptimizationStratigiesNames.SAME_CITY)
-	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE);
+	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE)
+	, TRANSPARENT(OptimizationStratigiesNames.TRANSPARENT);
 	
 	@Getter
 	@JsonValue

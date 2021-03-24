@@ -1,0 +1,9 @@
+{  
+  "TransStatus": "Successful",
+  "TransStatusDetails": "Shipment Pickup Request Created Successully",
+  "OrderNo": "11-22",
+  "WaybillNumber": "SA00712362",
+  "DeliveryFee": "2,100.00",
+  "VatAmount": "157.50",
+  "TotalAmount": "2,257.50"
+}

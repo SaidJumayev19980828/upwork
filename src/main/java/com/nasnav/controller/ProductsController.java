@@ -1,18 +1,24 @@
 package com.nasnav.controller;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import javax.validation.Valid;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
+import com.nasnav.service.ReviewServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -61,6 +67,9 @@ public class ProductsController {
 
     @Autowired
     private CsvDataExportService csvDataExportService;
+
+    @Autowired
+    private ReviewServiceImpl reviewService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -90,9 +99,9 @@ public class ProductsController {
     @DeleteMapping(
             produces = APPLICATION_JSON_UTF8_VALUE)
     public ProductsDeleteResponse deleteProduct(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestParam("product_id") List<Long> productIds)
-            		throws BusinessException {
-		return productService.deleteProducts(productIds);
+                                                @RequestParam("product_id") List<Long> productIds,
+                                                @RequestParam(value = "force_delete_collection_items", required = false, defaultValue = "false") Boolean forceDeleteCollectionItems){
+		return productService.deleteProducts(productIds, forceDeleteCollectionItems);
     }
 	
 	
@@ -296,7 +305,11 @@ public class ProductsController {
             @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
-
+        if(nonNull(metaData.getFeatureId())){
+            SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
+            productImgService.updateSwatchImagesBulk(zip, csv, swatchMetaData);
+            return emptyList();
+        }
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
 	
@@ -431,8 +444,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(value = "collection")
-    public void deleteCollection(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long id) {
-        productService.deleteCollection(id);
+    public void deleteCollection(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("id") List<Long> ids) {
+        productService.deleteCollection(ids);
     }
 
 
@@ -460,7 +473,7 @@ public class ProductsController {
     @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public List<ProductDetailsDTO> getCollections(@RequestHeader(name = "User-Token", required = false) String token) {
-        return productService.getCollections();
+        return productService.getEmptyCollections();
     }
 
 
@@ -503,5 +516,39 @@ public class ProductsController {
     public void updateRelatedItems(@RequestHeader(name = "User-Token", required = false) String token,
                                    @RequestBody RelatedItemsDTO relatedItems) {
         productService.updateRelatedItems(relatedItems);
+    }
+
+
+    @ApiOperation(value = "Rate a product", nickname = "productRate", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "product rate submitted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "review", consumes = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestBody ProductRateDTO dto) {
+        reviewService.rateProduct(dto);
+    }
+
+    @GetMapping(value="/review", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestHeader(name = "User-Token", required = false) String token) {
+        return reviewService.getProductsRatings();
+    }
+
+    @ApiOperation(value = "approve a product rating", nickname = "approveProductRate", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "product rate approved"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "review/approve")
+    @ResponseStatus(HttpStatus.OK)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestParam Long id) {
+        reviewService.approveRate(id);
     }
 }

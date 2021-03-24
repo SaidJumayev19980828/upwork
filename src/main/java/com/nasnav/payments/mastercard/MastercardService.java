@@ -66,7 +66,7 @@ public class MastercardService {
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
 
 
-    public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
+    public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository) {
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
     }
@@ -264,7 +264,7 @@ public class MastercardService {
             HttpPost request = new HttpPost(sessionUrl);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
-
+            classLogger.debug("Attempting to call: " + request.getURI().toString()) ;
             HttpResponse response = client.execute(request);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {

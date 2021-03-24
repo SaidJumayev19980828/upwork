@@ -48,6 +48,7 @@ public interface CsvDataImportService {
 					.put("sku", "sku")
 					.put("productCode", "product_code")
 					.put("unit", "unit")
+					.put("weight", "weight")
 					.getMap();
 	
 	
