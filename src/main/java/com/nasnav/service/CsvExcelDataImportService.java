@@ -72,7 +72,7 @@ public interface CsvExcelDataImportService {
 			@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException ;
 
-	ByteArrayOutputStream generateProductsCsvTemplate() throws IOException;
+	ByteArrayOutputStream generateProductsTemplate() throws IOException;
 
 	List<String> getProductImportTemplateHeaders();
 
