@@ -23,10 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 import javax.validation.Valid;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -205,27 +202,12 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     }
 
     @Override
-    public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException {
+    public ByteArrayOutputStream generateProductsTemplate() throws IOException {
         List<String> baseHeaders = getProductImportTemplateHeaders();
 
-        return writeCsvHeaders(baseHeaders);
+        return writeFileHeaders(baseHeaders);
     }
 
-    private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
-        ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
-        Writer outputWriter = new OutputStreamWriter(csvResult);
+    abstract ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException;
 
-        CsvWriter writer = new CsvWriter(outputWriter, createWritingSettings());
-
-        writer.writeHeaders(headers);
-        writer.close();
-        csvResult.close();
-
-        return csvResult;
-    }
-
-    private CsvWriterSettings createWritingSettings() {
-        CsvWriterSettings settings = new CsvWriterSettings();
-        return settings;
-    }
 }

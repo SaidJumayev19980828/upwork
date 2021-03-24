@@ -3,10 +3,12 @@ package com.nasnav.service;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -15,10 +17,12 @@ import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jboss.logging.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductImportMetadata;
@@ -30,11 +34,11 @@ import com.nasnav.service.model.importproduct.csv.CsvRow;
 import java.lang.reflect.Type;
 
 @Service
+@Qualifier("excel")
 public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportService {
 
 	private Logger logger = Logger.getLogger(getClass());
 
-	@Transactional(rollbackFor = Throwable.class)
 	@Override
 	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws RuntimeBusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
@@ -128,6 +132,24 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		}
 		return null;
 	}
+
+	@Override
+	ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
+
+		AtomicInteger column = new AtomicInteger();
+		Row row = sheet.createRow(0);
+
+		headers.stream().forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
+
+		FileOutputStream outputStream = new FileOutputStream(File.createTempFile("template",""));
+		workbook.write(bos);
+		workbook.close();
+		return bos;
+	}
+
 	public static class ReflectUtils {
 
 		public static boolean set(Object object, String fieldName, Object fieldValue) {

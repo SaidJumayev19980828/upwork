@@ -3,15 +3,15 @@ package com.nasnav.service;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
@@ -52,7 +52,6 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 
 	private Logger logger = Logger.getLogger(getClass());
 
-	@Transactional(rollbackFor = Throwable.class)
 	@Override
 	public ImportProductContext importProductList(@Valid MultipartFile file,
 												  @Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException {
@@ -144,6 +143,24 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 		return mapping;
 	}
 
+
+	 ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException {
+		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
+		Writer outputWriter = new OutputStreamWriter(csvResult);
+
+		CsvWriter writer = new CsvWriter(outputWriter, createWritingSettings());
+
+		writer.writeHeaders(headers);
+		writer.close();
+		csvResult.close();
+
+		return csvResult;
+	}
+
+	private CsvWriterSettings createWritingSettings() {
+		CsvWriterSettings settings = new CsvWriterSettings();
+		return settings;
+	}
 }
 
 @Data

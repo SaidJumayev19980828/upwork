@@ -76,14 +76,24 @@ public class DataImportContoller {
 		}			
     }
 
-    @GetMapping(value = "/productlist/template")
+	@GetMapping(value = "/productlist/csv/template")
 	@ResponseBody
 	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
-		ByteArrayOutputStream s = csvImportService.generateProductsCsvTemplate();
+		ByteArrayOutputStream s = csvImportService.generateProductsTemplate();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
 				.body(s.toString());
 	}
 
+
+	@GetMapping(value = "/productlist/xls/template")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateXlsTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
+		ByteArrayOutputStream s = excelDataImportService.generateProductsTemplate();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Product_Template.xlsx")
+				.body(s.toByteArray());
+	}
 }

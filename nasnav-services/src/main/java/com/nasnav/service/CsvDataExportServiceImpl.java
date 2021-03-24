@@ -45,7 +45,7 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 	private DataExportService exportService;
 	
 	@Autowired
-	private ExcelDataImportServiceImpl importService;
+	private CsvDataImportServiceImpl importService;
 	
 	@Autowired
 	private ProductImgsCustomRepository productImgsCustomRepo;
