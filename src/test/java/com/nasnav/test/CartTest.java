@@ -17,6 +17,7 @@ import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.http.client.utils.CloneUtils;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
@@ -60,7 +61,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class CartTest {
 
-	public static final String USELESS_NOTE = "Wait for me! I am not coming!";
+	public static final String USELESS_NOTE = "come after dinner";
 	@Autowired
     private TestRestTemplate template;
 
@@ -788,7 +789,8 @@ public class CartTest {
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
-//	@Test
+	@Test
+	@Ignore			//this test make calls to bosta test server, so it is ignored by default
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {

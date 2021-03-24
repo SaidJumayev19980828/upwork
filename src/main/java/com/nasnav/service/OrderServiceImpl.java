@@ -478,12 +478,14 @@ public class OrderServiceImpl implements OrderService {
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
 		String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
 		String orgName = org.getName();
+		String year = LocalDateTime.now().getYear()+"";
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("orgDomain", orgDomain);
 		params.put("domain", domain);
 		params.put("orgName", orgName);
 		params.put("orgLogo", orgLogo);
+		params.put("year", year);
 
 		return params;
 	}

@@ -560,7 +560,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .map(AddressRepObj::getPhoneNumber)
                         .orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
         List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
-
         Map<String, Object> params = createOrgPropertiesParams(org.get());
         params.put("userName", userName);
         params.put("requestId", request.getId());
@@ -646,12 +645,14 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
         String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
         String orgName = org.getName();
+        String year = LocalDateTime.now().getYear()+"";
 
         Map<String, Object> params = new HashMap<>();
         params.put("orgDomain", orgDomain);
         params.put("domain", domain);
         params.put("orgName", orgName);
         params.put("orgLogo", orgLogo);
+        params.put("year", year);
 
         return params;
     }
@@ -774,9 +775,11 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         String message =
                 ofNullable(rejectionReason)
                         .orElse(DEFAULT_REJECTION_MESSAGE);
+        String year = LocalDateTime.now().getYear()+"";
         params.put("id", returnRequest.getId().toString());
         params.put("rejectionReason", message);
         params.put("returnRequest", returnRequest);
+        params.put("year", year);
         return params;
     }
 
@@ -1172,7 +1175,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 
         List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
-
         Map<String, Object> params = createOrgPropertiesParams(org.get());
         params.put("userName", userName);
         params.put("requestId", request.getId());
