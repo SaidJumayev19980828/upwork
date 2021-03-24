@@ -5,6 +5,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dto.response.navbox.SearchResult;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Search_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @NotThreadSafe
+@Ignore  //it is used only by developers using a local elasticsearch instance
 public class NavBoxSearchTest {
 
     private String mockServerFullUrl;

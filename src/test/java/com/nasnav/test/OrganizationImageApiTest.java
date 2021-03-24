@@ -8,7 +8,9 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.nasnav.service.AdminService;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +59,8 @@ public class OrganizationImageApiTest {
     @Autowired
     private TestRestTemplate template;
 
-    
+    @Autowired
+    private AdminService adminService;
     
     void performSqlScript(Resource resource) {
         try (Connection con = datasource.getConnection()) {
@@ -66,8 +69,13 @@ public class OrganizationImageApiTest {
             e.printStackTrace();
         }
     }
-    
-    
+
+
+
+    @Before
+    public void clearCache(){
+        adminService.invalidateCaches();
+    }
     
 
     @Test

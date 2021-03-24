@@ -254,7 +254,7 @@ public class StockServiceImpl implements StockService {
 	}
 	
 	private int getTotalStockValue(StocksEntity stock) {
-    	BigDecimal price = stock.getPrice();
+    	BigDecimal price = ofNullable(stock).map(StocksEntity::getPrice).orElse(ZERO);
 		BigDecimal discount = ofNullable(stock.getDiscount()).orElse(ZERO);
 		return price.subtract(discount).intValue();
 	}
@@ -325,7 +325,7 @@ public class StockServiceImpl implements StockService {
 				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
 				.filter(stk -> isNotSeenBefore(seen, stk))
 				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache, unitsCache))
-				.map(stk -> checkTotalStockValue(stk))
+				.map(this::checkTotalStockValue)
 				.collect(toList());
 	}
 

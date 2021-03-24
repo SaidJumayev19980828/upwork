@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.cache.Caches;
 import com.nasnav.dto.*;
+import com.nasnav.service.AdminService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -58,7 +59,7 @@ public class NavBoxTest {
     private TestRestTemplate template;
 
     @Autowired
-    private CacheManager cacheMgr;
+    private AdminService adminService;
 
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
@@ -72,7 +73,7 @@ public class NavBoxTest {
 
     @Before
     public void clearCache(){
-        cacheMgr.getCache(Caches.COUNTRIES).clear();
+        adminService.invalidateCaches();
     }
 
 

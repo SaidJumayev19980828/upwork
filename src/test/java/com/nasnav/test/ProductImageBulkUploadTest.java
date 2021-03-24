@@ -23,6 +23,7 @@ import com.nasnav.persistence.ProductExtraAttributesEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,11 +57,12 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
 @PropertySource("classpath:test.database.properties")
-@NotThreadSafe 
+@NotThreadSafe
 @ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase= BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
 @Sql(executionPhase= AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Ignore  //tests are too slow for now
 public class ProductImageBulkUploadTest {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk";
 

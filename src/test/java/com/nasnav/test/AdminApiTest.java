@@ -19,8 +19,10 @@ import com.nasnav.dto.CitiesRepObj;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.service.AddressService;
+import com.nasnav.service.AdminService;
 import com.nasnav.test.commons.TestCommons;
 import org.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +62,15 @@ public class AdminApiTest {
     private Resource updateCountriesBody;
     @Autowired
     private ObjectMapper jsonMapper;
+    @Autowired
+    private AdminService adminService;
+
+
+    @Before
+    public void clearCache(){
+        adminService.invalidateCaches();
+    }
+
 
     @Test
     public void createDomainTest() {
