@@ -1243,21 +1243,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
         Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl());
         Long orgId = domain.getFirst();
-        validateOrgExistenceAndUserAuthZ(userToken, orgId);
-        return createSiteMapResponse(orgId, params);
-    }
-
-
-    private void validateOrgExistenceAndUserAuthZ(String userToken, Long orgId) {
         if (orgId.intValue() == 0) {
-            createEmptyResponseEntity();
+            return createEmptyResponseEntity();
         }
         if (!isBlankOrNull(userToken)) {
             Long userOrgId = userTokenRepo.findEmployeeOrgIdByToken(userToken);
             if (userOrgId == null || !userOrgId.equals(orgId)) {
-                createEmptyResponseEntity();
+                return createEmptyResponseEntity();
             }
         }
+        return createSiteMapResponse(orgId, params);
     }
 
 
@@ -1278,7 +1273,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     private ResponseEntity<?> createEmptyResponseEntity() {
-        //throw new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, 0L);
         return ResponseEntity.notFound().build();
     }
 
