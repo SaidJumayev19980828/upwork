@@ -1,0 +1,31 @@
+
+{
+  "CountryID": "EGY",
+  "CustomerID": "UNR-023538",
+  "Address": "12 Abbas el-Akkad, Nasr City, Cairo, Egypt ",
+  "City_Code": "",
+  "Total_Order_Discount": 0,
+  "Total": 600.00,
+  "Shipping_fees": 0,
+  "COD_Fee": 0,
+  "Subtotal": 600.00,
+  "InventSite": "OCTOBER1",
+  "Store": "FOoscar",
+  "PaymentMethod": "Credit_CHE",
+  "CodCode": "Non",
+  "CODFeeAmount": 0,
+  "ShippingfeesCode": "Non",
+  "Items": [
+    {
+      "Item": "11CYM-0015566",
+      "InventSiteID": "OCTOBER1",
+      "Store": "FOoscar",
+      "Code": null,
+      "Qty": 1.00,
+      "SalesPrice": 600.00,
+      "DiscountAmount": 0,
+      "NetPrice": 600.0000,
+      "Totals": 600.0000
+    }
+  ]
+}

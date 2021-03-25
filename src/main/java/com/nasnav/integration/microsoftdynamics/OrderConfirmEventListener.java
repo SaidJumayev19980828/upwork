@@ -16,6 +16,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,27 +37,27 @@ import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrderItem;
 
 import reactor.core.publisher.Mono;
 
-public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<OrderConfirmEvent, OrderData, String> {
+public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<OrderConfirmEvent, OrderData, OrderData.Result> {
 	private static final String PAYMENT_METHOD = "Credit_CHE";
-	
-	
+
+
 	public OrderConfirmEventListener(IntegrationService integrationService) {
 		super(integrationService);
 	}
 
-	
-	
-	
+
+
+
 	@Override
-	protected Mono<String> handleEventAsync(EventInfo<OrderData> event) {
-		//TODO: this validation should be generalized to all payment events and it should filter invalid events 
+	protected Mono<OrderData.Result> handleEventAsync(EventInfo<OrderData> event) {
+		//TODO: this validation should be generalized to all payment events and it should filter invalid events
 		//before pushing them to the integration module , in the integration service.
 		//we can't add this in IntegrationHelper because it runs by JPA entity listeners, and the listeners are not
-		//managed by spring, which means we may not be able to control transactions, and errors are thrown if we try to 
+		//managed by spring, which means we may not be able to control transactions, and errors are thrown if we try to
 		//read from the database.
 		validateOrderEvent(event);
-		
-		
+
+
 		OrderData order = event.getEventData();
 		SalesOrder requestData = createSalesOrderData(order);
 		return getWebClient(order.getOrganizationId())
@@ -64,96 +65,14 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(String.class))
 				.map(orderExtId -> orderExtId.replace("\"", ""))
-				.flatMap(orderExtId -> createPaymentForOrderAndReturnOrderId(orderExtId, order));
+				.map(orderExtId -> new OrderData.Result(order.getOrderId(), orderExtId));
 	}
 
-	
-	
-	
-	
-	/**
-	 * @return if the order has a payment ; create a payment for the order with the same amount.
-	 * return the order id in all cases
-	 * */
-	private Mono<String> createPaymentForOrderAndReturnOrderId(String orderExtId, OrderData order) {
-		Long orgId = order.getOrganizationId();
-		Mono<String> paymentExtIdMono =
-				Mono
-				.justOrEmpty(getPaymentData(order))
-				.map(data -> createPaymentRequest(orderExtId, data))
-				.flatMap(requestData -> 
-							getWebClient(orgId)
-							 .createPayment(requestData))
-				.flatMap(this::throwExceptionIfNotOk)
-				.flatMap(res -> res.bodyToMono(String.class))
-				.defaultIfEmpty("-1");
-		
-		return Mono.zip(paymentExtIdMono, Mono.just(orderExtId), (paymentId, orderId) -> orderId);
-	}
-	
-	
-	
-	
-	
-	private Optional<PaymentData> getPaymentData(OrderData order) {
-		Optional<PaymentData> paymentData = order.getPaymentData();
-		return paymentData
-				.map(data -> modifyPaymentData(data, order));
-	}
-	
-	
-	
-	
-	
-	private PaymentData modifyPaymentData(PaymentData data, OrderData order) {
-		PaymentData copy = copyPaymentData(data);
-		copy.setId(null);
-		copy.setValue(order.getTotalValue());
-		return copy;
-	}
-	
-	
-	
-	
-	
-	private PaymentData copyPaymentData(PaymentData data) {		
-		try {
-			return (PaymentData)BeanUtils.cloneBean(data);
-		} catch (IllegalAccessException | InstantiationException | InvocationTargetException
-				| NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-	} 
 
 
 
 
-	private Payment createPaymentRequest(String extOrderId, PaymentData data) {
-		Payment payment = new Payment();
-		
-		if(extOrderId == null) {
-			logger.severe(format("Null external order id for payment event[%s]", data.toString()));
-			throw new ExternalOrderIdNotFound(data.getOrderId(), data.getOrganizationId());
-		}
-		
-		List<PaymentDetails> paymentDetails = createPaymentDetails(data, extOrderId);
-		payment.setPaymentDetails(paymentDetails);
-		payment.setSalesId(extOrderId);
-		
-		return payment;
-	}
-	
-	
-	
-	
-	
-	private List<PaymentDetails> createPaymentDetails(PaymentData data, String salesId) {
-		PaymentDetails details = new PaymentDetails();
-		details.setAmount(data.getValue());
-		details.setSalesId(salesId);
-		details.setPaymentMethod(PAYMENT_METHOD);		
-		return asList(details);
-	}
+
 
 
 
@@ -169,39 +88,39 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 			throw new RuntimeBusinessException(msg, "INVALID INTEGRATION EVENT", INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 	private SalesOrder createSalesOrderData(OrderData data) {
-		String customerExtId = getCustomerExternalId(data);		
+		String customerExtId = getCustomerExternalId(data);
 		String storeExtId = getStoreExternalId(data);
 		List<SalesOrderItem> items = getSalesOrderItems(data, storeExtId);
 		BigDecimal total = data.getTotalValue();
-		
+
 		SalesOrder salesOrder = new SalesOrder();
-		
+
 		salesOrder.setCashOnDeliveryFee(ZERO);
 		salesOrder.setCityCode("");
 		salesOrder.setCodCode("Non");
 		salesOrder.setCodFeeAmount(ZERO);
-		salesOrder.setCountryId("EGY");		
+		salesOrder.setCountryId("EGY");
 		salesOrder.setInventSite("OCTOBER1");
 		salesOrder.setPaymentMethod("Credit_CHE");
 		salesOrder.setShippingFees(ZERO);
 		salesOrder.setShippingFeesCode("Non");
 		salesOrder.setTotalOrderDiscount(ZERO);
-		
+
 		salesOrder.setAddress(data.getAddress().getAddressLine1());
 		salesOrder.setCustomerId(customerExtId);
 		salesOrder.setItems(items);
 		salesOrder.setStore(storeExtId);
 		salesOrder.setSubTotal(total);
 		salesOrder.setTotal(total);
-		
+
 		return salesOrder;
 	}
 
@@ -224,41 +143,41 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 	}
 
 
-	
-	
-	
-	
+
+
+
+
 	private SalesOrderItem toSalesOrderItem(OrderItemData data, String storeExtId, Long orgId) {
 		String itemExtId = getItemExternalId(data, orgId);
 		BigDecimal total = data.getItemPrice().multiply(data.getQuantity());
-		
+
 		SalesOrderItem item = new SalesOrderItem();
 		item.setCode(null);
 		item.setDiscountAmount(ZERO);
-		item.setInventSiteId("OCTOBER1");		
+		item.setInventSiteId("OCTOBER1");
 		item.setQuantity(data.getQuantity());
-		item.setSalesPrice(data.getItemPrice());		
+		item.setSalesPrice(data.getItemPrice());
 		item.setStore(storeExtId);
 		item.setItem(itemExtId);
 		item.setNetPrice(total);
 		item.setTotals(total);
-		
+
 		return item;
 	}
 
 
-	
-	
-	
-	
+
+
+
+
 	private String getItemExternalId(OrderItemData data, Long orgId) {
 		return integrationService.getRemoteMappedValue(orgId, PRODUCT_VARIANT, nullableToString(data.getVariantId()));
 	}
 
 
 
-	
-	
+
+
 
 	private String getCustomerExternalId(OrderData data) {
 		return integrationService

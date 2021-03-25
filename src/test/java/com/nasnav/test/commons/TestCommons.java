@@ -124,8 +124,13 @@ public class TestCommons {
 
 
 
-    public static String readResource(Resource resource) throws IOException {
-    	return new String( Files.readAllBytes(resource.getFile().toPath()) );
+    public static String readResource(Resource resource){
+        try {
+            return new String( Files.readAllBytes(resource.getFile().toPath()) );
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
     }
 
 

@@ -8,7 +8,7 @@ import com.nasnav.integration.events.data.OrderData;
 
 import reactor.core.publisher.Mono;
 
-public class OrderConfirmEventHandler extends IntegrationEventListener<OrderConfirmEvent, OrderData, String> {
+public class OrderConfirmEventHandler extends IntegrationEventListener<OrderConfirmEvent, OrderData, OrderData.Result> {
 
 	
 	
@@ -31,8 +31,9 @@ public class OrderConfirmEventHandler extends IntegrationEventListener<OrderConf
 	
 
 	@Override
-	public Mono<String> handleEventAsync(EventInfo<OrderData> event) {
-		return Mono.just("PASSED!!");
+	public Mono<OrderData.Result> handleEventAsync(EventInfo<OrderData> event) {
+		Long localOrderId = event.getEventData().getOrderId();
+		return Mono.just(new OrderData.Result(localOrderId, "PASSED!!"));
 	}
 
 

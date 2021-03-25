@@ -32,7 +32,6 @@ public abstract class AbstractMSDynamicsEventListener<E extends Event<T,R>, T, R
 			String serverUrl = integrationService.getIntegrationParamValue(orgId, SERVER_URL.getValue());
 			client = new FortuneWebClient(serverUrl);
 		}
-		
 		return client;
 	}
 	

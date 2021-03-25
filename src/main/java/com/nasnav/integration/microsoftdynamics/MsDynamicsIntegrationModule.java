@@ -2,11 +2,7 @@ package com.nasnav.integration.microsoftdynamics;
 
 import com.nasnav.integration.IntegrationModule;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.events.CustomerCreateEvent;
-import com.nasnav.integration.events.OrderConfirmEvent;
-import com.nasnav.integration.events.ProductsImportEvent;
-import com.nasnav.integration.events.ShopsImportEvent;
-import com.nasnav.integration.events.StockFetchEvent;
+import com.nasnav.integration.events.*;
 
 public class MsDynamicsIntegrationModule extends IntegrationModule {
 
@@ -24,6 +20,7 @@ public class MsDynamicsIntegrationModule extends IntegrationModule {
 		addEventListener(ProductsImportEvent.class, new ProductImportEventListener(integrationService));
 		addEventListener(StockFetchEvent.class, new StockFetchEventListener(integrationService));
 		addEventListener(OrderConfirmEvent.class, new OrderConfirmEventListener(integrationService));
+		addEventListener(PaymentCreateEvent.class, new PaymentCreateEventListener(integrationService));
 	}
 
 }

@@ -30,6 +30,20 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 	List<OrdersEntity> findByMetaOrderId(Long metaOrderId);
 
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user"
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE meta.id = :metaOrderId" )
+	List<OrdersEntity> findInDetailsByMetaOrderId(@Param("metaOrderId")Long metaOrderId);
+
     List<OrdersEntity> findByStatus(Integer status);    
 
 	Long countByStatusAndUserId(Integer value, long l);

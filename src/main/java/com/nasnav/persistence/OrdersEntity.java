@@ -8,13 +8,11 @@ import static java.util.Optional.ofNullable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -26,14 +24,12 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.persistence.listeners.OrdersEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,7 +38,6 @@ import lombok.ToString;
 
 @Entity
 @Table(name="orders")
-@EntityListeners(OrdersEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class OrdersEntity implements BaseEntity{

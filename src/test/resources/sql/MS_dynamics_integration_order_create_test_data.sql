@@ -98,8 +98,8 @@ insert into public.product_variants(id, "name" , product_id, barcode, feature_sp
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60001, 50001, 600, 99001, 600.0, 310001);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60002, 50001, 55, 99001, 600.0, 310002);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60003, 50002, 66, 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60002, 50001, 55, 99001, 600.0, 310003);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60003, 50002, 66, 99001, 600.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60004, 55555, 88, 99001, 600.0, 310003);
 
 
@@ -108,6 +108,7 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTO
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67005, 'SHOP');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT_VARIANT');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67007, 'ORDER');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67008, 'PAYMENT');
 
 
 
@@ -127,7 +128,6 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);
 
-
 --inserting orders
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 88, now(), now(), 99001, 0, 50001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330034, 88, now(), now(), 99001, 0, 50001);
@@ -139,7 +139,8 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 
 
 -- insert cart
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(60001, '99001/img2.jpg', '{"Color":"Blue"}', 5, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(60001, '99001/img2.jpg', '{"Color":"Pink"}', 5, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(60003, '99001/img2.jpg', '{"Color":"Blue"}', 1, 88);
 
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 

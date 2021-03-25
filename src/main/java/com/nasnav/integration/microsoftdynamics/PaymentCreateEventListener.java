@@ -9,8 +9,10 @@ import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
+import com.nasnav.integration.events.Event;
 import org.springframework.http.HttpStatus;
 
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -28,16 +30,9 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 
 	private static final String PAYMENT_METHOD = "Credit_CHE";
 
-
-
-
-
-	public PaymentCreateEventListener(IntegrationService integrationService) {
+	public  PaymentCreateEventListener(IntegrationService integrationService) {
 		super(integrationService);
 	}
-	
-	
-	
 	
 
 	@Override
@@ -49,12 +44,7 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		//read from the database.
 		validatePaymentEvent(event);
 		
-		Payment requestData = createPaymentRequest(event);
-		return getWebClient(event.getOrganizationId())
-				.createPayment(requestData)
-				.flatMap(this::throwExceptionIfNotOk)
-				.flatMap(res -> res.bodyToMono(String.class))
-				.map(paymentId -> paymentId.replace("\"", ""));
+		return sendPaymentRequest(event.getEventData());
 	}
 
 
@@ -73,56 +63,61 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		}
 	}
 
-	
-	
-	
-	
-	private Payment createPaymentRequest(EventInfo<PaymentData> event) {
+
+	private Mono<String> sendPaymentRequest(PaymentData payment) {
+		Long orgId = payment.getOrganizationId();
+		return Mono
+				.justOrEmpty(payment)
+				.map(this::createPaymentRequest)
+				.flatMap(requestData ->
+						getWebClient(orgId)
+								.createPayment(requestData))
+				.flatMap(this::throwExceptionIfNotOk)
+				.flatMap(res -> res.bodyToMono(String.class))
+				.defaultIfEmpty("-1");
+	}
+
+
+
+	private Payment createPaymentRequest(PaymentData data) {
+		String extOrderId = getExtOrderId(data);
+		List<PaymentDetails> paymentDetails = createPaymentDetails(data);
+
 		Payment payment = new Payment();
-		
-		PaymentData data = event.getEventData();
-		String orderId = getOrderId(data);		
-		String extOrderId = integrationService.getRemoteMappedValue(event.getOrganizationId(), ORDER, orderId);
-		
-		if(extOrderId == null) {
-			logger.severe(format("Null external order id for payment event[%s]", data.toString()));
-			throw new ExternalOrderIdNotFound(data.getOrderId(), event.getOrganizationId());
-		}
-		
-		List<PaymentDetails> paymentDetails = createPaymentDetails(event, extOrderId);
 		payment.setPaymentDetails(paymentDetails);
 		payment.setSalesId(extOrderId);
-		
 		return payment;
 	}
 
 
 
-
-
-	private String getOrderId(PaymentData data) {
+	private String getExtOrderId(PaymentData data) {
 		return ofNullable(data)
-				.map(PaymentData::getOrderId)
-				.map(id -> id.toString())
-				.orElse(null);
+				.map(PaymentData::getExternalOrderId)
+				.orElseThrow(() ->{
+					logger.severe(format("Null external order id for payment event[%s]", toString(data)));
+					return new ExternalOrderIdNotFound(data);
+				});
 	}
 
 
 
+	private String toString(PaymentData data){
+		return ofNullable(data)
+				.map(Object::toString)
+				.orElse("[]");
+	}
 
 
-	private List<PaymentDetails> createPaymentDetails(EventInfo<PaymentData> event, String salesId) {
-		PaymentData data = event.getEventData();
-		
+
+	private List<PaymentDetails> createPaymentDetails(PaymentData data) {
+		String salesId = data.getExternalOrderId();
 		PaymentDetails details = new PaymentDetails();
 		details.setAmount(data.getValue());
 		details.setSalesId(salesId);
 		details.setPaymentMethod(PAYMENT_METHOD);
-		
 		return asList(details);
 	}
-
-
 
 
 
