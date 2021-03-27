@@ -24,25 +24,6 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
-import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
-import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static com.nasnav.service.CsvExcelDataImportService.IMG_CSV_BASE_HEADERS;
-import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
-import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
-import static com.nasnav.service.CsvExcelDataImportService.*;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 
 @Service("csv")
 public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
-public enum ImageCsvTemplateType {
+public enum ImageFileTemplateType {
 	EMPTY("empty"), PRODUCTS_WITH_NO_IMGS("product_with_no_imgs");
 	
 	@Getter
@@ -12,7 +12,7 @@ public enum ImageCsvTemplateType {
     private final String value;
 	
 	@JsonCreator
-	ImageCsvTemplateType(String value) {
+	ImageFileTemplateType(String value) {
         this.value = value;
     }
 }
