@@ -4,8 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import java.io.*;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,6 +15,7 @@ import javax.validation.Valid;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -31,13 +31,12 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
-import java.lang.reflect.Type;
 
 @Service
 @Qualifier("excel")
 public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportService {
 
-	private Logger logger = Logger.getLogger(getClass());
+	private final Logger logger = Logger.getLogger(getClass());
 
 	@Override
 	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws RuntimeBusinessException, ImportProductException {
@@ -47,7 +46,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		ProductImportMetadata importMetadata = getImportMetaData(importMetaData);
 		ImportProductContext initialContext = new ImportProductContext(emptyList(), importMetadata);
 
-		List<CsvRow> rows = parseExcelFile(file, importMetaData, initialContext);
+		List<CsvRow> rows = parseExcelFile(file, initialContext);
 
 		List<ProductImportDTO> productsData =
 				rows
@@ -62,8 +61,8 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	}
 
-	private List<CsvRow> parseExcelFile(MultipartFile file, ProductListImportDTO importMetaData, ImportProductContext initialContext) throws ImportProductException {
-		List<CsvRow> lines = null;
+	private List<CsvRow> parseExcelFile(MultipartFile file, ImportProductContext initialContext) throws ImportProductException {
+		List<CsvRow> lines;
 		try {
 			Workbook wb = WorkbookFactory.create(file.getInputStream());
 			Sheet sheet = wb.getSheetAt(0);
@@ -86,13 +85,13 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		}
 		List<String> originalHeaders = getProductImportTemplateHeaders();
 		String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
-		if(headerNotFound != null && !headerNotFound.isEmpty()){
+		if(!headerNotFound.isEmpty()){
 			throw new BusinessException(" Could not find fields : ["+headerNotFound+"]", "", HttpStatus.NOT_ACCEPTABLE);
 		}
 
 	}
 
-	public List<CsvRow> readImpDataLines(Sheet sheet) {
+	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
 		List<CsvRow> lines = new ArrayList<>();
 		int rowIterator =0;
 		for (Row row: sheet) {
@@ -107,7 +106,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				String headerMapped = getColumnHeaderMapping(headerName);
 				headerName = StringUtils.isEmpty(headerMapped) ? headerName: headerMapped;
 				Object value = getCellValue(cell);
-				ReflectUtils.set(line, headerName, value);
+				BeanUtils.setProperty(line, headerName, value);
 				cellIterator++;
 			}
 			lines.add(line);
@@ -142,56 +141,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		AtomicInteger column = new AtomicInteger();
 		Row row = sheet.createRow(0);
 
-		headers.stream().forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
+		headers.forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
 
  		workbook.write(bos);
 		workbook.close();
 		return bos;
-	}
-
-	public static class ReflectUtils {
-
-		public static boolean set(Object object, String fieldName, Object fieldValue) {
-			if(fieldName==null)
-				return false;
-			Class<?> clazz = object.getClass();
-			while (clazz != null) {
-				try {
-					Field field = clazz.getDeclaredField(fieldName);
-					field.setAccessible(true);
-					Type pt=null;
-					try{
-						pt = field.getGenericType();
-					}catch(Exception e){
-						e.printStackTrace();
-					}
-					if(fieldValue != null ) {
-						if (pt != null && pt.getTypeName().equals("java.lang.String"))
-							if (fieldValue instanceof Double)
-								field.set(object, String.valueOf(((Double) fieldValue).intValue()));
-							else
-								field.set(object, String.valueOf(fieldValue));
-						else if (pt != null && (pt.getTypeName().equals("java.lang.Long") || pt.getTypeName().equals("long")))
-							field.set(object, new BigDecimal(String.valueOf(fieldValue)).longValue());
-						else if (pt != null && (pt.getTypeName().equals("java.math.BigDecimal")))
-							field.set(object, new BigDecimal(String.valueOf(fieldValue)));
-						else if (pt != null && (pt.getTypeName().equals("java.lang.Integer") || pt.getTypeName().equals("int")))
-							if (fieldValue instanceof Double)
-								field.set(object, ((Double) fieldValue).intValue());
-							else
-								field.set(object, Integer.parseInt(String.valueOf(fieldValue)));
-					}
-					else
-						field.set(object, fieldValue);
-					return true;
-				} catch (NoSuchFieldException e) {
-					clazz = clazz.getSuperclass();
-				} catch (Exception e) {
-					throw new IllegalStateException(e);
-				}
-			}
-			return false;
-		}
 	}
 }
 
