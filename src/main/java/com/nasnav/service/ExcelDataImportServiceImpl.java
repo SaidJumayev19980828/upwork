@@ -144,8 +144,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 		headers.stream().forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
 
-		FileOutputStream outputStream = new FileOutputStream(File.createTempFile("template",""));
-		workbook.write(bos);
+ 		workbook.write(bos);
 		workbook.close();
 		return bos;
 	}

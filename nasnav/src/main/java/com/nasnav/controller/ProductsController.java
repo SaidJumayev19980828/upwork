@@ -1,5 +1,17 @@
 package com.nasnav.controller;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+
+import javax.validation.Valid;
+
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
@@ -18,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +38,18 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.List;
+import com.nasnav.enumerations.ImageFileTemplateType;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.BundleSearchParam;
+import com.nasnav.response.BundleResponse;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.ProductsDeleteResponse;
+import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.CsvExcelDataExportService;
+import com.nasnav.service.ProductImageService;
+import com.nasnav.service.ProductService;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -49,7 +70,12 @@ public class ProductsController {
 	private ProductImageService productImgService;
 
     @Autowired
-    private CsvDataExportService csvDataExportService;
+    @Qualifier("csv")
+    private CsvExcelDataExportService csvDataExportService;
+
+    @Autowired
+    @Qualifier("excel")
+    private CsvExcelDataExportService excelDataExportService;
 
     @Autowired
     private ReviewServiceImpl reviewService;
@@ -362,8 +388,8 @@ public class ProductsController {
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
     public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token
-    		, @RequestParam(name="type", required = false) ImageCsvTemplateType type) throws IOException {
-        ByteArrayOutputStream s = csvDataExportService.generateImagesCsvTemplate(type);
+    		, @RequestParam(name="type", required = false) ImageFileTemplateType type) throws IOException {
+        ByteArrayOutputStream s = csvDataExportService.generateImagesTemplate(type);
         return ResponseEntity
         		.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))

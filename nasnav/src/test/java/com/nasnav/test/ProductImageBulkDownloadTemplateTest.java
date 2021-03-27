@@ -1,5 +1,17 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.ImageFileTemplateType.PRODUCTS_WITH_NO_IMGS;
+import static com.nasnav.service.CsvDataImportServiceImpl.IMG_CSV_BASE_HEADERS;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertEquals;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.OK;
+
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.NavBox;
 import net.jcip.annotations.NotThreadSafe;
