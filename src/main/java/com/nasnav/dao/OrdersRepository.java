@@ -200,10 +200,11 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join basket.stocksEntity stock " +
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
-			" where product.organizationId = :orgId and subOrder.creationDate between :minMonth and :maxMonth")
-	BigDecimal getTotalIncomePerMonth(@Param("orgId") Long orgId,
-									  @Param("minMonth") LocalDateTime minMonth,
-									  @Param("maxMonth") LocalDateTime maxMonth);
+			" where product.organizationId = :orgId and subOrder.creationDate between :minMonth and :maxMonth" +
+			" and subOrder.status in (5,8)")
+	Optional<BigDecimal> getTotalIncomePerMonth(@Param("orgId") Long orgId,
+												@Param("minMonth") LocalDateTime minMonth,
+												@Param("maxMonth") LocalDateTime maxMonth);
 
 	@Query("SELECT sum(basket.quantity) " +
 			" FROM OrdersEntity subOrder " +
@@ -211,10 +212,11 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join basket.stocksEntity stock " +
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
-			" where product.organizationId = :orgId and subOrder.creationDate between :minWeek and :maxWeek")
-	Integer getSalesPerWeek(@Param("orgId") Long orgId,
-							@Param("minWeek") LocalDateTime minWeek,
-							@Param("maxWeek") LocalDateTime maxWeek);
+			" where product.organizationId = :orgId and subOrder.creationDate between :minWeek and :maxWeek" +
+			" and subOrder.status in (5,8)")
+	Optional<Integer> getSalesPerWeek(@Param("orgId") Long orgId,
+									  @Param("minWeek") LocalDateTime minWeek,
+									  @Param("maxWeek") LocalDateTime maxWeek);
 
 	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 5 and subOrder.id = :orderId")
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
