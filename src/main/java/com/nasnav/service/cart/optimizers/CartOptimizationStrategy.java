@@ -15,7 +15,8 @@ public enum CartOptimizationStrategy {
 	SAME_CITY(OptimizationStratigiesNames.SAME_CITY)
 	, DEFAULT_OPTIMIZER(OptimizationStratigiesNames.SAME_CITY)
 	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE)
-	, TRANSPARENT(OptimizationStratigiesNames.TRANSPARENT);
+	, TRANSPARENT(OptimizationStratigiesNames.TRANSPARENT)
+	, SHOP_PER_SUBAREA(OptimizationStratigiesNames.SHOP_PER_SUBAREA);
 	
 	@Getter
 	@JsonValue

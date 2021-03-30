@@ -5,6 +5,7 @@ import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.SAME_CITY;
+import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SHOP_PER_SUBAREA;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -59,7 +60,7 @@ import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_3.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
@@ -352,11 +353,8 @@ public class SettingsServiceTest {
 	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
-	
-	
-	
-	
-	
+
+
 	
 	@Test
 	public void postWarehouseCartOptimizationSettingWarehouseFromAnotherOrgTest() {
@@ -376,12 +374,106 @@ public class SettingsServiceTest {
 	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
+
+
+
+	@Test
+	public void postSubAreaShopCartOptimizationSettingDefaultShopFromAnotherOrgTest() {
+		String strategy = SHOP_PER_SUBAREA;
+		String body =
+				json()
+					.put("strategy_name", strategy)
+					.put("parameters",
+							json()
+							.put("default_shop", 501)
+							.put("sub_area_shop_mapping", json().put("77001", 502)))
+					.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+
+		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
+				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		assertFalse(optimizationParamsEntity.isPresent());
+	}
+
+
+
+	@Test
+	public void postSubAreaShopCartOptimizationSettingSubAreaShopFromAnotherOrgTest() {
+		String strategy = SHOP_PER_SUBAREA;
+		String body =
+				json()
+					.put("strategy_name", strategy)
+					.put("parameters",
+							json()
+							.put("default_shop", 502)
+							.put("sub_area_shop_mapping", json().put("77001", 501)))
+					.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+
+		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
+				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		assertFalse(optimizationParamsEntity.isPresent());
+	}
+
+
+
+	@Test
+	public void postSubAreaShopCartOptimizationSettingSubAreaFromAnotherOrgTest() {
+		String strategy = SHOP_PER_SUBAREA;
+		String body =
+				json()
+					.put("strategy_name", strategy)
+					.put("parameters",
+							json()
+							.put("default_shop", 502)
+							.put("sub_area_shop_mapping", json().put("77002", 502)))
+					.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+
+		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
+				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		assertFalse(optimizationParamsEntity.isPresent());
+	}
+
+
+
+	@Test
+	public void postSubAreaShopCartOptimizationSettingSuccessTest() {
+		String strategy = SHOP_PER_SUBAREA;
+		String body =
+				json()
+					.put("strategy_name", strategy)
+					.put("parameters",
+							json()
+							.put("default_shop", 502)
+							.put("sub_area_shop_mapping", json().put("77001", 502)))
+					.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+		assertEquals(OK, res.getStatusCode());
+
+		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
+				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		assertTrue(optimizationParamsEntity.isPresent());
+		assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
+	}
 	
-	
-	
-	
-	
-	
+
+
 	@Test
 	public void postWarehouseCartOptimizationSettingSuccessTest() {
 		String strategy = WAREHOUSE;

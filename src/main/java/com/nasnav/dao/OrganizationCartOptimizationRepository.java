@@ -17,12 +17,12 @@ public interface OrganizationCartOptimizationRepository extends JpaRepository<Or
 			String shippingServiceId, Long id);
 
 	
-	@Query("SELECT optimize.optimizationStrategy "
+	@Query("SELECT optimize "
 			+ " FROM OrganizationCartOptimizationEntity optimize "
 			+ " LEFT JOIN optimize.organization org "
 			+ " WHERE org.id = :orgId "
 			+ " AND optimize.shippingServiceId IS NULL ")
-	Optional<String> findOrganizationDefaultOptimizationStrategy(@Param("orgId")Long orgId);
+	Optional<OrganizationCartOptimizationEntity> findOrganizationDefaultOptimizationStrategy(@Param("orgId")Long orgId);
 
 	Optional<OrganizationCartOptimizationEntity> findByShippingServiceIdAndOrganization_Id(String shippingServiceId, Long orgId);
 

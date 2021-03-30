@@ -167,9 +167,10 @@ public enum ErrorCodes {
 	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
 	,O$CRT$0010("Invalid or missing cart optimization parameters!")
 	,O$CRT$0011("Failed to optimize cart item for shipping! No stock can fulfill the cart for cart item with id[%d] and stock Id[%d]!")
-	,O$CRT$0012("Invalid Cart optimization common parameters [%s] !")
-	,O$CRT$0013("Missing Cart optimization common parameters for organization [%d] and optimizer [%s] !")
-	,O$CRT$0014("Failed to parse Common optimization parameters for organization [%d] and optimizer [%s] !")
+	,O$CRT$0012("Invalid Cart optimization configuration parameters [%s] !")
+	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
+	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
+	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")

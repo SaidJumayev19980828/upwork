@@ -33,4 +33,11 @@ public interface SubAreaRepository extends JpaRepository<SubAreasEntity, Long> {
     @Query(value = " DELETE SubAreasEntity subArea " +
             " where subArea.id in :subAreas")
     void deleteByIdIn(@Param("subAreas")Set<Long> subAreasToDelete);
+
+
+    @Query("SELECT subArea.id FROM SubAreasEntity subArea" +
+            " LEFT JOIN subArea.organization org " +
+            " WHERE org.id = :orgId " +
+            " AND subArea.id in :ids")
+    Set<Long> findByIdInAndOrganizationId_Id(@Param("ids")Set<Long> providedSubAreas, @Param("orgId")Long orgId);
 }

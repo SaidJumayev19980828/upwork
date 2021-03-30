@@ -44,11 +44,12 @@ import com.nasnav.dto.response.navbox.Cart;
  * CartOptimizationService is responsible for constructing an instance of both CartParams and CommonParams and providing
  * them to the optimizer instance during the optimization process.
  * */
-public interface CartOptimizer<CartParams, CommonParams> {
+public interface CartOptimizer<CartParams, Config> {
 	Optional<CartParams> createCartOptimizationParameters(CartCheckoutDTO dto);
-	Optional<OptimizedCart> createOptimizedCart(Optional<CartParams> parameters, Cart cart );
+	Optional<OptimizedCart> createOptimizedCart(Optional<CartParams> parameters, Config config, Cart cart );
 	Class<? extends CartParams> getCartParametersClass();
-	Class<? extends CommonParams> getCommonParametersClass();
-	Boolean areCommonParametersValid(CommonParams parameters);
+	Class<? extends Config> getConfigurationClass();
+	Boolean isConfigValid(Config parameters);
 	Boolean areCartParametersValid(CartParams parameters);
+	String getOptimizerName();
 }
