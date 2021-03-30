@@ -4,21 +4,19 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface CartService {
     Cart getCart();
-    Cart getUserCart(Long userId);
+    Cart getCart(String promoCode);
+    Cart getUserCart(Long userId, String promoCode);
     Cart addCartItem(CartItem item);
-    Cart deleteCartItem(Long itemId);
+    Cart addCartItem(CartItem item, String promoCode);
+    Cart deleteCartItem(Long itemId, String promoCode);
     Order checkoutCart(CartCheckoutDTO dto);
-    BigDecimal calculateCartTotal();
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
     List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
     List<CartItem> toCartItemsDto(List<CartItemData> cartItems);

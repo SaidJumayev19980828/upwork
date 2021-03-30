@@ -408,12 +408,12 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountTest() {
 		String promoCode = "GREEEEEED";
-		String url = format("/cart/promo/discount?promo=%s", promoCode);		
+		String url = format("/cart?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
-        ResponseEntity<BigDecimal> res = 
-        		template.exchange(url, GET, req, BigDecimal.class);
+        ResponseEntity<Cart> res =
+        		template.exchange(url, GET, req, Cart.class);
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(0, res.getBody().compareTo(new BigDecimal("270")));
+        assertEquals(0, res.getBody().getDiscount().compareTo(new BigDecimal("270")));
 	}
 	
 	
@@ -422,7 +422,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountNoExistingPromoTest() {
 		String promoCode = "NotExist";
-		String url = format("/cart/promo/discount?promo=%s", promoCode);		
+		String url = format("/cart?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -435,7 +435,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountExpiredPromoTest() {
 		String promoCode = "MORE2020";
-		String url = format("/cart/promo/discount?promo=%s", promoCode);		
+		String url = format("/cart?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -448,7 +448,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountNotApplicablePromoTest() {
 		String promoCode = "MONEY2020";
-		String url = format("/cart/promo/discount?promo=%s", promoCode);		
+		String url = format("/cart?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
         ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -463,7 +463,7 @@ public class PromotionsTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getPromotionDiscountAlreadyUsedTest() {
 		String promoCode = "GREEEEEED";
-		String url = format("/cart/promo/discount?promo=%s", promoCode);		
+		String url = format("/cart?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);

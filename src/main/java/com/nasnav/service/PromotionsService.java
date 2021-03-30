@@ -17,8 +17,6 @@ public interface PromotionsService {
 
 	Long updatePromotion(PromotionDTO promotion);
 
-	BigDecimal calcPromoDiscountForCart(String promoCode);
-
 	BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal);
 
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
@@ -30,7 +28,10 @@ public interface PromotionsService {
 
     void removePromotion(Long promotionId);
 
-	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItemData> items) ;
-	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue);
-	BigDecimal calculateTotalCartDiscount();
+    BigDecimal calculateAllApplicablePromos(List<CartItemData> items, Long userId, Long orgId, BigDecimal totalCartValue,
+											Long totalCartQuantity, String promoCode);
+
+	BigDecimal calculateBuyXGetYPromoDiscount( List<CartItemData> items, Long orgId) ;
+	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue);
+	BigDecimal calculateTotalCartDiscount(Long userId, Long orgId, BigDecimal totalCartValue, Long totalCartQuantity);
 }

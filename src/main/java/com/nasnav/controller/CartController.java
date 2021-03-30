@@ -50,8 +50,9 @@ public class CartController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) {
-		return cartService.getCart();
+	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+						@RequestParam(value = "promo", required = false) String promoCode) {
+		return cartService.getCart(promoCode);
 	}
 
 
@@ -63,8 +64,9 @@ public class CartController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "stock not found")
 	})
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
-	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item) {
-		return cartService.addCartItem(item);
+	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item,
+							@RequestParam(value = "promo", required = false) String promoCode) {
+		return cartService.addCartItem(item, promoCode);
 	}
 
 
@@ -76,8 +78,9 @@ public class CartController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "item not found")
 	})
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
-	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
-		return cartService.deleteCartItem(itemId);
+	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId,
+							   @RequestParam(value = "promo", required = false) String promoCode) {
+		return cartService.deleteCartItem(itemId, promoCode);
 	}
 
 
@@ -107,19 +110,5 @@ public class CartController {
 								@RequestBody CartCheckoutDTO dto) {
 		return cartOptimizeService.optimizeCart(dto);
 	}
-	
-	
-	
-	
-	@ApiOperation(value = "calculate promo for the cart", nickname = "cartPromoCalc")
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 403, message = "Not a customer"),
-			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid parameters")
-	})
-	@GetMapping(value = "/promo/discount", produces=APPLICATION_JSON_VALUE)
-	public BigDecimal calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestParam("promo") String promoCode) {
-		return promoService.calcPromoDiscountForCart(promoCode);
-	}
+
 }

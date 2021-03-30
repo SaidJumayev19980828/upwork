@@ -60,9 +60,6 @@ public class PromotionsEntity {
 	@Column(name="user_restricted")
 	private Integer userRestricted;
 
-	@Column(name="class_id")
-	private Integer classId;
-
 	@Column(name="type_id")
 	private Integer typeId;
 	

@@ -119,7 +119,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 		CartOptimizer<T,P> optimizer = getCartOptimizer(strategy.getValue());
 		Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
-		Cart cart = cartService.getCart();
+		Cart cart = cartService.getCart(dto.getPromoCode());
 		
 		return optimizer.createOptimizedCart(parameters, cart);
 		

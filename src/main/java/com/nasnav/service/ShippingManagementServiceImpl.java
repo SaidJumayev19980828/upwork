@@ -260,7 +260,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 	
 	private ShipmentDTO setShippingPromoDiscount(ShipmentDTO dto) {
-		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getShippingFee());
+		BigDecimal totalCartValue = cartRepo.findTotalCartValueByUser_Id(securityService.getCurrentUser().getId());
+		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getShippingFee(), totalCartValue);
 		dto.setShippingFee(dto.getShippingFee().subtract(discount));
 		return dto;
 	}

@@ -833,7 +833,7 @@ public class CartTest {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSameCityTest() {
 		Long userId = 88L;
-		Cart initialCart = cartService.getUserCart(userId);
+		Cart initialCart = cartService.getUserCart(userId, null);
 		//---------------------------------------------------------------		
 		String requestBody = createCartCheckoutBody().toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
@@ -852,7 +852,7 @@ public class CartTest {
 		assertTrue(res.getBody().getTotalChanged());		
 		
 		//---------------------------------------------------------------
-		Cart cartAfter = cartService.getUserCart(userId);
+		Cart cartAfter = cartService.getUserCart(userId, null);
 		
 		assertEquals(initialCart, cartAfter);
 	}

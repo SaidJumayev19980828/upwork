@@ -4,12 +4,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
-import com.nasnav.dto.request.order.returned.ReceivedItem;
-import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
-import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -21,16 +16,10 @@ import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
-import com.nasnav.persistence.dto.query.result.StockAdditionalData;
-import com.nasnav.persistence.dto.query.result.StockBasicData;
+import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.helpers.UserServicesHelper;
-import com.nasnav.service.model.mail.MailAttachment;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -39,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +58,6 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
-import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
@@ -87,7 +74,6 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static java.util.stream.IntStream.range;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
 @Service
@@ -1880,13 +1866,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BigDecimal subtractShippingDiscount(BigDecimal totalShippingValue) {
-		BigDecimal discount = promoService.calculateShippingPromoDiscount(totalShippingValue);
-		totalShippingValue = totalShippingValue.subtract(discount);
-		return totalShippingValue;
-	}
-
-
 	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
@@ -1966,21 +1945,20 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders) {
+		OrdersEntity suborder = subOrders.stream().findFirst().get();
+		Long userId = suborder.getUserId();
+		Long orgId = suborder.getOrganizationEntity().getId();
+
 		BigDecimal subTotal = 
 				subOrders
 				.stream()
 				.map(OrdersEntity::getAmount)
 				.reduce(ZERO, BigDecimal::add);
-		
-		BigDecimal promoDiscount = 
-				ofNullable(dto)
-				.map(CartCheckoutDTO::getPromoCode)
-				.map(promo -> promoService.calcPromoDiscount(promo, subTotal))
-				.orElse(ZERO);
 
-		promoDiscount = promoService.calculateTotalCartDiscount()
-				.add(promoService.calculateBuyXGetYPromoDiscount(cartItemRepo.findCurrentCartItemsByUser_Id(securityService.getCurrentUser().getId())))
-				.add(promoDiscount);
+
+		Long totalCartVariantsCount = cartItemRepo.findTotalCartQuantityByUser_Id(userId);
+		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
+		BigDecimal promoDiscount = promoService.calculateAllApplicablePromos(cartItems, userId, orgId, subTotal, totalCartVariantsCount, dto.getPromoCode());
 
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
