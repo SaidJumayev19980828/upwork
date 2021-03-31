@@ -8,11 +8,9 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 import com.nasnav.service.ShippingManagementService;
-import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
-import com.nasnav.shipping.services.SallabShippingService;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,11 +34,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.shipping.services.SallabShippingService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.math.BigDecimal.ZERO;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
@@ -111,8 +108,8 @@ public class SallabShippingServiceTest {
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("16.66")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("16.66")));
         assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("16.68")));
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(3) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(3).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
     }
 
 
@@ -133,8 +130,8 @@ public class SallabShippingServiceTest {
         assertEquals(2, shipments.size());
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(ZERO));
         assertEquals(0 , shipments.get(1).getShippingFee().compareTo(ZERO));
-        assertEquals(now().plusDays(Integer.parseInt(ETA_FROM)) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(Integer.parseInt(ETA_TO)) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(Integer.parseInt(ETA_FROM)).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(Integer.parseInt(ETA_TO)).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
     }
 
 

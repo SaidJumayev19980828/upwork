@@ -41,7 +41,7 @@ import java.util.function.Consumer;
 import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.sort;
@@ -127,8 +127,8 @@ public class ClicknshipServiceTest {
         List<Shipment> shipments = offer.getShipments();
         assertTrue(offer.isAvailable());
         assertEquals(2, shipments.size());
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(4) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(4).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
 
         if(isUsingMockServer()){
             assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("3547.50")));
@@ -225,8 +225,8 @@ public class ClicknshipServiceTest {
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(1, shipments.size());
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(4) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(4).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
         if(isUsingMockServer()){
             assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("3547.5")));
         }

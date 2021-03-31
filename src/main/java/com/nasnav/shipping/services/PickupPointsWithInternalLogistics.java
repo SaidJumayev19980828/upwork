@@ -7,7 +7,7 @@ import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.lang.Long.MIN_VALUE;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;

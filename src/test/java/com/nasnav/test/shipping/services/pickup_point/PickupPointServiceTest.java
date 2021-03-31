@@ -7,7 +7,7 @@ import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.WAR
 import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MAX;
 import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MIN;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -98,8 +98,8 @@ public class PickupPointServiceTest {
         		asList(503L).stream().allMatch(shops::contains));
         ShipmentDTO shipment = offers.get(0).getShipments().get(0);
         ShippingEtaDTO eta = shipment.getEta();
-        assertEquals(now().plusDays(ETA_FROM), eta.getFrom());
-		assertEquals(now().plusDays(ETA_TO), eta.getTo());
+        assertEquals(now().plusDays(ETA_FROM).toLocalDate(), eta.getFrom().toLocalDate());
+		assertEquals(now().plusDays(ETA_TO).toLocalDate(), eta.getTo().toLocalDate());
 	}
 	
 	

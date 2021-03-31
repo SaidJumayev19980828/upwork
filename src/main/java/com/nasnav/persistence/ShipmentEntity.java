@@ -60,9 +60,9 @@ public class ShipmentEntity implements BaseEntity {
 	private BigDecimal shippingFee;
 
 	@Column(name="delivery_from")
-	private LocalDate from;
+	private LocalDateTime from;
 	@Column(name="delivery_until")
-	private LocalDate to;
+	private LocalDateTime to;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

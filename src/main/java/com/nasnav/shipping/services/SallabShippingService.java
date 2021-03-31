@@ -30,12 +30,11 @@ import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.service.model.common.ParameterType.*;
-import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.math.RoundingMode.HALF_EVEN;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -195,12 +194,12 @@ public class SallabShippingService implements ShippingService{
 
 
 	private void correctCalculationError(Fee fee, List<Shipment> shipments) {
-		BigDecimal accumlatedFeeTotal =
+		BigDecimal accumulatedFeeTotal =
 				shipments
 				.stream()
 				.map(Shipment::getShippingFee)
 				.reduce(ZERO, BigDecimal::add);
-		BigDecimal error = fee.getTotalFee().subtract(accumlatedFeeTotal);
+		BigDecimal error = fee.getTotalFee().subtract(accumulatedFeeTotal);
 		shipments
 			.stream()
 			.peek( shipment -> shipment.setShippingFee(shipment.getShippingFee().add(error)))

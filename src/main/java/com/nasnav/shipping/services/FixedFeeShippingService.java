@@ -26,7 +26,7 @@ import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
