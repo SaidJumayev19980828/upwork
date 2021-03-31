@@ -150,8 +150,8 @@ public class SallabShippingServiceTest {
         assertEquals(2, shipments.size());
         assertEquals(0 , shipments.get(0).getShippingFee().compareTo(new BigDecimal("41")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("50")));
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
     }
 
 

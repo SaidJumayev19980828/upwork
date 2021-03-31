@@ -7,12 +7,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShippingEtaDTO {
-	private LocalDateTime from;
-	private LocalDateTime to;
+	private ZonedDateTime from;
+	private ZonedDateTime to;
 }

@@ -42,6 +42,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -307,7 +308,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private ShipmentDTO createShipmentDTO(Shipment shipment) {
 		ShippingEtaDTO etaDto = 
 				ofNullable(shipment.getEta())
-				.map(eta -> new ShippingEtaDTO(eta.getFrom(), eta.getTo()))
+				.map(eta -> new ShippingEtaDTO(
+						eta.getFrom().atZone(ZoneId.of("UTC")),
+						eta.getTo().atZone(ZoneId.of("UTC"))))
 				.orElse(new ShippingEtaDTO() );
 		
 		List<Long> stocks = shipment.getStocks();

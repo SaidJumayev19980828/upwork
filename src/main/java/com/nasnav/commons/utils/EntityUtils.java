@@ -6,6 +6,8 @@ import static java.util.Optional.ofNullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -256,6 +258,12 @@ public class EntityUtils {
 	}
 
 
+	public static LocalDateTime toLocalDateTime(ZonedDateTime time){
+		return ofNullable(time)
+				.map(t -> t.withZoneSameInstant(ZoneId.of("UTC")))
+				.map(ZonedDateTime::toLocalDateTime)
+				.orElse(null);
+	}
 }
 
 

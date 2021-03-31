@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
@@ -2299,8 +2300,8 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$SHP$0003));
 
 		shipment.setShippingFee(shipmentDTO.getShippingFee());
-		shipment.setFrom(shipmentDTO.getEta().getFrom());
-		shipment.setTo(shipmentDTO.getEta().getTo());
+		shipment.setFrom( toLocalDateTime(shipmentDTO.getEta().getFrom()));
+		shipment.setTo( toLocalDateTime(shipmentDTO.getEta().getTo()));
 
 		return shipmentRepo.save(shipment);
 	}
