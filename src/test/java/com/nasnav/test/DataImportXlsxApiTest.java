@@ -190,7 +190,7 @@ public class DataImportXlsxApiTest {
 	private StockUnitRepository stockUnitRepo;
 
 	@Test
-    public void uploadProductsCSVNoAuthNTest() throws Exception {
+    public void uploadProductsXLSNoAuthNTest() throws Exception {
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -200,7 +200,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVNoAuthZTest() throws Exception{
+    public void uploadProductsXLSNoAuthZTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -210,7 +210,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVMissingShopIdTest() throws Throwable {
+    public void uploadProductsXLSMissingShopIdTest() throws Throwable {
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("shop_id");
@@ -222,7 +222,7 @@ public class DataImportXlsxApiTest {
 
 
 	@Test
-    public void uploadProductsCSVMissingEncodingTest() throws Exception{
+    public void uploadProductsXLSMissingEncodingTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("encoding");
@@ -233,7 +233,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVMissingCurrencyTest() throws Exception{
+    public void uploadProductsXLSMissingCurrencyTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("currency");
@@ -244,9 +244,8 @@ public class DataImportXlsxApiTest {
         result.andExpect(status().is(406));
     }
 
-
 	@Test
-    public void uploadProductsCSVNonExistingShopIdTest() throws Exception{
+    public void uploadProductsXLSNonExistingShopIdTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", 88865);
@@ -257,7 +256,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVUserFromAnotherOrgTest() throws Exception{
+    public void uploadProductsXLSUserFromAnotherOrgTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -267,7 +266,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVInvalidEncodingTest() throws Exception{
+    public void uploadProductsXLSInvalidEncodingTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("encoding", "KOKI-8");
@@ -279,7 +278,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVInvalidCurrencyTest() throws Exception{
+    public void uploadProductsXLSInvalidCurrencyTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("currency", 9999);
@@ -291,7 +290,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVNoXlsxUploadedTest() throws Exception{
+    public void uploadProductsXLSNoXlsxUploadedTest() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -303,7 +302,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVMissingCol() throws Exception{
+    public void uploadProductsXLSMissingCol() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -313,7 +312,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-    public void uploadProductsCSVInvalidData() throws Exception{
+    public void uploadProductsXLSInvalidData() throws Exception{
 
 		JSONObject importProperties = createDataImportProperties();
 
@@ -327,7 +326,7 @@ public class DataImportXlsxApiTest {
     }
 
 	@Test
-	public void uploadProductCSVNewDataTest() throws Exception{
+	public void uploadProductXLSNewDataTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -349,7 +348,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVNewUnit() throws Exception{
+	public void uploadProductXLSNewUnit() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -364,7 +363,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVRemovedVariant() throws Exception {
+	public void uploadProductXLSRemovedVariant() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -379,7 +378,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVNewDataTestGroupByKey() throws Exception{
+	public void uploadProductXLSNewDataTestGroupByKey() throws Exception{
 		variantRepo.deleteAll();
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
@@ -424,7 +423,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductInvalidCSV() throws Exception{
+	public void uploadProductInvalidXLS() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -456,7 +455,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVNewDataWithMissingFeaturesTest() throws Exception{
+	public void uploadProductXLSNewDataWithMissingFeaturesTest() throws Exception{
         JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
@@ -478,7 +477,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVNewDataVariantsTest() throws Exception{
+	public void uploadProductXLSNewDataVariantsTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -513,8 +512,6 @@ public class DataImportXlsxApiTest {
 		return count;
 	}
 
-
-
 	private ExtendedProductDataCount countExtendedProductData() {
 		ProductDataCount count = countProductData();
 		ExtendedProductDataCount extendedCount = new ExtendedProductDataCount(count);
@@ -525,7 +522,7 @@ public class DataImportXlsxApiTest {
 
 
 	@Test
-	public void uploadProductCSVNewDataDryRunTest() throws Exception {
+	public void uploadProductXLSNewDataDryRunTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("dryrun", true);
@@ -553,7 +550,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateStockDisabledTest() throws Exception {
+	public void uploadProductXLSUpdateStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -575,7 +572,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateProductsDisabledTest() throws Exception {
+	public void uploadProductXLSUpdateProductsDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", false);
@@ -604,7 +601,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateBothProductsAndStockDisabledTest() throws Exception {
+	public void uploadProductXLSUpdateBothProductsAndStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", false);
@@ -643,7 +640,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVLargeColumnTest() throws Exception{
+	public void uploadProductXLSLargeColumnTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -682,7 +679,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateDataEnabledTest() throws Exception{
+	public void uploadProductXLSUpdateDataEnabledTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -706,7 +703,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateWithInvisibleExtraAttributesTest() throws Exception{
+	public void uploadProductXLSUpdateWithInvisibleExtraAttributesTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -730,7 +727,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVInsertNewProductsDisabledTest() throws Exception{
+	public void uploadProductXLSInsertNewProductsDisabledTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -757,7 +754,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateNullFeaturesTest() throws Exception{
+	public void uploadProductXLSUpdateNullFeaturesTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -782,7 +779,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateDataDeleteOldProductsTest() throws Throwable {
+	public void uploadProductXLSUpdateDataDeleteOldProductsTest() throws Throwable {
 		JSONObject importProperties = createDataImportPropertiesWithDeleteOldProducts();
 
 		Long orgId = 99001L;
@@ -915,7 +912,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateGroupsWithExistingVariantTest() throws Exception{
+	public void uploadProductXLSUpdateGroupsWithExistingVariantTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -1004,7 +1001,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVExistingVariantIdNoVariantEntity() throws Exception {
+	public void uploadProductXLSExistingVariantIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -1014,7 +1011,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
+	public void uploadProductXLSExistingVariantIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
@@ -1035,7 +1032,7 @@ public class DataImportXlsxApiTest {
 
 
 	@Test
-	public void uploadProductCSVExistingExternalIdNoVariantEntity() throws Exception {
+	public void uploadProductXLSExistingExternalIdNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -1055,7 +1052,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
+	public void uploadProductXLSExistingExternalIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
@@ -1069,7 +1066,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
+	public void uploadProductXLSExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
@@ -1090,7 +1087,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVUpdateProductWithMultipleTagsTest() throws Exception{
+	public void uploadProductXLSUpdateProductWithMultipleTagsTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -1113,7 +1110,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_6.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateProductWithTagsWithDifferentCaseTest() throws Exception{
+	public void uploadProductXLSUpdateProductWithTagsWithDifferentCaseTest() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -1135,7 +1132,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws Exception{
+	public void uploadProductXLSWithBarcodesAndNewTagsOnly() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
@@ -1157,7 +1154,7 @@ public class DataImportXlsxApiTest {
 	}
 
 	@Test
-	public void uploadProductCSVWithNewTagsAndBrand() throws Exception{
+	public void uploadProductXLSWithNewTagsAndBrand() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
@@ -1180,7 +1177,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVWithResetTagsFlag() throws Exception{
+	public void uploadProductXLSWithResetTagsFlag() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -1206,7 +1203,7 @@ public class DataImportXlsxApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVSetWeights() throws Exception{
+	public void uploadProductXLSSetWeights() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -1248,21 +1245,12 @@ public class DataImportXlsxApiTest {
 		return report;
 	}
 
-
-
-
-
-
 	private void assertNewTagsAndBrandsImported() {
 		Set<String> newTags= setOf("new squish", "new hill equipment");
 		Set<String> newBrands = setOf("new brand","shiny new brand");
 		assertEquals(2, tagsRepo.findByNameLowerCaseInAndOrganizationEntity_Id(newTags, 99001L).size());
         assertEquals(2, brandsRepo.findByNameInAndRemoved(newBrands, 0).size());
 	}
-
-
-
-
 
 	private void assertProductUpdatedDataSavedWithStock() {
 		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
@@ -1289,19 +1277,11 @@ public class DataImportXlsxApiTest {
         assertEquals(101L, updatedProduct.getBrandId().longValue());
 	}
 
-
-
-
-
-
 	private void assertTestVariantUpdated(ProductVariantsEntity updatedVariant) {
 		assertEquals("TT232222", updatedVariant.getBarcode());
         assertEquals("Squishy shoes", updatedVariant.getName());
         assertEquals("squishy", updatedVariant.getDescription());
 	}
-
-
-
 
 	private void assertProductDataImported(Long shopId, ExpectedSavedData expected) {
 
