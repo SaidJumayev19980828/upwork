@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
-import com.univocity.parsers.csv.CsvWriterSettings;
 
 @Service("excel")
 public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportService{
