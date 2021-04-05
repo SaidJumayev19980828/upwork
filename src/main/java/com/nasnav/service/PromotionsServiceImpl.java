@@ -518,10 +518,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 										, PROMO$PARAM$0008, promoCode));
 		
 		validatePromoCode(promoCode, promo, subTotal);
-		
-		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-				.orElse(calcDiscount(promo, subTotal));
+
+		return getDiscount(subTotal, promo);
 	}
 
 
@@ -591,6 +589,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public BigDecimal calculateBuyXGetYPromoDiscount( List<CartItemData> items, Long orgId) {
+		//get promotions
+		//for each promotion:
+		// -- apply all promotions
+		// -- get
+		//sum
 		BigDecimal discount = ZERO;
 		List<Long> includedItems = new ArrayList<>();
 		List<PromotionsEntity> promosList = promoRepo
@@ -623,15 +626,18 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return discount;
 	}
 
+
+
+
 	private BigDecimal getDiscountBasedOnBrandsList(List<CartItemData> items, List<Long> allowedBrands, List<Long> includedItems,
-													Integer productQuantityMin, Integer productToGive) {
+													Integer productQuantityMin, Integer freeProductQuantity) {
 		return items
 				.stream()
 				.filter(i -> allowedBrands.contains(i.getBrandId()))
 				.filter(i -> i.getQuantity() >= productQuantityMin)
 				.filter(i -> !includedItems.contains(i.getProductId()))
 				.map(i -> markItemAsIncluded(i, includedItems))
-				.map(i -> getProductQuantityToGiveInDiscount(i.getQuantity(), productQuantityMin, productToGive).multiply(i.getPrice()))
+				.map(i -> getProductQuantityToGiveInDiscount(i.getQuantity(), productQuantityMin, freeProductQuantity).multiply(i.getPrice()))
 				.reduce(ZERO, BigDecimal::add);
 	}
 
@@ -675,24 +681,29 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.reduce(ZERO, BigDecimal::add);
 	}
 
+
+
 	@Override
 	public BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue){
-		BigDecimal discount = ZERO;
-		BigDecimal tmpDiscount;
-		List<PromotionsEntity> promoList = promoRepo
-				.findByOrganization_IdAndTypeIdIn(securityService.getCurrentUserOrganizationId(), asList(SHIPPING.getValue()));
-		for(PromotionsEntity promo : promoList) {
-			if (isPromoValidForTheCart(promo, totalCartValue)) {
-				Map<String, Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-				tmpDiscount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-						.orElse(calcDiscount(promo, totalShippingValue));
-				if (tmpDiscount.compareTo(discount) > 0) {
-					discount = tmpDiscount;
-				}
-			}
-		}
-		return discount;
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return promoRepo
+				.findByOrganization_IdAndTypeIdIn(orgId, asList(SHIPPING.getValue()))
+				.stream()
+				.filter(promo -> isPromoValidForTheCart(promo, totalCartValue))
+				.map(promo -> getDiscount(totalShippingValue, promo))
+				.max(BigDecimal::compareTo)
+				.orElse(ZERO);
 	}
+
+
+
+	private BigDecimal getDiscount(BigDecimal totalShippingValue, PromotionsEntity promo) {
+		Map<String, Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+				.orElse(calcDiscount(promo, totalShippingValue));
+	}
+
+
 
 	private void decreasePromoUsageLimit(PromotionsEntity promo) {
 		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
