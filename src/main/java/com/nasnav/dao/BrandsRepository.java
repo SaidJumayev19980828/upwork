@@ -37,7 +37,7 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			+ " WHERE brand.id in :ids and brand.removed = 0")
 	List<BrandBasicData> findByIdIn(@Param("ids")List<Long> ids);
 
-	@Query(value = "select new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from BrandsEntity b" +
-			"  where b.organizationEntity.id = :orgId and b.removed = 0")
+	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join BrandsEntity b on p.brandId = b.id" +
+			"  where b.organizationEntity.id = :orgId and b.removed = 0 and p.removed = 0")
 	List<IdAndNamePair> getBrandIdAndNamePairs(@Param("orgId") Long orgId);
 }
