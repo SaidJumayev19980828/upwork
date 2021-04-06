@@ -33,13 +33,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.nullableToString;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.*;
+import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.integration.IntegrationServiceImpl.REQUEST_TIMEOUT_SEC;
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
@@ -475,6 +473,10 @@ class PaymentAndOrderIdMapping{
 	private Map<Long,String> orderIdMapping;
 
 	public Boolean isPaymentPresent(){
-		return ofNullable(payment).map(Optional::isPresent).orElse(false);
+		return ofNullable(payment)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.map(pay -> Objects.equals(PAID, pay.getStatus()))
+				.orElse(false);
 	}
 }

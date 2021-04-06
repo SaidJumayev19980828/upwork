@@ -38,7 +38,7 @@ public class DummyShippingService implements ShippingService {
 	private static final String BILL_FILE= "NOT EMPTY";
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
 	public static final String RETURN_EMAIL_MSG = "TEST.. TEST .. YOU WILL GET NOTHING!!!!";
-	public static final String SHOP_ID = "\"Shop Id\"";
+	public static final String SHOP_ID = "Shop Id";
 	public static final String ICON = "";
 
 	@Getter

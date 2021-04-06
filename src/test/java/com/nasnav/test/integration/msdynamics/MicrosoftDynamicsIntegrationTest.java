@@ -1,9 +1,11 @@
 package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.enumerations.PaymentStatus.PAID;
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
+import static com.nasnav.shipping.services.DummyShippingService.SHOP_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
@@ -27,6 +29,8 @@ import java.util.stream.StreamSupport;
 
 import com.nasnav.dao.*;
 import com.nasnav.persistence.*;
+import com.nasnav.shipping.services.DummyShippingService;
+import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -73,6 +77,7 @@ import com.nasnav.service.OrderService;
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @DirtiesContext
+@NotThreadSafe
 public class MicrosoftDynamicsIntegrationTest {
 	
 	@SuppressWarnings("unused")
@@ -187,7 +192,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		//------------------------------------------------
 		//wait for the integration event to be handled.
 		//can't use concurrentunit.Waiter class, the response is served by the MockServer
-		Thread.sleep(7000);
+		Thread.sleep(5000);
 		
 		//------------------------------------------------
 		//test the mock api was called
@@ -416,7 +421,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		Order order = createNewOrder(token, stockId, orderQuantity); 
 		PaymentEntity payment = createDummyPayment(order);
-		confirmOrder(token, order.getOrderId());
+		finalizeOrder(token, order.getOrderId());
 		//---------------------------------------------------------------		
 		Thread.sleep(5000);
 		//---------------------------------------------------------------
@@ -439,13 +444,14 @@ public class MicrosoftDynamicsIntegrationTest {
 		Integer orderQuantity = 5;
 
 		Order order = createNewOrder(token, stockId, orderQuantity);
-		confirmOrder(token, order.getOrderId());
+		PaymentEntity payment = createDummyCodPayment(order);
+		finalizeOrder(token, order.getOrderId());
 		//---------------------------------------------------------------
 		Thread.sleep(5000);
 		//---------------------------------------------------------------
 		order
-				.getSubOrders()
-				.forEach(this::assertOrderIntegration);
+		.getSubOrders()
+		.forEach(this::assertOrderIntegration);
 
 		assertNoPaymentIntegration();
 	}
@@ -465,6 +471,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	}
 
 
+
 	private void assertPaymentMappingCreated(PaymentEntity payment){
 		IntegrationMappingEntity paymentMapping =
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
@@ -475,8 +482,6 @@ public class MicrosoftDynamicsIntegrationTest {
 				"single payment in nasnav can be saved as multiple payments in external systems, on for each sub-order"
 		 , 2,  new JSONArray(paymentMapping.getRemoteValue()).length());
 	}
-
-
 
 	
 	
@@ -490,13 +495,9 @@ public class MicrosoftDynamicsIntegrationTest {
 				      ,exactly(order.getSubOrders().size())	//for each sub-order an external payment should be created
 				    );
 		}
-
 		assertPaymentMappingCreated(payment);
 	}
-	
-	
-	
-	
+
 
 	
 	String getPaymentApiRequestExpectedBody(String externalOrderId, BigDecimal amount) {
@@ -515,9 +516,6 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
-	
-	
-	
 	private PaymentEntity createDummyPayment(Order order) {
 		
 		PaymentEntity payment = new PaymentEntity();
@@ -535,6 +533,27 @@ public class MicrosoftDynamicsIntegrationTest {
 		payment.setUserId(order.getUserId());
 		payment.setMetaOrderId(order.getOrderId());
 		
+		payment= paymentRepo.saveAndFlush(payment);
+		return payment;
+	}
+
+
+
+	private PaymentEntity createDummyCodPayment(Order order) {
+		PaymentEntity payment = new PaymentEntity();
+		JSONObject paymentObj =
+				json().put("what_is_this?", "dummy_payment_obj");
+
+		payment.setOperator("CoD");
+		payment.setUid("MLB-<MerchantReference>");
+		payment.setExecuted(new Date());
+		payment.setObject(paymentObj.toString());
+		payment.setAmount(order.getTotal());
+		payment.setCurrency(EGP);
+		payment.setStatus(UNPAID);
+		payment.setUserId(order.getUserId());
+		payment.setMetaOrderId(order.getOrderId());
+
 		payment= paymentRepo.saveAndFlush(payment);
 		return payment;
 	}
@@ -576,7 +595,7 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
-	private void confirmOrder(String token, Long orderId) throws BusinessException {
+	private void finalizeOrder(String token, Long orderId) throws BusinessException {
 		orderService.finalizeOrder(orderId);
 	}
 
@@ -590,6 +609,7 @@ public class MicrosoftDynamicsIntegrationTest {
 				json()
 				.put("shipping_service_id", "TEST")
 				.put("customer_address", 12300001L)
+				.put("additional_data", json().put(SHOP_ID, 50001))
 				.toString();
 		ResponseEntity<Order> response = 
 				template
@@ -659,7 +679,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
 		integrationInfo.setIntegrationModule("com.nasnav.integration.microsoftdynamics.MsDynamicsIntegrationModule");
-		integrationInfo.setMaxRequestRate(1);
+		integrationInfo.setMaxRequestRate(100);
 		integrationInfo.setOrganizationId(99001L);
 		integrationInfo.setIntegrationParameters(params);
 		

@@ -152,45 +152,47 @@ public class AdminApiTest {
         assertEquals("www.new.com", domainAfter.getDomain());
     }
 
+
+
     @Test
     public void createDomainRepeatedDomainAndSubdir() {
         String newDomain = "fortune.nasnav.com";
         Long orgId = 99001L;
         String requestBody =
                 json()
-                        .put("domain", newDomain)
-                        .put("organization_id", orgId)
-                        .toString();
+                .put("domain", newDomain)
+                .put("organization_id", orgId)
+                .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
 
         assertEquals(406, response.getStatusCode().value());
     }
 
+
+
     @Test
     public void updateDomainTest() {
         String newDomain = "new.com";
         Long orgId = 99001L;
+        Long domainId = 150002L;
         String requestBody =
                 json()
-                        .put("id", 2)
-                        .put("domain", newDomain)
-                        .put("organization_id", orgId)
-                        .put("canonical", 1)
-                        .toString();
+                    .put("id", domainId)
+                    .put("domain", newDomain)
+                    .put("organization_id", orgId)
+                    .put("canonical", 1)
+                    .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
 
-        OrganizationDomainsEntity domainAfter =
-                domainRepo
-                        .findByOrganizationEntity_IdOrderByPriorityDescIdDesc(orgId)
-                        .stream()
-                        .findFirst()
-                        .get();
+        OrganizationDomainsEntity domainAfter = domainRepo.findById(domainId).get();
 
         assertEquals(200, response.getStatusCode().value());
         assertEquals(newDomain, domainAfter.getDomain());
     }
+
+
 
     @Test
     public void updateDomainInvalidAuthN() {

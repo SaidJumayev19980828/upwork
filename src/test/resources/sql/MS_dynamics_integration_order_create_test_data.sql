@@ -6,6 +6,10 @@ INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
+--inserting organization domain
+INSERT INTO public.organization_domains (id, "domain", organization_id, canonical) VALUES(150001, 'fortune.nasnav.com', 99001, 0);
+INSERT INTO public.organization_domains (id, "domain", organization_id, canonical) VALUES(150002, 'www.fortune.com', 99001, 1);
+
 
 --inserting categories
 INSERT INTO public.categories(id, name) VALUES(201, 'PERFUMES');
