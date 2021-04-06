@@ -151,7 +151,8 @@ public class DataImportServiceImpl implements DataImportService {
         
         if(productImportMetadata.isDeleteOldProducts()) {
         	Set<Long> productsToDelete = getProductsToDelete(context);
-			processInBatches(productsToDelete, 500, productServiceTransactions::deleteProducts);
+			productServiceTransactions
+				.deleteProducts(new ArrayList<>(productsToDelete), true);
         }
 
         return context;

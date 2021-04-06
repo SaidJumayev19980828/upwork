@@ -23,6 +23,7 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.enumerations.Roles.*;
@@ -344,8 +345,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public void suspendEmployeeAccount(Long id, Boolean suspend) {
 		EmployeeUserEntity user = getAndValidateEmployeeToSuspend(id);
-
-		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		UserStatus status = empUserSvcHelper.checkUserStatusForSuspension(user);
 		if (suspend) {
 			if (status.equals(ACCOUNT_SUSPENDED)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);

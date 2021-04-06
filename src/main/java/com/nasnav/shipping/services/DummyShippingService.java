@@ -1,10 +1,27 @@
 package com.nasnav.shipping.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.DummyCallbackDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.service.model.common.Parameter;
+import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.model.*;
+import lombok.Getter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
 import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.service.model.common.ParameterType.*;
-import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -12,27 +29,6 @@ import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import com.nasnav.shipping.model.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.DummyCallbackDTO;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.service.model.common.Parameter;
-import com.nasnav.shipping.ShippingService;
-
-import lombok.Getter;
-import org.json.JSONObject;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 public class DummyShippingService implements ShippingService {
 	
@@ -42,7 +38,7 @@ public class DummyShippingService implements ShippingService {
 	private static final String BILL_FILE= "NOT EMPTY";
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
 	public static final String RETURN_EMAIL_MSG = "TEST.. TEST .. YOU WILL GET NOTHING!!!!";
-	public static final String SHOP_ID = "\"Shop Id\"";
+	public static final String SHOP_ID = "Shop Id";
 	public static final String ICON = "";
 
 	@Getter

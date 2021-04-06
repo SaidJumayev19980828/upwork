@@ -31,6 +31,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.persistence.*;
+import com.nasnav.service.AdminService;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -121,6 +122,9 @@ public class UserRegisterTest {
 	@MockBean
 	private MailService mailService;
 
+	@Autowired
+	private AdminService adminService;
+
 	private String uniqueAddress = "630f3256-59bb-4b87-9600-60e64d028d68";
 
 	@Before
@@ -130,6 +134,10 @@ public class UserRegisterTest {
 	}
 
 
+	@Before
+	public void clearCache(){
+		adminService.invalidateCaches();
+	}
 	
 	
 	@Before
@@ -1178,6 +1186,26 @@ public class UserRegisterTest {
 		assertEquals(200, res.getStatusCodeValue());
 		UserEntity user = userRepository.findById(88006L).get();
 		assertEquals(201, user.getUserStatus().intValue());
+	}
+
+	@Test
+	public void suspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=true", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
+	}
+
+	@Test
+	public void unsuspendUserNotActivatedAccount() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88004&suspend=false", req, String.class);
+
+		assertEquals(406, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88004L).get();
+		assertEquals(200, user.getUserStatus().intValue());
 	}
 
 

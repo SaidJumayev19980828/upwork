@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
@@ -26,7 +27,7 @@ import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -47,6 +48,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
     public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
     public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
+    public static final String ETA_MINUTES_MIN = "ETA_MINUTES_MIN";
+    public static final String ETA_MINUTES_MAX = "ETA_MINUTES_MAX";
     public static final String APOLOGY_MSG = "APOLOGY_MSG";
     public static final String DEFAULT_ERR_AREA_NOT_SUPPORTED = "We are very sorry! It seems we don't support shipping to your area!";
 
@@ -55,6 +58,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
                     , new Parameter(MIN_SHIPPING_FEE, NUMBER)
                     , new Parameter(ETA_DAYS_MIN, NUMBER, false)
                     , new Parameter(ETA_DAYS_MAX, NUMBER, false)
+                    , new Parameter(ETA_MINUTES_MIN, NUMBER, false)
+                    , new Parameter(ETA_MINUTES_MAX, NUMBER, false)
                     , new Parameter(APOLOGY_MSG, STRING, false));
 
     private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
@@ -62,8 +67,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
     private List<Long> supportedAreas;
     private BigDecimal minFee;
-    private Integer etaDaysMin;
-    private Integer etaDaysMax;
+    private Integer etaMinutesMin;
+    private Integer etaMinutesMax;
     private String apologyMsg;
 
 
@@ -74,8 +79,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
     public FixedFeeSelectedAreasShippingService() {
-        etaDaysMin = ETA_DAYS_MIN_DEFAULT;
-        etaDaysMax = ETA_DAYS_MAX_DEFAULT;
+        etaMinutesMin = ETA_DAYS_MIN_DEFAULT*1440;
+        etaMinutesMax = ETA_DAYS_MAX_DEFAULT*1440;
         apologyMsg = DEFAULT_ERR_AREA_NOT_SUPPORTED;
     }
 
@@ -111,8 +116,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
             supportedAreas = objectMapper.readValue(supportedCitiesString, new TypeReference<List<Long>>(){});
             minFee = new BigDecimal(minFeeString);
             validateSupportedAreas(supportedAreas);
-            setEtaDaysMin(serviceParameters);
-            setEtaDaysMax(serviceParameters);
+            setEtaMinutesMin(serviceParameters);
+            setEtaMinutesMax(serviceParameters);
             setApologyMsg(serviceParameters);
         } catch (Throwable e) {
             logger.error(e,e);
@@ -151,7 +156,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Integer shipmentsNumInt) {
         BigDecimal shipmentsNum = BigDecimal.valueOf(shipmentsNumInt);
         BigDecimal fee = minFee.divide(shipmentsNum, 2, FLOOR);
-        ShippingEta eta = new ShippingEta(now().plusDays(etaDaysMin), now().plusDays(etaDaysMax));
+        ShippingEta eta = new ShippingEta(now().plusMinutes(etaMinutesMin), now().plusMinutes(etaMinutesMax));
         List<Long> stockIds = getItemsStockId(shippingInfo);
         return new Shipment(fee, eta, stockIds, shippingInfo.getSubOrderId());
     }
@@ -240,28 +245,48 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
 
-    private void setEtaDaysMin(Map<String, String> serviceParams) {
-        ofNullable(serviceParams.get(ETA_DAYS_MIN))
-                .flatMap(EntityUtils::parseLongSafely)
-                .map(Long::intValue)
-                .ifPresent(val -> etaDaysMin = val);
+    private void setEtaMinutesMin(Map<String, String> serviceParams) {
+        firstExistingValueOf(
+            getIntegerParameter(serviceParams, ETA_MINUTES_MIN),
+            getEtaFromDays(serviceParams, ETA_DAYS_MIN))
+        .ifPresent(val -> etaMinutesMin = val);
+    }
+
+
+    private Optional<Integer> getEtaFromDays(Map<String, String> serviceParams, String etaDaysMin) {
+        return getIntegerParameter(serviceParams, etaDaysMin)
+                .map(this::toMinutes);
     }
 
 
 
-    private void setEtaDaysMax(Map<String, String> serviceParams) {
-        ofNullable(serviceParams.get(ETA_DAYS_MAX))
+    private Optional<Integer> getIntegerParameter(Map<String, String> serviceParams, String etaDaysMin) {
+        return ofNullable(serviceParams.get(etaDaysMin))
                 .flatMap(EntityUtils::parseLongSafely)
-                .map(Long::intValue)
-                .ifPresent(val -> etaDaysMax = val);
+                .map(Long::intValue);
     }
+
+
+
+    private Integer toMinutes(Integer days) {
+        return days*1440;
+    }
+
+
+
+    private void setEtaMinutesMax(Map<String, String> serviceParams) {
+        firstExistingValueOf(
+                getIntegerParameter(serviceParams, ETA_MINUTES_MAX),
+                getEtaFromDays(serviceParams, ETA_DAYS_MAX))
+        .ifPresent(val -> etaMinutesMax = val);
+    }
+
 
 
     private void setApologyMsg(Map<String, String> serviceParams) {
         ofNullable(serviceParams.get(APOLOGY_MSG))
                 .ifPresent(val -> apologyMsg = val);
     }
-
 
 
 

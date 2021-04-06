@@ -30,11 +30,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.enumerations.ProductFeatureType;
-import com.nasnav.test.commons.TestCommons;
+import com.nasnav.persistence.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -58,17 +57,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.ProductSearchParam;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -1311,7 +1299,33 @@ public class ProductServiceTest {
 		assertTrue( isProductsWithStockHavePrices(products) );
 	}
 
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteProductsWithVariantsLinkedToCollection() {
+		HttpEntity<?> request =  getHttpEntity("131415");
 
+		ResponseEntity<String> response =
+				template.exchange("/product?product_id=1006", DELETE, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void deleteProductsWithVariantsLinkedToCollectionAndForceFlagTrue() {
+		ProductCollectionEntity collection = productCollectionRepo.findByIdAndOrganizationId(1008L, 99002L).get();
+		assertFalse(collection.getVariants().isEmpty());
+
+		HttpEntity<?> request =  getHttpEntity("131415");
+
+		ResponseEntity<String> response =
+				template.exchange("/product?product_id=1006&force_delete_collection_items=true", DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		collection = productCollectionRepo.findByIdAndOrganizationId(1008L, 99002L).get();
+		assertTrue(collection.getVariants().isEmpty());
+	}
 
 
 	private boolean isProductsWithStockHavePrices(List<ProductRepresentationObject> products) {

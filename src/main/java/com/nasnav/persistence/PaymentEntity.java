@@ -9,7 +9,6 @@ import java.util.Date;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -21,7 +20,6 @@ import javax.persistence.Transient;
 
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.persistence.listeners.PaymentEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,7 +27,6 @@ import lombok.Setter;
 
 @Data
 @Entity
-@EntityListeners(PaymentEntityListener.class)
 @Table(name = "payments")
 @EqualsAndHashCode(callSuper=false)
 public class PaymentEntity {

@@ -2,8 +2,11 @@ package com.nasnav.test.integration.msdynamics;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.mockserver.matchers.MatchType.ONLY_MATCHING_FIELDS;
+import static org.mockserver.model.Body.Type.JSON;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static org.mockserver.model.JsonBody.json;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,6 +84,7 @@ public class IntegrationTestCommon {
 		 mockReversePaymentRequest(mockServerRule);
 		 mockCancelOrderRequest(mockServerRule);
 		 mockCreateOrderRequest(mockServerRule);
+		 mockCreateOrder2Request(mockServerRule);
 		 mockReturnOrderRequest(mockServerRule);
 		 mockGetProductByIdRequest(mockServerRule);
 		 mockGetProductByIdRequestWithDelay(mockServerRule);
@@ -241,12 +245,31 @@ public class IntegrationTestCommon {
 	private  void mockCreateOrderRequest(MockServerRule mockServerRule) {
 		mockServerRule.getClient()
 			.when(
-				request().withMethod("PUT")
-						.withPath("/api/salesorder"))
+				request()
+					.withMethod("PUT")
+					.withPath("/api/salesorder")
+					.withBody(json("{'Store': 'FOoscar'}"
+							, ONLY_MATCHING_FIELDS)))
 			.respond(
 					response().withBody("UNR19-050000") 
 							  .withStatusCode(200))
 				;
+	}
+
+
+
+	private  void mockCreateOrder2Request(MockServerRule mockServerRule) {
+		mockServerRule.getClient()
+				.when(
+						request()
+								.withMethod("PUT")
+								.withPath("/api/salesorder")
+								.withBody(json("{'Store': 'FOarabia'}"
+										, ONLY_MATCHING_FIELDS)))
+				.respond(
+						response().withBody("UNR18-066600")
+								.withStatusCode(200))
+		;
 	}
 
 

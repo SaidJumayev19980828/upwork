@@ -310,7 +310,7 @@ public class ShopStockUpdateTest {
 	
 	
 	@Test
-	public void createStockMissingPriceAndCurrecnyOnlyTest() throws JsonProcessingException{
+	public void createStockMissingPriceAndCurrencyOnlyTest() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
 		
 		JSONObject updateReq = createStockUpdateReq();

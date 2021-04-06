@@ -17,6 +17,7 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 
 import static com.nasnav.dto.request.RequestType.COUNT;
+import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -111,8 +112,8 @@ public class StatisticsService {
         LocalDateTime minWeek = minMonth.plusWeeks( (getWeekNumber(week)-1) );
         LocalDateTime maxWeek = minWeek.plusWeeks( 1 );
 
-        BigDecimal income = ordersRepo.getTotalIncomePerMonth(orgId, minMonth, maxMonth);
-        Integer sales = ordersRepo.getSalesPerWeek(orgId, minWeek, maxWeek);
+        BigDecimal income = ordersRepo.getTotalIncomePerMonth(orgId, minMonth, maxMonth).orElse(ZERO);
+        Integer sales = ordersRepo.getSalesPerWeek(orgId, minWeek, maxWeek).orElse(0);
 
         LinkedHashMap map = new LinkedHashMap();
         map.put("monthly_income", income);

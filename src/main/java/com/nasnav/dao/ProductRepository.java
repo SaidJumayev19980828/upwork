@@ -117,7 +117,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
             " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p " +
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
+            " where s.shopsEntity.id = :shopId and p.productType = 0" +
+            " and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%" +
             " or LOWER(v.sku) like %:name% or LOWER(v.productCode) like %:name%)")
@@ -134,7 +135,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " join item.item v " +
             " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
+            " where s.shopsEntity.id = :shopId and p.productType = 2" +
+            " and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%" +
             " or LOWER(v.sku) like %:name% or LOWER(v.productCode) like %:name%)")
@@ -173,12 +175,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Query("SELECT product from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
     List<ProductEntity> getExistingProducts(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
-    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductEntity p" +
-            "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 0")
+    @Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductVariantsEntity v left join v.productEntity p " +
+            "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 0 and v.removed = 0")
     List<IdAndNamePair> getProductIdAndNamePairs(@Param("orgId") Long orgId);
 
-    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductEntity p" +
-            "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 2")
+    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductCollectionItemEntity item left join item.collection p " +
+            "  where p.organizationId = :orgId and p.removed = 0 and item.item.removed = 0")
     List<IdAndNamePair> getCollectionIdAndNamePairs(@Param("orgId") Long orgId);
 
     long countByProductType(Integer productType);

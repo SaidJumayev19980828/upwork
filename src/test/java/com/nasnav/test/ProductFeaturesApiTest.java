@@ -7,10 +7,9 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.OK;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -148,12 +147,12 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity("","INVALID TOKEN");
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 	
 	
@@ -166,7 +165,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -186,7 +185,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -206,7 +205,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -227,7 +226,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -247,7 +246,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -269,7 +268,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -290,7 +289,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -312,7 +311,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -331,7 +330,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -365,7 +364,7 @@ public class ProductFeaturesApiTest {
 
 		ResponseEntity<String> response =
 				template.exchange("/organization/products_feature"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class
 				);
@@ -423,7 +422,7 @@ public class ProductFeaturesApiTest {
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
@@ -441,6 +440,110 @@ public class ProductFeaturesApiTest {
 		assertEquals("check values that was not updated", featureBefore.getPname() , saved.getPname());		
 	}
 
+
+
+	@Test
+	public void deleteFeatureNoAuthN(){
+		HttpEntity<?> request = getHttpEntity("INVALID");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
+
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteFeatureNoAuthZ(){
+		HttpEntity<?> request = getHttpEntity("192021");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteFeatureFromAnotherOrg(){
+		HttpEntity<?> request = getHttpEntity("131415");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteFeatureStillUsed(){
+		HttpEntity<?> request = getHttpEntity("161718");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=235", DELETE, request, String.class);
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteFeatureAlreadyDeleted(){
+		HttpEntity<?> request = getHttpEntity("131415");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=2333337", DELETE, request, String.class);
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteFeatureSuccess(){
+		int featureId = 234;
+
+		Optional<?> featureBefore = featureRepo.findById(featureId);
+		assertTrue(featureBefore.isPresent());
+
+		HttpEntity<?> request = getHttpEntity("161718");
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature?id=" + featureId, DELETE, request, String.class);
+
+		assertEquals(OK, response.getStatusCode());
+
+		Optional<?> featureAfter = featureRepo.findById(featureId);
+		assertFalse(featureAfter.isPresent());
+	}
+
+
+
+	@Test
+	public void updateFeatureDeleted(){
+		BaseUserEntity user = empRepo.getById(69L);
+		Integer id = 237;
+
+		boolean featureExists = featureRepo.existsById(id);
+		assertFalse(featureExists);
+
+		JSONObject json = createProductFeatureRequest();
+		json.put("operation", Operation.UPDATE.getValue());
+		json.put("feature_id", id);
+		json.remove("p_name");
+
+		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+
+		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+				, POST
+				, request
+				, String.class
+		);
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
 
 
 

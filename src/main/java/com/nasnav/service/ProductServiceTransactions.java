@@ -1,13 +1,12 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -33,6 +32,8 @@ public class ProductServiceTransactions {
 	
 	@Autowired
 	private ProductVariantsRepository variantRepo;
+	@Autowired
+	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
 	private StockRepository stockRepo;
@@ -44,14 +45,17 @@ public class ProductServiceTransactions {
 	private BundleRepository bundleRepo;
 
 
-	public void deleteProducts(List<Long> productIds) {
+	public void deleteProducts(List<Long> productIds, Boolean forceDelete) {
 		if (isBlankOrNull(productIds)){
 			return;
 		}
-		processInBatches(productIds, 500, cartRepo::deleteByProductIdIn);
-		processInBatches(productIds, 500, stockRepo::setProductStocksQuantityZero);
-		processInBatches(productIds, 500, variantRepo::deleteAllByProductIdIn);
-		processInBatches(productIds, 500, productRepo::deleteAllByIdIn);
+		processInBatches(productIds, 5000, cartRepo::deleteByProductIdIn);
+		processInBatches(productIds, 5000, stockRepo::setProductStocksQuantityZero);
+		if (forceDelete) {
+			processInBatches(productIds, 5000, collectionItemRepo::deleteItemsByProductIds);
+		}
+		processInBatches(productIds, 5000, variantRepo::deleteAllByProductIdIn);
+		processInBatches(productIds, 5000, productRepo::deleteAllByIdIn);
 	}
 
 

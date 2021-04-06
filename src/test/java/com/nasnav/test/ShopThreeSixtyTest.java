@@ -160,7 +160,10 @@ public class ShopThreeSixtyTest {
         assertEquals(200, response.getStatusCodeValue());
         JSONObject object = new JSONObject(response.getBody());
         List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
-        assertEquals(4, products.size());
+        // shop 502 has variants 310004, 310005, 310006
+        // variant 310004 has product (1004) and collection (1007) , variant 310005 has product (1005) , variant 310006 has product (1006) and collection (1004, 1008)
+        // the intersection of these products and collections is 1004, 1005, 1006, 1007, 1008 = 5 items
+        assertEquals(5, products.size());
     }
 
     @Test
@@ -169,7 +172,7 @@ public class ShopThreeSixtyTest {
         assertEquals(200, response.getStatusCodeValue());
         JSONObject object = new JSONObject(response.getBody());
         List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
-        assertEquals(1, products.size());
+        assertEquals("there are 3 collections 1007, 1008, 1009 in shop 502", 3, products.size());
     }
 
     @Test
@@ -178,7 +181,8 @@ public class ShopThreeSixtyTest {
         assertEquals(200, response.getStatusCodeValue());
         JSONObject object = new JSONObject(response.getBody());
         List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
-        assertEquals(3, products.size());
+
+        assertEquals("there are 2 products in shop 502", 2, products.size());
     }
 
     @Test

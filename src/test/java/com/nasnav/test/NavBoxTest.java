@@ -6,10 +6,14 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import com.nasnav.cache.Caches;
 import com.nasnav.dto.*;
+import com.nasnav.service.AdminService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -18,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +58,9 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
+    @Autowired
+    private AdminService adminService;
+
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
     @Autowired  private OrganizationRepository organizationRepository;
@@ -62,6 +70,13 @@ public class NavBoxTest {
 
     @Mock
     private NavboxController navboxController;
+
+    @Before
+    public void clearCache(){
+        adminService.invalidateCaches();
+    }
+
+
 
     @Test
     public void testBrands() {
@@ -178,7 +193,30 @@ public class NavBoxTest {
 
 
     @Test
-    public void getCountries() throws IOException {
+    public void getCountries() {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        String name = JsonPath.read(response.getBody(), "$['UK']['name']");
+        assertEquals(name, "UK");
+    }
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Countries_Invalid_Test_Data.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getCountriesWithDuplicateAreas() {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+
+        int id = JsonPath.read(response.getBody(), "$['Egypt']['cities']['Cairo']['areas']['New Cairo']['id']");
+        assertEquals("smaller id should be picked for duplicate areas", 1, id);
+    }
+
+
+
+    @Test
+    public void getCountriesNoOrgProvided() throws IOException {
         ResponseEntity<String> response = template.getForEntity("/navbox/countries", String.class);
         Map<String, CountriesRepObj> body =
                 objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});

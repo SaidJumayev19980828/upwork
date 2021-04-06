@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import static com.nasnav.shipping.services.FixedFeeStrictSameCityShippingService.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
@@ -85,8 +85,8 @@ public class FixedFeeSameCityShippingServiceTest {
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(2) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(2).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
     }
 
 

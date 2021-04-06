@@ -54,4 +54,6 @@ public interface IntegrationMappingRepository extends JpaRepository<IntegrationM
 
 	Page<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeName(Long orgId, String mappingtype,
 			Pageable pageable);
+
+	int countByOrganizationIdAndMappingType_TypeName(Long orgId, String value);
 }

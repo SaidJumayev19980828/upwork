@@ -10,7 +10,7 @@ import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVI
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.UPPER_EGYPT_PRICE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.WEBHOOK_URL;
 import static java.math.BigDecimal.ZERO;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -91,8 +91,8 @@ public class BostaLevisServiceTest {
 		assertEquals(2, shipments.size());
 		assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("30")));
 		assertEquals(0 , shipments.get(1).getShippingFee().compareTo(ZERO));
-		assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-		assertEquals(now().plusDays(2) , shipments.get(0).getEta().getTo());
+		assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+		assertEquals(now().plusDays(2).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
 	}
 
 	

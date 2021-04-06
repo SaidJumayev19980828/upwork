@@ -36,14 +36,14 @@ public class TransparentOptimizer implements CartOptimizer<EmptyParams, EmptyPar
 
 
     @Override
-    public Class<EmptyParams> getCommonParametersClass() {
+    public Class<EmptyParams> getConfigurationClass() {
         return EmptyParams.class;
     }
 
 
 
     @Override
-    public Boolean areCommonParametersValid(EmptyParams parameters) {
+    public Boolean isConfigValid(EmptyParams parameters) {
         return true;
     }
 
@@ -57,7 +57,14 @@ public class TransparentOptimizer implements CartOptimizer<EmptyParams, EmptyPar
 
 
     @Override
-    public Optional<OptimizedCart> createOptimizedCart(Optional<EmptyParams> parameters, Cart cart) {
+    public String getOptimizerName() {
+        return TRANSPARENT;
+    }
+
+
+
+    @Override
+    public Optional<OptimizedCart> createOptimizedCart(Optional<EmptyParams> parameters, EmptyParams config, Cart cart) {
         return cart
                 .getItems()
                 .stream()

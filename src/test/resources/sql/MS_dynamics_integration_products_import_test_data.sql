@@ -29,28 +29,28 @@ INSERT INTO public.categories(id, name) VALUES(222, 'GIFT VOUCHER'	);
 
 
 
---tags                                                                                                                                      
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'PERFUMES'		,'PERFUMES'		, 'prefumes', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'SKIN CARE'	,'SKIN CARE'	, 'skin-care', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(203, 'MAKE UP'		,'MAKE UP'		, 'make-up', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(204, 'FRAGRANCE'	,'FRAGRANCE'	, 'fragrance', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(205, 'BC POSM'		,'BC POSM'		, 'bc-posm', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(206, 'BABY CARE'	,'BABY CARE'	, 'baby-care', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(207, 'SC POSM'		,'SC POSM'		, 'sc-posm', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(208, 'FOOT CARE'	,'FOOT CARE'	, 'foot-care', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(209, 'FR POSM'		,'FR POSM'		, 'fr-posm', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(210, 'DIM'			,'DIM'			, 'dim', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(211, 'TREATMENT'	,'TREATMENT'	, 'treatment', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(212, 'FOOTC POSM'	,'FOOTC POSM'	, 'footc-posm', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(213, 'MAKE-UP AC'	,'MAKE-UP AC'	, 'make-up-ac', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(214, 'FORTUNE'		,'FORTUNE'		, 'fortune', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(215, 'HAIR CARE'	,'HAIR CARE'	, 'hair-care', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(217, 'READY TO WEAR','READY TO WEAR', 'ready-to-wear', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(218, 'MU POSM'		,'MU POSM'		, 'mu-posm', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(219, 'BODY'			,'BODY'			, 'body', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(220, 'DELSEY'		,'DELSEY'		, 'delsey', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(221, 'ACCESSORY'	,'ACCESSORY'	, 'accessory', '{}', 0, 99001);
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(222, 'GIFT VOUCHER'	,'GIFT VOUCHER'	, 'gift-voucher', '{}', 0, 99001);
+--tags
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33301 ,201, 'PERFUMES'		,'PERFUMES'		, 'prefumes', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33302 ,202, 'SKIN CARE'	,'SKIN CARE'	, 'skin-care', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33303 ,203, 'MAKE UP'		,'MAKE UP'		, 'make-up', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33304 ,204, 'FRAGRANCE'	,'FRAGRANCE'	, 'fragrance', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33305 ,205, 'BC POSM'		,'BC POSM'		, 'bc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33306 ,206, 'BABY CARE'	,'BABY CARE'	, 'baby-care', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33307 ,207, 'SC POSM'		,'SC POSM'		, 'sc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33308 ,208, 'FOOT CARE'	,'FOOT CARE'	, 'foot-care', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33309 ,209, 'FR POSM'		,'FR POSM'		, 'fr-posm', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33310 ,210, 'DIM'			,'DIM'			, 'dim', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33311 ,211, 'TREATMENT'	,'TREATMENT'	, 'treatment', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33312 ,212, 'FOOTC POSM'	,'FOOTC POSM'	, 'footc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33313 ,213, 'MAKE-UP AC'	,'MAKE-UP AC'	, 'make-up-ac', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33314 ,214, 'FORTUNE'		,'FORTUNE'		, 'fortune', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33315 ,215, 'HAIR CARE'	,'HAIR CARE'	, 'hair-care', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33316 ,217, 'READY TO WEAR','READY TO WEAR', 'ready-to-wear', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33317 ,218, 'MU POSM'		,'MU POSM'		, 'mu-posm', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33318 ,219, 'BODY'			,'BODY'			, 'body', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33319 ,220, 'DELSEY'		,'DELSEY'		, 'delsey', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33320 ,221, 'ACCESSORY'	,'ACCESSORY'	, 'accessory', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(33321 ,222, 'GIFT VOUCHER'	,'GIFT VOUCHER'	, 'gift-voucher', '{}', 0, 99001);
 
 
 

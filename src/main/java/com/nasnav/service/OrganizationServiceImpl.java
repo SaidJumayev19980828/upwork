@@ -157,6 +157,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     private DomainService domainService;
     @Autowired
     private AppConfig config;
+    @Autowired
+    private ProductService productService;
 
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
@@ -611,6 +613,42 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
+
+    @Override
+    @Transactional(rollbackFor = Throwable.class)
+    public void removeProductFeature(Integer  featureId){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        featureRepo
+            .findByIdAndOrganization_Id(featureId, orgId)
+            .map(this::validateProductFeatureToDelete)
+            .map(this::doRemoveProductFeature)
+            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0001, featureId));
+    }
+
+
+
+    private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {
+        featureRepo.delete(feature);
+        return feature;
+    }
+
+
+
+    private ProductFeaturesEntity validateProductFeatureToDelete(ProductFeaturesEntity feature) {
+        if(variantsHasTheFeature(feature)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0002, feature.getId());
+        }
+        return feature;
+    }
+
+
+
+    private boolean variantsHasTheFeature(ProductFeaturesEntity feature) {
+        return productService.getVariantsWithFeature(feature).size() > 0;
+    }
+
+
+
     private Optional<ExtraAttributesEntity> createExtraAttributesIfNeeded(ProductFeaturesEntity entity) {
         Integer type = entity.getType();
        if(nonNull(type) && FEATURE_TYPE_WITH_EXTRA_DATA.contains(type)){
@@ -787,8 +825,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 					format("Invalid parameters [feature_id], no feature exists with id [%d]!", id)
 					, "INVALID PARAM:feature_id"
 					, NOT_ACCEPTABLE);
-		}	
-		
+		}
 		Long featureOrgId = featureOptional.map(ProductFeaturesEntity::getOrganization)
 										   .map(OrganizationEntity::getId)
 										   .orElseThrow(
@@ -797,15 +834,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 															, "INTERNAL SERVER ERROR"
 															, INTERNAL_SERVER_ERROR)
 												   );
-		   
-		
 		if(!Objects.equals(featureOrgId, userOrgId)) {
 			throw new BusinessException(
-					format("Feature of id[%d], can't be changed a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId)
+					format("Feature of id[%d], can't be changed by a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId)
 					, "INVALID PARAM:feature_id"
 					, FORBIDDEN);
 		}
-		
 		if(featureDto.isUpdated("name") &&
 				isBlankOrNull(featureDto.getName())) {
 			throw new BusinessException(
@@ -1019,17 +1053,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
     public Pair getOrganizationAndSubdirsByUrl(String urlString) {
-        URIBuilder url = null;
-
-        try {
-            urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
-            url = new URIBuilder(urlString);
-        } catch (URISyntaxException e) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0005);
-        }
+        urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
+        URIBuilder url = domainService.validateDomainCharacters(urlString);
 
         String domain = ofNullable(url.getHost()).orElse("");
-	    domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
 
 	    String subDir = null;
 	    if (url.getPath() != null && url.getPath().length() > 1) {
@@ -1216,21 +1243,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
         Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl());
         Long orgId = domain.getFirst();
-        validateOrgExistenceAndUserAuthZ(userToken, orgId);
-        return createSiteMapResponse(orgId, params);
-    }
-
-
-    private void validateOrgExistenceAndUserAuthZ(String userToken, Long orgId) {
         if (orgId.intValue() == 0) {
-            createEmptyResponseEntity();
+            return createEmptyResponseEntity();
         }
         if (!isBlankOrNull(userToken)) {
             Long userOrgId = userTokenRepo.findEmployeeOrgIdByToken(userToken);
             if (userOrgId == null || !userOrgId.equals(orgId)) {
-                createEmptyResponseEntity();
+                return createEmptyResponseEntity();
             }
         }
+        return createSiteMapResponse(orgId, params);
     }
 
 
@@ -1251,7 +1273,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     private ResponseEntity<?> createEmptyResponseEntity() {
-        //throw new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, 0L);
         return ResponseEntity.notFound().build();
     }
 

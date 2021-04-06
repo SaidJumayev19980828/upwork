@@ -9,7 +9,6 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
-import com.nasnav.shipping.services.FixedFeeSelectedAreasShippingService;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,13 +24,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 
 import static com.nasnav.shipping.services.FixedFeeSelectedAreasMinOrderShippingService.MIN_ORDER_VALUE;
 import static com.nasnav.shipping.services.FixedFeeSelectedAreasMinOrderShippingService.SERVICE_ID;
 import static com.nasnav.shipping.services.FixedFeeSelectedAreasShippingService.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static java.time.LocalDate.now;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
@@ -119,8 +119,36 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(2) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
+        assertEquals(now().plusDays(2).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
+    }
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_15.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void testGetMinimumOfferWith90MinutesEta() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+
+        sort(shipments, comparing(ShipmentDTO::getShippingFee));
+        assertEquals(3, shipments.size());
+        assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("5")));
+        assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("5")));
+        assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
+        Duration durationFrom = Duration.between(now(), shipments.get(0).getEta().getFrom());
+        Duration durationTo = Duration.between(now(), shipments.get(0).getEta().getTo());
+
+        assertEquals(-1, durationFrom.compareTo(Duration.ofMinutes(60)));
+        assertEquals(-1, durationTo.compareTo(Duration.ofMinutes(90)));
     }
 
 

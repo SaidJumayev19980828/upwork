@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import com.nasnav.commons.utils.StringUtils;
@@ -164,6 +165,7 @@ public class UserServiceImpl implements UserService {
 		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
 		String orgLogo = domain + "/files/"+ orgService.getOrgLogo(userEntity.getOrganizationId());
 		String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
+		String year = LocalDateTime.now().getYear()+"";
 
 		Map<String, String> parametersMap = new HashMap<>();
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
@@ -171,6 +173,7 @@ public class UserServiceImpl implements UserService {
 		parametersMap.put("orgDomain", orgDomain);
 		parametersMap.put("orgLogo", orgLogo);
 		parametersMap.put("orgName", orgName);
+		parametersMap.put("year", year);
 		return parametersMap;
 	}
 
@@ -674,7 +677,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void suspendUserAccount(Long id, Boolean suspend) {
 		UserEntity user = getUserEntityById(id);
-		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		UserStatus status = userServicesHelper.checkUserStatusForSuspension(user);
 		if (suspend) {
 			if (status.equals(ACCOUNT_SUSPENDED)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);
@@ -722,12 +725,14 @@ public class UserServiceImpl implements UserService {
 			String orgLogo = domain + "/files/"+ orgService.getOrgLogo(orgId);
 			String orgName = orgRepo.findById(orgId).get().getName();
 			String subscriptionUrl =  domain + "/user/subscribe/activate?org_id="+orgId+"&token=" + activationToken;
+			String year = LocalDateTime.now().getYear()+"";
 
 			Map<String, String> parametersMap = new HashMap<>();
 			parametersMap.put("subscriptionUrl", subscriptionUrl);
 			parametersMap.put("orgDomain", orgDomain);
 			parametersMap.put("orgLogo", orgLogo);
 			parametersMap.put("orgName", orgName);
+			parametersMap.put("year", year);
 			mailService.send(email, "Subscribe to newsletter",
 					USER_SUBSCRIPTION_TEMPLATE, parametersMap);
 		} catch (Exception e) {

@@ -1520,10 +1520,11 @@ public class ProductService {
 
 
 
-	public ProductsDeleteResponse deleteProducts(List<Long> productIds) {
+	public ProductsDeleteResponse deleteProducts(List<Long> productIds, Boolean forceDeleteCollectionItems) {
 		validateProductToDelete(productIds);
+		validateVariantsExistenceInCollections(productIds, forceDeleteCollectionItems);
 		try {
-			transactions.deleteProducts(productIds);
+			transactions.deleteProducts(productIds, forceDeleteCollectionItems);
 		} catch (Throwable e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0009, e.getMessage());
@@ -1531,7 +1532,11 @@ public class ProductService {
 		return new ProductsDeleteResponse(true, productIds);
 	}
 
-
+	private void validateVariantsExistenceInCollections(List<Long> productIds, Boolean forceDelete) {
+		if (!forceDelete && collectionItemRepo.countByItem_ProductEntity_IdIn(productIds) > 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0014);
+		}
+	}
 
 
 	private void validateProductToDelete(List<Long> productIds) {
@@ -2984,6 +2989,7 @@ public class ProductService {
 
 		cartRepo.deleteByOrganizationId(orgId);
 		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
+		collectionItemRepo.deleteItemsByOrganizationId(orgId);
 		productRepository.deleteAllByOrganizationId(orgId);
 	}
 
@@ -3396,6 +3402,10 @@ public class ProductService {
 	}
 
 
+
+    public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
+		return productVariantsRepository.findByFeature(feature.getId(), feature.getOrganization().getId());
+    }
 }
 
 

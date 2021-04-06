@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
@@ -20,10 +21,16 @@ public class OrderData {
 	private AddressRepObj address;
 	private BigDecimal totalValue;
 	private List<OrderItemData> items;
-	private Optional<PaymentData> paymentData;	//in case of cash-on-delivery, payment can be null
-	
+
 	public OrderData() {
 		items = new ArrayList<>();
-		paymentData = empty();
+	}
+
+
+	@Data
+	@AllArgsConstructor
+	public static class Result{
+		private Long subOrderId;
+		private String externalId;
 	}
 }

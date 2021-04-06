@@ -27,6 +27,8 @@ public enum ErrorCodes {
 
 	, U$STATUS$0001("Account is already suspended!")
 	, U$STATUS$0002("User can't suspend/activates himself!")
+	, U$STATUS$0003("Couldn't suspend/activate user account, invalid user status!")
+	, U$STATUS$0004("Couldn't get user status!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 
@@ -66,6 +68,7 @@ public enum ErrorCodes {
 	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
 	,P$PRO$0012("No collection exists with ID[%d]!")
 	,P$PRO$0013("No collections exists with ID %s!")
+	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
@@ -75,6 +78,7 @@ public enum ErrorCodes {
 	,P$BRA$0003("Brand with id [%d] linked to %d products!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
+	,P$FTR$0002("Feature is still used by some products!")
 
 	,P$IMG$0001("Provided Zip file has no data!")
 	,P$IMG$0002("Provided images archive is not ZIP file!")
@@ -105,6 +109,7 @@ public enum ErrorCodes {
 	,GEN$0017("There are still %s [%s] assigned to this category!")
 	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
 	,GEN$0019("Failed to read resource[%s]!")
+	,GEN$0021(" Domain and subdir already exist[%s]!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -162,9 +167,10 @@ public enum ErrorCodes {
 	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
 	,O$CRT$0010("Invalid or missing cart optimization parameters!")
 	,O$CRT$0011("Failed to optimize cart item for shipping! No stock can fulfill the cart for cart item with id[%d] and stock Id[%d]!")
-	,O$CRT$0012("Invalid Cart optimization common parameters [%s] !")
-	,O$CRT$0013("Missing Cart optimization common parameters for organization [%d] and optimizer [%s] !")
-	,O$CRT$0014("Failed to parse Common optimization parameters for organization [%d] and optimizer [%s] !")
+	,O$CRT$0012("Invalid Cart optimization configuration parameters [%s] !")
+	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
+	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
+	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
@@ -177,6 +183,8 @@ public enum ErrorCodes {
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
 	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+
+	,O$NEW$0001("Failed to create order! Please try again!")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")

@@ -8,6 +8,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -111,6 +112,7 @@ public class AddressServiceImpl implements AddressService{
         return city
                 .getAreas()
                 .stream()
+                .sorted(comparing(AreasEntity::getId))
                 .collect(
                         collectingAndThen(
                                 toMap(AreasEntity::getName, area -> getAreasRepObj(area, orgSubareas), FunctionalUtils::getFirst),

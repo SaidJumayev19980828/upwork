@@ -5,4 +5,5 @@ public class OptimizationStratigiesNames {
 	public final static String GIVEN_SHOP = "GIVEN_SHOP";
 	public final static String WAREHOUSE = "WAREHOUSE";
 	public final static String TRANSPARENT = "TRANSPARENT";
+	public final static String SHOP_PER_SUBAREA = "SHOP_PER_SUBAREA";
 }

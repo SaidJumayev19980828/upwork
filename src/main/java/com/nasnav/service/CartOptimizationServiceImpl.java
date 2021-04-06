@@ -1,37 +1,5 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0012;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
-import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
-import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
-import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
-import static java.util.Arrays.stream;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,10 +12,35 @@ import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
-import com.nasnav.service.cart.optimizers.CartOptimizer;
-import com.nasnav.service.cart.optimizers.OptimizedCart;
-import com.nasnav.service.cart.optimizers.OptimizedCartItem;
+import com.nasnav.service.cart.optimizers.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 
 @Service
@@ -72,6 +65,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	@Autowired
 	private OrganizationCartOptimizationRepository orgCartOptimizerRepo;
+
+	@Autowired
+	private CartOptimizationHelper helper;
 	
 	
 	
@@ -106,26 +102,23 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.map(OptimizedCart::getCartItems)
 				.orElse(emptyList())
 				.stream()
-				.map(OptimizedCartItem::getPriceChanged)
-				.anyMatch(isPriceChanged -> isPriceChanged);
+				.anyMatch(OptimizedCartItem::getPriceChanged);
 	}
 
 
-
-
 	
-	private <T,P> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
-		CartOptimizationStrategy strategy = getOptimizationStrategyForCart(dto);
-	
-		CartOptimizer<T,P> optimizer = getCartOptimizer(strategy.getValue());
+	private <T, Config> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
+		Optimizer optimizerData = getOptimizerData(dto);
+		CartOptimizationStrategy strategy = optimizerData.getStrategy();
+
+		CartOptimizer<T, Config> optimizer = getCartOptimizer(strategy.getValue());
+
+		Config config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
 		Cart cart = cartService.getCart(dto.getPromoCode());
 		
-		return optimizer.createOptimizedCart(parameters, cart);
-		
+		return optimizer.createOptimizedCart(parameters, config, cart);
 	}
-
-
 
 
 	@SuppressWarnings("unchecked")
@@ -142,26 +135,45 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-	private CartOptimizationStrategy getOptimizationStrategyForCart(CartCheckoutDTO dto) {
+	private Optimizer getOptimizerData(CartCheckoutDTO dto) {
 		String shippingServiceId = dto.getServiceId();
 		
-		Optional<String> shippingServiceOptimizer = 
+		Optional<Optimizer> shippingServiceOptimizer =
 				getCartOptimizationStrategyForShippingService(shippingServiceId);
-		Optional<String> organizationCartOptimizer = 
+		Optional<Optimizer> organizationCartOptimizer =
 				getCartOptimizationStrategyForOrganization();
-		Optional<String> defaultOptimizer = Optional.of(DEFAULT_OPTIMIZER.getValue());
+		Optional<Optimizer> defaultOptimizer = Optional.of(new Optimizer(DEFAULT_OPTIMIZER, "{}"));
 		
 		return firstExistingValueOf(
 				shippingServiceOptimizer
 				, organizationCartOptimizer 
 				, defaultOptimizer)
-				.map(this::validateCartOptimizationStrategy)
-				.flatMap(CartOptimizationStrategy::getCartOptimizationStrategy)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006));
 	}
 	
 	
-	
+
+	private Optional<Optimizer> createOptimizerData(OrganizationCartOptimizationEntity entity){
+		return ofNullable(entity)
+				.map(Optimizer.BasicData::new)
+				.flatMap(this::createOptimizer);
+	}
+
+
+
+	private Optional<Optimizer> createOptimizer(Optimizer.BasicData data){
+		return getStrategy(data.getStrategy())
+				.map(strategy -> new Optimizer(strategy, data.getConfigurationJson()));
+	}
+
+
+	private Optional<CartOptimizationStrategy> getStrategy(String name){
+		return ofNullable(name)
+				.map(this::validateCartOptimizationStrategy)
+				.flatMap(CartOptimizationStrategy::getCartOptimizationStrategy);
+	}
+
+
 	
 	private String validateCartOptimizationStrategy(String strategy) {
 		if(isBlankOrNull(strategy)) {
@@ -174,27 +186,25 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	
 	
-	@Override
-	public Optional<String> getCartOptimizationStrategyForOrganization(){
+
+	private Optional<Optimizer> getCartOptimizationStrategyForOrganization(){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
-				.findOrganizationDefaultOptimizationStrategy(orgId);
+				.findOrganizationDefaultOptimizationStrategy(orgId)
+				.flatMap(this::createOptimizerData);
 	}
 	
 	
 	
 	
-	public Optional<String> getCartOptimizationStrategyForShippingService(String shippingServiceId){
+	public Optional<Optimizer> getCartOptimizationStrategyForShippingService(String shippingServiceId){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
 				.findByShippingServiceIdAndOrganization_Id(shippingServiceId, orgId)
-				.map(OrganizationCartOptimizationEntity::getOptimizationStrategy);
+				.flatMap(this::createOptimizerData);
 	}
 	
-	
-	
-	
-	
+
 
 	@Override
 	public <T> void  setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto) {
@@ -204,7 +214,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		}
 		
 		Map<String,Object> parameters = ofNullable(settingDto.getParameters()).orElse(emptyMap());
-		validateCommonParametersJson(strategy, parameters);
+		validateConfigJson(strategy, parameters);
 		
 		persistCartOptimizationInfo(settingDto, strategy, parameters);
 	}
@@ -243,17 +253,17 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-	private <T,P> void validateCommonParametersJson(String strategy, Map<String,Object> parameters) {
+	private <T,P> void validateConfigJson(String strategy, Map<String,Object> configJson) {
 		try {
 			CartOptimizer<T,P> optimizer = getCartOptimizer(strategy);
-			P parametersObj = objectMapper.convertValue(parameters, optimizer.getCommonParametersClass());
-			if(!optimizer.areCommonParametersValid(parametersObj)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0012, parameters.toString());
+			P config = objectMapper.convertValue(configJson, optimizer.getConfigurationClass());
+			if(!optimizer.isConfigValid(config)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0012, configJson.toString());
 			};
 		} catch (Throwable e) {
 			logger.error(e,e);
 			Long orgId = securityService.getCurrentUserOrganizationId();
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, WAREHOUSE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, strategy);
 		}
 	}
 
@@ -332,10 +342,31 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	private <CartParams, CommonParams> CommonParams createParamsObject(CartOptimizer<CartParams, CommonParams> optimizer) {
 		try {
-			return optimizer.getCommonParametersClass().newInstance();
+			return optimizer.getConfigurationClass().newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
 			logger.error(e,e);
 			return null;
+		}
+	}
+}
+
+
+
+@Data
+@AllArgsConstructor
+class Optimizer {
+	private CartOptimizationStrategy strategy;
+	private String configurationJson;
+
+
+	@Data
+	static class BasicData{
+		private String strategy;
+		private String configurationJson;
+
+		BasicData(OrganizationCartOptimizationEntity entity){
+			this.strategy = entity.getOptimizationStrategy();
+			this.configurationJson = entity.getParameters();
 		}
 	}
 }

@@ -6,6 +6,8 @@ import static java.util.Optional.ofNullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +23,7 @@ import java.util.stream.Stream;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeanUtils;
 
 public class EntityUtils {
 
@@ -252,6 +255,14 @@ public class EntityUtils {
 	public static Optional<String> toTimeString(LocalDateTime time){
 		return ofNullable(time)
 				.map(t -> DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN).format(t));
+	}
+
+
+	public static LocalDateTime toLocalDateTime(ZonedDateTime time){
+		return ofNullable(time)
+				.map(t -> t.withZoneSameInstant(ZoneId.of("UTC")))
+				.map(ZonedDateTime::toLocalDateTime)
+				.orElse(null);
 	}
 }
 

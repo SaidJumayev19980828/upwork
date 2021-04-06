@@ -1,20 +1,18 @@
 package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.enumerations.PaymentStatus.PAID;
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
+import static com.nasnav.shipping.services.DummyShippingService.SHOP_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 import static org.mockserver.verify.VerificationTimes.exactly;
@@ -31,6 +29,8 @@ import java.util.stream.StreamSupport;
 
 import com.nasnav.dao.*;
 import com.nasnav.persistence.*;
+import com.nasnav.shipping.services.DummyShippingService;
+import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -77,6 +77,7 @@ import com.nasnav.service.OrderService;
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @DirtiesContext
+@NotThreadSafe
 public class MicrosoftDynamicsIntegrationTest {
 	
 	@SuppressWarnings("unused")
@@ -94,6 +95,9 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Value("classpath:/json/ms_dynamics_integratoin_test/expected_order_request.json")
 	private Resource orderRequest;
+
+	@Value("classpath:/json/ms_dynamics_integratoin_test/expected_order_request_2.json")
+	private Resource orderRequest2;
 	
 	@Value("classpath:/json/ms_dynamics_integratoin_test/get_stores_response.json")
 	private Resource storesJson;
@@ -188,7 +192,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		//------------------------------------------------
 		//wait for the integration event to be handled.
 		//can't use concurrentunit.Waiter class, the response is served by the MockServer
-		Thread.sleep(7000);
+		Thread.sleep(5000);
 		
 		//------------------------------------------------
 		//test the mock api was called
@@ -403,17 +407,10 @@ public class MicrosoftDynamicsIntegrationTest {
 			assertEquals(NOT_ACCEPTABLE, stkQty.getStatusCode());
 		}
 	}
+
+
 	
-	
-	
-	
-	
-	//TODO : the payment integration needs a big refactoring, as the model changed and payments
-	//now references Meta-orders and spans multiple sub-orders.
-	//The original payment integration worked on the previous model where a single payment 
-	//referenced a single OrdersEntity.
-	//so, this test won't work until we do this refactoring
-//	@Test
+	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createOrderTest() throws Throwable {
@@ -424,55 +421,83 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		Order order = createNewOrder(token, stockId, orderQuantity); 
 		PaymentEntity payment = createDummyPayment(order);
-		confirmOrder(token, order.getOrderId());
+		finalizeOrder(token, order.getOrderId());
 		//---------------------------------------------------------------		
 		Thread.sleep(5000);
 		//---------------------------------------------------------------
-		Long subOrderId = 
-				order
-				.getSubOrders()
-				.stream()
-				.map(SubOrder::getSubOrderId)
-				.findAny()
-				.get();
-		assertOrderIntegration(subOrderId); 
-		assertPaymentIntegration(subOrderId, payment);
+		order
+		.getSubOrders()
+		.forEach(this::assertOrderIntegration);
+
+		assertPaymentIntegration(order, payment);
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createCodOrderTest() throws Throwable {
+		//create order
+		String token = "123eerd";
+		Long stockId = 60001L;
+		Integer orderQuantity = 5;
+
+		Order order = createNewOrder(token, stockId, orderQuantity);
+		PaymentEntity payment = createDummyCodPayment(order);
+		finalizeOrder(token, order.getOrderId());
+		//---------------------------------------------------------------
+		Thread.sleep(5000);
+		//---------------------------------------------------------------
+		order
+		.getSubOrders()
+		.forEach(this::assertOrderIntegration);
+
+		assertNoPaymentIntegration();
+	}
+
+
+
+	private void assertNoPaymentIntegration() {
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+					request()
+							.withMethod("PUT")
+							.withPath("/api/Payment")
+					,exactly(0)
+			);
+		}
+		assertEquals("a no payment integration for Cash on delivery" ,0 , mappingRepo.countByOrganizationIdAndMappingType_TypeName(ORG_ID, PAYMENT.getValue()));
+	}
+
+
+
+	private void assertPaymentMappingCreated(PaymentEntity payment){
+		IntegrationMappingEntity paymentMapping =
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
+						.orElse(null);
+		assertNotNull("a Payment is created for each sub-order", paymentMapping);
+
+		assertEquals(
+				"single payment in nasnav can be saved as multiple payments in external systems, on for each sub-order"
+		 , 2,  new JSONArray(paymentMapping.getRemoteValue()).length());
 	}
 
 	
 	
-	
-
-
-
-	
-	
-	private void assertPaymentIntegration(Long orderId, PaymentEntity payment) throws AssertionError {
-		OrdersEntity order = orderRepo.findById(orderId).get();
-		IntegrationMappingEntity orderMapping = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), order.getId().toString())
-							.orElse(null);
-		@SuppressWarnings("unused")
-		String expectedBody = getPaymentApiRequestExpectedBody(orderMapping.getRemoteValue(), payment.getAmount());
+	private void assertPaymentIntegration(Order order, PaymentEntity payment) throws AssertionError {
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("PUT")
 				        .withPath("/api/Payment")
 //				        .withBody(json(expectedBody))		//seems there is a bug in MockServer that makes it parse the request as string instead of JSON
-				      ,exactly(1)
+				      ,exactly(order.getSubOrders().size())	//for each sub-order an external payment should be created
 				    );
 		}
-		
-		IntegrationMappingEntity paymentMapping = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
-							.orElse(null);
-		assertNull("We don't create a mapping for the payment for microsoft integration", paymentMapping); 
+		assertPaymentMappingCreated(payment);
 	}
-	
-	
-	
-	
+
 
 	
 	String getPaymentApiRequestExpectedBody(String externalOrderId, BigDecimal amount) {
@@ -491,9 +516,6 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
-	
-	
-	
 	private PaymentEntity createDummyPayment(Order order) {
 		
 		PaymentEntity payment = new PaymentEntity();
@@ -517,11 +539,32 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
+	private PaymentEntity createDummyCodPayment(Order order) {
+		PaymentEntity payment = new PaymentEntity();
+		JSONObject paymentObj =
+				json().put("what_is_this?", "dummy_payment_obj");
+
+		payment.setOperator("CoD");
+		payment.setUid("MLB-<MerchantReference>");
+		payment.setExecuted(new Date());
+		payment.setObject(paymentObj.toString());
+		payment.setAmount(order.getTotal());
+		payment.setCurrency(EGP);
+		payment.setStatus(UNPAID);
+		payment.setUserId(order.getUserId());
+		payment.setMetaOrderId(order.getOrderId());
+
+		payment= paymentRepo.saveAndFlush(payment);
+		return payment;
+	}
 
 
-	private void assertOrderIntegration(Long orderId) throws IOException, AssertionError {
+
+
+
+	private void assertOrderIntegration(SubOrder subOrder){
 		//check the api was called with the expected request body
-		String expectedExtOrderRequest = readResource(orderRequest);
+		String expectedExtOrderRequest = getExpectedOrderRequest(subOrder);
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
@@ -535,18 +578,24 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		//---------------------------------------------------------------
 		//validate an integration mapping was created
-		
-		Optional<IntegrationMappingEntity> orderMappingAfterOrderConfirm = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
+		Optional<IntegrationMappingEntity> orderMappingAfterOrderConfirm =
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(
+						ORG_ID, ORDER.getValue(), subOrder.getSubOrderId().toString());
 		assertTrue(orderMappingAfterOrderConfirm.isPresent());
 	}
 
 
 
+	private String getExpectedOrderRequest(SubOrder subOrder) {
+		Long shopId = subOrder.getShopId();
+		return shopId == 50001L ?
+				readResource(orderRequest)
+				: readResource(orderRequest2);
+	}
 
 
 
-	private void confirmOrder(String token, Long orderId) throws BusinessException {
+	private void finalizeOrder(String token, Long orderId) throws BusinessException {
 		orderService.finalizeOrder(orderId);
 	}
 
@@ -560,6 +609,7 @@ public class MicrosoftDynamicsIntegrationTest {
 				json()
 				.put("shipping_service_id", "TEST")
 				.put("customer_address", 12300001L)
+				.put("additional_data", json().put(SHOP_ID, 50001))
 				.toString();
 		ResponseEntity<Order> response = 
 				template
@@ -629,7 +679,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
 		integrationInfo.setIntegrationModule("com.nasnav.integration.microsoftdynamics.MsDynamicsIntegrationModule");
-		integrationInfo.setMaxRequestRate(1);
+		integrationInfo.setMaxRequestRate(100);
 		integrationInfo.setOrganizationId(99001L);
 		integrationInfo.setIntegrationParameters(params);
 		

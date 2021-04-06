@@ -12,6 +12,7 @@ public class PaymentData {
 	private Long userId;
 	private String currency;
 	private Long orderId;
-	private LocalDateTime excutionTime;
+	private String externalOrderId;
+	private LocalDateTime executionTime;
 	private Long organizationId;
 }

@@ -96,12 +96,6 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 	Optional<Integer> getStockProductType(@Param("stockId") Long id);
 
 
-//	@Query("select treat(product AS BundleEntity).items from StocksEntity bundleStock"
-//			+ " left join bundleStock.productVariantsEntity variant "
-//			+ " left join variant.productEntity product"
-////			+ " left join bundle.items itemsStocks"
-//			+ " where bundleStock.id = :stockId "
-//			+ " and TYPE(product) = BundleEntity")
 	@Query("select bundle.items from BundleEntity bundle " +
 			" left join bundle.productVariants variants " +
 			" left join variants.stocks bundleStocks " +

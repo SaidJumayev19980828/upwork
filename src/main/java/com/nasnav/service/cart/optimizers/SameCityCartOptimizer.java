@@ -63,31 +63,21 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	@Override
-	public Optional<OptimizedCart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters, Cart cart ) {
-		
-		Long customerCityId = 
-				parameters
-				.map(SameCityCartOptimizerParameters::getCustomerAddressId)
-				.flatMap(this::getAddressCityId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0010));
+	public Optional<OptimizedCart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters, EmptyParams config,  Cart cart ) {
+		Long customerCityId = getCustomerCityId(parameters);
 		
 		Optional<Long> givenShopId = parameters.map(SameCityCartOptimizerParameters::getShopId);
 		
-		List<ShopFulfillingCart> shopsOrderdByPriority = 
-				cartService
-				.getShopsThatCanProvideCartItems() 
-				.stream()
-				.sorted(createShopPriorityComparator(givenShopId, customerCityId))
-				.collect(toList());
+		List<ShopFulfillingCart> shopsOrderedByPriority = getShopsOrderedByPriority(customerCityId, givenShopId);
 		
 		logger.info(
-				format("Optimizing cart using parameters [%s], selecing shops by the priority list : [%s]"
-						, parameters.toString(),  shopsOrderdByPriority.toString()));
+				format("Optimizing cart using parameters [%s], selecting shops by the priority list : [%s]"
+						, parameters.toString(),  shopsOrderedByPriority.toString()));
 		
 		return cart
 				.getItems()
 				.stream()
-				.map(item -> createOptimizedCartItem(item, shopsOrderdByPriority))
+				.map(item -> createOptimizedCartItem(item, shopsOrderedByPriority))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(collectingAndThen(
@@ -95,13 +85,28 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 							, items -> Optional.of(new OptimizedCart(items))));
 	}
 
+
 	
-	
-	
-	
-	private Optional<OptimizedCartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderdByPriority) {
+	private Long getCustomerCityId(Optional<SameCityCartOptimizerParameters> parameters) {
+		return parameters
+				.map(SameCityCartOptimizerParameters::getCustomerAddressId)
+				.flatMap(this::getAddressCityId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0010));
+	}
+
+
+	private List<ShopFulfillingCart> getShopsOrderedByPriority(Long customerCityId, Optional<Long> givenShopId) {
+		return cartService
+				.getShopsThatCanProvideCartItems()
+				.stream()
+				.sorted(createShopPriorityComparator(givenShopId, customerCityId))
+				.collect(toList());
+	}
+
+
+	private Optional<OptimizedCartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderedByPriority) {
 		Optional<OptimizedCartItem> optimizedItem = 
-				getCartItemStockFromHighestPriorityShop(item, shopsOrderdByPriority)
+				getCartItemStockFromHighestPriorityShop(item, shopsOrderedByPriority)
 				.map(itemStk -> createOptimizedCartItem(itemStk, item));
 		if(!optimizedItem.isPresent()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId());
@@ -261,10 +266,14 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 
 
 
+	@Override
+	public String getOptimizerName() {
+		return SAME_CITY;
+	}
 
 
 	@Override
-	public Class<? extends EmptyParams> getCommonParametersClass() {
+	public Class<? extends EmptyParams> getConfigurationClass() {
 		return EmptyParams.class;
 	}
 
@@ -273,7 +282,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 
 
 	@Override
-	public Boolean areCommonParametersValid(EmptyParams parameters) {
+	public Boolean isConfigValid(EmptyParams parameters) {
 		return true;
 	}
 }

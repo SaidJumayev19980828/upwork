@@ -18,8 +18,8 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
 	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  502, 201);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (70, 'testuser4@nasnav.com', 99001, '123',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (70, 'testuser4@nasnav.com', 99001, '123',  502, 201);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (71, 'testuser5@nasnav.com', 99001, '456',  502);
 	INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
@@ -43,6 +43,8 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 	VALUES (80, 'L', 'testuser71@nasnav.com', 99002, '373839',  501);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (81, 'Hussien', 'testuser81@nasnav.com', 99002, '404142',  501);
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, user_status)
+	VALUES (82, 'Mohmyo', 'testuser9@nasnav.com', 99001, '1920213',  502, 200);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'Walid', 'testuser3@nasnav.com', 99001, 'nopqrst',  502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password

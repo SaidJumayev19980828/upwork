@@ -75,6 +75,15 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     List<AddressesEntity> findByIdIn(@Param("ids")List<Long> ids);
 
 
+    @Query("SELECT addr FROM AddressesEntity addr "
+            + " LEFT JOIN FETCH addr.areasEntity area "
+            + " LEFT JOIN FETCH area.citiesEntity city "
+            + " LEFT JOIN FETCH city.countriesEntity country "
+            + " LEFT JOIN FETCH addr.subAreasEntity subArea "
+            + " WHERE addr.id = :id")
+    Optional<AddressesEntity> findByIdWithDetails(@Param("id")Long id);
+
+
     @Query(value = "select DISTINCT country " +
             " from CountriesEntity country " +
             " left JOIN FETCH country.cities city " +

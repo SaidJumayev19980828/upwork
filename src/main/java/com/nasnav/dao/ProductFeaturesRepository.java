@@ -21,5 +21,9 @@ public interface ProductFeaturesRepository extends CrudRepository<ProductFeature
 
     boolean existsByIdAndOrganization_Id(Integer featureId, Long orgId);
 
+
+	@Query("SELECT f FROM ProductFeaturesEntity f "
+			+ " LEFT JOIN FETCH f.organization org "
+			+ " WHERE f.id = :featureId AND org.id = :orgId ")
 	Optional<ProductFeaturesEntity> findByIdAndOrganization_Id(Integer featureId, Long orgId);
 }

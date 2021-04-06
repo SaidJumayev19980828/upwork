@@ -1,77 +1,52 @@
 package com.nasnav.shipping.services.bosta;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.StringUtils.parseLongWithDefault;
-import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
-import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
-import static com.nasnav.enumerations.ShippingStatus.FAILED;
-import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
-import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0004;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0005;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0012;
-import static com.nasnav.service.model.common.ParameterType.NUMBER;
-import static com.nasnav.service.model.common.ParameterType.STRING;
-import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
-import static java.lang.String.format;
-import static java.math.BigDecimal.ZERO;
-import static java.math.RoundingMode.HALF_EVEN;
-import static java.time.LocalDate.now;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.leftPad;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static reactor.core.publisher.Mono.error;
-import static reactor.core.publisher.Mono.just;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.Period;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.IntStream;
-
-import com.nasnav.shipping.model.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.model.*;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
-import com.nasnav.shipping.services.bosta.webclient.dto.Address;
-import com.nasnav.shipping.services.bosta.webclient.dto.BostaCallbackDTO;
-import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
-import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
-import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
-import com.nasnav.shipping.services.bosta.webclient.dto.PackageDetails;
-import com.nasnav.shipping.services.bosta.webclient.dto.PackageSpec;
-import com.nasnav.shipping.services.bosta.webclient.dto.Receiver;
-
+import com.nasnav.shipping.services.bosta.webclient.dto.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Period;
+import java.util.*;
+import java.util.stream.IntStream;
+
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.StringUtils.parseLongWithDefault;
+import static com.nasnav.enumerations.ShippingStatus.*;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.service.model.common.ParameterType.STRING;
+import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.HALF_EVEN;
+import static java.time.LocalDateTime.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
+import static org.apache.commons.lang3.StringUtils.leftPad;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.just;
 
 public class BostaLevisShippingService implements ShippingService{
 

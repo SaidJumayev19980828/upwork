@@ -18,6 +18,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	
 	@Query("SELECT meta FROM MetaOrderEntity meta "
 			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.subOrders subOrder "
 			+ " WHERE meta.id =:id")
 	Optional<MetaOrderEntity> findMetaOrderWithOrganizationById(@Param("id")Long id);
 	

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
+import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.AppConfig;
+
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.*;
-import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
@@ -424,4 +427,12 @@ public class UserServicesHelper {
 		}
 	}
 
+	public UserStatus checkUserStatusForSuspension(BaseUserEntity user) {
+		UserStatus status = ofNullable(UserStatus.getUserStatus(user.getUserStatus()))
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, U$STATUS$0004));
+		if(!setOf(ACTIVATED, ACCOUNT_SUSPENDED).contains(status)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0003);
+		}
+		return status;
+	}
 }

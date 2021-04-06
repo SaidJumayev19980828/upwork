@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class WarehouseOptimizerCommonParameters {
+public class WarehouseOptimizerConfig {
 	@JsonProperty("warehouse_id")
 	private Long warehouseId;
 	
-	public WarehouseOptimizerCommonParameters() {
+	public WarehouseOptimizerConfig() {
 		this.warehouseId = -1L;
 	}
 }

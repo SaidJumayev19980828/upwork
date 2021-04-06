@@ -6,4 +6,5 @@ public class FunctionalUtils{
         return obj1;
     }
     public static <T> T self(T obj){return obj;}
+    public static <T> void doNothing(T obj){}
 }

@@ -109,4 +109,21 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 													 @Param("name") String name);
 
     List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
+
+
+    @Query(value =
+			"with org_variants as (\n" +
+			"    select \n" +
+			"    (json_each(public.text_to_json(variant.feature_spec))).key::::int8 as feature_Id\n" +
+			"    ,variant.id \n" +
+			"    from public.product_variants variant\n" +
+			"    inner join public.products prod\n" +
+			"    on variant.product_id = prod.id\n" +
+			"    and prod.organization_id = :orgId\n" +
+			"    and prod.removed = 0\n" +
+			"    where variant.removed = 0\n" +
+			")\n" +
+			"select id from org_variants \n" +
+			"where feature_id = :featureId", nativeQuery = true)
+    List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
 }
