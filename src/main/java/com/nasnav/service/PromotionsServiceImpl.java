@@ -732,7 +732,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoRepo
 				.findByOrganization_IdAndTypeIdIn(orgId, asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()))
 				.stream()
-				.filter(promo -> isNotValidTotalCartPromo(promo, totalCartValue, totalCartQuantity))
+				.filter(promo -> !isNotValidTotalCartPromo(promo, totalCartValue, totalCartQuantity))
 				.map(promo -> getDiscount(totalCartValue, promo))
 				.max(BigDecimal::compareTo)
 				.orElse(ZERO);
