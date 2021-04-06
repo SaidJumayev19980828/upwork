@@ -29,4 +29,5 @@ public class PromotionDTO {
 	private Long userId;
 	private String userName;
 	private LocalDateTime createdOn;
+	private Integer priority;
 }

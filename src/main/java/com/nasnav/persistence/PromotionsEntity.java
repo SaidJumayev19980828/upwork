@@ -81,4 +81,7 @@ public class PromotionsEntity {
 	@Column(name="created_on")
 	@CreationTimestamp
 	private LocalDateTime createdOn;
+
+	@Column(name = "priority")
+	private Integer priority;
 }

@@ -148,6 +148,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setUserId(entity.getCreatedBy().getId());
 		dto.setUserName(entity.getCreatedBy().getName());
 		dto.setTypeId(entity.getTypeId());
+		dto.setPriority(entity.getPriority());
 		return dto;
 	}
 	
@@ -302,11 +303,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private PromotionsEntity createPromotionsEntity(PromotionDTO promotion) {
-		PromotionsEntity entity = 
-				ofNullable(promotion)
-				.map(PromotionDTO::getId)
-				.map(this::getExistingPromotion)
-				.orElseGet(PromotionsEntity::new);
+		PromotionsEntity entity = getOrCreatePromotionEntity(promotion);
 		
 		if(isUpdateOperation(promotion)	&& !isInactivePromo(entity)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
@@ -316,14 +313,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
 		OrganizationEntity organization = securityService.getCurrentUserOrganization();
 		
-		Integer status = 
-				PromotionStatus
-				.getPromotionStatus(promotion.getStatus())
-				.map(PromotionStatus::getValue)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
-										, PROMO$PARAM$0001, promotion.getStatus()));
+		Integer status = getPromotionStatus(promotion.getStatus());
 
 		Integer type = PromotionType.getPromotionType(promotion.getTypeId()).getValue();
+		Integer priority =
+				ofNullable(promotion.getPriority())
+				.orElse(0);
 
 		String codeUpperCase = 
 				ofNullable(promotion.getCode())
@@ -341,10 +336,24 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setStatus(status);
 		entity.setUserRestricted(0);
 		entity.setTypeId(type);
+		entity.setPriority(priority);
 		return entity;
 	}
 
-	
+	private Integer getPromotionStatus(String statusString) {
+		return PromotionStatus
+				.getPromotionStatus(statusString)
+				.map(PromotionStatus::getValue)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0001, statusString));
+	}
+
+	private PromotionsEntity getOrCreatePromotionEntity(PromotionDTO promotion) {
+		return ofNullable(promotion)
+						.map(PromotionDTO::getId)
+						.map(this::getExistingPromotion)
+						.orElseGet(PromotionsEntity::new);
+	}
 	
 	
 	private PromotionsEntity getExistingPromotion(Long id){
@@ -720,22 +729,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public BigDecimal calculateTotalCartDiscount(Long userId, Long orgId, BigDecimal totalCartValue, Long totalCartQuantity) {
-		BigDecimal discount = ZERO;
-		BigDecimal tmpDiscount;
-		List<PromotionsEntity> promoList = promoRepo
-				.findByOrganization_IdAndTypeIdIn(orgId, asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()));
-		for(PromotionsEntity promo : promoList) {
-			if (isNotValidTotalCartPromo(promo, totalCartValue, totalCartQuantity)) {
-				continue;
-			}
-			Map<String, Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-			tmpDiscount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-					.orElse(calcDiscount(promo, totalCartValue));
-			if (tmpDiscount.compareTo(discount) > 0) {
-				discount = tmpDiscount;
-			}
-		}
-		return discount;
+		return promoRepo
+				.findByOrganization_IdAndTypeIdIn(orgId, asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()))
+				.stream()
+				.filter(promo -> isNotValidTotalCartPromo(promo, totalCartValue, totalCartQuantity))
+				.map(promo -> getDiscount(totalCartValue, promo))
+				.max(BigDecimal::compareTo)
+				.orElse(ZERO);
 	}
 
 	private boolean isValidPromoForCartQuantity(PromotionsEntity promo, Long totalCartQuantity) {

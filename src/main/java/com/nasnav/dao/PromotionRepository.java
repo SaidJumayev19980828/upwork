@@ -53,7 +53,8 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " LEFT JOIN promo.organization org "
 			+ " where org.id = :orgId "
 			+ " AND promo.typeId in :typeIds "
-			+ " AND now() between promo.dateStart and promo.dateEnd")
+			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " order by prioirty desc")
 	List<PromotionsEntity> findByOrganization_IdAndTypeIdIn(@Param("orgId") Long orgId,
 														  @Param("typeIds") List<Integer> typeIds);
 }
