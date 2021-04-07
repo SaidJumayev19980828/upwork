@@ -90,6 +90,7 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe material', 's-material', 'Material of the shoes', 99001);
 
 
+insert into organization_payments ("id", account, gateway, organization_id)values (554411, 'cod','cod',99001);
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 

@@ -1,6 +1,5 @@
 package com.nasnav.integration;
 
-import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 import static com.nasnav.commons.utils.StringUtils.anyBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.nullableToString;
@@ -11,11 +10,8 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_FETCH_STOCK_VARIANT_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PARAM_NAME;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_TYPE_NOT_EXISTS;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_PRODUCT_DATA_RETURNED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_SHOP_IMPORT_FAILED;
@@ -33,8 +29,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_SINGLETON;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -43,8 +39,6 @@ import static reactor.core.scheduler.Schedulers.boundedElastic;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,13 +46,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
 import org.jboss.logging.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -94,7 +88,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.exceptions.ImportProductRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
@@ -136,8 +129,10 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @Service
+@Scope(value = SCOPE_SINGLETON)
 public class IntegrationServiceImpl implements IntegrationService {
 	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 5760L;
 
@@ -178,20 +173,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private ShopsRepository shopRepo;
-	
+
 	
 	@Autowired
 	private ProductImageService imgService;
 	
 	@Autowired
-	private IntegrationUtils integrationUtils;
+	private IntegrationUtils utils;
 	
 	@Autowired
 	private IntegrationServiceHelper integrationHelper;
-	
-	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
-	
-	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
 	@SuppressWarnings("rawtypes")
 	private FluxSink<EventHandling> eventFluxSink;
@@ -202,36 +193,30 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Autowired
 	private IntegrationEventFailureRepository eventFailureRepo;
 	
-	
+	@Autowired
+	private IntegrationModulesService modules;
 	
 	
 	
 	@PostConstruct
 	public void init() throws BusinessException {
-		orgIntegration = new HashMap<>();
-		mandatoryIntegrationParams = getMandatoryParams();
 		loadIntegrationModules();
 		initEventFlux();
 	}
-	
-	
-	
-	
+
 
 	
 	private void initEventFlux() {
-		Scheduler scheduler = boundedElastic(); 
+		Scheduler scheduler = boundedElastic();
 		@SuppressWarnings("rawtypes")
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux =	emitterProcessor									
 						.publishOn(scheduler) 																			
 						.publish()
 						.autoConnect();								
-							
 		eventFlux.groupBy(e -> e.getEvent().getOrganizationId())
 				.subscribe(this::initOrganizationEventFlux);
-		
-		eventFluxSink = emitterProcessor.sink();		
+		eventFluxSink = emitterProcessor.sink();
 	}
 	
 	
@@ -239,7 +224,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@SuppressWarnings("rawtypes")
 	private void initOrganizationEventFlux(GroupedFlux<Long, EventHandling> orgFlux) {
 		Long orgId = orgFlux.key(); 
-		Long eventDelay = ofNullable( orgIntegration.get(orgId) )
+		Long eventDelay = ofNullable(modules.getIntegrationInfo(orgId))
 							.map(OrganizationIntegrationInfo::getRequestMinDelayMillis)
 							.orElse(0L);
 		
@@ -254,9 +239,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 
-	private Set<IntegrationParamTypeEntity> getMandatoryParams() {		
-		return paramTypeRepo.findByIsMandatory(true);
-	}
+
 
 
 
@@ -266,212 +249,20 @@ public class IntegrationServiceImpl implements IntegrationService {
 		// TODO Auto-generated method stub
 
 	}
-	
-	
-	
-	
+
+
 
 	@Override
 	public IntegrationModule getIntegrationModule(Long orgId) {
-		return orgIntegration.get(orgId).getIntegrationModule();
+		return modules.getIntegrationModule(orgId);
 	}
-	
-	
-	
-	
+
 
 	@Override
 	public void loadIntegrationModules() throws BusinessException {	
-		List<Long> integratedOrgs = getIntegratedOrganizations();
-		for(Long orgId: integratedOrgs) {
-			try {
-				loadOrganizationIntegrationModule(orgId);
-			}
-			catch(Exception e) {
-				String msg = String.format(ERR_INTEGRATION_MODULE_LOAD_FAILED, orgId);
-				logger.error(msg, e);
-				throwIntegrationInitException(msg);
-			}
-		}
+		modules.loadIntegrationModules(this);
 	}
 
-
-
-
-
-
-	private void loadOrganizationIntegrationModule(Long orgId) throws BusinessException {
-		OrganizationIntegrationInfo integration = getOrganizationIntegrationInfo(orgId);
-		this.orgIntegration.put(orgId, integration);
-	}
-
-
-
-	
-
-	private List<Long> getIntegratedOrganizations() {
-		String paramName = IntegrationParam.INTEGRATION_MODULE.getValue();
-		return paramRepo.findByType_typeName( paramName ) 
-						.stream()
-						.map(IntegrationParamEntity::getOrganizationId)
-						.collect(toList());
-	}
-	
-	
-	
-	
-	
-	
-	private OrganizationIntegrationInfo getOrganizationIntegrationInfo(Long orgId) throws BusinessException {
-						
-		List<IntegrationParamEntity> params = getOrgInegrationParams(orgId);
-		IntegrationModule integrationModule = loadIntegrationModule(orgId, params);
-		Long minRequestDelay = getOrgMinRequestDelay(params);
-		
-		OrganizationIntegrationInfo info = new OrganizationIntegrationInfo(integrationModule, minRequestDelay, params);
-		info.setDisabled( isModuleDisabled(params));
-		
-		return info;
-	}
-
-
-
-
-
-
-	private boolean isModuleDisabled(List<IntegrationParamEntity> params) {
-		return Optional.ofNullable(params)
-					.orElseGet(ArrayList::new)
-					.stream()
-					.map(IntegrationParamEntity::getType)
-					.map(IntegrationParamTypeEntity::getTypeName)
-					.anyMatch( name -> Objects.equals(name, DISABLED.getValue()) );
-	}
-
-
-
-
-	private Long getOrgMinRequestDelay(List<IntegrationParamEntity> params) {
-		
-		return params.stream()
-					.filter( param -> Objects.equals( param.getType().getTypeName() , IntegrationParam.MAX_REQUEST_RATE.getValue()))
-					.map( IntegrationParamEntity::getParamValue )
-					.map( failSafeFunction(Long::valueOf) )
-					.filter( Objects::nonNull )
-					.map( this::calcMinRequestDelayMillis )
-					.findFirst()
-					.orElse(0L);
-	}
-
-
-
-
-	private Long calcMinRequestDelayMillis(Long requestRatePerSec) {
-		if(requestRatePerSec == null || requestRatePerSec == 0) 
-			return 0L;
-		else
-			return (long) ((1.0/requestRatePerSec)*1000);
-	}
-	
-	
-
-
-	private IntegrationModule loadIntegrationModule(Long orgId, List<IntegrationParamEntity> params)
-			throws BusinessException {
-		String integrationModuleClass = getIntegrationModuleClassName(orgId,params);
-		
-		return loadIntegrationModuleClass(orgId, integrationModuleClass);
-	}
-
-
-
-
-
-
-	private IntegrationModule loadIntegrationModuleClass(Long orgId, String integrationModuleClass
-			) throws BusinessException {
-		IntegrationModule integrationModule = null;
-		
-		try {
-			@SuppressWarnings("unchecked")
-			Class<IntegrationModule> moduleClass = (Class<IntegrationModule>) this.getClass().getClassLoader().loadClass(integrationModuleClass);
-			integrationModule = moduleClass.getDeclaredConstructor(IntegrationService.class).newInstance(this);						
-		} catch (Throwable e) {
-			logger.error(e,e);
-			throwIntegrationInitException(ERR_LOADING_INTEGRATION_MODULE_CLASS, integrationModuleClass, orgId);
-		}
-		
-		return integrationModule;
-	}
-
-
-
-
-	
-	
-	private String getIntegrationModuleClassName(Long orgId, List<IntegrationParamEntity> params) throws BusinessException {
-		String integrationModuleClass = params.stream()
-												.filter(this::isIntegrationModuleNameParam)
-												.map(IntegrationParamEntity::getParamValue)
-												.findFirst()
-												.orElseThrow(() -> getIntegrationInitException(ERR_NO_INTEGRATION_MODULE, orgId));
-		return integrationModuleClass;
-	}
-	
-	
-
-
-
-
-	private boolean isIntegrationModuleNameParam(IntegrationParamEntity p) {
-		return Objects.equals(p.getType().getTypeName(), IntegrationParam.INTEGRATION_MODULE.getValue() );
-	}
-
-
-
-
-	private List<IntegrationParamEntity> getOrgInegrationParams(Long orgId) throws BusinessException {
-		List<IntegrationParamEntity> params = paramRepo.findByOrganizationId(orgId);
-				
-		validateLoadedIntegrationParams(orgId, params);
-		return params;
-	}
-	
-	
-	
-	
-	
-	
-
-	private void validateLoadedIntegrationParams(Long orgId, List<IntegrationParamEntity> params) throws BusinessException {
-		if(params == null || params.isEmpty()) {
-			throwIntegrationInitException(ERR_NO_INTEGRATION_PARAMS, orgId);
-		}		
-		
-		if(!hasMandatoryParams(params)) {
-			throwIntegrationInitException(ERR_MISSING_MANDATORY_PARAMS, orgId);
-		}
-	}
-
-
-
-	
-
-	private void throwIntegrationInitException(String msg, Object... args) throws BusinessException {
-		throw getIntegrationInitException(msg, args);
-	}
-
-	
-	
-	
-	
-	private BusinessException getIntegrationInitException(String msg, Object... args) {
-		return new BusinessException( String.format( msg, args )
-										, "INTEGRATION INITIALIZATION FAILURE"
-										, HttpStatus.INTERNAL_SERVER_ERROR);
-	}
-	
-	
 	
 	
 	private RuntimeBusinessException getIntegrationRuntimeException(String msg, Object... args) {
@@ -480,29 +271,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 										, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	
-
-
-
-	private Boolean hasMandatoryParams(List<IntegrationParamEntity> params) {
-		Set<String> mandatoryParamNames =
-				mandatoryIntegrationParams
-					.stream()
-					.map(IntegrationParamTypeEntity::getTypeName)
-					.collect(toSet());
-		
-		Boolean mandatoryParamsExists = 
-				params.stream()
-						.map(IntegrationParamEntity::getType)
-						.map(IntegrationParamTypeEntity::getTypeName)
-						.collect(toSet())
-						.containsAll(mandatoryParamNames);
-		
-		return mandatoryParamsExists;
-	}
-
-
-	
 
 
 	@Override
@@ -516,9 +284,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	private void saveIntegrationMapping(Long orgId, String typeName, String localValue, String remoteValue)
 			throws BusinessException {
 		IntegrationMappingTypeEntity mappingType = mappingTypeRepo.findByTypeName(typeName)
@@ -526,19 +291,14 @@ public class IntegrationServiceImpl implements IntegrationService {
 		IntegrationMappingEntity mapping = new IntegrationMappingEntity(orgId, mappingType, localValue, remoteValue);
 		mappingRepo.save(mapping);
 	}
-	
-	
-	
-	
+
+
 
 	private void deleteExistingMappingOfLocalAndRemoteValues(Long orgId, String typeName, String localValue, String remoteValue) {
 		IntegrationMappingTypeEntity type = mappingTypeRepo.findByTypeName(typeName).orElse(null);
 		mappingRepo.deleteByLocalValue(orgId, type, localValue);
 		mappingRepo.deleteByRemoteValue(orgId, type, remoteValue);
 	}
-
-
-
 
 
 
@@ -568,11 +328,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 							.map(IntegrationMappingEntity::getLocalValue)
 							.orElse(null);
 	}
-	
-	
-	
-	
-	
+
+
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
@@ -599,8 +356,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private void validateImportShopRequest() throws BusinessException {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		if(!orgIntegration.containsKey(orgId)) {
-			throw getIntegrationInitException(ERR_NO_INTEGRATION_MODULE, orgId);
+		if(!modules.hasIntegrationModule(orgId)) {
+			throw utils.getIntegrationInitException(ERR_NO_INTEGRATION_MODULE, orgId);
 		}
 	}
 
@@ -1033,7 +790,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private <E extends Event<T,R>, T, R> void handle(EventHandling<E,T,R> handling) {
 		E event = handling.getEvent();
-		OrganizationIntegrationInfo integration =  orgIntegration.get(event.getOrganizationId());
+		Long orgId = event.getOrganizationId();
+		OrganizationIntegrationInfo integration =  modules.getIntegrationInfo(orgId);
 		if(integration == null || integration.isDisabled()) {			
 			//ignore events if its organization has no integration info. loaded or is disabled.
 			return; 	
@@ -1123,9 +881,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	public void registerIntegrationModule(OrganizationIntegrationInfoDTO info) throws BusinessException {
 		validateIntegrationInfo(info);
@@ -1139,7 +894,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			.forEach((name, val) -> saveIntegrationParam(orgId, name, val));
 		
 		try {
-			loadOrganizationIntegrationModule(orgId);
+			modules.loadOrganizationIntegrationModule(orgId, this);
 		}catch(BusinessException e) {
 			logger.error(e,e);
 			throw new BusinessException( 
@@ -1148,9 +903,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
-
-
-
 
 
 
@@ -1171,9 +923,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	private IntegrationParamTypeEntity getIntegrationParamType(String typeName) {
 		IntegrationParamTypeEntity type = paramTypeRepo.findByTypeName(typeName)
 														.orElseGet(IntegrationParamTypeEntity::new);		
@@ -1182,9 +931,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 		}
 		return type;
 	}
-
-
-
 
 
 
@@ -1197,18 +943,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	private void validateIntegrationInfo(OrganizationIntegrationInfoDTO info) throws BusinessException {
 		Long orgId  = info.getOrganizationId();
 		
 		verifyOrgIntegrationFields(info, orgId);		
 		verifyModuleClassExistsInClasspath(info, orgId);
 	}
-
-
-
 
 
 
@@ -1234,9 +974,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	private void verifyModuleClassExistsInClasspath(OrganizationIntegrationInfoDTO info, Long orgId) throws BusinessException {
 		String integrationModuleClass = info.getIntegrationModule();
 		try {
@@ -1250,41 +987,31 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	public void disableIntegrationModule(Long organizationId) throws BusinessException {
 		if(organizationId == null 
 				|| !orgRepo.existsById(organizationId)
-				|| !orgIntegration.containsKey(organizationId) ) {
+				|| !modules.hasIntegrationModule(organizationId) ) {
 			return;
 		}
 		saveIntegrationParam(organizationId, DISABLED.getValue(), "TRUE");
-		loadOrganizationIntegrationModule(organizationId);
+		modules.loadOrganizationIntegrationModule(organizationId, this);
 	}
-
-
-
 
 
 
 	@Override
 	@Transactional
 	public void enableIntegrationModule(Long organizationId) throws BusinessException {
-		if(organizationId == null || !orgIntegration.containsKey(organizationId) ) {
+		if(organizationId == null || !modules.hasIntegrationModule(organizationId) ) {
 			throw new BusinessException(
 					format(ERR_NO_INTEGRATION_MODULE, organizationId) 
 					, "INVALID_PARAM:organization_id"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
-		
 		deleteIntegrationParam(organizationId, DISABLED.getValue());
-		loadOrganizationIntegrationModule(organizationId);
+		modules.loadOrganizationIntegrationModule(organizationId, this);
 	}
-
-
-
 
 
 
@@ -1294,28 +1021,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	public void clearAllIntegrationModules() {
-		orgIntegration.clear();
+		modules.clearAllIntegrationModules();
 	}
-
-
-
 
 
 
 	@Override
 	@Transactional
 	public void removeIntegrationModule(Long organizationId) {
-		paramRepo.deleteByOrganizationId(organizationId);		
-		orgIntegration.remove(organizationId);
+		modules.removeIntegrationModule(organizationId);
 	}
-
-
-
 
 
 
@@ -1380,39 +1097,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	public List<OrganizationIntegrationInfoDTO> getAllIntegrationModules() {
-		return orgIntegration.entrySet()
-							.stream()
-							.map(this::toOrganizationIntegrationInfoDTO)
-							.collect(toList());					
+		return modules.getAllIntegrationModules();
 	}
-	
-	
-	
-	
-	
-	private OrganizationIntegrationInfoDTO toOrganizationIntegrationInfoDTO(Map.Entry<Long, OrganizationIntegrationInfo> infoEntry) {
-		OrganizationIntegrationInfoDTO dto = new OrganizationIntegrationInfoDTO();
-		Long orgId = infoEntry.getKey();
-		OrganizationIntegrationInfo info = infoEntry.getValue();
-		Map<String,String> params = info.getParameters()
-										.stream()
-										.collect(toMap(IntegrationParamEntity::getParameterTypeName
-																, IntegrationParamEntity::getParamValue));		
-		dto.setOrganizationId(orgId);
-		dto.setIntegrationModule(info.getIntegrationModule().getClass().getName());
-		dto.setMaxRequestRate(1000/info.getRequestMinDelayMillis().intValue());
-		dto.setIntegrationParameters(params);
-		
-		return dto;
-	}
-
-
-
 
 
 
@@ -1425,9 +1113,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	@Transactional
 	public void deleteMappingByRemoteValue(Long orgId, MappingType type, String mappingRemoteVal) {
@@ -1437,16 +1122,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-
-
-
 	@Override
 	public String getIntegrationParamValue(Long orgId, String paramName) {
 		return getParamFromDB(orgId, paramName);
 	}
-
-
-
 
 
 
@@ -1872,7 +1551,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	private Mono<ImportedImagesPage> getImportedImagesPage(ImportedImagesUrlMappingPage mappingPage, ProductImageBulkUpdateDTO metaData){		
-		return integrationUtils
+		return utils
 				.readImgsFromUrls(mappingPage.getImgToProductsMapping(), metaData, mappingPage.getImgsWebClient())
 				.collectList()
 				.map(HashSet::new)
@@ -1919,7 +1598,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Override
 	public IntegrationUtils getIntegrationUtils() {
-		return integrationUtils;
+		return utils;
 	}
 
 
@@ -1929,7 +1608,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public boolean hasActiveIntegration(Long orgId) {
-		return ofNullable(orgIntegration.get(orgId))
+		return ofNullable(modules.getIntegrationInfo(orgId))
 				.map(integrationModule -> !integrationModule.isDisabled())
 				.orElse(false);
 	}

@@ -3,6 +3,7 @@ package com.nasnav.integration;
 import java.util.List;
 import java.util.Map;
 
+import com.nasnav.exceptions.BusinessException;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
@@ -17,4 +18,8 @@ public interface IntegrationUtils {
 			Map<String, List<VariantIdentifier>> fileIdentifiersMap
 			, ProductImageBulkUpdateDTO metaData
 			, WebClient client);
+
+	public void throwIntegrationInitException(String msg, Object... args) throws BusinessException;
+
+	public BusinessException getIntegrationInitException(String msg, Object... args);
 }

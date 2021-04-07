@@ -180,7 +180,7 @@ public class DomainServiceImpl implements DomainService{
 	@Override
 	public String getBackendUrl() {
 		String backendUrl = ofNullable(appConfig.environmentHostName)
-				.orElse(getCurrentServerDomain());
+				.orElseGet(this::getCurrentServerDomain);
 		return addProtocolIfNeeded(backendUrl);
 	}
 
