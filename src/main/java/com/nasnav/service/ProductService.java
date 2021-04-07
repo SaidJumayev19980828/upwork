@@ -939,10 +939,6 @@ public class ProductService {
 			predicate.and( stock.price.gt(ZERO));
 		}
 
-		if(!params.include_out_of_stock) {
-			predicate.and( stock.price.gt(ZERO));
-		}
-
 		predicate.and( shop.removed.eq(0) );
 
 		return predicate;
