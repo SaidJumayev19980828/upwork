@@ -9,6 +9,8 @@ import static org.springframework.http.HttpHeaders.SET_COOKIE;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import javax.servlet.http.Cookie;
@@ -182,5 +184,18 @@ public class TestCommons {
 
     public static Object nullableJsonValue(Object value){
         return isNull(value) ? JSONObject.NULL : value;
+    }
+
+
+
+    public static Path getTempDirectory() {
+        Path tempDirPath;
+        try {
+            tempDirPath = Files.createTempDirectory("_nasnav_test_");
+        } catch (IOException e) {
+            e.printStackTrace();
+            tempDirPath = Paths.get("src/test/resources/test_files_base_dir");
+        }
+        return tempDirPath;
     }
 }

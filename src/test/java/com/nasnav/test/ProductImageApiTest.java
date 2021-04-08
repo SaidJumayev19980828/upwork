@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -87,18 +88,9 @@ import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
-@NotThreadSafe 
-@ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@Ignore  //tests are too slow for now
-public class ProductImageApiTest {
+public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long TEST_PRODUCT_ID = 1001L;
 
@@ -114,11 +106,7 @@ public class ProductImageApiTest {
 
 	private static final String EXPECTED_COVER_IMG_URL = "99001/cover_img.jpg";
 
-	@Value("${files.basepath}")
-	private String basePathStr;
 
-	private Path basePath;
-	
 	
 	@Autowired
 	private ProductRepository productRepository;
@@ -152,27 +140,7 @@ public class ProductImageApiTest {
 	@Autowired 
 	private EmployeeUserRepository empUserRepo;
 	
-	
-	@Before
-	public void setup() throws IOException {		
-		this.basePath = Paths.get(basePathStr);
-		
-		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-		
-		//The base directory must exists for all tests
-		assertTrue(Files.exists(basePath));
-		
-		//assert an empty temp directory was created for the test
-		try(Stream<Path> files = Files.list(basePath)){
-			assertEquals(0L, files.count());
-		}
-		
-	}
-	
-	
-	
-	
-	
+
 	@Test
 	public void productImageMissingImageIdIdTest() throws IOException, Exception {
 		String fileName = TEST_PHOTO;

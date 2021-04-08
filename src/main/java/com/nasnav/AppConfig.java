@@ -1,5 +1,7 @@
 package com.nasnav;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,19 +29,9 @@ public class AppConfig {
     @Value("${environment.development}") public boolean develEnvironment = false;
     @Value("${environment.hostname}")   public String environmentHostName;
     @Value("${email.url.emp_recover}")  public String empMailRecoveryUrl = "";
-    
-    
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
-
-    
-    
-    @Bean
-    public JavaMailSender mailSender() {
-        return new NasNavMailSender();
-    }
-
+    @Value("${files.basepath}")
+    @Getter
+    @Setter
+    private String basePathStr;
 }

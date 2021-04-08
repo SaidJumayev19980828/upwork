@@ -33,6 +33,7 @@ import javax.annotation.PostConstruct;
 import javax.cache.annotation.CacheResult;
 import javax.imageio.ImageIO;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -41,6 +42,7 @@ import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.tika.Tika;
@@ -64,8 +66,8 @@ public class FileService {
 
 	private static List<String> SUPPORTED_IMAGE_FORMATS = asList("jpg", "jpeg", "png", "webp");
 
-	@Value("${files.basepath}")
-	private String basePathStr;
+	@Autowired
+	private AppConfig appConfig;
 
 	private Path basePath;
 
@@ -85,7 +87,7 @@ public class FileService {
 
 	@PostConstruct
 	public void setupFileLocation() throws BusinessException {
-		this.basePath = Paths.get(basePathStr);
+		this.basePath = Paths.get(appConfig.getBasePathStr());
 
 		if(!Files.exists(basePath) ) {
 			try {
@@ -109,11 +111,11 @@ public class FileService {
 		}
 
 		String origName = file.getOriginalFilename();
-		String uniqeFileName = getUniqueName(origName, orgId );
-		String url = getUrl(uniqeFileName, orgId);
-		Path location = getRelativeLocation(uniqeFileName, orgId);
+		String uniqueFileName = getUniqueName(origName, orgId );
+		String url = getUrl(uniqueFileName, orgId);
+		Path location = getRelativeLocation(uniqueFileName, orgId);
 
-		saveFile(file, uniqeFileName, orgId );
+		saveFile(file, uniqueFileName, orgId );
 
 		if(Files.exists(basePath.resolve(location) )) {
 			saveToDatabase(origName, location , url, orgId);
@@ -161,11 +163,10 @@ public class FileService {
 
 
 	private Path getSaveDir(Long orgId) {
-		Path saveDir = ofNullable(orgId)
-				.map(id -> id.toString())
+		return ofNullable(orgId)
+				.map(Object::toString)
 				.map(basePath::resolve)
 				.orElse(basePath);
-		return saveDir;
 	}
 
 
@@ -204,20 +205,18 @@ public class FileService {
 
 
 	private Path getRelativeLocation(String origName, Long orgId) {
-		return basePath.relativize( getSaveDir(orgId) )
+		return basePath
+				.relativize( getSaveDir(orgId) )
 				.resolve(origName);
 	}
 
 
 
-
-	private String getUrl(String origName, Long orgId) {
-		String url = ofNullable(orgId)
-				.map(id -> String.format("%d/%s", id, origName))
-				.orElse(origName);
-		return url;
+	private String getUrl(String originalName, Long orgId) {
+		return ofNullable(orgId)
+				.map(id -> String.format("%d/%s", id, originalName))
+				.orElse(originalName);
 	}
-
 
 
 
@@ -227,7 +226,6 @@ public class FileService {
 		String uuid = UUID.randomUUID().toString().replace("-", "");
 		return String.format("%s-%s.%s", origNameNoExtension, uuid , ext);
 	}
-
 
 
 
@@ -359,7 +357,6 @@ public class FileService {
 
 	private FilesResizedEntity createResizedImageEntity(FileEntity originalFile, Integer width, Integer height, String fileType) {
 		try {
-			this.basePath = Paths.get(basePathStr);
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
 			BufferedImage image = ImageIO.read(file);
@@ -612,7 +609,7 @@ public class FileService {
 
 	private Optional<ImageInfo> createNewImageInfo(FileEntity originalFile) {
 		try{
-			this.basePath = Paths.get(basePathStr);
+			this.basePath = Paths.get(appConfig.getBasePathStr());
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
 			BufferedImage image = ImageIO.read(file);

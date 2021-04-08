@@ -19,6 +19,7 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import com.google.common.primitives.Shorts;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
@@ -49,8 +50,8 @@ import com.nasnav.response.ShopResponse;
 @Service
 public class ShopThreeSixtyService {
 
-    @Value("${files.basepath}")
-    private String basePathStr;
+    @Autowired
+    private AppConfig appConfig;
 
     private Path basePath;
 
@@ -567,7 +568,7 @@ public class ShopThreeSixtyService {
 
 
     private String resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException, BusinessException {
-        this.basePath = Paths.get(basePathStr);
+        this.basePath = Paths.get(appConfig.getBasePathStr());
         Path location = basePath.resolve(image.getLocation());
 
         BufferedImage inputImage = ImageIO.read(new File(location.toString()));

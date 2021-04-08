@@ -1,10 +1,26 @@
 package com.nasnav.test;
-import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.test.bulkimport.img.ImageBulkUrlUploadTestCommon;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockserver.junit.MockServerRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,54 +30,16 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockserver.junit.MockServerRule;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.mock.web.MockPart;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.web.reactive.function.client.WebClient;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.nasnav.NavBox;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.test.bulkimport.img.ImageBulkUrlUploadTestCommon;
-
-import net.jcip.annotations.NotThreadSafe;
-
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
-@NotThreadSafe 
-@ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@Ignore  //tests are too slow for now
-public class ProductImageBulkUrlUploadTest {
+public class ProductImageBulkUrlUploadTest extends AbstractTestWithTempBaseDir {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk/url";
 
 	private static final String USER_TOKEN = "101112";	
@@ -78,12 +56,6 @@ public class ProductImageBulkUrlUploadTest {
 	private static final String TEST_CSV_VARIANT_ID_NO_VARIANT = "img_bulk_url_exist_variant_id_no_variant.csv";
 	private static final String TEST_CSV_EXTERNAL_ID_NO_MAPPING = "img_bulk_url_exist_external_id_no_mapping.csv";
 	
-	
-	
-	@Value("${files.basepath}")
-	private String basePathStr;
-
-	private Path basePath;
 	
 	
 	@Autowired
@@ -108,30 +80,11 @@ public class ProductImageBulkUrlUploadTest {
 	
 	
 	@Before
-	public void setup() throws Exception {		
-		assertRequiredDirectoriesExists();
-		
-		
+	public void setupMockServer() throws Exception {
 		serverUrl = testCommons.initImgsMockServer(mockServerRule);
 	}
 
 
-
-	private void assertRequiredDirectoriesExists() throws IOException {
-		this.basePath = Paths.get(basePathStr);
-		
-		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-		
-		//The base directory must exists for all tests
-		assertTrue(Files.exists(basePath));
-		
-		//assert an empty temp directory was created for the test
-		try(Stream<Path> files = Files.list(basePath)){
-			assertEquals(0L, files.count());
-		}
-	}
-	
-	
 	
 	@Test
 	public void updateImgBulkNoAuthz() throws IOException, Exception {
@@ -143,10 +96,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
+
 	
 	
 	@Test
@@ -159,8 +109,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertNoImgsImported();
 	}
-	
-	
+
 	
 	
 	@Test
@@ -175,11 +124,8 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
-	
+
+
 	
 	@Test
 	public void updateImgBulkMissingPriority() throws IOException, Exception {
@@ -194,10 +140,8 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
+
+
 	
 	@Test
 	public void updateImgBulkTestInvalidBarcode() throws IOException, Exception {
@@ -212,8 +156,8 @@ public class ProductImageBulkUrlUploadTest {
 
 		assertNoImgsImported();
 	}
-	
-	
+
+
 	
 	@Test
 	public void updateImgBulkAdminOfOtherOrg() throws IOException, Exception {
@@ -228,10 +172,8 @@ public class ProductImageBulkUrlUploadTest {
 
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
+
+
 	
 	@Test
 	public void updateImgBulkWithCSVTest() throws IOException, Exception {
@@ -247,9 +189,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertImgsImported(response);		
 	}
-	
-	
-	
+
 	
 	
 	@Test
@@ -273,8 +213,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		validateImageCountAfter(3L);
 	}
-	
-	
+
 	
 	
 	@Test
@@ -316,8 +255,7 @@ public class ProductImageBulkUrlUploadTest {
 		Long countOtherOrgAfter = imgRepo.countByProductEntity_OrganizationId(99002L);
 		assertEquals(1L, countOtherOrgAfter.longValue());
 	}
-	
-	
+
 	
 	
 	@Test
@@ -334,10 +272,7 @@ public class ProductImageBulkUrlUploadTest {
 		assertNoImgsImported();		
 	}
 	
-	
-	
-	
-	
+
 
 	/**
 	 * just a test that the local test server is returning static test images for the 
@@ -358,11 +293,7 @@ public class ProductImageBulkUrlUploadTest {
 		Thread.sleep(1000);
 	}
 	
-	
-	
-	
-	
-	
+
 	
 	@Test
 	public void updateImgBulkWithCSVAndMultipleBarcodeForSamePathTest() throws IOException, Exception {
@@ -378,10 +309,8 @@ public class ProductImageBulkUrlUploadTest {
 
 		assertSameImgImportedForProductAndVariants(response);
 	}
-	
-	
-	
-	
+
+
 	
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_2.sql"})
@@ -399,10 +328,6 @@ public class ProductImageBulkUrlUploadTest {
 
 		assertSameImgImportedForProductWithNoDuplicates(response);
 	}
-	
-	
-	
-	
 
 	
 	
@@ -420,10 +345,7 @@ public class ProductImageBulkUrlUploadTest {
 		assertImgsImported(response);
 	}
 
-	
-	
-	
-	
+
 	
 	@Test
 	public void updateImgBulkTestExistExternalIdExistMapping() throws IOException, Exception {
@@ -439,9 +361,7 @@ public class ProductImageBulkUrlUploadTest {
 		assertImgsImported(response);
 	}
 
-	
-	
-	
+
 	
 	@Test
 	public void updateImgBulkTestExistVariantIdNoVariant() throws Exception {
@@ -505,10 +425,8 @@ public class ProductImageBulkUrlUploadTest {
 		assertEquals("a single image was imported for the product and its variants, so they all should reference the same url"
 						, 1, urls.size());
 	}
-	
-	
-	
-	
+
+
 	
 	private void assertSameImgImportedForProductWithNoDuplicates(String response) {
 		JSONArray responseJson = new JSONArray(response);
@@ -533,10 +451,8 @@ public class ProductImageBulkUrlUploadTest {
 					+ " it is a product image"
 						, 1, urls.size());
 	}
-	
-	
-	
-	
+
+
 	
 	private void assertImgsImported(String response) {
 		JSONArray responseJson = new JSONArray(response);
@@ -551,9 +467,8 @@ public class ProductImageBulkUrlUploadTest {
 				.mapToObj(responseJson::getJSONObject)
 				.forEach(this::assertImageUploaded);
 	}
-	
-	
-	
+
+
 	
 	private void assertImgsImported(String response, Long expectedCount) {
 		JSONArray responseJson = new JSONArray(response);
@@ -568,8 +483,7 @@ public class ProductImageBulkUrlUploadTest {
 				.mapToObj(responseJson::getJSONObject)
 				.forEach(this::assertImageUploaded);
 	}
-	
-	
+
 	
 	
 	private void assertImageUploaded(JSONObject response) {
@@ -582,9 +496,7 @@ public class ProductImageBulkUrlUploadTest {
 		assertTrue(imgRepo.existsById(imgId));		
 		assertTrue(Files.exists(imgPath));
 	}
-	
-	
-	
+
 	
 	
 	private JSONObject createDummyUploadRequest() {
@@ -596,8 +508,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		return metaData;
 	}
-	
-	
+
 	
 	
 	private ResultActions performFileUpload(String csvFileName, byte[] json, String userToken) throws IOException, Exception {
@@ -613,8 +524,7 @@ public class ProductImageBulkUrlUploadTest {
 				                 .header(TOKEN_HEADER, userToken));
 		return result;
 	}
-	
-	
+
 	
 	
 	private void assertNoImgsImported() throws IOException {
@@ -625,8 +535,7 @@ public class ProductImageBulkUrlUploadTest {
 			assertEquals("no files should exist in the save directory", 0L, cnt.longValue());
 		}
 	}
-	
-	
+
 	
 
 	private MockPart createJsonPart(byte[] json) {
@@ -634,8 +543,7 @@ public class ProductImageBulkUrlUploadTest {
 		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		return jsonPart;
 	}
-	
-	
+
 	
 	
 	private MockMultipartFile createCsvPart(String csvFileName) throws IOException {
@@ -645,6 +553,7 @@ public class ProductImageBulkUrlUploadTest {
 		MockMultipartFile csvPart = new MockMultipartFile("imgs_barcode_csv", csvFileName, "text/csv", csvData);
 		return csvPart;
 	}
+
 
 
 	private void assertImgsImportedAndCollectionImagesRemained(String response) {

@@ -5,10 +5,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.Properties;
 
+@Component
 @PropertySource(value = "classpath:mail.properties")
 public class NasNavMailSender extends JavaMailSenderImpl {
 

@@ -6,6 +6,7 @@ import static org.springframework.http.CacheControl.maxAge;
 
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -16,9 +17,9 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 
 @Configuration
 public class StaticResourcesConfig implements WebMvcConfigurer {
-	@Value("${files.basepath}")
-	private String basePathStr;
-	
+	@Autowired
+	private AppConfig appConfig;
+
 	
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -33,8 +34,8 @@ public class StaticResourcesConfig implements WebMvcConfigurer {
 
 
 	private String getStaticFilesLocationPath() {
-		return ofNullable(basePathStr)
-		.map(path -> path.endsWith("/")? path: path + "/")
-		.orElse("./");
+		return ofNullable(appConfig.getBasePathStr())
+				.map(path -> path.endsWith("/")? path: path + "/")
+				.orElse("./");
 	}
 }

@@ -1,28 +1,12 @@
 package com.nasnav.test.integration.sallab;
 
-import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
-import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
-import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockserver.model.HttpRequest.request;
-import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.OK;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import com.nasnav.NavBox;
+import com.nasnav.dao.*;
+import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.IntegrationParam;
+import com.nasnav.persistence.ProductVariantsEntity;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,7 +15,6 @@ import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -45,19 +28,20 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.nasnav.NavBox;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.IntegrationMappingRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dto.OrganizationIntegrationInfoDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.enums.IntegrationParam;
-import com.nasnav.persistence.ProductVariantsEntity;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.*;
+import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static org.junit.Assert.*;
+import static org.mockserver.model.HttpRequest.request;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.OK;
 
 
 @RunWith(SpringRunner.class)
@@ -119,14 +103,8 @@ public class ElSallabIntegrationTest {
 	
 	@Autowired
 	private ProductImagesRepository imgRepo;
-	
 
-	@Value("${files.basepath}")
-	private String basePathStr;
 
-	private Path basePath;
-
-	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
 	
@@ -137,24 +115,6 @@ public class ElSallabIntegrationTest {
 	public void init() throws Exception {			
 		initIntegrationModules();		
 	}
-
-
-
-
-
-
-
-
-	private void printDummyImageSavePath() {
-		this.basePath = Paths.get(basePathStr);
-		
-		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-	}
-
-
-
-
-
 
 
 
@@ -280,8 +240,6 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Images_Insert.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void imagesImportTest() throws InterruptedException {
-		printDummyImageSavePath();
-		
 		Integer variantNum = 2;
 		Long imgsCountBefore  = imgRepo.count();
 		//------------------------------------------------		

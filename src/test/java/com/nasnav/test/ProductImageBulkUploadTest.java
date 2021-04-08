@@ -1,5 +1,6 @@
 package com.nasnav.test;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.test.commons.TestCommons.getTempDirectory;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
@@ -13,34 +14,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.service.FileService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -52,18 +55,12 @@ import com.nasnav.persistence.FileEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
-@NotThreadSafe
-@ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
+import javax.annotation.PostConstruct;
+
+
 @Sql(executionPhase= BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
 @Sql(executionPhase= AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@Ignore  //tests are too slow for now
-public class ProductImageBulkUploadTest {
+public class ProductImageBulkUploadTest extends AbstractTestWithTempBaseDir {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk";
 
 	private static final String USER_TOKEN = "101112";
@@ -110,47 +107,23 @@ public class ProductImageBulkUploadTest {
 	private static final String TEST_ZIP_UPLOADED_WITH_CSV_MISSING_PATH = "img_bulk_upload_with_csv_missing_path.zip";
 
 	private static final String TEST_CSV_OTHER_ORG_VARIANTS = "img_bulk_url_variant_from_other_org.csv";
-	
 
-	@Value("${files.basepath}")
-	private String basePathStr;
 
-	private Path basePath;
-	
-	
+
+
 	@Autowired
 	private FilesRepository filesRepo;
 	
 	@Autowired
 	private ProductImagesRepository imgRepo;
 	
-	
-	
 	@Autowired
 	private  MockMvc mockMvc;
 
 	@Autowired
 	private ProductExtraAttributesEntityRepository extraAttrRepo;
-	
-	@Before
-	public void setup() throws IOException {		
-		this.basePath = Paths.get(basePathStr);
-		
-		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-		
-		//The base directory must exists for all tests
-		assertTrue(Files.exists(basePath));
-		
-		//assert an empty temp directory was created for the test
-		try(Stream<Path> files = Files.list(basePath)){
-			assertEquals(0L, files.count());
-		}
-		
-	}
-	
-	
-	
-	
+
+
 	@Test
 	public void updateImgBulkNoAuthz() throws IOException, Exception {
 		
@@ -434,13 +407,7 @@ public class ProductImageBulkUploadTest {
 
 		assertImgsImported(response);
 	}
-	
-	
-	
-	
-	
-	
-	
+
 	
 	
 	@Test
@@ -456,12 +423,8 @@ public class ProductImageBulkUploadTest {
 		
 		assertImgsImported(response);
 	}
-	
-	
-	
-	
-	
-	
+
+
 
 	@Test
 	public void updateImgBulkWithIncompleteCSVTest() throws IOException, Exception {
@@ -477,11 +440,8 @@ public class ProductImageBulkUploadTest {
 
 		assertImgsImported(response);
 	}
-	
-	
-	
 
-	
+
 	
 	@Test
 	public void updateImgBulkTestEmptyImgFile() throws IOException, Exception {
@@ -519,6 +479,8 @@ public class ProductImageBulkUploadTest {
 		assertImgsImported(response);
 	}
 
+
+
 	@Test
 	public void updateImgBulkTestExistExternalIdExistMapping() throws IOException, Exception {
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
@@ -533,6 +495,8 @@ public class ProductImageBulkUploadTest {
 		assertImgsImported(response);
 	}
 
+
+
 	@Test
 	public void updateImgBulkTestExistVariantIdNoVariant() throws Exception {
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
@@ -543,6 +507,8 @@ public class ProductImageBulkUploadTest {
 		assertNoImgsImported();
 	}
 
+
+
 	@Test
 	public void updateImgBulkTestExistExternalIdNoMapping() throws Exception {
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
@@ -552,10 +518,9 @@ public class ProductImageBulkUploadTest {
 
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
+
+
+
 	@Test
 	public void updateImgBulkWithCSVWithMissingPathTest() throws IOException, Exception {
 		

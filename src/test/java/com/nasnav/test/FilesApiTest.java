@@ -1,32 +1,19 @@
 package com.nasnav.test;
-import static com.nasnav.commons.utils.StringUtils.getFileNameSanitized;
-import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-
+import com.nasnav.AppConfig;
+import com.nasnav.NavBox;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import net.jcip.annotations.NotThreadSafe;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,44 +29,40 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import com.nasnav.NavBox;
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
-import net.jcip.annotations.NotThreadSafe;
+import static com.nasnav.commons.utils.StringUtils.getFileNameSanitized;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.hamcrest.core.StringStartsWith.startsWith;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc 
-@PropertySource("classpath:test.database.properties")
-@ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
-@NotThreadSafe
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Files_API_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@Ignore  //tests are too slow for now
-public class FilesApiTest {
+public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
 	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
 
-	@Value("${files.basepath}")
-	private String basePathStr;
 
-	private Path basePath;
-	
-	
-	
 	@Autowired
 	private FilesRepository filesRepo;
+
+	@Autowired
+	private AppConfig appConfig;
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
@@ -91,29 +74,7 @@ public class FilesApiTest {
 	private TestRestTemplate template;
 	
 	
-	@Before
-	public void setup() throws IOException {		
-		this.basePath = Paths.get(basePathStr);
-		
-		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-		
-		//The base directory must exists for all tests
-		assertTrue(Files.exists(basePath));
-		
-		//assert an empty temp directory was created for the test
-		try(Stream<Path> files = Files.list(basePath)){
-			assertEquals(0L, files.count());
-		}
-		
-	}
 
-
-
-
-	
-	
-	
-	
 	
 	@Test
 	public void fileUploadTest() throws Exception {
@@ -126,9 +87,7 @@ public class FilesApiTest {
 		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);		 
 	}
 	
-	
-	
-	
+
 	
 	@Test
 	public void fileUploadOrgNotExistTest() throws Exception {
@@ -149,12 +108,6 @@ public class FilesApiTest {
 
 
 
-
-
-
-
-
-
 	private void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
 		FileEntity file = filesRepo.findByUrl(expectedUrl);	
 		OrganizationEntity org = orgRepo.findOneById(orgId);
@@ -165,8 +118,8 @@ public class FilesApiTest {
 		 assertEquals(org, file.getOrganization());
 		 assertEquals(fileName, file.getOriginalFileName());
 	}
-	
-	
+
+
 	
 	@Test
 	public void fileUploadSameNameTest() throws Exception {
@@ -203,11 +156,9 @@ public class FilesApiTest {
 		 assertEquals("Both files saved to DB", 2L, filesRepo.count());
 		 
 	}
-	
-	
-	
-	
-	
+
+
+
 	@Test
 	public void fileUploadNullOrgTest() throws Exception {
 		
@@ -298,12 +249,10 @@ public class FilesApiTest {
 		
 		String orgIdStr = orgId == null ? null : orgId.toString();
 		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
-		 ResultActions result = 
-		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
-								                 .file(file)
-								                 .header(TOKEN_HEADER, "101112")
-								                 .param("org_id",  orgIdStr));
-		return result;
+		return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+											 .file(file)
+											 .header(TOKEN_HEADER, "101112")
+											 .param("org_id",  orgIdStr));
 	}
 	
 	
@@ -311,6 +260,10 @@ public class FilesApiTest {
 	
 	
 	@Test
+	@Ignore
+	//serving static resources files, depends on taking configurations from AppConfig/
+	//this is done at the configuration phase, and I can't still mock the configuration
+	//at the configuration phase, without using ContextInitializer and slowing down the tests.
 	public void downloadFileTest() throws IOException, Exception {
 		//first upload a file 
 		
@@ -318,8 +271,7 @@ public class FilesApiTest {
 		Long orgId = 99001L;
 		Path origFile = Paths.get(TEST_IMG_DIR).resolve(fileName).toAbsolutePath();	
 		
-		
-		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);
 		String expectedUrl = orgId + "/" + sanitizedFileName;
 		
 		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
@@ -366,9 +318,12 @@ public class FilesApiTest {
 	
 	
 	@Test
-	public void downloadFileDeletedOnSystem() throws Exception {		
-		//first upload a file 
-		
+	@Ignore
+	//serving static resources files, depends on taking configurations from AppConfig/
+	//this is done at the configuration phase, and I can't still mock the configuration
+	//at the configuration phase, without using ContextInitializer and slowing down the tests.
+	public void downloadFileDeletedOnSystem() throws Exception {
+		//first upload a file
 		String fileName = TEST_PHOTO;
 		Long orgId = 99001L;		
 		
@@ -384,7 +339,6 @@ public class FilesApiTest {
 		
 		 //--------------------------------------------
 		 //Now try to download the deleted file
-		
 		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
 		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
@@ -402,7 +356,7 @@ public class FilesApiTest {
              .andExpect(status().is(200))
              .andExpect(content().string(expectedUrl));
 		 
-		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
+		 assertTrue("Organization directory was created", Files.exists(saveDir));
 		 
 		 try(Stream<Path> files = Files.list(saveDir)){
 			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
