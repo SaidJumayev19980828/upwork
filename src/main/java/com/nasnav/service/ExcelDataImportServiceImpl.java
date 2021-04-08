@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,24 +94,19 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
 		List<CsvRow> lines = new ArrayList<>();
-		int rowIterator =0;
 		for (Row row: sheet) {
 			CsvRow line = new CsvRow();
-			if(rowIterator ==0){
-				rowIterator++;
+			if(row.getRowNum() ==0){
 				continue; // skip header row
 			}
-			int cellIterator = 0;
 			for (Cell cell : row) {
-				String headerName = sheet.getRow(0).getCell(cellIterator).getStringCellValue();
+				String headerName = sheet.getRow(0).getCell(cell.getColumnIndex()).getStringCellValue();
 				String headerMapped = getColumnHeaderMapping(headerName);
 				headerName = StringUtils.isEmpty(headerMapped) ? headerName: headerMapped;
 				Object value = getCellValue(cell);
 				BeanUtils.setProperty(line, headerName, value);
-				cellIterator++;
 			}
 			lines.add(line);
-			rowIterator++;
 		}
 		return lines;
 	}
@@ -123,11 +119,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		switch (cell.getCellType())
 		{
 			case Cell.CELL_TYPE_NUMERIC:
-				return cell.getNumericCellValue();
+				return BigDecimal.valueOf(cell.getNumericCellValue()).toString();
 			case Cell.CELL_TYPE_STRING:
 				return cell.getStringCellValue();
 			case Cell.CELL_TYPE_BOOLEAN:
-				return cell.getBooleanCellValue();
+				return Boolean.toString(cell.getBooleanCellValue());
 		}
 		return null;
 	}
