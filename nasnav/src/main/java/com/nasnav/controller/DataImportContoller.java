@@ -76,6 +76,59 @@ public class DataImportContoller {
 		}			
     }
 
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Products data verified/imported xlsx"),
+			@ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@ApiResponse(code = 403, message = "Insuffucient Rights"),
+			@ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "productlist/xlsx",
+			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+			consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ImportProductContext> importProductListXLSX(
+			@RequestHeader(name = "User-Token", required = false) String token,
+			@RequestPart("xlsx") @Valid MultipartFile file,
+			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
+			throws BusinessException, ImportProductException {
+		ImportProductContext importResult = null;
+		if(FilesUtils.isExcel(file)){
+			importResult = excelDataImportService.importProductList(file, importMetaData);
+		}
+		
+		if(importResult != null && importResult.isSuccess()) {
+			return ResponseEntity.ok(importResult);
+		}else {
+			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+		}
+	}
+
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Products data verified/imported csv"),
+			@ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@ApiResponse(code = 403, message = "Insuffucient Rights"),
+			@ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "productlist/csv",
+			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+			consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ImportProductContext> importProductListCSV(
+			@RequestHeader(name = "User-Token", required = false) String token,
+			@RequestPart("csv") @Valid MultipartFile file,
+			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
+			throws BusinessException, ImportProductException {
+		ImportProductContext importResult = null;
+		if(FilesUtils.isCsv(file)){
+			importResult = csvImportService.importProductList(file, importMetaData);
+		}
+		if(importResult != null && importResult.isSuccess()) {
+			return ResponseEntity.ok(importResult);
+		}else {
+			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+		}
+	}
+
 	@GetMapping(value = "/productlist/csv/template")
 	@ResponseBody
 	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {

@@ -28,15 +28,18 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 
 	protected ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException {
 
-		return writeFileResult(headers, null, products);
+		return writeFileResult(headers, products);
 	}
 
 	protected ByteArrayOutputStream buildImagesFile(List<String> headers,
 												   List<ProductImageDTO> images) throws IOException {
-		return writeFileResult(headers.stream().collect(Collectors.toCollection(ArrayList::new)), null, images);
+		headers = headers
+				.stream()
+				.collect(Collectors.toCollection(ArrayList::new));
+		return writeFileResult(headers, images);
 	}
 
-	protected ByteArrayOutputStream writeFileResult(List<String> headers, Object settings_NOTUSED, List<?> data) throws IOException {
+	protected ByteArrayOutputStream writeFileResult(List<String> headers, List<?> data) throws IOException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
@@ -63,7 +66,10 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		headers.forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
 		Map<String, String> specialColumns = CsvExcelDataImportService.PRODUCT_DATA_SPECIAL_MAPPING;
 		specialColumns
-				.keySet().stream().filter(map-> headers.contains(map)).forEach((key) -> replaceSpecialColumns(headers, specialColumns, key));
+				.keySet()
+				.stream()
+				.filter(map-> headers.contains(map))
+				.forEach((key) -> replaceSpecialColumns(headers, specialColumns, key));
 	}
 
 	private void replaceSpecialColumns(List<String> headers, Map<String, String> specialColumns, String key) {
@@ -93,7 +99,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 
 		removeSpecialColumns(imgDataToColumnMapping);
 
-		return writeFileResult(headers, null, variants);
+		return writeFileResult(headers, variants);
 	}
 
 	@Override

@@ -144,7 +144,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         EmployeeUserEntity user =  empRepo.getOneByEmail(auth.getName());
-        Long userOrgId = user.getOrganizationId();
+        Long userOrgId = security.getCurrentUserOrganizationId();
 
         ShopsEntity shop = shopRepo.findById(shopId).get();
         Long shopOrgId = shop.getOrganizationEntity().getId();

@@ -70,6 +70,41 @@ public class DataExportController {
 
 	}
 
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Products data exported XLXS"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "/products/xlsx")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateProductsXLSX(
+			@RequestHeader(name = "User-Token", required = false) String token
+			, @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
+			ByteArrayOutputStream s = excelExportService.generateProductsFile(shopId);
+			return ResponseEntity.ok()
+					.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
+					.body(s.toByteArray());
+	}
+
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Products data exported CSV"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "/products/csv")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateProductsCSV(
+			@RequestHeader(name = "User-Token", required = false) String token
+			, @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
+		ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId);
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
+				.body(s.toByteArray());
+	}
 
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "Products images data exported"),
@@ -99,5 +134,40 @@ public class DataExportController {
 		}
 		throw  new UnsupportedOperationException();
 
+	}
+
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Products images data exported csv"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "/products/images/csv")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateProductsImagesCSV(
+			@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
+		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
+			return ResponseEntity.ok()
+					.contentType(MediaType.parseMediaType("text/csv"))
+					.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
+					.body(s.toByteArray());
+	}
+
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Products images data exported csv"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "/products/images/xlsx")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateProductsImagesXLSX(
+			@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
+		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
+				.body(s.toByteArray());
 	}
 }
