@@ -322,13 +322,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
 
-
-    
 	public HeaderWriter contentTypeHeaderWriter() {
 		return new ContentTypeHeaderWriter();
 	}
