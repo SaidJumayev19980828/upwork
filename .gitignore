@@ -42,3 +42,6 @@ transaction-logs
 secrets.yml
 .gradletasknamecache
 .sts4-cache
+/src/main/resources/test.database.properties
+/src/main/resources/application.properties
+/src/main/resources/database.properties
