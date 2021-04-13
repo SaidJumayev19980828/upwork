@@ -87,7 +87,7 @@ VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 1,
          "cart_quantity_min":2,
          "applied_to_products":{"required": 0,"ids":[1001]},
          "product_quantity_min" : 3,
-         "product_to_give": 1}', null, 69, now(), 2);
+         "product_to_give": 1}', null, 69, now(), 6);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
 VALUES(630006, 'buy X get Y promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null,
@@ -95,7 +95,7 @@ VALUES(630006, 'buy X get Y promo2', 99001, now(), now() + INTERVAL '200 DAY', 1
          "cart_quantity_min":2,
          "applied_to_products":{"required": 0,"ids":[1001, 1002]},
          "product_quantity_min" : 10,
-         "product_to_give": 5}', null, 69, now(), 2);
+         "product_to_give": 5}', null, 69, now(), 6);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
 VALUES(630005, 'promo code', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());

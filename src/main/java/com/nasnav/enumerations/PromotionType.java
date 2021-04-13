@@ -12,9 +12,11 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public enum PromotionType {
     PROMO_CODE(0),
     SHIPPING(1),
-    BUY_X_GET_Y(2),
+    BUY_X_GET_Y_FROM_BRAND(2),
     TOTAL_CART_ITEMS_VALUE(3),
-    TOTAL_CART_ITEMS_QUANTITY(4);
+    TOTAL_CART_ITEMS_QUANTITY(4),
+    BUY_X_GET_Y_FROM_TAG(5),
+    BUY_X_GET_Y_FROM_PRODUCT(6);
 
     @Getter
     private Integer value;
