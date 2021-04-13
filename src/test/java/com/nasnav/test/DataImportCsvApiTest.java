@@ -385,6 +385,11 @@ public class DataImportCsvApiTest {
 	}
 
 	@Test
+	public void uploadProductsDefaultRemovedVariant() throws Exception {
+		uploadProductRemovedVariant(URL_UPLOAD_PRODUCTLIST);
+	}
+	
+	@Test
 	public void uploadProductCSVRemovedVariant() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
