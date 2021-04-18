@@ -1,4 +1,6 @@
 --dummy organization
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+
 insert into public.organizations(id , name )
 values (99001, 'Bundle guys' );
 

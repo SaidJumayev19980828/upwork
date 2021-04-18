@@ -13,6 +13,8 @@ INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'Bundle Shop'  , 99002);
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'another Shop'  , 99001);
 
+-- dummy brands
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99001);
 
 
 --inserting users

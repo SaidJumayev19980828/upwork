@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.math.BigDecimal.ZERO;
 import static javax.persistence.GenerationType.IDENTITY;
 
 
@@ -30,6 +31,7 @@ public class ProductVariantsEntity {
     public ProductVariantsEntity() {
         removed = 0;
         extraAttributes = new HashSet<>();
+        weight = ZERO;
     }
 
 

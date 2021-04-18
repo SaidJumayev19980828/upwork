@@ -2465,7 +2465,8 @@ public class ProductService {
 		}
 
 		if(variant.isUpdated("weight")) {
-			entity.setWeight(variant.getWeight());
+			var weight = ofNullable(variant.getWeight()).orElse(ZERO);
+			entity.setWeight(weight);
 		}
 
 		String pname = getPname(variant, opr);

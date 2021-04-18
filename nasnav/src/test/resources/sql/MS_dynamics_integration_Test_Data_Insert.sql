@@ -51,7 +51,7 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67007, 'PAYME
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);
 
-INSERT INTO public.countries values(100001, 'E');
+INSERT INTO public.countries(id, name, iso_code, currency) values(100001, 'E', 819, 'Pizo');
 
 INSERT INTO public.cities values(100001, 100001, 'C');
 

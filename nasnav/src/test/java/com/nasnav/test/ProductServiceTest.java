@@ -117,6 +117,7 @@ public class ProductServiceTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
 	private final String PRODUCT_PRODUCT_BARCODE = "BBE3343222DDF";
@@ -388,6 +389,7 @@ public class ProductServiceTest {
 	}
 
 
+
 	private ProductTestData createProductTestDataWithExtraAttr() {
 		ProductTestData testData = new ProductTestData();
 
@@ -504,6 +506,7 @@ public class ProductServiceTest {
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
+		productEntity.setBrandId(101L);
 		productEntity = productRepository.save(productEntity);
 
 		return productEntity;
@@ -1356,6 +1359,7 @@ public class ProductServiceTest {
 
 class ProductTestData{
 	public String spec;
+	public BrandsEntity brand;
 	ProductEntity productEntity;		
 	ProductFeaturesEntity productFeaturesEntity_1;
 	ProductFeaturesEntity productFeaturesEntity_2;
