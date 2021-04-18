@@ -33,11 +33,11 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100004, '192021', now(), 71, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
@@ -98,19 +98,19 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting tags
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001, 'tag_1', 'tag_1', 201, 99001, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5002, 'tag_2', 'tag_2', 201, 99002, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5003, 'tag_3', 'tag_2', 201, 99002, '');
+insert into public.Tags(id, name, alias, category_id, organization_id, metadata) values(5001, 'tag_1', 'tag_1', 201, 99001, '');
+insert into public.Tags(id, name, alias, category_id, organization_id, metadata) values(5002, 'tag_2', 'tag_2', 201, 99002, '');
+insert into public.Tags(id, name, alias, category_id, organization_id, metadata) values(5003, 'tag_3', 'tag_2', 201, 99002, '');
 
-insert into product_tags(product_id, tag_id) values(1001, 5001);
-insert into product_tags(product_id, tag_id) values(1001, 5002);
-insert into product_tags(product_id, tag_id) values(1002, 5001);
-insert into product_tags(product_id, tag_id) values(1003, 5001);
-insert into product_tags(product_id, tag_id) values(1004, 5001);
-insert into product_tags(product_id, tag_id) values(1005, 5001);
-insert into product_tags(product_id, tag_id) values(1006, 5001);
-insert into product_tags(product_id, tag_id) values(1007, 5001);
-insert into product_tags(product_id, tag_id) values(1008, 5001);
+insert into public.product_tags(product_id, tag_id) values(1001, 5001);
+insert into public.product_tags(product_id, tag_id) values(1001, 5002);
+insert into public.product_tags(product_id, tag_id) values(1002, 5001);
+insert into public.product_tags(product_id, tag_id) values(1003, 5001);
+insert into public.product_tags(product_id, tag_id) values(1004, 5001);
+insert into public.product_tags(product_id, tag_id) values(1005, 5001);
+insert into public.product_tags(product_id, tag_id) values(1006, 5001);
+insert into public.product_tags(product_id, tag_id) values(1007, 5001);
+insert into public.product_tags(product_id, tag_id) values(1008, 5001);
 
 -- insertign extra attributes
 INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100001, 'Extra Prop', 'String'::character varying, 99001, null);

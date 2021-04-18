@@ -366,7 +366,7 @@ public class NavboxController {
 			@ApiResponse(responseCode = " 200" ,description = "OK")
 	})
 	@GetMapping(value="/seo", produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<SeoKeywordsDTO> search(
+	public List<SeoKeywordsDTO> getSeoKeywords(
 			@RequestParam(value = "org_id", required = true)Long orgId,
 			@RequestParam(value = "type", required = false)SeoEntityType type,
 			@RequestParam(value = "id", required = false)Long entityId) {

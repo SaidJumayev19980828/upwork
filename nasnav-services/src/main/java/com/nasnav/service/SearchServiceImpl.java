@@ -60,6 +60,8 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -109,7 +111,7 @@ public class SearchServiceImpl implements SearchService{
 
     @Override
     public Mono<SearchResult> search(SearchParameters parameters) {
-        if(anyIsNull(parameters, parameters.org_id, parameters.keyword)){
+        if(anyIsNull(parameters, parameters.keyword)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, NAVBOX$SRCH$0001);
         }
 
@@ -148,14 +150,16 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchSourceBuilder getSuggestionSourceBuilder(SearchParameters params) {
+        var mainQuery = QueryBuilders
+                .boolQuery()
+                .should( regexpQuery("name", ".*"+params.keyword+".*"))
+                .should( fuzzyQuery("name", params.keyword))
+                .minimumShouldMatch(1);      //at least one condition should be met
+        if(nonNull(params.org_id)){
+            mainQuery.filter( matchQuery("organization_id", params.org_id));
+        }
         return new SearchSourceBuilder()
-                .query( QueryBuilders
-                        .boolQuery()
-                        .should( regexpQuery("name", ".*"+params.keyword+".*"))
-                        .should( fuzzyQuery("name", params.keyword))
-                        .filter( matchQuery("organization_id", params.org_id))
-                        .minimumShouldMatch(1)      //at least one condition should be met
-                )
+                .query( mainQuery)
                 .fetchSource(new String[]{"name"}, new String[]{})
                 .from(params.start)
                 .size(params.count);
@@ -502,15 +506,18 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchSourceBuilder getSearchSourceBuilder(SearchParameters parameters) {
+        var mainQuery =
+                QueryBuilders
+                .boolQuery()
+                .must( multiMatchQuery(parameters.keyword)
+                        .fuzziness(AUTO)
+                        .field("name", 3) //give priority to field "name"
+                        .field("*"));
+        if(nonNull(parameters.org_id)){
+            mainQuery.filter(matchQuery("organization_id", parameters.org_id));
+        }
         return new SearchSourceBuilder()
-                .query( QueryBuilders
-                        .boolQuery()
-                        .must(
-                            multiMatchQuery(parameters.keyword)
-                                .fuzziness(AUTO)
-                                .field("name", 3) //give priority to field "name"
-                                .field("*"))
-                        .filter(matchQuery("organization_id", parameters.org_id)))
+                .query(mainQuery)
                 .from(parameters.start)
                 .size(parameters.count);
     }
