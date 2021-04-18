@@ -166,7 +166,7 @@ public class ProductFeaturesApiTest {
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -312,11 +312,48 @@ public class ProductFeaturesApiTest {
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
-	
-	
-	
+
+
+
+	@Test
+	public void productFeatureCreateWithDuplicateNameTest() {
+		BaseUserEntity user = empRepo.getById(69L);
+
+		JSONObject json = createProductFeatureRequest();
+		json.put("name", "Shoe size");
+		HttpEntity<?> request = getHttpEntity(json.toString(), user.getAuthenticationToken());
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature"
+						, POST
+						, request
+						, String.class
+				);
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+
+	@Test
+	public void productFeatureCreateWithDuplicateNameInOtherOrgTest() {
+		BaseUserEntity user = empRepo.getById(70L);
+
+		JSONObject json = createProductFeatureRequest();
+		json.put("name", "Shoe color");
+		HttpEntity<?> request = getHttpEntity(json.toString(), user.getAuthenticationToken());
+
+		ResponseEntity<String> response =
+				template.exchange("/organization/products_feature"
+						, POST
+						, request
+						, String.class
+				);
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
 	
 	@Test
 	public void productFeatureCreateTest() {

@@ -25,4 +25,6 @@ public interface ProductFeaturesRepository extends CrudRepository<ProductFeature
 			+ " LEFT JOIN FETCH f.organization org "
 			+ " WHERE f.id = :featureId AND org.id = :orgId ")
 	Optional<ProductFeaturesEntity> findByIdAndOrganization_Id(Integer featureId, Long orgId);
+
+    boolean existsByNameAndOrganizationId(String name, Long orgId);
 }

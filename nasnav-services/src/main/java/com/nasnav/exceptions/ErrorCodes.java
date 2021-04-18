@@ -108,7 +108,8 @@ public enum ErrorCodes {
 	,GEN$0017("There are still %s [%s] assigned to this category!")
 	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
 	,GEN$0019("Failed to read resource[%s]!")
-	,GEN$0021(" Domain and subdir already exist[%s]!")
+	,GEN$0021("Domain and subdir already exist[%s]!")
+	,GEN$0022("Missing required parameters!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -132,6 +133,9 @@ public enum ErrorCodes {
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+
+	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
+	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

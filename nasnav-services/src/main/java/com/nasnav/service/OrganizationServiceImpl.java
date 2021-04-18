@@ -11,6 +11,7 @@ import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.cod.CodCommons;
 import com.nasnav.payments.mastercard.MastercardAccount;
@@ -830,31 +831,22 @@ public class OrganizationServiceImpl implements OrganizationService {
 	}
 	
 	
-	
 
-	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId) throws BusinessException {
+	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId){
 		if(!featureDto.areRequiredForCreatePropertiesProvided()) {
-			throw new BusinessException(
-					"Missing required parameters !" 
-					, "MISSING PARAM"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
 		}
-		
-		
 		if(!organizationRepository.existsById( orgId )) {
-			throw new BusinessException(
-					format("Invalid parameters [organization_id], no organization exists with id [%d]!", orgId)
-									, "INVALID PARAM:organization_id"
-									, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
-		
 		if(isBlankOrNull(featureDto.getName())) {
-			throw new BusinessException(
-					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
-					, "INVALID PARAM:name"
-					, NOT_ACCEPTABLE);
+		    throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
 		}
+        if(featureRepo.existsByNameAndOrganizationId(featureDto.getName(), orgId)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0002);
+        }
 	}
+
 
 
 	@Override
