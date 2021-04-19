@@ -1,0 +1,307 @@
+package com.nasnav.exceptions;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
+
+public enum ErrorCodes {
+	U$0001("No user found with ID [%d]!")
+	, UXACTVX0001("User with email[%s] doesn't exists for organization[%d]!")
+	, UXACTVX0002("Cannot send activation email to[%s], email is already activated!")
+	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
+	, UXACTVX0004("Invalid redirection url[%s]!")
+	, UXACTVX0005("Missing recovery token!")
+	, UXACTVX0006("Invalid token! %s")
+	
+	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
+	, U$LOG$0002("Invalid credentials!")
+	, U$LOG$0003("Need activation!")
+	, U$LOG$0004("Account is suspended!")
+	, U$LOG$0005("Invalid password!")
+	, U$LOG$0006("Expired token!")
+	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
+	, U$LOG$0008("Account is already activated!")
+	, U$LOG$0009("Email is already subscribed!")
+
+
+	, U$STATUS$0001("Account is already suspended!")
+	, U$STATUS$0002("User can't suspend/activates himself!")
+	, U$STATUS$0003("Couldn't suspend/activate user account, invalid user status!")
+	, U$STATUS$0004("Couldn't get user status!")
+
+	,U$AUTH$0001("User is not an authorized to modify %s!")
+
+	,U$EMP$0001("No Roles provided for user creation!")
+	,U$EMP$0002("No Employee exists with id[%d]!")
+	,U$EMP$0003("Invalid Name [%s]!")
+	,U$EMP$0004("Invalid e-mail [%s]!")
+	,U$EMP$0005("Invalid org_id [%d]!")
+	,U$EMP$0006("An Employee with email[%s] already exists!")
+	,U$EMP$0007("Invalid role [%s]!")
+	,U$EMP$0008("Employee can't create employees")
+	,U$EMP$0009("Employee can't create employees with requested roles!")
+	,U$EMP$0010("Created employee must be in the same organization as the manager!")
+	,U$EMP$0011("Created employee must be in the same store as the manager!")
+	,U$EMP$0012("Invalid store_id [%d]!")
+
+	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
+	,P$VAR$0001("No Variant found with id[%s]!")
+	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
+	,P$VAR$003("No variant id provided!")
+	,P$VAR$004("Missing variant_id or rate value or order_id!")
+	,P$VAR$005("No Variant rate found with id[%d]!")
+	,P$VAR$006("Rate must be between 0 and 5")
+	,P$VAR$007("User can rate only bought products!")
+	,P$VAR$008("Missing Extra Attribute name!")
+	
+	,P$PRO$0001("No product id provided!")
+	,P$PRO$0002("No product exists with ID[%d]!")
+	,P$PRO$0003("Product name Must be provided!")
+	,P$PRO$0004("Product name cannot be Null!")
+	,P$PRO$0005("Brand Id Must be provided!")
+	,P$PRO$0006("Failed to parse product update json [%s]!")
+	,P$PRO$0007("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!")
+	,P$PRO$0008("No Operation provided! parameter operation should have values in[%s]!")
+	,P$PRO$0009("Failed to delete products [%s]!")
+	,P$PRO$0010("Product of ID[%d] cannot be deleted by a user from organization of id [%d]")
+	,P$PRO$0011("Cannot delete Products! the products are inside bundles [%s] and must be removed first!")
+	,P$PRO$0012("No collection exists with ID[%d]!")
+	,P$PRO$0013("No collections exists with ID %s!")
+	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
+
+	,P$STO$0001("No stock exists with ID:[%d]!")
+	,P$STO$0002("Stock total value can't be negative!")
+	
+	,P$BRA$0001("No Brand exists with ID:[%d]!")
+	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
+	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+
+	,P$FTR$0001("No Product Feature type exists with code[%d]!")
+	,P$FTR$0002("Feature is still used by some products!")
+
+	,P$IMG$0001("Provided Zip file has no data!")
+	,P$IMG$0002("Provided images archive is not ZIP file!")
+	,P$IMG$0003("No feature provided for swatch images!")
+	,P$IMG$0004("No feature exists with id[%d]!")
+	,P$IMG$0005("Failed to read zip file!")
+	,P$IMG$0006("Failed To parse CSV file!")
+	,P$IMG$0007("Failed to prepare images for import due to errors!\nerrors:[%s]")
+	,P$IMG$0008("Feature is not of the type %s!")
+	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
+
+	,GEN$0001("NO %s exists with ID:[%d]!")
+	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
+	,GEN$0003("Couldn't send mail, reason[%s]")
+	,GEN$0004("Unknown User Entity Type]")
+	,GEN$0005("the provided url is malformed!")
+	,GEN$0006("Couldn't resize image [%s]")
+	,GEN$0007("Must provide width or height!")
+	,GEN$0008("No file name provided!")
+	,GEN$0009("Failed to save file Organization directory at location : %s")
+	,GEN$0010("Failed to create directory at location : %s")
+	,GEN$0011("No file exists with url: %s")
+	,GEN$0012("Invalid URL : %s")
+	,GEN$0013("Failed to parse MIME type for the file:  %s")
+	,GEN$0014("Failed to parse type for the file:  %s")
+	,GEN$0015("Couldn't read image [%s]")
+	,GEN$0016("Provided category_id[%d] doesn't match any existing category!")
+	,GEN$0017("There are still %s [%s] assigned to this category!")
+	,GEN$0018("Invalid file type[%s]! only MIME 'image' types are accepted!")
+	,GEN$0019("Failed to read resource[%s]!")
+	,GEN$0021("Domain and subdir already exist[%s]!")
+	,GEN$0022("Missing required parameters!")
+
+	,S$0001("Shop is linked to %s !")
+	,S$0002( "No Shop exists with ID: [%d]!")
+	,S$0003("No shops found!")
+	,S$0004("Shop with id[%d] has invalid address id[%d]")
+	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
+	,S$0006("No shop id provided!")
+
+	,S$360$0001("No 360 shop found!")
+	,S$360$0002("No scene found with ID[%d]!")
+	,S$360$F$0001("floor [%d] number can't be null!")
+	,S$360$PRO$POS$001("%s is linked to products positions!, please confirm if you want to delete them too")
+
+	,TYP$0001("Missing or invalid type, available types are [%s]!")
+
+	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
+
+	,ORG$0001("No organization found with ID[%d]!")
+
+	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
+
+	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+
+	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
+	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
+
+	,AREA$001("No Area exists with ID:[%d]!")
+	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
+	,SUBAREA$002("Sub-Area with ID:[%d] doesn't match area with id[%d]!")
+	,SUBAREA$003("Provided Sub-Areas %s doesn't match any existing sub-areas for organization[%d]!")
+	,ADDR$ADDR$0001("%s with name [%s] already exists!")
+	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
+	,ADDR$ADDR$0003("Must provide id of parent %s")
+	,ADDR$ADDR$0004("Must provide customer address!")
+	,ADDR$ADDR$0005("Address has no city!")
+	,ADDR$ADDR$0006("No %s exists with ID:[%d]!")
+	,ADDR$ADDR$0007("Can't delete %s linked to address")
+	,ADDR$ADDR$0008("No Country name was provided!")
+
+	,G$USR$0001("User is not an employee!")
+	,G$JSON$0001("Failed to read json into an object!")
+	,G$PRAM$0001("Missing required parameters in object[%s]!")
+	,G$PRAM$0002("Invalid Parameter value[%s]!")
+	,G$ORG$0001("No organization exists with id[%d]!")
+	,G$STK$0001("Failed to get stock data for stock [%d]!")
+
+	,E$USR$0001("User is an employee!")
+
+	,O$CRT$0001("Cannot create a cart for an employee user!")
+	,O$CRT$0002("Quantity must be greater than equal zero!")
+	,O$CRT$0003("Quantity is greater than available stock!")
+	,O$CRT$0004("Currencies of items are different!")
+	,O$CRT$0005("Cart items belong to different organizations!")
+	,O$CRT$0006("Missing Cart optimization strategy!")
+	,O$CRT$0007("Invalid Cart optimization strategy [%s] !")
+	,O$CRT$0008("Failed to parse Cart optimization parameters [%s] !")
+	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
+	,O$CRT$0010("Invalid or missing cart optimization parameters!")
+	,O$CRT$0011("Failed to optimize cart item for shipping! No stock can fulfill the cart for cart item with id[%d] and stock Id[%d]!")
+	,O$CRT$0012("Invalid Cart optimization configuration parameters [%s] !")
+	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
+	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
+	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
+	
+	,O$SHP$0001("Failed to create shipment for order[%d]!")
+	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
+	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
+	,O$SHP$0004("Failed to create a shipment for return request[%d]!")
+	,O$SHP$0005("Meta-order with id [%d], has no sub-orders!")
+	,O$SHP$0006("Provided area_id [%d] doesn't map to any existing external area_id")
+
+	,O$CHK$0001("Must have at least one item in cart!")
+	,O$CHK$0002("Must provide shipping service provider")
+	,O$CHK$0003("Must provide shipping service additional data")
+	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+
+	,O$NEW$0001("Failed to create order! Please try again!")
+	
+	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
+	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
+	,O$CFRM$0003("Cannot Confirm order with id[%d]! User didn't provide a phone number!")
+	,O$CFRM$0004("No order exists for Organizations[%d] with id[%d]!")
+	
+	,O$RJCT$0001("No sub order Id was provided!")
+	,O$RJCT$0002("Cannot reject order with id[%d]! Invalid order Status [%s]!")
+	
+	,O$CNCL$0002("Cannot cancel Meta order with id[%d]! Invalid order Status [%s]!")
+
+	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
+	
+	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
+
+	,O$RET$0001("No return request item found with ID[%s]!")
+	,O$RET$0002("Returned item quantity cannot be greater than requested quantity!")
+	,O$RET$0003("Either provide return request item or basket item!")
+	,O$RET$0004("Must provide return request item ID!")
+	,O$RET$0005("Must provide return request item Quantity!")
+	,O$RET$0006("Must provide return basket item ID!")
+	,O$RET$0007("Must provide return basket item Quantity!")
+	,O$RET$0008("No order items found with ID[%s]!")
+	,O$RET$0009("Returned items are in different orders!")
+	,O$RET$0010("Return request items are in different return request!")
+    ,O$RET$0012("Return request item with basket[%d] already existing!")
+    ,O$RET$0013("Returned item quantity cannot be less than or equal 0!")
+    ,O$RET$0014("No Order item exists with id[%d]!")
+	,O$RET$0015("Cannot Return order items that belongs to another user!")
+	,O$RET$0016("Return period has passed for item(s)!")
+	,O$RET$0017("No return request found with ID[%d]!")
+	,O$RET$0018("Cannot update return request status from [%s] to [%s]!")
+	,O$RET$0019("Failed to get customer address!")
+	,O$RET$0020("Store managers cannot update received items! Please contact the organization manager to do it!")
+	,O$RET$0021("Cannot return order with status[%s]!")
+	,O$RET$0022("Items are not returnable or are overdue!")
+
+	,O$0001("No order exists with ID[%d]!")
+
+	,O$GNRL$0001("Cannot update order status from [%s] to [%s]!")
+	,O$GNRL$0002("No Meta order exists with id[%d]!")
+	,O$GNRL$0003("Cannot access Meta order with id[%d] by the current user!")
+
+	,O$WISH$0001("Employee users cannot manage wishlists!")
+	,O$WISH$0002("No wishlist item exists with id[%d]")
+
+	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+
+	,ENUM$0001("Invalid shipping status")
+	
+	,SHP$SRV$0001("Invalid service parameter [%s]!")
+	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
+	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
+	,SHP$SRV$0004("Failed to get valid response from external shipping service [%s]! returned response is[%s]")
+	,SHP$SRV$0005("Shipping service [%s] doesnot support city with id[%d]!")
+	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
+	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
+	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
+	,SHP$SRV$0009("Shipment not found!")
+	,SHP$SRV$0010("Cannot create shipment with the given parameters!")
+	,SHP$SRV$0011("Cannot create shipment with the given parameters due to : %s!")
+	,SHP$SRV$0012("Failed to calculate shipping fees for shipping service [%s], with shipment details[%s]!"
+			+ " Make sure there is no missing data , and the destination city is supported by the shipping service!")
+	,SHP$SRV$0013("Missing shipping address for shipping service[%s]!")
+	,SHP$SRV$0014("Delivery is only supported in the same city!")
+	,SHP$SRV$0015("Delivery is only available for items value starting from %s!")
+
+	,SHP$PARS$0001("Error while parsing status update request!")
+
+	,SHP$SVC$0001("Shipping service is not available!")
+
+
+	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
+	
+	,PROMO$ENUM$0001("Saved Promo has invalid status!")
+	,PROMO$JSON$0001("Saved Promo has invalid json string value[%s]!")
+	,PROMO$PARAM$0001("Invalid promo status [%s]!")
+	,PROMO$PARAM$0002("Missing parameters in given promotion [%s]!")
+	,PROMO$PARAM$0003("Promotion start date cannot be after its end date!")
+	,PROMO$PARAM$0004("Promotion dates cannot be in the past!")
+	,PROMO$PARAM$0005("Cannot update promotion with id[%d], only inactive promotions can be update!")
+	,PROMO$PARAM$0006("Promo code [%s] was already used before by another promotion!")
+	,PROMO$PARAM$0007("No Promo exists with id[%d]!")
+	,PROMO$PARAM$0008("No active Promo exists with code[%s]!")
+	,PROMO$PARAM$0009("Promo code [%s] is not applicable to the current cart!")
+	,PROMO$PARAM$0010("Promo code[%s] was already used!")
+	,PROMO$PARAM$0011("Promo code[%s] was already terminated!")
+	,PROMO$PARAM$0012("Invalid promo type_id[%d]!")
+	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
+	,PROMO$PARAM$0014("Usage limit exceeded max value!")
+	
+	,ORG$SETTING$0001("No setting exists with name[%s]!")
+	,ORG$SETTING$0002("No setting type exists with [%d]!")
+
+	,TAG$TREE$0001("No tag exists with id[%s]!")
+
+	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
+	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")
+
+	,SRCH$SYNC$0001("Failed to synchronize products data for organization[%d]!")
+	,SRCH$SYNC$0002("Failed to synchronize products data for organization[%d]!\nError details: %s")
+
+
+	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
+
+	,INTG$EVENT$0001("Failed to create instance of event of type[%s]!")
+	;
+	
+	@Getter
+	@JsonValue
+    private final String value;
+	
+	@JsonCreator
+	ErrorCodes(String value) {
+        this.value = value;
+    }
+}

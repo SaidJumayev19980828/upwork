@@ -1,0 +1,31 @@
+ADR-20210418-0001: Adopting using Architecture Decision Records
+
+ 2021-04-18
+
+---------------------------------------------
+Context
+---------------------------------------------
+as we recently made large architecture changes, it seemed useful to collect the documentation for such decisions in more
+standard way inside the project.
+
+---------------------------------------------
+Decision
+---------------------------------------------
+created a directory for ADR's, starting with this document. which shows the format for the ADR documents based on the
+article https://www.wimdeblauwe.com/blog/2020/12/26/architecture-decision-records/
+
+also , for now the naming convention for the ADR will be : ADR-{$date}-{$counter}.{$extension}
+where :
+- date : is the document add date in YYYYMMDD format
+- counter: a counter for documents inside the same day, use three digits with leading zeros. ex: 001, 021
+- extension : document extension, can be [txt, odt], other text documents formats are accepted.
+but the mentioned types are preferred.
+
+---------------------------------------------
+Status
+---------------------------------------------
+ ACCEPTED
+
+---------------------------------------------
+Consequences
+---------------------------------------------
