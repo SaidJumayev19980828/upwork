@@ -30,6 +30,7 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
@@ -159,7 +160,7 @@ public class ShopServiceImpl implements ShopService {
     
     
     @Override
-    public List<ShopRepresentationObject> getLocationShops(Long orgId, String name) {
+    public List<ShopRepresentationObject> getLocationShops(String name) {
 
         Set<ShopsEntity> shops = shopsRepository.getShopsByLocation(name);
 

@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -16,8 +17,8 @@ import java.util.Properties;
         ElasticsearchDataAutoConfiguration.class,
         ElasticsearchRestClientAutoConfiguration.class})
 @EnableCaching
-public class Yeshtery
-{
+@ComponentScan({"com.nasnav"})
+public class Yeshtery{
 
     public static void main(String[] args) throws IOException
     {
