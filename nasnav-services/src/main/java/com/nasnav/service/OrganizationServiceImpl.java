@@ -11,9 +11,7 @@ import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.payments.cod.CodCommons;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.rave.RaveAccount;
@@ -56,8 +54,7 @@ import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
-import static com.nasnav.enumerations.ProductFeatureType.COLOR;
-import static com.nasnav.enumerations.ProductFeatureType.IMG_SWATCH;
+import static com.nasnav.enumerations.ProductFeatureType.*;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -559,7 +556,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         ProductFeatureType type =
                 ProductFeatureType
                 .getProductFeatureType(entity.getType())
-                .orElse(ProductFeatureType.STRING);
+                .orElse(STRING);
         Map<String, ?> extraData =
                 ofNullable(entity.getExtraData())
                 .map(JSONObject::new)
@@ -633,17 +630,23 @@ public class OrganizationServiceImpl implements OrganizationService {
     private Optional<ExtraAttributesEntity> createExtraAttributesIfNeeded(ProductFeaturesEntity entity) {
         Integer type = entity.getType();
        if(nonNull(type) && FEATURE_TYPE_WITH_EXTRA_DATA.contains(type)){
-           ExtraAttributesEntity attr =
-                   getOptionalExtraAttributesEntity(entity)
-                    .orElse(doCreateExtraAttribute(entity));
-           return Optional.of(attr);
+           return getSavedExtraAttrInFeatureConfig(entity)
+                    .or(() -> findExistingExtraAttrInDb(entity))
+                    .or(() -> doCreateExtraAttribute(entity));
        }
        return Optional.empty();
     }
 
 
 
-    private Optional<ExtraAttributesEntity> getOptionalExtraAttributesEntity(ProductFeaturesEntity entity) {
+    private Optional<ExtraAttributesEntity> findExistingExtraAttrInDb(ProductFeaturesEntity entity) {
+        var orgId = securityService.getCurrentUserOrganizationId();
+        String name = getAdditionalDataExtraAttrName(entity);
+        return extraAttributesRepository.findByNameAndOrganizationId(name, orgId);
+    }
+
+
+    private Optional<ExtraAttributesEntity> getSavedExtraAttrInFeatureConfig(ProductFeaturesEntity entity) {
         Long orgId = securityService.getCurrentUserOrganizationId();
         return getAdditionalDataExtraAttrId(entity)
                 .flatMap(id -> extraAttributesRepository.findByIdAndOrganizationId(id, orgId));
@@ -651,7 +654,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
-    private ExtraAttributesEntity doCreateExtraAttribute(ProductFeaturesEntity entity) {
+    private Optional<ExtraAttributesEntity> doCreateExtraAttribute(ProductFeaturesEntity entity) {
         Long orgId = securityService.getCurrentUserOrganizationId();
         String name = getAdditionalDataExtraAttrName(entity);
 
@@ -659,7 +662,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         attr.setType(INVISIBLE.getValue());
         attr.setName(name);
         attr.setOrganizationId(orgId);
-        return extraAttributesRepository.save(attr);
+        return Optional.of(extraAttributesRepository.save(attr));
     }
 
 
@@ -691,8 +694,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     public Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature){
         return ofNullable(feature.getExtraData())
                 .map(JSONObject::new)
+                .filter(json -> json.has(EXTRA_ATTRIBUTE_ID))
                 .map(json -> json.getInt(EXTRA_ATTRIBUTE_ID));
     }
+
 
 
     private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
@@ -717,9 +722,9 @@ public class OrganizationServiceImpl implements OrganizationService {
             entity.setLevel( featureDto.getLevel() );
         }
         if(featureDto.isUpdated("type")) {
-            Integer type = ofNullable(featureDto.getType()).orElse(ProductFeatureType.STRING).getValue();
+            var type = ofNullable(featureDto.getType()).orElse(STRING).getValue();
             entity.setType(type);
-            Optional<ExtraAttributesEntity> attr = createExtraAttributesIfNeeded(entity);
+            var attr = createExtraAttributesIfNeeded(entity);
             if(attr.isPresent()){
                 addExtraAttrToFeatureExtraData(entity, attr.get());
             }

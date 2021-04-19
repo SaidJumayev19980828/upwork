@@ -78,7 +78,7 @@ INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, d
 VALUES(80002,1001, '{"234": "45"}', 'orginal variant', 'orginal_variant', 'removed', 'AFDSSDF214', 1);
 
 
---inserting product features
+--inserting product stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 6, 99001, 600.0, 80001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 80002);
 

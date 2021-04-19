@@ -12,7 +12,6 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
@@ -27,7 +26,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -37,6 +35,7 @@ import java.util.*;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.enumerations.ProductFeatureType.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
@@ -80,7 +79,7 @@ public class ProductFeaturesApiTest {
 
 	@Test
 	public void getProductFeaturesTest() throws JsonParseException, JsonMappingException, IOException {
-		List<ProductFeatureDTO> expected = 
+		var expected =
 			asList(
 				productFeatureDTO(234, "Shoe size", "Size of the shoes", "s-size", 0, STRING),
 				productFeatureDTO(235, "Shoe color", "Color of the shoes", "s-color", 0, STRING)
@@ -89,12 +88,12 @@ public class ProductFeaturesApiTest {
 		Map<String, Object> params = new HashMap<>();
 		params.put("organization_id", 99001L);
 
-		String json = template.getForEntity("/organization/products_features?organization_id={organization_id}"
+		var json = template.getForEntity("/organization/products_features?organization_id={organization_id}"
 														, String.class
 														, params)
 												.getBody();
-		ObjectMapper mapper = new ObjectMapper();
-		List<ProductFeatureDTO> fetched = mapper.readValue(json, new TypeReference<List<ProductFeatureDTO>>(){});
+		var mapper = new ObjectMapper();
+		var fetched = mapper.readValue(json, new TypeReference<List<ProductFeatureDTO>>(){});
 		
 		assertTrue(fetched.containsAll(expected));
 	}
@@ -102,7 +101,7 @@ public class ProductFeaturesApiTest {
 
 
 	private ProductFeatureDTO productFeatureDTO(int id, String name, String description, String pname, int level, ProductFeatureType type) {
-		ProductFeatureDTO dto = new ProductFeatureDTO();
+		var dto = new ProductFeatureDTO();
 		dto.setId(id);
 		dto.setName(name);
 		dto.setDescription(description);
@@ -120,7 +119,7 @@ public class ProductFeaturesApiTest {
 	public void getProductFeaturesTypes() throws IOException {
 		BaseUserEntity user = empRepo.getById(68L);
 		HttpEntity<?> request = getHttpEntity(user.getAuthenticationToken());
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_features/types"
 						, GET
 						, request
@@ -129,8 +128,8 @@ public class ProductFeaturesApiTest {
 
 		assertEquals(OK, response.getStatusCode());
 
-		Set<String> expectedTypes  = setOf(ProductFeatureType.values()).stream().map(ProductFeatureType::name).collect(toSet());
-		Set<String> types = objectMapper.readValue(response.getBody(), new TypeReference<Set<String>>(){});
+		var expectedTypes  = setOf(ProductFeatureType.values()).stream().map(ProductFeatureType::name).collect(toSet());
+		var types = objectMapper.readValue(response.getBody(), new TypeReference<Set<String>>(){});
 		assertEquals(expectedTypes, types);
 	}
 	
@@ -141,8 +140,8 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureUpdateNoAuthNTest() {
 		HttpEntity<?> request = getHttpEntity("","INVALID TOKEN");
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -159,8 +158,8 @@ public class ProductFeaturesApiTest {
 		BaseUserEntity user = empRepo.getById(68L);
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -175,12 +174,12 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureCreateMissingParamTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.remove("operation");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -195,12 +194,12 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureCreateNonValidOprTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.put("operation", "NOT VALID");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -214,14 +213,14 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureCreateInvalidNameTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.put("name", JSONObject.NULL);
 		json.remove("p_name");
 		json.remove("description");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -235,13 +234,13 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureCreateOptionalParamAbsentTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.remove("p_name");
 		json.remove("description");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -257,13 +256,13 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureUpdateNonExistingFeatureIdTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.put("feature_id", 999999999L);
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -278,13 +277,13 @@ public class ProductFeaturesApiTest {
 	@Test
 	public void productFeatureUpdateMissingFeatureIdTest() {
 		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.remove("feature_id");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -300,13 +299,13 @@ public class ProductFeaturesApiTest {
 	public void productFeatureUpdateInvalidUserTest() {
 		BaseUserEntity user = empRepo.getById(70L); //Organization admin, but for another organization
 		Integer id = TEST_FEATURE_ID;
-		
-		JSONObject json = createProductFeatureRequest();
+
+		var json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.put("feature_id", id);
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
@@ -321,11 +320,11 @@ public class ProductFeaturesApiTest {
 	public void productFeatureCreateWithDuplicateNameTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 
-		JSONObject json = createProductFeatureRequest();
+		var json = createProductFeatureRequest();
 		json.put("name", "Shoe size");
 		HttpEntity<?> request = getHttpEntity(json.toString(), user.getAuthenticationToken());
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature"
 						, POST
 						, request
@@ -340,11 +339,11 @@ public class ProductFeaturesApiTest {
 	public void productFeatureCreateWithDuplicateNameInOtherOrgTest() {
 		BaseUserEntity user = empRepo.getById(70L);
 
-		JSONObject json = createProductFeatureRequest();
+		var json = createProductFeatureRequest();
 		json.put("name", "Shoe color");
 		HttpEntity<?> request = getHttpEntity(json.toString(), user.getAuthenticationToken());
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature"
 						, POST
 						, request
@@ -357,27 +356,12 @@ public class ProductFeaturesApiTest {
 	
 	@Test
 	public void productFeatureCreateTest() {
-		BaseUserEntity user = empRepo.getById(69L);
-		
-		JSONObject json = createProductFeatureRequest();
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
-															, POST
-															, request
-															, String.class
-															);
-		assertEquals(OK, response.getStatusCode());
-		
-		JSONObject body = new JSONObject(response.getBody());
-		assertTrue(body.has("feature_id"));
-		
-		Integer id =  body.getInt("feature_id");		
-		Optional<ProductFeaturesEntity> opt= featureRepo.findById(id);
+		var json = createProductFeatureRequest();
+		var opt= postProductFeature(json);
 		
 		assertTrue(opt.isPresent());
-		
-		ProductFeaturesEntity saved = opt.get();
+
+		var saved = opt.get();
 		
 		assertEquals(json.getString("name"), saved.getName());
 		assertEquals(json.getString("description"), saved.getDescription());
@@ -389,38 +373,49 @@ public class ProductFeaturesApiTest {
 
 	@Test
 	public void productFeatureCreateWithTypeTest() {
-		BaseUserEntity user = empRepo.getById(69L);
-
-		JSONObject json = createProductFeatureRequest();
+		var json = createProductFeatureRequest();
 		json.put("type", COLOR.name());
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 
-		ResponseEntity<String> response =
+		var opt = postProductFeature(json);
+
+		assertTrue(opt.isPresent());
+
+		var savedPName = encodeUrl(json.getString("name"));
+		var saved = opt.get();
+		assertEquals(json.getString("name"), saved.getName());
+		assertEquals(json.getString("description"), saved.getDescription());
+		assertEquals(savedPName, saved.getPname());
+		assertEquals(json.getString("type") , getTypeName(saved));
+		assertSwatchExtraAttrCreated(savedPName, saved);
+	}
+
+
+
+	private Optional<ProductFeaturesEntity> postProductFeature(JSONObject json) {
+		var user = empRepo.getById(69L);
+		var request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+
+		var response =
 				template.exchange("/organization/products_feature"
 						, POST
 						, request
 						, String.class
 				);
-
 		assertEquals(OK, response.getStatusCode());
 
-		JSONObject body = new JSONObject(response.getBody());
+		var body = new JSONObject(response.getBody());
 		assertTrue(body.has("feature_id"));
 
-		Integer id =  body.getInt("feature_id");
-		Optional<ProductFeaturesEntity> opt= featureRepo.findById(id);
+		var id =  body.getInt("feature_id");
+		return featureRepo.findById(id);
+	}
 
-		assertTrue(opt.isPresent());
 
-		String savedPName = encodeUrl(json.getString("name"));
-		ProductFeaturesEntity saved = opt.get();
-		Optional<ExtraAttributesEntity> attr =
+
+	private void assertSwatchExtraAttrCreated(String savedPName, ProductFeaturesEntity saved) {
+		var attr =
 				extraAttrRepo
 						.findByNameAndOrganizationId(format("$%s$%s", savedPName, COLOR.name()),99002L);
-		assertEquals(json.getString("name"), saved.getName());
-		assertEquals(json.getString("description"), saved.getDescription());
-		assertEquals(savedPName, saved.getPname());
-		assertEquals(json.getString("type") , getTypeName(saved));
 		assertTrue(attr.isPresent());
 		assertEquals(attr.get().getId().intValue(), getExtraDataExtraAttr(saved));
 	}
@@ -430,6 +425,7 @@ public class ProductFeaturesApiTest {
 	private int getExtraDataExtraAttr(ProductFeaturesEntity saved) {
 		return new JSONObject(saved.getExtraData()).getInt("extra_attribute_id");
 	}
+
 
 
 	private String getTypeName(ProductFeaturesEntity saved) {
@@ -442,31 +438,31 @@ public class ProductFeaturesApiTest {
 	public void productFeatureUpdateTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		Integer id = TEST_FEATURE_ID;
-		
-		ProductFeaturesEntity featureBefore = featureRepo.findById(id).get();
-		
-		JSONObject json = createProductFeatureRequest();
-		json.put("operation", Operation.UPDATE.getValue());
+
+		var featureBefore = featureRepo.findById(id).get();
+
+		var json = createProductFeatureRequest();
+		json.put("operation", UPDATE.getValue());
 		json.put("feature_id", id);
 		json.remove("p_name");
 		json.remove("description");
 		json.remove("organization");
 		
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+
+		var response = template.exchange("/organization/products_feature"
 															, POST
 															, request
 															, String.class
 															);
 		assertEquals(OK, response.getStatusCode());
-		
-		JSONObject body = new JSONObject(response.getBody());
+
+		var body = new JSONObject(response.getBody());
 		assertTrue(body.has("feature_id"));
 		
 		assertEquals(body.get("feature_id"), id);
 
-		ProductFeaturesEntity saved = featureRepo.findById(id).get();
+		var saved = featureRepo.findById(id).get();
 		
 		assertEquals("check updated values",json.getString("name"), saved.getName());
 		assertEquals("check values that was not updated", featureBefore.getDescription(), saved.getDescription());
@@ -476,10 +472,60 @@ public class ProductFeaturesApiTest {
 
 
 	@Test
+	public void productFeatureUpdateToColorTypeTest() {
+		var json = createProductFeatureRequest();
+		json.put("operation", UPDATE.getValue());
+		json.put("feature_id", TEST_FEATURE_ID);
+		json.put("type", COLOR.name());
+
+		var saved = postProductFeature(json).get();
+		var updatedType = ProductFeatureType.getProductFeatureType(saved.getType()).get().name();
+		assertEquals("check updated values",json.getString("type"), updatedType);
+		assertSwatchExtraAttrCreated(saved.getPname(), saved);
+	}
+
+
+
+	@Test
+	public void productFeatureUpdateToTextThenBackToColorTypeTest() {
+		Integer id = createColorFeature();
+		updateToStringFeature(id);
+		var secondUpdateJson =
+				createProductFeatureRequest()
+						.put("operation", UPDATE.getValue())
+						.put("feature_id", id)
+						.put("type", COLOR.name());
+		var saved = postProductFeature(secondUpdateJson).get();
+		var updatedType = ProductFeatureType.getProductFeatureType(saved.getType()).get().name();
+		assertEquals("check updated values",secondUpdateJson.getString("type"), updatedType);
+		assertSwatchExtraAttrCreated(saved.getPname(), saved);
+	}
+
+
+
+	private void updateToStringFeature(Integer id) {
+		var firstUpdateJson =
+				createProductFeatureRequest()
+						.put("operation", UPDATE.getValue())
+						.put("feature_id", id)
+						.put("type", STRING.name());
+		postProductFeature(firstUpdateJson).get();
+	}
+
+
+
+	private Integer createColorFeature() {
+		var createJson = createProductFeatureRequest().put("type", COLOR.name());
+		return postProductFeature(createJson).get().getId();
+	}
+
+
+
+	@Test
 	public void deleteFeatureNoAuthN(){
 		HttpEntity<?> request = getHttpEntity("INVALID");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
 
 		assertEquals(UNAUTHORIZED, response.getStatusCode());
@@ -491,7 +537,7 @@ public class ProductFeaturesApiTest {
 	public void deleteFeatureNoAuthZ(){
 		HttpEntity<?> request = getHttpEntity("192021");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
@@ -503,7 +549,7 @@ public class ProductFeaturesApiTest {
 	public void deleteFeatureFromAnotherOrg(){
 		HttpEntity<?> request = getHttpEntity("131415");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=234", DELETE, request, String.class);
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
@@ -515,7 +561,7 @@ public class ProductFeaturesApiTest {
 	public void deleteFeatureStillUsed(){
 		HttpEntity<?> request = getHttpEntity("161718");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=235", DELETE, request, String.class);
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
@@ -527,7 +573,7 @@ public class ProductFeaturesApiTest {
 	public void deleteFeatureAlreadyDeleted(){
 		HttpEntity<?> request = getHttpEntity("131415");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=2333337", DELETE, request, String.class);
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
@@ -537,14 +583,14 @@ public class ProductFeaturesApiTest {
 
 	@Test
 	public void deleteFeatureSuccess(){
-		int featureId = 234;
+		var featureId = 234;
 
 		Optional<?> featureBefore = featureRepo.findById(featureId);
 		assertTrue(featureBefore.isPresent());
 
 		HttpEntity<?> request = getHttpEntity("161718");
 
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/organization/products_feature?id=" + featureId, DELETE, request, String.class);
 
 		assertEquals(OK, response.getStatusCode());
@@ -560,17 +606,17 @@ public class ProductFeaturesApiTest {
 		BaseUserEntity user = empRepo.getById(69L);
 		Integer id = 237;
 
-		boolean featureExists = featureRepo.existsById(id);
+		var featureExists = featureRepo.existsById(id);
 		assertFalse(featureExists);
 
-		JSONObject json = createProductFeatureRequest();
-		json.put("operation", Operation.UPDATE.getValue());
+		var json = createProductFeatureRequest();
+		json.put("operation", UPDATE.getValue());
 		json.put("feature_id", id);
 		json.remove("p_name");
 
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 
-		ResponseEntity<String> response = template.exchange("/organization/products_feature"
+		var response = template.exchange("/organization/products_feature"
 				, POST
 				, request
 				, String.class
@@ -582,7 +628,7 @@ public class ProductFeaturesApiTest {
 
 
 	private JSONObject createProductFeatureRequest() {
-		JSONObject json = new JSONObject();
+		var json = new JSONObject();
 		
 		json.put("feature_id", JSONObject.NULL);
 		json.put("operation", Operation.CREATE.getValue());
