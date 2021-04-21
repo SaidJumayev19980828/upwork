@@ -263,4 +263,35 @@ public class NavBoxTest {
         assertNull("This organization has no sub-areas", werwerLand);
     }
 
+
+    @Test
+    public void getCountriesForOrgWithNoAllowedCountries() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99001", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>(){});
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(2, body.size());
+    }
+
+    @Test
+    public void getCountriesForOrgWithOneAllowedCountries() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99003", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>() {
+                });
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1, body.size());
+        CountriesRepObj uk = body.get("UK");
+        assertTrue(uk != null);
+    }
+
+    @Test
+    public void getCountriesForOrgWithInvalidAllowedCountries() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/navbox/countries?org_id=99002", String.class);
+        Map<String, CountriesRepObj> body =
+                objectMapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>() {
+                });
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(2, body.size());
+    }
 }

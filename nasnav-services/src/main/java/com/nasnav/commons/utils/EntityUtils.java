@@ -73,17 +73,19 @@ public class EntityUtils {
 		List<Optional<?>> elementList =  asList(elements);
 		return elementList.stream().anyMatch(opt -> !opt.isPresent());
 	}
-	
-	
-	
-	
+
 	
 	
 	public static boolean isNullOrEmpty(Collection<?> collection) {
 		return collection == null || collection.isEmpty();
 	}
-	
-	
+
+
+
+	public static boolean notNullNorEmpty(Collection<?> collection) {
+		return !isNullOrEmpty(collection);
+	}
+
 	
 	
 	public static boolean isNullOrZero(Long n) {

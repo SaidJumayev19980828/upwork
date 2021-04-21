@@ -11,7 +11,6 @@ import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
@@ -19,9 +18,8 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import static com.nasnav.commons.utils.CollectionUtils.streamJsonArrayElements;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
@@ -134,16 +132,6 @@ public class PickupFromShop implements ShippingService{
 				.flatMap(EntityUtils::parseLongSafely)
 				.map(Long::intValue)
 				.ifPresent(val -> etaDaysMin = val);
-	}
-
-
-
-	Stream<Object> streamJsonArrayElements(String jsonString){
-		return ofNullable(jsonString)
-				.map(JSONArray::new)
-				.map(JSONArray::spliterator)
-				.map(iterator -> StreamSupport.stream(iterator, false))
-				.orElse(Stream.empty());
 	}
 	
 	

@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -17,9 +18,10 @@ import java.util.*;
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.cache.Caches.COUNTRIES;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
+import static com.nasnav.commons.utils.CollectionUtils.streamJsonArrayElements;
+import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.Settings.ALLOWED_COUNTRIES;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
@@ -47,19 +49,39 @@ public class AddressServiceImpl implements AddressService{
     private SubAreaRepository subAreaRepo;
 
     @Autowired
+    private SettingRepository settingRepo;
+
+    @Autowired
     private SecurityService securityService;
 
 
     @CacheResult(cacheName = COUNTRIES)
     public Map<String, CountriesRepObj> getCountries(Boolean hideEmptyCities, Long organizationId) {
-        Long orgId = ofNullable(organizationId).orElse(0L);
-        Map<Long, List<SubAreasRepObj>> orgSubareas = getOrganizationSubAreas(orgId);
+        var orgId = ofNullable(organizationId).orElse(0L);
+        var orgSubareas = getOrganizationSubAreas(orgId);
+        var supportedCountriesByOrg = getSupportedCountriesIdsByOrg(orgId);
         return addressRepo
-                .getCountries()
+                .getCountries(supportedCountriesByOrg)
                 .stream()
                 .collect( toMap(CountriesEntity::getName, country -> getCountriesRepObj(country, hideEmptyCities, orgSubareas)));
     }
 
+    private List<Long> getSupportedCountriesIdsByOrg(Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(ALLOWED_COUNTRIES.name(), orgId)
+                .map(SettingEntity::getSettingValue)
+                .map(this::parseSettingValue)
+                .filter(EntityUtils::notNullNorEmpty)
+                .orElseGet(countryRepo::findAllCountriesIds);
+    }
+
+
+
+    private List<Long> parseSettingValue(String setting){
+        return streamJsonArrayElements(setting)
+                .map(Object::toString)
+                .map(Long::parseLong)
+                .collect(toList());
+    }
 
     private Map<Long, List<SubAreasRepObj>> getOrganizationSubAreas(Long orgId) {
         return subAreaRepo.findByOrganization_Id(orgId)

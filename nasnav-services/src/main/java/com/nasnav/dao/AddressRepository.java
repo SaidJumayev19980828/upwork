@@ -87,8 +87,9 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
             " from CountriesEntity country " +
             " left JOIN FETCH country.cities city " +
             " left JOIN FETCH city.areas area " +
+            " where country.id in :countryIds" +
             " order by country.name")
-    List<CountriesEntity> getCountries();
+    List<CountriesEntity> getCountries(@Param("countryIds") List<Long> countryIds);
 
     @Transactional
     @Modifying

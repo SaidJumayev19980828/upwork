@@ -1123,7 +1123,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     @Override
-    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
 	public void updateSetting(SettingDTO settingDto) {
 		validateSetting(settingDto);
 		
@@ -1131,7 +1131,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 		SettingEntity setting = 
 				settingRepo
 				.findBySettingNameAndOrganization_Id(settingDto.getName(), orgId)
-				.orElseGet(()-> createSettingEntity(settingDto));
+				.orElseGet(() -> new SettingEntity());
+		createSettingEntity(setting, settingDto);
 		settingRepo.save(setting);		
 	}
 
@@ -1171,14 +1172,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
-    private SettingEntity createSettingEntity(SettingDTO settingDto) {
+    private SettingEntity createSettingEntity(SettingEntity entity, SettingDTO settingDto) {
 		OrganizationEntity organization = securityService.getCurrentUserOrganization();
         Integer type =
                 ofNullable(settingDto.getType())
                         .map(SettingsType::getSettingsType)
                         .orElse(PRIVATE)
                         .getValue();
-		SettingEntity entity = new SettingEntity();
 		entity.setSettingName(settingDto.getName());
 		entity.setSettingValue(settingDto.getValue());
 		entity.setOrganization(organization);

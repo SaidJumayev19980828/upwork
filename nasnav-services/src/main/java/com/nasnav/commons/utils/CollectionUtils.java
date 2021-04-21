@@ -1,5 +1,6 @@
 package com.nasnav.commons.utils;
 
+import org.json.JSONArray;
 import reactor.core.publisher.Flux;
 
 import java.util.*;
@@ -7,9 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 public class CollectionUtils {
@@ -63,8 +66,14 @@ public class CollectionUtils {
 		U distinctKey = keyExtractor.apply(element);
 	    return seen.add(distinctKey);
 	}
-	
-	
+
+	public static Stream<Object> streamJsonArrayElements(String jsonString){
+		return ofNullable(jsonString)
+				.map(JSONArray::new)
+				.map(JSONArray::spliterator)
+				.map(iterator -> StreamSupport.stream(iterator, false))
+				.orElse(Stream.empty());
+	}
 	
 	
 	@SafeVarargs

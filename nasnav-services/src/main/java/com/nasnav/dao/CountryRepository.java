@@ -20,4 +20,7 @@ public interface CountryRepository extends CrudRepository<CountriesEntity, Long>
     Optional<CountriesEntity> findByNameIgnoreCase(String name);
 
     CountriesEntity findByIsoCode(Integer isoCode);
+
+    @Query("select c.id from CountriesEntity c")
+    List<Long> findAllCountriesIds();
 }
