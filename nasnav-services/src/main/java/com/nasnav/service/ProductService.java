@@ -214,15 +214,17 @@ public class ProductService {
 
 
 	@Transactional
-	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants, boolean includeOutOfStock) throws BusinessException{
+	public ProductDetailsDTO getProduct(ProductFetchDTO productFetchDTO) throws BusinessException{
+		var id = ofNullable(productFetchDTO.getProductId()).orElse(-1L);
+		var allowAll = !ofNullable(productFetchDTO.getOnlyYeshteryProducts()).orElse(false);
 		ProductEntity product =
 				productRepository
-						.findByProductId( ofNullable(productId).orElse(-1L))
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productId));
+						.findByProductId(id , allowAll)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
 
-		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants);
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, productFetchDTO.isCheckVariants());
 
-		return createProductDetailsDTO(product, shopId, productVariants, includeOutOfStock);
+		return createProductDetailsDTO(product, productFetchDTO.getShopId(), productVariants, productFetchDTO.isIncludeOutOfStock());
 	}
 
 

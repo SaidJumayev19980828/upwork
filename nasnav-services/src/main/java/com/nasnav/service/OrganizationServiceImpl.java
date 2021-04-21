@@ -359,10 +359,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.googleToken != null) {
             organization.setGoogleToken(json.googleToken);
         }
-
         if (json.currencyIso != null) {
             CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
             organization.setCountry(country);
+        }
+        if(nonNull(json.yeshteryState)){
+            organization.setYeshteryState(json.yeshteryState.getValue());
         }
         return organization;
     }

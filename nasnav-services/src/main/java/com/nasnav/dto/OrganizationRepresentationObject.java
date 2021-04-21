@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.enumerations.YeshteryState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -84,6 +85,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Integer currencyIso;
     private Map<String,String> settings;
     private Integer matomoSiteId;
-
+    private YeshteryState yeshteryState;
 }
 

@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -63,9 +64,13 @@ public class OrganizationEntity implements BaseEntity {
     @ToString.Exclude
     private CountriesEntity country;
 
+    @Column(name = "yeshtery_state")
+    private Integer yeshteryState;
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
+        this.yeshteryState = 0;
     }
 
     public Type getType() {
@@ -98,29 +103,30 @@ public class OrganizationEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        OrganizationRepresentationObject organizationRepresentationObject = new OrganizationRepresentationObject();
-        organizationRepresentationObject.setId(getId());
-        organizationRepresentationObject.setDescription(getDescription());
-        organizationRepresentationObject.setName(getName());
-        organizationRepresentationObject.setPname(getPname());
-        organizationRepresentationObject.setType(getType()!=null?getType().name():null);
-        organizationRepresentationObject.setThemeId(getThemeId().toString());
-        organizationRepresentationObject.setEcommerce((getEcommerce()));
-        organizationRepresentationObject.setGoogleToken(getGoogleToken());
-        organizationRepresentationObject.setMatomoSiteId(getMatomoId());
+        var obj = new OrganizationRepresentationObject();
+        obj.setId(getId());
+        obj.setDescription(getDescription());
+        obj.setName(getName());
+        obj.setPname(getPname());
+        obj.setType(getType()!=null?getType().name():null);
+        obj.setThemeId(getThemeId().toString());
+        obj.setEcommerce((getEcommerce()));
+        obj.setGoogleToken(getGoogleToken());
+        obj.setMatomoSiteId(getMatomoId());
+        YeshteryState
+                .getYeshteryState(yeshteryState)
+                .ifPresent(obj::setYeshteryState);
         if(getCountry() != null) {
-            organizationRepresentationObject.setCurrency(getCountry().getCurrency());
-            organizationRepresentationObject.setCurrencyIso(getCountry().getIsoCode());
+            obj.setCurrency(getCountry().getCurrency());
+            obj.setCurrencyIso(getCountry().getIsoCode());
         }
         if (getExtraInfo() != null) {
             try {
                 JSONObject json = new JSONObject(getExtraInfo());
-                organizationRepresentationObject.setInfo(json.toMap());
+                obj.setInfo(json.toMap());
             } catch (Exception e) {}
         }
-
-
-        return organizationRepresentationObject;
+        return obj;
     }
 
 }

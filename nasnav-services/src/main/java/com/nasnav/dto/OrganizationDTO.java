@@ -1,6 +1,7 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.enumerations.YeshteryState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,6 +35,10 @@ public class OrganizationDTO {
 
         @JsonProperty("currency_iso")
         public Integer currencyIso;
+
+        @JsonProperty("yeshtery_state")
+        @Schema(name = "state of the organization on yeshtery application", example = "ACTIVE")
+        public YeshteryState yeshteryState;
     }
 
     @Schema(name = "Organization Modification Data")
@@ -74,5 +79,7 @@ public class OrganizationDTO {
         @JsonProperty("extra_info")
         public Map<?,?> info;
 
+        @JsonProperty("yeshtery_state")
+        public YeshteryState yeshteryState;
     }
 }

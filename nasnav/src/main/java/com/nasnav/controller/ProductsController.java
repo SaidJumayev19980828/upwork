@@ -482,8 +482,12 @@ public class ProductsController {
     public ProductDetailsDTO getProduct(@RequestHeader(name = "User-Token", required = false) String token,
                                         @RequestParam(name = "product_id") Long productId,
                                         @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
-
-        return productService.getProduct(productId, shopId, false, true);
+        var params = new ProductFetchDTO(productId);
+        params.setShopId(shopId);
+        params.setCheckVariants(false);
+        params.setIncludeOutOfStock(true);
+        params.setOnlyYeshteryProducts(false);
+        return productService.getProduct(params);
     }
 
 

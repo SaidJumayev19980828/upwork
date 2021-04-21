@@ -175,8 +175,12 @@ public class NavboxController {
 										@RequestParam(name = "shop_id",required=false) Long shopId,
 										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
 			throws BusinessException {
-
-		return productService.getProduct(productId, shopId, true, includeOutOfStock);
+		var params = new ProductFetchDTO(productId);
+		params.setShopId(shopId);
+		params.setCheckVariants(true);
+		params.setIncludeOutOfStock(includeOutOfStock);
+		params.setOnlyYeshteryProducts(false);
+		return productService.getProduct(params);
 	}
 
 
