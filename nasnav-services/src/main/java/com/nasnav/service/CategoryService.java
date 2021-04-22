@@ -735,12 +735,18 @@ public class CategoryService {
 	}
 
 
-	public void setTagsListCategory(Long categoryId, List<Long> tagsIds) {
+	public void setTagsListCategory(UpdateTagsCategoryDTO updateDto) {
+    	var categoryId = updateDto.getCategoryId();
+    	var tagsIds = updateDto.getTagsIds();
     	CategoriesEntity category = getCategoryById(categoryId);
     	orgTagsRepo.setTagsListCategory(category, tagsIds);
 	}
 
-	public void setProductsListCategory(Long categoryId, List<Long> productsIds) {
+
+
+	public void setProductsListCategory(UpdateProductsCategoryDTO updateDto) {
+		var categoryId = updateDto.getCategoryId();
+		var productsIds = updateDto.getProductsIds();
 		getCategoryById(categoryId);
 		productRepository.setProductsListCategory(categoryId, productsIds);
 	}

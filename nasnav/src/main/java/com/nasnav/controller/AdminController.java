@@ -90,9 +90,8 @@ public class AdminController {
 	})
 	@PostMapping(value = "tag/category")
 	public void setTagsListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
-									@RequestParam (value = "category_id") Long categoryId,
-									@RequestParam(value = "tags") List<Long> tagsIds) {
-		categoryService.setTagsListCategory(categoryId, tagsIds);
+									@RequestBody UpdateTagsCategoryDTO updateDto) {
+		categoryService.setTagsListCategory(updateDto);
 	}
 
 
@@ -104,9 +103,8 @@ public class AdminController {
 	})
 	@PostMapping(value = "product/category")
 	public void setProductListCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
-									@RequestParam (value = "category_id") Long categoryId,
-									@RequestParam(value = "products") List<Long> productsIds) {
-		categoryService.setProductsListCategory(categoryId, productsIds);
+									@RequestBody UpdateProductsCategoryDTO updateDto) {
+		categoryService.setProductsListCategory(updateDto);
 	}
 
 
