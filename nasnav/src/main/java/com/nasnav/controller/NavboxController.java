@@ -355,7 +355,7 @@ public class NavboxController {
 	})
 	@GetMapping(value="/search", produces=MediaType.APPLICATION_JSON_VALUE)
 	public Mono<SearchResult> search(SearchParameters params) {
-		return searchService.search(params);
+		return searchService.search(params, false);
 	}
 
 

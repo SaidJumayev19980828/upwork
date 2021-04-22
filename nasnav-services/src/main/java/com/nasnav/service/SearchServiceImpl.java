@@ -12,6 +12,7 @@ import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SearchType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import lombok.Data;
@@ -110,18 +111,18 @@ public class SearchServiceImpl implements SearchService{
     private Resource commonMappingResource;
 
     @Override
-    public Mono<SearchResult> search(SearchParameters parameters) {
+    public Mono<SearchResult> search(SearchParameters parameters, boolean onlyYeshtery) {
         if(anyIsNull(parameters, parameters.keyword)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, NAVBOX$SRCH$0001);
         }
 
-        SearchParameters normalizedParams = createNormalizedParams(parameters);
-        SearchSourceBuilder searchSourceBuilder = getSearchSourceBuilder(normalizedParams);
-        SearchSourceBuilder searchSuggestionBuilder = getSuggestionSourceBuilder(normalizedParams);
+        var normalizedParams = createNormalizedParams(parameters, onlyYeshtery);
+        var searchSourceBuilder = getSearchSourceBuilder(normalizedParams);
+        var searchSuggestionBuilder = getSuggestionSourceBuilder(normalizedParams);
 
-        String[] indices = getIndices(normalizedParams);
-        SearchRequest searchRequest = getSearchRequest(searchSourceBuilder, indices);
-        SearchRequest suggestionRequest = getSearchRequest(searchSuggestionBuilder, indices);
+        var indices = getIndices(normalizedParams);
+        var searchRequest = getSearchRequest(searchSourceBuilder, indices);
+        var suggestionRequest = getSearchRequest(searchSuggestionBuilder, indices);
         return Mono
                 .<SearchResult>create(sink -> searchAsync(sink, searchRequest))
                 .flatMap(response -> addSuggestionToResponse(response, suggestionRequest))
@@ -139,7 +140,7 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchRequest getSearchRequest(SearchSourceBuilder searchSourceBuilder, String[] indices) {
-        SearchRequest searchRequest = new SearchRequest();
+        var searchRequest = new SearchRequest();
         searchRequest.source(searchSourceBuilder);
         if(indices.length > 0){
             searchRequest.indices(indices);
@@ -169,7 +170,7 @@ public class SearchServiceImpl implements SearchService{
 
     @Override
     public Mono<Void> syncSearchData() {
-        List<Long> organizationsToSync = getOrgsToSync();
+        var organizationsToSync = getOrgsToSync();
         return Flux
                 .fromIterable(organizationsToSync)
                 .flatMap(this::doSyncSearchData)
@@ -188,8 +189,8 @@ public class SearchServiceImpl implements SearchService{
 
 
     private Mono<Void> deleteIndex(SearchType index) {
-        String indexName = getIndex(index);
-        DeleteIndexRequest deleteRequest = new DeleteIndexRequest(indexName);
+        var indexName = getIndex(index);
+        var deleteRequest = new DeleteIndexRequest(indexName);
         return indexExists(indexName)
                 .flatMap(exists ->
                         exists? runWithDefaultParams(client.indices()::deleteAsync, deleteRequest, AcknowledgedResponse.class)
@@ -197,25 +198,26 @@ public class SearchServiceImpl implements SearchService{
     }
 
 
-    private SearchParameters createNormalizedParams(SearchParameters parameters) {
-        SearchParameters normalized = new SearchParameters();
+    private NormalizedSearchParameters createNormalizedParams(SearchParameters parameters, boolean onlyYeshtery) {
+        var normalized = new NormalizedSearchParameters();
         normalized.keyword = ofNullable(parameters.keyword).orElse("").toLowerCase();
         normalized.org_id = parameters.org_id;
         normalized.type = parameters.type;
         normalized.start = ofNullable(parameters.start).orElse(0);
         normalized.count = ofNullable(parameters.count).map(this::limitPage).orElse(DEFAULT_PG_SIZE);
+        normalized.only_yeshtery = onlyYeshtery;
         return normalized;
     }
 
 
 
 
-    private List<Long> getOrgsToSync() {
+    private List<OrganizationEntity> getOrgsToSync() {
         if(securityService.currentUserHasRole(NASNAV_ADMIN)){
             return orgRepo.findAllOrganizations();
         }
         else if(securityService.currentUserHasRole(ORGANIZATION_ADMIN)){
-            Long orgId = securityService.getCurrentUserOrganizationId();
+            var orgId = securityService.getCurrentUserOrganization();
             return singletonList(orgId);
         }else{
             return emptyList();
@@ -224,10 +226,10 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private Mono<Void> doSyncSearchData(Long orgId){
-        return deleteOrganizationData(orgId)
+    private Mono<Void> doSyncSearchData(OrganizationEntity org){
+        return deleteOrganizationData(org)
                 .then(createIndicesIfNeeded())
-                .then(resendOrganizationData(orgId));
+                .then(resendOrganizationData(org));
     }
 
 
@@ -241,7 +243,7 @@ public class SearchServiceImpl implements SearchService{
 
 
     private Mono<Void> createIndex(String index) {
-        CreateIndexRequest request = new CreateIndexRequest(index);
+        var request = new CreateIndexRequest(index);
         request.mapping(getCommonIndexMapping(), JSON);
         return indexExists(index)
                 .flatMap(exists ->
@@ -274,7 +276,8 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private Mono<Void> deleteOrganizationData(Long orgId){
+    private Mono<Void> deleteOrganizationData(OrganizationEntity org){
+        var orgId = org.getId();
         return Mono
                 .zip(deleteProductsIndexData(orgId)
                         , deleteCollectionsIndexData(orgId)
@@ -310,7 +313,7 @@ public class SearchServiceImpl implements SearchService{
 
 
     private Mono<Void> doDeleteIndexOfNameAndOrganization(String name, Long orgId) {
-        DeleteByQueryRequest request = new DeleteByQueryRequest(name);
+        var request = new DeleteByQueryRequest(name);
         request.setQuery(new TermQueryBuilder("organization_id", orgId));
         return runWithDefaultParams(client::deleteByQueryAsync, request, BulkByScrollResponse.class);
     }
@@ -344,21 +347,21 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-
-    private Mono<Void> resendOrganizationData(Long orgId){
+    private Mono<Void> resendOrganizationData(OrganizationEntity org){
         return Mono
-                .zip(sendProductsAndCollectionsData(orgId), sendTagsData(orgId))
+                .zip(sendProductsAndCollectionsData(org), sendTagsData(org))
                 .then();
     }
 
 
 
-    private Mono<Void> sendTagsData(Long orgId) {
-        BulkRequest request = new BulkRequest();
+    private Mono<Void> sendTagsData(OrganizationEntity org) {
+        var orgId = org.getId();
+        var request = new BulkRequest();
         categoryService
                 .getOrganizationTags(orgId, null)
                 .stream()
-                .map(tag -> new TagsObject(tag, orgId))
+                .map(tag -> new TagsObject(tag, org))
                 .map(tag -> createIndexRequest(TAGS, tag))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -375,7 +378,7 @@ public class SearchServiceImpl implements SearchService{
         if(!response.hasFailures()){
             sink.success();
         }else{
-            String errMsg = response.buildFailureMessage();
+            var errMsg = response.buildFailureMessage();
             Throwable e = new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0002, orgId, errMsg);
             sink.error(e);
         }
@@ -385,10 +388,10 @@ public class SearchServiceImpl implements SearchService{
 
 
     private <T> Optional<IndexRequest> createIndexRequest(SearchType type ,T obj){
-        String index = getIndex(type);
-        IndexRequest request = new IndexRequest(index);
+        var index = getIndex(type);
+        var request = new IndexRequest(index);
         try {
-            String json = objectMapper.writeValueAsString(obj);
+            var json = objectMapper.writeValueAsString(obj);
             request.source(json, JSON);
             return Optional.of(request);
         } catch (JsonProcessingException e) {
@@ -400,16 +403,17 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private Mono<Void> sendProductsAndCollectionsData(Long orgId) {
-        BulkRequest request = new BulkRequest();
-        Map<Long,List<CsvRow>> extraData = getProductsExtraData(orgId);
-        Long totalProducts = getTotalProducts(orgId);
+    private Mono<Void> sendProductsAndCollectionsData(OrganizationEntity org) {
+        var orgId = org.getId();
+        var request = new BulkRequest();
+        var extraData = getProductsExtraData(orgId);
+        var totalProducts = getTotalProducts(orgId);
         double batchSize = 1000;
-        int batches = (int)Math.ceil(totalProducts/batchSize);
+        var batches = (int)Math.ceil(totalProducts/batchSize);
         logger.info(format("Sync search data for org[%d]: sync [%d] product and collections in [%d] batches!", orgId, totalProducts, batches));
-        for(int i=0; i< batches; i++ ){
+        for(var i = 0; i< batches; i++ ){
             try {
-                List<Product> products = getProductsBatch(orgId, extraData, batchSize, i);
+                var products = getProductsBatch(org, extraData, batchSize, i);
                 addProductsToBulkIndexRequest(request, products);
                 addCollectionsToBulkIndexRequest(request, products);
             } catch (Throwable e) {
@@ -463,24 +467,24 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private List<Product> getProductsBatch(Long orgId, Map<Long, List<CsvRow>> extraData, double batchSize, int i) throws BusinessException, InvocationTargetException, IllegalAccessException {
-        int start = (int)(batchSize * i);
-        ProductSearchParam params = new ProductSearchParam();
-        params.org_id = orgId;
+    private List<Product> getProductsBatch(OrganizationEntity org, Map<Long, List<CsvRow>> extraData, double batchSize, int i) throws BusinessException, InvocationTargetException, IllegalAccessException {
+        var start = (int)(batchSize * i);
+        var params = new ProductSearchParam();
+        params.org_id = org.getId();
         params.count = (int) batchSize;
         params.start = start;
         return productService
                 .getProducts(params)
                 .getProducts()
                 .stream()
-                .map(prod -> new Product(prod, extraData.get(prod.getId()), orgId))
+                .map(prod -> new Product(prod, extraData.get(prod.getId()), org))
                 .collect(toList());
     }
 
 
 
     private Long getTotalProducts(Long orgId) {
-        ProductSearchParam params = new ProductSearchParam();
+        var params = new ProductSearchParam();
         params.org_id = orgId;
         params.count = 10;
         params.start = 0;
@@ -505,7 +509,7 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private SearchSourceBuilder getSearchSourceBuilder(SearchParameters parameters) {
+    private SearchSourceBuilder getSearchSourceBuilder(NormalizedSearchParameters parameters) {
         var mainQuery =
                 QueryBuilders
                 .boolQuery()
@@ -515,6 +519,9 @@ public class SearchServiceImpl implements SearchService{
                         .field("*"));
         if(nonNull(parameters.org_id)){
             mainQuery.filter(matchQuery("organization_id", parameters.org_id));
+        }
+        if(parameters.only_yeshtery){
+            mainQuery.filter(matchQuery("yeshtery_state", 1));
         }
         return new SearchSourceBuilder()
                 .query(mainQuery)
@@ -554,10 +561,10 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchResult createSearchResult(SearchResponse response) {
-        SearchHits hits = response.getHits();
-        SearchResult.Results results = createResults(hits);
+        var hits = response.getHits();
+        var results = createResults(hits);
 
-        SearchResult result = new SearchResult();
+        var result = new SearchResult();
         result.setTotal(hits.getTotalHits().value);
         result.setResults(results);
         return result;
@@ -567,8 +574,8 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchResult addSuggestionResultsToResponse(SearchResult searchResult, SearchResponse suggestionResponse){
-        List<String> suggestions = createSuggestionResult(suggestionResponse);
-        SearchResult searchResultCpy = new SearchResult();
+        var suggestions = createSuggestionResult(suggestionResponse);
+        var searchResultCpy = new SearchResult();
         copyProperties(searchResult, searchResultCpy);
         searchResultCpy.setSuggestions(suggestions);
         return searchResultCpy;
@@ -590,7 +597,7 @@ public class SearchServiceImpl implements SearchService{
 
 
     private SearchResult.Results createResults(SearchHits hits) {
-        SearchResult.Results results = new SearchResult.Results();
+        var results = new SearchResult.Results();
         results.setTags(filterByType(hits, TAGS));
         results.setCollections(filterByType(hits, COLLECTIONS));
         results.setProducts(filterByType(hits, PRODUCTS));
@@ -628,9 +635,11 @@ public class SearchServiceImpl implements SearchService{
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class TagsObject extends TagsRepresentationObject{
     private Long organizationId;
+    private Integer yeshteryState;
 
-    TagsObject(TagsRepresentationObject representationObj , Long orgId){
-        this.organizationId = orgId;
+    TagsObject(TagsRepresentationObject representationObj , OrganizationEntity org){
+        this.organizationId = org.getId();
+        this.yeshteryState = org.getYeshteryState();
         copyProperties(representationObj, this);
     }
 }
@@ -643,10 +652,17 @@ class TagsObject extends TagsRepresentationObject{
 class Product extends ProductRepresentationObject{
     private List<CsvRow> extraData;
     private Long organizationId;
+    private Integer yeshteryState;
 
-    public Product(ProductRepresentationObject repObject, List<CsvRow> extraData, Long orgId){
+    public Product(ProductRepresentationObject repObject, List<CsvRow> extraData, OrganizationEntity org){
         this.extraData = extraData;
-        this.organizationId = orgId;
+        this.organizationId = org.getId();
+        this.yeshteryState = org.getYeshteryState();
         copyProperties(repObject, this);
     }
+}
+
+
+class NormalizedSearchParameters extends SearchParameters{
+    public boolean only_yeshtery;
 }

@@ -4,15 +4,20 @@ import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.ProductService;
+import com.nasnav.service.SearchService;
 import com.nasnav.service.ShopService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -26,8 +31,12 @@ public class YeshteryController {
 
     @Autowired
     private ShopService shopService;
+
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private SearchService searchService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> shippingCallback(@PathVariable("api_version") String apiVersion,
@@ -61,5 +70,16 @@ public class YeshteryController {
         params.setIncludeOutOfStock(includeOutOfStock);
         params.setOnlyYeshteryProducts(true);
         return productService.getProduct(params);
+    }
+
+
+
+    @Operation(description =  "search the data", summary = "search")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/search", produces= MediaType.APPLICATION_JSON_VALUE)
+    public Mono<SearchResult> search(SearchParameters params) {
+        return searchService.search(params, true);
     }
 }

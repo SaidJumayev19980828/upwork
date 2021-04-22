@@ -5,7 +5,7 @@ import com.nasnav.dto.response.navbox.SearchResult;
 import reactor.core.publisher.Mono;
 
 public interface SearchService {
-    Mono<SearchResult> search(SearchParameters parameters);
+    Mono<SearchResult> search(SearchParameters parameters, boolean onlyYeshtery);
 
     Mono<Void> syncSearchData();
 

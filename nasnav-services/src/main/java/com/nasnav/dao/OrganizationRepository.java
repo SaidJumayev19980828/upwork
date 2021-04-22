@@ -33,8 +33,8 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     Integer countThemeClassesByOrganizationId(@Param("orgId") Long orgId,
                                               @Param("classId") Integer classId);
 
-    @Query("SELECT org.id from OrganizationEntity org")
-    List<Long> findAllOrganizations();
+    @Query("SELECT org from OrganizationEntity org")
+    List<OrganizationEntity> findAllOrganizations();
 }
 
 

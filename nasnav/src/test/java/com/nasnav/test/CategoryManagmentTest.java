@@ -909,8 +909,13 @@ public class CategoryManagmentTest {
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
     @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void assignTagCategoryByNasnavAdmin() {
-        HttpEntity<Object> json = getHttpEntity("abcdefg");
-        String url = "/admin/tag/category?category_id=201&tags=5004&tags=5005&tags=5006&tags=5007";
+        var body =
+                json()
+                .put("category_id", 201)
+                .put("tags", jsonArray().put(5004).put(5005).put(5006).put(5007))
+                .toString();
+        HttpEntity<Object> json = getHttpEntity(body, "abcdefg");
+        String url = "/admin/tag/category";
         ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
         assertEquals(OK, response.getStatusCode());
 
@@ -954,14 +959,21 @@ public class CategoryManagmentTest {
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
     @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void assignProductCategoryByNasnavAdmin() {
-        HttpEntity<Object> json = getHttpEntity("abcdefg");
-        String url = "/admin/product/category?category_id=202&products=1001&products=1002";
+        var body =
+                json()
+                    .put("category_id", 202)
+                    .put("products", jsonArray().put(1001).put(1002))
+                    .toString();
+        HttpEntity<Object> json = getHttpEntity(body, "abcdefg");
+        String url = "/admin/product/category";
         ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
         assertEquals(OK, response.getStatusCode());
 
         List<Long> products = productRepo.findProductsIdsByCategoryId(202L);
         assertEquals(5, products.size());
     }
+
+
 
     @Test
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
