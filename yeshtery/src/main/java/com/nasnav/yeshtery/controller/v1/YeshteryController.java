@@ -1,12 +1,11 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.BrandService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SearchService;
 import com.nasnav.service.ShopService;
@@ -34,25 +33,40 @@ public class YeshteryController {
 
     @Autowired
     private ProductService productService;
+    @Autowired
+    private BrandService brandService;
 
     @Autowired
     private SearchService searchService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
-    public List<ShopRepresentationObject> shippingCallback(@PathVariable("api_version") String apiVersion,
-                                                           @RequestParam(value = "name", required = false, defaultValue = "") String name) {
+    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
         return shopService.getLocationShops(name);
     }
 
 
 
     @GetMapping(value = "/related_products", produces = APPLICATION_JSON_VALUE)
-    public List<ProductRepresentationObject> getRelatedProducts(@PathVariable("api_version") String apiVersion,
-                                                                @RequestParam("product_id") Long productId) {
+    public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
         return productService.getRelatedProducts(productId);
     }
 
+    @GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
+    public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {
+        return brandService.getBrandById(brandId);
+    }
 
+    @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
+    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,
+                                        @RequestParam(required = false, defaultValue = "0") Integer start,
+                                        @RequestParam(required = false, defaultValue = "10") Integer count) {
+        return productService.getVariantsForYeshtery(name, start, count);
+    }
+
+    @GetMapping(value = "collection", produces = APPLICATION_JSON_VALUE)
+    public ProductDetailsDTO getCollectionById(@RequestParam Long id) {
+        return productService.getCollection(id);
+    }
 
     @Operation(description =  "Get information about a specific product", summary = "productInfo")
     @ApiResponses(value = {

@@ -24,6 +24,7 @@ import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.request.VariantSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
@@ -3251,18 +3252,15 @@ public class ProductService {
 
 
 	public VariantsResponse getVariants(Long orgId, String name, Integer start, Integer count) {
-		if (isBlankOrNull(start) || start < 0) {
-			start = 0;
-		}
-		if (isBlankOrNull(count) || count < 0) {
-			count = 10;
-		}
-
-		name = ofNullable(name.toLowerCase()).orElse("");
-		Long total = productVariantsRepository.countByOrganizationId(orgId, name);
+		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
+		Long total = productVariantsRepository.countByOrganizationId(orgId, params.getName());
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of((int)Math.floor(start/count), count));
+				productVariantsRepository.findByOrganizationId(orgId, params.getName(), PageRequest.of((int)Math.floor(params.getStart()/params.getCount()), params.getCount()));
 
+		return prepareVariantsDtos(variantsEntities, total);
+	}
+
+	private VariantsResponse prepareVariantsDtos(List<ProductVariantsEntity> variantsEntities, Long total) {
 		List<Long> variantsIds = getVariantsIds(variantsEntities);
 		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;
 
@@ -3271,6 +3269,31 @@ public class ProductService {
 				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
 				.collect(toList());
 		return new VariantsResponse(total, variants);
+	}
+
+	public VariantsResponse getVariantsForYeshtery(String name, Integer start, Integer count) {
+		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
+		Long total = productVariantsRepository.countByYeshteryProducts(params.getName());
+		List<ProductVariantsEntity> variantsEntities =
+				productVariantsRepository.findByYeshteryProducts(params.getName(), PageRequest.of((int)Math.floor(params.getStart()/params.getCount()), params.getCount()));
+
+		return prepareVariantsDtos(variantsEntities, total);
+	}
+
+	private VariantSearchParam normalizeVariantSearchParam(String name, Integer start, Integer count) {
+		VariantSearchParam params = new VariantSearchParam();
+		if (isBlankOrNull(start) || start < 0) {
+			params.setStart(0);
+		} else {
+			params.setStart(start);
+		}
+		if (isBlankOrNull(count) || count < 0 || count > 1000) {
+			params.setCount(10);
+		} else {
+			params.setCount(count);
+		}
+		params.setName(ofNullable(name.toLowerCase()).orElse(""));
+		return params;
 	}
 
 
