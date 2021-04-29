@@ -5,20 +5,24 @@ import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SearchService;
-import com.nasnav.service.ShopService;
+import com.nasnav.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -35,7 +39,10 @@ public class YeshteryController {
     private ProductService productService;
     @Autowired
     private BrandService brandService;
-
+    @Autowired
+    private AddressService addressService;
+    @Autowired
+    private FileService fileService;
     @Autowired
     private SearchService searchService;
 
@@ -86,7 +93,28 @@ public class YeshteryController {
         return productService.getProduct(params);
     }
 
+    @GetMapping(value="countries", produces=MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, CountriesRepObj> getCountries(@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities) {
+        return addressService.getCountries(hideEmptyCities, null);
+    }
 
+    @GetMapping( path="**")
+    public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @RequestParam(required = false) Integer height,
+                             @RequestParam(required = false) Integer width,
+                             @RequestParam(required = false) String type) throws ServletException, IOException {
+        String url = request.getRequestURI().replaceFirst("/files", "");
+        String resourceInternalUrl;
+        if (height != null || width != null) {
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);
+        } else {
+            resourceInternalUrl = fileService.getResourceInternalUrl(url);
+        }
+        resp.setStatus(HttpStatus.OK.value());
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
+        dispatcher.forward(request, resp);
+    }
 
     @Operation(description =  "search the data", summary = "search")
     @ApiResponses(value = {
