@@ -17,7 +17,7 @@
     <properties>
         <java.version>11</java.version>
         <spring.boot.version>2.4.4</spring.boot.version>
-        <lombok.version>1.18.20</lombok.version>
+        <lombok.version>1.18.16</lombok.version>
         <httpclient.version>4.5.8</httpclient.version>
         <start-class>com.nasnav.NavBox</start-class>
         <!-- TEST AND TEST COVERAGE -->
@@ -118,6 +118,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
             <version>${spring.boot.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
         </dependency>
 
         <dependency>
