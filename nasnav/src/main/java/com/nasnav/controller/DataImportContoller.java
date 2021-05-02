@@ -3,12 +3,13 @@ package com.nasnav.controller;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.service.CsvDataImportService;
+import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import com.nasnav.service.CsvDataImportServiceImpl;
+import com.nasnav.service.ExcelDataImportServiceImpl;
+import io.swagger.annotations.ApiResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -27,11 +31,12 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 @RequestMapping("/upload")
 @Tag(name = "Data Import api")
 public class DataImportContoller {
-	
-	
-	@Autowired
-	private CsvDataImportService importService;
 
+	@Autowired
+	private CsvDataImportServiceImpl csvImportService;
+
+	@Autowired
+	private ExcelDataImportServiceImpl excelImportService;
 
 	@ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "Products data verified/imported"),
@@ -48,21 +53,18 @@ public class DataImportContoller {
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException, ImportProductException {
-		ImportProductContext importResult = importService.importProductListFromCSV(file, importMetaData);
+		ImportProductContext importResult = csvImportService.importProductList(file, importMetaData);
 		if(importResult.isSuccess()) {
 			return ResponseEntity.ok(importResult);
 		}else {
 			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
 		}			
     }
-	
-	
-	
 
     @GetMapping(value = "/productlist/template")
 	@ResponseBody
 	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
-		ByteArrayOutputStream s = importService.generateProductsCsvTemplate();
+		ByteArrayOutputStream s = csvImportService.generateProductsCsvTemplate();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")

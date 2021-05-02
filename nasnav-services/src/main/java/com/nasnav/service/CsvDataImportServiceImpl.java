@@ -1,19 +1,11 @@
 package com.nasnav.service;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
@@ -28,71 +20,35 @@ import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 import lombok.Data;
 import org.jboss.logging.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.io.*;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import javax.validation.Valid;
 @Service
-public class CsvDataImportServiceImpl implements CsvDataImportService {
+@Qualifier("csv")
+public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService {
 
-	
-	@Autowired
-	private ShopsRepository shopRepo;
-	
-	@Autowired
-	private EmployeeUserRepository empRepo;
-	
-	@Autowired
-	private SecurityService security;
-
-	
-	@Autowired
-	private ProductFeaturesRepository featureRepo;
-
-	@Autowired
-	private ProductFeaturesRepository prodcutFeaturesRepo;
-
-	@Autowired
-	private DataImportService dataImportService;
-	
-	@Autowired
-	private ExtraAttributesRepository extraAttrRepo;
-	
-	
-	
 	private Logger logger = Logger.getLogger(getClass());
 
-	
-	
-	
-	@Transactional(rollbackFor = Throwable.class)
-	public ImportProductContext importProductListFromCSV(@Valid MultipartFile file,
-			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException, ImportProductException {
-		
-		validateProductImportMetaData(csvImportMetaData);
+	@Override
+	public ImportProductContext importProductList(@Valid MultipartFile file,
+												  @Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException {
+		validateProductImportMetaData(importMetaData);
 		validateProductImportCsvFile(file);
 
-		ProductImportMetadata importMetadata = getImportMetaData(csvImportMetaData);
+		ProductImportMetadata importMetadata = getImportMetaData(importMetaData);
 		ImportProductContext initialContext = new ImportProductContext(emptyList(), importMetadata);
 		
-		List<CsvRow> rows = parseCsvFile(file, csvImportMetaData, initialContext);
+		List<CsvRow> rows = parseCsvFile(file, importMetaData, initialContext);
 		
 		List<ProductImportDTO> productsData = 
 				rows
@@ -101,29 +57,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.collect(toList());
 		return dataImportService.importProducts(productsData, importMetadata);
 	}
-	
-	
-	
-
-	private ProductImportMetadata getImportMetaData(ProductListImportDTO csvImportMetaData) {
-		ProductImportMetadata importMetadata = new ProductImportMetadata();
-
-		importMetadata.setDryrun(csvImportMetaData.isDryrun());
-		importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
-		importMetadata.setUpdateStocks(csvImportMetaData.isUpdateStocks());
-		importMetadata.setShopId(csvImportMetaData.getShopId());
-		importMetadata.setCurrency(csvImportMetaData.getCurrency());
-		importMetadata.setEncoding(csvImportMetaData.getEncoding());
-		importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
-		importMetadata.setResetTags(csvImportMetaData.isResetTags());
-		importMetadata.setInsertNewProducts(csvImportMetaData.isInsertNewProducts());
-
-		return importMetadata;
-	}
-	
-	
-	
-	
 
 	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData, ImportProductContext context) throws ImportProductException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
@@ -140,10 +73,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		return rowProcessor.getBeans();
 	}
 
-
-
-
-
 	private void runCsvParser(ByteArrayInputStream in, RowParseErrorHandler rowParsingErrHandler, CsvParser parser, String encoding)
 			throws ImportProductException {
 		ImportProductContext context = rowParsingErrHandler.getImportContext();
@@ -159,10 +88,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		}
 	}
 
-
-
-
-
 	private CsvParserSettings createParsingSettings(BeanListProcessor<CsvRow> rowProcessor,
 			RowParseErrorHandler rowParsingErrHandler) {
 		CsvParserSettings settings = new CsvParserSettings();
@@ -172,8 +97,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		settings.setMaxCharsPerColumn(-1);
 		return settings;
 	}
-
-
 
 	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
 		List<String> defaultTemplateHeaders = getProductImportTemplateHeaders();
@@ -186,13 +109,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
 	}
-	
-	
-	
-	
-
-
-
 
 	private ByteArrayInputStream readCsvFile(MultipartFile file, ImportProductContext context) throws ImportProductException {
 		byte[] bytes = new byte[0];
@@ -207,10 +123,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		return in;
 	}
 
-
-
-
-
 	private ColumnMapping createAttrToColMapping(ProductListImportDTO metaData) {
 		ColumnMapping mapping = new ColumnMapping();
 		mapping.attributesToColumnNames(PRODUCT_DATA_TO_COLUMN_MAPPING);
@@ -218,118 +130,10 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		return mapping;
 	}
 
-
-
-
-
-	private void validateProductImportCsvFile(@Valid MultipartFile file) throws BusinessException{
-		if(file == null || file.isEmpty()) {
-			throw new BusinessException(
-					ERR_NO_FILE_UPLOADED
-					, "INVALID PARAM"
-					, HttpStatus.NOT_ACCEPTABLE); 
-		}
-		
-	}
-
-
-
-
-
-	private void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws BusinessException{
-		Long shopId = metaData.getShopId();
-		String encoding = metaData.getEncoding();
-		Integer currency = metaData.getCurrency();
-		
-		if( anyIsNull(shopId, encoding, currency)) {
-			throw new BusinessException(
-					ERR_PRODUCT_IMPORT_MISSING_PARAM
-					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}		
-		
-		validateShopId(shopId);		
-		
-		validateEncodingCharset(encoding);		
-		
-		validateStockCurrency(currency);		
-	}
-
-
-
-
-
-	private void validateEncodingCharset(String encoding) throws BusinessException {
-		try {
-			if( !Charset.isSupported(encoding)) {
-				throw new IllegalStateException();
-			}			
-		}catch(Exception e) {
-			logger.error(e,e);
-			throw new BusinessException(
-					String.format(ERR_INVALID_ENCODING, encoding)
-					, "MISSING PARAM:encoding"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-	}
-
-
-
-
-
-	private void validateShopId(Long shopId) throws BusinessException {
-		if( !shopRepo.existsById( shopId ) ) {
-			throw new BusinessException(
-					String.format(ERR_SHOP_ID_NOT_EXIST, shopId)
-					, "MISSING PARAM:shop_id"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-		
-		
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		EmployeeUserEntity user =  empRepo.getOneByEmail(auth.getName());
-		Long userOrgId = user.getOrganizationId();
-
-		ShopsEntity shop = shopRepo.findById(shopId).get();
-		Long shopOrgId = shop.getOrganizationEntity().getId();
-		
-		if(!Objects.equals(shopOrgId, userOrgId)) {
-			throw new BusinessException(
-					String.format(ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP, userOrgId, shopOrgId)
-					, "MISSING PARAM:shop_id"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-	}
-	
-	
-	
-	
-	
-	private void validateStockCurrency(Integer currency) throws BusinessException {
-		boolean invalidCurrency = Arrays.asList( TransactionCurrency.values() )
-										.stream()
-										.map(TransactionCurrency::getValue)
-										.map(Integer::valueOf)
-										.noneMatch(val -> Objects.equals(currency, val));
-		if(invalidCurrency ) {
-			throw new BusinessException(
-					String.format("Invalid Currency code [%d]!", currency)
-					, "INVALID_PARAM:currency" 
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-	}
-	
-	
-	
-	
-
 	private CsvWriterSettings createWritingSettings() {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		return settings;
 	}
-	
-	
-	
 
 	private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
 		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
@@ -343,8 +147,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 		return csvResult;
 	}
-	
-	
 
 	@Override
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{		
@@ -352,51 +154,16 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 		return writeCsvHeaders(baseHeaders);
 	}
-
-
-
-
-	@Override
-	public List<String> getProductImportTemplateHeaders() {
-		Long orgId = security.getCurrentUserOrganizationId();
-		List<String> features = 
-				prodcutFeaturesRepo
-					.findByOrganizationId(orgId)
-					.stream()
-					.map(ProductFeaturesEntity::getName)
-					.sorted()
-					.collect(toList());
-		
-		List<String> extraAttributes = 
-				extraAttrRepo.findByOrganizationId(orgId)
-				.stream()
-				.map(ExtraAttributesEntity::getName)
-				.sorted()
-				.collect(toList());
-		
-		List<String> baseHeaders = new ArrayList<>(CSV_BASE_HEADERS);
-		baseHeaders.addAll(features);
-		baseHeaders.addAll(extraAttributes);
-		return baseHeaders;
-	}
-
-	
 }
-
-
-
 
 @Data
 class RowParseErrorHandler implements RowProcessorErrorHandler {
 	private ImportProductContext importContext;
-	
-	
+
 	public RowParseErrorHandler(ImportProductContext context) {
 		this.importContext = context;
 	}
-	
-	
-	
+
 	@Override
 	public void handleError(DataProcessingException error, Object[] inputRow, ParsingContext context) {
 			importContext.logNewError(error, Arrays.toString(inputRow), (int)(context.currentLine())+1);	
