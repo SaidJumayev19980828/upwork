@@ -1991,7 +1991,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<Long, ShopsEntity> createOrganizationShopsCache(OrganizationEntity org) {
 		return shopsRepo
-		.findByOrganizationEntity_IdAndRemoved(org.getId(), 0)
+		.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(org.getId(), 0)
 		.stream()
 		.collect(toMap(ShopsEntity::getId, shop -> shop));
 	}

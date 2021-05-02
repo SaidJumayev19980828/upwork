@@ -22,7 +22,7 @@ public interface ShopService {
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     ShopResponse shopModification(ShopJsonDTO shopJson);
 
-    List<ShopRepresentationObject> getLocationShops(String name);
+    List<ShopRepresentationObject> getLocationShops(String name, Long orgId);
 
     @Transactional
     @CacheEvict(cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})

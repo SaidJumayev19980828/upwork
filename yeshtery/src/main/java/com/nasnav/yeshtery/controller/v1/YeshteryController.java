@@ -39,16 +39,14 @@ public class YeshteryController {
     private SearchService searchService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
-    public List<ShopRepresentationObject> shippingCallback(@PathVariable("api_version") String apiVersion,
-                                                           @RequestParam(value = "name", required = false, defaultValue = "") String name) {
-        return shopService.getLocationShops(name);
+    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
+        return shopService.getLocationShops(name, null);
     }
 
 
 
     @GetMapping(value = "/related_products", produces = APPLICATION_JSON_VALUE)
-    public List<ProductRepresentationObject> getRelatedProducts(@PathVariable("api_version") String apiVersion,
-                                                                @RequestParam("product_id") Long productId) {
+    public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
         return productService.getRelatedProducts(productId);
     }
 

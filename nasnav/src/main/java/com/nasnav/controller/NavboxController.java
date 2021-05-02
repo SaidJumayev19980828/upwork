@@ -290,8 +290,9 @@ public class NavboxController {
 			@ApiResponse(responseCode = " 406" ,description = "invalid search parameter")
 	})
 	@GetMapping(value="/location_shops",produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name) {
-		return shopService.getLocationShops(name);
+	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name,
+														   @RequestParam(name = "org_id") Long orgId) {
+		return shopService.getLocationShops(name, orgId);
 	}
 
 

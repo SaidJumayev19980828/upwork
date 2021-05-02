@@ -15,9 +15,9 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
     Optional<ShopsEntity> findByIdAndRemoved(Long id, Integer removed);
 
-    List<ShopsEntity> findByOrganizationEntity_IdAndRemoved(Long organizationId, Integer removed);
+    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationId, Integer removed);
     
-    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouse(Long organizationId, Integer removed, Integer isWarehouse);
+    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(Long organizationId, Integer removed, Integer isWarehouse);
 
     @Query(value = "select * from shops s where s.lng between :minLong and :maxLong and s.lat between :minLat and :maxLat and s.organization_id = :orgId" +
             " and s.id in (select st.shop_id from stocks st join Product_Variants v " +
@@ -29,15 +29,27 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
                                          @Param("minLat") Double minLat,
                                          @Param("maxLat") Double maxLat);
 
-    @Query(value = "select s from StocksEntity st" +
+    @Query(value = "select distinct s from StocksEntity st" +
             " left join st.shopsEntity s" +
             " left join st.productVariantsEntity v " +
             " left join v.productEntity p " +
             " left join p.tags t " +
-            "where (p.name like %:name% or t.name like %:name% ) and s.removed = 0")
-    Set<ShopsEntity> getShopsByLocation(@Param("name") String name);
+            " where (p.name like %:name% or t.name like %:name% ) and s.removed = 0" +
+            " and s.organizationEntity.yeshteryState = 1" +
+            " order by s.priority desc")
+    List<ShopsEntity> getShopsByProductsOrTags(@Param("name") String name);
 
-	Optional<ShopsEntity> findByNameAndOrganizationEntity_IdAndRemoved(String shopName, Long orgId, Integer removed);
+    @Query(value = "select distinct s from StocksEntity st" +
+            " left join st.shopsEntity s" +
+            " left join st.productVariantsEntity v " +
+            " left join v.productEntity p " +
+            " left join p.tags t " +
+            " where (p.name like %:name% or t.name like %:name% ) and s.removed = 0 and s.organizationEntity.id = :orgId" +
+            " order by s.priority desc")
+    List<ShopsEntity> getShopsByOrgIdAndProductsOrTags(@Param("name") String name,
+                                                       @Param("orgId") Long orgId);
+
+	Optional<ShopsEntity> findByNameAndOrganizationEntity_IdAndRemovedOrderByPriorityDesc(String shopName, Long orgId, Integer removed);
 
 	ShopsEntity findByIdAndOrganizationEntity_IdAndRemoved(Long id, Long orgId, Integer removed);
 
