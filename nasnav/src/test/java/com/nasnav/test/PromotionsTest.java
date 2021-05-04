@@ -794,6 +794,89 @@ public class PromotionsTest {
 		assertTrue("total is subTotal - discount + shipping", 276.38 == order.getTotal().doubleValue());
 	}
 
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithBuyXGetYPromoAndOtherCartPromos() {
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 3);
+		createCartForUser(req, 603L, 1);
+
+		var requestBody = createCheckoutDTO();
+		requestBody.put("promo_code", "GREEEEEED");
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertTrue(100 == order.getDiscount().intValue());
+		assertTrue(400 == order.getSubtotal().intValue());
+		assertTrue(6.38 == order.getShipping().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 306.38 == order.getTotal().doubleValue());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithMultipleBuyXGetYPromoAndFirstInapplicable() {
+		changePromoPriority(630006L, 3);
+		promoRepo.deleteById(630002L);
+		promoRepo.deleteById(630003L);
+
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 3);
+		createCartForUser(req, 603L, 1);
+
+		var requestBody = createCheckoutDTO();
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertEquals(150 , order.getDiscount().intValue());
+		assertEquals(400 , order.getSubtotal().intValue());
+		assertEquals(6.38 , order.getShipping().doubleValue());
+		assertEquals("total is subTotal - discount + shipping", 256.38 , order.getTotal().doubleValue());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderWithBuyXGetYPromoAndProductsInMultipleShops() {
+		promoRepo.deleteById(630002L);
+		promoRepo.deleteById(630003L);
+
+		HttpEntity<?> req = getHttpEntity("123");
+		createCartForUser(req, 601L, 2);
+		createCartForUser(req, 602L, 1);
+
+		var requestBody = createCheckoutDTO();
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+		Order order = res.getBody();
+
+		assertEquals(100 , order.getDiscount().intValue());
+		assertEquals(300 , order.getSubtotal().intValue());
+		assertEquals(6.38 , order.getShipping().doubleValue());
+		assertEquals("total is subTotal - discount + shipping", 206.38 , order.getTotal().doubleValue());
+	}
+
+
+
+	private void changePromoPriority(Long id, int priority) {
+		promoRepo
+			.findById(id)
+			.map(e -> {e.setPriority(priority); return e;})
+			.map(promoRepo::save);
+	}
+
+
 	private JSONObject createCheckoutDTO() {
 		return json()
 				.put("customer_address", 12300001)
