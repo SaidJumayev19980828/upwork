@@ -158,7 +158,8 @@ public class ProductService {
 
 	@Autowired
 	private TagsRepository orgTagRepo;
-
+	@Autowired
+	private OrganizationRepository orgRepo;
 	@Autowired
 	private ExtraAttributesRepository extraAttrRepo;
 
@@ -854,8 +855,14 @@ public class ProductService {
 		predicate.and(product.removed.eq(0));
 		predicate.and(product.hide.eq(false));
 
-		if(params.org_id != null)
-			predicate.and( product.organizationId.eq((params.org_id) ));
+		if (params.yeshtery_products) {
+			List<Long> yeshteryOrganizationsIds = orgRepo.findByYeshteryState();
+			predicate.and(product.organizationId.in(yeshteryOrganizationsIds));
+		} else if (params.org_id != null) {
+			predicate.and(product.organizationId.eq((params.org_id)));
+		} else {
+			predicate.and( stock.shopId.eq(params.shop_id) );
+		}
 
 		if(params.brand_id != null)
 			predicate.and( product.brandId.eq(params.brand_id) );
@@ -875,9 +882,6 @@ public class ProductService {
 					.or(product.description.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
-
-		if(params.shop_id != null && params.org_id == null)
-			predicate.and( stock.shopId.eq(params.shop_id) );
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
@@ -919,7 +923,7 @@ public class ProductService {
 		if (params.count != null && params.count < 1)
 			throw new BusinessException("Count can be One or more", "", BAD_REQUEST);
 
-		if (params.org_id == null && params.shop_id == null)
+		if (params.org_id == null && params.shop_id == null && !params.yeshtery_products)
 			throw new BusinessException("Shop Id or Organization Id shall be provided", "", BAD_REQUEST);
 
 		if (params.minPrice != null && params.minPrice.compareTo(ZERO) < 0)

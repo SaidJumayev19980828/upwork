@@ -23,6 +23,9 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     @Query("select o.id from OrganizationEntity o where o.themeId = :themeId")
     Set<Long> findByThemeId(@Param("themeId") Integer themeId);
 
+    @Query("select o.id from OrganizationEntity o where o.yeshteryState = 1")
+    List<Long> findByYeshteryState();
+
     OrganizationEntity findByIdAndThemeId(Long id, Integer themeId);
 
     boolean existsByIdAndThemeId(Long id, Integer themeId);
