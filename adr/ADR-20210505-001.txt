@@ -1,0 +1,44 @@
+ADR-20210505-001: using liquibase for database migration
+
+ 2021-05-05
+
+---------------------------------------------
+Context
+---------------------------------------------
+- We originally left the local database for each developer to manage. on the other hand changes done
+in develop, uat and production environments where managed by Marek.
+- To add a change in the database, we usually send the change script to Marek on slack , and other team
+members should apply the change on their local databases as well.
+- This didn't always worked well, even for our very small team. as in some cases the database changes were
+not identical -default values for columns, nullability for ex.-, leading to Nondeterministic behavior of tests.
+
+---------------------------------------------
+Decision
+---------------------------------------------
+- We decided to try using a database migration tool to handle the changes in the database.
+- We decided to use Liquibase, but only on our local databases, develop and uat environments.
+- We expect this to improve the workflow, by eliminating mismatches in database structures,
+  and speed up our feature merges a bit.
+- as we didn't want any risks for our production database, we decided to disable liquibase from managing our
+ our production database.
+- but to make manual changes easier on production, it was decided to use liquibase changelogs in sql format, this
+way our changelog files can be re-used by Marek on production.
+- but to achieve this , all our changelogs should usually use the option 'splitStatements:false', as there were proplems
+with using native sql directly , when using [$] or [''] in the scripts. disabling this option was a workaround.
+
+---------------------------------------------
+Status
+---------------------------------------------
+ ACCEPTED
+
+---------------------------------------------
+Consequences
+---------------------------------------------
+- from now on, adding new database changes should be done by liquibase changelogs
+- the changelogs must be done in sql format
+- they should be placed placed in nasnav-services/src/main/resources/db/changelog/change-logs, liquibase will
+check all the changelogs in that directory.
+- we placed the changelogs in a common project, because both nasnav and yeshtery use the same database.
+- manual database changes should be done before deploying to production only.
+- new developers can run the application and tests on an empty database directly, and liquibase will handle creating
+database.

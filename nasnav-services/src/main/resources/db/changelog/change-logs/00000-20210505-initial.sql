@@ -1,12 +1,19 @@
---
--- PostgreSQL database dump
---
+--liquibase formatted sql
 
--- Dumped from database version 9.5.21
--- Dumped by pg_dump version 9.5.21
+--changeset galal:init dbms:postgresql splitStatements:false failOnError:false
+
+--precondition-sql-check expectedResult:t SELECT count(*) < 3 FROM information_schema.tables WHERE table_schema = 'public';
+
+--comment: the database dump @ 2021-05-05 from postgres database version 9.5.21
+--comment: splitStatements=false to allow scripts with '$', so the whole script is executed as single statement
+--comment: the script will run only if schema public has no tables
+--comment: failOnError:false ,because this script will run against both empty databases and legacy database on our development and production environments
+--comment: the precondition checks if the schema is empty except for liquibase tables.
+
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -16,21 +23,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
-
---
--- Name: text_to_json(character varying); Type: FUNCTION; Schema: public; Owner: -
+-- Name: text_to_json(character varying); Type: FUNCTION; Schema: public; Owner: nasnav
 --
 
 CREATE FUNCTION public.text_to_json(character varying) RETURNS json
@@ -49,12 +42,12 @@ CREATE FUNCTION public.text_to_json(character varying) RETURNS json
 $_$;
 
 
+ALTER FUNCTION public.text_to_json(character varying) OWNER TO nasnav;
+
 SET default_tablespace = '';
 
-SET default_with_oids = false;
-
 --
--- Name: addresses; Type: TABLE; Schema: public; Owner: -
+-- Name: addresses; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.addresses (
@@ -75,8 +68,10 @@ CREATE TABLE public.addresses (
 );
 
 
+ALTER TABLE public.addresses OWNER TO nasnav;
+
 --
--- Name: addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.addresses_id_seq
@@ -87,15 +82,17 @@ CREATE SEQUENCE public.addresses_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.addresses_id_seq OWNER TO nasnav;
+
 --
--- Name: addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.addresses_id_seq OWNED BY public.addresses.id;
 
 
 --
--- Name: areas; Type: TABLE; Schema: public; Owner: -
+-- Name: areas; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.areas (
@@ -105,8 +102,10 @@ CREATE TABLE public.areas (
 );
 
 
+ALTER TABLE public.areas OWNER TO nasnav;
+
 --
--- Name: areas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: areas_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.areas_id_seq
@@ -117,15 +116,17 @@ CREATE SEQUENCE public.areas_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.areas_id_seq OWNER TO nasnav;
+
 --
--- Name: areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.areas_id_seq OWNED BY public.areas.id;
 
 
 --
--- Name: baskets; Type: TABLE; Schema: public; Owner: -
+-- Name: baskets; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.baskets (
@@ -140,8 +141,10 @@ CREATE TABLE public.baskets (
 );
 
 
+ALTER TABLE public.baskets OWNER TO nasnav;
+
 --
--- Name: baskets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: baskets_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.baskets_id_seq
@@ -152,15 +155,17 @@ CREATE SEQUENCE public.baskets_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.baskets_id_seq OWNER TO nasnav;
+
 --
--- Name: baskets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: baskets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.baskets_id_seq OWNED BY public.baskets.id;
 
 
 --
--- Name: brands; Type: TABLE; Schema: public; Owner: -
+-- Name: brands; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.brands (
@@ -179,8 +184,10 @@ CREATE TABLE public.brands (
 );
 
 
+ALTER TABLE public.brands OWNER TO nasnav;
+
 --
--- Name: brands_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: brands_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.brands_id_seq
@@ -191,15 +198,17 @@ CREATE SEQUENCE public.brands_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.brands_id_seq OWNER TO nasnav;
+
 --
--- Name: brands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: brands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.brands_id_seq OWNED BY public.brands.id;
 
 
 --
--- Name: cart_items; Type: TABLE; Schema: public; Owner: -
+-- Name: cart_items; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.cart_items (
@@ -214,8 +223,10 @@ CREATE TABLE public.cart_items (
 );
 
 
+ALTER TABLE public.cart_items OWNER TO nasnav;
+
 --
--- Name: cart_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cart_items_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.cart_items_id_seq
@@ -226,15 +237,17 @@ CREATE SEQUENCE public.cart_items_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.cart_items_id_seq OWNER TO nasnav;
+
 --
--- Name: cart_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cart_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.cart_items_id_seq OWNED BY public.cart_items.id;
 
 
 --
--- Name: categories; Type: TABLE; Schema: public; Owner: -
+-- Name: categories; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.categories (
@@ -246,8 +259,10 @@ CREATE TABLE public.categories (
 );
 
 
+ALTER TABLE public.categories OWNER TO nasnav;
+
 --
--- Name: categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: categories_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.categories_id_seq
@@ -258,15 +273,17 @@ CREATE SEQUENCE public.categories_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.categories_id_seq OWNER TO nasnav;
+
 --
--- Name: categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.categories_id_seq OWNED BY public.categories.id;
 
 
 --
--- Name: cities; Type: TABLE; Schema: public; Owner: -
+-- Name: cities; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.cities (
@@ -276,8 +293,10 @@ CREATE TABLE public.cities (
 );
 
 
+ALTER TABLE public.cities OWNER TO nasnav;
+
 --
--- Name: cities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cities_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.cities_id_seq
@@ -288,15 +307,17 @@ CREATE SEQUENCE public.cities_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.cities_id_seq OWNER TO nasnav;
+
 --
--- Name: cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.cities_id_seq OWNED BY public.cities.id;
 
 
 --
--- Name: countries; Type: TABLE; Schema: public; Owner: -
+-- Name: countries; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.countries (
@@ -307,8 +328,10 @@ CREATE TABLE public.countries (
 );
 
 
+ALTER TABLE public.countries OWNER TO nasnav;
+
 --
--- Name: countries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: countries_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.countries_id_seq
@@ -319,15 +342,17 @@ CREATE SEQUENCE public.countries_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.countries_id_seq OWNER TO nasnav;
+
 --
--- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.countries_id_seq OWNED BY public.countries.id;
 
 
 --
--- Name: employee_users; Type: TABLE; Schema: public; Owner: -
+-- Name: employee_users; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.employee_users (
@@ -354,8 +379,10 @@ CREATE TABLE public.employee_users (
 );
 
 
+ALTER TABLE public.employee_users OWNER TO nasnav;
+
 --
--- Name: employee_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: employee_users_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.employee_users_id_seq
@@ -366,15 +393,17 @@ CREATE SEQUENCE public.employee_users_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.employee_users_id_seq OWNER TO nasnav;
+
 --
--- Name: employee_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: employee_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.employee_users_id_seq OWNED BY public.employee_users.id;
 
 
 --
--- Name: extra_attributes; Type: TABLE; Schema: public; Owner: -
+-- Name: extra_attributes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.extra_attributes (
@@ -386,8 +415,10 @@ CREATE TABLE public.extra_attributes (
 );
 
 
+ALTER TABLE public.extra_attributes OWNER TO nasnav;
+
 --
--- Name: extra_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: extra_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.extra_attributes_id_seq
@@ -398,15 +429,17 @@ CREATE SEQUENCE public.extra_attributes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.extra_attributes_id_seq OWNER TO nasnav;
+
 --
--- Name: extra_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: extra_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.extra_attributes_id_seq OWNED BY public.extra_attributes.id;
 
 
 --
--- Name: files; Type: TABLE; Schema: public; Owner: -
+-- Name: files; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.files (
@@ -419,8 +452,10 @@ CREATE TABLE public.files (
 );
 
 
+ALTER TABLE public.files OWNER TO nasnav;
+
 --
--- Name: files_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: files_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.files_id_seq
@@ -431,15 +466,17 @@ CREATE SEQUENCE public.files_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.files_id_seq OWNER TO nasnav;
+
 --
--- Name: files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.files_id_seq OWNED BY public.files.id;
 
 
 --
--- Name: files_resized; Type: TABLE; Schema: public; Owner: -
+-- Name: files_resized; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.files_resized (
@@ -451,8 +488,10 @@ CREATE TABLE public.files_resized (
 );
 
 
+ALTER TABLE public.files_resized OWNER TO nasnav;
+
 --
--- Name: files_resized_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: files_resized_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.files_resized_id_seq
@@ -463,15 +502,17 @@ CREATE SEQUENCE public.files_resized_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.files_resized_id_seq OWNER TO nasnav;
+
 --
--- Name: files_resized_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: files_resized_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.files_resized_id_seq OWNED BY public.files_resized.id;
 
 
 --
--- Name: hibernate_sequence; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: hibernate_sequence; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.hibernate_sequence
@@ -482,8 +523,10 @@ CREATE SEQUENCE public.hibernate_sequence
     CACHE 1;
 
 
+ALTER TABLE public.hibernate_sequence OWNER TO nasnav;
+
 --
--- Name: integration_event_failure; Type: TABLE; Schema: public; Owner: -
+-- Name: integration_event_failure; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.integration_event_failure (
@@ -497,8 +540,10 @@ CREATE TABLE public.integration_event_failure (
 );
 
 
+ALTER TABLE public.integration_event_failure OWNER TO nasnav;
+
 --
--- Name: integration_event_failure_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: integration_event_failure_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.integration_event_failure_id_seq
@@ -509,15 +554,17 @@ CREATE SEQUENCE public.integration_event_failure_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.integration_event_failure_id_seq OWNER TO nasnav;
+
 --
--- Name: integration_event_failure_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: integration_event_failure_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.integration_event_failure_id_seq OWNED BY public.integration_event_failure.id;
 
 
 --
--- Name: integration_mapping; Type: TABLE; Schema: public; Owner: -
+-- Name: integration_mapping; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.integration_mapping (
@@ -529,8 +576,10 @@ CREATE TABLE public.integration_mapping (
 );
 
 
+ALTER TABLE public.integration_mapping OWNER TO nasnav;
+
 --
--- Name: integration_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: integration_mapping_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.integration_mapping_id_seq
@@ -541,15 +590,17 @@ CREATE SEQUENCE public.integration_mapping_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.integration_mapping_id_seq OWNER TO nasnav;
+
 --
--- Name: integration_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: integration_mapping_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.integration_mapping_id_seq OWNED BY public.integration_mapping.id;
 
 
 --
--- Name: integration_mapping_type; Type: TABLE; Schema: public; Owner: -
+-- Name: integration_mapping_type; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.integration_mapping_type (
@@ -558,8 +609,10 @@ CREATE TABLE public.integration_mapping_type (
 );
 
 
+ALTER TABLE public.integration_mapping_type OWNER TO nasnav;
+
 --
--- Name: integration_mapping_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: integration_mapping_type_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.integration_mapping_type_id_seq
@@ -570,15 +623,17 @@ CREATE SEQUENCE public.integration_mapping_type_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.integration_mapping_type_id_seq OWNER TO nasnav;
+
 --
--- Name: integration_mapping_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: integration_mapping_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.integration_mapping_type_id_seq OWNED BY public.integration_mapping_type.id;
 
 
 --
--- Name: integration_param; Type: TABLE; Schema: public; Owner: -
+-- Name: integration_param; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.integration_param (
@@ -589,8 +644,10 @@ CREATE TABLE public.integration_param (
 );
 
 
+ALTER TABLE public.integration_param OWNER TO nasnav;
+
 --
--- Name: integration_param_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: integration_param_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.integration_param_id_seq
@@ -601,15 +658,17 @@ CREATE SEQUENCE public.integration_param_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.integration_param_id_seq OWNER TO nasnav;
+
 --
--- Name: integration_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: integration_param_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.integration_param_id_seq OWNED BY public.integration_param.id;
 
 
 --
--- Name: integration_param_type; Type: TABLE; Schema: public; Owner: -
+-- Name: integration_param_type; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.integration_param_type (
@@ -619,8 +678,10 @@ CREATE TABLE public.integration_param_type (
 );
 
 
+ALTER TABLE public.integration_param_type OWNER TO nasnav;
+
 --
--- Name: integration_param_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: integration_param_type_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.integration_param_type_id_seq
@@ -631,15 +692,17 @@ CREATE SEQUENCE public.integration_param_type_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.integration_param_type_id_seq OWNER TO nasnav;
+
 --
--- Name: integration_param_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: integration_param_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.integration_param_type_id_seq OWNED BY public.integration_param_type.id;
 
 
 --
--- Name: meta_orders; Type: TABLE; Schema: public; Owner: -
+-- Name: meta_orders; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.meta_orders (
@@ -656,8 +719,10 @@ CREATE TABLE public.meta_orders (
 );
 
 
+ALTER TABLE public.meta_orders OWNER TO nasnav;
+
 --
--- Name: meta_orders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: meta_orders_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.meta_orders_id_seq
@@ -668,15 +733,17 @@ CREATE SEQUENCE public.meta_orders_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.meta_orders_id_seq OWNER TO nasnav;
+
 --
--- Name: meta_orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: meta_orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.meta_orders_id_seq OWNED BY public.meta_orders.id;
 
 
 --
--- Name: meta_orders_promotions; Type: TABLE; Schema: public; Owner: -
+-- Name: meta_orders_promotions; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.meta_orders_promotions (
@@ -685,8 +752,10 @@ CREATE TABLE public.meta_orders_promotions (
 );
 
 
+ALTER TABLE public.meta_orders_promotions OWNER TO nasnav;
+
 --
--- Name: oauth2_providers; Type: TABLE; Schema: public; Owner: -
+-- Name: oauth2_providers; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.oauth2_providers (
@@ -695,8 +764,10 @@ CREATE TABLE public.oauth2_providers (
 );
 
 
+ALTER TABLE public.oauth2_providers OWNER TO nasnav;
+
 --
--- Name: oauth2_providers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: oauth2_providers_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.oauth2_providers_id_seq
@@ -707,15 +778,17 @@ CREATE SEQUENCE public.oauth2_providers_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.oauth2_providers_id_seq OWNER TO nasnav;
+
 --
--- Name: oauth2_providers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: oauth2_providers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.oauth2_providers_id_seq OWNED BY public.oauth2_providers.id;
 
 
 --
--- Name: oauth2_users; Type: TABLE; Schema: public; Owner: -
+-- Name: oauth2_users; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.oauth2_users (
@@ -729,8 +802,10 @@ CREATE TABLE public.oauth2_users (
 );
 
 
+ALTER TABLE public.oauth2_users OWNER TO nasnav;
+
 --
--- Name: oauth2_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: oauth2_users_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.oauth2_users_id_seq
@@ -741,15 +816,17 @@ CREATE SEQUENCE public.oauth2_users_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.oauth2_users_id_seq OWNER TO nasnav;
+
 --
--- Name: oauth2_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: oauth2_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.oauth2_users_id_seq OWNED BY public.oauth2_users.id;
 
 
 --
--- Name: orders; Type: TABLE; Schema: public; Owner: -
+-- Name: orders; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.orders (
@@ -776,8 +853,10 @@ CREATE TABLE public.orders (
 );
 
 
+ALTER TABLE public.orders OWNER TO nasnav;
+
 --
--- Name: orders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: orders_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.orders_id_seq
@@ -788,15 +867,17 @@ CREATE SEQUENCE public.orders_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.orders_id_seq OWNER TO nasnav;
+
 --
--- Name: orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.orders_id_seq OWNED BY public.orders.id;
 
 
 --
--- Name: organization_domains; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_domains; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_domains (
@@ -808,8 +889,10 @@ CREATE TABLE public.organization_domains (
 );
 
 
+ALTER TABLE public.organization_domains OWNER TO nasnav;
+
 --
--- Name: organization_domains_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_domains_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_domains_id_seq
@@ -820,15 +903,17 @@ CREATE SEQUENCE public.organization_domains_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_domains_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_domains_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_domains_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_domains_id_seq OWNED BY public.organization_domains.id;
 
 
 --
--- Name: organization_image_types; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_image_types; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_image_types (
@@ -837,8 +922,10 @@ CREATE TABLE public.organization_image_types (
 );
 
 
+ALTER TABLE public.organization_image_types OWNER TO nasnav;
+
 --
--- Name: organization_image_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_image_types_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_image_types_id_seq
@@ -849,15 +936,17 @@ CREATE SEQUENCE public.organization_image_types_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_image_types_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_image_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_image_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_image_types_id_seq OWNED BY public.organization_image_types.id;
 
 
 --
--- Name: organization_images; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_images; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_images (
@@ -869,8 +958,10 @@ CREATE TABLE public.organization_images (
 );
 
 
+ALTER TABLE public.organization_images OWNER TO nasnav;
+
 --
--- Name: organization_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_images_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_images_id_seq
@@ -881,15 +972,17 @@ CREATE SEQUENCE public.organization_images_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_images_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_images_id_seq OWNED BY public.organization_images.id;
 
 
 --
--- Name: organization_payments; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_payments; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_payments (
@@ -900,8 +993,10 @@ CREATE TABLE public.organization_payments (
 );
 
 
+ALTER TABLE public.organization_payments OWNER TO nasnav;
+
 --
--- Name: organization_payments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_payments_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_payments_id_seq
@@ -912,15 +1007,17 @@ CREATE SEQUENCE public.organization_payments_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_payments_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_payments_id_seq OWNED BY public.organization_payments.id;
 
 
 --
--- Name: organization_shipping_service; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_shipping_service; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_shipping_service (
@@ -931,8 +1028,10 @@ CREATE TABLE public.organization_shipping_service (
 );
 
 
+ALTER TABLE public.organization_shipping_service OWNER TO nasnav;
+
 --
--- Name: organization_shipping_service_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_shipping_service_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_shipping_service_id_seq
@@ -943,15 +1042,17 @@ CREATE SEQUENCE public.organization_shipping_service_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_shipping_service_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_shipping_service_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_shipping_service_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_shipping_service_id_seq OWNED BY public.organization_shipping_service.id;
 
 
 --
--- Name: organization_theme_classes; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_theme_classes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_theme_classes (
@@ -961,8 +1062,10 @@ CREATE TABLE public.organization_theme_classes (
 );
 
 
+ALTER TABLE public.organization_theme_classes OWNER TO nasnav;
+
 --
--- Name: organization_theme_classes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_theme_classes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_theme_classes_id_seq
@@ -973,15 +1076,17 @@ CREATE SEQUENCE public.organization_theme_classes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_theme_classes_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_theme_classes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_theme_classes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_theme_classes_id_seq OWNED BY public.organization_theme_classes.id;
 
 
 --
--- Name: organization_themes; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_themes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_themes (
@@ -1004,8 +1109,10 @@ CREATE TABLE public.organization_themes (
 );
 
 
+ALTER TABLE public.organization_themes OWNER TO nasnav;
+
 --
--- Name: organization_themes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_themes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_themes_id_seq
@@ -1016,15 +1123,17 @@ CREATE SEQUENCE public.organization_themes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_themes_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_themes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_themes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_themes_id_seq OWNED BY public.organization_themes.id;
 
 
 --
--- Name: organization_themes_settings; Type: TABLE; Schema: public; Owner: -
+-- Name: organization_themes_settings; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organization_themes_settings (
@@ -1035,8 +1144,10 @@ CREATE TABLE public.organization_themes_settings (
 );
 
 
+ALTER TABLE public.organization_themes_settings OWNER TO nasnav;
+
 --
--- Name: organization_themes_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_themes_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organization_themes_settings_id_seq
@@ -1047,15 +1158,17 @@ CREATE SEQUENCE public.organization_themes_settings_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organization_themes_settings_id_seq OWNER TO nasnav;
+
 --
--- Name: organization_themes_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_themes_settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organization_themes_settings_id_seq OWNED BY public.organization_themes_settings.id;
 
 
 --
--- Name: organizations; Type: TABLE; Schema: public; Owner: -
+-- Name: organizations; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organizations (
@@ -1070,12 +1183,15 @@ CREATE TABLE public.organizations (
     ecommerce integer DEFAULT 0,
     google_token text,
     currency_iso integer DEFAULT 818,
-    matomo integer
+    matomo integer,
+    yeshtery_state integer DEFAULT 0 NOT NULL
 );
 
 
+ALTER TABLE public.organizations OWNER TO nasnav;
+
 --
--- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organizations_id_seq
@@ -1086,15 +1202,17 @@ CREATE SEQUENCE public.organizations_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organizations_id_seq OWNER TO nasnav;
+
 --
--- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
 
 
 --
--- Name: organiztion_cart_optimization; Type: TABLE; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.organiztion_cart_optimization (
@@ -1106,8 +1224,10 @@ CREATE TABLE public.organiztion_cart_optimization (
 );
 
 
+ALTER TABLE public.organiztion_cart_optimization OWNER TO nasnav;
+
 --
--- Name: organiztion_cart_optimization_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.organiztion_cart_optimization_id_seq
@@ -1118,15 +1238,17 @@ CREATE SEQUENCE public.organiztion_cart_optimization_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.organiztion_cart_optimization_id_seq OWNER TO nasnav;
+
 --
--- Name: organiztion_cart_optimization_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.organiztion_cart_optimization_id_seq OWNED BY public.organiztion_cart_optimization.id;
 
 
 --
--- Name: payment_refunds; Type: TABLE; Schema: public; Owner: -
+-- Name: payment_refunds; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.payment_refunds (
@@ -1141,8 +1263,10 @@ CREATE TABLE public.payment_refunds (
 );
 
 
+ALTER TABLE public.payment_refunds OWNER TO nasnav;
+
 --
--- Name: payment_refunds_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: payment_refunds_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.payment_refunds_id_seq
@@ -1153,15 +1277,17 @@ CREATE SEQUENCE public.payment_refunds_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.payment_refunds_id_seq OWNER TO nasnav;
+
 --
--- Name: payment_refunds_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: payment_refunds_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.payment_refunds_id_seq OWNED BY public.payment_refunds.id;
 
 
 --
--- Name: payments; Type: TABLE; Schema: public; Owner: -
+-- Name: payments; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.payments (
@@ -1181,8 +1307,10 @@ CREATE TABLE public.payments (
 );
 
 
+ALTER TABLE public.payments OWNER TO nasnav;
+
 --
--- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.payments_id_seq
@@ -1193,15 +1321,17 @@ CREATE SEQUENCE public.payments_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.payments_id_seq OWNER TO nasnav;
+
 --
--- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
 
 
 --
--- Name: product_bundles; Type: TABLE; Schema: public; Owner: -
+-- Name: product_bundles; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_bundles (
@@ -1210,8 +1340,10 @@ CREATE TABLE public.product_bundles (
 );
 
 
+ALTER TABLE public.product_bundles OWNER TO nasnav;
+
 --
--- Name: product_collections; Type: TABLE; Schema: public; Owner: -
+-- Name: product_collections; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_collections (
@@ -1222,8 +1354,10 @@ CREATE TABLE public.product_collections (
 );
 
 
+ALTER TABLE public.product_collections OWNER TO nasnav;
+
 --
--- Name: product_collections_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_collections_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_collections_id_seq
@@ -1234,15 +1368,17 @@ CREATE SEQUENCE public.product_collections_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_collections_id_seq OWNER TO nasnav;
+
 --
--- Name: product_collections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_collections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_collections_id_seq OWNED BY public.product_collections.id;
 
 
 --
--- Name: product_features; Type: TABLE; Schema: public; Owner: -
+-- Name: product_features; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_features (
@@ -1257,8 +1393,10 @@ CREATE TABLE public.product_features (
 );
 
 
+ALTER TABLE public.product_features OWNER TO nasnav;
+
 --
--- Name: product_features_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_features_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_features_id_seq
@@ -1269,15 +1407,17 @@ CREATE SEQUENCE public.product_features_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_features_id_seq OWNER TO nasnav;
+
 --
--- Name: product_features_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_features_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_features_id_seq OWNED BY public.product_features.id;
 
 
 --
--- Name: product_images; Type: TABLE; Schema: public; Owner: -
+-- Name: product_images; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_images (
@@ -1290,8 +1430,10 @@ CREATE TABLE public.product_images (
 );
 
 
+ALTER TABLE public.product_images OWNER TO nasnav;
+
 --
--- Name: product_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_images_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_images_id_seq
@@ -1302,15 +1444,17 @@ CREATE SEQUENCE public.product_images_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_images_id_seq OWNER TO nasnav;
+
 --
--- Name: product_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_images_id_seq OWNED BY public.product_images.id;
 
 
 --
--- Name: product_positions; Type: TABLE; Schema: public; Owner: -
+-- Name: product_positions; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_positions (
@@ -1322,8 +1466,10 @@ CREATE TABLE public.product_positions (
 );
 
 
+ALTER TABLE public.product_positions OWNER TO nasnav;
+
 --
--- Name: product_positions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_positions_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_positions_id_seq
@@ -1334,15 +1480,17 @@ CREATE SEQUENCE public.product_positions_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_positions_id_seq OWNER TO nasnav;
+
 --
--- Name: product_positions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_positions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_positions_id_seq OWNED BY public.product_positions.id;
 
 
 --
--- Name: product_ratings; Type: TABLE; Schema: public; Owner: -
+-- Name: product_ratings; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_ratings (
@@ -1356,8 +1504,10 @@ CREATE TABLE public.product_ratings (
 );
 
 
+ALTER TABLE public.product_ratings OWNER TO nasnav;
+
 --
--- Name: product_ratings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_ratings_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_ratings_id_seq
@@ -1368,15 +1518,17 @@ CREATE SEQUENCE public.product_ratings_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_ratings_id_seq OWNER TO nasnav;
+
 --
--- Name: product_ratings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_ratings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_ratings_id_seq OWNED BY public.product_ratings.id;
 
 
 --
--- Name: product_tags; Type: TABLE; Schema: public; Owner: -
+-- Name: product_tags; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_tags (
@@ -1385,8 +1537,10 @@ CREATE TABLE public.product_tags (
 );
 
 
+ALTER TABLE public.product_tags OWNER TO nasnav;
+
 --
--- Name: product_variants; Type: TABLE; Schema: public; Owner: -
+-- Name: product_variants; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.product_variants (
@@ -1404,8 +1558,10 @@ CREATE TABLE public.product_variants (
 );
 
 
+ALTER TABLE public.product_variants OWNER TO nasnav;
+
 --
--- Name: product_variants_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_variants_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.product_variants_id_seq
@@ -1416,15 +1572,17 @@ CREATE SEQUENCE public.product_variants_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.product_variants_id_seq OWNER TO nasnav;
+
 --
--- Name: product_variants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_variants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.product_variants_id_seq OWNED BY public.product_variants.id;
 
 
 --
--- Name: products; Type: TABLE; Schema: public; Owner: -
+-- Name: products; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.products (
@@ -1446,8 +1604,10 @@ CREATE TABLE public.products (
 );
 
 
+ALTER TABLE public.products OWNER TO nasnav;
+
 --
--- Name: products_extra_attributes; Type: TABLE; Schema: public; Owner: -
+-- Name: products_extra_attributes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.products_extra_attributes (
@@ -1458,8 +1618,10 @@ CREATE TABLE public.products_extra_attributes (
 );
 
 
+ALTER TABLE public.products_extra_attributes OWNER TO nasnav;
+
 --
--- Name: products_extra_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: products_extra_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.products_extra_attributes_id_seq
@@ -1470,15 +1632,17 @@ CREATE SEQUENCE public.products_extra_attributes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.products_extra_attributes_id_seq OWNER TO nasnav;
+
 --
--- Name: products_extra_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: products_extra_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.products_extra_attributes_id_seq OWNED BY public.products_extra_attributes.id;
 
 
 --
--- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.products_id_seq
@@ -1489,15 +1653,17 @@ CREATE SEQUENCE public.products_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.products_id_seq OWNER TO nasnav;
+
 --
--- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
 
 
 --
--- Name: products_related; Type: TABLE; Schema: public; Owner: -
+-- Name: products_related; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.products_related (
@@ -1507,8 +1673,10 @@ CREATE TABLE public.products_related (
 );
 
 
+ALTER TABLE public.products_related OWNER TO nasnav;
+
 --
--- Name: products_related_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: products_related_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.products_related_id_seq
@@ -1519,15 +1687,17 @@ CREATE SEQUENCE public.products_related_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.products_related_id_seq OWNER TO nasnav;
+
 --
--- Name: products_related_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: products_related_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.products_related_id_seq OWNED BY public.products_related.id;
 
 
 --
--- Name: promotions; Type: TABLE; Schema: public; Owner: -
+-- Name: promotions; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.promotions (
@@ -1538,18 +1708,21 @@ CREATE TABLE public.promotions (
     date_end timestamp without time zone DEFAULT now() NOT NULL,
     status integer DEFAULT 0 NOT NULL,
     user_restricted integer DEFAULT 0 NOT NULL,
-    code text NOT NULL,
+    code text,
     constrains text,
     discount text,
     created_by bigint,
     created_on timestamp without time zone DEFAULT now() NOT NULL,
     class_id integer DEFAULT 0 NOT NULL,
-    type_id integer DEFAULT 0 NOT NULL
+    type_id integer DEFAULT 0 NOT NULL,
+    priority integer
 );
 
 
+ALTER TABLE public.promotions OWNER TO nasnav;
+
 --
--- Name: promotions_cart_codes; Type: TABLE; Schema: public; Owner: -
+-- Name: promotions_cart_codes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.promotions_cart_codes (
@@ -1559,8 +1732,10 @@ CREATE TABLE public.promotions_cart_codes (
 );
 
 
+ALTER TABLE public.promotions_cart_codes OWNER TO nasnav;
+
 --
--- Name: promotions_cart_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotions_cart_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.promotions_cart_codes_id_seq
@@ -1571,15 +1746,17 @@ CREATE SEQUENCE public.promotions_cart_codes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.promotions_cart_codes_id_seq OWNER TO nasnav;
+
 --
--- Name: promotions_cart_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotions_cart_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.promotions_cart_codes_id_seq OWNED BY public.promotions_cart_codes.id;
 
 
 --
--- Name: promotions_codes_used; Type: TABLE; Schema: public; Owner: -
+-- Name: promotions_codes_used; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.promotions_codes_used (
@@ -1590,8 +1767,10 @@ CREATE TABLE public.promotions_codes_used (
 );
 
 
+ALTER TABLE public.promotions_codes_used OWNER TO nasnav;
+
 --
--- Name: promotions_codes_used_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotions_codes_used_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.promotions_codes_used_id_seq
@@ -1602,15 +1781,17 @@ CREATE SEQUENCE public.promotions_codes_used_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.promotions_codes_used_id_seq OWNER TO nasnav;
+
 --
--- Name: promotions_codes_used_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotions_codes_used_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.promotions_codes_used_id_seq OWNED BY public.promotions_codes_used.id;
 
 
 --
--- Name: promotions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotions_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.promotions_id_seq
@@ -1621,15 +1802,17 @@ CREATE SEQUENCE public.promotions_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.promotions_id_seq OWNER TO nasnav;
+
 --
--- Name: promotions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.promotions_id_seq OWNED BY public.promotions.id;
 
 
 --
--- Name: return_request_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: return_request_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.return_request_id_seq
@@ -1640,8 +1823,10 @@ CREATE SEQUENCE public.return_request_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.return_request_id_seq OWNER TO nasnav;
+
 --
--- Name: return_request; Type: TABLE; Schema: public; Owner: -
+-- Name: return_request; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.return_request (
@@ -1654,8 +1839,10 @@ CREATE TABLE public.return_request (
 );
 
 
+ALTER TABLE public.return_request OWNER TO nasnav;
+
 --
--- Name: return_request_item_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: return_request_item_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.return_request_item_id_seq
@@ -1666,8 +1853,10 @@ CREATE SEQUENCE public.return_request_item_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.return_request_item_id_seq OWNER TO nasnav;
+
 --
--- Name: return_request_item; Type: TABLE; Schema: public; Owner: -
+-- Name: return_request_item; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.return_request_item (
@@ -1684,8 +1873,10 @@ CREATE TABLE public.return_request_item (
 );
 
 
+ALTER TABLE public.return_request_item OWNER TO nasnav;
+
 --
--- Name: return_shipment; Type: TABLE; Schema: public; Owner: -
+-- Name: return_shipment; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.return_shipment (
@@ -1699,8 +1890,10 @@ CREATE TABLE public.return_shipment (
 );
 
 
+ALTER TABLE public.return_shipment OWNER TO nasnav;
+
 --
--- Name: return_shipment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: return_shipment_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.return_shipment_id_seq
@@ -1711,15 +1904,17 @@ CREATE SEQUENCE public.return_shipment_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.return_shipment_id_seq OWNER TO nasnav;
+
 --
--- Name: return_shipment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: return_shipment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.return_shipment_id_seq OWNED BY public.return_shipment.id;
 
 
 --
--- Name: role_employee_users; Type: TABLE; Schema: public; Owner: -
+-- Name: role_employee_users; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.role_employee_users (
@@ -1729,8 +1924,10 @@ CREATE TABLE public.role_employee_users (
 );
 
 
+ALTER TABLE public.role_employee_users OWNER TO nasnav;
+
 --
--- Name: role_employee_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: role_employee_users_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.role_employee_users_id_seq
@@ -1741,15 +1938,17 @@ CREATE SEQUENCE public.role_employee_users_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.role_employee_users_id_seq OWNER TO nasnav;
+
 --
--- Name: role_employee_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: role_employee_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.role_employee_users_id_seq OWNED BY public.role_employee_users.id;
 
 
 --
--- Name: roles; Type: TABLE; Schema: public; Owner: -
+-- Name: roles; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.roles (
@@ -1759,8 +1958,10 @@ CREATE TABLE public.roles (
 );
 
 
+ALTER TABLE public.roles OWNER TO nasnav;
+
 --
--- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.roles_id_seq
@@ -1771,15 +1972,17 @@ CREATE SEQUENCE public.roles_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.roles_id_seq OWNER TO nasnav;
+
 --
--- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
 
 
 --
--- Name: scenes; Type: TABLE; Schema: public; Owner: -
+-- Name: scenes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.scenes (
@@ -1794,8 +1997,10 @@ CREATE TABLE public.scenes (
 );
 
 
+ALTER TABLE public.scenes OWNER TO nasnav;
+
 --
--- Name: scenes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: scenes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.scenes_id_seq
@@ -1806,15 +2011,17 @@ CREATE SEQUENCE public.scenes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.scenes_id_seq OWNER TO nasnav;
+
 --
--- Name: scenes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: scenes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.scenes_id_seq OWNED BY public.scenes.id;
 
 
 --
--- Name: sections; Type: TABLE; Schema: public; Owner: -
+-- Name: sections; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.sections (
@@ -1826,8 +2033,10 @@ CREATE TABLE public.sections (
 );
 
 
+ALTER TABLE public.sections OWNER TO nasnav;
+
 --
--- Name: sections_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: sections_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.sections_id_seq
@@ -1838,15 +2047,17 @@ CREATE SEQUENCE public.sections_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.sections_id_seq OWNER TO nasnav;
+
 --
--- Name: sections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: sections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.sections_id_seq OWNED BY public.sections.id;
 
 
 --
--- Name: seo_keywords; Type: TABLE; Schema: public; Owner: -
+-- Name: seo_keywords; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.seo_keywords (
@@ -1858,8 +2069,10 @@ CREATE TABLE public.seo_keywords (
 );
 
 
+ALTER TABLE public.seo_keywords OWNER TO nasnav;
+
 --
--- Name: seo_keywords_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: seo_keywords_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.seo_keywords_id_seq
@@ -1870,15 +2083,17 @@ CREATE SEQUENCE public.seo_keywords_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.seo_keywords_id_seq OWNER TO nasnav;
+
 --
--- Name: seo_keywords_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: seo_keywords_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.seo_keywords_id_seq OWNED BY public.seo_keywords.id;
 
 
 --
--- Name: settings; Type: TABLE; Schema: public; Owner: -
+-- Name: settings; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.settings (
@@ -1890,8 +2105,10 @@ CREATE TABLE public.settings (
 );
 
 
+ALTER TABLE public.settings OWNER TO nasnav;
+
 --
--- Name: settings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: settings_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.settings_id_seq
@@ -1902,15 +2119,17 @@ CREATE SEQUENCE public.settings_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.settings_id_seq OWNER TO nasnav;
+
 --
--- Name: settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: settings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.settings_id_seq OWNED BY public.settings.id;
 
 
 --
--- Name: shipment; Type: TABLE; Schema: public; Owner: -
+-- Name: shipment; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shipment (
@@ -1929,8 +2148,10 @@ CREATE TABLE public.shipment (
 );
 
 
+ALTER TABLE public.shipment OWNER TO nasnav;
+
 --
--- Name: shipment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shipment_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shipment_id_seq
@@ -1941,15 +2162,17 @@ CREATE SEQUENCE public.shipment_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shipment_id_seq OWNER TO nasnav;
+
 --
--- Name: shipment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shipment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shipment_id_seq OWNED BY public.shipment.id;
 
 
 --
--- Name: shipping_areas; Type: TABLE; Schema: public; Owner: -
+-- Name: shipping_areas; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shipping_areas (
@@ -1960,8 +2183,10 @@ CREATE TABLE public.shipping_areas (
 );
 
 
+ALTER TABLE public.shipping_areas OWNER TO nasnav;
+
 --
--- Name: shipping_areas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shipping_areas_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shipping_areas_id_seq
@@ -1972,15 +2197,17 @@ CREATE SEQUENCE public.shipping_areas_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shipping_areas_id_seq OWNER TO nasnav;
+
 --
--- Name: shipping_areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shipping_areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shipping_areas_id_seq OWNED BY public.shipping_areas.id;
 
 
 --
--- Name: shipping_service; Type: TABLE; Schema: public; Owner: -
+-- Name: shipping_service; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shipping_service (
@@ -1990,8 +2217,10 @@ CREATE TABLE public.shipping_service (
 );
 
 
+ALTER TABLE public.shipping_service OWNER TO nasnav;
+
 --
--- Name: shop360_products; Type: TABLE; Schema: public; Owner: -
+-- Name: shop360_products; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shop360_products (
@@ -2007,8 +2236,10 @@ CREATE TABLE public.shop360_products (
 );
 
 
+ALTER TABLE public.shop360_products OWNER TO nasnav;
+
 --
--- Name: shop360_products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shop360_products_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shop360_products_id_seq
@@ -2019,15 +2250,17 @@ CREATE SEQUENCE public.shop360_products_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shop360_products_id_seq OWNER TO nasnav;
+
 --
--- Name: shop360_products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shop360_products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shop360_products_id_seq OWNED BY public.shop360_products.id;
 
 
 --
--- Name: shop360s; Type: TABLE; Schema: public; Owner: -
+-- Name: shop360s; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shop360s (
@@ -2043,8 +2276,10 @@ CREATE TABLE public.shop360s (
 );
 
 
+ALTER TABLE public.shop360s OWNER TO nasnav;
+
 --
--- Name: shop360s_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shop360s_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shop360s_id_seq
@@ -2055,15 +2290,17 @@ CREATE SEQUENCE public.shop360s_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shop360s_id_seq OWNER TO nasnav;
+
 --
--- Name: shop360s_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shop360s_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shop360s_id_seq OWNED BY public.shop360s.id;
 
 
 --
--- Name: shop_floors; Type: TABLE; Schema: public; Owner: -
+-- Name: shop_floors; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shop_floors (
@@ -2075,8 +2312,10 @@ CREATE TABLE public.shop_floors (
 );
 
 
+ALTER TABLE public.shop_floors OWNER TO nasnav;
+
 --
--- Name: shop_floors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shop_floors_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shop_floors_id_seq
@@ -2087,15 +2326,17 @@ CREATE SEQUENCE public.shop_floors_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shop_floors_id_seq OWNER TO nasnav;
+
 --
--- Name: shop_floors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shop_floors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shop_floors_id_seq OWNED BY public.shop_floors.id;
 
 
 --
--- Name: shop_sections; Type: TABLE; Schema: public; Owner: -
+-- Name: shop_sections; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shop_sections (
@@ -2108,8 +2349,10 @@ CREATE TABLE public.shop_sections (
 );
 
 
+ALTER TABLE public.shop_sections OWNER TO nasnav;
+
 --
--- Name: shop_sections_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shop_sections_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shop_sections_id_seq
@@ -2120,15 +2363,17 @@ CREATE SEQUENCE public.shop_sections_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shop_sections_id_seq OWNER TO nasnav;
+
 --
--- Name: shop_sections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shop_sections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shop_sections_id_seq OWNED BY public.shop_sections.id;
 
 
 --
--- Name: shops; Type: TABLE; Schema: public; Owner: -
+-- Name: shops; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shops (
@@ -2146,12 +2391,15 @@ CREATE TABLE public.shops (
     address_id bigint,
     removed integer DEFAULT 0 NOT NULL,
     google_place_id text,
-    is_warehouse integer DEFAULT 0 NOT NULL
+    is_warehouse integer DEFAULT 0 NOT NULL,
+    priority integer DEFAULT 0 NOT NULL
 );
 
 
+ALTER TABLE public.shops OWNER TO nasnav;
+
 --
--- Name: shops_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shops_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shops_id_seq
@@ -2162,15 +2410,17 @@ CREATE SEQUENCE public.shops_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shops_id_seq OWNER TO nasnav;
+
 --
--- Name: shops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shops_id_seq OWNED BY public.shops.id;
 
 
 --
--- Name: shops_opening_times; Type: TABLE; Schema: public; Owner: -
+-- Name: shops_opening_times; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.shops_opening_times (
@@ -2184,8 +2434,10 @@ CREATE TABLE public.shops_opening_times (
 );
 
 
+ALTER TABLE public.shops_opening_times OWNER TO nasnav;
+
 --
--- Name: shops_opening_times_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: shops_opening_times_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.shops_opening_times_id_seq
@@ -2196,15 +2448,17 @@ CREATE SEQUENCE public.shops_opening_times_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.shops_opening_times_id_seq OWNER TO nasnav;
+
 --
--- Name: shops_opening_times_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: shops_opening_times_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.shops_opening_times_id_seq OWNED BY public.shops_opening_times.id;
 
 
 --
--- Name: social_links; Type: TABLE; Schema: public; Owner: -
+-- Name: social_links; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.social_links (
@@ -2219,8 +2473,10 @@ CREATE TABLE public.social_links (
 );
 
 
+ALTER TABLE public.social_links OWNER TO nasnav;
+
 --
--- Name: social_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: social_links_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.social_links_id_seq
@@ -2231,15 +2487,17 @@ CREATE SEQUENCE public.social_links_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.social_links_id_seq OWNER TO nasnav;
+
 --
--- Name: social_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: social_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.social_links_id_seq OWNED BY public.social_links.id;
 
 
 --
--- Name: stocks; Type: TABLE; Schema: public; Owner: -
+-- Name: stocks; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.stocks (
@@ -2255,8 +2513,10 @@ CREATE TABLE public.stocks (
 );
 
 
+ALTER TABLE public.stocks OWNER TO nasnav;
+
 --
--- Name: stocks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: stocks_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.stocks_id_seq
@@ -2267,15 +2527,17 @@ CREATE SEQUENCE public.stocks_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.stocks_id_seq OWNER TO nasnav;
+
 --
--- Name: stocks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: stocks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.stocks_id_seq OWNED BY public.stocks.id;
 
 
 --
--- Name: sub_areas; Type: TABLE; Schema: public; Owner: -
+-- Name: sub_areas; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.sub_areas (
@@ -2288,8 +2550,10 @@ CREATE TABLE public.sub_areas (
 );
 
 
+ALTER TABLE public.sub_areas OWNER TO nasnav;
+
 --
--- Name: sub_areas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: sub_areas_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.sub_areas_id_seq
@@ -2300,15 +2564,17 @@ CREATE SEQUENCE public.sub_areas_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.sub_areas_id_seq OWNER TO nasnav;
+
 --
--- Name: sub_areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: sub_areas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.sub_areas_id_seq OWNED BY public.sub_areas.id;
 
 
 --
--- Name: tag_graph_edges; Type: TABLE; Schema: public; Owner: -
+-- Name: tag_graph_edges; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.tag_graph_edges (
@@ -2318,8 +2584,10 @@ CREATE TABLE public.tag_graph_edges (
 );
 
 
+ALTER TABLE public.tag_graph_edges OWNER TO nasnav;
+
 --
--- Name: tag_graph_edges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tag_graph_edges_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.tag_graph_edges_id_seq
@@ -2330,15 +2598,17 @@ CREATE SEQUENCE public.tag_graph_edges_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tag_graph_edges_id_seq OWNER TO nasnav;
+
 --
--- Name: tag_graph_edges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tag_graph_edges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.tag_graph_edges_id_seq OWNED BY public.tag_graph_edges.id;
 
 
 --
--- Name: tag_graph_nodes; Type: TABLE; Schema: public; Owner: -
+-- Name: tag_graph_nodes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.tag_graph_nodes (
@@ -2347,8 +2617,10 @@ CREATE TABLE public.tag_graph_nodes (
 );
 
 
+ALTER TABLE public.tag_graph_nodes OWNER TO nasnav;
+
 --
--- Name: tag_graph_nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tag_graph_nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.tag_graph_nodes_id_seq
@@ -2359,15 +2631,17 @@ CREATE SEQUENCE public.tag_graph_nodes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tag_graph_nodes_id_seq OWNER TO nasnav;
+
 --
--- Name: tag_graph_nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tag_graph_nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.tag_graph_nodes_id_seq OWNED BY public.tag_graph_nodes.id;
 
 
 --
--- Name: tags; Type: TABLE; Schema: public; Owner: -
+-- Name: tags; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.tags (
@@ -2383,8 +2657,10 @@ CREATE TABLE public.tags (
 );
 
 
+ALTER TABLE public.tags OWNER TO nasnav;
+
 --
--- Name: tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: tags_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.tags_id_seq
@@ -2395,15 +2671,17 @@ CREATE SEQUENCE public.tags_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.tags_id_seq OWNER TO nasnav;
+
 --
--- Name: tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.tags_id_seq OWNED BY public.tags.id;
 
 
 --
--- Name: theme_classes; Type: TABLE; Schema: public; Owner: -
+-- Name: theme_classes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.theme_classes (
@@ -2412,8 +2690,10 @@ CREATE TABLE public.theme_classes (
 );
 
 
+ALTER TABLE public.theme_classes OWNER TO nasnav;
+
 --
--- Name: theme_classes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: theme_classes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.theme_classes_id_seq
@@ -2424,15 +2704,17 @@ CREATE SEQUENCE public.theme_classes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.theme_classes_id_seq OWNER TO nasnav;
+
 --
--- Name: theme_classes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: theme_classes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.theme_classes_id_seq OWNED BY public.theme_classes.id;
 
 
 --
--- Name: themes; Type: TABLE; Schema: public; Owner: -
+-- Name: themes; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.themes (
@@ -2445,8 +2727,10 @@ CREATE TABLE public.themes (
 );
 
 
+ALTER TABLE public.themes OWNER TO nasnav;
+
 --
--- Name: themes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: themes_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.themes_id_seq
@@ -2457,15 +2741,17 @@ CREATE SEQUENCE public.themes_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.themes_id_seq OWNER TO nasnav;
+
 --
--- Name: themes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: themes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.themes_id_seq OWNED BY public.themes.id;
 
 
 --
--- Name: units; Type: TABLE; Schema: public; Owner: -
+-- Name: units; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.units (
@@ -2474,8 +2760,10 @@ CREATE TABLE public.units (
 );
 
 
+ALTER TABLE public.units OWNER TO nasnav;
+
 --
--- Name: units_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: units_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.units_id_seq
@@ -2486,15 +2774,17 @@ CREATE SEQUENCE public.units_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.units_id_seq OWNER TO nasnav;
+
 --
--- Name: units_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: units_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.units_id_seq OWNED BY public.units.id;
 
 
 --
--- Name: user_addresses; Type: TABLE; Schema: public; Owner: -
+-- Name: user_addresses; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.user_addresses (
@@ -2505,8 +2795,10 @@ CREATE TABLE public.user_addresses (
 );
 
 
+ALTER TABLE public.user_addresses OWNER TO nasnav;
+
 --
--- Name: user_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_addresses_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.user_addresses_id_seq
@@ -2517,15 +2809,17 @@ CREATE SEQUENCE public.user_addresses_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.user_addresses_id_seq OWNER TO nasnav;
+
 --
--- Name: user_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_addresses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.user_addresses_id_seq OWNED BY public.user_addresses.id;
 
 
 --
--- Name: user_subscriptions; Type: TABLE; Schema: public; Owner: -
+-- Name: user_subscriptions; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.user_subscriptions (
@@ -2536,8 +2830,10 @@ CREATE TABLE public.user_subscriptions (
 );
 
 
+ALTER TABLE public.user_subscriptions OWNER TO nasnav;
+
 --
--- Name: user_subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.user_subscriptions_id_seq
@@ -2548,15 +2844,17 @@ CREATE SEQUENCE public.user_subscriptions_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.user_subscriptions_id_seq OWNER TO nasnav;
+
 --
--- Name: user_subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.user_subscriptions_id_seq OWNED BY public.user_subscriptions.id;
 
 
 --
--- Name: user_tokens; Type: TABLE; Schema: public; Owner: -
+-- Name: user_tokens; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.user_tokens (
@@ -2568,8 +2866,10 @@ CREATE TABLE public.user_tokens (
 );
 
 
+ALTER TABLE public.user_tokens OWNER TO nasnav;
+
 --
--- Name: user_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.user_tokens_id_seq
@@ -2580,15 +2880,17 @@ CREATE SEQUENCE public.user_tokens_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.user_tokens_id_seq OWNER TO nasnav;
+
 --
--- Name: user_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.user_tokens_id_seq OWNED BY public.user_tokens.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: -
+-- Name: users; Type: TABLE; Schema: public; Owner: nasnav
 --
 
 CREATE TABLE public.users (
@@ -2622,8 +2924,10 @@ CREATE TABLE public.users (
 );
 
 
+ALTER TABLE public.users OWNER TO nasnav;
+
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: nasnav
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -2634,519 +2938,521 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
+ALTER TABLE public.users_id_seq OWNER TO nasnav;
+
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nasnav
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: addresses id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.addresses ALTER COLUMN id SET DEFAULT nextval('public.addresses_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: areas id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.areas ALTER COLUMN id SET DEFAULT nextval('public.areas_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: baskets id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.baskets ALTER COLUMN id SET DEFAULT nextval('public.baskets_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: brands id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.brands ALTER COLUMN id SET DEFAULT nextval('public.brands_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cart_items id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cart_items ALTER COLUMN id SET DEFAULT nextval('public.cart_items_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: categories id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.categories ALTER COLUMN id SET DEFAULT nextval('public.categories_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cities id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cities ALTER COLUMN id SET DEFAULT nextval('public.cities_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: countries id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.countries ALTER COLUMN id SET DEFAULT nextval('public.countries_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: employee_users id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.employee_users ALTER COLUMN id SET DEFAULT nextval('public.employee_users_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: extra_attributes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.extra_attributes ALTER COLUMN id SET DEFAULT nextval('public.extra_attributes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: files id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files ALTER COLUMN id SET DEFAULT nextval('public.files_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: files_resized id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files_resized ALTER COLUMN id SET DEFAULT nextval('public.files_resized_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: integration_event_failure id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_event_failure ALTER COLUMN id SET DEFAULT nextval('public.integration_event_failure_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: integration_mapping id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping ALTER COLUMN id SET DEFAULT nextval('public.integration_mapping_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: integration_mapping_type id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping_type ALTER COLUMN id SET DEFAULT nextval('public.integration_mapping_type_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: integration_param id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param ALTER COLUMN id SET DEFAULT nextval('public.integration_param_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: integration_param_type id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param_type ALTER COLUMN id SET DEFAULT nextval('public.integration_param_type_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: meta_orders id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.meta_orders ALTER COLUMN id SET DEFAULT nextval('public.meta_orders_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: oauth2_providers id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_providers ALTER COLUMN id SET DEFAULT nextval('public.oauth2_providers_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: oauth2_users id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users ALTER COLUMN id SET DEFAULT nextval('public.oauth2_users_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: orders id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders ALTER COLUMN id SET DEFAULT nextval('public.orders_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_domains id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_domains ALTER COLUMN id SET DEFAULT nextval('public.organization_domains_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_images id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images ALTER COLUMN id SET DEFAULT nextval('public.organization_images_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_payments id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_payments ALTER COLUMN id SET DEFAULT nextval('public.organization_payments_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_shipping_service id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_shipping_service ALTER COLUMN id SET DEFAULT nextval('public.organization_shipping_service_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_theme_classes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_theme_classes ALTER COLUMN id SET DEFAULT nextval('public.organization_theme_classes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_themes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes ALTER COLUMN id SET DEFAULT nextval('public.organization_themes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_themes_settings id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes_settings ALTER COLUMN id SET DEFAULT nextval('public.organization_themes_settings_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organizations id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('public.organizations_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organiztion_cart_optimization ALTER COLUMN id SET DEFAULT nextval('public.organiztion_cart_optimization_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: payment_refunds id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payment_refunds ALTER COLUMN id SET DEFAULT nextval('public.payment_refunds_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: payments id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payments ALTER COLUMN id SET DEFAULT nextval('public.payments_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_collections id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections ALTER COLUMN id SET DEFAULT nextval('public.product_collections_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_features id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_features ALTER COLUMN id SET DEFAULT nextval('public.product_features_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_images id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_images ALTER COLUMN id SET DEFAULT nextval('public.product_images_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_positions id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_positions ALTER COLUMN id SET DEFAULT nextval('public.product_positions_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_ratings id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_ratings ALTER COLUMN id SET DEFAULT nextval('public.product_ratings_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_variants id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_variants ALTER COLUMN id SET DEFAULT nextval('public.product_variants_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: products id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.products_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: products_extra_attributes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_extra_attributes ALTER COLUMN id SET DEFAULT nextval('public.products_extra_attributes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: products_related id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_related ALTER COLUMN id SET DEFAULT nextval('public.products_related_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotions id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions ALTER COLUMN id SET DEFAULT nextval('public.promotions_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotions_cart_codes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_cart_codes ALTER COLUMN id SET DEFAULT nextval('public.promotions_cart_codes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotions_codes_used id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_codes_used ALTER COLUMN id SET DEFAULT nextval('public.promotions_codes_used_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: return_shipment id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_shipment ALTER COLUMN id SET DEFAULT nextval('public.return_shipment_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: role_employee_users id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.role_employee_users ALTER COLUMN id SET DEFAULT nextval('public.role_employee_users_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: roles id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: scenes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.scenes ALTER COLUMN id SET DEFAULT nextval('public.scenes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: sections id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sections ALTER COLUMN id SET DEFAULT nextval('public.sections_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: seo_keywords id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.seo_keywords ALTER COLUMN id SET DEFAULT nextval('public.seo_keywords_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: settings id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.settings ALTER COLUMN id SET DEFAULT nextval('public.settings_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shipment id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipment ALTER COLUMN id SET DEFAULT nextval('public.shipment_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shipping_areas id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipping_areas ALTER COLUMN id SET DEFAULT nextval('public.shipping_areas_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shop360_products id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products ALTER COLUMN id SET DEFAULT nextval('public.shop360_products_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shop360s id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360s ALTER COLUMN id SET DEFAULT nextval('public.shop360s_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shop_floors id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_floors ALTER COLUMN id SET DEFAULT nextval('public.shop_floors_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shop_sections id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_sections ALTER COLUMN id SET DEFAULT nextval('public.shop_sections_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shops id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops ALTER COLUMN id SET DEFAULT nextval('public.shops_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: shops_opening_times id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops_opening_times ALTER COLUMN id SET DEFAULT nextval('public.shops_opening_times_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: social_links id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.social_links ALTER COLUMN id SET DEFAULT nextval('public.social_links_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: stocks id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks ALTER COLUMN id SET DEFAULT nextval('public.stocks_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: sub_areas id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sub_areas ALTER COLUMN id SET DEFAULT nextval('public.sub_areas_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tag_graph_edges id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_edges ALTER COLUMN id SET DEFAULT nextval('public.tag_graph_edges_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tag_graph_nodes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_nodes ALTER COLUMN id SET DEFAULT nextval('public.tag_graph_nodes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tags id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags ALTER COLUMN id SET DEFAULT nextval('public.tags_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: theme_classes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.theme_classes ALTER COLUMN id SET DEFAULT nextval('public.theme_classes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: themes id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.themes ALTER COLUMN id SET DEFAULT nextval('public.themes_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: units id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.units ALTER COLUMN id SET DEFAULT nextval('public.units_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_addresses id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_addresses ALTER COLUMN id SET DEFAULT nextval('public.user_addresses_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_subscriptions id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_subscriptions ALTER COLUMN id SET DEFAULT nextval('public.user_subscriptions_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_tokens id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_tokens ALTER COLUMN id SET DEFAULT nextval('public.user_tokens_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: addresses addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.addresses
@@ -3154,7 +3460,7 @@ ALTER TABLE ONLY public.addresses
 
 
 --
--- Name: areas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: areas areas_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.areas
@@ -3162,7 +3468,7 @@ ALTER TABLE ONLY public.areas
 
 
 --
--- Name: baskets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: baskets baskets_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.baskets
@@ -3170,7 +3476,7 @@ ALTER TABLE ONLY public.baskets
 
 
 --
--- Name: brands_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: brands brands_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.brands
@@ -3178,7 +3484,7 @@ ALTER TABLE ONLY public.brands
 
 
 --
--- Name: cart_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cart_items cart_items_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cart_items
@@ -3186,7 +3492,7 @@ ALTER TABLE ONLY public.cart_items
 
 
 --
--- Name: categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.categories
@@ -3194,7 +3500,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: cities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cities cities_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cities
@@ -3202,7 +3508,7 @@ ALTER TABLE ONLY public.cities
 
 
 --
--- Name: countries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: countries countries_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.countries
@@ -3210,7 +3516,7 @@ ALTER TABLE ONLY public.countries
 
 
 --
--- Name: employee_users_authentication_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: employee_users employee_users_authentication_token_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.employee_users
@@ -3218,7 +3524,7 @@ ALTER TABLE ONLY public.employee_users
 
 
 --
--- Name: employee_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: employee_users employee_users_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.employee_users
@@ -3226,7 +3532,7 @@ ALTER TABLE ONLY public.employee_users
 
 
 --
--- Name: extra_attributes_name_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: extra_attributes extra_attributes_name_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.extra_attributes
@@ -3234,7 +3540,7 @@ ALTER TABLE ONLY public.extra_attributes
 
 
 --
--- Name: extra_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: extra_attributes extra_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.extra_attributes
@@ -3242,7 +3548,7 @@ ALTER TABLE ONLY public.extra_attributes
 
 
 --
--- Name: files_location_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_location_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files
@@ -3250,7 +3556,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files
@@ -3258,7 +3564,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files_resized_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files_resized files_resized_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files_resized
@@ -3266,7 +3572,7 @@ ALTER TABLE ONLY public.files_resized
 
 
 --
--- Name: files_url_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_url_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files
@@ -3274,7 +3580,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: integration_event_failure_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_event_failure integration_event_failure_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_event_failure
@@ -3282,7 +3588,7 @@ ALTER TABLE ONLY public.integration_event_failure
 
 
 --
--- Name: integration_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping integration_mapping_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping
@@ -3290,7 +3596,7 @@ ALTER TABLE ONLY public.integration_mapping
 
 
 --
--- Name: integration_mapping_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping_type integration_mapping_type_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping_type
@@ -3298,7 +3604,7 @@ ALTER TABLE ONLY public.integration_mapping_type
 
 
 --
--- Name: integration_mapping_type_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping_type integration_mapping_type_type_name_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping_type
@@ -3306,7 +3612,7 @@ ALTER TABLE ONLY public.integration_mapping_type
 
 
 --
--- Name: integration_param_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param integration_param_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param
@@ -3314,7 +3620,7 @@ ALTER TABLE ONLY public.integration_param
 
 
 --
--- Name: integration_param_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param_type integration_param_type_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param_type
@@ -3322,7 +3628,7 @@ ALTER TABLE ONLY public.integration_param_type
 
 
 --
--- Name: integration_param_type_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param_type integration_param_type_type_name_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param_type
@@ -3330,7 +3636,7 @@ ALTER TABLE ONLY public.integration_param_type
 
 
 --
--- Name: meta_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: meta_orders meta_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.meta_orders
@@ -3338,7 +3644,7 @@ ALTER TABLE ONLY public.meta_orders
 
 
 --
--- Name: oauth2_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_providers oauth2_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_providers
@@ -3346,7 +3652,7 @@ ALTER TABLE ONLY public.oauth2_providers
 
 
 --
--- Name: oauth2_providers_provider_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_providers oauth2_providers_provider_name_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_providers
@@ -3354,7 +3660,7 @@ ALTER TABLE ONLY public.oauth2_providers
 
 
 --
--- Name: oauth2_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_users oauth2_users_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users
@@ -3362,7 +3668,7 @@ ALTER TABLE ONLY public.oauth2_users
 
 
 --
--- Name: oauth2_users_unq_per_org; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_users oauth2_users_unq_per_org; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users
@@ -3370,7 +3676,7 @@ ALTER TABLE ONLY public.oauth2_users
 
 
 --
--- Name: orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -3378,7 +3684,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: organization_domains_domain_subdir_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_domains organization_domains_domain_subdir_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_domains
@@ -3386,7 +3692,7 @@ ALTER TABLE ONLY public.organization_domains
 
 
 --
--- Name: organization_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_domains organization_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_domains
@@ -3394,7 +3700,7 @@ ALTER TABLE ONLY public.organization_domains
 
 
 --
--- Name: organization_image_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_image_types organization_image_types_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_image_types
@@ -3402,7 +3708,7 @@ ALTER TABLE ONLY public.organization_image_types
 
 
 --
--- Name: organization_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_images organization_images_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images
@@ -3410,7 +3716,7 @@ ALTER TABLE ONLY public.organization_images
 
 
 --
--- Name: organization_payments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_payments organization_payments_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_payments
@@ -3418,7 +3724,7 @@ ALTER TABLE ONLY public.organization_payments
 
 
 --
--- Name: organization_shipping_service_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_shipping_service organization_shipping_service_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_shipping_service
@@ -3426,7 +3732,7 @@ ALTER TABLE ONLY public.organization_shipping_service
 
 
 --
--- Name: organization_theme_classes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_theme_classes organization_theme_classes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_theme_classes
@@ -3434,7 +3740,7 @@ ALTER TABLE ONLY public.organization_theme_classes
 
 
 --
--- Name: organization_themes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_themes organization_themes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes
@@ -3442,7 +3748,7 @@ ALTER TABLE ONLY public.organization_themes
 
 
 --
--- Name: organization_themes_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_themes_settings organization_themes_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes_settings
@@ -3450,7 +3756,7 @@ ALTER TABLE ONLY public.organization_themes_settings
 
 
 --
--- Name: organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organizations organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organizations
@@ -3458,7 +3764,7 @@ ALTER TABLE ONLY public.organizations
 
 
 --
--- Name: organiztion_cart_optimization_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization organiztion_cart_optimization_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organiztion_cart_optimization
@@ -3466,7 +3772,7 @@ ALTER TABLE ONLY public.organiztion_cart_optimization
 
 
 --
--- Name: payment_refunds_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: payment_refunds payment_refunds_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payment_refunds
@@ -3474,7 +3780,7 @@ ALTER TABLE ONLY public.payment_refunds
 
 
 --
--- Name: payments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payments
@@ -3482,7 +3788,7 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: product_collections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_collections product_collections_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections
@@ -3490,7 +3796,7 @@ ALTER TABLE ONLY public.product_collections
 
 
 --
--- Name: product_features_name_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_features product_features_name_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_features
@@ -3498,7 +3804,7 @@ ALTER TABLE ONLY public.product_features
 
 
 --
--- Name: product_features_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_features product_features_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_features
@@ -3506,7 +3812,7 @@ ALTER TABLE ONLY public.product_features
 
 
 --
--- Name: product_features_pname_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_features product_features_pname_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_features
@@ -3514,7 +3820,7 @@ ALTER TABLE ONLY public.product_features
 
 
 --
--- Name: product_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_images product_images_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_images
@@ -3522,7 +3828,7 @@ ALTER TABLE ONLY public.product_images
 
 
 --
--- Name: product_positions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_positions product_positions_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_positions
@@ -3530,7 +3836,7 @@ ALTER TABLE ONLY public.product_positions
 
 
 --
--- Name: product_ratings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_ratings product_ratings_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_ratings
@@ -3538,7 +3844,7 @@ ALTER TABLE ONLY public.product_ratings
 
 
 --
--- Name: product_ratings_variant_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_ratings product_ratings_variant_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_ratings
@@ -3546,7 +3852,7 @@ ALTER TABLE ONLY public.product_ratings
 
 
 --
--- Name: product_tags_product_id_tag_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_tags product_tags_product_id_tag_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_tags
@@ -3554,7 +3860,7 @@ ALTER TABLE ONLY public.product_tags
 
 
 --
--- Name: product_variants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_variants product_variants_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_variants
@@ -3562,7 +3868,7 @@ ALTER TABLE ONLY public.product_variants
 
 
 --
--- Name: products_extra_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: products_extra_attributes products_extra_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_extra_attributes
@@ -3570,7 +3876,7 @@ ALTER TABLE ONLY public.products_extra_attributes
 
 
 --
--- Name: products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products
@@ -3578,7 +3884,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- Name: products_related_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: products_related products_related_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_related
@@ -3586,7 +3892,7 @@ ALTER TABLE ONLY public.products_related
 
 
 --
--- Name: products_related_product_id_related_product_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: products_related products_related_product_id_related_product_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_related
@@ -3594,7 +3900,7 @@ ALTER TABLE ONLY public.products_related
 
 
 --
--- Name: promotions_cart_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions_cart_codes promotions_cart_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_cart_codes
@@ -3602,7 +3908,7 @@ ALTER TABLE ONLY public.promotions_cart_codes
 
 
 --
--- Name: promotions_codes_used_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions_codes_used promotions_codes_used_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_codes_used
@@ -3610,7 +3916,7 @@ ALTER TABLE ONLY public.promotions_codes_used
 
 
 --
--- Name: promotions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions promotions_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions
@@ -3618,7 +3924,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- Name: return_request_item_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -3626,7 +3932,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request return_request_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request
@@ -3634,7 +3940,7 @@ ALTER TABLE ONLY public.return_request
 
 
 --
--- Name: return_shipment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: return_shipment return_shipment_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_shipment
@@ -3642,7 +3948,7 @@ ALTER TABLE ONLY public.return_shipment
 
 
 --
--- Name: role_employee_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: role_employee_users role_employee_users_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.role_employee_users
@@ -3650,7 +3956,7 @@ ALTER TABLE ONLY public.role_employee_users
 
 
 --
--- Name: roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.roles
@@ -3658,7 +3964,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: scenes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: scenes scenes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.scenes
@@ -3666,7 +3972,7 @@ ALTER TABLE ONLY public.scenes
 
 
 --
--- Name: sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sections sections_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sections
@@ -3674,7 +3980,7 @@ ALTER TABLE ONLY public.sections
 
 
 --
--- Name: seo_keywords_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: seo_keywords seo_keywords_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.seo_keywords
@@ -3682,7 +3988,7 @@ ALTER TABLE ONLY public.seo_keywords
 
 
 --
--- Name: settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: settings settings_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.settings
@@ -3690,7 +3996,7 @@ ALTER TABLE ONLY public.settings
 
 
 --
--- Name: shipment_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shipment shipment_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipment
@@ -3698,7 +4004,7 @@ ALTER TABLE ONLY public.shipment
 
 
 --
--- Name: shipping_areas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shipping_areas shipping_areas_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipping_areas
@@ -3706,7 +4012,7 @@ ALTER TABLE ONLY public.shipping_areas
 
 
 --
--- Name: shipping_service_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shipping_service shipping_service_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipping_service
@@ -3714,7 +4020,7 @@ ALTER TABLE ONLY public.shipping_service
 
 
 --
--- Name: shop360_products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -3722,7 +4028,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360_products_product_id_shop_id_published_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_product_id_shop_id_published_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -3730,7 +4036,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360s_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360s shop360s_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360s
@@ -3738,7 +4044,7 @@ ALTER TABLE ONLY public.shop360s
 
 
 --
--- Name: shop_floors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_floors shop_floors_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_floors
@@ -3746,7 +4052,7 @@ ALTER TABLE ONLY public.shop_floors
 
 
 --
--- Name: shop_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_sections shop_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_sections
@@ -3754,7 +4060,7 @@ ALTER TABLE ONLY public.shop_sections
 
 
 --
--- Name: shops_name_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shops shops_name_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops
@@ -3762,7 +4068,7 @@ ALTER TABLE ONLY public.shops
 
 
 --
--- Name: shops_opening_times_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shops_opening_times shops_opening_times_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops_opening_times
@@ -3770,7 +4076,7 @@ ALTER TABLE ONLY public.shops_opening_times
 
 
 --
--- Name: shops_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: shops shops_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops
@@ -3778,7 +4084,7 @@ ALTER TABLE ONLY public.shops
 
 
 --
--- Name: social_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: social_links social_links_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.social_links
@@ -3786,7 +4092,7 @@ ALTER TABLE ONLY public.social_links
 
 
 --
--- Name: stocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks stocks_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -3794,7 +4100,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: stocks_variant_shop_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks stocks_variant_shop_uniq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -3802,7 +4108,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: sub_areas_name_organization_id_area_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sub_areas sub_areas_name_organization_id_area_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sub_areas
@@ -3810,7 +4116,7 @@ ALTER TABLE ONLY public.sub_areas
 
 
 --
--- Name: sub_areas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sub_areas sub_areas_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sub_areas
@@ -3818,7 +4124,7 @@ ALTER TABLE ONLY public.sub_areas
 
 
 --
--- Name: tag_graph_edges_parent_id_child_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_edges tag_graph_edges_parent_id_child_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_edges
@@ -3826,7 +4132,7 @@ ALTER TABLE ONLY public.tag_graph_edges
 
 
 --
--- Name: tag_graph_edges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_edges tag_graph_edges_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_edges
@@ -3834,7 +4140,7 @@ ALTER TABLE ONLY public.tag_graph_edges
 
 
 --
--- Name: tag_graph_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_nodes tag_graph_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_nodes
@@ -3842,7 +4148,7 @@ ALTER TABLE ONLY public.tag_graph_nodes
 
 
 --
--- Name: tags_name_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tags tags_name_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags
@@ -3850,7 +4156,7 @@ ALTER TABLE ONLY public.tags
 
 
 --
--- Name: tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tags tags_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags
@@ -3858,7 +4164,7 @@ ALTER TABLE ONLY public.tags
 
 
 --
--- Name: tags_pname_unq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tags tags_pname_unq; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags
@@ -3866,7 +4172,7 @@ ALTER TABLE ONLY public.tags
 
 
 --
--- Name: theme_classes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: theme_classes theme_classes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.theme_classes
@@ -3874,7 +4180,7 @@ ALTER TABLE ONLY public.theme_classes
 
 
 --
--- Name: themes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: themes themes_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.themes
@@ -3882,7 +4188,7 @@ ALTER TABLE ONLY public.themes
 
 
 --
--- Name: themes_uid_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: themes themes_uid_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.themes
@@ -3890,7 +4196,7 @@ ALTER TABLE ONLY public.themes
 
 
 --
--- Name: units_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: units units_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.units
@@ -3898,7 +4204,7 @@ ALTER TABLE ONLY public.units
 
 
 --
--- Name: unq_integration_map_local; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping unq_integration_map_local; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping
@@ -3906,7 +4212,7 @@ ALTER TABLE ONLY public.integration_mapping
 
 
 --
--- Name: unq_integration_map_remote; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping unq_integration_map_remote; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping
@@ -3914,7 +4220,7 @@ ALTER TABLE ONLY public.integration_mapping
 
 
 --
--- Name: unq_integration_param; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param unq_integration_param; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param
@@ -3922,7 +4228,7 @@ ALTER TABLE ONLY public.integration_param
 
 
 --
--- Name: user_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_addresses user_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_addresses
@@ -3930,7 +4236,7 @@ ALTER TABLE ONLY public.user_addresses
 
 
 --
--- Name: user_subscriptions_email_organization_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_subscriptions user_subscriptions_email_organization_id_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_subscriptions
@@ -3938,7 +4244,7 @@ ALTER TABLE ONLY public.user_subscriptions
 
 
 --
--- Name: user_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_subscriptions user_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_subscriptions
@@ -3946,7 +4252,7 @@ ALTER TABLE ONLY public.user_subscriptions
 
 
 --
--- Name: user_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_tokens user_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_tokens
@@ -3954,7 +4260,7 @@ ALTER TABLE ONLY public.user_tokens
 
 
 --
--- Name: user_tokens_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_tokens user_tokens_token_key; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_tokens
@@ -3962,7 +4268,7 @@ ALTER TABLE ONLY public.user_tokens
 
 
 --
--- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.users
@@ -3970,434 +4276,434 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: collection_prod_indx; Type: INDEX; Schema: public; Owner: -
+-- Name: collection_prod_indx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX collection_prod_indx ON public.product_collections USING btree (product_id);
 
 
 --
--- Name: collection_prod_unq_indx; Type: INDEX; Schema: public; Owner: -
+-- Name: collection_prod_unq_indx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX collection_prod_unq_indx ON public.product_collections USING btree (product_id, variant_id);
 
 
 --
--- Name: countries_iso_code_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: countries_iso_code_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX countries_iso_code_idx ON public.countries USING btree (iso_code);
 
 
 --
--- Name: files_organization_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: files_organization_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX files_organization_id_idx ON public.files USING btree (organization_id);
 
 
 --
--- Name: files_resized_original_file_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: files_resized_original_file_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX files_resized_original_file_id_idx ON public.files_resized USING btree (original_file_id);
 
 
 --
--- Name: index_brands_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_brands_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_brands_on_organization_id ON public.brands USING btree (organization_id);
 
 
 --
--- Name: index_cities_on_country_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_cities_on_country_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_cities_on_country_id ON public.cities USING btree (country_id);
 
 
 --
--- Name: index_employee_users_on_email; Type: INDEX; Schema: public; Owner: -
+-- Name: index_employee_users_on_email; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX index_employee_users_on_email ON public.employee_users USING btree (email);
 
 
 --
--- Name: index_employee_users_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_employee_users_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_employee_users_on_organization_id ON public.employee_users USING btree (organization_id);
 
 
 --
--- Name: index_employee_users_on_organization_manager_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_employee_users_on_organization_manager_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_employee_users_on_organization_manager_id ON public.employee_users USING btree (organization_manager_id);
 
 
 --
--- Name: index_employee_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
+-- Name: index_employee_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX index_employee_users_on_reset_password_token ON public.employee_users USING btree (reset_password_token);
 
 
 --
--- Name: index_employee_users_on_shop_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_employee_users_on_shop_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_employee_users_on_shop_id ON public.employee_users USING btree (shop_id);
 
 
 --
--- Name: index_orders_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_orders_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_orders_on_organization_id ON public.orders USING btree (organization_id);
 
 
 --
--- Name: index_orders_on_shop_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_orders_on_shop_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_orders_on_shop_id ON public.orders USING btree (shop_id);
 
 
 --
--- Name: index_orders_on_user_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_orders_on_user_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_orders_on_user_id ON public.orders USING btree (user_id);
 
 
 --
--- Name: index_organization_themes_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_organization_themes_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_organization_themes_on_organization_id ON public.organization_themes USING btree (organization_id);
 
 
 --
--- Name: index_product_positions_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_product_positions_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_product_positions_on_organization_id ON public.product_positions USING btree (organization_id);
 
 
 --
--- Name: index_product_positions_on_shop360_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_product_positions_on_shop360_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_product_positions_on_shop360_id ON public.product_positions USING btree (shop360_id);
 
 
 --
--- Name: index_products_on_brand_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_products_on_brand_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_products_on_brand_id ON public.products USING btree (brand_id);
 
 
 --
--- Name: index_products_on_category_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_products_on_category_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_products_on_category_id ON public.products USING btree (category_id);
 
 
 --
--- Name: index_products_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_products_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_products_on_organization_id ON public.products USING btree (organization_id);
 
 
 --
--- Name: index_roles_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_roles_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_roles_on_organization_id ON public.roles USING btree (organization_id);
 
 
 --
--- Name: index_scenes_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_scenes_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_scenes_on_organization_id ON public.scenes USING btree (organization_id);
 
 
 --
--- Name: index_scenes_on_shop_section_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_scenes_on_shop_section_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_scenes_on_shop_section_id ON public.scenes USING btree (shop_section_id);
 
 
 --
--- Name: index_sections_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_sections_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_sections_on_organization_id ON public.sections USING btree (organization_id);
 
 
 --
--- Name: index_sections_on_shop360_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_sections_on_shop360_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_sections_on_shop360_id ON public.sections USING btree (shop360_id);
 
 
 --
--- Name: index_shop360s_on_shop_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shop360s_on_shop_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shop360s_on_shop_id ON public.shop360s USING btree (shop_id);
 
 
 --
--- Name: index_shop_floors_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shop_floors_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shop_floors_on_organization_id ON public.shop_floors USING btree (organization_id);
 
 
 --
--- Name: index_shop_floors_on_shop360_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shop_floors_on_shop360_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shop_floors_on_shop360_id ON public.shop_floors USING btree (shop360_id);
 
 
 --
--- Name: index_shop_sections_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shop_sections_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shop_sections_on_organization_id ON public.shop_sections USING btree (organization_id);
 
 
 --
--- Name: index_shop_sections_on_shop_floor_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shop_sections_on_shop_floor_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shop_sections_on_shop_floor_id ON public.shop_sections USING btree (shop_floor_id);
 
 
 --
--- Name: index_shops_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_shops_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_shops_on_organization_id ON public.shops USING btree (organization_id);
 
 
 --
--- Name: index_social_links_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_social_links_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_social_links_on_organization_id ON public.social_links USING btree (organization_id);
 
 
 --
--- Name: index_stocks_on_organization_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_stocks_on_organization_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_stocks_on_organization_id ON public.stocks USING btree (organization_id);
 
 
 --
--- Name: index_stocks_on_shop_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_stocks_on_shop_id; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX index_stocks_on_shop_id ON public.stocks USING btree (shop_id);
 
 
 --
--- Name: index_users_on_authentication_token; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_authentication_token; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX index_users_on_authentication_token ON public.users USING btree (authentication_token);
 
 
 --
--- Name: index_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING btree (reset_password_token);
 
 
 --
--- Name: organization_domains_domain_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_domains_domain_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX organization_domains_domain_idx ON public.organization_domains USING btree (domain);
 
 
 --
--- Name: organiztion_cart_optimization_optimization_strategy_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization_optimization_strategy_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX organiztion_cart_optimization_optimization_strategy_idx ON public.organiztion_cart_optimization USING btree (optimization_strategy, organization_id, shipping_service_id);
 
 
 --
--- Name: product_images_product_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_images_product_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_images_product_id_idx ON public.product_images USING btree (product_id);
 
 
 --
--- Name: product_images_uri_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_images_uri_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_images_uri_idx ON public.product_images USING btree (uri);
 
 
 --
--- Name: product_images_variant_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_images_variant_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_images_variant_id_idx ON public.product_images USING btree (variant_id);
 
 
 --
--- Name: product_tags_product_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_tags_product_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_tags_product_id_idx ON public.product_tags USING btree (product_id);
 
 
 --
--- Name: product_variants_product_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_variants_product_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_variants_product_id_idx ON public.product_variants USING btree (product_id);
 
 
 --
--- Name: product_variants_removed_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: product_variants_removed_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX product_variants_removed_idx ON public.product_variants USING btree (removed);
 
 
 --
--- Name: products_extra_attributes_variant_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: products_extra_attributes_variant_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX products_extra_attributes_variant_id_idx ON public.products_extra_attributes USING btree (variant_id);
 
 
 --
--- Name: products_hide_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: products_hide_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX products_hide_idx ON public.products USING btree (hide);
 
 
 --
--- Name: products_removed_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: products_removed_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX products_removed_idx ON public.products USING btree (removed);
 
 
 --
--- Name: products_removed_idx1; Type: INDEX; Schema: public; Owner: -
+-- Name: products_removed_idx1; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX products_removed_idx1 ON public.products USING btree (removed);
 
 
 --
--- Name: seo_keywords_all_indx; Type: INDEX; Schema: public; Owner: -
+-- Name: seo_keywords_all_indx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX seo_keywords_all_indx ON public.seo_keywords USING btree (entity_id, type_id, organization_id);
 
 
 --
--- Name: seo_keywords_id_type_indx; Type: INDEX; Schema: public; Owner: -
+-- Name: seo_keywords_id_type_indx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX seo_keywords_id_type_indx ON public.seo_keywords USING btree (entity_id, type_id);
 
 
 --
--- Name: seo_keywords_org_id_indx; Type: INDEX; Schema: public; Owner: -
+-- Name: seo_keywords_org_id_indx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX seo_keywords_org_id_indx ON public.seo_keywords USING btree (organization_id);
 
 
 --
--- Name: settings_setting_name_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: settings_setting_name_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE UNIQUE INDEX settings_setting_name_idx ON public.settings USING btree (setting_name, organization_id);
 
 
 --
--- Name: shops_removed_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: shops_removed_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX shops_removed_idx ON public.shops USING btree (removed);
 
 
 --
--- Name: stocks_price_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: stocks_price_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX stocks_price_idx ON public.stocks USING btree (price);
 
 
 --
--- Name: stocks_variant_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: stocks_variant_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX stocks_variant_id_idx ON public.stocks USING btree (variant_id);
 
 
 --
--- Name: tag_graph_edges_child_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: tag_graph_edges_child_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX tag_graph_edges_child_id_idx ON public.tag_graph_edges USING btree (child_id);
 
 
 --
--- Name: tag_graph_edges_parent_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: tag_graph_edges_parent_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX tag_graph_edges_parent_id_idx ON public.tag_graph_edges USING btree (parent_id);
 
 
 --
--- Name: tags_graph_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: tags_graph_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX tags_graph_id_idx ON public.tags USING btree (graph_id);
 
 
 --
--- Name: tags_organization_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: tags_organization_id_idx; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX tags_organization_id_idx ON public.tags USING btree (organization_id);
 
 
 --
--- Name: tags_organization_id_idx1; Type: INDEX; Schema: public; Owner: -
+-- Name: tags_organization_id_idx1; Type: INDEX; Schema: public; Owner: nasnav
 --
 
 CREATE INDEX tags_organization_id_idx1 ON public.tags USING btree (organization_id);
 
 
 --
--- Name: addresses_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: addresses addresses_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.addresses
@@ -4405,7 +4711,7 @@ ALTER TABLE ONLY public.addresses
 
 
 --
--- Name: addresses_sub_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: addresses addresses_sub_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.addresses
@@ -4413,7 +4719,7 @@ ALTER TABLE ONLY public.addresses
 
 
 --
--- Name: areas_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: areas areas_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.areas
@@ -4421,7 +4727,7 @@ ALTER TABLE ONLY public.areas
 
 
 --
--- Name: baskets_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: baskets baskets_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.baskets
@@ -4429,7 +4735,7 @@ ALTER TABLE ONLY public.baskets
 
 
 --
--- Name: baskets_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: baskets baskets_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.baskets
@@ -4437,7 +4743,7 @@ ALTER TABLE ONLY public.baskets
 
 
 --
--- Name: brands_cover_url_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brands brands_cover_url_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.brands
@@ -4445,7 +4751,7 @@ ALTER TABLE ONLY public.brands
 
 
 --
--- Name: brands_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: brands brands_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.brands
@@ -4453,7 +4759,7 @@ ALTER TABLE ONLY public.brands
 
 
 --
--- Name: cart_items_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cart_items cart_items_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cart_items
@@ -4461,7 +4767,7 @@ ALTER TABLE ONLY public.cart_items
 
 
 --
--- Name: cart_items_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cart_items cart_items_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cart_items
@@ -4469,7 +4775,7 @@ ALTER TABLE ONLY public.cart_items
 
 
 --
--- Name: employee_users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: employee_users employee_users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.employee_users
@@ -4477,7 +4783,7 @@ ALTER TABLE ONLY public.employee_users
 
 
 --
--- Name: employee_users_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: employee_users employee_users_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.employee_users
@@ -4485,7 +4791,7 @@ ALTER TABLE ONLY public.employee_users
 
 
 --
--- Name: extra_attribute_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products_extra_attributes extra_attribute_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_extra_attributes
@@ -4493,7 +4799,7 @@ ALTER TABLE ONLY public.products_extra_attributes
 
 
 --
--- Name: extra_attributes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: extra_attributes extra_attributes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.extra_attributes
@@ -4501,7 +4807,7 @@ ALTER TABLE ONLY public.extra_attributes
 
 
 --
--- Name: files_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: files files_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files
@@ -4509,7 +4815,7 @@ ALTER TABLE ONLY public.files
 
 
 --
--- Name: files_resized_original_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: files_resized files_resized_original_file_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.files_resized
@@ -4517,7 +4823,7 @@ ALTER TABLE ONLY public.files_resized
 
 
 --
--- Name: fk_rails_102545b523; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_sections fk_rails_102545b523; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_sections
@@ -4525,7 +4831,7 @@ ALTER TABLE ONLY public.shop_sections
 
 
 --
--- Name: fk_rails_34316e0ca5; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_floors fk_rails_34316e0ca5; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_floors
@@ -4533,7 +4839,7 @@ ALTER TABLE ONLY public.shop_floors
 
 
 --
--- Name: fk_rails_6333433b00; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_floors fk_rails_6333433b00; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_floors
@@ -4541,7 +4847,7 @@ ALTER TABLE ONLY public.shop_floors
 
 
 --
--- Name: fk_rails_66b5304bc3; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_themes fk_rails_66b5304bc3; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes
@@ -4549,7 +4855,7 @@ ALTER TABLE ONLY public.organization_themes
 
 
 --
--- Name: fk_rails_7a3b031e76; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_positions fk_rails_7a3b031e76; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_positions
@@ -4557,7 +4863,7 @@ ALTER TABLE ONLY public.product_positions
 
 
 --
--- Name: fk_rails_82f48f7407; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: categories fk_rails_82f48f7407; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.categories
@@ -4565,7 +4871,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- Name: fk_rails_888a1fc9be; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360s fk_rails_888a1fc9be; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360s
@@ -4573,7 +4879,7 @@ ALTER TABLE ONLY public.shop360s
 
 
 --
--- Name: fk_rails_996e05be41; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cities fk_rails_996e05be41; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.cities
@@ -4581,7 +4887,7 @@ ALTER TABLE ONLY public.cities
 
 
 --
--- Name: fk_rails_9b1a7e5d8e; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: social_links fk_rails_9b1a7e5d8e; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.social_links
@@ -4589,7 +4895,7 @@ ALTER TABLE ONLY public.social_links
 
 
 --
--- Name: fk_rails_a66b01e057; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scenes fk_rails_a66b01e057; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.scenes
@@ -4597,7 +4903,7 @@ ALTER TABLE ONLY public.scenes
 
 
 --
--- Name: fk_rails_d232c97110; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scenes fk_rails_d232c97110; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.scenes
@@ -4605,7 +4911,7 @@ ALTER TABLE ONLY public.scenes
 
 
 --
--- Name: fk_rails_d8eb88b3bf; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks fk_rails_d8eb88b3bf; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -4613,7 +4919,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: fk_rails_f2b72e42c7; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop_sections fk_rails_f2b72e42c7; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop_sections
@@ -4621,7 +4927,7 @@ ALTER TABLE ONLY public.shop_sections
 
 
 --
--- Name: fk_rails_f868b47f6a; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders fk_rails_f868b47f6a; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4629,7 +4935,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: fk_rails_fefa61a65a; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_positions fk_rails_fefa61a65a; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_positions
@@ -4637,7 +4943,7 @@ ALTER TABLE ONLY public.product_positions
 
 
 --
--- Name: integration_event_failure_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_event_failure integration_event_failure_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_event_failure
@@ -4645,7 +4951,7 @@ ALTER TABLE ONLY public.integration_event_failure
 
 
 --
--- Name: integration_mapping_mapping_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping integration_mapping_mapping_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping
@@ -4653,7 +4959,7 @@ ALTER TABLE ONLY public.integration_mapping
 
 
 --
--- Name: integration_mapping_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_mapping integration_mapping_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_mapping
@@ -4661,7 +4967,7 @@ ALTER TABLE ONLY public.integration_mapping
 
 
 --
--- Name: integration_param_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param integration_param_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param
@@ -4669,7 +4975,7 @@ ALTER TABLE ONLY public.integration_param
 
 
 --
--- Name: integration_param_param_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: integration_param integration_param_param_type_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.integration_param
@@ -4677,7 +4983,7 @@ ALTER TABLE ONLY public.integration_param
 
 
 --
--- Name: meta_orders_promotions_meta_order_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: meta_orders_promotions meta_orders_promotions_meta_order_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.meta_orders_promotions
@@ -4685,7 +4991,7 @@ ALTER TABLE ONLY public.meta_orders_promotions
 
 
 --
--- Name: meta_orders_promotions_promotion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: meta_orders_promotions meta_orders_promotions_promotion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.meta_orders_promotions
@@ -4693,7 +4999,7 @@ ALTER TABLE ONLY public.meta_orders_promotions
 
 
 --
--- Name: oauth2_users_nasnav_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_users oauth2_users_nasnav_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users
@@ -4701,7 +5007,7 @@ ALTER TABLE ONLY public.oauth2_users
 
 
 --
--- Name: oauth2_users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_users oauth2_users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users
@@ -4709,7 +5015,7 @@ ALTER TABLE ONLY public.oauth2_users
 
 
 --
--- Name: oauth2_users_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: oauth2_users oauth2_users_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.oauth2_users
@@ -4717,7 +5023,7 @@ ALTER TABLE ONLY public.oauth2_users
 
 
 --
--- Name: orders_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4725,7 +5031,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4733,7 +5039,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4741,7 +5047,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders_promotion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_promotion_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4749,7 +5055,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.orders
@@ -4757,7 +5063,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: organization_domains_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_domains organization_domains_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_domains
@@ -4765,7 +5071,7 @@ ALTER TABLE ONLY public.organization_domains
 
 
 --
--- Name: organization_images_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_images organization_images_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images
@@ -4773,7 +5079,7 @@ ALTER TABLE ONLY public.organization_images
 
 
 --
--- Name: organization_images_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_images organization_images_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images
@@ -4781,7 +5087,7 @@ ALTER TABLE ONLY public.organization_images
 
 
 --
--- Name: organization_images_type_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_images organization_images_type_fk; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images
@@ -4789,7 +5095,7 @@ ALTER TABLE ONLY public.organization_images
 
 
 --
--- Name: organization_images_uri_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_images organization_images_uri_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_images
@@ -4797,7 +5103,7 @@ ALTER TABLE ONLY public.organization_images
 
 
 --
--- Name: organization_payments_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_payments organization_payments_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_payments
@@ -4805,7 +5111,7 @@ ALTER TABLE ONLY public.organization_payments
 
 
 --
--- Name: organization_shipping_service_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_shipping_service organization_shipping_service_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_shipping_service
@@ -4813,7 +5119,7 @@ ALTER TABLE ONLY public.organization_shipping_service
 
 
 --
--- Name: organization_theme_classes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_theme_classes organization_theme_classes_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_theme_classes
@@ -4821,7 +5127,7 @@ ALTER TABLE ONLY public.organization_theme_classes
 
 
 --
--- Name: organization_theme_classes_theme_class_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_theme_classes organization_theme_classes_theme_class_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_theme_classes
@@ -4829,7 +5135,7 @@ ALTER TABLE ONLY public.organization_theme_classes
 
 
 --
--- Name: organization_themes_settings_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_themes_settings organization_themes_settings_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes_settings
@@ -4837,7 +5143,7 @@ ALTER TABLE ONLY public.organization_themes_settings
 
 
 --
--- Name: organization_themes_settings_theme_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_themes_settings organization_themes_settings_theme_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organization_themes_settings
@@ -4845,7 +5151,7 @@ ALTER TABLE ONLY public.organization_themes_settings
 
 
 --
--- Name: organizations_currency_iso_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organizations organizations_currency_iso_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organizations
@@ -4853,7 +5159,7 @@ ALTER TABLE ONLY public.organizations
 
 
 --
--- Name: organiztion_cart_optimization_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organiztion_cart_optimization organiztion_cart_optimization_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.organiztion_cart_optimization
@@ -4861,7 +5167,7 @@ ALTER TABLE ONLY public.organiztion_cart_optimization
 
 
 --
--- Name: payment_refunds_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payment_refunds payment_refunds_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payment_refunds
@@ -4869,7 +5175,7 @@ ALTER TABLE ONLY public.payment_refunds
 
 
 --
--- Name: payments_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payments
@@ -4877,7 +5183,7 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: payments_org_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_org_payment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payments
@@ -4885,7 +5191,7 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: payments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.payments
@@ -4893,7 +5199,7 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: product_bundles_bundle_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_bundles product_bundles_bundle_stock_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_bundles
@@ -4901,7 +5207,7 @@ ALTER TABLE ONLY public.product_bundles
 
 
 --
--- Name: product_bundles_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_bundles product_bundles_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_bundles
@@ -4909,7 +5215,7 @@ ALTER TABLE ONLY public.product_bundles
 
 
 --
--- Name: product_collection_prod_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_collections product_collection_prod_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections
@@ -4917,7 +5223,7 @@ ALTER TABLE ONLY public.product_collections
 
 
 --
--- Name: product_collection_var_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_collections product_collection_var_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections
@@ -4925,7 +5231,7 @@ ALTER TABLE ONLY public.product_collections
 
 
 --
--- Name: product_collections_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_collections product_collections_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections
@@ -4933,7 +5239,7 @@ ALTER TABLE ONLY public.product_collections
 
 
 --
--- Name: product_collections_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_collections product_collections_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_collections
@@ -4941,7 +5247,7 @@ ALTER TABLE ONLY public.product_collections
 
 
 --
--- Name: product_features_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_features product_features_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_features
@@ -4949,7 +5255,7 @@ ALTER TABLE ONLY public.product_features
 
 
 --
--- Name: product_images_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_images product_images_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_images
@@ -4957,7 +5263,7 @@ ALTER TABLE ONLY public.product_images
 
 
 --
--- Name: product_images_uri_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_images product_images_uri_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_images
@@ -4965,7 +5271,7 @@ ALTER TABLE ONLY public.product_images
 
 
 --
--- Name: product_images_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_images product_images_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_images
@@ -4973,7 +5279,7 @@ ALTER TABLE ONLY public.product_images
 
 
 --
--- Name: product_ratings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_ratings product_ratings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_ratings
@@ -4981,7 +5287,7 @@ ALTER TABLE ONLY public.product_ratings
 
 
 --
--- Name: product_ratings_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_ratings product_ratings_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_ratings
@@ -4989,7 +5295,7 @@ ALTER TABLE ONLY public.product_ratings
 
 
 --
--- Name: product_tags_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_tags product_tags_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_tags
@@ -4997,7 +5303,7 @@ ALTER TABLE ONLY public.product_tags
 
 
 --
--- Name: product_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_tags product_tags_tag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_tags
@@ -5005,7 +5311,7 @@ ALTER TABLE ONLY public.product_tags
 
 
 --
--- Name: product_variants_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_variants product_variants_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.product_variants
@@ -5013,7 +5319,7 @@ ALTER TABLE ONLY public.product_variants
 
 
 --
--- Name: products_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products products_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products
@@ -5021,7 +5327,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- Name: products_category_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products products_category_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products
@@ -5029,7 +5335,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- Name: products_extra_attributes_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products_extra_attributes products_extra_attributes_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_extra_attributes
@@ -5037,7 +5343,7 @@ ALTER TABLE ONLY public.products_extra_attributes
 
 
 --
--- Name: products_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products products_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products
@@ -5045,7 +5351,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- Name: products_related_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products_related products_related_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_related
@@ -5053,7 +5359,7 @@ ALTER TABLE ONLY public.products_related
 
 
 --
--- Name: products_related_related_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: products_related products_related_related_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.products_related
@@ -5061,7 +5367,7 @@ ALTER TABLE ONLY public.products_related
 
 
 --
--- Name: promotions_cart_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions_cart_codes promotions_cart_codes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_cart_codes
@@ -5069,7 +5375,7 @@ ALTER TABLE ONLY public.promotions_cart_codes
 
 
 --
--- Name: promotions_codes_used_promotion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions_codes_used promotions_codes_used_promotion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_codes_used
@@ -5077,7 +5383,7 @@ ALTER TABLE ONLY public.promotions_codes_used
 
 
 --
--- Name: promotions_codes_used_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions_codes_used promotions_codes_used_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions_codes_used
@@ -5085,7 +5391,7 @@ ALTER TABLE ONLY public.promotions_codes_used
 
 
 --
--- Name: promotions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions promotions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions
@@ -5093,7 +5399,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- Name: promotions_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions promotions_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.promotions
@@ -5101,7 +5407,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- Name: return_request_created_by_employee_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request return_request_created_by_employee_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request
@@ -5109,7 +5415,7 @@ ALTER TABLE ONLY public.return_request
 
 
 --
--- Name: return_request_created_by_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request return_request_created_by_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request
@@ -5117,7 +5423,7 @@ ALTER TABLE ONLY public.return_request
 
 
 --
--- Name: return_request_item_created_by_employee_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_created_by_employee_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5125,7 +5431,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_item_created_by_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_created_by_user_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5133,7 +5439,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_item_order_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_order_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5141,7 +5447,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_item_received_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_received_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5149,7 +5455,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_item_return_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_return_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5157,7 +5463,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_item_return_shipment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request_item return_request_item_return_shipment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request_item
@@ -5165,7 +5471,7 @@ ALTER TABLE ONLY public.return_request_item
 
 
 --
--- Name: return_request_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: return_request return_request_meta_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.return_request
@@ -5173,7 +5479,7 @@ ALTER TABLE ONLY public.return_request
 
 
 --
--- Name: role_employee_users_employee_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: role_employee_users role_employee_users_employee_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.role_employee_users
@@ -5181,7 +5487,7 @@ ALTER TABLE ONLY public.role_employee_users
 
 
 --
--- Name: role_employee_users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: role_employee_users role_employee_users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.role_employee_users
@@ -5189,7 +5495,7 @@ ALTER TABLE ONLY public.role_employee_users
 
 
 --
--- Name: sections_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: sections sections_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sections
@@ -5197,7 +5503,7 @@ ALTER TABLE ONLY public.sections
 
 
 --
--- Name: sections_shop360_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: sections sections_shop360_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sections
@@ -5205,7 +5511,7 @@ ALTER TABLE ONLY public.sections
 
 
 --
--- Name: seo_keywords_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: seo_keywords seo_keywords_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.seo_keywords
@@ -5213,7 +5519,7 @@ ALTER TABLE ONLY public.seo_keywords
 
 
 --
--- Name: settings_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: settings settings_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.settings
@@ -5221,7 +5527,7 @@ ALTER TABLE ONLY public.settings
 
 
 --
--- Name: shipment_sub_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shipment shipment_sub_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipment
@@ -5229,7 +5535,7 @@ ALTER TABLE ONLY public.shipment
 
 
 --
--- Name: shipping_areas_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shipping_areas shipping_areas_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipping_areas
@@ -5237,7 +5543,7 @@ ALTER TABLE ONLY public.shipping_areas
 
 
 --
--- Name: shipping_areas_shipping_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shipping_areas shipping_areas_shipping_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shipping_areas
@@ -5245,7 +5551,7 @@ ALTER TABLE ONLY public.shipping_areas
 
 
 --
--- Name: shop360_products_floor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_floor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -5253,7 +5559,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360_products_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -5261,7 +5567,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360_products_scene_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_scene_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -5269,7 +5575,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360_products_section_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_section_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -5277,7 +5583,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shop360_products_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shop360_products shop360_products_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shop360_products
@@ -5285,7 +5591,7 @@ ALTER TABLE ONLY public.shop360_products
 
 
 --
--- Name: shops_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shops shops_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops
@@ -5293,7 +5599,7 @@ ALTER TABLE ONLY public.shops
 
 
 --
--- Name: shops_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shops shops_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops
@@ -5301,7 +5607,7 @@ ALTER TABLE ONLY public.shops
 
 
 --
--- Name: shops_opening_times_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shops_opening_times shops_opening_times_shop_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops_opening_times
@@ -5309,7 +5615,7 @@ ALTER TABLE ONLY public.shops_opening_times
 
 
 --
--- Name: shops_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: shops shops_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.shops
@@ -5317,7 +5623,7 @@ ALTER TABLE ONLY public.shops
 
 
 --
--- Name: stocks_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks stocks_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -5325,7 +5631,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: stocks_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks stocks_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -5333,7 +5639,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: stocks_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: stocks stocks_variant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.stocks
@@ -5341,7 +5647,7 @@ ALTER TABLE ONLY public.stocks
 
 
 --
--- Name: sub_areas_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: sub_areas sub_areas_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sub_areas
@@ -5349,7 +5655,7 @@ ALTER TABLE ONLY public.sub_areas
 
 
 --
--- Name: sub_areas_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: sub_areas sub_areas_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.sub_areas
@@ -5357,7 +5663,7 @@ ALTER TABLE ONLY public.sub_areas
 
 
 --
--- Name: tag_edges_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_edges tag_edges_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_edges
@@ -5365,7 +5671,7 @@ ALTER TABLE ONLY public.tag_graph_edges
 
 
 --
--- Name: tag_edges_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_edges tag_edges_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_edges
@@ -5373,7 +5679,7 @@ ALTER TABLE ONLY public.tag_graph_edges
 
 
 --
--- Name: tag_graph_nodes_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tag_graph_nodes tag_graph_nodes_fk; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tag_graph_nodes
@@ -5381,7 +5687,7 @@ ALTER TABLE ONLY public.tag_graph_nodes
 
 
 --
--- Name: tags_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tags tags_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags
@@ -5389,7 +5695,7 @@ ALTER TABLE ONLY public.tags
 
 
 --
--- Name: tags_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tags tags_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.tags
@@ -5397,7 +5703,7 @@ ALTER TABLE ONLY public.tags
 
 
 --
--- Name: themes_theme_class_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: themes themes_theme_class_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.themes
@@ -5405,7 +5711,7 @@ ALTER TABLE ONLY public.themes
 
 
 --
--- Name: user_addresses_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_addresses user_addresses_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_addresses
@@ -5413,7 +5719,7 @@ ALTER TABLE ONLY public.user_addresses
 
 
 --
--- Name: user_addresses_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_addresses user_addresses_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_addresses
@@ -5421,7 +5727,7 @@ ALTER TABLE ONLY public.user_addresses
 
 
 --
--- Name: user_subscriptions_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_subscriptions user_subscriptions_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_subscriptions
@@ -5429,7 +5735,7 @@ ALTER TABLE ONLY public.user_subscriptions
 
 
 --
--- Name: user_tokens_employee_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_tokens user_tokens_employee_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_tokens
@@ -5437,7 +5743,7 @@ ALTER TABLE ONLY public.user_tokens
 
 
 --
--- Name: user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_tokens user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.user_tokens
@@ -5445,7 +5751,7 @@ ALTER TABLE ONLY public.user_tokens
 
 
 --
--- Name: users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nasnav
 --
 
 ALTER TABLE ONLY public.users
@@ -5453,7 +5759,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: nasnav
 --
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
@@ -5465,4 +5771,5 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
+
 
