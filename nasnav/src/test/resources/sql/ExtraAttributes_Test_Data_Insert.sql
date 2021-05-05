@@ -4,8 +4,8 @@ INSERT INTO public.countries(id,name,iso_code,currency) values (100001, 'Egypt',
 INSERT INTO public.countries(id,name,iso_code,currency) values (100002, 'UK', 820, 'EGP');
 
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'org-number-one');
-INSERT INTO public.organizations(id, name,  p_name, matomo) VALUES (99002, 'organization_2', 'org-number-two', 10);
-INSERT INTO public.organizations(id, name,  p_name) VALUES (99003, 'organization_3', 'org-number-three');
+INSERT INTO public.organizations(id, name,  p_name, extra_info, matomo) VALUES (99002, 'organization_2', 'org-number-two', '{"ALLOWED_COUNTRIES":[]}', 10);
+INSERT INTO public.organizations(id, name,  p_name, extra_info) VALUES (99003, 'organization_3', 'org-number-three', '{"ALLOWED_COUNTRIES":[100002]}');
 
 
 -- dummy shop
@@ -54,8 +54,3 @@ insert into public.roles(id, name,  organization_id) values(3, 'STORE_MANAGER', 
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
-
-INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
-	VALUES (99002, 'ALLOWED_COUNTRIES', '[100002]', 99003, 0);
-INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
-	VALUES (99003, 'ALLOWED_COUNTRIES', '[]', 99002, 0);

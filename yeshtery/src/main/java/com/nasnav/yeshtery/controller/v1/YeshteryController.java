@@ -48,7 +48,7 @@ public class YeshteryController {
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
-        return shopService.getLocationShops(name);
+        return shopService.getLocationShops(name, null);
     }
 
 

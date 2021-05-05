@@ -31,6 +31,8 @@ public class ShopJsonDTO extends BaseJsonDTO{
     @JsonProperty("is_warehouse")
     private Boolean isWarehouse;
 
+    private Integer priority;
+
     @Override
     protected void initRequiredProperties() { }
 
@@ -69,6 +71,10 @@ public class ShopJsonDTO extends BaseJsonDTO{
     	setPropertyAsUpdated("isWarehouse");
     	this.isWarehouse = isWarehouse;
     }
-    
+
+    public void setPriority(Integer priority) {
+        setPropertyAsUpdated("priority");
+        this.priority = priority;
+    }
 
 }

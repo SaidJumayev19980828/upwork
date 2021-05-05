@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.AREA$001;
 import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
@@ -78,6 +79,14 @@ public class ShopServiceHelper extends BeanUtils{
 
         if (shopJson.isUpdated("placeId"))
             shopsEntity.setPlaceId(shopJson.getPlaceId());
+
+        if (shopJson.isUpdated("priority")) {
+            Integer priority = ofNullable(shopJson.getPriority()).orElseGet(() -> 0);
+            shopsEntity.setPriority(priority);
+        }
+        if (shopsEntity.getPriority() == null) {
+            shopsEntity.setPriority(0);
+        }
         shopsEntity.setOrganizationEntity(org);
         return shopsEntity;
     }

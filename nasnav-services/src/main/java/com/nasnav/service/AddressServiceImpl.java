@@ -7,6 +7,8 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.cache.annotation.CacheResult;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.cache.Caches.COUNTRIES;
@@ -49,7 +53,7 @@ public class AddressServiceImpl implements AddressService{
     private SubAreaRepository subAreaRepo;
 
     @Autowired
-    private SettingRepository settingRepo;
+    private OrganizationRepository orgRepo;
 
     @Autowired
     private SecurityService securityService;
@@ -67,8 +71,8 @@ public class AddressServiceImpl implements AddressService{
     }
 
     private List<Long> getSupportedCountriesIdsByOrg(Long orgId) {
-        return settingRepo.findBySettingNameAndOrganization_Id(ALLOWED_COUNTRIES.name(), orgId)
-                .map(SettingEntity::getSettingValue)
+        return orgRepo.findById(orgId)
+                .map(OrganizationEntity::getExtraInfo)
                 .map(this::parseSettingValue)
                 .filter(EntityUtils::notNullNorEmpty)
                 .orElseGet(countryRepo::findAllCountriesIds);
@@ -77,7 +81,13 @@ public class AddressServiceImpl implements AddressService{
 
 
     private List<Long> parseSettingValue(String setting){
-        return streamJsonArrayElements(setting)
+        return ofNullable(setting)
+                .map(JSONObject::new)
+                .filter(o -> o.has(ALLOWED_COUNTRIES.name()))
+                .map(o -> o.getJSONArray(ALLOWED_COUNTRIES.name()))
+                .map(JSONArray::spliterator)
+                .map(iterator -> StreamSupport.stream(iterator, false))
+                .orElse(Stream.empty())
                 .map(Object::toString)
                 .map(Long::parseLong)
                 .collect(toList());

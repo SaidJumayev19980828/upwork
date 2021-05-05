@@ -48,4 +48,6 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     
     @JsonProperty("is_warehouse")
     private Boolean isWarehouse;
+
+    private Integer priority;
 }

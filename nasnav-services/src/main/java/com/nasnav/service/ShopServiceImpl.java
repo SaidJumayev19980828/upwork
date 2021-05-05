@@ -72,9 +72,9 @@ public class ShopServiceImpl implements ShopService {
     	//but i was in hurry
     	List<ShopsEntity> shopsEntities = emptyList();
     	if(showWarehouses) {
-    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemoved(organizationId, 0);
+    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(organizationId, 0);
     	}else {
-    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouse(organizationId, 0, 0);	
+    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(organizationId, 0, 0);
     	}
 
         return shopsEntities
@@ -160,11 +160,13 @@ public class ShopServiceImpl implements ShopService {
     
     
     @Override
-    public List<ShopRepresentationObject> getLocationShops(String name) {
-
-        Set<ShopsEntity> shops = shopsRepository.getShopsByLocation(name);
-
-        return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(toList());
+    public List<ShopRepresentationObject> getLocationShops(String name, Long orgId) {
+        return ofNullable(orgId)
+                .map(id -> shopsRepository.getShopsByOrgIdAndProductsOrTags(name, id))
+                .orElseGet(() -> shopsRepository.getShopsByProductsOrTags(name))
+                .stream()
+                .map(s -> (ShopRepresentationObject)s.getRepresentation())
+                .collect(toList());
     }
 
 

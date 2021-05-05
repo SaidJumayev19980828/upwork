@@ -25,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
+
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.*;
@@ -273,6 +275,27 @@ public class ShopsUpdateTest {
         response = template.exchange("/shop/delete?shop_id=502",
                 DELETE, request, String.class);
         assertEquals(406, response.getStatusCodeValue());
+    }
+
+    @Test
+    public void setShopPriority() {
+        ShopsEntity shop = shopsRepository.findById(505L).get();
+        assertEquals(0, shop.getPriority().intValue());
+
+        String json = json()
+                .put("id", 505)
+                .put("priority", 1)
+                .toString();
+        HttpEntity request = getHttpEntity(json, "161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+
+        shop = shopsRepository.findById(505L).get();
+        assertEquals(1, shop.getPriority().intValue());
+
+        List<ShopsEntity> shops = shopsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(99001L, 0);
+        ShopsEntity firstShop = shops.get(0);
+        assertEquals(505, firstShop.getId().intValue());
     }
 
 }

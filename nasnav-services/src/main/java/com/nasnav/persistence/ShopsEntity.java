@@ -56,7 +56,8 @@ public class ShopsEntity implements BaseEntity{
      
     @Column(name = "is_warehouse")
     private Integer isWarehouse;
-    
+
+    private Integer priority;
     
     public ShopsEntity() {
     	this.isWarehouse = 0;
@@ -73,6 +74,7 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setPname(getPname());
         shopRepresentationObject.setPlaceId(getPlaceId());
         shopRepresentationObject.setIsWarehouse(getIsWarehouse() > 0);
+        shopRepresentationObject.setPriority(getPriority());
 
         if (getAddressesEntity() != null) {
             shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());

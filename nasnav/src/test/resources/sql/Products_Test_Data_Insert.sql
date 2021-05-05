@@ -13,8 +13,8 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, priority) VALUES (501, 'shop_1', 102, 99002, 0, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, priority) VALUES (502, 'shop_2', 101, 99001, 0, 0);
 
 --insering users
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
