@@ -27,9 +27,7 @@ public interface PromotionsService {
 
     void removePromotion(Long promotionId);
 
-    BigDecimal calculateAllApplicablePromos(List<CartItemData> items, Long userId, Long orgId, BigDecimal totalCartValue,
-											Long totalCartQuantity, String promoCode);
+    BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode);
 
 	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue);
-	BigDecimal calculateTotalCartDiscount(Long userId, Long orgId, BigDecimal totalCartValue, Long totalCartQuantity);
 }

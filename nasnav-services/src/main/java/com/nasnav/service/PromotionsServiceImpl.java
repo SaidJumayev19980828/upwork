@@ -431,10 +431,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public BigDecimal calculateAllApplicablePromos(List<CartItemData> items, Long userId, Long orgId,
-												   BigDecimal totalCartValue, Long totalCartQuantity, String promoCode) {
-		BigDecimal promoCodeDiscount = calcPromoDiscount(promoCode, totalCartValue);
-		BigDecimal TotalCartDiscounts = calculateTotalCartDiscount(userId, orgId, totalCartValue, totalCartQuantity);
+	public BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items,
+												   BigDecimal totalCartValue, String promoCode) {
+		var totalItemsCount = calcTotalCartQuantity(items);
+		var promoCodeDiscount = calcPromoDiscount(promoCode, totalCartValue);
+		var TotalCartDiscounts = calculateTotalCartDiscount(totalCartValue, totalItemsCount);
 
 		var cartItems = new ArrayList<>(items);
 		var orgId = securityService.getCurrentUserOrganizationId();
