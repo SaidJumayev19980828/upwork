@@ -32,6 +32,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromosConstraints;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.enumerations.PromotionType;
@@ -411,9 +412,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-
-
-
 	private boolean isCodeRepeated(PromotionDTO promotion) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		if(isUpdateOperation(promotion)) {
@@ -424,7 +422,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 					 promotion.getCode(), orgId);
 		}
 	}
-
 
 
 
@@ -439,16 +436,29 @@ public class PromotionsServiceImpl implements PromotionsService {
 		BigDecimal promoCodeDiscount = calcPromoDiscount(promoCode, totalCartValue);
 		BigDecimal TotalCartDiscounts = calculateTotalCartDiscount(userId, orgId, totalCartValue, totalCartQuantity);
 
-		BigDecimal buyXGetYDiscount = promoRepo
+		var cartItems = new ArrayList<>(items);
+		var orgId = securityService.getCurrentUserOrganizationId();
+		var buyXGetYDiscount = promoRepo
 				.findByOrganization_IdAndTypeIdIn(orgId, asList(BUY_X_GET_Y_FROM_BRAND.getValue(), BUY_X_GET_Y_FROM_TAG.getValue(), BUY_X_GET_Y_FROM_PRODUCT.getValue()))
 				.stream()
-				.map(p -> getDiscountBasedOnBrandsList(new PromoInfoContainer(p, items, ZERO)))
+				.map(p -> getDiscountBasedOnBrandsList(new PromoInfoContainer(p, cartItems, ZERO)))
 				.map(this::getDiscountBasedOnTagsList)
 				.map(this::getDiscountBasedOnProductsList)
 				.map(p -> p.discount)
 				.reduce(ZERO, BigDecimal::add);
 
 		return buyXGetYDiscount.add(TotalCartDiscounts).add(promoCodeDiscount);
+	}
+
+
+
+	private Long calcTotalCartQuantity(List<PromoItemDto> items) {
+		return items
+				.stream()
+				.map(PromoItemDto::getQuantity)
+				.filter(Objects::nonNull)
+				.map(Integer::longValue)
+				.reduce(0L, Long::sum);
 	}
 
 
@@ -604,6 +614,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promo.getDateStart().isAfter(now());
 	}
 
+
 	private PromoInfoContainer getDiscountBasedOnBrandsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
 		Integer productQuantityMin = getProductQuantityMin(constraints);
@@ -611,27 +622,28 @@ public class PromotionsServiceImpl implements PromotionsService {
 		if (constraints.getBrands() == null) {
 			return promoInfoContainer;
 		}
-		List<Long> allowedBrands = constraints.getBrands().getIds();
+		var allowedBrands = constraints.getBrands().getIds();
 
-		List<CartItemData> applicableItems = promoInfoContainer
+		var applicableItems = promoInfoContainer
 				.items
 				.stream()
 				.filter(i -> allowedBrands.contains(i.getBrandId()))
 				.collect(toList());
 
-		BigDecimal productPrice = getMinProductPrice(applicableItems);
+		var productPrice = getMinProductPrice(applicableItems);
 
-		BigDecimal discount = calculateBuyXGetYDiscountValue(applicableItems, productQuantityMin, freeProductQuantity, productPrice);
+		var discount = calculateBuyXGetYDiscountValue(applicableItems, productQuantityMin, freeProductQuantity, productPrice);
 
 		promoInfoContainer.items.removeAll(applicableItems);
 		promoInfoContainer.discount = promoInfoContainer.discount.add(discount);
 		return promoInfoContainer;
 	}
 
-	private BigDecimal getMinProductPrice(List<CartItemData> applicableItems) {
+
+	private BigDecimal getMinProductPrice(List<PromoItemDto> applicableItems) {
 		return applicableItems
 				.stream()
-				.map(CartItemData::getPrice)
+				.map(PromoItemDto::getPrice)
 				.min(BigDecimal::compareTo)
 				.orElse(ZERO);
 	}
@@ -659,6 +671,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return new BigDecimal((quantity / productQuantityMin) * productToGive);
 	}
 
+
+
 	private PromoInfoContainer getDiscountBasedOnTagsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
 		Integer productQuantityMin = getProductQuantityMin(constraints);
@@ -669,7 +683,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		List<Long> allowedTags = constraints.getTags().getIds();
 		List<Long> allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
 
-		List<CartItemData> applicableItems = promoInfoContainer
+		var applicableItems = promoInfoContainer
 				.items
 				.stream()
 				.filter(i -> allowedProducts.contains(i.getProductId()))
@@ -682,13 +696,15 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoInfoContainer;
 	}
 
+
+
 	private PromoInfoContainer getDiscountBasedOnProductsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
 		Integer productQuantityMin = getProductQuantityMin(constraints);
 		Integer freeProductQuantity = getProductQuantityToGive(constraints);
 		List<Long> allowedProducts = constraints.getProducts().getIds();
 
-		List<CartItemData> applicableItems = promoInfoContainer.items
+		var applicableItems = promoInfoContainer.items
 				.stream()
 				.filter(i -> allowedProducts.contains(i.getProductId()))
 				.collect(toList());
@@ -700,11 +716,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoInfoContainer;
 	}
 
-	private BigDecimal calculateBuyXGetYDiscountValue(List<CartItemData> applicableItems, Integer productQuantityMin, Integer freeProductQuantity,
+
+
+	private BigDecimal calculateBuyXGetYDiscountValue(List<PromoItemDto> applicableItems, Integer productQuantityMin, Integer freeProductQuantity,
 													  BigDecimal productPrice) {
 		return applicableItems
 				.stream()
-				.map(i -> i.getQuantity())
+				.map(PromoItemDto::getQuantity)
 				.reduce(Integer::sum)
 				.map(i -> getProductQuantityToGiveInDiscount(i, productQuantityMin, freeProductQuantity).multiply(productPrice))
 				.orElse(ZERO);
@@ -745,8 +763,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 		promo.setConstrainsJson(serializeMap(constrains));
 	}
 
-	@Override
-	public BigDecimal calculateTotalCartDiscount(Long userId, Long orgId, BigDecimal totalCartValue, Long totalCartQuantity) {
+
+
+	public BigDecimal calculateTotalCartDiscount(BigDecimal totalCartValue, Long totalCartQuantity) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		return promoRepo
 				.findByOrganization_IdAndTypeIdIn(orgId, asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()))
 				.stream()
@@ -755,6 +775,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.max(BigDecimal::compareTo)
 				.orElse(ZERO);
 	}
+
+
 
 	private boolean isValidPromoForCartQuantity(PromotionsEntity promo, Long totalCartQuantity) {
 		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
@@ -767,15 +789,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 				promo.getTypeId().equals(TOTAL_CART_ITEMS_QUANTITY.getValue()) && !isValidPromoForCartQuantity(promo, totalCartQuantity) ;
 	}
 
-
-
 }
 
 
 @AllArgsConstructor
 class PromoInfoContainer {
 	PromotionsEntity promo;
-	List<CartItemData> items;
+	List<PromoItemDto> items;
 	BigDecimal discount;
 }
 

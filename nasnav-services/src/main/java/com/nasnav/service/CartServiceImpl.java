@@ -4,6 +4,7 @@ import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -16,6 +17,7 @@ import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +34,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -82,13 +85,12 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public Cart getUserCart(Long userId, String promoCode) {
-        List<CartItemData> cartItemData = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
+        var cartItemData = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
         Cart cart = new Cart(toCartItemsDto(cartItemData));
-        Long orgId = userRepository.findUserOrganizationId(userId);
         BigDecimal subTotal = calculateCartTotal(cart);
-        Long totalCartVariantsCount = cartItemRepo.findTotalCartQuantityByUser_Id(userId);
 
-        BigDecimal discount = promotionsService.calculateAllApplicablePromos(cartItemData, userId, orgId, subTotal, totalCartVariantsCount, promoCode);
+        var promoItems = toPromoItems(cartItemData);
+        var discount = promotionsService.calculateAllApplicablePromos(promoItems, subTotal, promoCode);
 
         BigDecimal total = subTotal.subtract(discount);
         cart.setSubTotal(subTotal);
@@ -98,6 +100,25 @@ public class CartServiceImpl implements CartService{
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         return cart;
     }
+
+
+
+    private List<PromoItemDto> toPromoItems(List<CartItemData> cartItems) {
+        return cartItems
+                .stream()
+                .map(this::toPromoItem)
+                .collect(toUnmodifiableList());
+    }
+
+
+
+    private PromoItemDto toPromoItem(CartItemData cartItem) {
+        var promoItem = new PromoItemDto();
+        copyProperties(cartItem, promoItem);
+        return promoItem;
+    }
+
+
 
     @Override
     public Cart addCartItem(CartItem item) {

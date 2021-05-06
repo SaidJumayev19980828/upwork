@@ -3,6 +3,7 @@ package com.nasnav.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
