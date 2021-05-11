@@ -189,6 +189,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
 			" where product.organizationId = :orgId and subOrder.creationDate >= :startDate" +
+			" and subOrder.status in (5,8)" +
 			" GROUP BY product.id, product.name, variant.id, variant.name, DATE_TRUNC('month',subOrder.creationDate)" +
 			" order by DATE_TRUNC('month',subOrder.creationDate) desc, COUNT(product.id) desc")
 	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId,
