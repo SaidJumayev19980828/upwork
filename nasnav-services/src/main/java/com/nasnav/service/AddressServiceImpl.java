@@ -314,7 +314,7 @@ public class AddressServiceImpl implements AddressService{
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = COUNTRIES)
+    @CacheEvict(value=COUNTRIES, allEntries=true)
     public void updateSubAreas(SubAreasUpdateDTO subAreas) {
         validateSubAreas(subAreas);
         updateExistingAndAddNewAreas(subAreas);
@@ -323,7 +323,7 @@ public class AddressServiceImpl implements AddressService{
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = COUNTRIES)
+    @CacheEvict(value=COUNTRIES, allEntries=true)
     public void deleteSubAreas(Set<Long> subAreas) {
         validateProvidedSubAreasExisting(new HashSet<>(subAreas));
 
