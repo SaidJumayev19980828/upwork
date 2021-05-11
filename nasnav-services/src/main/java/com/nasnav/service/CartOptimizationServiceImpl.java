@@ -36,6 +36,7 @@ import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAR
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
@@ -74,13 +75,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
-		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
-		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
-		Cart returnedCart = getCartObject(optimizedCart);
+		var optimizedCart = createOptimizedCart(dto);
+		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
+		var returnedCart = getCartObject(optimizedCart);
 		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
 	}
-
-
 
 
 
@@ -95,8 +94,6 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-
-
 	private boolean isAnyItemPriceChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
 		return optimizedCart
 				.map(OptimizedCart::getCartItems)
@@ -108,14 +105,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	
 	private <T, Config> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
-		Optimizer optimizerData = getOptimizerData(dto);
-		CartOptimizationStrategy strategy = optimizerData.getStrategy();
+		var optimizerData = getOptimizerData(dto);
+		var strategy = optimizerData.getStrategy();
 
 		CartOptimizer<T, Config> optimizer = getCartOptimizer(strategy.getValue());
 
-		Config config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
-		Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
-		Cart cart = cartService.getCart();
+		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
+		var parameters = optimizer.createCartOptimizationParameters(dto);
+		var cart = cartService.getCart();
 		
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}
@@ -133,16 +130,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-
-
 	private Optimizer getOptimizerData(CartCheckoutDTO dto) {
-		String shippingServiceId = dto.getServiceId();
-		
-		Optional<Optimizer> shippingServiceOptimizer =
+		var shippingServiceId = dto.getServiceId();
+
+		var shippingServiceOptimizer =
 				getCartOptimizationStrategyForShippingService(shippingServiceId);
-		Optional<Optimizer> organizationCartOptimizer =
+		var organizationCartOptimizer =
 				getCartOptimizationStrategyForOrganization();
-		Optional<Optimizer> defaultOptimizer = Optional.of(new Optimizer(DEFAULT_OPTIMIZER, "{}"));
+		var defaultOptimizer = Optional.of(new Optimizer(DEFAULT_OPTIMIZER, "{}"));
 		
 		return firstExistingValueOf(
 				shippingServiceOptimizer
@@ -183,37 +178,35 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		}
 		return strategy;
 	}
-	
-	
+
 	
 
 	private Optional<Optimizer> getCartOptimizationStrategyForOrganization(){
-		Long orgId = securityService.getCurrentUserOrganizationId();
+		var orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
 				.findOrganizationDefaultOptimizationStrategy(orgId)
 				.flatMap(this::createOptimizerData);
 	}
-	
-	
+
 	
 	
 	public Optional<Optimizer> getCartOptimizationStrategyForShippingService(String shippingServiceId){
-		Long orgId = securityService.getCurrentUserOrganizationId();
+		var orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
 				.findByShippingServiceIdAndOrganization_Id(shippingServiceId, orgId)
 				.flatMap(this::createOptimizerData);
 	}
-	
+
 
 
 	@Override
 	public <T> void  setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto) {
-		String strategy = settingDto.getStrategyName(); 
+		var strategy = settingDto.getStrategyName();
 		if(isBlankOrNull(strategy)|| !isValidStrategy(strategy)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, settingDto.toString());
 		}
-		
-		Map<String,Object> parameters = ofNullable(settingDto.getParameters()).orElse(emptyMap());
+
+		var parameters = ofNullable(settingDto.getParameters()).orElse(emptyMap());
 		validateConfigJson(strategy, parameters);
 		
 		persistCartOptimizationInfo(settingDto, strategy, parameters);
@@ -221,24 +214,22 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-
-
 	private void persistCartOptimizationInfo(CartOptimizationSettingDTO settingDto, String strategy,
 			Map<String,Object> parameters) {
-		String shippingServiceId = settingDto.getShippingServiceId();
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		var shippingServiceId = settingDto.getShippingServiceId();
+		var org = securityService.getCurrentUserOrganization();
 		String parametersJsonStr;
 		try {
 			parametersJsonStr = objectMapper.writeValueAsString(parameters);
 		} catch (JsonProcessingException e) {
-			Long orgId = securityService.getCurrentUserOrganizationId();
+			var orgId = securityService.getCurrentUserOrganizationId();
 			logger.error(e,e);
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, WAREHOUSE);
 		}
-		
-		OrganizationCartOptimizationEntity parametersEntity = 
+
+		var parametersEntity =
 				orgCartOptimizerRepo
-				.findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(strategy, shippingServiceId, org.getId())
+				.findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(strategy, shippingServiceId, org.getId())
 				.orElseGet(() -> getOrganizationCartOptimizationParameters(settingDto));
 		
 		parametersEntity.setOptimizationStrategy(strategy);
@@ -251,31 +242,27 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-
-
 	private <T,P> void validateConfigJson(String strategy, Map<String,Object> configJson) {
 		try {
 			CartOptimizer<T,P> optimizer = getCartOptimizer(strategy);
-			P config = objectMapper.convertValue(configJson, optimizer.getConfigurationClass());
+			var config = objectMapper.convertValue(configJson, optimizer.getConfigurationClass());
 			if(!optimizer.isConfigValid(config)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0012, configJson.toString());
 			};
 		} catch (Throwable e) {
 			logger.error(e,e);
-			Long orgId = securityService.getCurrentUserOrganizationId();
+			var orgId = securityService.getCurrentUserOrganizationId();
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, strategy);
 		}
 	}
 
 
 
-
-
 	private OrganizationCartOptimizationEntity getOrganizationCartOptimizationParameters(CartOptimizationSettingDTO settingDto) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		String strategy = settingDto.getStrategyName(); 
+		var orgId = securityService.getCurrentUserOrganizationId();
+		var strategy = settingDto.getStrategyName();
 		return orgCartOptimizerRepo
-				.findByOptimizationStrategyAndOrganization_Id(strategy, orgId)
+				.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, orgId)
 				.orElse(new OrganizationCartOptimizationEntity());
 	}
 
@@ -285,7 +272,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Override
 	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy() {
-		Long orgId = securityService.getCurrentUserOrganizationId();
+		var orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
 				.findByOrganization_Id(orgId)
 				.stream()
@@ -298,15 +285,15 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	
 	private CartOptimizationSettingDTO createSettingDTO(OrganizationCartOptimizationEntity entity) {
-		String parametersJson = ofNullable(entity.getParameters()).orElse("{}");
+		var parametersJson = ofNullable(entity.getParameters()).orElse("{}");
 		Map<String,Object> params = emptyMap();
 		try {
 			 params = objectMapper.readValue(parametersJson, new TypeReference<Map<String,Object>>(){});
 		} catch (IOException e) {
 			logger.error(e,e);
 		}
-		
-		CartOptimizationSettingDTO settingDto = new CartOptimizationSettingDTO();
+
+		var settingDto = new CartOptimizationSettingDTO();
 		settingDto.setShippingServiceId(entity.getShippingServiceId());
 		settingDto.setStrategyName(entity.getOptimizationStrategy());
 		settingDto.setParameters(params);
@@ -326,13 +313,24 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.collect(toList());
 	}
 
-	
-	
-	
+
+
+	@Override
+	@Transactional
+	public void deleteCartOptimizationStrategy(String strategyName, String shippingService) {
+		var orgId = securityService.getCurrentUserOrganizationId();
+		if(isNull(shippingService)){
+			orgCartOptimizerRepo.deleteByOptimizationStrategy(strategyName, orgId);
+		}else{
+			orgCartOptimizerRepo.deleteByOptimizationStrategy(strategyName, shippingService, orgId);
+		}
+	}
+
+
 	private <CartParams, CommonParams> CartOptimizationStrategyDTO createCartOptimizationStrategyDTO(
 											String strategyName) {
 		CartOptimizer<CartParams, CommonParams> optimizer = getCartOptimizer(strategyName);
-		CommonParams params = createParamsObject(optimizer);
+		var params = createParamsObject(optimizer);
 		return new CartOptimizationStrategyDTO(strategyName, params);
 	}
 

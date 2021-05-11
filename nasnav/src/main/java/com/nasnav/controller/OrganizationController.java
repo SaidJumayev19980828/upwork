@@ -538,11 +538,10 @@ public class OrganizationController {
     })
     @PostMapping(value = "settings/cart_optimization/strategy")
     @ResponseStatus(OK)
-    public void setCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
+    public void setCartOptimizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
                                            @RequestBody CartOptimizationSettingDTO setting){
         cartOptimizeService.setCartOptimizationStrategy(setting);
     }
-
 
 
 
@@ -554,8 +553,23 @@ public class OrganizationController {
     })
     @GetMapping(value = "settings/cart_optimization/strategy")
     @ResponseStatus(OK)
-    public List<CartOptimizationSettingDTO> getCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken){
+    public List<CartOptimizationSettingDTO> getCartOptimizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken){
         return cartOptimizeService.getCartOptimizationStrategy();
+    }
+
+
+    @Operation(description =  "delete cart optimization strategy for the organization or the shipping service", summary = "setCartOptimization")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "process completed successfully"),
+            @ApiResponse(responseCode = " 403" ,description = "User not authorized to do this action"),
+            @ApiResponse(responseCode = " 406" ,description = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "settings/cart_optimization/strategy")
+    @ResponseStatus(OK)
+    public void deleteCartOptimizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                           @RequestParam("strategy_name")String strategyName
+                                            ,@RequestParam(value = "shipping_service", required = false)String shippingService){
+        cartOptimizeService.deleteCartOptimizationStrategy(strategyName, shippingService);
     }
 
 

@@ -8,9 +8,8 @@ import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.SettingEntity;
 import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
+import com.nasnav.shipping.services.PickupPointsWithInternalLogistics;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,13 +20,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
@@ -72,20 +68,20 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postPrivateSettingsSuccessTest() {
-		String settingName = "TEST_SETTING";
-		String settingValue = "ON";
-		String body = 
+		var settingName = "TEST_SETTING";
+		var settingValue = "ON";
+		var body =
 				json()
 				.put("name", settingName)
 				.put("value", settingValue)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings",POST, req, String.class);
 	    assertEquals(200, res.getStatusCodeValue());
-	    
-	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+
+		var entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    assertTrue(entity.isPresent());
 	    assertEquals(settingName, entity.get().getSettingName());
 	    assertEquals(settingValue, entity.get().getSettingValue());
@@ -97,21 +93,21 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postPublicSettingsSuccessTest() {
-		String settingName = "NOT_IN_SETTINGS_ENUM";
-		String settingValue = "YEP";
-		String body =
+		var settingName = "NOT_IN_SETTINGS_ENUM";
+		var settingValue = "YEP";
+		var body =
 				json()
 				.put("name", settingName)
 				.put("value", settingValue)
 				.put("type", PUBLIC.getValue())
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-		ResponseEntity<String> res =
+		var res =
 				template
 						.exchange("/organization/settings",POST, req, String.class);
 		assertEquals(200, res.getStatusCodeValue());
 
-		Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+		var entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 		assertTrue(entity.isPresent());
 		assertEquals(settingName, entity.get().getSettingName());
 		assertEquals(settingValue, entity.get().getSettingValue());
@@ -123,19 +119,19 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postSettingsInvalidParamTest() {
-		String settingName = "TEST_SETTING";
-		String body = 
+		var settingName = "TEST_SETTING";
+		var body =
 				json()
 				.put("name", settingName)
 				.put("value", NULL)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+
+		var entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    assertFalse(entity.isPresent());
 	}
 	
@@ -144,19 +140,19 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postSettingsInvalidSettingTest() {
-		String settingName = "INVALID";
-		String body = 
+		var settingName = "INVALID";
+		var body =
 				json()
 				.put("name", settingName)
 				.put("value", "Bogy")
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+
+		var entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    assertFalse(entity.isPresent());
 	}
 	
@@ -165,7 +161,7 @@ public class SettingsServiceTest {
 	@Test
 	public void postSettingsNoAuthZTest() {
 		HttpEntity<?> req = getHttpEntity("eereeee");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings",POST, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
@@ -177,7 +173,7 @@ public class SettingsServiceTest {
 	@Test
 	public void postSettingsNoAuthNTest() {
 		HttpEntity<?> req = getHttpEntity("NOT EXIST");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings",POST, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
@@ -190,7 +186,7 @@ public class SettingsServiceTest {
 	@Test
 	public void deleteSettingsNoAuthZTest() {
 		HttpEntity<?> req = getHttpEntity("eereeee");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings",DELETE, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
@@ -202,7 +198,7 @@ public class SettingsServiceTest {
 	@Test
 	public void deleteSettingsNoAuthNTest() {
 		HttpEntity<?> req = getHttpEntity("NOT EXIST");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings",DELETE, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
@@ -214,14 +210,14 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void deleteSettingsSuccessTest() {
-		String settingName = "TEST_SETTING";
+		var settingName = "TEST_SETTING";
 		HttpEntity<?> req = getHttpEntity("hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings?name="+settingName,DELETE, req, String.class);
 	    assertEquals(200, res.getStatusCodeValue());
-	    
-	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+
+		var entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    assertFalse(entity.isPresent());
 	}
 	
@@ -232,7 +228,7 @@ public class SettingsServiceTest {
 	@Test
 	public void postCartOptimizationSettingNoAuthZTest() {
 		HttpEntity<?> req = getHttpEntity("eereeee");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
@@ -244,9 +240,9 @@ public class SettingsServiceTest {
 	@Test
 	public void postCartOptimizationSettingNoAuthNTest() {
 		HttpEntity<?> req = getHttpEntity("NOT EXIST");
-        ResponseEntity<String> res = 
+		var res =
         		template
-        		.exchange("/organization/settings/cart_optimization/strategy",DELETE, req, String.class);
+        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
 	}
 	
@@ -255,19 +251,19 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postCartOptimizationSettingInvalidParamTest() {
-		String strategy = "INVALID";
-		String body = 
+		var strategy = "INVALID";
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
 	
@@ -276,22 +272,22 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postCartOptimizationSettingSuccessTest() {
-		String strategy = SAME_CITY.name();
-		String optimizationParams = 
+		var strategy = SAME_CITY.name();
+		var optimizationParams =
 				json()
 				.toString();
-		String body = 
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(OK, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertTrue(optimizationParamsEntity.isPresent());
 	    assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
 	    assertEquals(optimizationParams, optimizationParamsEntity.get().getParameters());
@@ -303,20 +299,20 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postWarehouseCartOptimizationSettingInvalidParamTest() {
-		String strategy = WAREHOUSE;
-		String body = 
+		var strategy = WAREHOUSE;
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.put("parameters", json())
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
 	
@@ -326,20 +322,20 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postWarehouseCartOptimizationSettingNoExistingWareHouseTest() {
-		String strategy = WAREHOUSE;
-		String body = 
+		var strategy = WAREHOUSE;
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.put("parameters", json().put("warehouse_id", -1))
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
 
@@ -347,20 +343,20 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postWarehouseCartOptimizationSettingWarehouseFromAnotherOrgTest() {
-		String strategy = WAREHOUSE;
-		String body = 
+		var strategy = WAREHOUSE;
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.put("parameters", json().put("warehouse_id", 501))
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertFalse(optimizationParamsEntity.isPresent());
 	}
 
@@ -368,8 +364,8 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postSubAreaShopCartOptimizationSettingDefaultShopFromAnotherOrgTest() {
-		String strategy = SHOP_PER_SUBAREA;
-		String body =
+		var strategy = SHOP_PER_SUBAREA;
+		var body =
 				json()
 					.put("strategy_name", strategy)
 					.put("parameters",
@@ -378,13 +374,13 @@ public class SettingsServiceTest {
 							.put("sub_area_shop_mapping", json().put("77001", 502)))
 					.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-		ResponseEntity<String> res =
+		var res =
 				template
 						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
 
-		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
-				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		var optimizationParamsEntity =
+				optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 		assertFalse(optimizationParamsEntity.isPresent());
 	}
 
@@ -392,8 +388,8 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postSubAreaShopCartOptimizationSettingSubAreaShopFromAnotherOrgTest() {
-		String strategy = SHOP_PER_SUBAREA;
-		String body =
+		var strategy = SHOP_PER_SUBAREA;
+		var body =
 				json()
 					.put("strategy_name", strategy)
 					.put("parameters",
@@ -402,13 +398,13 @@ public class SettingsServiceTest {
 							.put("sub_area_shop_mapping", json().put("77001", 501)))
 					.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-		ResponseEntity<String> res =
+		var res =
 				template
 						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
 
-		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
-				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		var optimizationParamsEntity =
+				optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 		assertFalse(optimizationParamsEntity.isPresent());
 	}
 
@@ -416,8 +412,8 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postSubAreaShopCartOptimizationSettingSubAreaFromAnotherOrgTest() {
-		String strategy = SHOP_PER_SUBAREA;
-		String body =
+		var strategy = SHOP_PER_SUBAREA;
+		var body =
 				json()
 					.put("strategy_name", strategy)
 					.put("parameters",
@@ -426,13 +422,13 @@ public class SettingsServiceTest {
 							.put("sub_area_shop_mapping", json().put("77002", 502)))
 					.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-		ResponseEntity<String> res =
+		var res =
 				template
 						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
 
-		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
-				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		var optimizationParamsEntity =
+				optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 		assertFalse(optimizationParamsEntity.isPresent());
 	}
 
@@ -440,8 +436,8 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postSubAreaShopCartOptimizationSettingSuccessTest() {
-		String strategy = SHOP_PER_SUBAREA;
-		String body =
+		var strategy = SHOP_PER_SUBAREA;
+		var body =
 				json()
 					.put("strategy_name", strategy)
 					.put("parameters",
@@ -450,13 +446,13 @@ public class SettingsServiceTest {
 							.put("sub_area_shop_mapping", json().put("77001", 502)))
 					.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-		ResponseEntity<String> res =
+		var res =
 				template
 						.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 		assertEquals(OK, res.getStatusCode());
 
-		Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity =
-				optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+		var optimizationParamsEntity =
+				optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 		assertTrue(optimizationParamsEntity.isPresent());
 		assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
 	}
@@ -465,21 +461,21 @@ public class SettingsServiceTest {
 
 	@Test
 	public void postWarehouseCartOptimizationSettingSuccessTest() {
-		String strategy = WAREHOUSE;
-		JSONObject optimizationParams = json().put("warehouse_id", 502);
-		String body = 
+		var strategy = WAREHOUSE;
+		var optimizationParams = json().put("warehouse_id", 502);
+		var body =
 				json()
 				.put("strategy_name", strategy)
 				.put("parameters", optimizationParams)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(OK, res.getStatusCode());
-	    
-	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
-	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+
+		var optimizationParamsEntity =
+	    		optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
 	    assertTrue(optimizationParamsEntity.isPresent());
 	    assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
 	    assertEquals(optimizationParams.toString(), optimizationParamsEntity.get().getParameters());
@@ -493,13 +489,14 @@ public class SettingsServiceTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOptimizationStrategyTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(OK, res.getStatusCode());
         
         List<CartOptimizationSettingDTO> strategyConfigs = 
-        		objectMapper.readValue(res.getBody(), new TypeReference<List<CartOptimizationSettingDTO>>(){});
+        		objectMapper.readValue(res.getBody(), new TypeReference<>() {
+				});
         
         assertEquals(2, strategyConfigs.size());
 	}
@@ -513,7 +510,7 @@ public class SettingsServiceTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOptimizationStrategyNoAuthzTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("eereeee");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
@@ -528,7 +525,7 @@ public class SettingsServiceTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOptimizationStrategyNoAuthNTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("Non existing");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
@@ -541,21 +538,22 @@ public class SettingsServiceTest {
 	@Test
 	public void listOptimizationStrategiesTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(OK, res.getStatusCode());
         
         List<CartOptimizationStrategyDTO> strategies = 
-        		objectMapper.readValue(res.getBody(), new TypeReference<List<CartOptimizationStrategyDTO>>(){});
-       
-        
-        Set<String> strategiesNames = 
+        		objectMapper.readValue(res.getBody(), new TypeReference<>() {
+				});
+
+
+		var strategiesNames =
         		stream(CartOptimizationStrategy.values())
         		.map(CartOptimizationStrategy::getValue)
         		.collect(toSet());
-        
-        boolean allStrategiesReturned =
+
+		var allStrategiesReturned =
         		strategies
         		.stream()
         		.map(CartOptimizationStrategyDTO::getName)
@@ -573,7 +571,7 @@ public class SettingsServiceTest {
 	@Test
 	public void listOptimizationStrategiesNoAuthzTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("eereeee");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
@@ -586,7 +584,7 @@ public class SettingsServiceTest {
 	@Test
 	public void listOptimizationStrategiesAuthNTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("Non existing");
-        ResponseEntity<String> res = 
+		var res =
         		template
         		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
@@ -601,11 +599,11 @@ public class SettingsServiceTest {
 	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void showFreeProductsEnabled() {
 		setOrganizationSetting(SHOW_FREE_PRODUCTS.name(), true);
-		
-		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
+
+		var response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
-		long total = json.getLong("total");
+		var json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		var total = json.getLong("total");
 		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero price",4L , total);
 	}
 	
@@ -617,11 +615,11 @@ public class SettingsServiceTest {
 	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void hideEmptyStocksEnabled() {
 		setOrganizationSetting(HIDE_EMPTY_STOCKS.name(), true);
-		
-		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
+
+		var response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
-		long total = json.getLong("total");
+		var json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		var total = json.getLong("total");
 		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero stock, which should be ignored"
 						,2L , total);
 	}
@@ -630,15 +628,86 @@ public class SettingsServiceTest {
 
 
 	private void setOrganizationSetting(String settingName, Object settingValue) {
-		String body = 
+		var body =
 				json()
 				.put("name", settingName)
 				.put("value", settingValue)
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "161718");
-	        ResponseEntity<String> res = 
+		var res =
 	        		template
 	        		.exchange("/organization/settings",POST, req, String.class);
 	    assertEquals(200, res.getStatusCodeValue());
+	}
+
+
+
+	@Test
+	public void deleteCartOptimizationSettingNoAuthZTest() {
+		HttpEntity<?> req = getHttpEntity("eereeee");
+		var res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy",DELETE, req, String.class);
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+
+
+
+	@Test
+	public void deleteCartOptimizationSettingNoAuthNTest() {
+		HttpEntity<?> req = getHttpEntity("NOT EXIST");
+		var res =
+				template
+					.exchange("/organization/settings/cart_optimization/strategy",DELETE, req, String.class);
+		assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteCartOptimizationSettingForOrgTest() {
+		var strategy = SAME_CITY.name();
+		var existsBefore = optimizationRepo.findOrganizationDefaultOptimizationStrategy(99001L).isPresent();
+		assertTrue(existsBefore);
+		var optimizationParams = json().toString();
+		var body =
+				json()
+					.put("strategy_name", strategy)
+					.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		var res =
+				template
+					.exchange(String.format("/organization/settings/cart_optimization/strategy?strategy_name=%s", strategy),DELETE, req, String.class);
+		assertEquals(OK, res.getStatusCode());
+
+		var existsAfter = optimizationRepo.findOrganizationDefaultOptimizationStrategy(99001L).isPresent();
+		assertFalse(existsAfter);
+	}
+
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteCartOptimizationSettingForShippingServiceTest() {
+		var strategy = WAREHOUSE;
+		var shipping = PickupPointsWithInternalLogistics.SERVICE_ID;
+		var existsBefore = optimizationRepo.findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(strategy, shipping, 99001L).isPresent();
+		assertTrue(existsBefore);
+		var body =
+				json()
+				.put("strategy_name", strategy)
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+		var res =
+				template
+					.exchange(String.format("/organization/settings/cart_optimization/strategy?strategy_name=%s&shipping_service=%s", strategy,shipping)
+							,DELETE, req, String.class);
+		assertEquals(OK, res.getStatusCode());
+
+		var existsAfter = optimizationRepo.findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(strategy, shipping,99001L).isPresent();
+		assertFalse(existsAfter);
 	}
 }

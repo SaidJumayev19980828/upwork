@@ -12,4 +12,5 @@ public interface CartOptimizationService {
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto);
 	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy();
 	public List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies();
+    void deleteCartOptimizationStrategy(String strategyName, String shippingService);
 }
