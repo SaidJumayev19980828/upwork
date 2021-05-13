@@ -3,6 +3,7 @@ package com.nasnav.shipping.services;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
@@ -25,6 +26,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static com.nasnav.shipping.utils.ShippingUtils.*;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.time.LocalDateTime.now;
@@ -101,16 +103,9 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
     @Override
     public void setServiceParameters(List<ServiceParameter> params) {
-        Map<String, String> serviceParameters = params
-                .stream()
-                .collect(
-                        toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
-        String supportedCitiesString =
-                ofNullable(serviceParameters.get(SUPPORTED_AREAS))
-                        .orElse("[]");
-        String minFeeString =
-                ofNullable(serviceParameters.get(MIN_SHIPPING_FEE))
-                        .orElse("0");
+        var serviceParameters = toServiceParamMap(params);
+        var supportedCitiesString = serviceParameters.getOrDefault(SUPPORTED_AREAS, "[]");
+        var minFeeString = serviceParameters.getOrDefault(MIN_SHIPPING_FEE, "0");
         try {
             supportedAreas = objectMapper.readValue(supportedCitiesString, new TypeReference<List<Long>>(){});
             minFee = new BigDecimal(minFeeString);
@@ -139,7 +134,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
             return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }
         Integer shipmentsNum = shippingInfo.size();
-        List<Shipment> shipments =
+        var shipments =
                 shippingInfo
                         .stream()
                         .map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, shipmentsNum))
@@ -153,37 +148,11 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
     private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Integer shipmentsNumInt) {
-        BigDecimal shipmentsNum = BigDecimal.valueOf(shipmentsNumInt);
-        BigDecimal fee = minFee.divide(shipmentsNum, 2, FLOOR);
-        ShippingEta eta = new ShippingEta(now().plusMinutes(etaMinutesMin), now().plusMinutes(etaMinutesMax));
-        List<Long> stockIds = getItemsStockId(shippingInfo);
+        var shipmentsNum = BigDecimal.valueOf(shipmentsNumInt);
+        var fee = minFee.divide(shipmentsNum, 2, FLOOR);
+        var eta = new ShippingEta(now().plusMinutes(etaMinutesMin), now().plusMinutes(etaMinutesMax));
+        var stockIds = getItemsStockId(shippingInfo);
         return new Shipment(fee, eta, stockIds, shippingInfo.getSubOrderId());
-    }
-
-
-
-    private List<Long> getItemsStockId(ShippingDetails shippingInfo) {
-        return shippingInfo
-                .getItems()
-                .stream()
-                .map(ShipmentItems::getStockId)
-                .collect(toList());
-    }
-
-
-
-
-    private void correctCalculationError(BigDecimal fee, List<Shipment> shipments) {
-        BigDecimal accumlatedFeeTotal =
-                shipments
-                        .stream()
-                        .map(Shipment::getShippingFee)
-                        .reduce(ZERO, BigDecimal::add);
-        BigDecimal error = fee.subtract(accumlatedFeeTotal);
-        shipments
-                .stream()
-                .peek( shipment -> shipment.setShippingFee(shipment.getShippingFee().add(error)))
-                .findFirst();
     }
 
 
@@ -227,7 +196,7 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
     @Override
     public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) {
-        ShipmentStatusData statusData = new ShipmentStatusData();
+        var statusData = new ShipmentStatusData();
         statusData.setExternalShipmentId(null);
         statusData.setOrgId(orgId);
         statusData.setServiceId(serviceId);
@@ -255,14 +224,6 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
     private Optional<Integer> getEtaFromDays(Map<String, String> serviceParams, String etaDaysMin) {
         return getIntegerParameter(serviceParams, etaDaysMin)
                 .map(this::toMinutes);
-    }
-
-
-
-    private Optional<Integer> getIntegerParameter(Map<String, String> serviceParams, String etaDaysMin) {
-        return ofNullable(serviceParams.get(etaDaysMin))
-                .flatMap(EntityUtils::parseLongSafely)
-                .map(Long::intValue);
     }
 
 
@@ -308,8 +269,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
     private List<Long> getAreas(ShippingDetails details){
-        Long destinationArea = details.getDestination().getArea();
-        Long sourceArea = details.getSource().getArea();
+        var destinationArea = details.getDestination().getArea();
+        var sourceArea = details.getSource().getArea();
         return asList(destinationArea, sourceArea);
     }
 

@@ -1,4 +1,4 @@
-package com.nasnav.test.shipping.services.fixed_fee_selected_areas_min_order;
+package com.nasnav.test.shipping.services.var_fee_selected_sub_areas_min_order;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,7 +6,6 @@ import com.nasnav.NavBox;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
 import net.jcip.annotations.NotThreadSafe;
@@ -18,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -27,9 +25,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 
-import static com.nasnav.shipping.services.FixedFeeSelectedAreasMinOrderShippingService.MIN_ORDER_VALUE;
-import static com.nasnav.shipping.services.FixedFeeSelectedAreasMinOrderShippingService.SERVICE_ID;
-import static com.nasnav.shipping.services.FixedFeeSelectedAreasShippingService.*;
+import static com.nasnav.shipping.services.VarFeeSelectedSubAreaMinOrderShippingService.SUBAREAS_SHIPPING_FEES;
+import static com.nasnav.shipping.services.VarFeeSelectedSubAreaMinOrderShippingService.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
@@ -42,17 +39,16 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 
-
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_14.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_16.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
-    private static final Integer ETA_FROM = 1;
-    private static final Integer ETA_TO = 2;
+public class VarFeeSelectedSubAreaMinOrderShippingServiceTest {
+    private static final Integer ETA_FROM = 60;
+    private static final Integer ETA_TO = 90;
 
     @Autowired
     private ShippingServiceFactory shippingServiceFactory;
@@ -70,24 +66,6 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     public void testGetOrderUnderMinValueOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("456");
         var response =
-                template.exchange("/shipping/offers?customer_address=12300002", GET, request, String.class);
-
-        assertEquals(OK, response.getStatusCode());
-
-        var offers =
-                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        var offer = offers.get(0);
-
-        assertFalse(offer.isAvailable());
-        assertNotNull(offer.getMessage());
-    }
-
-
-
-    @Test
-    public void testGetOrderUnderMinValueAndOutOfServiceOffer() throws IOException {
-        HttpEntity<?> request =  getHttpEntity("456");
-        var response =
                 template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
@@ -103,31 +81,23 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
     @Test
-    public void testGetMinimumOffer() throws IOException {
+    public void testGetOrderUnderMinValueAndOutOfServiceOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
         var response =
-                template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
+                template.exchange("/shipping/offers?customer_address=12300002", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
         var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        var shipments = offers.get(0).getShipments();
+        var offer = offers.get(0);
 
-        sort(shipments, comparing(ShipmentDTO::getShippingFee));
-        assertEquals(3, shipments.size());
-        assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("5")));
-        assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("5")));
-        assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
-        assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
-        assertEquals(now().plusDays(2).toLocalDate() , shipments.get(0).getEta().getTo().toLocalDate());
+        assertFalse(offer.isAvailable());
+        assertNotNull(offer.getMessage());
     }
 
 
 
-    @Test
-    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_15.sql"})
-    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void testGetMinimumOfferWith90MinutesEta() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
         var response =
@@ -172,7 +142,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
     @Test(expected = RuntimeBusinessException.class)
-    public void createDeliveryUnsupportedAreaTest() {
+    public void createDeliveryUnsupportedSubAreaTest() {
         var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
@@ -201,7 +171,6 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
 
-
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryWithTooLowValueAndOutOfServiceTest() {
         var service =
@@ -227,10 +196,10 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
     private List<ServiceParameter> createServiceParams() {
-        return asList(new ServiceParameter(MIN_SHIPPING_FEE,"15")
-                , new ServiceParameter(SUPPORTED_AREAS, "[1,2]")
-                , new ServiceParameter(ETA_DAYS_MIN, ETA_FROM.toString())
-                , new ServiceParameter(ETA_DAYS_MAX, ETA_TO.toString())
+        return asList(
+                 new ServiceParameter(SUBAREAS_SHIPPING_FEES, "{\"676701\": 20}")
+                , new ServiceParameter(ETA_MINUTES_MIN, ETA_FROM.toString())
+                , new ServiceParameter(ETA_MINUTES_MAX, ETA_TO.toString())
                 , new ServiceParameter(MIN_ORDER_VALUE, "100"));
     }
 
@@ -257,6 +226,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         customerAddr.setArea(1L);
         customerAddr.setBuildingNumber("555");
         customerAddr.setCity(1L);
+        customerAddr.setSubArea(676701L);
         customerAddr.setCountry(1L);
         customerAddr.setFlatNumber("5A");
         customerAddr.setId(12300001L);

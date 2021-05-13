@@ -87,7 +87,7 @@ public class FixedFeeSelectedAreasMinOrderShippingService extends FixedFeeSelect
     public void setServiceParameters(List<ServiceParameter> params) {
         super.setServiceParameters(params);
         try {
-            Map<String, String> serviceParameters = params
+            var serviceParameters = params
                     .stream()
                     .collect(
                             toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
@@ -111,7 +111,7 @@ public class FixedFeeSelectedAreasMinOrderShippingService extends FixedFeeSelect
 
     private ShippingOffer checkOrderValue(ShippingOffer offer, List<ShippingDetails> shippingDetails){
         if(offer.isAvailable() && isOrderValueTooLow(shippingDetails)){
-            String msg = createInvalidOrderMessage();
+            var msg = createInvalidOrderMessage();
             return new ShippingOffer(getServiceInfo(), msg);
         }else {
             return offer;

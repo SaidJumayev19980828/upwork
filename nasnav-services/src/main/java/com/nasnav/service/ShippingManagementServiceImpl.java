@@ -416,10 +416,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private ShippingAddress createShippingAddress(AddressesEntity entity) {
+		Optional<SubAreasEntity> subArea =  ofNullable(entity).map(AddressesEntity::getSubAreasEntity);
 		Optional<AreasEntity> area = ofNullable(entity).map(AddressesEntity::getAreasEntity);
 		Optional<CitiesEntity> city = area.map(AreasEntity::getCitiesEntity);
 		Optional<CountriesEntity> country = city.map(CitiesEntity::getCountriesEntity);
-		
+
+		Long subAreaId = subArea.map(SubAreasEntity::getId).orElse(-1L);
 		Long areaId = area.map(AreasEntity::getId).orElse(-1L);
 		Long cityId = city.map(CitiesEntity::getId).orElse(-1L);
 		Long countryId = country.map(CountriesEntity::getId).orElse(-1L);
@@ -430,6 +432,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		addr.setAddressLine1(entity.getAddressLine1());
 		addr.setAddressLine2(entity.getAddressLine2());
 		addr.setArea(areaId);
+		addr.setSubArea(subAreaId);
 		addr.setBuildingNumber(entity.getBuildingNumber());
 		addr.setCity(cityId);
 		addr.setCountry(countryId);
