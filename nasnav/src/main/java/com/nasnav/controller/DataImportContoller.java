@@ -19,7 +19,6 @@ import javax.validation.Valid;
 import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.service.CsvDataImportServiceImpl;
 import com.nasnav.service.ExcelDataImportServiceImpl;
-import io.swagger.annotations.ApiResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -28,14 +27,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.service.model.importproduct.context.ImportProductContext;
-
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-
 
 @RestController
 @RequestMapping("/upload")
@@ -48,12 +39,7 @@ public class DataImportContoller {
 	@Autowired
 	private ExcelDataImportServiceImpl excelDataImportService;
 
-	@ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "Products data verified/imported"),
-            @ApiResponse(responseCode = " 401" ,description = "Unauthorized (invalid User-Token)"),
-            @ApiResponse(responseCode = " 403" ,description = "Insuffucient Rights"),
-            @ApiResponse(responseCode = " 406" ,description = "Invalid data"),
-    })
+
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "productlist",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
@@ -76,12 +62,6 @@ public class DataImportContoller {
 		}			
     }
 
-	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "Products data verified/imported xlsx"),
-			@ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-			@ApiResponse(code = 403, message = "Insuffucient Rights"),
-			@ApiResponse(code = 406, message = "Invalid data"),
-	})
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "productlist/xlsx",
 			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
@@ -103,12 +83,7 @@ public class DataImportContoller {
 		}
 	}
 
-	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "Products data verified/imported csv"),
-			@ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-			@ApiResponse(code = 403, message = "Insuffucient Rights"),
-			@ApiResponse(code = 406, message = "Invalid data"),
-	})
+
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "productlist/csv",
 			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,

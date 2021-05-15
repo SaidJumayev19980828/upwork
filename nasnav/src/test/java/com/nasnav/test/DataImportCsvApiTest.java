@@ -384,11 +384,7 @@ public class DataImportCsvApiTest {
 				, unitsCountAfter, unitsCountBefore + 1);
 	}
 
-	@Test
-	public void uploadProductsDefaultRemovedVariant() throws Exception {
-		uploadProductRemovedVariant(URL_UPLOAD_PRODUCTLIST);
-	}
-	
+
 	@Test
 	public void uploadProductCSVRemovedVariant() throws Exception {
 		JSONObject importProperties = createDataImportProperties();

@@ -17,11 +17,9 @@ import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
-import com.nasnav.enumerations.ImageCsvTemplateType;
+import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
-import com.nasnav.response.*;
-import com.nasnav.service.CsvDataExportService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewServiceImpl;
@@ -38,9 +36,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.enumerations.ImageFileTemplateType;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.request.BundleSearchParam;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -48,14 +43,6 @@ import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.CsvExcelDataExportService;
-import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
-
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.*;
 
 @RestController
 @RequestMapping("/product")
