@@ -16,8 +16,6 @@ public interface PromotionsService {
 
 	Long updatePromotion(PromotionDTO promotion);
 
-	BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal);
-
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
 
 	/**
