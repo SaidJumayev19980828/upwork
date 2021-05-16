@@ -45,3 +45,4 @@ secrets.yml
 /src/main/resources/test.database.properties
 /src/main/resources/application.properties
 /src/main/resources/database.properties
+
