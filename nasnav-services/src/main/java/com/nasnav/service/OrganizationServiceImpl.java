@@ -1199,9 +1199,16 @@ public class OrganizationServiceImpl implements OrganizationService {
 	}
 
 
-	
 
-	@Override
+    @Override
+    public Optional<String> getOrganizationSettingValue(Long orgId, Settings setting) {
+        return settingRepo
+                .findBySettingNameAndOrganization_Id(setting.name(), orgId)
+                .map(SettingEntity::getSettingValue);
+    }
+
+
+    @Override
     public List<ShopRepresentationObject> getOrganizationShops() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return shopService.getOrganizationShops(orgId, true);
