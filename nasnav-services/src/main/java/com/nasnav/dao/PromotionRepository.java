@@ -48,6 +48,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 
 	Optional<PromotionsEntity> findByIdAndOrganization_Id(Long promotionId, Long orgId);
 
+
 	@Query("select promo "
 			+ " FROM PromotionsEntity promo "
 			+ " LEFT JOIN promo.organization org "
@@ -57,4 +58,14 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " order by priority desc")
 	List<PromotionsEntity> findByOrganization_IdAndTypeIdIn(@Param("orgId") Long orgId,
 															@Param("typeIds") List<Integer> typeIds);
+
+	@Query("select promo "
+			+ " FROM PromotionsEntity promo "
+			+ " LEFT JOIN promo.organization org "
+			+ " where org.id = :orgId "
+			+ " AND promo.typeId not in :typeIds "
+			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " order by priority desc")
+	List<PromotionsEntity> findByOrganization_IdAndTypeIdNotIn(@Param("orgId") Long orgId,
+															   @Param("typeIds") List<Integer> typeIds);
 }
