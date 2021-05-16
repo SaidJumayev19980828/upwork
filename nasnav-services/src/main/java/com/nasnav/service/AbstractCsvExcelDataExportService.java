@@ -8,6 +8,7 @@ import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +32,8 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     protected DataExportService exportService;
 
     @Autowired
-    protected CsvDataImportServiceImpl importService;
+    @Qualifier("csv")
+    protected CsvExcelDataImportService importService;
 
     @Autowired
     protected ProductImgsCustomRepository productImgsCustomRepo;

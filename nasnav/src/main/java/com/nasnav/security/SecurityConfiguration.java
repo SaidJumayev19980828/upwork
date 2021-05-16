@@ -133,7 +133,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/seo"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/sub_areas"								, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/export/*"												, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/export/**"												, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/integration/import/shops"								, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/products"							, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/product_images"					, setOf(ORGANIZATION_MANAGER)),
@@ -177,7 +177,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/webjars/**")		//for development only
                         , patternOf("/v3/api-docs/**")		//for development only
                         , patternOf("/csrf/**")		//for development only
-                        , patternOf("/upload/productlist/login")
                         , patternOf("/favicon.ico")
                         , patternOf("/static/**")
 						, patternOf("/icons/**")

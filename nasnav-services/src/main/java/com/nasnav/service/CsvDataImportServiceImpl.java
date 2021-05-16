@@ -12,6 +12,7 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
@@ -53,6 +54,7 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 	private Logger logger = Logger.getLogger(getClass());
 
 	@Override
+	@Transactional
 	public ImportProductContext importProductList(@Valid MultipartFile file,
 												  @Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
@@ -70,6 +72,8 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 				.collect(toList());
 		return dataImportService.importProducts(productsData, importMetadata);
 	}
+
+
 
 	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData, ImportProductContext context) throws ImportProductException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );

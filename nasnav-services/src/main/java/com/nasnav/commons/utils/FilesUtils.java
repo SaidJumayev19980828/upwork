@@ -16,6 +16,7 @@ public class FilesUtils {
     static {
         excelFileType.add("application/x-tika-msoffice");
         excelFileType.add("application/x-tika-ooxml");
+        excelFileType.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         // csv
         csvFileType.add("text/csv");
         csvFileType.add("text/plain");

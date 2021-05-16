@@ -1,19 +1,21 @@
 package com.nasnav.service;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import org.apache.commons.beanutils.BeanUtils;
@@ -24,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductImportMetadata;
@@ -38,8 +41,11 @@ import com.nasnav.service.model.importproduct.csv.CsvRow;
 public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportService {
 
 	private final Logger logger = Logger.getLogger(getClass());
+	private static final Map<String,String> HEADER_NAME_TO_BEAN_PROPERTY_MAPPING =
+			getHeaderNameToBeanPropertyMapping();
 
 	@Override
+	@Transactional
 	public ImportProductContext importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws RuntimeBusinessException, ImportProductException {
 		validateProductImportMetaData(importMetaData);
 		validateProductImporFile(file);
@@ -51,9 +57,9 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 		List<ProductImportDTO> productsData =
 				rows
-						.stream()
-						.map(CsvRow::toProductImportDto)
-						.collect(toList());
+					.stream()
+					.map(CsvRow::toProductImportDto)
+					.collect(toList());
 		try {
 			return dataImportService.importProducts(productsData, importMetadata);
 		} catch (BusinessException e) {
@@ -101,18 +107,28 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 			}
 			for (Cell cell : row) {
 				String headerName = sheet.getRow(0).getCell(cell.getColumnIndex()).getStringCellValue();
-				String headerMapped = getColumnHeaderMapping(headerName);
-				headerName = StringUtils.isEmpty(headerMapped) ? headerName: headerMapped;
+				var propertyName = getColumnHeaderMapping(headerName);
 				Object value = getCellValue(cell);
-				BeanUtils.setProperty(line, headerName, value);
+				BeanUtils.setProperty(line, propertyName, value);
 			}
 			lines.add(line);
 		}
 		return lines;
 	}
 
+
+
+	private static Map<String,String> getHeaderNameToBeanPropertyMapping() {
+		return PRODUCT_DATA_TO_COLUMN_MAPPING
+				.entrySet()
+				.stream()
+				.collect(toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey, FunctionalUtils::getFirst));
+	}
+
+
+
 	private String getColumnHeaderMapping(String headerName) {
-		return 	PRODUCT_DATA_SPECIAL_MAPPING.get(headerName);
+		return 	HEADER_NAME_TO_BEAN_PROPERTY_MAPPING.getOrDefault(headerName, headerName);
 	}
 
 	private static Object getCellValue(Cell cell ){

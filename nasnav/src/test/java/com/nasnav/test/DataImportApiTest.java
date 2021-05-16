@@ -1192,8 +1192,8 @@ public class DataImportApiTest {
 						, "sku", "product_code", "unit", "weight");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
-		
-		Assert.assertTrue(res.getStatusCodeValue() == 200);
+
+		assertEquals(200, res.getStatusCodeValue());
 		
 		String[] headersArr = res.getBody()
 								.replace(System.lineSeparator(), "")

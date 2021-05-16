@@ -46,3 +46,12 @@ secrets.yml
 /src/main/resources/application.properties
 /src/main/resources/database.properties
 
+/nasnav/src/test/resources/test_imgs_save_dir
+/nasnav/src/main/resources/*.properties
+/yeshtery/src/main/resources/*.properties
+/nasnav/src/test/resources/test.database.properties
+/yeshtery/src/test/resources/test.database.properties
+*.trc
+/nasnav/javacore.*.txt
+/nasnav/heapdump.*.phd
+/nasnav/src/test/resources/test_files_base_dir

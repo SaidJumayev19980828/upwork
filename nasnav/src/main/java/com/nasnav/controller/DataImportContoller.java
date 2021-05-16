@@ -21,6 +21,7 @@ import com.nasnav.service.CsvDataImportServiceImpl;
 import com.nasnav.service.ExcelDataImportServiceImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,10 +35,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class DataImportContoller {
 
 	@Autowired
-	private CsvDataImportServiceImpl csvImportService;
+	@Qualifier("csv")
+	private CsvExcelDataImportService csvImportService;
 
 	@Autowired
-	private ExcelDataImportServiceImpl excelDataImportService;
+	@Qualifier("excel")
+	private CsvExcelDataImportService excelDataImportService;
 
 
 	@ResponseStatus(HttpStatus.OK)
@@ -104,7 +107,7 @@ public class DataImportContoller {
 		}
 	}
 
-	@GetMapping(value = "/productlist/csv/template")
+	@GetMapping(value = {"/productlist/csv/template", "/productlist/template"})
 	@ResponseBody
 	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
 		ByteArrayOutputStream s = csvImportService.generateProductsTemplate();
