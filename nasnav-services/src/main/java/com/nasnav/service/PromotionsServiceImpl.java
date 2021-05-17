@@ -455,18 +455,17 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
 		for(var calc: calculators){
-			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue);
+			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
 			var result = calc.getCalcFunction().apply(info);
 			var calculatorDiscount =
 					ofNullable(result)
 					.map(PromoCalcResult::getDiscount)
 					.orElse(getTotalDiscount(result));
 
-			if(anyNonZeroDiscounts(calculatorDiscount)){
+			if(calculatorWasApplied(result, calculatorDiscount)){
 				removeConsumedItems(itemsState, result);
+				discountAccumulator = discountAccumulator.add(calculatorDiscount);
 			}
-
-			discountAccumulator = discountAccumulator.add(calculatorDiscount);
 
 			var isStopOtherPromos = false; //should be fetched later from the promotion entity
 			if(isStopOtherPromos){
@@ -476,6 +475,19 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return discountAccumulator;
 	}
 
+
+
+	private boolean calculatorWasApplied(PromoCalcResult result, BigDecimal calculatorDiscount) {
+		return anyNonZeroDiscounts(calculatorDiscount) && itemConsumed(result);
+	}
+
+
+	private boolean itemConsumed(PromoCalcResult result) {
+		return ofNullable(result)
+				.map(PromoCalcResult::getItems)
+				.map(items -> !items.isEmpty())
+				.orElse(false);
+	}
 
 
 	private boolean anyNonZeroDiscounts(BigDecimal discount) {
@@ -603,7 +615,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private  PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
-		var promoCode = info.promo.getCode();
+		var promoCode = info.promoCode;
 		var subTotal = info.totalItemsValue;
 		if (isBlankOrNull(promoCode)) {
 			return emptyResult();
@@ -866,7 +878,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var totalCartQuantity = calcTotalCartQuantity(info.items);
 		var consumedItems = consumeAllItems(info);
 		return ofNullable(info.totalItemsValue)
-				.filter(val -> !isValidPromoForCartQuantity(info.promo, totalCartQuantity))
+				.filter(val -> isValidPromoForCartQuantity(info.promo, totalCartQuantity))
 				.map(val -> getDiscount(val, info.promo))
 				.map(discount -> new PromoCalcResult(discount, consumedItems))
 				.orElse(emptyResult());
@@ -906,11 +918,13 @@ class PromoInfoContainer {
 	PromotionsEntity promo;
 	Set<PromoItemDto> items;
 	BigDecimal totalItemsValue;
+	String promoCode;
 
-	public PromoInfoContainer(PromotionsEntity promo, Set<PromoItemDto> items, BigDecimal totalItemsValue) {
+	public PromoInfoContainer(PromotionsEntity promo, Set<PromoItemDto> items, BigDecimal totalItemsValue, String promoCode) {
 		this.promo = promo;
 		this.items = ofNullable(items).orElse(emptySet());
 		this.totalItemsValue = ofNullable(totalItemsValue).orElse(ZERO);
+		this.promoCode = promoCode;
 	}
 }
 
