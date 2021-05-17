@@ -851,15 +851,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	public PromoCalcResult calculateDiscountBasedOnTotalValue(PromoInfoContainer promo) {
-		var totalCartQuantity = calcTotalCartQuantity(promo.items);
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return promoRepo
-				.findByOrganization_IdAndTypeIdIn(orgId, asList(TOTAL_CART_ITEMS_VALUE.getValue(), TOTAL_CART_ITEMS_QUANTITY.getValue()))
-				.stream()
-				.filter(promo -> !isNotValidTotalCartPromo(promo, totalCartValue, totalCartQuantity))
-				.map(promo -> getDiscount(totalCartValue, promo))
-				.max(BigDecimal::compareTo)
-				.orElse(ZERO);
+		BigDecimal totalCartValue = promo.totalItemsValue;
+		var consumedItems = consumeAllItems(promo);
+		return ofNullable(promo)
+				.filter(i -> isPromoValidForTheCart(i.promo, totalCartValue))
+				.map(i -> getDiscount(totalCartValue, i.promo))
+				.map(discount -> new PromoCalcResult(discount, consumedItems))
+				.orElse(emptyResult());
 	}
 
 
@@ -895,10 +893,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return totalCartQuantity.compareTo(minAmount) >= 0;
 	}
 
-	private boolean isNotValidTotalCartPromo(PromotionsEntity promo,  BigDecimal totalCartValue, Long totalCartQuantity) {
-		return promo.getTypeId().equals(TOTAL_CART_ITEMS_VALUE.getValue()) && !isPromoValidForTheCart(promo, totalCartValue) ||
-				) ;
-	}
 
 
 	private PromoCalcResult doNothingCalc(PromoInfoContainer info){
