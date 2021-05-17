@@ -280,6 +280,7 @@ public enum ErrorCodes {
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
+	,TAG$TREE$0002("No tag exists with name[%s]!")
 
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
 	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")

@@ -206,9 +206,6 @@ public class DataImportApiTest {
 
 
 	
-	
-	
-	
 	@Test
     public void uploadProductsCSVNoAuthZTest() throws IOException, Exception {
        
@@ -218,8 +215,7 @@ public class DataImportApiTest {
         
         result.andExpect(status().is(403));
     }
-	
-	
+
 	
 	
 	@Test

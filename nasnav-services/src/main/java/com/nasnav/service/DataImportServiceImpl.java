@@ -11,10 +11,7 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.*;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.exceptions.StockValidationException;
+import com.nasnav.exceptions.*;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -47,6 +44,7 @@ import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
+import static com.nasnav.exceptions.ErrorCodes.TAG$TREE$0002;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
@@ -647,7 +645,6 @@ public class DataImportServiceImpl implements DataImportService {
 				.parallelStream()
 				.map(product -> toTagAndProductIdPairs(product, tagsMap))
 				.flatMap(List::stream)
-				.distinct()
 				.collect(toSet());
 
 		List<Long> productIds = 
@@ -684,15 +681,9 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	
 	private ProductTagPair toTagAndProductIdPair(ProductData data, Map<String, TagsEntity> tagsMap, String tagName){
-		Long orgId = security.getCurrentUserOrganizationId();
 		Long tagId = ofNullable(tagsMap.get(tagName.toLowerCase()))
 					.map(TagsEntity::getId)
-					.orElseThrow(() -> 
-						new RuntimeBusinessException(
-	        				format(ERR_TAGS_NOT_FOUND, tagName, orgId)
-	        				, "INVLAID PRODUCT DATA"
-	        				, NOT_ACCEPTABLE
-	        			));
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, TAG$TREE$0002, tagName));
 		return new ProductTagPair(data.getProductDto().getId(), tagId);
 	}
 
