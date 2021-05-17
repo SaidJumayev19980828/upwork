@@ -27,6 +27,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.*;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static com.nasnav.shipping.utils.ShippingUtils.*;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.time.LocalDateTime.now;
@@ -110,11 +111,11 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
         etaFrom = getIntegerParameter(params, ETA_MINUTES_MIN).orElse(DEFAULT_ETA_MINUTES_MIN);
         etaTo = getIntegerParameter(params, ETA_MINUTES_MAX).orElse(DEFAULT_ETA_MINUTES_MAX);
         apologyMsg = params.getOrDefault(APOLOGY_MSG, DEFAULT_ERR_AREA_NOT_SUPPORTED);
-        invalidOrderMsg = params.getOrDefault(INVALID_ORDER_MSG, DEFAULT_INVALID_ORDER_MSG);
         try {
             var subAreasFeesStr = params.getOrDefault(SUBAREAS_SHIPPING_FEES, "{}");
             subAreasFees = objectMapper.readValue(subAreasFeesStr, new TypeReference<>(){});
             minOrderValue = new BigDecimal(minOrderString);
+            invalidOrderMsg = format(params.getOrDefault(INVALID_ORDER_MSG, DEFAULT_INVALID_ORDER_MSG), minOrderValue.toString());
         } catch (Throwable e) {
             logger.error(e,e);
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID);
