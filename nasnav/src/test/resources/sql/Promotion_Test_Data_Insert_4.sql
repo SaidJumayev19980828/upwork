@@ -79,7 +79,7 @@ INSERT INTO public.promotions
 VALUES(630002, 'Total cart value promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100, "cart_amount_min":800}', '{"percentage":10}', 69, now(), 3);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_quantity_min":2}', '{"percentage":10}', 69, now(), 4);
+VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_quantity_min":10}', '{"percentage":10}', 69, now(), 4);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
 VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null,

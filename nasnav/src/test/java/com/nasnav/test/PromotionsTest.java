@@ -697,12 +697,12 @@ public class PromotionsTest {
 	public void getCartWithTotalCartQuantitiesPromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 602L, 1);
-		createCartForUser(req, 603L, 1);
+		createCartForUser(req, 603L, 8);
 		Cart res = createCartForUser(req, 604L, 1);
 
-		assertEquals(30, res.getDiscount().intValue());
-		assertEquals(300, res.getSubTotal().intValue());
-		assertEquals(270, res.getTotal().intValue());
+		assertEquals(100, res.getDiscount().intValue());
+		assertEquals(1000, res.getSubTotal().intValue());
+		assertEquals(900, res.getTotal().intValue());
 	}
 
 
@@ -780,18 +780,18 @@ public class PromotionsTest {
 	public void orderWithTotalCartQuantitiesPromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 602L, 1);
-		createCartForUser(req, 603L, 1);
-		createCartForUser(req, 604L, 1);
+		createCartForUser(req, 603L, 4);
+		createCartForUser(req, 604L, 5);
 		String requestBody = createCheckoutDTO().toString();
 		req = new HttpEntity<>(requestBody, req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
 
-		assertTrue(30 == order.getDiscount().intValue());
-		assertTrue(300 == order.getSubtotal().intValue());
+		assertTrue(100 == order.getDiscount().intValue());
+		assertTrue(1000 == order.getSubtotal().intValue());
 		assertTrue(6.38 == order.getShipping().doubleValue());
-		assertTrue("total is subTotal - discount + shipping", 276.38 == order.getTotal().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 906.38 == order.getTotal().doubleValue());
 	}
 
 
@@ -810,10 +810,10 @@ public class PromotionsTest {
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
 
-		assertTrue(100 == order.getDiscount().intValue());
+		assertTrue(340 == order.getDiscount().intValue());
 		assertTrue(400 == order.getSubtotal().intValue());
 		assertTrue(6.38 == order.getShipping().doubleValue());
-		assertTrue("total is subTotal - discount + shipping", 306.38 == order.getTotal().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 66.38 == order.getTotal().doubleValue());
 	}
 
 
@@ -836,10 +836,10 @@ public class PromotionsTest {
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
 
-		assertEquals(150 , order.getDiscount().intValue());
+		assertEquals(100 , order.getDiscount().intValue());
 		assertEquals(400 , order.getSubtotal().intValue());
-		assertEquals(6.38 , order.getShipping().doubleValue());
-		assertEquals("total is subTotal - discount + shipping", 256.38 , order.getTotal().doubleValue());
+		assertEquals(6.38 , order.getShipping().doubleValue(), 1e-15);
+		assertEquals("total is subTotal - discount + shipping", 306.38 , order.getTotal().doubleValue(), 1e-15);
 	}
 
 
@@ -852,7 +852,7 @@ public class PromotionsTest {
 		promoRepo.deleteById(630003L);
 
 		HttpEntity<?> req = getHttpEntity("123");
-		createCartForUser(req, 601L, 2);
+		createCartForUser(req, 601L, 3);
 		createCartForUser(req, 602L, 1);
 
 		var requestBody = createCheckoutDTO();
@@ -863,7 +863,7 @@ public class PromotionsTest {
 
 		assertEquals(100 , order.getDiscount().intValue());
 		assertEquals(300 , order.getSubtotal().intValue());
-		assertEquals(6.38 , order.getShipping().doubleValue());
+		assertEquals(12.76 , order.getShipping().doubleValue());
 		assertEquals("total is subTotal - discount + shipping", 206.38 , order.getTotal().doubleValue());
 	}
 

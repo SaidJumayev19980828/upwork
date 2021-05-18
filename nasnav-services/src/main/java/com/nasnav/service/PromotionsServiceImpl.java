@@ -451,7 +451,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Override
 	public BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items,
 												   BigDecimal totalCartValue, String promoCode) {
-		var calculators =  getPromoCalculators();
+		var calculators =  getPromoCalculators(promoCode);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
 		for(var calc: calculators){
@@ -515,10 +515,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private List<PromoCalculator> getPromoCalculators() {
+	private List<PromoCalculator> getPromoCalculators(String promoCode) {
 		var orgId = securityService.getCurrentUserOrganizationId();
 		var promos = promoRepo
-				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()));
+				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), promoCode);
+		if (promoCode != null && promos.size() == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
+		}
 		return promos.stream().map(this::getCalculator).collect(toList());
 	}
 
@@ -620,12 +623,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		if (isBlankOrNull(promoCode)) {
 			return emptyResult();
 		}
-		Long orgId = securityService.getCurrentUserOrganizationId();
 		PromotionsEntity promo = info.promo;
-				promoRepo
-						.findByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)
-						.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
-								, PROMO$PARAM$0008, promoCode));
 		validatePromoCode(promoCode, promo, subTotal);
 
 		var discount = getDiscount(subTotal, promo);
