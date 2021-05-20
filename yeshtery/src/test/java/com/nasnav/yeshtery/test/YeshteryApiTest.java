@@ -1,6 +1,11 @@
 package com.nasnav.yeshtery.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.*;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.yeshtery.Yeshtery;
 import net.jcip.annotations.NotThreadSafe;
@@ -19,6 +24,8 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,6 +47,8 @@ public class YeshteryApiTest {
 
     @Autowired
     private TestRestTemplate template;
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private ProductRepository productRepo;
@@ -70,7 +79,49 @@ public class YeshteryApiTest {
         assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
+    @Test
+    public void getBrandTest()  {
+        var response = template.getForEntity("/v1/yeshtery/brand?brand_id=101", Organization_BrandRepresentationObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(101, response.getBody().getId().intValue());
+    }
 
+    @Test
+    public void getCountriesTest() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/countries", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        Map<String, CountriesRepObj> countries =  mapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>() {});
+        assertEquals(1, countries.size());
+    }
+
+    @Test
+    public void getShopsWithYeshteryProductsTest() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/location_shops?name=mountain", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ShopRepresentationObject> shops = mapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertTrue(shops.size() == 1);
+        assertEquals(502, shops.get(0).getId().intValue());
+    }
+
+    @Test
+    public void getYeshteryVariantsTest() {
+        var response = template.getForEntity("/v1/yeshtery/variants?name=ABCD1234", VariantsResponse.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<VariantDTO> variants = response.getBody().getVariants();
+        assertEquals(1, variants.size());
+        assertEquals(310001, variants.get(0).getId().intValue());
+    }
+
+    @Test
+    public void getYeshteryProductsTest() {
+        var response = template.getForEntity("/v1/yeshtery/products", ProductsResponse.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ProductRepresentationObject> products = response.getBody().getProducts();
+        assertEquals(3, products.size());
+        assertEquals(1001, products.get(0).getId().intValue());
+        assertEquals(1003, products.get(1).getId().intValue());
+        assertEquals(1004, products.get(2).getId().intValue());
+    }
 
     private JSONArray createExpectedFeaturesJson() {
         var expectedFeature1 = new JSONObject();

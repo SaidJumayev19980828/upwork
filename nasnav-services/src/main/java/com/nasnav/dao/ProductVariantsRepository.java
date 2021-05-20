@@ -48,7 +48,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			" INNER JOIN FETCH variant.productEntity prod " +
 			" INNER JOIN OrganizationEntity org on prod.organizationId = org.id " +
 			" where org.yeshteryState = 1 and variant.removed = 0 and " +
-			" (variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%) "+
+			" ( LOWER(variant.barcode) like %:name% or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%) "+
 			" order by variant.name ")
 	List<ProductVariantsEntity> findByYeshteryProducts(@Param("name") String name, Pageable pageable);
 
@@ -119,7 +119,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			" INNER JOIN variant.productEntity prod " +
 			" INNER JOIN OrganizationEntity org on prod.organizationId = org.id " +
 			" where org.yeshteryState = 1 and variant.removed = 0 and " +
-			"(variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%)" )
+			"(LOWER(variant.barcode) like %:name% or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%)" )
 	Long countByYeshteryProducts(@Param("name") String name);
 
     List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);

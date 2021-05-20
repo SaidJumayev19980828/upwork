@@ -139,26 +139,26 @@ public class YeshteryController {
 
 
 
-    @GetMapping(value = "/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping(value = "/360view/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
     public String getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
                                      @RequestParam String type,
                                      @RequestParam(defaultValue = "true") Boolean published) {
         return shop360Svc.getShop360JsonInfo(shopId, type, published);
     }
 
-    @GetMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/360view/sections", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
         Map<String, List> res = new HashMap<>();
         res.put("floors", shop360Svc.getSections(shopId));
         return res;
     }
 
-    @GetMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/360view/shops", produces = MediaType.APPLICATION_JSON_VALUE)
     public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
         return shop360Svc.getThreeSixtyShops(shopId);
     }
 
-    @GetMapping(value = "/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/360view/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ProductsPositionDTO getShop360ProductsPositions(@RequestParam("shop_id") Long shopId,
                                                            @RequestParam(defaultValue = "2") short published,
                                                            @RequestParam(value = "scene_id", required = false) Long sceneId,
@@ -167,7 +167,7 @@ public class YeshteryController {
         return shop360Svc.getProductsPositions(shopId, published, sceneId, sectionId, floorId);
     }
 
-    @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/360view/products", produces = MediaType.APPLICATION_JSON_VALUE)
     public LinkedHashMap getShop360products(@RequestParam("shop_id") Long shopId,
                                             @RequestParam(required = false) String name,
                                             @RequestParam(required = false, defaultValue = "5") Integer count,
