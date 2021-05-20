@@ -77,6 +77,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
 		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
 		Cart returnedCart = getCartObject(optimizedCart);
+		cartService.addCartPromoData(returnedCart, dto.getPromoCode());
 		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
 	}
 

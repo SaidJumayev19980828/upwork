@@ -862,9 +862,9 @@ public class PromotionsTest {
 		Order order = res.getBody();
 
 		assertEquals(100 , order.getDiscount().intValue());
-		assertEquals(300 , order.getSubtotal().intValue());
-		assertEquals(12.76 , order.getShipping().doubleValue());
-		assertEquals("total is subTotal - discount + shipping", 206.38 , order.getTotal().doubleValue());
+		assertEquals(400 , order.getSubtotal().intValue());
+		assertEquals(12.76 , order.getShipping().doubleValue(), 1e-15);
+		assertEquals("total is subTotal - discount + shipping", 312.76 , order.getTotal().doubleValue(), 1e-15);
 	}
 
 

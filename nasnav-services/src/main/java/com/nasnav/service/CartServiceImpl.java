@@ -87,23 +87,26 @@ public class CartServiceImpl implements CartService{
     public Cart getUserCart(Long userId, String promoCode) {
         var cartItemData = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
         Cart cart = new Cart(toCartItemsDto(cartItemData));
+        addCartPromoData(cart, promoCode);
+        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
+        return cart;
+    }
+
+    @Override
+    public void addCartPromoData(Cart cart, String promoCode) {
         BigDecimal subTotal = calculateCartTotal(cart);
 
-        var promoItems = toPromoItems(cartItemData);
+        var promoItems = toPromoItems(cart.getItems());
         var discount = promotionsService.calculateAllApplicablePromos(promoItems, subTotal, promoCode);
 
         BigDecimal total = subTotal.subtract(discount);
         cart.setSubTotal(subTotal);
         cart.setDiscount(discount);
         cart.setTotal(total);
-        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
-        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
-        return cart;
     }
 
-
-
-    private List<PromoItemDto> toPromoItems(List<CartItemData> cartItems) {
+    private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
         return cartItems
                 .stream()
                 .map(this::toPromoItem)
@@ -112,7 +115,7 @@ public class CartServiceImpl implements CartService{
 
 
 
-    private PromoItemDto toPromoItem(CartItemData cartItem) {
+    private PromoItemDto toPromoItem(CartItem cartItem) {
         var promoItem = new PromoItemDto();
         copyProperties(cartItem, promoItem);
         return promoItem;

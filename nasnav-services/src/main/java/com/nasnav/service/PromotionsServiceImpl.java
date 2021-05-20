@@ -516,9 +516,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private List<PromoCalculator> getPromoCalculators(String promoCode) {
+		var normalizedPromoCode = ofNullable(promoCode).map(String::toLowerCase).orElse("");
 		var orgId = securityService.getCurrentUserOrganizationId();
 		var promos = promoRepo
-				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), promoCode);
+				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
 		if (promoCode != null && promos.size() == 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
 		}

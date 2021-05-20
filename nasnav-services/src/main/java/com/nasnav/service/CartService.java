@@ -13,6 +13,9 @@ public interface CartService {
     Cart getCart();
     Cart getCart(String promoCode);
     Cart getUserCart(Long userId, String promoCode);
+
+    void addCartPromoData(Cart cart, String promoCode);
+
     Cart addCartItem(CartItem item);
     Cart addCartItem(CartItem item, String promoCode);
     Cart deleteCartItem(Long itemId, String promoCode);
