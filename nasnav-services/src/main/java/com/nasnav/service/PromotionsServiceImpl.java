@@ -1,47 +1,67 @@
 package com.nasnav.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.PromotionsCodesUsedRepository;
-import com.nasnav.dto.PromotionSearchParamDTO;
-import com.nasnav.dto.response.PromotionDTO;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.parseLongSafely;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.PromotionStatus.*;
+import static com.nasnav.enumerations.PromotionType.*;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.persistence.PromotionsEntity.*;
+import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.FLOOR;
+import static java.math.RoundingMode.HALF_EVEN;
+import static java.time.LocalDateTime.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.*;
+import static java.util.Comparator.comparing;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
+import static javax.persistence.criteria.JoinType.INNER;
+import static org.springframework.beans.BeanUtils.copyProperties;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.function.Function;
+
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.*;
+
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
-import com.nasnav.enumerations.PromotionStatus;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
-import lombok.AllArgsConstructor;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.enumerations.PromotionType;
+import lombok.Data;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.enumerations.PromotionStatus;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PromotionsCodesUsedEntity;
+import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.UserEntity;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.enumerations.PromotionStatus.*;
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.persistence.PromotionsEntity.*;
-import static java.math.BigDecimal.ZERO;
-import static java.math.RoundingMode.HALF_EVEN;
-import static java.time.LocalDateTime.now;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static javax.persistence.criteria.JoinType.INNER;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import lombok.AllArgsConstructor;
 
 
 
@@ -50,32 +70,38 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public class PromotionsServiceImpl implements PromotionsService {
 
 	private Logger logger = LogManager.getLogger();
-	
-	
-	@Autowired
-	private EntityManager entityMgr;
-	
-	
-	@Autowired
-	private ObjectMapper objectMapper;
-	
-	
-	@Autowired
-	private PromotionRepository promoRepo;
-	
-	
-	@Autowired
-	private SecurityService securityService;
-	
-	@Autowired
-	private OrderService orderService;
 
 	@Autowired
+	private EntityManager entityMgr;
+	@Autowired
+	private ObjectMapper objectMapper;
+	@Autowired
+	private PromotionRepository promoRepo;
+	@Autowired
+	private SecurityService securityService;
+	@Autowired
 	private CartService cartService;
-	
 	@Autowired
 	private PromotionsCodesUsedRepository usedPromoRepo;
-	
+	@Autowired
+	private ProductRepository productRepo;
+
+	private Map<PromotionType,Function<PromoInfoContainer, PromoCalcResult>> promoCalculators = emptyMap();
+
+
+	@PostConstruct
+	public void init(){
+		promoCalculators = Map.of(
+				BUY_X_GET_Y_FROM_BRAND, this::getDiscountBasedOnBrandsList,
+				BUY_X_GET_Y_FROM_PRODUCT, this::getDiscountBasedOnProductsList,
+				BUY_X_GET_Y_FROM_TAG, this::getDiscountBasedOnTagsList,
+				TOTAL_CART_ITEMS_QUANTITY, this::calculateDiscountBasedOnTotalQty,
+				TOTAL_CART_ITEMS_VALUE, this::calculateDiscountBasedOnTotalValue,
+				PROMO_CODE, this::calcPromoDiscount);
+	}
+
+
+
 	@Override
 	public PromotionResponse getPromotions(PromotionSearchParamDTO searchParams) {
 		SearchParams params = createSearchParam(searchParams);
@@ -102,6 +128,33 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.collect(toList());
 		Long total = getPromotionsCount(builder, restrictions.toArray(new Predicate[0]));
 		return new PromotionResponse(total, promotions);
+	}
+
+
+
+	@Override
+	public BigDecimal calcPromoDiscountForCart(String promoCode) {
+		var cart = cartService.getCart();
+		BigDecimal cartTotal = cartService.calculateCartTotal();
+		var promoItems = toPromoItems(cart.getItems());
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+	}
+
+
+
+	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
+		return cartItems
+				.stream()
+				.map(this::toPromoItem)
+				.collect(toUnmodifiableList());
+	}
+
+
+
+	private PromoItemDto toPromoItem(CartItem cartItem) {
+		var promoItem = new PromoItemDto();
+		copyProperties(cartItem, promoItem);
+		return promoItem;
 	}
 
 
@@ -142,6 +195,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setStatus(getPromotionStatusName(entity.getStatus()));
 		dto.setUserId(entity.getCreatedBy().getId());
 		dto.setUserName(entity.getCreatedBy().getName());
+		dto.setTypeId(entity.getTypeId());
+		dto.setPriority(entity.getPriority());
 		return dto;
 	}
 	
@@ -296,11 +351,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private PromotionsEntity createPromotionsEntity(PromotionDTO promotion) {
-		PromotionsEntity entity = 
-				ofNullable(promotion)
-				.map(PromotionDTO::getId)
-				.map(this::getExistingPromotion)
-				.orElseGet(PromotionsEntity::new);
+		PromotionsEntity entity = getOrCreatePromotionEntity(promotion);
 		
 		if(isUpdateOperation(promotion)	&& !isInactivePromo(entity)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
@@ -310,12 +361,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
 		OrganizationEntity organization = securityService.getCurrentUserOrganization();
 		
-		Integer status = 
-				PromotionStatus
-				.getPromotionStatus(promotion.getStatus())
-				.map(PromotionStatus::getValue)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
-										, PROMO$PARAM$0001, promotion.getStatus()));
+		Integer status = getPromotionStatus(promotion.getStatus());
+
+		Integer type = PromotionType.getPromotionType(promotion.getTypeId()).getValue();
+		Integer priority =
+				ofNullable(promotion.getPriority())
+				.orElse(0);
+
 		String codeUpperCase = 
 				ofNullable(promotion.getCode())
 				.map(String::toUpperCase)
@@ -331,10 +383,25 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setOrganization(organization);
 		entity.setStatus(status);
 		entity.setUserRestricted(0);
+		entity.setTypeId(type);
+		entity.setPriority(priority);
 		return entity;
 	}
 
-	
+	private Integer getPromotionStatus(String statusString) {
+		return PromotionStatus
+				.getPromotionStatus(statusString)
+				.map(PromotionStatus::getValue)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0001, statusString));
+	}
+
+	private PromotionsEntity getOrCreatePromotionEntity(PromotionDTO promotion) {
+		return ofNullable(promotion)
+						.map(PromotionDTO::getId)
+						.map(this::getExistingPromotion)
+						.orElseGet(PromotionsEntity::new);
+	}
 	
 	
 	private PromotionsEntity getExistingPromotion(Long id){
@@ -364,9 +431,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private void validatePromotion(PromotionDTO promotion) {
 		
-		if(anyIsNull(promotion, promotion.getCode(), promotion.getDiscount()
+		if(anyIsNull(promotion, promotion.getDiscount()
 				, promotion.getEndDate(), promotion.getIdentifier()
-				, promotion.getStartDate(), promotion.getStatus())) {
+				, promotion.getStartDate(), promotion.getStatus()
+				, promotion.getTypeId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0002, promotion.toString());
 		}
@@ -378,14 +446,16 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}
-		if(isCodeRepeated(promotion)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE
-					, PROMO$PARAM$0006, promotion.getCode());
+		if (Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
+			if (promotion.getCode() == null) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
+			}
+			if (isCodeRepeated(promotion)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0006, promotion.getCode());
+			}
 		}
 	}
-
-
-
 
 
 
@@ -402,43 +472,127 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-
 	private boolean isUpdateOperation(PromotionDTO promotion) {
 		return nonNull(promotion.getId());
 	}
 
 
-
-
 	@Override
-	public BigDecimal calcPromoDiscountForCart(String promoCode) {
-		BigDecimal cartTotal = cartService.calculateCartTotal();
-		
-		return calcPromoDiscount(promoCode, cartTotal);
+	public BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items,
+												   BigDecimal totalCartValue, String promoCode) {
+		var calculators =  getPromoCalculators(promoCode);
+		var discountAccumulator = ZERO;
+		var itemsState = new HashSet<>(items);
+		for(var calc: calculators){
+			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
+			var result = calc.getCalcFunction().apply(info);
+			var calculatorDiscount =
+					ofNullable(result)
+					.map(PromoCalcResult::getDiscount)
+					.orElse(getTotalDiscount(result));
+
+			if(calculatorWasApplied(result, calculatorDiscount)){
+				removeConsumedItems(itemsState, result);
+				discountAccumulator = discountAccumulator.add(calculatorDiscount);
+			}
+
+			var isStopOtherPromos = false; //should be fetched later from the promotion entity
+			if(isStopOtherPromos){
+				break;
+			}
+		}
+		return discountAccumulator;
 	}
 
 
 
+	private boolean calculatorWasApplied(PromoCalcResult result, BigDecimal calculatorDiscount) {
+		return anyNonZeroDiscounts(calculatorDiscount) && itemConsumed(result);
+	}
 
+
+	private boolean itemConsumed(PromoCalcResult result) {
+		return ofNullable(result)
+				.map(PromoCalcResult::getItems)
+				.map(items -> !items.isEmpty())
+				.orElse(false);
+	}
+
+
+	private boolean anyNonZeroDiscounts(BigDecimal discount) {
+		return discount.compareTo(ZERO) > 0;
+	}
+
+
+	private BigDecimal getTotalDiscount(PromoCalcResult result) {
+		return ofNullable(result.items)
+				.orElse(emptySet())
+				.stream()
+				.map(PromoItemDiscount::getDiscount)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+	private void removeConsumedItems(Set<PromoItemDto> itemsState, PromoCalcResult result) {
+		ofNullable(result.items)
+				.orElse(emptySet())
+				.stream()
+				.map(PromoItemDiscount::getItem)
+				.forEach(itemsState::remove);
+	}
+
+
+
+	private List<PromoCalculator> getPromoCalculators(String promoCode) {
+		var normalizedPromoCode = ofNullable(promoCode).map(String::toLowerCase).orElse("");
+		var orgId = securityService.getCurrentUserOrganizationId();
+		var promos = promoRepo
+				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
+		if (promoCode != null && promos.size() == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
+		}
+		return promos.stream().map(this::getCalculator).collect(toList());
+	}
+
+
+
+	private  PromoCalculator getCalculator(PromotionsEntity promoEntity){
+		return ofNullable(promoEntity)
+				.map(PromotionsEntity::getTypeId)
+				.map(PromotionType::getPromotionType)
+				.map(promoCalculators::get)
+				.map(fn -> new PromoCalculator(fn, promoEntity))
+				.orElse(new PromoCalculator(this::doNothingCalc, promoEntity));
+	}
+
+
+	private Long calcTotalCartQuantity(Set<PromoItemDto> items) {
+		return items
+				.stream()
+				.map(PromoItemDto::getQuantity)
+				.filter(Objects::nonNull)
+				.map(Integer::longValue)
+				.reduce(0L, Long::sum);
+	}
 
 
 	private BigDecimal calcDiscount(PromotionsEntity promo, BigDecimal cartTotal) {
-		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
-
-		BigDecimal percent =
+		var discountData = readJsonStrAsMap(promo.getDiscountJson());
+		var constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		var percent =
 				getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
 				.orElse(ZERO);
 
-		Optional<BigDecimal> maxDiscount = getOptionalBigDecimal(constrains, DISCOUNT_AMOUNT_MAX);
+		var maxDiscount = getOptionalBigDecimal(constrains, DISCOUNT_AMOUNT_MAX);
 
-		BigDecimal discount =
+		var discount =
 				percent
 				.multiply(new BigDecimal("0.01"))
 				.multiply(cartTotal);
 
 		return maxDiscount
-				.map( max -> discount.compareTo(max) >=0 ? max: discount)
+				.filter(max -> discount.compareTo(max) >= 0)
 				.orElse(discount)
 				.setScale(2, HALF_EVEN);
 	}
@@ -493,23 +647,18 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-
-
-
-	@Override
-	public BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		PromotionsEntity promo = 
-				promoRepo
-				.findByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)
-				.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
-										, PROMO$PARAM$0008, promoCode));
-		
+	private  PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
+		var promoCode = info.promoCode;
+		var subTotal = info.totalItemsValue;
+		if (isBlankOrNull(promoCode)) {
+			return emptyResult();
+		}
+		PromotionsEntity promo = info.promo;
 		validatePromoCode(promoCode, promo, subTotal);
-		
-		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-				.orElse(calcDiscount(promo, subTotal));
+
+		var discount = getDiscount(subTotal, promo);
+		var consumedItems = consumeAllItems(info);
+		return new PromoCalcResult(discount, consumedItems);
 	}
 
 
@@ -577,10 +726,243 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promo.getDateStart().isAfter(now());
 	}
 
+
+
+
+	private PromoCalcResult getDiscountBasedOnBrandsList(PromoInfoContainer promoInfoContainer) {
+		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
+		var allowedBrands = constraints.getBrands().getIds();
+		var  applicableItems =
+				promoInfoContainer
+				.items
+				.stream()
+				.filter(i -> allowedBrands.contains(i.getBrandId()))
+				.collect(toList());
+		return getPromoCalcResult(constraints, applicableItems);
+	}
+
+
+
+	private PromoCalcResult getPromoCalcResult(PromosConstraints constraints, List<PromoItemDto> applicableItems) {
+		var discount = calculateBuyXGetYDiscountValue(applicableItems, constraints);
+		var consumedItems = getConsumedItems(applicableItems, discount);
+		return new PromoCalcResult(discount, consumedItems);
+	}
+
+
+
+	private Set<PromoItemDiscount> getConsumedItems(List<PromoItemDto> applicableItems, BigDecimal discount) {
+		return applicableItems
+				.stream()
+				.filter(i -> discount.compareTo(ZERO) > 0)
+				.map(item -> new PromoItemDiscount(item, ZERO))
+				.collect(toSet());
+	}
+
+
+	private BigDecimal calcTotalValue(PromoItemDto item) {
+		var price = ofNullable(item.getPrice()).orElse(ZERO);
+		var discount = ofNullable(item.getDiscount()).orElse(ZERO);
+		var qty = ofNullable(item.getQuantity()).map(Object::toString).map(BigDecimal::new).orElse(ZERO);
+		return price.subtract(discount).multiply(qty);
+	}
+
+
+	private BigDecimal getMinProductPrice(List<PromoItemDto> applicableItems) {
+		return applicableItems
+				.stream()
+				.map(this::calcPriceAfterDiscount)
+				.min(BigDecimal::compareTo)
+				.orElse(ZERO);
+	}
+
+
+
+	private PromosConstraints getPromoConstraints(PromotionsEntity promo) {
+		PromosConstraints constraints = new PromosConstraints();
+		try {
+			constraints = objectMapper.readValue(promo.getConstrainsJson(), PromosConstraints.class);
+		} catch (IOException e) {
+			logger.error(e, e);
+		}
+		return constraints;
+	}
+
+	private Integer getProductQuantityMin(PromosConstraints constraints) {
+		return ofNullable(constraints.getProductQuantityMin()).orElse(Integer.MAX_VALUE);
+	}
+
+	private Integer getProductQuantityToGive(PromosConstraints constraints) {
+		return ofNullable(constraints.getProductToGive()).orElse(0);
+	}
+
+
+	private BigDecimal getProductQuantityToGiveInDiscount(Integer quantity, Integer productQuantityMin, Integer productToGive) {
+		return new BigDecimal((quantity / productQuantityMin) * productToGive).setScale(0, FLOOR);
+	}
+
+
+
+	private PromoCalcResult getDiscountBasedOnTagsList(PromoInfoContainer promoInfoContainer) {
+		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
+		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
+		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
+		var applicableItems =
+				promoInfoContainer
+				.items
+				.stream()
+				.filter(i -> allowedProducts.contains(i.getProductId()))
+				.collect(toList());
+		return getPromoCalcResult(constraints, applicableItems);
+	}
+
+
+
+	private PromoCalcResult getDiscountBasedOnProductsList(PromoInfoContainer promoInfoContainer) {
+		var constraints = getPromoConstraints(promoInfoContainer.promo);
+		var allowedProducts = constraints.getProducts().getIds();
+		var applicableItems =
+				promoInfoContainer.items
+				.stream()
+				.filter(i -> allowedProducts.contains(i.getProductId()))
+				.collect(toList());
+		return getPromoCalcResult(constraints, applicableItems);
+	}
+
+
+
+	private BigDecimal calculateBuyXGetYDiscountValue(List<PromoItemDto> applicableItems, PromosConstraints constrains) {
+		var minQtyToApplyPromo = getProductQuantityMin(constrains);
+		var giftQty = getProductQuantityToGive(constrains);
+		var minPrice = getMinProductPrice(applicableItems);
+		return applicableItems
+				.stream()
+				.map(PromoItemDto::getQuantity)
+				.reduce(Integer::sum)
+				.map(totalQty -> getProductQuantityToGiveInDiscount(totalQty, minQtyToApplyPromo, giftQty).multiply(minPrice))
+				.orElse(ZERO);
+	}
+
+
+
+	private BigDecimal calcPriceAfterDiscount(PromoItemDto item) {
+		var price = ofNullable(item.getPrice()).orElse(ZERO);
+		var discount = ofNullable(item.getDiscount()).orElse(ZERO);
+		return price.subtract(discount);
+	}
+
+
+
+	@Override
+	public BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue){
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return promoRepo
+				.findByOrganization_IdAndTypeIdIn(orgId, asList(SHIPPING.getValue()))
+				.stream()
+				.filter(promo -> isPromoValidForTheCart(promo, totalCartValue))
+				.map(promo -> getDiscount(totalShippingValue, promo))
+				.max(BigDecimal::compareTo)
+				.orElse(ZERO);
+	}
+
+
+
+	private BigDecimal getDiscount(BigDecimal value, PromotionsEntity promo) {
+		var discountData = readJsonStrAsMap(promo.getDiscountJson());
+		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+				.orElse(calcDiscount(promo, value));
+	}
+
+
+
+	private void decreasePromoUsageLimit(PromotionsEntity promo) {
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		BigDecimal newUsageLimit = ofNullable(constrains.get(USAGE_LIMIT))
+				.map(BigDecimal.class::cast)
+				.orElse(ZERO);
+		if (newUsageLimit.compareTo(ZERO) == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0014);
+		}
+		newUsageLimit = newUsageLimit.subtract(ONE);
+		constrains.put(USAGE_LIMIT, newUsageLimit);
+		promo.setConstrainsJson(serializeMap(constrains));
+	}
+
+
+
+	public PromoCalcResult calculateDiscountBasedOnTotalValue(PromoInfoContainer promo) {
+		BigDecimal totalCartValue = promo.totalItemsValue;
+		var consumedItems = consumeAllItems(promo);
+		return ofNullable(promo)
+				.filter(i -> isPromoValidForTheCart(i.promo, totalCartValue))
+				.map(i -> getDiscount(totalCartValue, i.promo))
+				.map(discount -> new PromoCalcResult(discount, consumedItems))
+				.orElse(emptyResult());
+	}
+
+
+
+	public PromoCalcResult calculateDiscountBasedOnTotalQty(PromoInfoContainer info) {
+		var totalCartQuantity = calcTotalCartQuantity(info.items);
+		var consumedItems = consumeAllItems(info);
+		return ofNullable(info.totalItemsValue)
+				.filter(val -> isValidPromoForCartQuantity(info.promo, totalCartQuantity))
+				.map(val -> getDiscount(val, info.promo))
+				.map(discount -> new PromoCalcResult(discount, consumedItems))
+				.orElse(emptyResult());
+	}
+
+
+
+	private PromoCalcResult emptyResult() {
+		return new PromoCalcResult(ZERO, emptySet());
+	}
+
+
+	private Set<PromoItemDiscount> consumeAllItems(PromoInfoContainer info) {
+		return info.items
+				.stream()
+				.map(item -> new PromoItemDiscount(item, ZERO))
+				.collect(toSet());
+	}
+
+
+	private boolean isValidPromoForCartQuantity(PromotionsEntity promo, Long totalCartQuantity) {
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		Long minAmount = parseLongSafely(constrains.get(MIN_QUANTITY_PROP)).orElse(0L);
+		return totalCartQuantity.compareTo(minAmount) >= 0;
+	}
+
+
+
+	private PromoCalcResult doNothingCalc(PromoInfoContainer info){
+		return emptyResult();
+	}
+
 }
 
 
+class PromoInfoContainer {
+	PromotionsEntity promo;
+	Set<PromoItemDto> items;
+	BigDecimal totalItemsValue;
+	String promoCode;
 
+	public PromoInfoContainer(PromotionsEntity promo, Set<PromoItemDto> items, BigDecimal totalItemsValue, String promoCode) {
+		this.promo = promo;
+		this.items = ofNullable(items).orElse(emptySet());
+		this.totalItemsValue = ofNullable(totalItemsValue).orElse(ZERO);
+		this.promoCode = promoCode;
+	}
+}
+
+
+@AllArgsConstructor
+@Data
+class PromoCalcResult {
+	BigDecimal discount;
+	Set<PromoItemDiscount> items;
+}
 
 
 
@@ -591,4 +973,17 @@ class SearchParams {
 	public Optional<LocalDateTime> startTime;
 	public Optional<LocalDateTime> endTime;
 	public Optional<Long> id;
+}
+
+
+@Data
+class PromoCalculator{
+	private Function<PromoInfoContainer, PromoCalcResult> calcFunction;
+	//expected to be used , as it is available in Magento, but currently not persisted in promotions table
+	private PromotionsEntity promoEntity;
+
+	public PromoCalculator(Function<PromoInfoContainer, PromoCalcResult> calcFunction, PromotionsEntity promoEntity) {
+		this.calcFunction = calcFunction;
+		this.promoEntity = promoEntity;
+	}
 }

@@ -20,7 +20,7 @@
         <postgresql.version>42.2.5</postgresql.version>
         <httpclient.version>4.5.8</httpclient.version>
         <querydsl.version>4.3.0</querydsl.version>
-        <lombok.version>1.18.16</lombok.version>
+        <lombok.version>1.18.20</lombok.version>
     </properties>
 
     <dependencies>

@@ -98,6 +98,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Autowired
 	private ShipmentRepository shipmentRepo;
+	@Autowired
+	private OrdersRepository ordersRepo;
 
 	@Autowired
 	private DomainService domainService;
@@ -107,6 +109,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private OrderService orderService;
+	@Autowired
+	private PromotionsService promotionsService;
 	
 	@Autowired
 	private PaymentsRepository paymentRepo;
@@ -205,7 +209,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElse(emptyList());
 	}
 	
-	
+	private ShipmentDTO setShippingPromoDiscount(ShipmentDTO dto) {
+		BigDecimal totalCartValue = cartRepo.findTotalCartValueByUser_Id(securityService.getCurrentUser().getId());
+		BigDecimal discount = promotionsService.calculateShippingPromoDiscount(dto.getShippingFee(), totalCartValue);
+		dto.setShippingFee(dto.getShippingFee().subtract(discount));
+		return dto;
+	}
 	
 	
 	private ShippingOfferDTO createShippingOfferDTO(ShippingOffer data) {
@@ -246,6 +255,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.getShipments()
 				.stream()
 				.map(this::createShipmentDTO)
+				.map(this::setShippingPromoDiscount)
 				.collect(toList());
 	}
 

@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
@@ -14,15 +18,17 @@ public interface PromotionsService {
 	Long updatePromotion(PromotionDTO promotion);
 
 	BigDecimal calcPromoDiscountForCart(String promoCode);
-	
-	BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal);
-	
+
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
-	
+
 	/**
 	 * set a used promo as un-used again
 	 * */
 	void redeemUsedPromotion(PromotionsEntity promotion, UserEntity user);
 
     void removePromotion(Long promotionId);
+
+    BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode);
+
+	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue);
 }

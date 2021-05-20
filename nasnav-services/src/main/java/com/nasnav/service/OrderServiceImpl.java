@@ -20,10 +20,7 @@ import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
-import com.nasnav.persistence.dto.query.result.StockAdditionalData;
-import com.nasnav.persistence.dto.query.result.StockBasicData;
+import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -1946,9 +1943,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
-
-
 	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
@@ -2008,12 +2002,8 @@ public class OrderServiceImpl implements OrderService {
 				.map(cartItems -> createSubOrder(cartItems, address, dto))
 				.collect(toSet());
 		
-		List<ShippingOfferDTO> shippingOffers =
-				subOrders
-				.stream()
-				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
-				.collect(collectingAndThen(toList(), shippingMgrService::getOffersFromOrganizationShippingServices));
-		
+		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders);
+
 		addPromoDiscounts(dto, subOrders);
 		
 		for(OrdersEntity subOrder : subOrders) {
@@ -2025,41 +2015,77 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
+				.collect(collectingAndThen(toList(), shippingMgrService::getOffersFromOrganizationShippingServices));
+	}
 
 
 	private void addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders) {
-		BigDecimal subTotal = 
+		OrdersEntity suborder = subOrders.stream().findFirst().get();
+		Long userId = suborder.getUserId();
+		BigDecimal subTotal =
 				subOrders
 				.stream()
 				.map(OrdersEntity::getAmount)
 				.reduce(ZERO, BigDecimal::add);
-		
-		BigDecimal promoDiscount = 
-				ofNullable(dto)
-				.map(CartCheckoutDTO::getPromoCode)
-				.map(promo -> promoService.calcPromoDiscount(promo, subTotal))
-				.orElse(ZERO);
-		
+
+		var promoItems = getPromoItems(subOrders);
+		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode());
+
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
 		}
-		
-		BigDecimal calculatedPromotionDiscount = 
+
+		BigDecimal calculatedPromotionDiscount =
 				addPromoDiscountAndGetItsCalculatedTotal(promoDiscount, subOrders);
-		
+
 		BigDecimal calculationError = promoDiscount.subtract(calculatedPromotionDiscount);
-		
+
 		subOrders
 		.stream()
 		.findFirst()
 		.ifPresent(subOrder -> addToSubOrderDiscounts(subOrder, calculationError));
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+	private List<PromoItemDto> getPromoItems(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
+				.map(this::toPromoItemDto)
+				.collect(toUnmodifiableList());
+	}
+
+
+
+	private PromoItemDto toPromoItemDto(BasketsEntity orderItem) {
+		var promoItem = new PromoItemDto();
+		promoItem.setPrice(orderItem.getPrice());
+		promoItem.setDiscount(orderItem.getDiscount());
+		promoItem.setItemData(orderItem.getItemData());
+
+		var stock = ofNullable(orderItem).map(BasketsEntity::getStocksEntity);
+		var variant = stock.map(StocksEntity::getProductVariantsEntity);
+		var product = variant.map(ProductVariantsEntity::getProductEntity);
+
+		ofNullable(orderItem.getQuantity()).map(BigDecimal::intValue).ifPresent(promoItem::setQuantity);
+		stock.map(StocksEntity::getId).ifPresent(promoItem::setStockId);
+		variant.map(ProductVariantsEntity::getId).ifPresent(promoItem::setVariantId);
+		product.map(ProductEntity::getId).ifPresent(promoItem::setProductId);
+		product.map(ProductEntity::getBrandId).ifPresent(promoItem::setBrandId);
+		product.map(ProductEntity::getProductType).ifPresent(promoItem::setProductType);
+		variant.map(ProductVariantsEntity::getWeight).ifPresent(promoItem::setWeight);
+		stock.map(StocksEntity::getUnit).map(StockUnitEntity::getName).ifPresent(promoItem::setUnit);
+
+		return promoItem;
+	}
+
+
 	private BigDecimal  addPromoDiscountAndGetItsCalculatedTotal(BigDecimal promoDiscount, Set<OrdersEntity> subOrders) {
 		BigDecimal subTotal = 
 				subOrders

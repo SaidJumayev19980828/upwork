@@ -255,8 +255,8 @@ public class CartServiceImpl implements CartService{
                 .stream()
                 .map(item ->
                         item.getPrice()
-                        .subtract(nullableBigDecimal(item.getDiscount()))
-                        .multiply(new BigDecimal(item.getQuantity())))
+                                .subtract(nullableBigDecimal(item.getDiscount()))
+                                .multiply(new BigDecimal(item.getQuantity())))
                 .reduce(ZERO, BigDecimal::add);
     }
 

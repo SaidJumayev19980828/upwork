@@ -222,4 +222,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 5 and subOrder.id = :orderId")
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
 											   @Param("userId") Long userId);
+
+	@Query("select order.userId from OrdersEntity order where order.id = :orderId")
+	Long getUserIdByOrderId(@Param("orderId")Long orderId);
 }

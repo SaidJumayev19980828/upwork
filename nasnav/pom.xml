@@ -17,7 +17,7 @@
     <properties>
         <java.version>11</java.version>
         <spring.boot.version>2.4.4</spring.boot.version>
-        <lombok.version>1.18.16</lombok.version>
+        <lombok.version>1.18.20</lombok.version>
         <httpclient.version>4.5.8</httpclient.version>
         <start-class>com.nasnav.NavBox</start-class>
         <!-- TEST AND TEST COVERAGE -->
