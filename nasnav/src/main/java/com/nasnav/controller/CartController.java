@@ -25,13 +25,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping("/cart")
 @Tag(name = "Methods for accessing cart")
 public class CartController {
-	
+
 	@Autowired
 	private CartService cartService;
-	
+
 	@Autowired
 	private PromotionsService promoService;
-	
+
 	@Autowired
 	private CartOptimizationService cartOptimizeService;
 
@@ -41,9 +41,8 @@ public class CartController {
 			@ApiResponse(responseCode = " 406" ,description = "invalid search parameter")
 	})
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-						@RequestParam(value = "promo", required = false) String promoCode) {
-		return cartService.getCart(promoCode);
+	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
+		return cartService.getCart();
 	}
 
 
@@ -55,9 +54,8 @@ public class CartController {
 			@ApiResponse(responseCode = " 406" ,description = "stock not found")
 	})
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
-	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item,
-							@RequestParam(value = "promo", required = false) String promoCode) {
-		return cartService.addCartItem(item, promoCode);
+	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item) {
+		return cartService.addCartItem(item);
 	}
 
 
@@ -69,9 +67,8 @@ public class CartController {
 			@ApiResponse(responseCode = " 406" ,description = "item not found")
 	})
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
-	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId,
-							   @RequestParam(value = "promo", required = false) String promoCode) {
-		return cartService.deleteCartItem(itemId, promoCode);
+	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
+		return cartService.deleteCartItem(itemId);
 	}
 
 
@@ -86,10 +83,10 @@ public class CartController {
 							  @RequestBody CartCheckoutDTO dto) {
 		return cartService.checkoutCart(dto);
 	}
-	
-	
-	
-	
+
+
+
+
 	@Operation(description =  "optimize the cart", summary = "cartOptimize")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = " 200" ,description = "OK"),
@@ -98,7 +95,22 @@ public class CartController {
 	})
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-								@RequestBody CartCheckoutDTO dto) {
+												@RequestBody CartCheckoutDTO dto) {
 		return cartOptimizeService.optimizeCart(dto);
+	}
+
+
+
+
+	@Operation(description =  "calculate promo for the cart", summary = "cartPromoCalc")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = " 200" ,description = "OK"),
+			@ApiResponse(responseCode = " 403" ,description = "Not a customer"),
+			@ApiResponse(responseCode = " 406" ,description = "Invalid parameters")
+	})
+	@GetMapping(value = "/promo/discount", produces=APPLICATION_JSON_VALUE)
+	public BigDecimal calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
+										@RequestParam(value = "promo", required = false) String promoCode) {
+		return promoService.calcPromoDiscountForCart(promoCode);
 	}
 }

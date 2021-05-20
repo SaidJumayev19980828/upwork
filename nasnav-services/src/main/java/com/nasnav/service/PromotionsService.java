@@ -9,12 +9,15 @@ import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.dto.query.result.CartItemData;
+
+import java.math.BigDecimal;
 
 public interface PromotionsService {
 	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
 
 	Long updatePromotion(PromotionDTO promotion);
+
+	BigDecimal calcPromoDiscountForCart(String promoCode);
 
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
 

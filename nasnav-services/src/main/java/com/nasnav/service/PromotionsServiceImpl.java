@@ -19,6 +19,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static javax.persistence.criteria.JoinType.INNER;
+import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -38,6 +39,7 @@ import javax.persistence.criteria.*;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
 import lombok.Data;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -126,6 +128,33 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.collect(toList());
 		Long total = getPromotionsCount(builder, restrictions.toArray(new Predicate[0]));
 		return new PromotionResponse(total, promotions);
+	}
+
+
+
+	@Override
+	public BigDecimal calcPromoDiscountForCart(String promoCode) {
+		var cart = cartService.getCart();
+		BigDecimal cartTotal = cartService.calculateCartTotal();
+		var promoItems = toPromoItems(cart.getItems());
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+	}
+
+
+
+	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
+		return cartItems
+				.stream()
+				.map(this::toPromoItem)
+				.collect(toUnmodifiableList());
+	}
+
+
+
+	private PromoItemDto toPromoItem(CartItem cartItem) {
+		var promoItem = new PromoItemDto();
+		copyProperties(cartItem, promoItem);
+		return promoItem;
 	}
 
 

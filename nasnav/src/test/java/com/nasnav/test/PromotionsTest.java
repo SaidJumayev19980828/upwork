@@ -9,6 +9,7 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ROUND_HALF_EVEN;
 import static java.time.LocalDateTime.now;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
@@ -407,21 +408,27 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountTest() {
 		String promoCode = "GREEEEEED";
-		String url = format("/cart?promo=%s", promoCode);
-		HttpEntity<?> req = getHttpEntity("123");
-        ResponseEntity<Cart> res =
-        		template.exchange(url, GET, req, Cart.class);
-        assertEquals(200, res.getStatusCodeValue());
-        assertEquals(0, res.getBody().getDiscount().compareTo(new BigDecimal("270")));
+		var discount = getCartDiscount(promoCode);
+        assertEquals(0, new BigDecimal("270").compareTo(discount));
 	}
-	
-	
-	
-	
+
+
+
+	private BigDecimal getCartDiscount(String promoCode) {
+		String url = isNull(promoCode)?
+						"/cart/promo/discount": format("/cart/promo/discount?promo=%s", promoCode);
+		HttpEntity<?> req = getHttpEntity("123");
+		ResponseEntity<BigDecimal> res =
+				template.exchange(url, GET, req, BigDecimal.class);
+		assertEquals(200, res.getStatusCodeValue());
+		return res.getBody();
+	}
+
+
 	@Test
 	public void getPromotionDiscountNoExistingPromoTest() {
 		String promoCode = "NotExist";
-		String url = format("/cart?promo=%s", promoCode);
+		String url = format("/cart/promo/discount?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -434,7 +441,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountExpiredPromoTest() {
 		String promoCode = "MORE2020";
-		String url = format("/cart?promo=%s", promoCode);
+		String url = format("/cart/promo/discount?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -447,7 +454,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionDiscountNotApplicablePromoTest() {
 		String promoCode = "MONEY2020";
-		String url = format("/cart?promo=%s", promoCode);
+		String url = format("/cart/promo/discount?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
         ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -462,7 +469,7 @@ public class PromotionsTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getPromotionDiscountAlreadyUsedTest() {
 		String promoCode = "GREEEEEED";
-		String url = format("/cart?promo=%s", promoCode);
+		String url = format("/cart/promo/discount?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
 		ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
@@ -672,10 +679,9 @@ public class PromotionsTest {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 601L, 3);
 		Cart res = createCartForUser(req, 601L, 3);
+		var discount = getCartDiscount(null);
 
-		assertEquals(100, res.getDiscount().intValue());
-		assertEquals(300, res.getSubTotal().intValue());
-		assertEquals(200, res.getTotal().intValue());
+		assertEquals(100, discount.intValue());
 	}
 
 
@@ -685,10 +691,9 @@ public class PromotionsTest {
 	public void getCartWithTotalCartValuePromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		Cart res = createCartForUser(req, 602L, 8);
+		var discount = getCartDiscount(null);
 
-		assertEquals(80, res.getDiscount().intValue());
-		assertEquals(800, res.getSubTotal().intValue());
-		assertEquals(720, res.getTotal().intValue());
+		assertEquals(80, discount.intValue());
 	}
 
 	@Test
@@ -699,10 +704,8 @@ public class PromotionsTest {
 		createCartForUser(req, 602L, 1);
 		createCartForUser(req, 603L, 8);
 		Cart res = createCartForUser(req, 604L, 1);
-
-		assertEquals(100, res.getDiscount().intValue());
-		assertEquals(1000, res.getSubTotal().intValue());
-		assertEquals(900, res.getTotal().intValue());
+		var discount = getCartDiscount(null);
+		assertEquals(100, discount.intValue());
 	}
 
 

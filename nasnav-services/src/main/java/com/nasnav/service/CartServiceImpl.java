@@ -2,9 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -17,7 +15,6 @@ import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +31,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -59,78 +55,36 @@ public class CartServiceImpl implements CartService{
 
     @Autowired
     private OrderService orderService;
-    @Autowired
-    private PromotionsService promotionsService;
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private CartServiceHelper cartServiceHelper;
 
     @Override
-    public Cart getCart(String promoCode) {
+    public Cart getCart() {
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
-        return getUserCart(user.getId(), promoCode);
-    }
-
-    @Override
-    public Cart getCart() {
-        return getCart(null);
+        return getUserCart(user.getId());
     }
 
 
 
+
     @Override
-    public Cart getUserCart(Long userId, String promoCode) {
-        var cartItemData = cartItemRepo.findCurrentCartItemsByUser_Id(userId);
-        Cart cart = new Cart(toCartItemsDto(cartItemData));
-        addCartPromoData(cart, promoCode);
+    public Cart getUserCart(Long userId) {
+        Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         return cart;
     }
 
-    @Override
-    public void addCartPromoData(Cart cart, String promoCode) {
-        BigDecimal subTotal = calculateCartTotal(cart);
 
-        var promoItems = toPromoItems(cart.getItems());
-        var discount = promotionsService.calculateAllApplicablePromos(promoItems, subTotal, promoCode);
-
-        BigDecimal total = subTotal.subtract(discount);
-        cart.setSubTotal(subTotal);
-        cart.setDiscount(discount);
-        cart.setTotal(total);
-    }
-
-    private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
-        return cartItems
-                .stream()
-                .map(this::toPromoItem)
-                .collect(toUnmodifiableList());
-    }
-
-
-
-    private PromoItemDto toPromoItem(CartItem cartItem) {
-        var promoItem = new PromoItemDto();
-        copyProperties(cartItem, promoItem);
-        return promoItem;
-    }
 
 
 
     @Override
-    public Cart addCartItem(CartItem item) {
-        return addCartItem(item, null);
-    }
-
-
-    @Override
-    public Cart addCartItem(CartItem item, String promoCode){
+    public Cart addCartItem(CartItem item){
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -149,9 +103,9 @@ public class CartServiceImpl implements CartService{
 
         if (item.getQuantity().equals(0)) {
             if (cartItem.getId() != null) {
-                return deleteCartItem(cartItem.getId(), promoCode);
+                return deleteCartItem(cartItem.getId());
             } else {
-                return getUserCart(user.getId(), promoCode);
+                return getUserCart(user.getId());
             }
         }
 
@@ -164,7 +118,7 @@ public class CartServiceImpl implements CartService{
         cartItem.setAdditionalData(additionalDataJson);
         cartItemRepo.save(cartItem);
 
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId());
     }
 
 
@@ -191,7 +145,7 @@ public class CartServiceImpl implements CartService{
 
 
     @Override
-    public Cart deleteCartItem(Long itemId, String promoCode){
+    public Cart deleteCartItem(Long itemId){
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -199,7 +153,7 @@ public class CartServiceImpl implements CartService{
 
         cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
 
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId());
     }
 
 
@@ -207,6 +161,13 @@ public class CartServiceImpl implements CartService{
     @Override
     public Order checkoutCart(CartCheckoutDTO dto){
         return orderService.createOrder(dto);
+    }
+
+
+
+    @Override
+    public BigDecimal calculateCartTotal() {
+        return  calculateCartTotal(getCart());
     }
 
 
@@ -294,8 +255,8 @@ public class CartServiceImpl implements CartService{
                 .stream()
                 .map(item ->
                         item.getPrice()
-                        .subtract(nullableBigDecimal(item.getDiscount()))
-                        .multiply(new BigDecimal(item.getQuantity())))
+                                .subtract(nullableBigDecimal(item.getDiscount()))
+                                .multiply(new BigDecimal(item.getQuantity())))
                 .reduce(ZERO, BigDecimal::add);
     }
 
@@ -365,22 +326,22 @@ public class CartServiceImpl implements CartService{
     //TODO: this implementation should be more efficient in accessing the database and
     //addCartItem should be the one depending on it instead.
     //also it can be the foundation for POST /cart api that saves the whole cart at once.
-    private Cart saveCart(Cart cart, String promoCode) {
+    private Cart saveCart(Cart cart) {
         BaseUserEntity user = securityService.getCurrentUser();
         return cart
                 .getItems()
                 .stream()
                 .map(this::addCartItem)
                 .reduce((first, second) -> second)
-                .orElseGet(() -> getUserCart(user.getId(), promoCode));
+                .orElseGet(() -> getUserCart(user.getId()));
     }
 
 
 
-    private Cart replaceCart(Cart newCart, String promoCode) {
+    private Cart replaceCart(Cart newCart) {
         BaseUserEntity user = securityService.getCurrentUser();
         cartItemRepo.deleteByUser_Id(user.getId());
-        return saveCart(newCart, promoCode);
+        return saveCart(newCart);
     }
 
 
