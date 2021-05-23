@@ -7,9 +7,11 @@ import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.CategoryService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SearchService;
 import com.nasnav.service.ShopService;
+import com.nasnav.dto.response.CategoryDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,6 +39,9 @@ public class YeshteryController {
 
     @Autowired
     private SearchService searchService;
+
+    @Autowired
+    private CategoryService categoryService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
@@ -79,5 +84,16 @@ public class YeshteryController {
     @GetMapping(value="/search", produces= MediaType.APPLICATION_JSON_VALUE)
     public Mono<SearchResult> search(SearchParameters params) {
         return searchService.search(params, true);
+    }
+
+
+
+    @Operation(description =  "get categories tree", summary = "getCategories")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/categories", produces= MediaType.APPLICATION_JSON_VALUE)
+    public List<CategoryDto> getCategories() {
+        return categoryService.getCategoriesTree();
     }
 }

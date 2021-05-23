@@ -1,6 +1,10 @@
 package com.nasnav.yeshtery.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.yeshtery.Yeshtery;
 import net.jcip.annotations.NotThreadSafe;
@@ -19,10 +23,16 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -43,6 +53,9 @@ public class YeshteryApiTest {
 
     @Autowired
     private ProductRepository productRepo;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
 
     @Test
@@ -70,6 +83,56 @@ public class YeshteryApiTest {
         assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
+
+
+    @Test
+    public void getCategoriesTree() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/categories", String.class);
+        assertEquals(OK, response.getStatusCode());
+
+        var rootLevel = objectMapper.readValue(response.getBody(), new TypeReference<List<CategoryDto>>(){});
+        assertRootLevelCategoriesReturned(rootLevel);
+        assertCategoryHadImgInMetadata(rootLevel);
+        assertFirstLevelCategoriesReturned(rootLevel);
+    }
+
+
+
+    private void assertFirstLevelCategoriesReturned(List<CategoryDto> rootLevel) {
+        var firstLevel = getCategoriesOfFirstLevel(rootLevel);
+        assertTrue(Set.of(203L, 204L, 205L, 206L).containsAll(firstLevel));
+    }
+
+
+
+    private void assertRootLevelCategoriesReturned(List<CategoryDto> rootLevel) {
+        var ids = rootLevel.stream().map(CategoryDto::getId).collect(toSet());
+        assertTrue(Set.of(201L, 202L).containsAll(ids));
+        assertEquals(2 , rootLevel.size());
+    }
+
+
+
+    private void assertCategoryHadImgInMetadata(List<CategoryDto> rootLevel) {
+        rootLevel.stream().filter(c -> Objects.equals(201L, c.getId())).findFirst().ifPresent(this::hasCoverImage);
+    }
+
+
+
+    private List<Long> getCategoriesOfFirstLevel(List<CategoryDto> rootLevel) {
+        return rootLevel
+                .stream()
+                .map(CategoryDto::getChildren)
+                .flatMap(List::stream)
+                .map(CategoryDto::getId)
+                .collect(toList());
+    }
+
+
+    private void hasCoverImage(CategoryDto category) {
+        assertTrue(category.getMetadata().containsKey("cover"));
+        assertTrue(category.getMetadata().containsKey("icon"));
+    }
 
 
     private JSONArray createExpectedFeaturesJson() {
