@@ -117,6 +117,15 @@ public class YeshteryApiTest {
     @Test
     @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
     @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getCollectionTest() {
+        var response = template.getForEntity("/v1/yeshtery/collection?id=1004", ProductDetailsDTO.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1004, response.getBody().getId().intValue());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void get360JsonData() {
         var response = template.getForEntity("/v1/yeshtery/360view/json_data?shop_id=501&type=web", String.class);
         assertEquals(200, response.getStatusCodeValue());
