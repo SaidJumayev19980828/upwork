@@ -677,7 +677,7 @@ public class OrganizationController {
 
 
 
-    @Operation(description =  "update organization sub-areas", summary = "addSeoKeywords")
+    @Operation(description =  "update organization sub-areas", summary = "updateSubAreas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "process completed successfully"),
             @ApiResponse(responseCode = " 403" ,description = "User not authorized to do this action"),

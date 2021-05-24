@@ -34,7 +34,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.*;
 
 @RunWith(SpringRunner.class)
@@ -63,7 +62,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("eereeee");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
     }
 
@@ -75,7 +74,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("NOT EXIST");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
     }
 
@@ -106,18 +105,12 @@ public class CartOptimizationManagementTest {
     @Test
     public void postCartOptimizationSettingSuccessTest() {
         var strategy = SAME_CITY.name();
-        var optimizationParams =
-                json()
-                        .toString();
+        var optimizationParams = json().toString();
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .toString();
-        HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-        var res =
-                template
-                        .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
-        assertEquals(OK, res.getStatusCode());
+                    .put("strategy_name", strategy)
+                    .toString();
+        postOptimizationStrategy(body);
 
         var optimizationParamsEntity =
                 optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
@@ -128,6 +121,79 @@ public class CartOptimizationManagementTest {
 
 
 
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_4.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void updateCartOptimizationSettingSuccessTest() {
+        var strategy = SAME_CITY.name();
+        final var shippingService = "FIXED_FEE";
+
+        assertOptStrategyExist(strategy, shippingService);
+
+        var optimizationParams = json().put("DUMMY", "VAL");
+        var body =
+                json()
+                    .put("strategy_name", strategy)
+                    .put("shipping_service_id", shippingService)
+                    .put("parameters", optimizationParams)
+                    .toString();
+        postOptimizationStrategy(body);
+
+        var optimizationParamsAfter =
+                optimizationRepo.findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(strategy, shippingService, 99001L);
+        assertEquals(1, optimizationParamsAfter.size());
+        assertEquals(optimizationParams.toString(), optimizationParamsAfter.get(0).getParameters());
+    }
+
+
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_4.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void updateDefaultCartOptimizationSettingSuccessTest() {
+        var strategy = SAME_CITY.name();
+
+        assertOptStrategyExist(strategy);
+
+        var optimizationParams = json().put("DUMMY", "VAL");
+        var body =
+                json()
+                    .put("strategy_name", strategy)
+                    .put("parameters", optimizationParams)
+                    .toString();
+        postOptimizationStrategy(body);
+
+        var optimizationParamsAfter =
+                optimizationRepo.findOrganizationDefaultOptimizationStrategy(99001L);
+        assertTrue(optimizationParamsAfter.isPresent());
+        assertEquals(optimizationParams.toString(), optimizationParamsAfter.get().getParameters());
+    }
+
+
+
+    private void postOptimizationStrategy(String body) {
+        HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        var res =
+                template
+                    .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+        assertEquals(OK, res.getStatusCode());
+    }
+
+
+    private void assertOptStrategyExist(String strategy, String shippingService) {
+        var optimizationParamsBefore =
+                optimizationRepo.findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(strategy, shippingService , 99001L);
+        assertEquals(1, optimizationParamsBefore.size());
+        assertEquals("{}", optimizationParamsBefore.get(0).getParameters());
+    }
+
+
+    private void assertOptStrategyExist(String strategy) {
+        var optimizationParamsBefore =
+                optimizationRepo.findOrganizationDefaultOptimizationStrategy( 99001L);
+        assertTrue(optimizationParamsBefore.isPresent());
+        assertEquals("{}", optimizationParamsBefore.get().getParameters());
+    }
 
 
     @Test
@@ -135,9 +201,9 @@ public class CartOptimizationManagementTest {
         var strategy = WAREHOUSE;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters", json())
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters", json())
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -158,9 +224,9 @@ public class CartOptimizationManagementTest {
         var strategy = WAREHOUSE;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters", json().put("warehouse_id", -1))
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters", json().put("warehouse_id", -1))
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -179,9 +245,9 @@ public class CartOptimizationManagementTest {
         var strategy = WAREHOUSE;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters", json().put("warehouse_id", 501))
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters", json().put("warehouse_id", 501))
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -200,12 +266,12 @@ public class CartOptimizationManagementTest {
         var strategy = SHOP_PER_SUBAREA;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters",
-                                json()
-                                        .put("default_shop", 501)
-                                        .put("sub_area_shop_mapping", json().put("77001", 502)))
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters",
+                            json()
+                                    .put("default_shop", 501)
+                                    .put("sub_area_shop_mapping", json().put("77001", 502)))
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -224,12 +290,12 @@ public class CartOptimizationManagementTest {
         var strategy = SHOP_PER_SUBAREA;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters",
-                                json()
-                                        .put("default_shop", 502)
-                                        .put("sub_area_shop_mapping", json().put("77001", 501)))
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters",
+                            json()
+                                    .put("default_shop", 502)
+                                    .put("sub_area_shop_mapping", json().put("77001", 501)))
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -248,12 +314,12 @@ public class CartOptimizationManagementTest {
         var strategy = SHOP_PER_SUBAREA;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters",
-                                json()
-                                        .put("default_shop", 502)
-                                        .put("sub_area_shop_mapping", json().put("77002", 502)))
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .put("parameters",
+                            json()
+                                    .put("default_shop", 502)
+                                    .put("sub_area_shop_mapping", json().put("77002", 502)))
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template
@@ -272,17 +338,13 @@ public class CartOptimizationManagementTest {
         var strategy = SHOP_PER_SUBAREA;
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters",
-                                json()
-                                        .put("default_shop", 502)
-                                        .put("sub_area_shop_mapping", json().put("77001", 502)))
-                        .toString();
-        HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-        var res =
-                template
-                        .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
-        assertEquals(OK, res.getStatusCode());
+                    .put("strategy_name", strategy)
+                    .put("parameters",
+                            json()
+                                    .put("default_shop", 502)
+                                    .put("sub_area_shop_mapping", json().put("77001", 502)))
+                    .toString();
+        postOptimizationStrategy(body);
 
         var optimizationParamsEntity =
                 optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
@@ -298,14 +360,10 @@ public class CartOptimizationManagementTest {
         var optimizationParams = json().put("warehouse_id", 502);
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .put("parameters", optimizationParams)
-                        .toString();
-        HttpEntity<?> req = getHttpEntity(body, "hijkllm");
-        var res =
-                template
-                        .exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
-        assertEquals(OK, res.getStatusCode());
+                    .put("strategy_name", strategy)
+                    .put("parameters", optimizationParams)
+                    .toString();
+        postOptimizationStrategy(body);
 
         var optimizationParamsEntity =
                 optimizationRepo.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(strategy, 99001L);
@@ -323,7 +381,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("hijkllm");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(OK, res.getStatusCode());
 
         List<CartOptimizationSettingDTO> strategyConfigs =
@@ -342,7 +400,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("eereeee");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
     }
 
@@ -355,7 +413,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("Non existing");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
     }
 
@@ -366,7 +424,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("hijkllm");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(OK, res.getStatusCode());
 
         List<CartOptimizationStrategyDTO> strategies =
@@ -397,7 +455,7 @@ public class CartOptimizationManagementTest {
         HttpEntity<?> req = getHttpEntity("eereeee");
         var res =
                 template
-                        .exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
+                    .exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(FORBIDDEN, res.getStatusCode());
     }
 
@@ -443,11 +501,10 @@ public class CartOptimizationManagementTest {
         var strategy = SAME_CITY.name();
         var existsBefore = optimizationRepo.findOrganizationDefaultOptimizationStrategy(99001L).isPresent();
         assertTrue(existsBefore);
-        var optimizationParams = json().toString();
         var body =
                 json()
-                        .put("strategy_name", strategy)
-                        .toString();
+                    .put("strategy_name", strategy)
+                    .toString();
         HttpEntity<?> req = getHttpEntity(body, "hijkllm");
         var res =
                 template

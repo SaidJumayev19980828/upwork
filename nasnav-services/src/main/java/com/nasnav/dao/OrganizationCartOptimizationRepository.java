@@ -49,4 +49,6 @@ public interface OrganizationCartOptimizationRepository extends JpaRepository<Or
 	void deleteByOptimizationStrategy(
 			@Param("strategyName")String strategyName
 			, @Param("orgId")Long orgId);
+
+	List<OrganizationCartOptimizationEntity> findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(String strategy, String shippingService, long orgId);
 }

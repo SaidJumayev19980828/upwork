@@ -1287,7 +1287,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void orderCancelAnotherCustomerTest() {
-		HttpEntity<?> request = getHttpEntity("456");
+		HttpEntity<?> request = getHttpEntity("666");
 		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
 	}

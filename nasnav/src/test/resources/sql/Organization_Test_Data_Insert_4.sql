@@ -85,3 +85,5 @@ INSERT INTO public.organiztion_cart_optimization(id, optimization_parameters, op
 VALUES(111101, '{}', 'SAME_CITY', 99001, null);
 INSERT INTO public.organiztion_cart_optimization(id, optimization_parameters, optimization_strategy, organization_id, shipping_service_id)
 VALUES(111102, '{}', 'WAREHOUSE', 99001, 'PICKUP_POINTS');
+INSERT INTO public.organiztion_cart_optimization(id, optimization_parameters, optimization_strategy, organization_id, shipping_service_id)
+VALUES(111103, '{}', 'SAME_CITY', 99001, 'FIXED_FEE');

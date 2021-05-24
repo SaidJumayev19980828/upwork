@@ -11,7 +11,6 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -230,7 +229,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		var parametersEntity =
 				orgCartOptimizerRepo
 				.findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(strategy, shippingServiceId, org.getId())
-				.orElseGet(() -> getOrganizationCartOptimizationParameters(settingDto));
+				.orElseGet(() -> getCartOptimizationParameters(settingDto));
 		
 		parametersEntity.setOptimizationStrategy(strategy);
 		parametersEntity.setOrganization(org);
@@ -258,7 +257,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-	private OrganizationCartOptimizationEntity getOrganizationCartOptimizationParameters(CartOptimizationSettingDTO settingDto) {
+	private OrganizationCartOptimizationEntity getCartOptimizationParameters(CartOptimizationSettingDTO settingDto) {
 		var orgId = securityService.getCurrentUserOrganizationId();
 		var strategy = settingDto.getStrategyName();
 		return orgCartOptimizerRepo
