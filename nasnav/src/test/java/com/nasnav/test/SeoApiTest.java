@@ -60,18 +60,18 @@ public class SeoApiTest {
     @Test
     public void addSeoKeywordsTest(){
         Long orgId = 99001L;
-        Long entityId = orgId;
-        SeoEntityType type = ORGANIZATION;
-        List<SeoKeywordEntity> seoKeywordsBefore =
+        var entityId = orgId;
+        var type = ORGANIZATION;
+        var seoKeywordsBefore =
                 seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, type.getValue(), orgId);
 
         assertTrue(seoKeywordsBefore.isEmpty());
 
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody = createAddSeoKeywordRequest(keywords, entityId, type);
+        var requestBody = createAddSeoKeywordRequest(keywords, entityId, type);
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "192021")
                         , String.class);
@@ -96,28 +96,28 @@ public class SeoApiTest {
 
     private void assertKeywordDataValid(Long orgId, List<String> keywords, JSONObject requestBody) {
         Long entityId = requestBody.getLong("id");
-        String type = requestBody.getString("type" );
-        Integer typeId = SeoEntityType.valueOf(type).getValue();
-        List<SeoKeywordEntity> seoKeywordsAfter =
+        var type = requestBody.getString("type" );
+        var typeId = SeoEntityType.valueOf(type).getValue();
+        var seoKeywordsAfter =
                 seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, typeId, orgId);
         assertEquals(keywords.size(), seoKeywordsAfter.size());
 
-        boolean allHaveOrganizationType =
+        var allHaveOrganizationType =
                 seoKeywordsAfter
                     .stream()
                     .allMatch(kw -> Objects.equals(kw.getTypeId(), ORGANIZATION.getValue()));
 
-        boolean allFollowTheOrganization =
+        var allFollowTheOrganization =
                 seoKeywordsAfter
                         .stream()
                         .allMatch(kw -> Objects.equals(kw.getOrganization().getId(), orgId));
 
-        boolean allAttachedToOrganizationEntity =
+        var allAttachedToOrganizationEntity =
                 seoKeywordsAfter
                         .stream()
                         .allMatch(kw -> Objects.equals(kw.getEntityId(), orgId));
 
-        boolean allKeywordsWereAdded =
+        var allKeywordsWereAdded =
                 keywords.stream().allMatch(kw -> anySeoKeywordEntityHasValue(seoKeywordsAfter, kw));
 
         assertTrue(allHaveOrganizationType);
@@ -137,7 +137,7 @@ public class SeoApiTest {
 
     @Test
     public void addSeoKeywordsNoAuthNTest(){
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity("NOT-EXISTING")
                         , String.class);
@@ -148,7 +148,7 @@ public class SeoApiTest {
 
     @Test
     public void addSeoKeywordNoAuthZTest(){
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity("161718")
                         , String.class);
@@ -160,18 +160,18 @@ public class SeoApiTest {
     @Test
     public void updateSeoKeywordForExistingEntityTest(){
         Long orgId = 99002L;
-        Long entityId = orgId;
-        SeoEntityType type = ORGANIZATION;
-        List<SeoKeywordEntity> seoKeywordsBefore =
+        var entityId = orgId;
+        var type = ORGANIZATION;
+        var seoKeywordsBefore =
                 seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, type.getValue(), orgId);
 
         assertEquals(1, seoKeywordsBefore.size());
 
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody = createAddSeoKeywordRequest(keywords ,entityId, type);
+        var requestBody = createAddSeoKeywordRequest(keywords ,entityId, type);
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "131415")
                         , String.class);
@@ -183,12 +183,12 @@ public class SeoApiTest {
 
     @Test
     public void addSeoKeywordMissingDataTest(){
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody = createAddSeoKeywordRequest(keywords, 1001L, PRODUCT);
+        var requestBody = createAddSeoKeywordRequest(keywords, 1001L, PRODUCT);
         requestBody.put("type", NULL);
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "192021")
                         , String.class);
@@ -200,18 +200,18 @@ public class SeoApiTest {
     @Test
     public void addSeoKeywordEntityFromAnotherOrgTest(){
         Long orgId = 99001L;
-        Long entityId = orgId;
-        SeoEntityType type = ORGANIZATION;
-        List<SeoKeywordEntity> seoKeywordsBefore =
+        var entityId = orgId;
+        var type = ORGANIZATION;
+        var seoKeywordsBefore =
                 seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, type.getValue(), orgId);
 
         assertTrue(seoKeywordsBefore.isEmpty());
 
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody = createAddSeoKeywordRequest(keywords, entityId, type);
+        var requestBody = createAddSeoKeywordRequest(keywords, entityId, type);
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "131415")
                         , String.class);
@@ -226,15 +226,15 @@ public class SeoApiTest {
         Long orgId = 99001L;
         Long entityId = 5001L;
 
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody =
+        var requestBody =
                 json()
                 .put("type", TAG.name())
                 .put("id", entityId)
                 .put("keywords", toJsonArray(keywords));
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "131415")
                         , String.class);
@@ -248,21 +248,21 @@ public class SeoApiTest {
     public void addSeoKeywordProductEntityFromAnotherOrgTest(){
         Long orgId = 99001L;
         Long entityId = 1001L;
-        SeoEntityType type = PRODUCT;
-        List<SeoKeywordEntity> seoKeywordsBefore =
+        var type = PRODUCT;
+        var seoKeywordsBefore =
                 seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, type.getValue(), orgId);
 
         assertTrue(seoKeywordsBefore.isEmpty());
 
-        List<String> keywords = asList("Hello Search BOT!", "Here's 10 LE");
+        var keywords = asList("Hello Search BOT!", "Here's 10 LE");
 
-        JSONObject requestBody =
+        var requestBody =
                 json()
                 .put("type", type.name())
                 .put("id", entityId)
                 .put("keywords", toJsonArray(keywords));
 
-        ResponseEntity<String> response =
+        var response =
                 template.postForEntity("/organization/seo"
                         , getHttpEntity(requestBody.toString(), "131415")
                         , String.class);
@@ -272,43 +272,41 @@ public class SeoApiTest {
 
 
 
-
     @Test
     public void getSeoKeywordsByOrganizationTest() throws IOException {
         Long orgId = 99002L;
-        ResponseEntity<String> response =
+        var response =
                 template.getForEntity("/navbox/seo?org_id="+orgId, String.class);
 
-        List<SeoKeywordsDTO> seoEntities = objectMapper.readValue(response.getBody(), new TypeReference<List<SeoKeywordsDTO>>(){});
+        var seoEntities = objectMapper.readValue(response.getBody(), new TypeReference<List<SeoKeywordsDTO>>(){});
         assertEquals(3, seoEntities.size());
 
-        List<String> expectedKeywords = asList("Search bot choco!", "Search bot notella!", "Search bot cookie!");
-        Set<String> retrievedKeywords = getAllKeywords(seoEntities);
-        boolean expectedKeywordsRetrieved =
+        var expectedKeywords = asList("Search bot choco!", "Search bot notella!", "Search bot cookie!");
+        var retrievedKeywords = getAllKeywords(seoEntities);
+        var expectedKeywordsRetrieved =
                 retrievedKeywords.containsAll(expectedKeywords);
         assertTrue(expectedKeywordsRetrieved);
     }
 
 
 
-
     @Test
     public void getSeoKeywordsByEntityTest() throws IOException {
         Long orgId = 99002L;
-        SeoEntityType type = PRODUCT;
+        var type = PRODUCT;
         Long entityId = 1002L;
-        String url = String.format("/navbox/seo?org_id=%d&id=%d&type=%s", orgId, entityId, type.name());
-        ResponseEntity<String> response =
+        var url = String.format("/navbox/seo?org_id=%d&id=%d&type=%s", orgId, entityId, type.name());
+        var response =
                 template.getForEntity(url, String.class);
 
-        List<SeoKeywordsDTO> seoEntities = objectMapper.readValue(response.getBody(), new TypeReference<List<SeoKeywordsDTO>>(){});
+        var seoEntities = objectMapper.readValue(response.getBody(), new TypeReference<List<SeoKeywordsDTO>>(){});
         assertEquals(1, seoEntities.size());
         assertEquals(entityId, seoEntities.get(0).getId());
         assertEquals(type, seoEntities.get(0).getType());
 
-        List<String> expectedKeywords = asList("Search bot choco!");
-        Set<String> retrievedKeywords = getAllKeywords(seoEntities);
-        boolean expectedKeywordsRetrieved = retrievedKeywords.containsAll(expectedKeywords);
+        var expectedKeywords = asList("Search bot choco!");
+        var retrievedKeywords = getAllKeywords(seoEntities);
+        var expectedKeywordsRetrieved = retrievedKeywords.containsAll(expectedKeywords);
         assertTrue(expectedKeywordsRetrieved);
     }
 
@@ -316,7 +314,7 @@ public class SeoApiTest {
 
     @Test
     public void getSeoKeywordsMissingOrgIdTest() throws IOException {
-        ResponseEntity<String> response =
+        var response =
                 template.getForEntity("/navbox/seo?id=5002&type=TAG", String.class);
 
         assertEquals(BAD_REQUEST, response.getStatusCode());
@@ -327,7 +325,7 @@ public class SeoApiTest {
     @Test
     public void getSeoKeywordsMissingEntityIdTest() throws IOException {
         Long orgId = 99002L;
-        ResponseEntity<String> response =
+        var response =
                 template.getForEntity("/navbox/seo?type=TAG&org_id="+orgId, String.class);
 
         assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
@@ -339,7 +337,7 @@ public class SeoApiTest {
     @Test
     public void getSeoKeywordsMissingTypeTest() throws IOException {
         Long orgId = 99002L;
-        ResponseEntity<String> response =
+        var response =
                 template.getForEntity("/navbox/seo?id=5002&org_id="+orgId, String.class);
 
         assertEquals(NOT_ACCEPTABLE, response.getStatusCode());

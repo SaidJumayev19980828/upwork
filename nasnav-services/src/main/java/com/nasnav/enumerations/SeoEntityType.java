@@ -8,7 +8,8 @@ public enum SeoEntityType {
 
     ORGANIZATION(0),
     PRODUCT(1),
-    TAG(2);
+    TAG(2),
+    CATEGORY(3);
 
     @Getter
     private final Integer value;

@@ -54,9 +54,9 @@ public class SeoServiceImpl implements SeoService{
         }
         validateSeoEntity(seoKeywords);
 
-        Long currentUserOrg = securityService.getCurrentUserOrganizationId();
-        Long entityId = seoKeywords.getId();
-        Integer typeId = seoKeywords.getType().getValue();
+        var currentUserOrg = securityService.getCurrentUserOrganizationId();
+        var entityId = seoKeywords.getId();
+        var typeId = seoKeywords.getType().getValue();
 
         seoRepo.deleteByEntityIdAndTypeAndOrganization_Id(entityId, typeId, currentUserOrg);
 
@@ -71,8 +71,8 @@ public class SeoServiceImpl implements SeoService{
 
 
     private SeoKeywordEntity createSeoEntity(Long entityId, Integer typeId, String keyword) {
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
-        SeoKeywordEntity seoKeywordEntity = new SeoKeywordEntity();
+        var org = securityService.getCurrentUserOrganization();
+        var seoKeywordEntity = new SeoKeywordEntity();
         seoKeywordEntity.setEntityId(entityId);
         seoKeywordEntity.setKeyword(keyword);
         seoKeywordEntity.setOrganization(org);
@@ -83,7 +83,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     private void validateSeoEntity(SeoKeywordsDTO seoKeywords) {
-        Long entityId = seoKeywords.getId();
+        var entityId = seoKeywords.getId();
         switch(seoKeywords.getType()){
             case ORGANIZATION: validateOrganizationEntity(entityId); break;
             case PRODUCT: validateProductEntity(entityId); break;
@@ -94,7 +94,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     private void validateTagEntity(Long entityId) {
-        Long currentUserOrg = securityService.getCurrentUserOrganizationId();
+        var currentUserOrg = securityService.getCurrentUserOrganizationId();
         if(!tagsRepo.existsByIdAndOrganizationEntity_Id(entityId, currentUserOrg)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, SEO$ADD$0001, TAG.name(), entityId, currentUserOrg);
         }
@@ -103,7 +103,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     private void validateProductEntity(Long entityId) {
-        Long currentUserOrg = securityService.getCurrentUserOrganizationId();
+        var currentUserOrg = securityService.getCurrentUserOrganizationId();
         if(!productRepo.existsByIdAndOrganizationId(entityId, currentUserOrg)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, SEO$ADD$0001, PRODUCT.name(), entityId, currentUserOrg);
         }
@@ -112,7 +112,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     private void validateOrganizationEntity(Long entityId) {
-        Long currentUserOrg = securityService.getCurrentUserOrganizationId();
+        var currentUserOrg = securityService.getCurrentUserOrganizationId();
         if(!Objects.equals(currentUserOrg, entityId)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, SEO$ADD$0001, ORGANIZATION.name(), entityId, currentUserOrg);
         }
@@ -133,6 +133,12 @@ public class SeoServiceImpl implements SeoService{
             seoKeywordEntities = seoRepo.findByOrganization_Id(orgId);
         }
 
+        return toSeoKeywordsDTOList(seoKeywordEntities);
+    }
+
+
+
+    private List<SeoKeywordsDTO> toSeoKeywordsDTOList(List<SeoKeywordEntity> seoKeywordEntities) {
         return seoKeywordEntities
                 .stream()
                 .collect(groupingBy(this::seoEntityKey))
@@ -143,11 +149,10 @@ public class SeoServiceImpl implements SeoService{
     }
 
 
-
     private SeoKeywordsDTO toSeoKeywordsDTO(Map.Entry<SeoEntityKey,List<SeoKeywordEntity>> seoEntityKeywords){
-        SeoEntityKey commonData = seoEntityKeywords.getKey();
-        List<String> keywords = getKeywords(seoEntityKeywords);
-        SeoKeywordsDTO dto = new SeoKeywordsDTO();
+        var commonData = seoEntityKeywords.getKey();
+        var keywords = getKeywords(seoEntityKeywords);
+        var dto = new SeoKeywordsDTO();
         dto.setId(commonData.getEntityId());
         dto.setType(findEnum(commonData.getSeoTypeId()));
         dto.setKeywords(keywords);
@@ -168,7 +173,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     private SeoEntityKey seoEntityKey(SeoKeywordEntity entity){
-        SeoEntityKey key = new SeoEntityKey();
+        var key = new SeoEntityKey();
         key.setEntityId(entity.getEntityId());
         key.setSeoTypeId(entity.getTypeId());
         key.setOrganizationId(entity.getOrganization().getId());

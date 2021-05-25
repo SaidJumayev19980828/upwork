@@ -39,4 +39,8 @@ public interface SeoKeywordRepository extends JpaRepository<SeoKeywordEntity,Lon
             (@Param("entityId")Long entityId,
              @Param("typeId")Integer typeId,
              @Param("orgId")Long orgId);
+
+    List<SeoKeywordEntity> findByEntityIdAndTypeId(Long entityId, Integer type);
+
+    List<SeoKeywordEntity> findByEntityIdInAndTypeId(List<Long> entityIdList, Integer type);
 }

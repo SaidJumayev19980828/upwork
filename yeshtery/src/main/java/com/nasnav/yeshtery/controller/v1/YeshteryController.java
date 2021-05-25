@@ -1,17 +1,16 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
+import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SearchService;
 import com.nasnav.service.ShopService;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.yeshtery.services.SeoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -42,6 +41,9 @@ public class YeshteryController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private SeoService seoService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
@@ -95,5 +97,18 @@ public class YeshteryController {
     @GetMapping(value="/categories", produces= MediaType.APPLICATION_JSON_VALUE)
     public List<CategoryDto> getCategories() {
         return categoryService.getCategoriesTree();
+    }
+
+
+
+    @Operation(description =  "return seo keywords", summary = "getSeo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/seo", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<SeoKeywordsDTO> getSeoKeywords(
+            @RequestParam(value = "type", required = true) SeoEntityType type,
+            @RequestParam(value = "id", required = true)Long entityId) {
+        return seoService.getSeoKeywords(entityId, type);
     }
 }
