@@ -184,8 +184,8 @@ public class YeshteryApiTest {
         assertEquals(200, response.getStatusCodeValue());
         List<ProductRepresentationObject> products = response.getBody().getProducts();
         assertEquals(3, products.size());
-        assertEquals(1001, products.get(0).getId().intValue());
-        assertEquals(1003, products.get(1).getId().intValue());
+        assertEquals(1003, products.get(0).getId().intValue());
+        assertEquals(1001, products.get(1).getId().intValue());
         assertEquals(1004, products.get(2).getId().intValue());
     }
 
@@ -198,6 +198,14 @@ public class YeshteryApiTest {
         assertRootLevelCategoriesReturned(rootLevel);
         assertCategoryHadImgInMetadata(rootLevel);
         assertFirstLevelCategoriesReturned(rootLevel);
+    }
+
+    @Test
+    public void getYeshteryBrands() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/brands", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<Organization_BrandRepresentationObject> body = mapper.readValue(response.getBody(), new TypeReference<List<Organization_BrandRepresentationObject>>() {});
+        assertEquals(102, body.get(0).getId().intValue());
     }
 
 

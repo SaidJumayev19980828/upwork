@@ -41,6 +41,8 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			"  where b.organizationEntity.id = :orgId and b.removed = 0 and p.removed = 0")
 	List<IdAndNamePair> getBrandIdAndNamePairs(@Param("orgId") Long orgId);
 
-	@Query("select b from BrandsEntity b left join fetch b.organizationEntity org where org.yeshteryState = 1")
+	@Query("select b from BrandsEntity b " +
+			" left join fetch b.organizationEntity org " +
+			" where org.yeshteryState = 1 order by b.name")
 	List<BrandsEntity> findByOrganizationEntity_YeshteryState(Pageable page);
 }

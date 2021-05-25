@@ -78,7 +78,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
-    public List<BaseRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
+    public List<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
                                                             @RequestParam(required = false, defaultValue = "10") Integer count) {
         return brandService.getYeshteryBrands(start, count);
     }
@@ -124,12 +124,12 @@ public class YeshteryController {
         return addressService.getCountries(hideEmptyCities, null);
     }
 
-    @GetMapping( path="files/**")
+    @GetMapping( path="files/{path}")
     public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
-        String url = request.getRequestURI().replaceFirst("/v1/yeshtery/files", "");
         String resourceInternalUrl;
         if (height != null || width != null) {
             resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);

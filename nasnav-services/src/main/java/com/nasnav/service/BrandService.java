@@ -62,11 +62,17 @@ public class BrandService {
         brandsRepository.setBrandHidden(brandId);
     }
 
-    public List<BaseRepresentationObject> getYeshteryBrands(Integer start, Integer count) {
+    public List<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count) {
+        if (start < 0) {
+            start = 0;
+        }
+        if (count <= 0) {
+            count = 10;
+        }
         PageRequest page = getQueryPage(start, count);
         return brandsRepository.findByOrganizationEntity_YeshteryState(page)
                 .stream()
-                .map(e -> e.getRepresentation())
+                .map(e -> (Organization_BrandRepresentationObject) e.getRepresentation())
                 .collect(toList());
     }
 
