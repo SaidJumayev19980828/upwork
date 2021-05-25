@@ -1,11 +1,12 @@
 package com.nasnav.shipping.utils;
 
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.FunctionalUtils;
+import com.nasnav.shipping.model.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 public class ShippingUtils {
 	
@@ -66,5 +67,44 @@ public class ShippingUtils {
     public static BigDecimal getItemValue(ShipmentItems shipmentItems) {
         BigDecimal price = shipmentItems.getPrice();
         return price.multiply(BigDecimal.valueOf(shipmentItems.getQuantity()));
+    }
+
+
+
+    public static Optional<Integer> getIntegerParameter(Map<String, String> serviceParams, String etaDaysMin) {
+        return ofNullable(serviceParams.get(etaDaysMin))
+                .flatMap(EntityUtils::parseLongSafely)
+                .map(Long::intValue);
+    }
+
+
+    public static void correctCalculationError(BigDecimal fee, List<Shipment> shipments) {
+        BigDecimal accumulatedFeeTotal =
+                shipments
+                        .stream()
+                        .map(Shipment::getShippingFee)
+                        .reduce(ZERO, BigDecimal::add);
+        BigDecimal error = fee.subtract(accumulatedFeeTotal);
+        shipments
+                .stream()
+                .peek( shipment -> shipment.setShippingFee(shipment.getShippingFee().add(error)))
+                .findFirst();
+    }
+
+
+    public static Map<String, String> toServiceParamMap(List<ServiceParameter> params) {
+        return params
+                .stream()
+                .collect(
+                        toMap(ServiceParameter::getParameter, ServiceParameter::getValue, FunctionalUtils::getFirst));
+    }
+
+
+    public static List<Long> getItemsStockId(ShippingDetails shippingInfo) {
+        return shippingInfo
+                .getItems()
+                .stream()
+                .map(ShipmentItems::getStockId)
+                .collect(toList());
     }
 }

@@ -1215,7 +1215,7 @@ public class CartTest {
 	private void clearWarehouseOptimizationParameters() {
 		OrganizationCartOptimizationEntity entity = 
 				orgOptimizerRepo
-				.findByOptimizationStrategyAndOrganization_Id(WAREHOUSE.getValue(), 99001L)
+				.findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(WAREHOUSE.getValue(), 99001L)
 				.get();
 		entity.setParameters("{}");
 		orgOptimizerRepo.save(entity);

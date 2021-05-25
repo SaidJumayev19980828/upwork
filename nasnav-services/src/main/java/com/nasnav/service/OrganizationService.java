@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.request.SitemapParams;
@@ -56,6 +57,8 @@ public interface OrganizationService {
     void updateSetting(SettingDTO settingDto);
 
     Map<String,String> getOrganizationSettings(Long orgId);
+
+    Optional<String> getOrganizationSettingValue(Long orgId, Settings setting);
 
     List<ShopRepresentationObject> getOrganizationShops();
 

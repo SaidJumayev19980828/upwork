@@ -58,8 +58,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<ProductEntity> findFullDataByIdIn(@Param("productIdList") List<Long> productIdList);
 
 
-    @Query(value = "SELECT t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
-    List<Long> getProductIdsByTagsList(@Param("tagsIds") List<Long> tagsIds);
+    @Query(value = "SELECT Distinct t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
+    Set<Long> getProductIdsByTagsList(@Param("tagsIds") Set<Long> tagsIds);
 
     Long countByBrandId(Long brandId);
 

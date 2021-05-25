@@ -393,7 +393,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     
     @Override
-    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
     @Transactional
     public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
@@ -1199,9 +1199,16 @@ public class OrganizationServiceImpl implements OrganizationService {
 	}
 
 
-	
 
-	@Override
+    @Override
+    public Optional<String> getOrganizationSettingValue(Long orgId, Settings setting) {
+        return settingRepo
+                .findBySettingNameAndOrganization_Id(setting.name(), orgId)
+                .map(SettingEntity::getSettingValue);
+    }
+
+
+    @Override
     public List<ShopRepresentationObject> getOrganizationShops() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return shopService.getOrganizationShops(orgId, true);

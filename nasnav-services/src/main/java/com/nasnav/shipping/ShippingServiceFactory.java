@@ -48,7 +48,8 @@ public class ShippingServiceFactory {
 					,FixedFeeShippingService.class
 					,FixedFeeStrictSameCityShippingService.class
 					,FixedFeeSelectedAreasShippingService.class
-					,FixedFeeSelectedAreasMinOrderShippingService.class);
+					,FixedFeeSelectedAreasMinOrderShippingService.class
+					,VarFeeSelectedSubAreaMinOrderShippingService.class);
 	
 	
 	@Autowired

@@ -15,6 +15,8 @@ public class PromotionDTO {
 	private Long id;
 	private String identifier;
 	private Long organizationId;
+	private Integer typeId;
+	private Integer classId;
 
 	private ZonedDateTime startDate;
 	private ZonedDateTime endDate;
@@ -26,4 +28,5 @@ public class PromotionDTO {
 	private Long userId;
 	private String userName;
 	private LocalDateTime createdOn;
+	private Integer priority;
 }

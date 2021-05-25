@@ -19,4 +19,5 @@ public class ShippingAddress{
     private BigDecimal latitude;
     private BigDecimal longitude;
     private Long area;
+    private Long subArea;
 }

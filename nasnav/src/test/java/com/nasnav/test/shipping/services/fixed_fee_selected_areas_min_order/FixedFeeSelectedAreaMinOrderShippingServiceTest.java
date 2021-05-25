@@ -69,14 +69,14 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     @Test
     public void testGetOrderUnderMinValueOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("456");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300002", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        ShippingOfferDTO offer = offers.get(0);
+        var offer = offers.get(0);
 
         assertFalse(offer.isAvailable());
         assertNotNull(offer.getMessage());
@@ -87,14 +87,14 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     @Test
     public void testGetOrderUnderMinValueAndOutOfServiceOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("456");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        ShippingOfferDTO offer = offers.get(0);
+        var offer = offers.get(0);
 
         assertFalse(offer.isAvailable());
         assertNotNull(offer.getMessage());
@@ -105,14 +105,14 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     @Test
     public void testGetMinimumOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+        var shipments = offers.get(0).getShipments();
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(3, shipments.size());
@@ -130,22 +130,22 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void testGetMinimumOfferWith90MinutesEta() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+        var shipments = offers.get(0).getShipments();
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(3, shipments.size());
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("5")));
         assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("5")));
-        Duration durationFrom = Duration.between(now(), shipments.get(0).getEta().getFrom());
-        Duration durationTo = Duration.between(now(), shipments.get(0).getEta().getTo());
+        var durationFrom = Duration.between(now(), shipments.get(0).getEta().getFrom());
+        var durationTo = Duration.between(now(), shipments.get(0).getEta().getTo());
 
         assertEquals(-1, durationFrom.compareTo(Duration.ofMinutes(60)));
         assertEquals(-1, durationTo.compareTo(Duration.ofMinutes(90)));
@@ -155,14 +155,14 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
     @Test
     public void createDeliveryTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
 
-        ShipmentTracker tracker = service.requestShipment(details).collectList().block().get(0);
+        var tracker = service.requestShipment(details).collectList().block().get(0);
 
         assertNull(tracker.getShipmentExternalId());
         assertNull(tracker.getTracker());
@@ -173,12 +173,12 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryUnsupportedAreaTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
         setOutOfReachCity(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
@@ -188,12 +188,12 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryWithTooLowValueTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
         reduceQuantities(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
@@ -204,12 +204,12 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryWithTooLowValueAndOutOfServiceTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
         reduceQuantities(details.get(0));
         setOutOfReachCity(details.get(0));
 
@@ -238,7 +238,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
     private void setOutOfReachCity(ShippingDetails details) {
-        ShippingAddress farFarAwayAddr = new ShippingAddress();
+        var farFarAwayAddr = new ShippingAddress();
         farFarAwayAddr.setAddressLine1("Frozen Oil st.");
         farFarAwayAddr.setArea(4L);
         farFarAwayAddr.setBuildingNumber("777");
@@ -252,7 +252,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
 
 
     private List<ShippingDetails> createShippingsDetails() {
-        ShippingAddress customerAddr = new ShippingAddress();
+        var customerAddr = new ShippingAddress();
         customerAddr.setAddressLine1("Mama st.");
         customerAddr.setArea(1L);
         customerAddr.setBuildingNumber("555");
@@ -263,7 +263,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         customerAddr.setName("Hamada Ezzo");
 
 
-        ShippingAddress shopAddr1 = new ShippingAddress();
+        var shopAddr1 = new ShippingAddress();
         shopAddr1.setAddressLine1("Food court st.");
         shopAddr1.setArea(2L);
         shopAddr1.setBuildingNumber("777");
@@ -273,7 +273,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         shopAddr1.setName("7rnksh Nasnav");
 
 
-        ShippingAddress shopAddr2 = new ShippingAddress();
+        var shopAddr2 = new ShippingAddress();
         shopAddr2.setAddressLine1("Food court st.");
         shopAddr2.setArea(1L);
         shopAddr2.setBuildingNumber("888");
@@ -282,12 +282,12 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         shopAddr2.setId(12300003L);
         shopAddr2.setName("Freska Nasnav");
 
-        ShipmentReceiver receiver = new ShipmentReceiver();
+        var receiver = new ShipmentReceiver();
         receiver.setFirstName("Sponge");
         receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
 
-        ShipmentItems item1 = new ShipmentItems(601L);
+        var item1 = new ShipmentItems(601L);
         item1.setName("Cool And Pool");
         item1.setBarcode("13AB");
         item1.setProductCode("Coco");
@@ -295,7 +295,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         item1.setPrice(new BigDecimal("18.222"));
         item1.setQuantity(2);
 
-        ShipmentItems item2 = new ShipmentItems(602L);
+        var item2 = new ShipmentItems(602L);
         item2.setName("Sponge And Bob");
         item2.setBarcode("447788888888");
         item2.setProductCode("Bob");
@@ -303,10 +303,10 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         item2.setPrice(new BigDecimal("10.222"));
         item2.setQuantity(20);
 
-        List<ShipmentItems> itemsOfShop1 = asList(item1 , item2);
+        var itemsOfShop1 = asList(item1 , item2);
 
 
-        ShippingDetails shippingDetails1 = new ShippingDetails();
+        var shippingDetails1 = new ShippingDetails();
         shippingDetails1.setDestination(customerAddr);
         shippingDetails1.setSource(shopAddr1);
         shippingDetails1.setItems(itemsOfShop1);
@@ -316,7 +316,7 @@ public class FixedFeeSelectedAreaMinOrderShippingServiceTest {
         shippingDetails1.setSubOrderId(100L);
 
 
-        List<ShippingDetails> details = asList(shippingDetails1);
+        var details = asList(shippingDetails1);
         return details;
     }
 }

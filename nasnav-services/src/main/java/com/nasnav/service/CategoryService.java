@@ -1,8 +1,10 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -26,6 +28,7 @@ import javax.cache.annotation.CacheResult;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
@@ -34,9 +37,9 @@ import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
@@ -70,10 +73,10 @@ public class CategoryService {
 
     @Autowired
     private OrganizationRepository orgRepo;
-    
-    
+	public static final long DUMMY_ROOT_PARENT = -1L;
 
-    @Autowired
+
+	@Autowired
     public CategoryService(BrandsRepository brandsRepository, ProductRepository productRepository) {
         this.brandsRepository = brandsRepository;
         this.productRepository = productRepository;
@@ -102,7 +105,7 @@ public class CategoryService {
         					.map(ArrayList::new)
         					.orElse(new ArrayList<>());        	
         	if(!categoriesEntityList.isEmpty()) {
-        		List<CategoriesEntity> children = categoryRepository.findByParentId(categoryId.intValue());
+        		List<CategoriesEntity> children = categoryRepository.findByParentId(categoryId);
             	children.forEach(categoriesEntityList::add);
         	}     	        					
     	}else {
@@ -190,7 +193,7 @@ public class CategoryService {
 			throw new RuntimeBusinessException(CONFLICT, GEN$0017, "tags", tagsIds.toString());
         }
 
-        List<Long> childrenCategoriesIds = categoryRepository.findCategoriesIdsByParentId(categoryId.intValue());
+        List<Long> childrenCategoriesIds = categoryRepository.findCategoriesIdsByParentId(categoryId);
         if (childrenCategoriesIds.size() > 0){
             throw new RuntimeBusinessException(CONFLICT, GEN$0017, "children categories", childrenCategoriesIds.toString());
         }
@@ -762,6 +765,78 @@ public class CategoryService {
 				.stream()
 				.map(t -> (TagsRepresentationObject) t.getRepresentation())
 				.collect(toList());
+	}
+
+
+
+	public List<CategoryDto> getCategoriesTree() {
+		var categories = categoryRepository.findAll();
+    	var cache =
+				categories.stream()
+						.collect(
+							toUnmodifiableMap(ent -> ofNullable(ent.getId()).orElse(DUMMY_ROOT_PARENT)
+									, Function.identity()
+									, FunctionalUtils::getFirst));
+    	return cache.values()
+				.stream()
+				.collect(
+					collectingAndThen(
+						groupingBy(ent -> ofNullable(ent.getParentId()).orElse(DUMMY_ROOT_PARENT))
+							, children -> createCategoriesTree(children, cache)
+					));
+	}
+
+
+	private List<CategoryDto> createCategoriesTree(Map<Long,List<CategoriesEntity>> categoriesChildren
+			, Map<Long,CategoriesEntity> allCategoriesCache) {
+    	var allDtoCache =
+				allCategoriesCache.entrySet()
+						.stream()
+						.map(e -> Map.entry(e.getKey(), toCategoryDto(e.getValue())))
+						.collect(toMap(Map.Entry::getKey, Map.Entry::getValue, FunctionalUtils::getFirst));
+    	addChildrenToCachedDtos(allDtoCache, categoriesChildren);
+		return allDtoCache
+				.values()
+				.stream()
+				.filter(dto -> isNull(dto.getParent()))
+				.collect(toList());
+	}
+
+
+
+	private void addChildrenToCachedDtos(Map<Long, CategoryDto> allDtoCache, Map<Long, List<CategoriesEntity>> categoriesChildren) {
+    	allDtoCache
+				.values()
+				.stream()
+				.filter(dto -> categoriesChildren.containsKey(dto.getId()))
+				.forEach(dto -> {
+					var children =
+							categoriesChildren.get(dto.getId())
+									.stream()
+									.map(entity -> allDtoCache.get(entity.getId()))
+									.collect(toList());
+					dto.setChildren(children);
+				});
+	}
+
+
+	private CategoryDto toCategoryDto(CategoriesEntity entity) {
+    	var metadata =
+				ofNullable(entity.getLogo())
+						.map(Object.class::cast)
+						.map(
+							logo -> Map.of(
+									"cover", logo,
+									"icon", logo)
+						).orElse(emptyMap());
+
+    	var dto = new CategoryDto();
+    	dto.setName(entity.getName());
+    	dto.setPname(entity.getPname());
+    	dto.setMetadata(metadata);
+    	dto.setId(entity.getId());
+    	dto.setParent(entity.getParentId());
+    	return dto;
 	}
 }
 

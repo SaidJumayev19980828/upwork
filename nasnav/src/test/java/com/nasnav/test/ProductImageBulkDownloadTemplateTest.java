@@ -1,5 +1,17 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.ImageFileTemplateType.PRODUCTS_WITH_NO_IMGS;
+import static com.nasnav.service.CsvDataImportServiceImpl.IMG_CSV_BASE_HEADERS;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertEquals;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.OK;
+
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.NavBox;
 import net.jcip.annotations.NotThreadSafe;
@@ -16,18 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.List;
-
-import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static com.nasnav.service.CsvDataImportServiceImpl.IMG_CSV_BASE_HEADERS;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static junit.framework.TestCase.assertEquals;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -75,12 +75,7 @@ public class ProductImageBulkDownloadTemplateTest {
 						, String.class);
 		assertEquals(OK, response.getStatusCode());		
 	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	public void getEmptyImgsTemplateTest() throws JsonProcessingException {
 		HttpEntity<?> request =  getHttpEntity("", ADMIN_TOKEN);

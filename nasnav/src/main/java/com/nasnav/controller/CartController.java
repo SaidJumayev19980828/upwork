@@ -25,13 +25,13 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping("/cart")
 @Tag(name = "Methods for accessing cart")
 public class CartController {
-	
+
 	@Autowired
 	private CartService cartService;
-	
+
 	@Autowired
 	private PromotionsService promoService;
-	
+
 	@Autowired
 	private CartOptimizationService cartOptimizeService;
 
@@ -83,10 +83,10 @@ public class CartController {
 							  @RequestBody CartCheckoutDTO dto) {
 		return cartService.checkoutCart(dto);
 	}
-	
-	
-	
-	
+
+
+
+
 	@Operation(description =  "optimize the cart", summary = "cartOptimize")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = " 200" ,description = "OK"),
@@ -95,13 +95,13 @@ public class CartController {
 	})
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-								@RequestBody CartCheckoutDTO dto) {
+												@RequestBody CartCheckoutDTO dto) {
 		return cartOptimizeService.optimizeCart(dto);
 	}
-	
-	
-	
-	
+
+
+
+
 	@Operation(description =  "calculate promo for the cart", summary = "cartPromoCalc")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = " 200" ,description = "OK"),
@@ -110,7 +110,7 @@ public class CartController {
 	})
 	@GetMapping(value = "/promo/discount", produces=APPLICATION_JSON_VALUE)
 	public BigDecimal calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestParam("promo") String promoCode) {
+										@RequestParam(value = "promo", required = false) String promoCode) {
 		return promoService.calcPromoDiscountForCart(promoCode);
 	}
 }

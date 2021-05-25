@@ -225,12 +225,9 @@ public class EntityUtils {
 			return empty();
 		}
 	}
-	
-	
-	
-	
-	
-	
+
+
+
 	public static Optional<LocalDateTime> parseTimeString(String timeStr, String pattern) {
 		String pattenStr = ofNullable(pattern).orElse(DEFAULT_TIMESTAMP_PATTERN);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattenStr);

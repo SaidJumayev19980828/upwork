@@ -22,7 +22,7 @@ public class CategoryDTO {
 
         @Schema(name = "Category's parent ID", example = "123", required = false)
         @JsonProperty("parent_id")
-        public Integer parentId;
+        public Long parentId;
 
         @Schema(name = "Category's logo", example = "/categories/logos/564961451_56541.jpg", required = false)
         @JsonProperty("logo")

@@ -1,11 +1,20 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductImgsCustomRepository;
-import com.nasnav.dao.ProductRepository;
+import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
-import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.univocity.parsers.common.fields.ColumnMapping;
@@ -15,102 +24,25 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.*;
 
-import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
-import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
-import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static com.nasnav.service.CsvDataImportService.*;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
+@Service("csv")
+public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
-@Service
-public class CsvDataExportServiceImpl implements CsvDataExportService {
-	
-	@Autowired
-	private SecurityService security;
-	
-	@Autowired
-	private DataExportService exportService;
-	
-	@Autowired
-	private CsvDataImportService importService;
-	
-	@Autowired
-	private ProductImgsCustomRepository productImgsCustomRepo;
-
-	@Autowired
-	private ProductImagesRepository productImagesRepo;
-
-	@Autowired
-	private ProductRepository productRepo;
-	
-	
-	
-	@Override
-	public ByteArrayOutputStream generateImagesCsvTemplate(ImageCsvTemplateType type) throws IOException{
-		ImageCsvTemplateType templateType = ofNullable(type).orElse(EMPTY);
-		if(templateType.equals(PRODUCTS_WITH_NO_IMGS)) {
-			return generateImagesCsvTemplateForProductsWithNoImgs();
-		}			
-		else {
-			return generateEmptyImagesCsvTemplate();
-		}
-	}
-	
-	
-
-	@Override
-	public ByteArrayOutputStream generateProductsCsv(Long shopId) {
-		Long orgId = security.getCurrentUserOrganizationId();
-
-		List<String> headers = importService.getProductImportTemplateHeaders();
-
-		List<CsvRow> products = exportService.exportProductsData(orgId, shopId);
-
-		return buildProductsCsv(headers, products);
-	}
-
-
-	@Override
-	public ByteArrayOutputStream generateProductsImagesCsv() {
-		Long orgId = security.getCurrentUserOrganizationId();
-
-		List<String> headers = Arrays.asList("product_id", "variant_id", "barcode", "image_path");
-
-		List<Long> productIdsList = productRepo.findProductsIdsByOrganizationId(orgId);
-
-		List<ProductImageDTO> images =  mapInBatches(productIdsList, 500, productImagesRepo::findByProductsIds)
-														.stream()
-														.map(i -> (ProductImageDTO) i.getRepresentation())
-														.collect(toList());
-
-		return buildImagesCsv(headers, images);
-	}
-	
-	
-	
-	private ByteArrayOutputStream buildProductsCsv(List<String> headers,
+	protected ByteArrayOutputStream buildProductsFile(List<String> headers,
 			   List<CsvRow> products) {
 		BeanWriterProcessor<CsvRow> processor = createProductsRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
-		
-		return writeCsvResult(headers, settings, products);
+
+		return writeFileResult(headers, settings, products);
 	}
 
-
-	private ByteArrayOutputStream buildImagesCsv(List<String> headers,
+	protected ByteArrayOutputStream buildImagesFile(List<String> headers,
 												   List<ProductImageDTO> images) {
 		BeanWriterProcessor<ProductImageDTO> processor = createProductImgsRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
 
-		return writeCsvResult(headers, settings, images);
+		return writeFileResult(headers, settings, images);
 	}
-
 
 	private BeanWriterProcessor<CsvRow> createProductsRowProcessor() {
 		ColumnMapping mapper = createCsvAttrToColMapping(PRODUCT_DATA_TO_COLUMN_MAPPING);
@@ -121,16 +53,11 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		return rowProcessor;
 	}
 
-
-
 	private BeanWriterProcessor<ProductImageDTO> createProductImgsRowProcessor() {
 
 		Map<String, String> imgDataToColumnMapping = new HashMap<>(IMG_DATA_TO_COLUMN_MAPPING);
 
-		imgDataToColumnMapping.remove("externalId");
-		imgDataToColumnMapping.remove("productName");
-		imgDataToColumnMapping.remove("externalId");
-		imgDataToColumnMapping.put("imagePath", "image_path");
+		removeSpecialColumns(imgDataToColumnMapping);
 
 		ColumnMapping mapper = createCsvAttrToColMapping(imgDataToColumnMapping);
 
@@ -139,9 +66,7 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
 	}
-	
-	
-	
+
 	private CsvWriterSettings createWritterSettings(BeanWriterProcessor<?> rowProcessor) {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		settings.setRowWriterProcessor(rowProcessor);		
@@ -149,19 +74,14 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		settings.setQuoteAllFields(true);
 		return settings;
 	}
-	
-	
-	
+
 	private ColumnMapping createCsvAttrToColMapping(Map<String,String> fields) {
 		ColumnMapping mapping = new ColumnMapping();
 		mapping.attributesToColumnNames(fields);
 		return mapping;
 	}
 
-	
-	
-	
-	private ByteArrayOutputStream writeCsvResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
+	protected ByteArrayOutputStream writeFileResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
 		Writer outputWriter = new OutputStreamWriter(csvOutStream);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
@@ -170,11 +90,7 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		writer.processRecordsAndClose(data);
 		return csvOutStream;
 	}
-	
-	
-	
-	
-	
+
 	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
 		
 		ColumnMapping mapper = createCsvAttrToColMapping(IMG_DATA_TO_COLUMN_MAPPING);
@@ -184,53 +100,23 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
 	}
-	
-	
-	
-	
-	private ByteArrayOutputStream generateImagesCsvTemplateForProductsWithNoImgs() {
-		List<String> headers = new ArrayList<>();
-		headers.addAll(IMG_CSV_BASE_HEADERS);
-		headers.add("product_name");
-		headers.add("product_id");
-		
-		Long orgId = security.getCurrentUserOrganizationId();
-		List<VariantWithNoImagesDTO> variants = productImgsCustomRepo.getProductsWithNoImages(orgId);
-		
-		return buildProductWithNoImgsCsv(headers, variants);
-	}
 
-
-
-
-	private ByteArrayOutputStream buildProductWithNoImgsCsv(List<String> headers,
-			List<VariantWithNoImagesDTO> variants) {
+	@Override
+	protected ByteArrayOutputStream buildProductWithNoImgsFile(List<String> headers,
+															   List<VariantWithNoImagesDTO> variants) {
 		BeanWriterProcessor<VariantWithNoImagesDTO> processor = createImgsTemplateRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
 
-		return writeCsvResult(headers, settings, variants);
+		return writeFileResult(headers, settings, variants);
 	}
 
-
-
-
-
-
-
-	private ByteArrayOutputStream generateEmptyImagesCsvTemplate() throws IOException {
-		return writeCsvHeaders(IMG_CSV_BASE_HEADERS);
-	}
-	
-	
 	private CsvWriterSettings createWritingSettings() {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		return settings;
 	}
-	
-	
-	
 
-	private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
+	@Override
+	protected ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException {
 		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
 		Writer outputWriter = new OutputStreamWriter(csvResult);
 

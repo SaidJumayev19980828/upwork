@@ -25,7 +25,7 @@ public class CategoriesEntity {
     private String logo;
     
     @Column(name = "parent_id")
-    private Integer parentId;
+    private Long parentId;
 
 
 

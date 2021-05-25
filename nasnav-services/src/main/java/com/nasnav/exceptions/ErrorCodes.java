@@ -275,11 +275,15 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0009("Promo code [%s] is not applicable to the current cart!")
 	,PROMO$PARAM$0010("Promo code[%s] was already used!")
 	,PROMO$PARAM$0011("Promo code[%s] was already terminated!")
+	,PROMO$PARAM$0012("Invalid promo type_id[%d]!")
+	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
+	,PROMO$PARAM$0014("Usage limit exceeded max value!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
+	,TAG$TREE$0002("No tag exists with name[%s]!")
 
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
 	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")

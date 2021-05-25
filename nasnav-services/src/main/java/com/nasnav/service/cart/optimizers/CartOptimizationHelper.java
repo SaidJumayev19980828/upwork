@@ -153,12 +153,12 @@ public class CartOptimizationHelper {
         Long orgId = securityService.getCurrentUserOrganizationId();
         Optional<OrganizationCartOptimizationEntity> shippingServiceOptimizationParams =
                 orgCartOptimizationRepo
-                        .findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(
+                        .findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(
                                 optimizer, shippingServiceId, orgId);
 
         Optional<OrganizationCartOptimizationEntity> orgOptimizationParams =
                 orgCartOptimizationRepo
-                        .findByOptimizationStrategyAndOrganization_Id(optimizer, orgId);
+                        .findFirstByOptimizationStrategyAndOrganization_IdOrderByIdDesc(optimizer, orgId);
 
         return firstExistingValueOf(
                 shippingServiceOptimizationParams

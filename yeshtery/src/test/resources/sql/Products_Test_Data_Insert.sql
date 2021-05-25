@@ -10,8 +10,17 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 --inserting categories
-INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
+INSERT INTO public.categories(id, name, logo) VALUES (201, 'category_1', 'cool_cat.jpg');
 INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
+
+INSERT INTO public.categories(id, name, parent_id) VALUES (203, 'category_1_1', 201);
+INSERT INTO public.categories(id, name, parent_id) VALUES (204, 'category_1_2', 201);
+INSERT INTO public.categories(id, name, parent_id) VALUES (205, 'category_2_1', 202);
+INSERT INTO public.categories(id, name, parent_id) VALUES (206, 'category_2_2', 202);
+
+INSERT INTO public.categories(id, name, parent_id) VALUES (207, 'category_3_1_cyclic', 201);
+INSERT INTO public.categories(id, name, parent_id) VALUES (208, 'category_3_2_cyclic', 207);
+update public.categories set parent_id = 208 where id = 207;
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99001, 0);
@@ -30,11 +39,11 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '8895ssf', now(), 70, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
@@ -88,6 +97,6 @@ INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, remov
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
 
 
-insert into product_tags(product_id, tag_id) values(1001, 22001);
-insert into product_tags(product_id, tag_id) values(1004, 22002);
+insert into public.product_tags(product_id, tag_id) values(1001, 22001);
+insert into public.product_tags(product_id, tag_id) values(1004, 22002);
 

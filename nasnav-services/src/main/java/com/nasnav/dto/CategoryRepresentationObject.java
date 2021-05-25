@@ -23,7 +23,7 @@ public class CategoryRepresentationObject extends BaseRepresentationObject{
     private String logo;
 
     @JsonProperty("parent_id")
-    private Integer parentId;
+    private Long parentId;
 
     @JsonProperty("operation")
     private String operation;

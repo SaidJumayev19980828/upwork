@@ -206,9 +206,6 @@ public class DataImportApiTest {
 
 
 	
-	
-	
-	
 	@Test
     public void uploadProductsCSVNoAuthZTest() throws IOException, Exception {
        
@@ -218,8 +215,7 @@ public class DataImportApiTest {
         
         result.andExpect(status().is(403));
     }
-	
-	
+
 	
 	
 	@Test
@@ -1192,8 +1188,8 @@ public class DataImportApiTest {
 						, "sku", "product_code", "unit", "weight");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
-		
-		Assert.assertTrue(res.getStatusCodeValue() == 200);
+
+		assertEquals(200, res.getStatusCodeValue());
 		
 		String[] headersArr = res.getBody()
 								.replace(System.lineSeparator(), "")
@@ -2317,103 +2313,5 @@ public class DataImportApiTest {
 	
 
 }
-
-
-
-@Data
-class ExpectedSavedData{
-	private Set<Integer> quantities;
-	private Set<BigDecimal> prices ;
-	private Set<BigDecimal> discounts;
-	private Set<String> barcodes ;
-	private Set<String> ProductNames;
-	private Set<String> VariantNames;
-	private Set<String> productPNames;
-	private Set<String> variantsPNames;
-	private Set<String>  descriptions;
-	private Set<String> variantDescriptions;
-	private Set<String> tags;
-	private Set<Long> brands;
-	private Set<TransactionCurrency> currencies;
-	private Set<JSONObject> featureSpecs;
-	private Set<JSONObject> extraAttributes;
-	private Set<String> sku;
-	private Set<String> productCodes;
-	private Integer stocksNum;
-	private Set<String> units;
-	private Set<String> extraAttributesTypes;
-	
-	public ExpectedSavedData() {
-		extraAttributes = new HashSet<>();
-		extraAttributes.add(new JSONObject());
-		featureSpecs = new HashSet<>();
-		featureSpecs.add(new JSONObject("{}") );
-		discounts = new HashSet<>();
-		sku = new HashSet<>();
-		productCodes = new HashSet<>();
-		units = new HashSet<>();
-		extraAttributesTypes = new HashSet<>();
-	}
-	
-	
-	public void setProductNames(Set<String> productNames) {
-		this.ProductNames = productNames;
-		if(this.VariantNames == null) {
-			this.VariantNames = productNames;
-		}
-	}
-	
-	
-	
-	public void setDescriptions(Set<String> descriptions) {
-		this.descriptions = descriptions;
-		if(this.variantDescriptions == null) {
-			this.variantDescriptions = descriptions;
-		}
-	}
-	
-	
-	public void setExtraAttributes(Set<JSONObject> extraAttributes) {
-		this.extraAttributes.addAll(extraAttributes);
-	}
-}
-
-
-
-
-class ProductDataCount{
-	public Long product;
-	public Long variant;
-	public Long stocks;
-}
-
-
-class ExtendedProductDataCount extends ProductDataCount{
-	public Long tags;
-	public Long brands;
-	
-	public ExtendedProductDataCount() {};
-	
-	public ExtendedProductDataCount(ProductDataCount count) {
-		this.product = count.product;
-		this.variant = count.variant;
-		this.stocks = count.stocks;
-	};
-}
-
-
-
-class ProductDataDeleteCounts{
-	public Long otherOrgId;
-	public Long orgId;
-	public ProductDataCount allProductsDataCount;
-	public long orgProducts;
-	public long orders;
-	public long orgVariants;
-	public long otherOrgProducts;
-	public long otherOrgOrders;
-	public long otherOrgVariants;
-} 
-
 
 

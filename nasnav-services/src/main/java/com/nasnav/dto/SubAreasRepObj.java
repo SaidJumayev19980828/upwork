@@ -14,4 +14,5 @@ public class SubAreasRepObj extends BaseRepresentationObject{
     private BigDecimal latitude;
     @JsonProperty("area_id")
     private Long areaId;
+    private Long orgId;
 }

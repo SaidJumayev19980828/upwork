@@ -40,15 +40,16 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUE
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (506, 'shop_6', 102, 99002, 12300002);
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'user2@nasnav.com','user2','456', 99002);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (90, 'user3@nasnav.com','user3','789', 99003);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, user_status)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001, 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, user_status)
+    VALUES (89, 'user2@nasnav.com','user2','456', 99002, 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, user_status)
+    VALUES (90, 'user3@nasnav.com','user3','789', 99003, 201);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (110, '666', now(), null, 90);
 
 -- insert user addresses
 

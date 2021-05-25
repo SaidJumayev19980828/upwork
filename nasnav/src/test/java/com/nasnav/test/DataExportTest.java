@@ -34,13 +34,11 @@ public class DataExportTest {
 	
 	@Autowired
 	private TestRestTemplate template;
-	
-	
-	
+
 	@Test
-	public void testProductExport(){		
+	public void testProductExportCsv(){
 		ResponseEntity<String> response = 
-				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("192021"), String.class);
+				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("192021"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
 		
@@ -48,42 +46,182 @@ public class DataExportTest {
 		assertFalse(response.getBody().isEmpty());
 	}
 
+	@Test
+	public void testProductExportCSV(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
 
 	@Test
-	public void testProductExportShopFromAnotherOrganization(){
+	public void testProductExportCsvShopFromAnotherOrganization(){
 		ResponseEntity<String> response =
-				template.exchange("/export/products?shop_id=501", GET, getHttpEntity("192021"), String.class);
+				template.exchange("/export/products?shop_id=501&type=CSV", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
-
-
-
 	@Test
-	public void testProductExportForWholeOrganization(){
+	public void testProductExportCsvForWholeOrganization(){
 		ResponseEntity<String> response =
-				template.exchange("/export/products", GET, getHttpEntity("192021"), String.class);
+				template.exchange("/export/products?type=CSV", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
 	}
-	
-	
-	
-	
+
 	@Test
-	public void testProductExportNoAuthz(){		
+	public void testProductExportCsvNoAuthz(){
 		ResponseEntity<String> response = 
-				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("101112"), String.class);
+				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("101112"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
 		
 		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportCSVNoAuthz(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("101112"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportXlsx(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductExportXLSX(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductExportXlsxShopFromAnotherOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products?shop_id=501&type=XLSX", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportXlsxForWholeOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products?type=XLSX", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductExportXlsxNoAuthz(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("101112"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportXLSXNoAuthz(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("101112"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductsExportXLSX(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductExportXLSXShopFromAnotherOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/xlsx?shop_id=501", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportXLSXForWholeOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/xlsx", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductsExportCSV(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void testProductExportCSVShopFromAnotherOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/csv?shop_id=501", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+	@Test
+	public void testProductExportCSVForWholeOrganization(){
+		ResponseEntity<String> response =
+				template.exchange("/export/products/csv", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
 	}
 }

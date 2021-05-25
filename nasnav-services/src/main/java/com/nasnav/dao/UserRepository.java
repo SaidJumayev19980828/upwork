@@ -22,6 +22,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
+	@Query("select u.organizationId from UserEntity u where u.id = :userId")
+	Long findUserOrganizationId(@Param("userId") Long userId);
+
 	/**
 	 * Check if the passed resetPasswordToken already exist before or not.
 	 *

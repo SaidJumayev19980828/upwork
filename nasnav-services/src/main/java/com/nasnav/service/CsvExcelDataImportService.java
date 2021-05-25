@@ -1,14 +1,7 @@
 package com.nasnav.service;
 
-import com.google.common.collect.ImmutableMap;
-import com.nasnav.commons.utils.MapBuilder;
-import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.service.model.importproduct.context.ImportProductContext;
-import org.springframework.web.multipart.MultipartFile;
+import static java.util.Arrays.asList;
 
-import javax.validation.Valid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
@@ -16,9 +9,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Arrays.asList;
+import javax.validation.Valid;
 
-public interface CsvDataImportService {
+import com.google.common.collect.ImmutableMap;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.nasnav.commons.utils.MapBuilder;
+import com.nasnav.dto.ProductListImportDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
+
+public interface CsvExcelDataImportService {
 	String IMG_CSV_HEADER_VARIANT_ID = "variant_id";
 	String IMG_CSV_HEADER_EXTERNAL_ID = "external_id";
 	String IMG_CSV_HEADER_BARCODE = "barcode";
@@ -48,8 +50,7 @@ public interface CsvDataImportService {
 					.put("unit", "unit")
 					.put("weight", "weight")
 					.getMap();
-	
-	
+
 	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = ImmutableMap.<String, String>builder()
 													.put("variantId", "variant_id")
 													.put("externalId", "external_id")
@@ -57,15 +58,21 @@ public interface CsvDataImportService {
 													.put("productName", "product_name")
 													.put("productId", "product_id")
 													.build();
-	
+	Map<String, String> PRODUCT_DATA_SPECIAL_MAPPING = MapBuilder.<String, String>map()
+									.put("variant_id","variantId")
+									.put("product_name","name")
+									.put("external_id","externalId")
+									.put("product_group_key","productGroupKey")
+									.put("product_code","productCode")
+			.getMap();
 	Set<String> CSV_BASE_HEADERS = new HashSet<String>(PRODUCT_DATA_TO_COLUMN_MAPPING.values());
 	
 	
-	public ImportProductContext importProductListFromCSV(
+	ImportProductContext importProductList(
 			@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException ;
 
-	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException;
+	ByteArrayOutputStream generateProductsTemplate() throws IOException;
 
 	List<String> getProductImportTemplateHeaders();
 

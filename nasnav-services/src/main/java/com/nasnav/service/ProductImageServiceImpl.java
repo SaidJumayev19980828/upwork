@@ -70,7 +70,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.querydsl.sql.QProductImages.productImages;
 import static com.nasnav.querydsl.sql.QProductVariants.productVariants;
 import static com.nasnav.querydsl.sql.QProducts.products;
-import static com.nasnav.service.CsvDataImportService.*;
+import static com.nasnav.service.CsvExcelDataImportService.*;
 import static com.querydsl.core.types.dsl.Expressions.cases;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
