@@ -2,6 +2,7 @@ package com.nasnav.querydsl.sql;
 
 import com.querydsl.core.types.Path;
 import com.querydsl.core.types.PathMetadata;
+import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.DateTimePath;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.core.types.dsl.StringPath;
@@ -40,6 +41,8 @@ public class QOrganizations extends com.querydsl.sql.RelationalPathBase<QOrganiz
     public final NumberPath<Integer> themeId = createNumber("themeId", Integer.class);
 
     public final StringPath type = createString("type");
+
+    public final NumberPath<Integer> yeshteryState = createNumber("yeshteryState", Integer.class);
 
     public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
 
@@ -134,6 +137,7 @@ public class QOrganizations extends com.querydsl.sql.RelationalPathBase<QOrganiz
         addMetadata(themeId, ColumnMetadata.named("theme_id").withIndex(9).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(type, ColumnMetadata.named("type").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(6).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
+        addMetadata(yeshteryState, ColumnMetadata.named("yeshtery_state").withIndex(10).ofType(Types.INTEGER).withSize(10).notNull());
     }
 
 }

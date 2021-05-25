@@ -77,6 +77,12 @@ public class YeshteryController {
         return brandService.getBrandById(brandId);
     }
 
+    @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
+    public List<BaseRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
+                                                            @RequestParam(required = false, defaultValue = "10") Integer count) {
+        return brandService.getYeshteryBrands(start, count);
+    }
+
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
     public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,
                                         @RequestParam(required = false, defaultValue = "0") Integer start,

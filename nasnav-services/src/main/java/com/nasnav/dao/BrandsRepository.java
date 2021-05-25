@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.service.model.IdAndNamePair;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -39,4 +40,7 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join BrandsEntity b on p.brandId = b.id" +
 			"  where b.organizationEntity.id = :orgId and b.removed = 0 and p.removed = 0")
 	List<IdAndNamePair> getBrandIdAndNamePairs(@Param("orgId") Long orgId);
+
+	@Query("select b from BrandsEntity b left join fetch b.organizationEntity org where org.yeshteryState = 1")
+	List<BrandsEntity> findByOrganizationEntity_YeshteryState(Pageable page);
 }

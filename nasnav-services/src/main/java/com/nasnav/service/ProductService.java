@@ -74,6 +74,7 @@ import java.util.stream.StreamSupport;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.MathUtils.getQueryPage;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
@@ -617,8 +618,9 @@ public class ProductService {
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QShops shop = QShops.shops;
+		QOrganizations organization = QOrganizations.organizations;
 
-		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant);
+		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant, organization);
 
 		List<OrderSpecifier> order = getProductQueryOrder(params, product, stock);
 
@@ -694,8 +696,9 @@ public class ProductService {
 		QProducts product = QProducts.products;
 		QShops shop = QShops.shops;
 		QProductVariants variant = QProductVariants.productVariants;
+		QOrganizations organization = QOrganizations.organizations;
 
-		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant);
+		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant, organization);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -849,15 +852,14 @@ public class ProductService {
 
 
 	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product
-			, QStocks stock, QShops shop, QProductVariants variant) {
+			, QStocks stock, QShops shop, QProductVariants variant, QOrganizations organization) {
 		BooleanBuilder predicate = new BooleanBuilder();
 
 		predicate.and(product.removed.eq(0));
 		predicate.and(product.hide.eq(false));
 
 		if (params.yeshtery_products) {
-			List<Long> yeshteryOrganizationsIds = orgRepo.findByYeshteryState();
-			predicate.and(product.organizationId.in(yeshteryOrganizationsIds));
+			predicate.and(organization.yeshteryState.eq(1));
 		} else if (params.org_id != null) {
 			predicate.and(product.organizationId.eq((params.org_id)));
 		} else {
@@ -3258,8 +3260,9 @@ public class ProductService {
 	public VariantsResponse getVariants(Long orgId, String name, Integer start, Integer count) {
 		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
 		Long total = productVariantsRepository.countByOrganizationId(orgId, params.getName());
+		PageRequest page = getQueryPage(params.getStart(), params.getCount());
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, params.getName(), PageRequest.of((int)Math.floor(params.getStart()/params.getCount()), params.getCount()));
+				productVariantsRepository.findByOrganizationId(orgId, params.getName(), page);
 
 		return prepareVariantsDtos(variantsEntities, total);
 	}
@@ -3278,8 +3281,9 @@ public class ProductService {
 	public VariantsResponse getVariantsForYeshtery(String name, Integer start, Integer count) {
 		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
 		Long total = productVariantsRepository.countByYeshteryProducts(params.getName());
+		PageRequest page = getQueryPage(params.getStart(), params.getCount());
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByYeshteryProducts(params.getName(), PageRequest.of((int)Math.floor(params.getStart()/params.getCount()), params.getCount()));
+				productVariantsRepository.findByYeshteryProducts(params.getName(), page);
 
 		return prepareVariantsDtos(variantsEntities, total);
 	}
