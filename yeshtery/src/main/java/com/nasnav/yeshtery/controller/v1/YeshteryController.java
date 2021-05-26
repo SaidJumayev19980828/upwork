@@ -4,8 +4,9 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.SearchResult;
-import com.nasnav.dto.response.navbox.VariantsResponse;
+import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SearchService;
@@ -13,6 +14,7 @@ import com.nasnav.service.ShopService;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
+import com.nasnav.yeshtery.services.SeoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -59,6 +61,9 @@ public class YeshteryController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private SeoService seoService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
@@ -202,5 +207,18 @@ public class YeshteryController {
                                             @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
             throws BusinessException {
         return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360, includeOutOfStock);
+    }
+
+
+
+    @Operation(description =  "return seo keywords", summary = "getSeo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/seo", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<SeoKeywordsDTO> getSeoKeywords(
+            @RequestParam(value = "type", required = true) SeoEntityType type,
+            @RequestParam(value = "id", required = true)Long entityId) {
+        return seoService.getSeoKeywords(entityId, type);
     }
 }
