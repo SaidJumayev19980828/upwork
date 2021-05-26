@@ -26,6 +26,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.DeliveryType.NORMAL_DELIVERY;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static com.nasnav.shipping.utils.ShippingUtils.createAwbFileName;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -42,6 +43,7 @@ import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
 public class ClickNShipShippingService implements ShippingService {
+    public static final String AWB_MIME = "application/pdf";
     private Logger logger = LogManager.getLogger(getClass());
     private static final String ERR_OUT_OF_SERVICE = "Sorry! We are currently unable to ship to your area!";
 
@@ -344,10 +346,18 @@ public class ClickNShipShippingService implements ShippingService {
                 .flatMap(res -> res.bodyToMono(ShipmentResponse.class))
                 .flatMap(this::throwErrorForFailureResponse)
                 .flatMap(response -> getAirwayBill(client, response))
-                .map(r -> new ShipmentTracker(r.getResponse().getOrderNo(), r.getResponse().getWaybillNumber(), r.getAirwayBill(),shipment));
+                .map(res -> createShipmentTracker(shipment, res));
     }
 
 
+
+    private ShipmentTracker createShipmentTracker(ShippingDetails shipment, ShipmentResponseWithAwb res) {
+        var trackNumber = res.getResponse().getWaybillNumber();
+        var tracker = new ShipmentTracker(res.getResponse().getOrderNo(), trackNumber, res.getAirwayBill(), shipment);
+        tracker.setAirwayBillFileMime(AWB_MIME);
+        tracker.setAirwayBillFileName(createAwbFileName(shipment, trackNumber));
+        return tracker;
+    }
 
 
     private Mono<ShipmentResponse> throwErrorForFailureResponse(ShipmentResponse shipmentResponse) {

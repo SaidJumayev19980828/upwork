@@ -28,6 +28,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.List;
 import java.util.Map;
 
+import static com.nasnav.shipping.model.Constants.DEFAULT_AWB_FILE_MIME;
+import static com.nasnav.shipping.model.Constants.DEFAULT_AWB_FILE_NAME;
 import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.*;
 import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MAX;
 import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MIN;
@@ -72,13 +74,13 @@ public class PickupPointServiceTest {
 	public void createOfferTest() throws Exception{
 		Long customerAddress = 12300001L;
 		HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response = 
+		var response =
         		template.exchange("/shipping/offers?customer_address="+customerAddress, GET, request, String.class);
 
-        String body = ofNullable(response.getBody()).orElse("[]");
-        List<ShippingOfferDTO> offers = mapper.readValue(body, new TypeReference<List<ShippingOfferDTO>>(){});
-        List<Long> pickupPoints = getOfferedShops(offers);
-        List<Long> shops = getOfferedStockShops(offers);
+		var body = ofNullable(response.getBody()).orElse("[]");
+		var offers = mapper.readValue(body, new TypeReference<List<ShippingOfferDTO>>(){});
+		var pickupPoints = getOfferedShops(offers);
+		var shops = getOfferedStockShops(offers);
         
         assertEquals(OK, response.getStatusCode());
         assertEquals(1, offers.size());
@@ -86,8 +88,8 @@ public class PickupPointServiceTest {
         		asList(501L,502L).stream().allMatch(pickupPoints::contains));
         assertTrue("The warehouse that will provide the stocks", 
         		asList(503L).stream().allMatch(shops::contains));
-        ShipmentDTO shipment = offers.get(0).getShipments().get(0);
-        ShippingEtaDTO eta = shipment.getEta();
+		var shipment = offers.get(0).getShipments().get(0);
+		var eta = shipment.getEta();
         assertEquals(now().plusDays(ETA_FROM).toLocalDate(), eta.getFrom().toLocalDate());
 		assertEquals(now().plusDays(ETA_TO).toLocalDate(), eta.getTo().toLocalDate());
 	}
@@ -98,13 +100,13 @@ public class PickupPointServiceTest {
 	
 	@Test
 	public void createDeliveryTest() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
-		
-		List<ShippingDetails> details = createShippingsDetails();
-		
-		ShipmentTracker tracker = service.requestShipment(details).collectList().block().get(0);
+
+		var details = createShippingsDetails();
+
+		var tracker = service.requestShipment(details).collectList().block().get(0);
 		
 		assertNull(tracker.getShipmentExternalId());
 		assertNull(tracker.getTracker());
@@ -116,11 +118,12 @@ public class PickupPointServiceTest {
 	
 	@Test(expected = RuntimeBusinessException.class)
 	public void validateShipmentItemsFromMultipleShops() {
-		ShippingService service = shippingServiceFactory
+		var service =
+				shippingServiceFactory
 				.getShippingService(SERVICE_ID, createServiceParams())
 				.get();
 
-		List<ShippingDetails> details = createShippingsDetailsFromMultipleShops();
+		var details = createShippingsDetailsFromMultipleShops();
 		
 		service.validateShipment(details);
 	}
@@ -130,11 +133,11 @@ public class PickupPointServiceTest {
 	
 	@Test(expected = RuntimeBusinessException.class)
 	public void validateShipmentItemsNotFromWarehouse() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 				.getShippingService(SERVICE_ID, createServiceParams())
 				.get();
 
-		List<ShippingDetails> details = createShippingsDetailsNotFromWarehouse();
+		var details = createShippingsDetailsNotFromWarehouse();
 		
 		service.validateShipment(details);
 	}
@@ -145,11 +148,11 @@ public class PickupPointServiceTest {
 	
 	@Test(expected = RuntimeBusinessException.class)
 	public void validateShipmentItemsNotFromAllowedShop() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 				.getShippingService(SERVICE_ID, createServiceParams())
 				.get();
 
-		List<ShippingDetails> details = createShippingsDetailsNotFromAllowedShop();
+		var details = createShippingsDetailsNotFromAllowedShop();
 		
 		service.validateShipment(details);
 	}
@@ -159,7 +162,7 @@ public class PickupPointServiceTest {
 	
 	
 	private List<ShippingDetails> createShippingsDetailsNotFromAllowedShop() {
-		List<ShippingDetails> shippingDetails = createShippingsDetails();
+		var shippingDetails = createShippingsDetails();
 		shippingDetails
 		.stream()
 		.map(ShippingDetails::getAdditionalData)
@@ -172,7 +175,7 @@ public class PickupPointServiceTest {
 
 
 	private List<ShippingDetails> createShippingsDetailsNotFromWarehouse() {
-		List<ShippingDetails> shippingDetails = createShippingsDetails();
+		var shippingDetails = createShippingsDetails();
 		shippingDetails
 		.stream()
 		.peek(details -> details.setShopId(501L))
@@ -187,8 +190,8 @@ public class PickupPointServiceTest {
 
 
 	private List<ShippingDetails> createShippingsDetailsFromMultipleShops() {
-		ShippingDetails shippingDetails = createShippingsDetails().get(0);
-		ShippingDetails fromAnotherShop = objectMapper.convertValue(shippingDetails, ShippingDetails.class);
+		var shippingDetails = createShippingsDetails().get(0);
+		var fromAnotherShop = objectMapper.convertValue(shippingDetails, ShippingDetails.class);
 		fromAnotherShop.getItems().forEach(item -> item.setStockId(604L));
 		
 		return asList(shippingDetails, fromAnotherShop);
@@ -234,7 +237,7 @@ public class PickupPointServiceTest {
 	
 	
 	private List<ShippingDetails> createShippingsDetails() {
-		ShippingAddress customerAddr = new ShippingAddress();
+		var customerAddr = new ShippingAddress();
 		customerAddr.setAddressLine1("Mama st.");
 		customerAddr.setArea(181818L);
 		customerAddr.setBuildingNumber("555");
@@ -243,9 +246,9 @@ public class PickupPointServiceTest {
 		customerAddr.setFlatNumber("5A");
 		customerAddr.setId(12300001L);
 		customerAddr.setName("Hamada Ezzo");
-		
-		
-		ShippingAddress shopAddr1 = new ShippingAddress();
+
+
+		var shopAddr1 = new ShippingAddress();
 		shopAddr1.setAddressLine1("Food court st.");
 		shopAddr1.setArea(191919L);
 		shopAddr1.setBuildingNumber("777");
@@ -253,9 +256,9 @@ public class PickupPointServiceTest {
 		shopAddr1.setCountry(1L);
 		shopAddr1.setId(12300002L);
 		shopAddr1.setName("7rnksh Nasnav");
-		
-		
-		ShippingAddress shopAddr2 = new ShippingAddress();
+
+
+		var shopAddr2 = new ShippingAddress();
 		shopAddr2.setAddressLine1("Food court st.");
 		shopAddr2.setArea(171717L);
 		shopAddr2.setBuildingNumber("888");
@@ -263,33 +266,33 @@ public class PickupPointServiceTest {
 		shopAddr2.setCountry(1L);
 		shopAddr2.setId(12300003L);
 		shopAddr2.setName("Freska Nasnav");
-		
-		ShipmentReceiver receiver = new ShipmentReceiver();
+
+		var receiver = new ShipmentReceiver();
 		receiver.setFirstName("Sponge");
 		receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
-		
-        ShipmentItems item1 = new ShipmentItems(601L);
+
+		var item1 = new ShipmentItems(601L);
         item1.setName("Cool And Pool");
         item1.setBarcode("13AB");
         item1.setProductCode("Coco");
         item1.setSpecs("Cool/XXXL");
-        
-        ShipmentItems item2 = new ShipmentItems(602L);
+
+		var item2 = new ShipmentItems(602L);
         item2.setName("Sponge And Bob");
         item2.setBarcode("447788888888");
         item2.setProductCode("Bob");
         item2.setSpecs("Wet/S");
-        
-		List<ShipmentItems> itemsOfShop1 = asList(item1 , item2);
-		
-		Map<String,String> additionalData = 
+
+		var itemsOfShop1 = asList(item1 , item2);
+
+		var additionalData =
 				MapBuilder
 				.<String,String>map()
 				.put(SHOP_ID, "502")
 				.getMap();
-		
-		ShippingDetails shippingDetails1 = new ShippingDetails();
+
+		var shippingDetails1 = new ShippingDetails();
 		shippingDetails1.setDestination(customerAddr);
 		shippingDetails1.setSource(shopAddr1);
 		shippingDetails1.setItems(itemsOfShop1);
@@ -298,9 +301,9 @@ public class PickupPointServiceTest {
 		shippingDetails1.setAdditionalData(additionalData);
 		shippingDetails1.setMetaOrderId(145L);
 		shippingDetails1.setSubOrderId(100L);
-		
-		
-		List<ShippingDetails> details = asList(shippingDetails1);
+
+
+		var details = asList(shippingDetails1);
 		return details;
 	}
 }

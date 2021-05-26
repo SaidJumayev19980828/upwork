@@ -67,15 +67,15 @@ public class FixedFeeShippingServiceTest {
     @Test
     public void testGetMinimumOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        ShippingOfferDTO offer = offers.get(0);
-        List<ShipmentDTO> shipments = offer.getShipments();
+        var offer = offers.get(0);
+        var shipments = offer.getShipments();
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(3, shipments.size());
@@ -93,17 +93,19 @@ public class FixedFeeShippingServiceTest {
 
     @Test
     public void createDeliveryTest() {
-        ShippingService service = shippingServiceFactory
+        var service = shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
 
-        ShipmentTracker tracker = service.requestShipment(details).collectList().block().get(0);
+        var tracker = service.requestShipment(details).collectList().block().get(0);
 
         assertNull(tracker.getShipmentExternalId());
         assertNull(tracker.getTracker());
         assertNull(tracker.getAirwayBillFile());
+        assertNull(tracker.getAirwayBillFileName());
+        assertNull(tracker.getAirwayBillFileMime());
     }
 
 
@@ -111,12 +113,12 @@ public class FixedFeeShippingServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryUnsupportedCityTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
         setOutOfReachCity(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
@@ -127,15 +129,15 @@ public class FixedFeeShippingServiceTest {
 
     @Test
     public void testGetOfferCityOutOfService() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingsDetails();
+        var details = createShippingsDetails();
         setOutOfReachCity(details.get(0));
 
-        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        var offer = service.createShippingOffer(details).blockOptional();
         assertFalse(offer.get().isAvailable());
         assertEquals( ERR_CITY_NOT_SUPPORTED, offer.get().getMessage());
     }
@@ -143,7 +145,7 @@ public class FixedFeeShippingServiceTest {
 
 
     private void setOutOfReachCity(ShippingDetails details) {
-        ShippingAddress farFarAwayAddr = new ShippingAddress();
+        var farFarAwayAddr = new ShippingAddress();
         farFarAwayAddr.setAddressLine1("Frozen Oil st.");
         farFarAwayAddr.setArea(191919L);
         farFarAwayAddr.setBuildingNumber("777");
@@ -168,7 +170,7 @@ public class FixedFeeShippingServiceTest {
 
 
     private List<ShippingDetails> createShippingsDetails() {
-        ShippingAddress customerAddr = new ShippingAddress();
+        var customerAddr = new ShippingAddress();
         customerAddr.setAddressLine1("Mama st.");
         customerAddr.setArea(181818L);
         customerAddr.setBuildingNumber("555");
@@ -179,7 +181,7 @@ public class FixedFeeShippingServiceTest {
         customerAddr.setName("Hamada Ezzo");
 
 
-        ShippingAddress shopAddr1 = new ShippingAddress();
+        var shopAddr1 = new ShippingAddress();
         shopAddr1.setAddressLine1("Food court st.");
         shopAddr1.setArea(191919L);
         shopAddr1.setBuildingNumber("777");
@@ -189,7 +191,7 @@ public class FixedFeeShippingServiceTest {
         shopAddr1.setName("7rnksh Nasnav");
 
 
-        ShippingAddress shopAddr2 = new ShippingAddress();
+        var shopAddr2 = new ShippingAddress();
         shopAddr2.setAddressLine1("Food court st.");
         shopAddr2.setArea(171717L);
         shopAddr2.setBuildingNumber("888");
@@ -198,27 +200,27 @@ public class FixedFeeShippingServiceTest {
         shopAddr2.setId(12300003L);
         shopAddr2.setName("Freska Nasnav");
 
-        ShipmentReceiver receiver = new ShipmentReceiver();
+        var receiver = new ShipmentReceiver();
         receiver.setFirstName("Sponge");
         receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
 
-        ShipmentItems item1 = new ShipmentItems(601L);
+        var item1 = new ShipmentItems(601L);
         item1.setName("Cool And Pool");
         item1.setBarcode("13AB");
         item1.setProductCode("Coco");
         item1.setSpecs("Cool/XXXL");
 
-        ShipmentItems item2 = new ShipmentItems(602L);
+        var item2 = new ShipmentItems(602L);
         item2.setName("Sponge And Bob");
         item2.setBarcode("447788888888");
         item2.setProductCode("Bob");
         item2.setSpecs("Wet/S");
 
-        List<ShipmentItems> itemsOfShop1 = asList(item1 , item2);
+        var itemsOfShop1 = asList(item1 , item2);
 
 
-        ShippingDetails shippingDetails1 = new ShippingDetails();
+        var shippingDetails1 = new ShippingDetails();
         shippingDetails1.setDestination(customerAddr);
         shippingDetails1.setSource(shopAddr1);
         shippingDetails1.setItems(itemsOfShop1);
@@ -228,7 +230,7 @@ public class FixedFeeShippingServiceTest {
         shippingDetails1.setSubOrderId(100L);
 
 
-        List<ShippingDetails> details = asList(shippingDetails1);
+        var details = asList(shippingDetails1);
         return details;
     }
 

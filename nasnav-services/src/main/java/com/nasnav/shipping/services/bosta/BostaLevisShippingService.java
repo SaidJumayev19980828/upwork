@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -32,6 +33,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static com.nasnav.shipping.utils.ShippingUtils.createAwbFileName;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
@@ -50,6 +52,7 @@ import static reactor.core.publisher.Mono.just;
 
 public class BostaLevisShippingService implements ShippingService{
 
+	public static final String AWB_MIME = "application/pdf";
 	private Logger logger = LogManager.getLogger(getClass());
 	
 	
@@ -190,7 +193,7 @@ public class BostaLevisShippingService implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		List<Optional<Shipment>> shipmentsOptionals = 
+		var shipmentsOptionals =
 				IntStream
 					.range(0, items.size())
 					.mapToObj(i -> new IndexedData<>(i, items.get(i)))
@@ -200,8 +203,8 @@ public class BostaLevisShippingService implements ShippingService{
 		if(anyShipmentCannotBeFulfilled(shipmentsOptionals)) {
 			return Mono.empty();
 		}
-		
-		List<Shipment> shipments = 
+
+		var shipments =
 				shipmentsOptionals
 					.stream()
 					.map(Optional::get)
@@ -231,24 +234,35 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
-		String serverUrl = 
+		var serverUrl =
 				ofNullable(paramMap.get(SERVER_URL))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
-		
-		String authToken = 
+
+		var authToken =
 				ofNullable(paramMap.get(AUTH_TOKEN_PARAM))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, AUTH_TOKEN_PARAM, SERVICE_ID));
-		
-		BostaWebClient client = new BostaWebClient(serverUrl);
-		
-		Delivery deliveryRequestDto = creatDeliveryRequestDto(shipment);
+
+		var client = new BostaWebClient(serverUrl);
+
+		var deliveryRequestDto = creatDeliveryRequestDto(shipment);
 		return client
 				.createDelivery(authToken, deliveryRequestDto)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res-> res.bodyToMono(CreateDeliveryResponse.class))
-				.map(res -> new ShipmentTracker(res.getId(), res.getTrackingNumber(), null, shipment))
+				.map(res -> createShipmentTracker(shipment, res))
 				.flatMap(shp -> getShipmentWithAirwaybill(authToken, client, shp));
 	}
+
+
+
+	private ShipmentTracker createShipmentTracker(ShippingDetails shipment, CreateDeliveryResponse res) {
+		var tracker = new ShipmentTracker(res.getId(), res.getTrackingNumber(), null, shipment);
+		tracker.setAirwayBillFileMime(AWB_MIME);
+		tracker.setAirwayBillFileName(createAwbFileName(shipment, res.getTrackingNumber()));
+		return tracker;
+	}
+
+
 
 
 
@@ -267,18 +281,18 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	private Delivery creatDeliveryRequestDto(ShippingDetails shipment) {
-		String businessRef = 
+		var businessRef =
 				ofNullable(paramMap.get(BUSINESS_ID_PARAM))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, BUSINESS_ID_PARAM, SERVICE_ID));
-		
-		Address pickupAddress =  createAddress(shipment.getSource());
-		Address dropOffAddress = createAddress(shipment.getDestination());
-		Receiver receiver = createReceiver(shipment.getReceiver());
-		PackageSpec specs = createPackageSpecs(shipment);
-		String notes = createShippingNotes(shipment);
-		String webHook = paramMap.get(WEBHOOK_URL);
 
-		Delivery request = new Delivery();
+		var pickupAddress =  createAddress(shipment.getSource());
+		var dropOffAddress = createAddress(shipment.getDestination());
+		var receiver = createReceiver(shipment.getReceiver());
+		var specs = createPackageSpecs(shipment);
+		var notes = createShippingNotes(shipment);
+		var webHook = paramMap.get(WEBHOOK_URL);
+
+		var request = new Delivery();
 		request.setBusinessReference(businessRef);
 		request.setDropOffAddress(dropOffAddress);
 		request.setReceiver(receiver);
@@ -319,20 +333,20 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private PackageSpec createPackageSpecs(ShippingDetails shipment) {
-		String metaOrderId = 
+		var metaOrderId =
 				ofNullable(shipment.getMetaOrderId())
 				.map(id -> id+"-")
 				.orElse("");
-		String orderDescription = format("Order Id: %s%d", metaOrderId, shipment.getSubOrderId());
-		String returnRequestDescription = format("Return request: %d", shipment.getReturnRequestId());
-		String description =
+		var orderDescription = format("Order Id: %s%d", metaOrderId, shipment.getSubOrderId());
+		var returnRequestDescription = format("Return request: %d", shipment.getReturnRequestId());
+		var description =
 				isNull(shipment.getReturnRequestId())? orderDescription : returnRequestDescription;
 
-		PackageDetails details = new PackageDetails();
+		var details = new PackageDetails();
 		details.setDescription(description);
 		details.setItemsCount(shipment.getItems().size());
 
-		PackageSpec spec = new PackageSpec();
+		var spec = new PackageSpec();
 		spec.setPackageDetails(details);
 		return spec;
 	}
@@ -340,7 +354,7 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private Receiver createReceiver(ShipmentReceiver user) {
-		Receiver receiver = new Receiver();
+		var receiver = new Receiver();
 		receiver.setEmail(user.getEmail());
 		receiver.setFirstName(user.getFirstName());
 		receiver.setLastName(user.getLastName());
@@ -372,13 +386,13 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private Address createAddress(ShippingAddress data) {
-		Long apartmentNum = parseLongWithDefault(data.getFlatNumber(), null); 
-		Long cityId = data.getCity();
-		String cityExtId = 
+		var apartmentNum = parseLongWithDefault(data.getFlatNumber(), null);
+		var cityId = data.getCity();
+		var cityExtId =
 				ofNullable(cityIdMapping.get(cityId))
 				.map(BostaCity::getCityCode)
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0005, SERVICE_ID, cityId));
-		Address addr = new Address();
+		var addr = new Address();
 		addr.setApartment(apartmentNum);
 		addr.setCity(cityExtId);
 		addr.setFirstLine(data.getAddressLine1());
@@ -401,8 +415,8 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	private Optional<Shipment> createShipmentOffer(IndexedData<ShippingDetails> details) {
-		ShippingEta eta = calculateEta(details);
-		List<Long> stocks = getStocks(details);
+		var eta = calculateEta(details);
+		var stocks = getStocks(details);
 		return calculateFee(details)
 				.filter(fee -> !stocks.isEmpty())
 				.map(fee -> new Shipment(fee, eta, stocks, details.getData().getSubOrderId()));
@@ -424,7 +438,7 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private ShippingEta calculateEta(IndexedData<ShippingDetails> details) {
-		ShippingPeriod period = getShippingPeriod(details);
+		var period = getShippingPeriod(details);
 		return new  ShippingEta(now().plus(period.getFrom()), now().plus(period.getTo()));
 	}
 
@@ -463,7 +477,7 @@ public class BostaLevisShippingService implements ShippingService{
 			return empty();
 		}
 		//customer pay for only first shipment, rest are free
-		BigDecimal fee = getCityShippingFee(details);
+		var fee = getCityShippingFee(details);
 		return Objects.equals(details.getIndex(), 0)? 
 					Optional.of(fee) : Optional.of(ZERO);
 	}
@@ -486,8 +500,8 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private boolean isSupportedCity(IndexedData<ShippingDetails> details) {
-		Boolean supportDestinationCity = getDestinationCityId(details).map(cityIdMapping::containsKey).orElse(false);
-		Boolean supportPickupCity = getPickupCityId(details).map(cityIdMapping::containsKey).orElse(false); 
+		var supportDestinationCity = getDestinationCityId(details).map(cityIdMapping::containsKey).orElse(false);
+		var supportPickupCity = getPickupCityId(details).map(cityIdMapping::containsKey).orElse(false);
 		return supportDestinationCity && supportPickupCity;
 	}
 	
@@ -544,7 +558,7 @@ public class BostaLevisShippingService implements ShippingService{
 			logger.error(e, e);
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$JSON$0001);
 		}
-		Integer shippingStatus = getShippingStatus(body.getState());
+		var shippingStatus = getShippingStatus(body.getState());
 
 		return new ShipmentStatusData(serviceId, orgId, body.getId(), shippingStatus, body.getExceptionReason());
 	}

@@ -5,6 +5,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,14 +62,14 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void testGetOffer() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
-		
-		List<ShippingDetails> details = createShippingsDetails();
-		
-		ShippingOffer offer = service.createShippingOffer(details).block();
-		List<Shipment> shipments = offer.getShipments();
+
+		var details = createShippingsDetails();
+
+		var offer = service.createShippingOffer(details).block();
+		var shipments = offer.getShipments();
 		assertEquals(2, shipments.size());
 		assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("30")));
 		assertEquals(0 , shipments.get(1).getShippingFee().compareTo(ZERO));
@@ -81,14 +82,14 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void testGetOfferCityOutOfService() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
-		
-		List<ShippingDetails> details = createShippingsDetails();
+
+		var details = createShippingsDetails();
 		setOutOfReachCity(details.get(0));
-		
-		Mono<ShippingOffer> offer = service.createShippingOffer(details);
+
+		var offer = service.createShippingOffer(details);
 		assertFalse(offer.blockOptional().isPresent());
 	}
 	
@@ -97,17 +98,19 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void createDeliveryTest() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
-		
-		List<ShippingDetails> details = createShippingsDetails();
-		
-		ShipmentTracker tracker = service.requestShipment(details).collectList().block().get(0);
+
+		var details = createShippingsDetails();
+
+		var tracker = service.requestShipment(details).collectList().block().get(0);
 		
 		assertEquals("8xY8LmHtJ", tracker.getShipmentExternalId());
 		assertEquals("6272455", tracker.getTracker());
 		assertNotNull(tracker.getAirwayBillFile());
+		assertEquals(AWB_MIME, tracker.getAirwayBillFileMime());
+		assertTrue(tracker.getAirwayBillFileName().matches(".*_trk_6272455_order_.*_.*\\.pdf"));
 		assertFalse(tracker.getAirwayBillFile().isEmpty());
 	}
 
@@ -118,11 +121,11 @@ public class BostaLevisServiceTest {
 	
 	@Test(expected = RuntimeBusinessException.class)
 	public void createDeliveryUnsupportedCityTest() {
-		ShippingService service = shippingServiceFactory
+		var service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
-		
-		List<ShippingDetails> details = createShippingsDetails();
+
+		var details = createShippingsDetails();
 		setOutOfReachCity(details.get(0));
 		
 		service.requestShipment(details).collectList().block().get(0);
@@ -147,7 +150,7 @@ public class BostaLevisServiceTest {
 	
 	
 	private void setOutOfReachCity(ShippingDetails details) {
-		ShippingAddress farFarAwayAddr = new ShippingAddress();
+		var farFarAwayAddr = new ShippingAddress();
 		farFarAwayAddr.setAddressLine1("Frozen Oil st.");
 		farFarAwayAddr.setArea(191919L);
 		farFarAwayAddr.setBuildingNumber("777");
@@ -164,7 +167,7 @@ public class BostaLevisServiceTest {
 	
 
 	private List<ShippingDetails> createShippingsDetails() {
-		ShippingAddress customerAddr = new ShippingAddress();
+		var customerAddr = new ShippingAddress();
 		customerAddr.setAddressLine1("Mama st.");
 		customerAddr.setArea(181818L);
 		customerAddr.setBuildingNumber("555");
@@ -173,9 +176,9 @@ public class BostaLevisServiceTest {
 		customerAddr.setFlatNumber("5A");
 		customerAddr.setId(12300001L);
 		customerAddr.setName("Hamada Ezzo");
-		
-		
-		ShippingAddress shopAddr1 = new ShippingAddress();
+
+
+		var shopAddr1 = new ShippingAddress();
 		shopAddr1.setAddressLine1("Food court st.");
 		shopAddr1.setArea(191919L);
 		shopAddr1.setBuildingNumber("777");
@@ -183,9 +186,9 @@ public class BostaLevisServiceTest {
 		shopAddr1.setCountry(1L);
 		shopAddr1.setId(12300002L);
 		shopAddr1.setName("7rnksh Nasnav");
-		
-		
-		ShippingAddress shopAddr2 = new ShippingAddress();
+
+
+		var shopAddr2 = new ShippingAddress();
 		shopAddr2.setAddressLine1("Food court st.");
 		shopAddr2.setArea(171717L);
 		shopAddr2.setBuildingNumber("888");
@@ -193,31 +196,31 @@ public class BostaLevisServiceTest {
 		shopAddr2.setCountry(1L);
 		shopAddr2.setId(12300003L);
 		shopAddr2.setName("Freska Nasnav");
-		
-		ShipmentReceiver receiver = new ShipmentReceiver();
+
+		var receiver = new ShipmentReceiver();
 		receiver.setFirstName("Sponge");
 		receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
-		
-		List<ShipmentItems> itemsOfShop1 = asList( new ShipmentItems(601L));
-		List<ShipmentItems> itemsOfShop2 = asList( new ShipmentItems(603L));
-		
-		ShippingDetails shippingDetails1 = new ShippingDetails();
+
+		var itemsOfShop1 = asList( new ShipmentItems(601L));
+		var itemsOfShop2 = asList( new ShipmentItems(603L));
+
+		var shippingDetails1 = new ShippingDetails();
 		shippingDetails1.setDestination(customerAddr);
 		shippingDetails1.setSource(shopAddr1);
 		shippingDetails1.setItems(itemsOfShop1);
 		shippingDetails1.setReceiver(receiver);
 		shippingDetails1.setShopId(502L);
-		
-		ShippingDetails shippingDetails2 = new ShippingDetails();
+
+		var shippingDetails2 = new ShippingDetails();
 		shippingDetails2.setDestination(customerAddr);
 		shippingDetails2.setSource(shopAddr2);
 		shippingDetails2.setItems(itemsOfShop2);
 		shippingDetails2.setReceiver(receiver);
 		shippingDetails2.setShopId(501L);
-		
-		
-		List<ShippingDetails> details = asList(shippingDetails1, shippingDetails2);
+
+
+		var details = asList(shippingDetails1, shippingDetails2);
 		return details;
 	}
 }

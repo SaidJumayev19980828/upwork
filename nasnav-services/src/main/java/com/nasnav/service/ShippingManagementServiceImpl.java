@@ -39,6 +39,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.*;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
 import static com.nasnav.enumerations.ShippingStatus.*;
@@ -46,12 +47,15 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.payments.cod.CodCommons.COD_OPERATOR;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.CommonServiceParameters.CART_OPTIMIZER;
+import static com.nasnav.shipping.model.Constants.DEFAULT_AWB_FILE_MIME;
+import static com.nasnav.shipping.model.Constants.DEFAULT_AWB_FILE_NAME;
 import static com.nasnav.shipping.model.ShippingServiceType.PICKUP;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
@@ -596,11 +600,20 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
 				.flatMap(this::getShippingService)
 				.map(service -> service.requestShipment(asList(shippingDetails)))
-				.map(trackerFlux -> trackerFlux.singleOrEmpty())
+				.map(flux -> flux.map(this::setDefaultTrackerDataIfNeeded))
+				.map(Flux::singleOrEmpty)
 				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, subOrder.getId()));
 	}
 
 
+	private ShipmentTracker setDefaultTrackerDataIfNeeded(ShipmentTracker tracker) {
+		var mod = new ShipmentTracker(tracker, tracker.getAirwayBillFile());
+		if(isNull(tracker.getAirwayBillFileName()) ){
+			mod.setAirwayBillFileName(DEFAULT_AWB_FILE_NAME);
+			mod.setAirwayBillFileMime(DEFAULT_AWB_FILE_MIME);
+		}
+		return mod;
+	}
 
 
 	@Override

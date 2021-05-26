@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.AWB_MIME;
 import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
@@ -103,9 +104,9 @@ public class ClicknshipServiceTest {
 
 
     private void updateServiceParams() {
-        OrganizationShippingServiceEntity serviceParams =
+        var serviceParams =
                 serviceParamRepo.getByOrganization_IdAndServiceId(99001L, SERVICE_ID).get();
-        JSONObject paramsJson = new JSONObject(serviceParams.getServiceParameters());
+        var paramsJson = new JSONObject(serviceParams.getServiceParameters());
         paramsJson.put("SERVER_URL", server);
         serviceParams.setServiceParameters(paramsJson.toString());
         serviceParamRepo.save(serviceParams);
@@ -116,13 +117,13 @@ public class ClicknshipServiceTest {
 
     @Test
     public void testGetOffer() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
-        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
-        ShippingOffer offer = service.createShippingOffer(details).block();
-        List<Shipment> shipments = offer.getShipments();
+        var details = createShippingDetails(randomLong(), randomLong());
+        var offer = service.createShippingOffer(details).block();
+        var shipments = offer.getShipments();
         assertTrue(offer.isAvailable());
         assertEquals(2, shipments.size());
         assertEquals(now().plusDays(1).toLocalDate() , shipments.get(0).getEta().getFrom().toLocalDate());
@@ -137,15 +138,15 @@ public class ClicknshipServiceTest {
 
     @Test
     public void testGetOfferWithErrorFromServer() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                         .getShippingService(SERVICE_ID, createServiceParams())
                         .get();
 
-        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        var details = createShippingDetails(randomLong(), randomLong());
         setCityTheReturnsError(details.get(0));
 
-        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        var offer = service.createShippingOffer(details).blockOptional();
         assertTrue(offer.isPresent());
         assertFalse(offer.get().isAvailable());
     }
@@ -154,20 +155,22 @@ public class ClicknshipServiceTest {
 
     @Test
     public void testCreateDeliveryRequest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
         //when running the tests against the staging server, the metaOrder-subOrder combination must be unique
         Long metaOrderId = isUsingMockServer() ? 11L: randomLong();
         Long subOrderId = isUsingMockServer() ? 22L: randomLong();
-        List<ShippingDetails> details = createShippingDetails(metaOrderId, subOrderId);
-        ShipmentTracker tracker = service.requestShipment(details).blockFirst();
+        var details = createShippingDetails(metaOrderId, subOrderId);
+        var tracker = service.requestShipment(details).blockFirst();
         assertEquals(format("%d-%d", metaOrderId, subOrderId), tracker.getShipmentExternalId());
         if(isUsingMockServer()){
             assertEquals("SA00712362", tracker.getTracker());
         }
         assertFalse(tracker.getAirwayBillFile().isEmpty());
+        assertEquals(AWB_MIME, tracker.getAirwayBillFileMime());
+        assertTrue(tracker.getAirwayBillFileName().matches(".*_trk_SA00712362_order_.*_.*\\.pdf"));
     }
 
 
@@ -179,15 +182,15 @@ public class ClicknshipServiceTest {
 
     @Test
     public void testGetOfferCityOutOfService() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
 
-        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        var details = createShippingDetails(randomLong(), randomLong());
         setOutOfReachCity(details.get(0));
 
-        Optional<ShippingOffer> offer = service.createShippingOffer(details).blockOptional();
+        var offer = service.createShippingOffer(details).blockOptional();
         assertTrue(offer.isPresent());
         assertFalse(offer.get().isAvailable());
     }
@@ -196,12 +199,12 @@ public class ClicknshipServiceTest {
 
     @Test(expected = RuntimeBusinessException.class)
     public void createDeliveryUnsupportedCityTest() {
-        ShippingService service =
+        var service =
                 shippingServiceFactory
                 .getShippingService(SERVICE_ID, createServiceParams())
                 .get();
 
-        List<ShippingDetails> details = createShippingDetails(randomLong(), randomLong());
+        var details = createShippingDetails(randomLong(), randomLong());
         setOutOfReachCity(details.get(0));
 
         service.requestShipment(details).collectList().block().get(0);
@@ -212,14 +215,14 @@ public class ClicknshipServiceTest {
     @Test
     public void testGetMinimumOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
-        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+        var shipments = offers.get(0).getShipments();
 
         sort(shipments, comparing(ShipmentDTO::getShippingFee));
         assertEquals(1, shipments.size());
@@ -235,12 +238,12 @@ public class ClicknshipServiceTest {
     @Test
     public void testGetFailingOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
-        ResponseEntity<String> response =
+        var response =
                 template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
 
         assertEquals(OK, response.getStatusCode());
 
-        List<ShippingOfferDTO> offers =
+        var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
         assertFalse(offers.get(0).isAvailable());
     }
@@ -255,7 +258,7 @@ public class ClicknshipServiceTest {
 
 
     private void setOutOfReachCity(ShippingDetails details) {
-        ShippingAddress farFarAwayAddr = new ShippingAddress();
+        var farFarAwayAddr = new ShippingAddress();
         farFarAwayAddr.setAddressLine1("Frozen Oil st.");
         farFarAwayAddr.setArea(191919L);
         farFarAwayAddr.setBuildingNumber("777");
@@ -269,7 +272,7 @@ public class ClicknshipServiceTest {
 
 
     private void setCityTheReturnsError(ShippingDetails details) {
-        ShippingAddress addr = new ShippingAddress();
+        var addr = new ShippingAddress();
         addr.setName("PETER ADEOGUN");
         addr.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
         addr.setArea(11L);
@@ -282,31 +285,31 @@ public class ClicknshipServiceTest {
 
 
     private List<ShippingDetails> createShippingDetails(Long metaOrderId, Long subOrderId) {
-        ShipmentReceiver receiver = new ShipmentReceiver();
+        var receiver = new ShipmentReceiver();
         receiver.setFirstName("John");
         receiver.setLastName("Smith");
         receiver.setPhone("08076522536");
         receiver.setEmail("testemail@yahoo.com");
 
-        ShippingAddress source1 = new ShippingAddress();
+        var source1 = new ShippingAddress();
         source1.setName("PETER ADEOGUN");
         source1.setAddressLine1("32 AJOSE ADEOGUN STREET, VICTORIA ISLAND, LAGOS");
         source1.setArea(11L);
         source1.setCity(1001L);
 
-        ShippingAddress source2 = new ShippingAddress();
+        var source2 = new ShippingAddress();
         source2.setName("PETER ADEOGUN");
         source2.setAddressLine1("32 KOMOMBO STREET, VICTORIA ISLAND, LAGOS");
         source2.setArea(11L);
         source2.setCity(1001L);
 
-        ShippingAddress dest = new ShippingAddress();
+        var dest = new ShippingAddress();
         dest.setName("BENSON ADEWALE");
         dest.setAddressLine1("23 Ikorodu Road, Maryland, Lagos");
         dest.setArea(22L);
         dest.setCity(1002L);
 
-        ShipmentItems item = new ShipmentItems();
+        var item = new ShipmentItems();
         item.setWeight(new BigDecimal("1.5"));
         item.setName("HAND BAG");
         item.setQuantity(5);
@@ -314,7 +317,7 @@ public class ClicknshipServiceTest {
         item.setSpecs("Color : BLUE, Size : 23");
         item.setStockId(310001L);
 
-        ShippingDetails details1 = new ShippingDetails();
+        var details1 = new ShippingDetails();
         details1.setReceiver(receiver);
         details1.setMetaOrderId(metaOrderId);
         details1.setSubOrderId(subOrderId);
@@ -322,7 +325,7 @@ public class ClicknshipServiceTest {
         details1.setDestination(dest);
         details1.setItems(singletonList(item));
 
-        ShippingDetails details2 = new ShippingDetails();
+        var details2 = new ShippingDetails();
         details2.setReceiver(receiver);
         details2.setMetaOrderId(metaOrderId);
         details2.setSubOrderId(subOrderId);

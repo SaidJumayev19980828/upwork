@@ -5,14 +5,18 @@ import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.shipping.model.*;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.nasnav.shipping.model.Constants.DEFAULT_AWB_FILE_NAME_PATTERN;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
+import static java.time.LocalDateTime.now;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 
@@ -106,5 +110,29 @@ public class ShippingUtils {
                 .stream()
                 .map(ShipmentItems::getStockId)
                 .collect(toList());
+    }
+
+
+    public static String createAwbFileName(ShippingDetails shipment, String trackNumber, String fileNamePattern){
+        var dateFormatted = DateTimeFormatter.ofPattern("yyyyMMdd").format(now());
+        var metaOrderId =
+                ofNullable(shipment)
+                .map(ShippingDetails::getMetaOrderId)
+                .map(EntityUtils::parseLongSafely)
+                .map(Object::toString)
+                .orElse("");
+        var subOrderId =
+                ofNullable(shipment)
+                    .map(ShippingDetails::getSubOrderId)
+                    .map(EntityUtils::parseLongSafely)
+                    .map(Object::toString)
+                    .orElse("");
+        var num = ofNullable(trackNumber).orElse("");
+        return format(fileNamePattern, dateFormatted, num, metaOrderId, subOrderId);
+    }
+
+
+    public static String createAwbFileName(ShippingDetails shipment, String trackNumber) {
+        return createAwbFileName(shipment, trackNumber, DEFAULT_AWB_FILE_NAME_PATTERN);
     }
 }
