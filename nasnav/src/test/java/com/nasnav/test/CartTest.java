@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
@@ -1098,8 +1098,8 @@ public class CartTest {
 	private void confrimOrder(Order order, ShopManager mgr) {
 		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
 		HttpEntity<?> request = getHttpEntity(mgr.getManagerAuthToken());
-		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfrimResponseDTO.class);
+		ResponseEntity<OrderConfirmResponseDTO> res =
+				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfirmResponseDTO.class);
 		
 		String billFile = res.getBody().getShippingBill();
 		OrdersEntity orderEntity = orderRepo.findByIdAndShopsEntity_Id(subOrderId, mgr.getShopId()).get();

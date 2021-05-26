@@ -5,7 +5,7 @@ import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
@@ -52,7 +52,7 @@ public interface OrderService {
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
-	public OrderConfrimResponseDTO confrimOrder(Long orderId);
+	public OrderConfirmResponseDTO confrimOrder(Long orderId);
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 

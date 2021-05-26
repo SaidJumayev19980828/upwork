@@ -8,7 +8,7 @@ import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
 import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
@@ -117,7 +117,7 @@ public class OrdersController {
     })
     @PostMapping(value = "confirm",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public OrderConfrimResponseDTO confrimOrder(
+    public OrderConfirmResponseDTO confirmOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("order_id") Long orderId)
             		throws BusinessException {

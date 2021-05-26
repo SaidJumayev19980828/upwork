@@ -10,7 +10,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
@@ -829,8 +829,8 @@ public class OrderServiceTest {
 		assertEquals(DRAFT.getValue(), subOrder.getShipment().getStatus());
 		//-------------------------------------------------
 		HttpEntity<?> request = getHttpEntity("sdrf8s");
-		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id=330031", request, OrderConfrimResponseDTO.class);
+		ResponseEntity<OrderConfirmResponseDTO> res =
+				template.postForEntity("/order/confirm?order_id=330031", request, OrderConfirmResponseDTO.class);
 		
 		//-------------------------------------------------		
 		assertEquals(OK, res.getStatusCode());

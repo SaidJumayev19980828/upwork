@@ -8,7 +8,7 @@ import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -1373,7 +1373,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
+	public OrderConfirmResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
 		
@@ -1382,7 +1382,7 @@ public class OrderServiceImpl implements OrderService {
 		return  shippingMgrService
 				.requestShipment(subOrder)
 				.doOnNext(trackerData -> saveShipmentTracker(trackerData, subOrder))
-				.map(trackerData -> new OrderConfrimResponseDTO(trackerData.getAirwayBillFile()))
+				.map(OrderConfirmResponseDTO::new)
 				.blockOptional(Duration.ofSeconds(120))
 				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, subOrder.getId()));
 	}
