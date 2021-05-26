@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -83,8 +85,8 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
-    public List<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
-                                                            @RequestParam(required = false, defaultValue = "10") Integer count) {
+    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
+                                                                              @RequestParam(required = false, defaultValue = "10") Integer count) {
         return brandService.getYeshteryBrands(start, count);
     }
 

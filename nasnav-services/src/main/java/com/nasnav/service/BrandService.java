@@ -8,15 +8,15 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import javax.cache.annotation.CacheResult;
 
-import java.util.List;
-
 import static com.nasnav.cache.Caches.*;
-import static com.nasnav.commons.utils.MathUtils.getQueryPage;
+import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -62,7 +62,7 @@ public class BrandService {
         brandsRepository.setBrandHidden(brandId);
     }
 
-    public List<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count) {
+    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count) {
         if (start < 0) {
             start = 0;
         }
@@ -70,10 +70,7 @@ public class BrandService {
             count = 10;
         }
         PageRequest page = getQueryPage(start, count);
-        return brandsRepository.findByOrganizationEntity_YeshteryState(page)
-                .stream()
-                .map(e -> (Organization_BrandRepresentationObject) e.getRepresentation())
-                .collect(toList());
+        return brandsRepository.findByOrganizationEntity_YeshteryState(page);
     }
 
 }

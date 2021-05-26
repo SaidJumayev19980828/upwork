@@ -20,6 +20,8 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -204,8 +206,9 @@ public class YeshteryApiTest {
     public void getYeshteryBrands() throws JsonProcessingException {
         var response = template.getForEntity("/v1/yeshtery/brands", String.class);
         assertEquals(200, response.getStatusCodeValue());
-        List<Organization_BrandRepresentationObject> body = mapper.readValue(response.getBody(), new TypeReference<List<Organization_BrandRepresentationObject>>() {});
-        assertEquals(102, body.get(0).getId().intValue());
+        PageImpl<Organization_BrandRepresentationObject> body = mapper.readValue(response.getBody(), new TypeReference<PageImpl<Organization_BrandRepresentationObject>>() {});
+        assertEquals(1, body.getTotalPages());
+        assertEquals(102, body.get().findFirst().get().getId().intValue());
     }
 
 

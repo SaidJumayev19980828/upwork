@@ -74,7 +74,7 @@ import java.util.stream.StreamSupport;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
-import static com.nasnav.commons.utils.MathUtils.getQueryPage;
+import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
@@ -860,9 +860,11 @@ public class ProductService {
 
 		if (params.yeshtery_products) {
 			predicate.and(organization.yeshteryState.eq(1));
-		} else if (params.org_id != null) {
+		}
+		if (params.org_id != null) {
 			predicate.and(product.organizationId.eq((params.org_id)));
-		} else {
+		}
+		if (params.shop_id != null)  {
 			predicate.and( stock.shopId.eq(params.shop_id) );
 		}
 

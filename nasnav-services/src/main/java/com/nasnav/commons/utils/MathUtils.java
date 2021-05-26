@@ -22,9 +22,6 @@ public class MathUtils {
 				.multiply(new BigDecimal("100"));
 	}
 
-	public static PageRequest getQueryPage(Integer start, Integer count) {
-		return PageRequest.of((int)Math.floor(start/count), count);
-	}
 
 	/**
 	 * returns ZERO if the given BigDecimal is null
