@@ -4,8 +4,12 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.StatisticsCartItem;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartStatisticsData;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -15,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.dto.request.RequestType.COUNT;
 import static java.math.BigDecimal.ZERO;
@@ -132,6 +137,53 @@ public class StatisticsService {
         return result;
     }
 
+    public List<UserCartInfo> getUsersAbandonedCarts() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return cartItemRepo.findUsersCartsOrg_Id(orgId)
+                .stream()
+                .collect(groupingBy(CartItemEntity::getUser))
+                .entrySet()
+                .stream()
+                .map(this::toUserCartInfo)
+                .collect(toList());
+    }
+
+    private UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map) {
+        UserCartInfo info = new UserCartInfo();
+        UserEntity user = map.getKey();
+        var items = map
+                .getValue()
+                .stream()
+                .map(this::toCartItem)
+                .collect(Collectors.toList());
+        info.setId(user.getId());
+        info.setName(user.getName());
+        info.setEmail(user.getEmail());
+        info.setPhoneNumber(user.getPhoneNumber());
+        info.setItems(items);
+        return info;
+    }
+
+    private StatisticsCartItem toCartItem(CartItemEntity entity) {
+        var  item = new StatisticsCartItem();
+        StocksEntity stock = entity.getStock();
+        ProductVariantsEntity variant = stock.getProductVariantsEntity();
+        ProductEntity product = variant.getProductEntity();
+        item.setId(entity.getId());
+        item.setCoverImg(entity.getCoverImage());
+        item.setStockId(stock.getId());
+        item.setQuantity(stock.getQuantity());
+        item.setPrice(stock.getPrice());
+        item.setDiscount(stock.getDiscount());
+        item.setVariantId(variant.getId());
+        item.setVariantName(variant.getName());
+        item.setProductId(product.getId());
+        item.setBarcode(product.getBarcode());
+        item.setName(product.getName());
+        item.setCreatedAt(entity.getCreatedAt());
+        return item;
+    }
+
     private LocalDateTime getMaxMonth(Integer monthNumber) {
         monthNumber = getMonthNumber(monthNumber);
         Integer finalMonthNumber = monthNumber == 12 ? 1 : monthNumber + 1;
@@ -146,7 +198,18 @@ public class StatisticsService {
     private Integer getMonthNumber(Integer monthNumber) {
         return ofNullable(monthNumber).orElseGet(() -> now().getMonthValue());
     }
+
     private Integer getWeekNumber(Integer week) {
         return ofNullable(week).orElseGet(() -> now().get(ChronoField.ALIGNED_WEEK_OF_MONTH));
     }
 }
+
+@Data
+class UserCartInfo {
+    Long id;
+    String name;
+    String email;
+    String phoneNumber;
+    List<StatisticsCartItem> items;
+}
+

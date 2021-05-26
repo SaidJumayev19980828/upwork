@@ -89,4 +89,17 @@ public class StatisticsTest {
         assertEquals(200, res.getStatusCodeValue());
         assertFalse(res.getBody().isEmpty());
     }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_10.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getUsersCartsTest() {
+        HttpEntity request = getHttpEntity("101112");
+        ResponseEntity<List> res = template.exchange("/statistics/users/carts", GET, request, List.class);
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertFalse(res.getBody().isEmpty());
+        assertEquals(1, res.getBody().size());
+    }
+
 }

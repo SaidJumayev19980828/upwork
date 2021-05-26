@@ -51,4 +51,9 @@ public class StatisticsController {
         return statisticsService.getSalesStatisticsPerMonth(month);
     }
 
+    @GetMapping("users/carts")
+    public List getUsersAbandonedCarts(@RequestHeader(name = "User-Token", required = false) String userToken) {
+        return statisticsService.getUsersAbandonedCarts();
+    }
+
 }
