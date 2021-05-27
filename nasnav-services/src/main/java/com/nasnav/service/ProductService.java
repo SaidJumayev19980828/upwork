@@ -671,7 +671,7 @@ public class ProductService {
 				product.name.as("name"),
 				product.pName.as("pname"),
 				product.description.as("description"),
-				product.search_360.as("has_360_view"),
+				product.search360.as("has_360_view"),
 				product.createdAt.as("creation_date"),
 				product.updatedAt.as("update_date"),
 				product.productType,
@@ -1176,6 +1176,7 @@ public class ProductService {
 				.map(ProductVariantsEntity::getStocks)
 				.filter(Objects::nonNull)
 				.flatMap(Set::stream)
+				.filter(s -> s.getQuantity() != null)
 				.filter(s -> checkEmptyStock(s, includeOutOfStock))
 				.min( comparing(StocksEntity::getPrice));
 	}

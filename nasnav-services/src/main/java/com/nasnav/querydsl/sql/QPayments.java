@@ -1,16 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -21,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QPayments extends com.querydsl.sql.RelationalPathBase<QPayments> {
 
-    private static final long serialVersionUID = 23898312;
+    private static final long serialVersionUID = -1249343773;
 
     public static final QPayments payments = new QPayments("payments");
 
@@ -33,11 +32,17 @@ public class QPayments extends com.querydsl.sql.RelationalPathBase<QPayments> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
+    public final NumberPath<Long> metaOrderId = createNumber("metaOrderId", Long.class);
+
     public final StringPath object = createString("object");
 
     public final StringPath operator = createString("operator");
 
     public final NumberPath<Long> orderId = createNumber("orderId", Long.class);
+
+    public final NumberPath<Integer> orgPaymentId = createNumber("orgPaymentId", Integer.class);
+
+    public final StringPath sessionId = createString("sessionId");
 
     public final NumberPath<Integer> status = createNumber("status", Integer.class);
 
@@ -47,7 +52,15 @@ public class QPayments extends com.querydsl.sql.RelationalPathBase<QPayments> {
 
     public final com.querydsl.sql.PrimaryKey<QPayments> paymentsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrders> paymentsOrderIdFkey = createForeignKey(orderId, "id");
+    public final com.querydsl.sql.ForeignKey<QMetaOrders> paymentsMetaOrderIdFkey = createForeignKey(metaOrderId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizationPayments> paymentsOrgPaymentIdFkey = createForeignKey(orgPaymentId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QUsers> paymentsUserIdFkey = createForeignKey(userId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrders> _ordersPaymentIdFkey = createInvForeignKey(id, "payment_id");
+
+    public final com.querydsl.sql.ForeignKey<QPaymentRefunds> _paymentRefundsPaymentIdFkey = createInvForeignKey(id, "payment_id");
 
     public QPayments(String variable) {
         super(QPayments.class, forVariable(variable), "public", "payments");
@@ -79,9 +92,12 @@ public class QPayments extends com.querydsl.sql.RelationalPathBase<QPayments> {
         addMetadata(currency, ColumnMetadata.named("currency").withIndex(8).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(executed, ColumnMetadata.named("executed").withIndex(6).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(metaOrderId, ColumnMetadata.named("meta_order_id").withIndex(11).ofType(Types.BIGINT).withSize(19));
         addMetadata(object, ColumnMetadata.named("object").withIndex(9).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(operator, ColumnMetadata.named("operator").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(orderId, ColumnMetadata.named("order_id").withIndex(2).ofType(Types.BIGINT).withSize(19));
+        addMetadata(orgPaymentId, ColumnMetadata.named("org_payment_id").withIndex(13).ofType(Types.INTEGER).withSize(10));
+        addMetadata(sessionId, ColumnMetadata.named("session_id").withIndex(12).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(status, ColumnMetadata.named("status").withIndex(5).ofType(Types.INTEGER).withSize(10));
         addMetadata(uid, ColumnMetadata.named("uid").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(userId, ColumnMetadata.named("user_id").withIndex(10).ofType(Types.BIGINT).withSize(19));

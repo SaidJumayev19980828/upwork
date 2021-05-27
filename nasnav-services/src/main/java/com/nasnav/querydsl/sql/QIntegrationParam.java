@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QIntegrationParam extends com.querydsl.sql.RelationalPathBase<QIntegrationParam> {
 
-    private static final long serialVersionUID = 1018561972;
+    private static final long serialVersionUID = -1588881201;
 
     public static final QIntegrationParam integrationParam = new QIntegrationParam("integration_param");
 
@@ -34,9 +34,9 @@ public class QIntegrationParam extends com.querydsl.sql.RelationalPathBase<QInte
 
     public final com.querydsl.sql.PrimaryKey<QIntegrationParam> integrationParamPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QIntegrationParamType> integrationParamParamTypeFkey = createForeignKey(paramType, "id");
-
     public final com.querydsl.sql.ForeignKey<QOrganizations> integrationParamOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QIntegrationParamType> integrationParamParamTypeFkey = createForeignKey(paramType, "id");
 
     public QIntegrationParam(String variable) {
         super(QIntegrationParam.class, forVariable(variable), "public", "integration_param");

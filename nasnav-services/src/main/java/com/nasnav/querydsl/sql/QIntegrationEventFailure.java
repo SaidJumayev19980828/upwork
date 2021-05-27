@@ -1,16 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -21,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QIntegrationEventFailure extends com.querydsl.sql.RelationalPathBase<QIntegrationEventFailure> {
 
-    private static final long serialVersionUID = -1774559607;
+    private static final long serialVersionUID = 294201102;
 
     public static final QIntegrationEventFailure integrationEventFailure = new QIntegrationEventFailure("integration_event_failure");
 
@@ -69,11 +68,11 @@ public class QIntegrationEventFailure extends com.querydsl.sql.RelationalPathBas
     }
 
     public void addMetadata() {
-        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(5).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
+        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(7).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(eventData, ColumnMetadata.named("event_data").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(eventType, ColumnMetadata.named("event_type").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647).notNull());
-        addMetadata(fallbackException, ColumnMetadata.named("fallback_exception").withIndex(7).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(handleException, ColumnMetadata.named("handle_exception").withIndex(6).ofType(Types.VARCHAR).withSize(2147483647).notNull());
+        addMetadata(fallbackException, ColumnMetadata.named("fallback_exception").withIndex(6).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(handleException, ColumnMetadata.named("handle_exception").withIndex(5).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(2).ofType(Types.BIGINT).withSize(19).notNull());
     }

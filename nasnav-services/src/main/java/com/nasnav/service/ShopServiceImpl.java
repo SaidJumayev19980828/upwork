@@ -6,6 +6,7 @@ import com.nasnav.dao.OrganizationImagesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -13,18 +14,23 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationImagesEntity;
 import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.querydsl.sql.*;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.cache.annotation.CacheResult;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
@@ -39,7 +45,10 @@ public class ShopServiceImpl implements ShopService {
 	
 	@Autowired
 	private SecurityService securityService;
-
+    @Autowired
+    private SQLQueryFactory queryFactory;
+    @Autowired
+    private JdbcTemplate template;
     private final ShopsRepository shopsRepository;
     private final UserServicesHelper userServicehelper;
     private final ShopServiceHelper shopServiceHelper;
@@ -160,15 +169,71 @@ public class ShopServiceImpl implements ShopService {
     
     
     @Override
-    public List<ShopRepresentationObject> getLocationShops(String name, Long orgId) {
-        return ofNullable(orgId)
-                .map(id -> shopsRepository.getShopsByOrgIdAndProductsOrTags(name, id))
-                .orElseGet(() -> shopsRepository.getShopsByProductsOrTags(name))
-                .stream()
-                .map(s -> (ShopRepresentationObject)s.getRepresentation())
-                .collect(toList());
+    public List<ShopRepresentationObject> getLocationShops(String name, Long orgId, Long areaId, Double longitude, Double latitude, Double radius) {
+        QShops shop = QShops.shops;
+
+        BooleanBuilder predicate = getQueryPredicate(name, orgId, areaId, longitude, latitude, radius);
+        SQLQuery fromClaus = getFromClaus(predicate);
+        SQLQuery query = (SQLQuery) fromClaus.select(shop.id, shop.name, shop.pName, shop.logo, shop.banner,
+                                   shop.googlePlaceId, shop.isWarehouse, shop.priority).distinct();
+
+        return template.query(query.getSQL().getSQL(),
+                new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
+
     }
 
+    private BooleanBuilder getQueryPredicate(String name, Long orgId, Long areaId, Double longitude, Double latitude, Double radius) {
+        BooleanBuilder predicate = new BooleanBuilder();
+        QShops shop = QShops.shops;
+        QProducts product = QProducts.products;
+        QTags tag = QTags.tags;
+        QAddresses address = QAddresses.addresses;
+        QAreas area = QAreas.areas;
+
+        predicate.and(shop.removed.eq(0));
+        if(name != null) {
+            predicate.and(product.name.likeIgnoreCase(name)
+                        .or(tag.name.likeIgnoreCase(name)));
+        }
+        if(orgId != null) {
+            predicate.and(product.organizationId.eq(orgId));
+        }
+        if (areaId != null) {
+            predicate.and(area.id.eq(areaId));
+        }
+        if (longitude != null && latitude != null) {
+            Double minLat, maxLat, minLong, maxLong;
+            minLong = longitude + radius * Math.cos(225 * Math.PI / 180);
+            minLat = latitude + radius * Math.sin(225 * Math.PI / 180);
+            maxLong = longitude + radius * Math.cos(45 * Math.PI / 180);
+            maxLat = latitude + radius * Math.sin(45 * Math.PI / 180);
+            predicate.and(address.latitude.between(minLat, maxLat))
+                    .and(address.longitude.between(minLong, maxLong));
+        }
+
+        return predicate;
+    }
+
+    private SQLQuery<?> getFromClaus(BooleanBuilder predicate) {
+        QShops shop = QShops.shops;
+        QStocks stock = QStocks.stocks;
+        QProductVariants variant = QProductVariants.productVariants;
+        QProducts product = QProducts.products;
+        QProductTags productTag = QProductTags.productTags;
+        QTags tag = QTags.tags;
+        QAddresses address = QAddresses.addresses;
+        QAreas area = QAreas.areas;
+
+        return queryFactory.from(stock)
+                .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                .innerJoin(product).on(variant.productId.eq(product.id))
+                .leftJoin(productTag).on(product.id.eq(productTag.productId))
+                .leftJoin(tag).on(tag.id.eq(productTag.tagId))
+                .leftJoin(address).on(shop.addressId.eq(address.id))
+                .leftJoin(area).on(address.areaId.eq(area.id))
+                .where(predicate);
+    }
 
     @Override
     @Transactional

@@ -1,26 +1,36 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
-import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
+import static com.querydsl.core.types.PathMetadataFactory.*;
 
+import com.querydsl.core.types.dsl.*;
+
+import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
+import com.querydsl.core.types.Path;
+
+import com.querydsl.sql.ColumnMetadata;
 import java.sql.Types;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 
+
+
+/**
+ * QUnits is a Querydsl query type for QUnits
+ */
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QUnits extends com.querydsl.sql.RelationalPathBase<QUnits> {
 
-    private static final long serialVersionUID = -198088154;
+    private static final long serialVersionUID = 800189305;
 
     public static final QUnits units = new QUnits("units");
 
+    public final NumberPath<Integer> id = createNumber("id", Integer.class);
+
     public final StringPath name = createString("name");
 
-    public final NumberPath<Long> id = createNumber("id", Long.class);
+    public final com.querydsl.sql.PrimaryKey<QUnits> unitsPkey = createPrimaryKey(id);
+
+    public final com.querydsl.sql.ForeignKey<QStocks> _stocksUnitIdFkey = createInvForeignKey(id, "unit_id");
 
     public QUnits(String variable) {
         super(QUnits.class, forVariable(variable), "public", "units");
@@ -48,7 +58,9 @@ public class QUnits extends com.querydsl.sql.RelationalPathBase<QUnits> {
     }
 
     public void addMetadata() {
+        addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(2).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
     }
+
 }
+

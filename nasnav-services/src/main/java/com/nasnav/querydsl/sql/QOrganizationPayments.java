@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QOrganizationPayments extends com.querydsl.sql.RelationalPathBase<QOrganizationPayments> {
 
-    private static final long serialVersionUID = -249002341;
+    private static final long serialVersionUID = 473502774;
 
     public static final QOrganizationPayments organizationPayments = new QOrganizationPayments("organization_payments");
 
@@ -32,9 +32,11 @@ public class QOrganizationPayments extends com.querydsl.sql.RelationalPathBase<Q
 
     public final NumberPath<Long> organizationId = createNumber("organizationId", Long.class);
 
-    public final com.querydsl.sql.PrimaryKey<QOrganizationPayments> organizationPaymentsPk = createPrimaryKey(id);
+    public final com.querydsl.sql.PrimaryKey<QOrganizationPayments> organizationPaymentsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> organizationPaymentsFk = createForeignKey(organizationId, "id");
+    public final com.querydsl.sql.ForeignKey<QOrganizations> organizationPaymentsOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QPayments> _paymentsOrgPaymentIdFkey = createInvForeignKey(id, "org_payment_id");
 
     public QOrganizationPayments(String variable) {
         super(QOrganizationPayments.class, forVariable(variable), "public", "organization_payments");
@@ -62,10 +64,10 @@ public class QOrganizationPayments extends com.querydsl.sql.RelationalPathBase<Q
     }
 
     public void addMetadata() {
-        addMetadata(account, ColumnMetadata.named("account").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(gateway, ColumnMetadata.named("gateway").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(account, ColumnMetadata.named("account").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647).notNull());
+        addMetadata(gateway, ColumnMetadata.named("gateway").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.INTEGER).withSize(10).notNull());
-        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(2).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(2).ofType(Types.BIGINT).withSize(19));
     }
 
 }

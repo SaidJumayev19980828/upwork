@@ -46,8 +46,12 @@ public class YeshteryController {
     private SeoService seoService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
-    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name) {
-        return shopService.getLocationShops(name, null);
+    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name,
+                                                           @RequestParam(value = "area_id", required = false) Long areaId,
+                                                           @RequestParam(required = false) Double longitude,
+                                                           @RequestParam(required = false) Double latitude,
+                                                           @RequestParam(required = false) Double radius) {
+        return shopService.getLocationShops(name, null, areaId, longitude, latitude, radius);
     }
 
 

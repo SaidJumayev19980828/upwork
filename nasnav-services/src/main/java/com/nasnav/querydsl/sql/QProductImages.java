@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QProductImages extends com.querydsl.sql.RelationalPathBase<QProductImages> {
 
-    private static final long serialVersionUID = -1393968244;
+    private static final long serialVersionUID = 1402697297;
 
     public static final QProductImages productImages = new QProductImages("product_images");
 
@@ -40,9 +40,9 @@ public class QProductImages extends com.querydsl.sql.RelationalPathBase<QProduct
 
     public final com.querydsl.sql.ForeignKey<QProducts> productImagesProductIdFkey = createForeignKey(productId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QProductVariants> productImagesVariantIdFkey = createForeignKey(variantId, "id");
+    public final com.querydsl.sql.ForeignKey<QFiles> productImagesUriFkey = createForeignKey(uri, "url");
 
-    public final com.querydsl.sql.ForeignKey<QFiles> productImagesFilesUrlKey = createForeignKey(uri, "url");
+    public final com.querydsl.sql.ForeignKey<QProductVariants> productImagesVariantIdFkey = createForeignKey(variantId, "id");
 
     public QProductImages(String variable) {
         super(QProductImages.class, forVariable(variable), "public", "product_images");

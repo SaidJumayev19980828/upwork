@@ -1,14 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -19,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QTagGraphNodes extends com.querydsl.sql.RelationalPathBase<QTagGraphNodes> {
 
-    private static final long serialVersionUID = 1673630850;
+    private static final long serialVersionUID = 175329095;
 
     public static final QTagGraphNodes tagGraphNodes = new QTagGraphNodes("tag_graph_nodes");
 
@@ -27,13 +28,13 @@ public class QTagGraphNodes extends com.querydsl.sql.RelationalPathBase<QTagGrap
 
     public final NumberPath<Long> tagId = createNumber("tagId", Long.class);
 
-    public final com.querydsl.sql.PrimaryKey<QTagGraphNodes> tagGraphNodesPk = createPrimaryKey(id);
+    public final com.querydsl.sql.PrimaryKey<QTagGraphNodes> tagGraphNodesPkey = createPrimaryKey(id);
 
     public final com.querydsl.sql.ForeignKey<QTags> tagGraphNodesFk = createForeignKey(tagId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QTagGraphEdges> _tagGraphEdgesChildFk = createInvForeignKey(id, "child_id");
+    public final com.querydsl.sql.ForeignKey<QTagGraphEdges> _tagEdgesChildIdFkey = createInvForeignKey(id, "child_id");
 
-    public final com.querydsl.sql.ForeignKey<QTagGraphEdges> _tagGraphEdgesParentFk = createInvForeignKey(id, "parent_id");
+    public final com.querydsl.sql.ForeignKey<QTagGraphEdges> _tagEdgesParentIdFkey = createInvForeignKey(id, "parent_id");
 
     public QTagGraphNodes(String variable) {
         super(QTagGraphNodes.class, forVariable(variable), "public", "tag_graph_nodes");

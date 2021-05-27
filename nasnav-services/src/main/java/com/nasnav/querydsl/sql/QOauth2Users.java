@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QOauth2Users extends com.querydsl.sql.RelationalPathBase<QOauth2Users> {
 
-    private static final long serialVersionUID = -342119726;
+    private static final long serialVersionUID = 1654084311;
 
     public static final QOauth2Users oauth2Users = new QOauth2Users("oauth2_users");
 
@@ -38,11 +38,13 @@ public class QOauth2Users extends com.querydsl.sql.RelationalPathBase<QOauth2Use
 
     public final NumberPath<Long> providerId = createNumber("providerId", Long.class);
 
-    public final com.querydsl.sql.PrimaryKey<QOauth2Users> oauth2UsersPk = createPrimaryKey(id);
+    public final com.querydsl.sql.PrimaryKey<QOauth2Users> oauth2UsersPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QUsers> oauth2UsersNasnavUser = createForeignKey(nasnavUserId, "id");
+    public final com.querydsl.sql.ForeignKey<QUsers> oauth2UsersNasnavUserIdFkey = createForeignKey(nasnavUserId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> oauth2UsersOrg = createForeignKey(organizationId, "id");
+    public final com.querydsl.sql.ForeignKey<QOrganizations> oauth2UsersOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOauth2Providers> oauth2UsersProviderIdFkey = createForeignKey(providerId, "id");
 
     public QOauth2Users(String variable) {
         super(QOauth2Users.class, forVariable(variable), "public", "oauth2_users");

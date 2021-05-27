@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QOauth2Providers extends com.querydsl.sql.RelationalPathBase<QOauth2Providers> {
 
-    private static final long serialVersionUID = -679321492;
+    private static final long serialVersionUID = -1733263887;
 
     public static final QOauth2Providers oauth2Providers = new QOauth2Providers("oauth2_providers");
 
@@ -28,7 +28,9 @@ public class QOauth2Providers extends com.querydsl.sql.RelationalPathBase<QOauth
 
     public final StringPath providerName = createString("providerName");
 
-    public final com.querydsl.sql.PrimaryKey<QOauth2Providers> oauth2ProvidersPk = createPrimaryKey(id);
+    public final com.querydsl.sql.PrimaryKey<QOauth2Providers> oauth2ProvidersPkey = createPrimaryKey(id);
+
+    public final com.querydsl.sql.ForeignKey<QOauth2Users> _oauth2UsersProviderIdFkey = createInvForeignKey(id, "provider_id");
 
     public QOauth2Providers(String variable) {
         super(QOauth2Providers.class, forVariable(variable), "public", "oauth2_providers");

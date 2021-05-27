@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QIntegrationMapping extends com.querydsl.sql.RelationalPathBase<QIntegrationMapping> {
 
-    private static final long serialVersionUID = 1216567349;
+    private static final long serialVersionUID = -570388336;
 
     public static final QIntegrationMapping integrationMapping = new QIntegrationMapping("integration_mapping");
 
@@ -36,9 +36,9 @@ public class QIntegrationMapping extends com.querydsl.sql.RelationalPathBase<QIn
 
     public final com.querydsl.sql.PrimaryKey<QIntegrationMapping> integrationMappingPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationMappingOrganizationIdFkey = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QIntegrationMappingType> integrationMappingMappingTypeFkey = createForeignKey(mappingType, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationMappingOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public QIntegrationMapping(String variable) {
         super(QIntegrationMapping.class, forVariable(variable), "public", "integration_mapping");

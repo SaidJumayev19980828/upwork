@@ -291,8 +291,12 @@ public class NavboxController {
 	})
 	@GetMapping(value="/location_shops",produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name,
-														   @RequestParam(name = "org_id") Long orgId) {
-		return shopService.getLocationShops(name, orgId);
+														   @RequestParam(name = "org_id") Long orgId,
+														   @RequestParam(value = "area_id", required = false) Long areaId,
+														   @RequestParam(required = false) Double longitude,
+														   @RequestParam(required = false) Double latitude,
+														   @RequestParam(required = false) Double radius) {
+		return shopService.getLocationShops(name, orgId, areaId, longitude, latitude, radius);
 	}
 
 
