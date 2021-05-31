@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.enumerations.ProductFeatureType;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -204,9 +207,13 @@ public class YeshteryApiTest {
 
     @Test
     public void getYeshteryBrands() throws JsonProcessingException {
-        var response = template.getForEntity("/v1/yeshtery/brands", String.class);
+        var response = template.exchange(
+                "/v1/yeshtery/brands",
+                GET,
+                null,
+                new ParameterizedTypeReference<RestResponsePage<Organization_BrandRepresentationObject>>() {});
         assertEquals(200, response.getStatusCodeValue());
-        PageImpl<Organization_BrandRepresentationObject> body = mapper.readValue(response.getBody(), new TypeReference<PageImpl<Organization_BrandRepresentationObject>>() {});
+        var body = response.getBody();
         assertEquals(1, body.getTotalPages());
         assertEquals(102, body.get().findFirst().get().getId().intValue());
     }
