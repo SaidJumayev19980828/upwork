@@ -7,6 +7,7 @@ import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.service.*;
@@ -295,8 +296,11 @@ public class NavboxController {
 														   @RequestParam(value = "area_id", required = false) Long areaId,
 														   @RequestParam(required = false) Double longitude,
 														   @RequestParam(required = false) Double latitude,
-														   @RequestParam(required = false) Double radius) {
-		return shopService.getLocationShops(name, orgId, areaId, longitude, latitude, radius);
+														   @RequestParam(required = false) Double radius,
+														   @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+														   @RequestParam(value = "product_type", required = false) Integer[] productType) {
+		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, longitude, latitude, radius, false, searchInTags.booleanValue(), productType);
+		return shopService.getLocationShops(param);
 	}
 
 

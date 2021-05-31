@@ -32,6 +32,9 @@ public class ShopsEntity implements BaseEntity{
 
     private String logo;
 
+    @Column(name = "dark_logo")
+    private String darkLogo;
+
     private String banner;
 
     private Integer removed;
@@ -70,6 +73,7 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setId(getId());
         shopRepresentationObject.setLogo(getLogo());
         shopRepresentationObject.setBanner(getBanner());
+        shopRepresentationObject.setDarkLogo(getDarkLogo());
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
         shopRepresentationObject.setPlaceId(getPlaceId());

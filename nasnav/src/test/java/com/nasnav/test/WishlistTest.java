@@ -275,7 +275,7 @@ public class WishlistTest {
         ResponseEntity<Wishlist> response =
                 template.exchange("/wishlist/item?item_id="+id, DELETE, request, Wishlist.class);
 
-        assertEquals(OK, response.getStatusCode());
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
         assertTrue("The item will not be deleted", wishlistRepo.findById(id).isPresent());
     }
 
@@ -293,7 +293,7 @@ public class WishlistTest {
         ResponseEntity<Cart> response =
                 template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
 
-        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
     }
 
 

@@ -15,10 +15,14 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationImagesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.querydsl.sql.*;
+import com.nasnav.request.LocationShopsParam;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Path;
+import com.querydsl.core.types.SubQueryExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -169,44 +173,57 @@ public class ShopServiceImpl implements ShopService {
     
     
     @Override
-    public List<ShopRepresentationObject> getLocationShops(String name, Long orgId, Long areaId, Double longitude, Double latitude, Double radius) {
-        QShops shop = QShops.shops;
+    public List<ShopRepresentationObject> getLocationShops(LocationShopsParam param) {
 
-        BooleanBuilder predicate = getQueryPredicate(name, orgId, areaId, longitude, latitude, radius);
-        SQLQuery fromClaus = getFromClaus(predicate);
-        SQLQuery query = (SQLQuery) fromClaus.select(shop.id, shop.name, shop.pName, shop.logo, shop.banner,
-                                   shop.googlePlaceId, shop.isWarehouse, shop.priority).distinct();
+        BooleanBuilder predicate = getQueryPredicate(param);
+        SubQueryExpression productsQuery = getProductsQuery(predicate);
+        SubQueryExpression collectionsQuery = getCollectionsQuery(predicate);
+        SQLQuery query = queryFactory.select((Expressions.template(ShopRepresentationObject.class,"*")))
+                .from(new SQLQuery<>().union( productsQuery,collectionsQuery).as("total"));
 
         return template.query(query.getSQL().getSQL(),
                 new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
 
     }
 
-    private BooleanBuilder getQueryPredicate(String name, Long orgId, Long areaId, Double longitude, Double latitude, Double radius) {
+    private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
         BooleanBuilder predicate = new BooleanBuilder();
         QShops shop = QShops.shops;
         QProducts product = QProducts.products;
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QOrganizations organization = QOrganizations.organizations;
 
         predicate.and(shop.removed.eq(0));
-        if(name != null) {
-            predicate.and(product.name.likeIgnoreCase(name)
-                        .or(tag.name.likeIgnoreCase(name)));
+        if(param.getName() != null) {
+            if (param.isSearchInTags()) {
+                predicate.and(product.name.likeIgnoreCase(param.getName())
+                        .or(tag.name.likeIgnoreCase(param.getName())));
+            }
+            else {
+                predicate.and(product.name.likeIgnoreCase(param.getName()));
+            }
         }
-        if(orgId != null) {
-            predicate.and(product.organizationId.eq(orgId));
+        if (param.isYeshteryState()) {
+           predicate.and(organization.yeshteryState.eq(1));
         }
-        if (areaId != null) {
-            predicate.and(area.id.eq(areaId));
+        if (param.getOrgId() != null) {
+            predicate.and(product.organizationId.eq(param.getOrgId()));
         }
-        if (longitude != null && latitude != null) {
-            Double minLat, maxLat, minLong, maxLong;
-            minLong = longitude + radius * Math.cos(225 * Math.PI / 180);
-            minLat = latitude + radius * Math.sin(225 * Math.PI / 180);
-            maxLong = longitude + radius * Math.cos(45 * Math.PI / 180);
-            maxLat = latitude + radius * Math.sin(45 * Math.PI / 180);
+        if (param.getAreaId() != null) {
+            predicate.and(area.id.eq(param.getAreaId()));
+        }
+        if (param.getProductType() != null) {
+            predicate.and(product.productType.in(param.getProductType()));
+        }
+        if (param.getLongitude() != null && param.getLatitude() != null) {
+            Double minLat, maxLat, minLong, maxLong, radius;
+            radius = ofNullable(param.getRadius()).map(r -> r/100).orElse(0.1);
+            minLong = getMinOrMaxLongitude(param.getLongitude(), radius ,225 );
+            minLat = getMinOrMaxLatitude(param.getLatitude(), radius ,225 );
+            maxLong = getMinOrMaxLongitude(param.getLongitude(), radius ,45 );
+            maxLat = getMinOrMaxLatitude(param.getLatitude(), radius ,45 );
             predicate.and(address.latitude.between(minLat, maxLat))
                     .and(address.longitude.between(minLong, maxLong));
         }
@@ -214,7 +231,15 @@ public class ShopServiceImpl implements ShopService {
         return predicate;
     }
 
-    private SQLQuery<?> getFromClaus(BooleanBuilder predicate) {
+    private double getMinOrMaxLongitude(double longitude, double radius, int angel) {
+        return longitude + radius * Math.cos(angel * Math.PI / 180);
+    }
+
+    private double getMinOrMaxLatitude(double latitude, double radius, int angel) {
+        return latitude + radius * Math.sin(angel * Math.PI / 180);
+    }
+
+    private SubQueryExpression getProductsQuery(BooleanBuilder predicate) {
         QShops shop = QShops.shops;
         QStocks stock = QStocks.stocks;
         QProductVariants variant = QProductVariants.productVariants;
@@ -223,8 +248,12 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QOrganizations organizations = QOrganizations.organizations;
 
-        return queryFactory.from(stock)
+        SQLQuery productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                shop.googlePlaceId, shop.isWarehouse, shop.priority, address.latitude, address.longitude)
+                .distinct()
+                .from(stock)
                 .innerJoin(shop).on(stock.shopId.eq(shop.id))
                 .innerJoin(variant).on(stock.variantId.eq(variant.id))
                 .innerJoin(product).on(variant.productId.eq(product.id))
@@ -232,7 +261,37 @@ public class ShopServiceImpl implements ShopService {
                 .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                 .leftJoin(address).on(shop.addressId.eq(address.id))
                 .leftJoin(area).on(address.areaId.eq(area.id))
+                .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
                 .where(predicate);
+        return productsQuery;
+    }
+
+    private SubQueryExpression getCollectionsQuery(BooleanBuilder predicate) {
+        QShops shop = QShops.shops;
+        QStocks stock = QStocks.stocks;
+        QProductVariants variant = QProductVariants.productVariants;
+        QProductCollections collection = QProductCollections.productCollections;
+        QProducts product = QProducts.products;
+        QProductTags productTag = QProductTags.productTags;
+        QTags tag = QTags.tags;
+        QAddresses address = QAddresses.addresses;
+        QAreas area = QAreas.areas;
+        QOrganizations organizations = QOrganizations.organizations;
+        SQLQuery collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                        shop.googlePlaceId, shop.isWarehouse, shop.priority, address.latitude, address.longitude)
+                .distinct()
+                .from(stock)
+                .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                .innerJoin(collection).on(collection.variantId.eq(variant.id))
+                .innerJoin(product).on(collection.productId.eq(product.id))
+                .leftJoin(productTag).on(product.id.eq(productTag.productId))
+                .leftJoin(tag).on(tag.id.eq(productTag.tagId))
+                .leftJoin(address).on(shop.addressId.eq(address.id))
+                .leftJoin(area).on(address.areaId.eq(area.id))
+                .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                .where(predicate);
+        return collectionsQuery;
     }
 
     @Override

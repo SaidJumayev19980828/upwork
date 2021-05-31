@@ -40,9 +40,9 @@ public class QAddresses extends com.querydsl.sql.RelationalPathBase<QAddresses> 
 
     public final StringPath lastName = createString("lastName");
 
-    public final NumberPath<java.math.BigInteger> latitude = createNumber("latitude", java.math.BigInteger.class);
+    public final NumberPath<java.math.BigDecimal> latitude = createNumber("latitude", java.math.BigDecimal.class);
 
-    public final NumberPath<java.math.BigInteger> longitude = createNumber("longitude", java.math.BigInteger.class);
+    public final NumberPath<java.math.BigDecimal> longitude = createNumber("longitude", java.math.BigDecimal.class);
 
     public final StringPath name = createString("name");
 

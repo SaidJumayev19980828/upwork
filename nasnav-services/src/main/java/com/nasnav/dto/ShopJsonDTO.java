@@ -23,6 +23,9 @@ public class ShopJsonDTO extends BaseJsonDTO{
 
     private String logo;
 
+    @JsonProperty("dark_logo")
+    private String darkLogo;
+
     private String banner;
 
     @JsonProperty("place_id")
@@ -44,6 +47,11 @@ public class ShopJsonDTO extends BaseJsonDTO{
     void setLogo(String logo) {
         setPropertyAsUpdated("logo");
         this.logo = logo;
+    }
+
+    void setDarkLogo(String darkLogo) {
+        setPropertyAsUpdated("dark_logo");
+        this.darkLogo = darkLogo;
     }
 
     public void setName(String name) {

@@ -35,8 +35,9 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
 
     private AddressRepObj address;
 
-    @JsonProperty("logo")
     private String logo;
+    @JsonProperty("darl_logo")
+    private String darkLogo;
     private String banner;
     @JsonProperty("open")
     private OpenWorkingDays openWorkingDays;
@@ -50,4 +51,7 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     private Boolean isWarehouse;
 
     private Integer priority;
+
+    private Double latitude;
+    private Double longitude;
 }

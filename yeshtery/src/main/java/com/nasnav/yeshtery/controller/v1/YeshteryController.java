@@ -5,6 +5,7 @@ import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.LocationShopsParam;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SearchService;
@@ -47,11 +48,15 @@ public class YeshteryController {
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name,
+                                                           @RequestParam(name = "org_id", required = false) Long orgId,
                                                            @RequestParam(value = "area_id", required = false) Long areaId,
                                                            @RequestParam(required = false) Double longitude,
                                                            @RequestParam(required = false) Double latitude,
-                                                           @RequestParam(required = false) Double radius) {
-        return shopService.getLocationShops(name, null, areaId, longitude, latitude, radius);
+                                                           @RequestParam(required = false) Double radius,
+                                                           @RequestParam(value = "search_in_tags", required = false, defaultValue = "true") Boolean searchInTags,
+                                                           @RequestParam(value = "product_type", required = false) Integer[] productType) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
+        return shopService.getLocationShops(param);
     }
 
 

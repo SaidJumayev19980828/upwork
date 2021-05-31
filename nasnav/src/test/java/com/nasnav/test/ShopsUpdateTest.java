@@ -66,28 +66,28 @@ public class ShopsUpdateTest {
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
 
         // create shop using Store_Mananger role (test fail)
         json = getHttpEntity(body,"192021");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals(403, response.getStatusCode().value());
+        assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
         json = getHttpEntity(body,"101112");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals(403, response.getStatusCode().value());
+        assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
         json = getHttpEntity(body,"131415");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals(403, response.getStatusCode().value());
+        assertEquals(403, response.getStatusCode().value());
     }
     
     
@@ -101,7 +101,7 @@ public class ShopsUpdateTest {
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
     
     
@@ -165,23 +165,26 @@ public class ShopsUpdateTest {
         //get created shop entity
         ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
         //update shop data and check if other data remain the same
-        String bodyString = "{\"org_id\":99001,\n" +
-                "\"id\":" + oldShop.getId() +",\n" +
-                "  \"brand_id\": 102,\n" +
-                "  \"name\": \"Different Shop\"\n" + "}";
+        String bodyString = json().put("org_id", 99001)
+                .put("id", oldShop.getId())
+                .put("brand_id", 102)
+                .put("name", "Different Shop")
+                .put("dark_logo", "dark logo value")
+                .toString();
         request = getHttpEntity(bodyString,"161718");
         response = template.postForEntity("/shop/update", request, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
 
         //check if unchanged data remains
-        Assert.assertEquals(oldShop.getAddressesEntity().getFlatNumber(), newShop.getAddressesEntity().getFlatNumber());
-        Assert.assertEquals(oldShop.getBanner(), newShop.getBanner());
-        Assert.assertEquals(oldShop.getLogo(), newShop.getLogo());
+        assertEquals(oldShop.getAddressesEntity().getFlatNumber(), newShop.getAddressesEntity().getFlatNumber());
+        assertEquals(oldShop.getBanner(), newShop.getBanner());
+        assertEquals(oldShop.getLogo(), newShop.getLogo());
         
         //check if changes applied
-        Assert.assertEquals(new Long(102), newShop.getBrandId());
-        Assert.assertEquals("Different Shop", newShop.getName());
+        assertEquals(new Long(102), newShop.getBrandId());
+        assertEquals("Different Shop", newShop.getName());
+        assertEquals("dark logo value", newShop.getDarkLogo());
 
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
     }
