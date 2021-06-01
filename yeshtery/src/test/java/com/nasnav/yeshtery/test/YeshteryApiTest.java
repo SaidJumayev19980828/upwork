@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.*;
+import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.yeshtery.Yeshtery;
@@ -17,12 +21,18 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -31,6 +41,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -50,12 +61,11 @@ public class YeshteryApiTest {
 
     @Autowired
     private TestRestTemplate template;
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private ProductRepository productRepo;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
 
     @Test
@@ -83,17 +93,129 @@ public class YeshteryApiTest {
         assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
+    @Test
+    public void getBrandTest()  {
+        var response = template.getForEntity("/v1/yeshtery/brand?brand_id=101", Organization_BrandRepresentationObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(101, response.getBody().getId().intValue());
+    }
 
+    @Test
+    public void getCountriesTest() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/countries", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        Map<String, CountriesRepObj> countries =  mapper.readValue(response.getBody(), new TypeReference<Map<String, CountriesRepObj>>() {});
+        assertEquals(1, countries.size());
+    }
+
+    @Test
+    public void getShopsWithYeshteryProductsTest() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/location_shops?name=mountain", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ShopRepresentationObject> shops = mapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertTrue(shops.size() == 1);
+        assertEquals(502, shops.get(0).getId().intValue());
+    }
+
+    @Test
+    public void getYeshteryVariantsTest() {
+        var response = template.getForEntity("/v1/yeshtery/variants?name=ABCD1234", VariantsResponse.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<VariantDTO> variants = response.getBody().getVariants();
+        assertEquals(1, variants.size());
+        assertEquals(310001, variants.get(0).getId().intValue());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getCollectionTest() {
+        var response = template.getForEntity("/v1/yeshtery/collection?id=1004", ProductDetailsDTO.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1004, response.getBody().getId().intValue());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void get360JsonData() {
+        var response = template.getForEntity("/v1/yeshtery/360view/json_data?shop_id=501&type=web", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals("{}", response.getBody());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void get360Setions() throws JsonProcessingException {
+        var response = template.getForEntity("/v1/yeshtery/360view/sections?shop_id=501", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        Map body = mapper.readValue(response.getBody(), new TypeReference<Map>() {});
+        assertEquals(1, body.size());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void get360Shop()  {
+        var response = template.getForEntity("/v1/yeshtery/360view/shops?shop_id=501", ShopThreeSixtyDTO.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(10010, response.getBody().getId().intValue());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void get360ProductPositions()  {
+        var response = template.getForEntity("/v1/yeshtery/360view/products_positions?shop_id=501&published=1", ProductsPositionDTO.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1, response.getBody().getProductsData().size());
+        assertEquals(1, response.getBody().getCollectionsData().size());
+    }
+
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Shop_360_Test_Data.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void get360Products()  {
+        var response = template.getForEntity("/v1/yeshtery/360view/products?shop_id=501&published=1", LinkedHashMap.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1, response.getBody().size());
+        assertEquals(3, ((List)response.getBody().get("products")).size());
+    }
+
+    @Test
+    public void getYeshteryProductsTest() {
+        var response = template.getForEntity("/v1/yeshtery/products", ProductsResponse.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ProductRepresentationObject> products = response.getBody().getProducts();
+        assertEquals(3, products.size());
+        assertEquals(1003, products.get(0).getId().intValue());
+        assertEquals(1001, products.get(1).getId().intValue());
+        assertEquals(1004, products.get(2).getId().intValue());
+    }
 
     @Test
     public void getCategoriesTree() throws JsonProcessingException {
         var response = template.getForEntity("/v1/yeshtery/categories", String.class);
         assertEquals(OK, response.getStatusCode());
 
-        var rootLevel = objectMapper.readValue(response.getBody(), new TypeReference<List<CategoryDto>>(){});
+        var rootLevel = mapper.readValue(response.getBody(), new TypeReference<List<CategoryDto>>(){});
         assertRootLevelCategoriesReturned(rootLevel);
         assertCategoryHadImgInMetadata(rootLevel);
         assertFirstLevelCategoriesReturned(rootLevel);
+    }
+
+    @Test
+    public void getYeshteryBrands() throws JsonProcessingException {
+        var response = template.exchange(
+                "/v1/yeshtery/brands",
+                GET,
+                null,
+                new ParameterizedTypeReference<RestResponsePage<Organization_BrandRepresentationObject>>() {});
+        assertEquals(200, response.getStatusCodeValue());
+        var body = response.getBody();
+        assertEquals(1, body.getTotalPages());
+        assertEquals(102, body.get().findFirst().get().getId().intValue());
     }
 
 
