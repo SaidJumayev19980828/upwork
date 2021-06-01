@@ -9,7 +9,9 @@ import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.security.UserAuthenticationData;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface SecurityService {
 	
@@ -41,4 +43,8 @@ public interface SecurityService {
     UserApiResponse logoutAll();
 
 	Optional<BaseUserEntity> getCurrentUserOptional();
+
+    boolean currentUserHasMaxRoleLevelOf(Roles role);
+
+    Set<Roles> getCurrentUserRoles();
 }

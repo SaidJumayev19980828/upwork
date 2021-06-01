@@ -4,6 +4,7 @@ import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -27,9 +28,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -57,29 +61,40 @@ public class DataExportServiceImpl implements DataExportService{
 	@Autowired
 	private ShopsRepository shopRepo;
 
+	@Autowired
+	protected ImportExportHelper helper;
+
 
 	@Override
 	public List<CsvRow> exportProductsData(Long orgId, Long shopId) {
+		validateShopId(orgId, shopId);
 
-		if(shopId != null && !shopRepo.existsByIdAndOrganizationEntity_Id(shopId, orgId)){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005, shopId, orgId);
-		}
+		var stocks = getExportQuery(orgId, shopId);
 
-		SQLQuery<?> stocks = getExportQuery(orgId, shopId);
-
-		List<ProductExportedData> result =
+		var result =
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductExportedData.class));
-		
-		Map<Long, List<VariantExtraAtrribute>> extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
-		Map<Long,List<ProductTagsBasicData>> productTags = createProductTagsMap(result);
-		Map<Integer, ProductFeaturesEntity> features = createFeaturesMap();		
+
+		var extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
+		var productTags = createProductTagsMap(result);
+		var features = createFeaturesMap();
 		return result
 				.stream()
 				.map(product -> toCsvRow(product, productTags, features, extraAttributes))
 				.collect(toList());
 	}
 
+
+
+	private void validateShopId(Long orgId, Long shopId) {
+		if(isNull(shopId) && security.currentUserHasMaxRoleLevelOf(STORE_MANAGER)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0006);
+		}else if(nonNull(shopId)){
+			shopRepo.findByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005, shopId, orgId));
+			helper.validateAdminCanManageTheShop(shopId);
+		}
+	}
 
 
 	private SQLQuery<?> getExportQuery(Long orgId, Long shopId) {
@@ -108,7 +123,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private Map<Integer, ProductFeaturesEntity> createFeaturesMap() {
-		Long orgId = security.getCurrentUserOrganizationId();
+		var orgId = security.getCurrentUserOrganizationId();
 		return feautreRepo
 				.findByOrganizationId(orgId)
 				.stream()
@@ -119,7 +134,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
-		List<Long> productIds = 
+		var productIds =
 				result
 				.stream()
 				.map(ProductExportedData::getProductId)
@@ -138,7 +153,7 @@ public class DataExportServiceImpl implements DataExportService{
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Integer, ProductFeaturesEntity> features
 			, Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
-		CsvRow row = createCsvRow(productData);
+		var row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
 		setFeatures(row, productData, features);
@@ -150,7 +165,7 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
 			Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
-		Map<String,String> extraAttrMap  = 
+		var extraAttrMap  =
 				extraAttributes
 				.getOrDefault(productData.getVariantId(), emptyList())
 				.stream()
@@ -162,7 +177,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 	private void setFeatures(CsvRow row, ProductExportedData productData,
 			Map<Integer, ProductFeaturesEntity> featuresMap) {
-		Map<String,String> features = 
+		var features =
 				ofNullable(productData)
 				.map(ProductExportedData::getFeatureSpec)
 				.flatMap(this::toFeaturesJson)
@@ -176,7 +191,7 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	private Map<String,String> toFreaturesMap(JSONObject json, Map<Integer, ProductFeaturesEntity> featuresMap){
 		Map<String,String> features = new  HashMap<>();
-		for(String key : json.keySet()) {
+		for(var key : json.keySet()) {
 			Optional.of(key)
 			.map(k -> Integer.valueOf(k))
 			.map(featuresMap::get)
@@ -190,7 +205,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 	private Optional<JSONObject> toFeaturesJson(String jsonStr) {
 		try {
-			JSONObject json = new JSONObject(jsonStr);
+			var json = new JSONObject(jsonStr);
 			return Optional.of(json);
 		}catch(Throwable e) {
 			return Optional.empty();
@@ -202,7 +217,7 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	
 	private CsvRow createCsvRow(ProductExportedData data) {
-		CsvRow row = new CsvRow();
+		var row = new CsvRow();
 		row.setBarcode(data.getBarcode());
 		row.setBrand(data.getBrand());
 		row.setDescription(data.getDescription());
@@ -226,9 +241,9 @@ public class DataExportServiceImpl implements DataExportService{
 
 	private void setTags(CsvRow row, ProductExportedData productData,
 			Map<Long, List<ProductTagsBasicData>> productTags) {
-		List<String> tagsList = getTagsNames(productData.getProductId(), productTags);
+		var tagsList = getTagsNames(productData.getProductId(), productTags);
 		if(tagsList.size() > 0) {
-			String tags = toTagsString(tagsList);
+			var tags = toTagsString(tagsList);
 			row.setTags(tags);
 		} else {
 			row.setTags("");
@@ -252,13 +267,13 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private SQLQuery<?> getStocksQuery(Long orgId, Long shopId) {
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QBrands brand = QBrands.brands;
-		QUnits unit = QUnits.units;
+		var stock = QStocks.stocks;
+		var product = QProducts.products;
+		var variant = QProductVariants.productVariants;
+		var brand = QBrands.brands;
+		var unit = QUnits.units;
 
-		SQLQuery<?> fromClause = getProductsBaseQuery(queryFactory, orgId, shopId);
+		var fromClause = getProductsBaseQuery(queryFactory, orgId, shopId);
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.quantity,
 											stock.price,
@@ -281,7 +296,7 @@ public class DataExportServiceImpl implements DataExportService{
 													.partitionBy(product.id)
 													.orderBy(stock.price).as("row_num"));
 
-		SQLQuery<?> stocks = queryFactory.from(productsQuery.as("total_products"));
+		var stocks = queryFactory.from(productsQuery.as("total_products"));
 
 		stocks.select((Expressions.template(CsvRow.class,"*")));
 
@@ -293,13 +308,13 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private SQLQuery<?> getVariantsQuery(Long orgId) {
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QBrands brand = QBrands.brands;
-		QUnits unit = QUnits.units;
+		var stock = QStocks.stocks;
+		var product = QProducts.products;
+		var variant = QProductVariants.productVariants;
+		var brand = QBrands.brands;
+		var unit = QUnits.units;
 
-		SQLQuery<?> fromClause = getOrganizationProductsBaseQuery(queryFactory, orgId);
+		var fromClause = getOrganizationProductsBaseQuery(queryFactory, orgId);
 		SQLQuery<?> productsQuery = fromClause
 											.distinct()
 											.select(
@@ -317,7 +332,7 @@ public class DataExportServiceImpl implements DataExportService{
 											variant.productCode.as("product_code"),
 											variant.weight.as("weight"));
 
-		SQLQuery<?> stocks = queryFactory.from(productsQuery.as("total_products"));
+		var stocks = queryFactory.from(productsQuery.as("total_products"));
 
 		stocks.select((Expressions.template(CsvRow.class,"*")));
 
@@ -327,8 +342,8 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private String toTagsString(List<String> tags) {
-		String tagsString = "";
-		for(String tag : tags) {
+		var tagsString = "";
+		for(var tag : tags) {
 			tagsString += ";"+tag;
 		}
 		return tagsString.substring(1);
@@ -336,11 +351,11 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, Long orgId, Long shopId) {
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QBrands brand = QBrands.brands;
-		QUnits unit = QUnits.units;
+		var stock = QStocks.stocks;
+		var product = QProducts.products;
+		var variant = QProductVariants.productVariants;
+		var brand = QBrands.brands;
+		var unit = QUnits.units;
 
 		return query.from(stock)
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
@@ -355,11 +370,11 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private SQLQuery<?> getOrganizationProductsBaseQuery(SQLQueryFactory query, Long orgId) {
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QBrands brand = QBrands.brands;
-		QUnits unit = QUnits.units;
+		var stock = QStocks.stocks;
+		var product = QProducts.products;
+		var variant = QProductVariants.productVariants;
+		var brand = QBrands.brands;
+		var unit = QUnits.units;
 
 		return query.from(stock)
 				.distinct()

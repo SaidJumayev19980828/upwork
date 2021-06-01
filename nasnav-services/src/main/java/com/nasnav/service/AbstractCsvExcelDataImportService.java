@@ -7,23 +7,15 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
+import com.nasnav.persistence.*;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
-import javax.validation.Valid;
 
-import java.io.*;
+import javax.validation.Valid;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,8 +23,12 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.anyIsTrue;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataImportService {
 
@@ -40,11 +36,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     protected ShopsRepository shopRepo;
 
     @Autowired
-    protected EmployeeUserRepository empRepo;
-
-    @Autowired
     protected SecurityService security;
-
 
     @Autowired
     protected ProductFeaturesRepository featureRepo;
@@ -58,13 +50,16 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     @Autowired
     protected ExtraAttributesRepository extraAttrRepo;
 
+    @Autowired
+    protected ImportExportHelper helper;
+
 
     private Logger logger = Logger.getLogger(getClass());
 
 
 
     protected ProductImportMetadata getImportMetaData(ProductListImportDTO csvImportMetaData) {
-        ProductImportMetadata importMetadata = new ProductImportMetadata();
+        var importMetadata = new ProductImportMetadata();
 
         importMetadata.setDryrun(csvImportMetaData.isDryrun());
         importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
@@ -86,33 +81,40 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
             throw new RuntimeBusinessException(
                     ERR_NO_FILE_UPLOADED
                     , "INVALID PARAM"
-                    , HttpStatus.NOT_ACCEPTABLE);
+                    , NOT_ACCEPTABLE);
         }
 
     }
 
 
     protected void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws RuntimeBusinessException{
-        Long shopId = metaData.getShopId();
-        String encoding = metaData.getEncoding();
-        Integer currency = metaData.getCurrency();
+        var shopId = metaData.getShopId();
+        var encoding = metaData.getEncoding();
+        var currency = metaData.getCurrency();
 
         if( anyIsNull(shopId, encoding, currency)) {
             throw new RuntimeBusinessException(
                     ERR_PRODUCT_IMPORT_MISSING_PARAM
                     , "MISSING PARAM"
-                    , HttpStatus.NOT_ACCEPTABLE);
+                    , NOT_ACCEPTABLE);
         }
 
+        validateFlags(metaData);
         validateShopId(shopId);
-
         validateEncodingCharset(encoding);
-
         validateStockCurrency(currency);
     }
 
 
 
+    private void validateFlags(ProductListImportDTO metaData){
+        var isStoreManager = security.currentUserHasMaxRoleLevelOf(STORE_MANAGER);
+        if(isStoreManager &&
+                anyIsTrue(metaData.isUpdateProduct(), metaData.isDeleteOldProducts()
+                        , metaData.isInsertNewProducts(), metaData.isResetTags())){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMPORT$0001);
+        }
+    };
 
 
     private void validateEncodingCharset(String encoding) throws RuntimeBusinessException {
@@ -125,7 +127,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
             throw new RuntimeBusinessException(
                     String.format(ERR_INVALID_ENCODING, encoding)
                     , "MISSING PARAM:encoding"
-                    , HttpStatus.NOT_ACCEPTABLE);
+                    , NOT_ACCEPTABLE);
         }
     }
 
@@ -134,34 +136,35 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
     private void validateShopId(Long shopId) throws RuntimeBusinessException {
-        if( !shopRepo.existsById( shopId ) ) {
-            throw new RuntimeBusinessException(
-                    String.format(ERR_SHOP_ID_NOT_EXIST, shopId)
-                    , "MISSING PARAM:shop_id"
-                    , HttpStatus.NOT_ACCEPTABLE);
-        }
+        var shop =
+                shopRepo
+                .findById(shopId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, shopId));
 
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userOrgId = security.getCurrentUserOrganizationId();
-
-        ShopsEntity shop = shopRepo.findById(shopId).get();
-        Long shopOrgId = shop.getOrganizationEntity().getId();
-
-        if(!Objects.equals(shopOrgId, userOrgId)) {
-            throw new RuntimeBusinessException(
-                    String.format(ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP, userOrgId, shopOrgId)
-                    , "MISSING PARAM:shop_id"
-                    , HttpStatus.NOT_ACCEPTABLE);
-        }
+        validateShopBelongsToOrganization(shop);
+        helper.validateAdminCanManageTheShop(shopId);
     }
 
 
 
 
 
+
+    private void validateShopBelongsToOrganization(ShopsEntity shop) {
+        var userOrgId = security.getCurrentUserOrganizationId();
+        var shopOrgId = shop.getOrganizationEntity().getId();
+
+        if(!Objects.equals(shopOrgId, userOrgId)) {
+            throw new RuntimeBusinessException(
+                    String.format(ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP, userOrgId, shopOrgId)
+                    , "MISSING PARAM:shop_id"
+                    , NOT_ACCEPTABLE);
+        }
+    }
+
+
     private void validateStockCurrency(Integer currency) throws RuntimeBusinessException {
-        boolean invalidCurrency = Arrays.asList( TransactionCurrency.values() )
+        var invalidCurrency = Arrays.asList( TransactionCurrency.values() )
                 .stream()
                 .map(TransactionCurrency::getValue)
                 .map(Integer::valueOf)
@@ -170,7 +173,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
             throw new RuntimeBusinessException(
                     String.format("Invalid Currency code [%d]!", currency)
                     , "INVALID_PARAM:currency"
-                    , HttpStatus.NOT_ACCEPTABLE);
+                    , NOT_ACCEPTABLE);
         }
     }
 
@@ -178,8 +181,8 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
     @Override
     public List<String> getProductImportTemplateHeaders() {
-        Long orgId = security.getCurrentUserOrganizationId();
-        List<String> features =
+        var orgId = security.getCurrentUserOrganizationId();
+        var features =
                 productFeaturesRepo
                         .findByOrganizationId(orgId)
                         .stream()
@@ -187,7 +190,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
                         .sorted()
                         .collect(toList());
 
-        List<String> extraAttributes =
+        var extraAttributes =
                 extraAttrRepo.findByOrganizationId(orgId)
                         .stream()
                         .map(ExtraAttributesEntity::getName)
@@ -202,7 +205,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
     @Override
     public ByteArrayOutputStream generateProductsTemplate() throws IOException {
-        List<String> baseHeaders = getProductImportTemplateHeaders();
+        var baseHeaders = getProductImportTemplateHeaders();
 
         return writeFileHeaders(baseHeaders);
     }

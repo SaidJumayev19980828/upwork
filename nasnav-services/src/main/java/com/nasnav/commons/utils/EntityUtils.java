@@ -255,6 +255,13 @@ public class EntityUtils {
 				.map(ZonedDateTime::toLocalDateTime)
 				.orElse(null);
 	}
+
+
+	public static boolean anyIsTrue(Boolean ... flags){
+		return Arrays.stream(flags)
+				.map(booleanVal -> ofNullable(booleanVal).orElse(false))
+				.anyMatch(FunctionalUtils::self);
+	}
 }
 
 

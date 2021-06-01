@@ -90,10 +90,9 @@ public class WareHouseCartOptimizer implements CartOptimizer<WarehouseOptimizerC
 				ofNullable(config)
 				.map(WarehouseOptimizerConfig::getWarehouseId)
 				.orElse(-1L);
-		ShopsEntity shop = 
-				shopRepo
-				.findByIdAndOrganizationEntity_IdAndRemoved(warehouseId, orgId, 0);
-		return nonNull(shop);
+		return	shopRepo
+				.findByIdAndOrganizationEntity_IdAndRemoved(warehouseId, orgId, 0)
+				.isPresent();
 	}
 
 

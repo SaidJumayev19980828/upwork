@@ -37,7 +37,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCsv(){
-		ResponseEntity<String> response = 
+		var response =
 				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("192021"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -48,7 +48,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCSV(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -59,7 +59,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCsvShopFromAnotherOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?shop_id=501&type=CSV", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -69,7 +69,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCsvForWholeOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?type=CSV", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -80,7 +80,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCsvNoAuthz(){
-		ResponseEntity<String> response = 
+		var response =
 				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("101112"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -90,7 +90,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCSVNoAuthz(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("101112"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -100,7 +100,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXlsx(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -111,7 +111,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXLSX(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -122,7 +122,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXlsxShopFromAnotherOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?shop_id=501&type=XLSX", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -132,7 +132,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXlsxForWholeOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?type=XLSX", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -143,7 +143,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXlsxNoAuthz(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("101112"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -153,7 +153,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXLSXNoAuthz(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("101112"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -163,7 +163,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductsExportXLSX(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -174,7 +174,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXLSXShopFromAnotherOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/xlsx?shop_id=501", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -184,7 +184,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportXLSXForWholeOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/xlsx", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -195,7 +195,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductsExportCSV(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -206,7 +206,7 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCSVShopFromAnotherOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/csv?shop_id=501", GET, getHttpEntity("192021"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
@@ -216,8 +216,42 @@ public class DataExportTest {
 
 	@Test
 	public void testProductExportCSVForWholeOrganization(){
-		ResponseEntity<String> response =
+		var response =
 				template.exchange("/export/products/csv", GET, getHttpEntity("192021"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+
+	@Test
+	public void testProductExportCSVForWholeOrganizationByStoreManager(){
+		var response =
+				template.exchange("/export/products/csv", GET, getHttpEntity("TTTRRR"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+	@Test
+	public void testProductExportCSVForInvalidShopByStoreManager(){
+		var response =
+				template.exchange("/export/products/csv?shop_id=503", GET, getHttpEntity("TTTRRR"), String.class);
+
+		System.out.println(">>>>>>>\n" + response.getBody());
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
+
+
+	@Test
+	public void testProductExportCSVForByStoreManager(){
+		var response =
+				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("TTTRRR"), String.class);
 
 		System.out.println(">>>>>>>\n" + response.getBody());
 

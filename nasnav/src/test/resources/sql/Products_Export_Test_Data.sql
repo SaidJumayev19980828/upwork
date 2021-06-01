@@ -16,6 +16,7 @@ INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 101, 99001, 0);
 
 --insering users
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -26,18 +27,22 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (70, 'testuser3@nasnav.com', 99002, '161718',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (71, 'testuser4@nasnav.com', 99001, '192021',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (73, 'testuser6@nasnav.com', 99001, 'TTTRRR',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100001, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100002, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100003, '161718', now(), 70, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100004, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (100005, 'TTTRRR', now(), 73, null);
 
 --inserting Roles
-insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
-insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(6, 'STORE_MANAGER', 99001);
+insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
@@ -45,6 +50,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 5);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 73, 6);
 
 
 

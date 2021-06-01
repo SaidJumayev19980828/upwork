@@ -153,15 +153,19 @@ public class UserServicesHelper {
 
 	public boolean hasMaxRoleLevelOf(Roles role, Long currentUserId){
 		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
-		boolean hasNoRolesWithHigherLevel =
-				currentUserRoles
-				.stream()
-				.noneMatch(currentUserRole -> currentUserRole.getLevel() < role.getLevel());
-		boolean hasRole = currentUserRoles.contains(role);
-		return hasRole && hasNoRolesWithHigherLevel;
+		return hasMaxRoleLevelOf(role, currentUserRoles);
 	}
 
 
+
+	public boolean hasMaxRoleLevelOf(Roles role, Set<Roles> userRoles) {
+		boolean hasNoRolesWithHigherLevel =
+				userRoles
+				.stream()
+				.noneMatch(currentUserRole -> currentUserRole.getLevel() < role.getLevel());
+		boolean hasRole = userRoles.contains(role);
+		return hasRole && hasNoRolesWithHigherLevel;
+	}
 
 
 	private Set<Roles> getUserRoles(Long currentUserId) {

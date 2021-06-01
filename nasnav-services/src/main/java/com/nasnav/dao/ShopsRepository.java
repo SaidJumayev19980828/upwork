@@ -51,7 +51,7 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
 	Optional<ShopsEntity> findByNameAndOrganizationEntity_IdAndRemovedOrderByPriorityDesc(String shopName, Long orgId, Integer removed);
 
-	ShopsEntity findByIdAndOrganizationEntity_IdAndRemoved(Long id, Long orgId, Integer removed);
+	Optional<ShopsEntity> findByIdAndOrganizationEntity_IdAndRemoved(Long id, Long orgId, Integer removed);
 
 	List<ShopsEntity> findByIdInAndRemoved(Set<Long> shopIdList, Integer removed);
 
@@ -77,5 +77,5 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 	Optional<ShopsEntity> findShopFullData(@Param("id")Long id);
 
 
-    boolean existsByIdAndOrganizationEntity_Id(Long storeId, Long orgId);
+    boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long storeId, Long orgId, int removed);
 }

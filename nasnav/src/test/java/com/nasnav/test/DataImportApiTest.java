@@ -10,7 +10,6 @@ import com.nasnav.persistence.*;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
-import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -196,10 +195,10 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-        
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "Not Existing", csvFile, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "Not Existing", csvFile, importProperties);
 		
         result.andExpect(status().is(401));
     }
@@ -208,10 +207,10 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVNoAuthZTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "101112", csvFile, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "101112", csvFile, importProperties);
         
         result.andExpect(status().is(403));
     }
@@ -220,11 +219,11 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVMissingShopIdTest() throws Exception, Throwable {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.remove("shop_id");
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -236,11 +235,11 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVMissingEncodingTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.remove("encoding");
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -252,12 +251,12 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVMissingCurrencyTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.remove("currency");
-		
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -269,11 +268,11 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVNonExistingShopIdTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", 88865);
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -285,10 +284,10 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVUserFromAnotherOrgTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "898dssd", csvFile, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "898dssd", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -299,12 +298,12 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVInvalidEncodingTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.put("encoding", "KOKI-8");
-		
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -315,12 +314,12 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVInvalidCurrencyTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
+
+		var importProperties = createDataImportProperties();
 		importProperties.put("currency", 9999);
-		
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -332,12 +331,12 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVNoCsvUploadedTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-		
-		MockMultipartFile emptyFilePart = new MockMultipartFile("csv", "nothing.empty", "text/csv", new byte[0]);
-        
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", emptyFilePart, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var emptyFilePart = new MockMultipartFile("csv", "nothing.empty", "text/csv", new byte[0]);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", emptyFilePart, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -352,10 +351,10 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVMissingCol() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-        
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileMissingCol, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileMissingCol, importProperties);
         
         result.andExpect(status().is(406));
     }
@@ -366,14 +365,14 @@ public class DataImportApiTest {
 	
 	@Test
     public void uploadProductsCSVInvalidData() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-        
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileInvalidData, importProperties);
+
+		var importProperties = createDataImportProperties();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileInvalidData, importProperties);
         
         result.andExpect(status().is(406));
-        
-        ImportProductContext report = readImportReport(result);
+
+		var report = readImportReport(result);
         assertEquals(4, report.getErrors().size());
         assertFalse(report.isSuccess());
     }
@@ -384,21 +383,21 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVNewDataTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-        
-		ExtendedProductDataCount before = countExtendedProductData();	
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+
+		var before = countExtendedProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ExtendedProductDataCount after = countExtendedProductData();		
+
+		var after = countExtendedProductData();
 		assertExpectedRowNumInserted(before, after, 2);
 		assertEquals(0, after.tags - before.tags);
 		assertEquals(0, after.brands - before.brands);
 
-        ExpectedSavedData expected = getExpectedAllNewData();
+		var expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
         validateImportReportForNewData(result);
@@ -408,17 +407,17 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVNewUnit() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ExtendedProductDataCount before = countExtendedProductData();
+		var before = countExtendedProductData();
 
-		long unitsCountBefore = stockUnitRepo.count();
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithUnit, importProperties);
+		var unitsCountBefore = stockUnitRepo.count();
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithUnit, importProperties);
 
 		result.andExpect(status().is(200));
 
-		long unitsCountAfter = stockUnitRepo.count();
+		var unitsCountAfter = stockUnitRepo.count();
 		assertEquals("imported two units, one already exists and the other is new"
 				, unitsCountAfter, unitsCountBefore + 1);
 	}
@@ -426,15 +425,15 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVRemovedVariant() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		long variantsCountBefore = variantRepo.count();
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvRemovedVariant, importProperties);
+		var variantsCountBefore = variantRepo.count();
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvRemovedVariant, importProperties);
 
 		result.andExpect(status().is(200));
 
-		long variantsCountAfter = variantRepo.count();
+		var variantsCountAfter = variantRepo.count();
 		assertEquals("imported two variants, one is to removed product and the other is removed itself"
 				, variantsCountAfter, variantsCountBefore + 2);
 	}
@@ -446,22 +445,22 @@ public class DataImportApiTest {
 	@Test
 	public void uploadProductCSVNewDataTestGroupByKey() throws IOException, Exception {
 		variantRepo.deleteAll();
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-        
-		ProductDataCount before = countProductData();	
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileGroupByKey, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileGroupByKey, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();
+
+		var after = countProductData();
 		
 		assertEquals(2L, after.product - before.product);
 		assertEquals(3L, after.variant - before.variant);
 		assertEquals(3L, after.stocks - before.stocks);
 
-        ExpectedSavedData expected = getExpectedNewDataGroupedByKey();
+		var expected = getExpectedNewDataGroupedByKey();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
         
         validateVariantsGrouping();
@@ -475,15 +474,15 @@ public class DataImportApiTest {
 
 
 	private void validateVariantsGrouping() {
-		List<ProductVariantsEntity> variants = variantRepo.findByOrganizationId(99001L);
+		var variants = variantRepo.findByOrganizationId(99001L);
         assertEquals(3, variants.size());
-        Map<Long, List<ProductVariantsEntity>> groupedByProduct = 
+		var groupedByProduct =
         		variants
         		.stream()
         		.collect(groupingBy(var -> var.getProductEntity().getId()));
         assertEquals(2, groupedByProduct.keySet().size());
-        
-        Set<Set<String>> variantsBarcodes = 
+
+		var variantsBarcodes =
         		groupedByProduct
         		.values()
         		.stream()
@@ -499,21 +498,21 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-        
-		ExtendedProductDataCount before = countExtendedProductData();	
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+
+		var before = countExtendedProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ExtendedProductDataCount after = countExtendedProductData();		
+
+		var after = countExtendedProductData();
 		assertExpectedRowNumInserted(before, after, 2);
 		assertEquals(0, after.tags - before.tags);
 		assertEquals(0, after.brands - before.brands);
 
-        ExpectedSavedData expected = getExpectedAllNewData();
+		var expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
         validateImportReportForNewData(result);
@@ -526,7 +525,7 @@ public class DataImportApiTest {
 
 	private void validateImportReportForNewData(ResultActions result)
 			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
         assertEquals(2, report.getCreatedProducts().size());
         assertTrue(report.getUpdatedProducts().isEmpty());
         assertTrue(report.getCreatedBrands().isEmpty());
@@ -541,18 +540,18 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVNewDataWithMissingFeaturesTest() throws IOException, Exception {
-        JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileMissingFeatures, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileMissingFeatures, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = variantRepo.getVariantFullData(310001L).get().getProductEntity();
+		var product = variantRepo.getVariantFullData(310001L).get().getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 
-        Optional<IntegrationMappingEntity> mapping = 
+		var mapping =
         		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
         				99001L
         				, PRODUCT_VARIANT.getValue()
@@ -567,22 +566,22 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVNewDataVariantsTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-        
-		ProductDataCount before = countProductData();	
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariants, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariants, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();
+
+		var after = countProductData();
 		assertEquals(2, after.product - before.product);
         assertEquals(4, after.variant - before.variant);
         assertEquals(4, after.stocks  - before.stocks);
-        
 
-        ExpectedSavedData expected = getExpectedAllNewVariantsData();
+
+		var expected = getExpectedAllNewVariantsData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
 	}
@@ -604,7 +603,7 @@ public class DataImportApiTest {
 
 
 	private ProductDataCount countProductData() {
-		ProductDataCount count = new ProductDataCount();
+		var count = new ProductDataCount();
 		count.product = productRepo.countByProductType(0);
 		count.variant = variantRepo.count();
 		count.stocks = stocksRepo.count();
@@ -614,8 +613,8 @@ public class DataImportApiTest {
 	
 	
 	private ExtendedProductDataCount countExtendedProductData() {
-		ProductDataCount count = countProductData();
-		ExtendedProductDataCount extendedCount = new ExtendedProductDataCount(count);
+		var count = countProductData();
+		var extendedCount = new ExtendedProductDataCount(count);
 		extendedCount.tags = tagsRepo.count();
 		extendedCount.brands = brandsRepo.count();
 		return extendedCount;
@@ -626,17 +625,17 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVNewDataDryRunTest() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("dryrun", true);
-        
-		ProductDataCount before = countProductData();		
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
+
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);
 		
 		validateImportReportForDryRun(result);
@@ -649,7 +648,7 @@ public class DataImportApiTest {
 
 	private void validateImportReportForDryRun(ResultActions result)
 			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
 		assertTrue(report.getCreatedProducts().isEmpty());
 		assertTrue(report.getUpdatedProducts().isEmpty());
 		assertTrue(report.getCreatedTags().isEmpty());
@@ -662,58 +661,54 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVUpdateStockDisabledTest() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stock", false);
-        
-		ProductDataCount before = countProductData();		
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
-		assertExpectedRowNumInserted(before, after, 1);        
 
-        
-        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithoutStocks();
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 1);
+
+
+		var expected = getExpectedNewAndUpdatedDataWithoutStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithoutStock();     
 	}
 
-
-
-	
-	
 	
 	
 	@Test
 	public void uploadProductCSVUpdateProductsDisabledTest() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", true);
-        
-		ProductDataCount before = countProductData();	
-		
-		ProductVariantsEntity variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
-		ProductEntity productBefore = variantBefore.getProductEntity();
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var before = countProductData();
+
+		var variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var productBefore = variantBefore.getProductEntity();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
-		assertExpectedRowNumInserted(before, after, 1);          
 
-        ProductVariantsEntity variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
-        ProductEntity productAFter = variantAfter.getProductEntity();
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 1);
+
+		var variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var productAFter = variantAfter.getProductEntity();
         
         assertEquals(variantBefore, variantAfter);
         assertEquals(productBefore, productAFter);
-        
-        ExpectedSavedData expected = getExpectedNewOnlyAndUpdatedStocks();
+
+		var expected = getExpectedNewOnlyAndUpdatedStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);            
 	}
 	
@@ -722,30 +717,30 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVUpdateBothProductsAndStockDisabledTest() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", false);
 		importProperties.put("update_stocks", false);
-        
-		ProductDataCount before = countProductData();	
-		
-		ProductVariantsEntity variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
-		ProductEntity productBefore = variantBefore.getProductEntity();
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var before = countProductData();
+
+		var variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var productBefore = variantBefore.getProductEntity();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
-		assertExpectedRowNumInserted(before, after, 1);          
 
-        ProductVariantsEntity variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
-        ProductEntity productAFter = variantAfter.getProductEntity();
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 1);
+
+		var variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var productAFter = variantAfter.getProductEntity();
         
         assertEquals(variantBefore, variantAfter);
         assertEquals(productBefore, productAFter);
-        
-        ExpectedSavedData expected = getExpectedNewOnlyWithoutStocks();
+
+		var expected = getExpectedNewOnlyWithoutStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);    
         
         validateImportReportWithUpdateDisabled(result);
@@ -758,7 +753,7 @@ public class DataImportApiTest {
 
 	private void validateImportReportWithUpdateDisabled(ResultActions result)
 			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
         assertEquals(1, report.getCreatedProducts().size());
         assertTrue(report.getUpdatedProducts().isEmpty());
         assertTrue(report.getCreatedTags().isEmpty());
@@ -769,20 +764,20 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVLargeColumnTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ProductDataCount before = countProductData();
+		var before = countProductData();
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileLargeColumn, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileLargeColumn, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductDataCount after = countProductData();
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 2);
 
 
-		ExpectedSavedData expected = getExpectedAllNewData();
+		var expected = getExpectedAllNewData();
 		expected.setDescriptions(setOf(readResource(largeDescription), "too hard"));
 		expected.setVariantDescriptions(setOf(readResource(largeDescription), "too hard"));
 		assertProductDataImported(TEST_IMPORT_SHOP, expected);
@@ -792,13 +787,13 @@ public class DataImportApiTest {
 
 
 	private void assertProductUpdatedDataSavedWithoutStock() {
-		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
         assertTestVariantUpdated(updatedVariant);
-        
-        ProductEntity updatedProduct = updatedVariant.getProductEntity();
+
+		var updatedProduct = updatedVariant.getProductEntity();
         assertTestProductUpdated(updatedProduct);
-        
-        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
+
+		var updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
         assertTestStockRemainedSame(updatedStocks);
 	}
 
@@ -820,23 +815,23 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVUpdateDataEnabledTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
-        
-		ProductDataCount before = countProductData();			
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
+
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 1);         
 
-        assertDataSaved();     
-        
-        ImportProductContext report = readImportReport(result);
+        assertDataSaved();
+
+		var report = readImportReport(result);
         assertEquals(1, report.getCreatedProducts().size());
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
@@ -847,23 +842,23 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVUpdateWithInvisibleExtraAttributesTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 
-		ProductDataCount before = countProductData();
+		var before = countProductData();
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvInvisibleAttributes, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvInvisibleAttributes, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductDataCount after = countProductData();
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 1);
 
 		assertDataSavedWithInvisibleExtraAttributes();
 
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
 		assertEquals(1, report.getCreatedProducts().size());
 		assertEquals(1, report.getUpdatedProducts().size());
 		assertTrue(report.getErrors().isEmpty());
@@ -875,24 +870,24 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVInsertNewProductsDisabledTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", false);
-        
-		ProductDataCount before = countProductData();			
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
+
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);         
 
-		assertOnlyUpdatedDataSaved();       
-        
-        ImportProductContext report = readImportReport(result);
+		assertOnlyUpdatedDataSaved();
+
+		var report = readImportReport(result);
         assertEquals(0, report.getCreatedProducts().size());
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
@@ -908,23 +903,23 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateNullFeaturesTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
-        
-		ProductDataCount before = countProductData();			
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdateNullFeatures, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdateNullFeatures, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
+
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);         
 
-		assertDataSavedWithoutUpdatingProductFeatures();     
-        
-        ImportProductContext report = readImportReport(result);
+		assertDataSavedWithoutUpdatingProductFeatures();
+
+		var report = readImportReport(result);
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
 	}
@@ -938,17 +933,17 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateDataDeleteOldProductsTest() throws Throwable {
-		JSONObject importProperties = createDataImportPropertiesWithDeleteOldProducts();
+		var importProperties = createDataImportPropertiesWithDeleteOldProducts();
         
 		Long orgId = 99001L;
 		Long otherOrg = 99002L;
 		Long variantToBeDeleted = 310001L;
 		Long productToBeDeleted = 200001L;
-		
-		ProductDataDeleteCounts before = countData(orgId, otherOrg);		
+
+		var before = countData(orgId, otherOrg);
 		assertDataExistedBeforeImport(variantToBeDeleted, productToBeDeleted, before);
-				
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
 
@@ -962,18 +957,25 @@ public class DataImportApiTest {
 
 
 	private void assertOnlyUpdatedDataSaved() {
-		ExpectedSavedData expected = getExpectedUpdatedDataWithStocks();
+		var expected = getExpectedUpdatedDataWithStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();
     }
 
 
 
+	private void assertOnlyStockDataSaved() {
+		var expected = getExpectedUpdatedStocks();
+		assertProductDataImported(TEST_UPDATE_SHOP, expected);
+		assertStockUpdatedDataSaved();
+	}
+
+
 
 
 
 	private void assertDataSaved() {
-		ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
+		var expected = getExpectedNewAndUpdatedDataWithStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();
 	}
@@ -981,7 +983,7 @@ public class DataImportApiTest {
 
 
 	private void assertDataSavedWithInvisibleExtraAttributes() {
-		ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithInvisibleAttributes();
+		var expected = getExpectedNewAndUpdatedDataWithInvisibleAttributes();
 		assertProductDataImported(TEST_UPDATE_SHOP, expected);
 		assertProductUpdatedDataSavedWithStock();
 	}
@@ -989,7 +991,7 @@ public class DataImportApiTest {
 	
 	
 	private void assertDataSavedWithoutUpdatingProductFeatures() {
-		ExpectedSavedData expected = getExpectedUpdatedDataWithNullFeatures();
+		var expected = getExpectedUpdatedDataWithNullFeatures();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();
 	}
@@ -1001,7 +1003,7 @@ public class DataImportApiTest {
 
 
 	private JSONObject createDataImportPropertiesWithDeleteOldProducts() {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
@@ -1015,9 +1017,9 @@ public class DataImportApiTest {
 
 
 	private void assertOtherOrgDataNotDeleted(Long orgId, Long otherOrg, ProductDataDeleteCounts before) {
-		long otherOrgProductAfter = productRepo.countByOrganizationId(otherOrg);
-		long otherOrgOrdersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
-		long otherOrgVariantsAfter = variantRepo.countByProductEntity_organizationId(orgId);
+		var otherOrgProductAfter = productRepo.countByOrganizationId(otherOrg);
+		var otherOrgOrdersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+		var otherOrgVariantsAfter = variantRepo.countByProductEntity_organizationId(orgId);
 		
 		assertEquals(before.otherOrgProducts, otherOrgProductAfter);
 		assertEquals(before.otherOrgOrders, otherOrgOrdersCountAfter);
@@ -1047,7 +1049,7 @@ public class DataImportApiTest {
 
 
 	private ProductDataDeleteCounts countData(Long orgId, Long otherOrg) {
-		ProductDataDeleteCounts before = new ProductDataDeleteCounts();
+		var before = new ProductDataDeleteCounts();
 		before.allProductsDataCount = countProductData();
 		before.orgProducts = productRepo.countByOrganizationIdAndProductType(orgId, 0);
 		before.orders = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), orgId);
@@ -1067,10 +1069,10 @@ public class DataImportApiTest {
 
 	private void validateDeletedOldProducts(ProductDataDeleteCounts before, ResultActions result
 			, Long productToBeDeleted, Long variantToBeDeleted) throws  Throwable {
-		ImportProductContext report = readImportReport(result);
-		Long orgId = before.orgId;
-		Long otherOrg = before.otherOrgId;
-		ProductDataDeleteCounts after = countData(orgId, otherOrg);
+		var report = readImportReport(result);
+		var orgId = before.orgId;
+		var otherOrg = before.otherOrgId;
+		var after = countData(orgId, otherOrg);
 		 
         validateExpectedReport(report);
 		validateOrgDataCount(after, before, report, productToBeDeleted, variantToBeDeleted);
@@ -1090,9 +1092,9 @@ public class DataImportApiTest {
         		,0 , after.allProductsDataCount.variant - before.allProductsDataCount.variant);
         assertEquals("for organization 99001 a single stock will be added, and no stocks will be deleted"
         		,1 , after.allProductsDataCount.stocks  - before.allProductsDataCount.stocks);
-        
-		int createdProducts = report.getCreatedProducts().size(); 
-        int updatedProducts = report.getUpdatedProducts().size();
+
+		var createdProducts = report.getCreatedProducts().size();
+		var updatedProducts = report.getUpdatedProducts().size();
 		assertEquals(createdProducts + updatedProducts , after.orgProducts);
 		assertEquals("validate variants deleted , each product has single variant in the test..."
 				, createdProducts + updatedProducts, after.orgVariants);
@@ -1107,8 +1109,8 @@ public class DataImportApiTest {
 
 
 	private void validateExpectedReport(ImportProductContext report) {
-		int createdProducts = report.getCreatedProducts().size(); 
-        int updatedProducts = report.getUpdatedProducts().size();
+		var createdProducts = report.getCreatedProducts().size();
+		var updatedProducts = report.getUpdatedProducts().size();
 		assertEquals(1, createdProducts);
         assertEquals(1, updatedProducts);
         assertTrue(report.getErrors().isEmpty());
@@ -1122,29 +1124,29 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateGroupsWithExistingVariantTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
-        
-		ProductDataCount before = countProductData();			
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileGroupExistingVariants, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileGroupExistingVariants, importProperties);
 		
 		result.andExpect(status().is(200));
 		
 		//- Grouping new variant to existing variant, will add the new one to the existing product
 		//- if two groups have existing variants from a single product, they will be merged.  
-		ProductDataCount after = countProductData();		
+		var after = countProductData();
 		assertEquals(0, after.product - before.product);
         assertEquals(1, after.variant - before.variant);
-        assertEquals(1, after.stocks  - before.stocks);         
+        assertEquals(1, after.stocks  - before.stocks);
 
-		
-        ExpectedSavedData expected = getExpectedUpdateDataGroupExistingVariants();
+
+		var expected = getExpectedUpdateDataGroupExistingVariants();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
-        
-        ImportProductContext report = readImportReport(result);
+
+		var report = readImportReport(result);
         assertEquals(0, report.getCreatedProducts().size());
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
@@ -1155,8 +1157,8 @@ public class DataImportApiTest {
 	
 	@Test
 	public void getProductsCsvTemplateInvalidAuthentication() {
-		HttpEntity<Object> request = TestCommons.getHttpEntity("","456");
-		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		var request = TestCommons.getHttpEntity("","456");
+		var res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 401);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
@@ -1169,8 +1171,8 @@ public class DataImportApiTest {
 	
 	@Test
 	public void getProductsCsvTemplateInvalidAuthorization() {
-		HttpEntity<Object> request = TestCommons.getHttpEntity("","101112");
-		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		var request = TestCommons.getHttpEntity("","101112");
+		var res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 403);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
@@ -1182,19 +1184,19 @@ public class DataImportApiTest {
 
 	@Test
 	public void getProductsCsvTemplate() {
-		Set<String> expectedTemplateHeaders = 
+		var expectedTemplateHeaders =
 				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
 						, "variant_id", "external_id", "color", "size", "product_group_key", "discount"
 						, "sku", "product_code", "unit", "weight");
-		HttpEntity<Object> request = getHttpEntity("","131415");
-		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
+		var request = getHttpEntity("","131415");
+		var res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 
 		assertEquals(200, res.getStatusCodeValue());
-		
-		String[] headersArr = res.getBody()
+
+		var headersArr = res.getBody()
 								.replace(System.lineSeparator(), "")
-								.split(",");		
-		Set<String> headers = setOf(headersArr);
+								.split(",");
+		var headers = setOf(headersArr);
 		
 		assertEquals(expectedTemplateHeaders, headers);
 	}
@@ -1204,20 +1206,20 @@ public class DataImportApiTest {
 	
 	@Test
 	public void getImageUploadCsvTemplate() {
-		String[] expectedImageHeaders = {"variant_id","external_id","barcode","image_file"};
-		
-		HttpEntity<Object> request = getHttpEntity("","131415");
-		ResponseEntity<String> res = 
+		var expectedImageHeaders = new String[]{"variant_id", "external_id", "barcode", "image_file"};
+
+		var request = getHttpEntity("","131415");
+		var res =
 				template
 					.exchange(
 						"/product/image/bulk/template", GET, request ,String.class);
-		
-		String[] headers = res.getBody()
+
+		var headers = res.getBody()
 								.replace(System.lineSeparator(), "")
 								.split(",");
 		
 		Assert.assertTrue(res.getStatusCodeValue() == 200);
-		for(int i=0;i<headers.length;i++){
+		for(var i = 0; i<headers.length; i++){
 			Assert.assertTrue(headers[i].equals(expectedImageHeaders[i]));
 		}
 	}
@@ -1225,10 +1227,10 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVExistingVariantIdNoVariantEntity() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
 
 		result.andExpect(status().is(406));
 	}
@@ -1238,42 +1240,42 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
 
 		@SuppressWarnings("unused")
-		String body = 
+		var body =
 				result
 				.andExpect(status().is(200))
 				.andReturn()
 				.getResponse()
 				.getContentAsString();
 
-		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
+		var product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 	}
 
 
 	@Test
 	public void uploadProductCSVExistingExternalIdNoVariantEntity() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalId, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalId, importProperties);
 
 		result.andExpect(status().is(200));
 
-		Optional<IntegrationMappingEntity> mapping = 
+		var mapping =
 				integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
 						99001L
 						, PRODUCT_VARIANT.getValue()
 						, "5");
 		assertTrue(mapping.isPresent());
 
-		Optional<ProductVariantsEntity> product = variantRepo.findById(Long.parseLong(mapping.get().getLocalValue()));
+		var product = variantRepo.findById(Long.parseLong(mapping.get().getLocalValue()));
 		assertTrue(product.isPresent());
 	}
 
@@ -1283,15 +1285,15 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdExistingMapping, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdExistingMapping, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
+		var product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 	}
 
@@ -1299,18 +1301,18 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("update_product", true);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdAndBarcode, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdAndBarcode, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
+		var product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 
-        Optional<IntegrationMappingEntity> mapping = 
+		var mapping =
         		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
         				99001L
         				, PRODUCT_VARIANT.getValue()
@@ -1324,21 +1326,21 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVUpdateProductWithMultipleTagsTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
-        
-		ProductDataCount before = countProductData();			
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagProductUpdate, importProperties);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagProductUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();		
-		assertExpectedRowNumInserted(before, after, 0);         
 
-        ExpectedSavedData expected = getExpectedUpdatedDataForMultipleTags();
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+
+		var expected = getExpectedUpdatedDataForMultipleTags();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();        
 	}
@@ -1349,22 +1351,22 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_6.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVUpdateProductWithTagsWithDifferentCaseTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("insert_new_products", true);
 
-		ProductDataCount before = countProductData();
+		var before = countProductData();
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagDifferentCaseProductUpdate, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagDifferentCaseProductUpdate, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductDataCount after = countProductData();
+		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 2);
 
-		ExpectedSavedData expected = getExpectedUpdatedDataForMultipleWithDifferentCaseTags();
+		var expected = getExpectedUpdatedDataForMultipleWithDifferentCaseTags();
 		assertProductDataImported(TEST_UPDATE_SHOP, expected);
 		assertProductUpdatedDataSavedWithStock();
 	}
@@ -1373,22 +1375,22 @@ public class DataImportApiTest {
 
 	@Test
 	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("update_product", true);
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-		ExtendedProductDataCount before = countExtendedProductData();
+		var before = countExtendedProductData();
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithBarcodesAndNewTagsOnly, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithBarcodesAndNewTagsOnly, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ExtendedProductDataCount after = countExtendedProductData();
+		var after = countExtendedProductData();
 
 		assertExpectedRowNumInserted(before, after, 0);
 
 		assertEquals(2, after.tags - before.tags);
 
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
 
 		assertEquals(2, report.getUpdatedProducts().size());
 	}
@@ -1397,16 +1399,16 @@ public class DataImportApiTest {
 	
 	@Test
 	public void uploadProductCSVWithNewTagsAndBrand() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-        
-		ExtendedProductDataCount before = countExtendedProductData();	
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithNewTags, importProperties);
+
+		var before = countExtendedProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithNewTags, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ExtendedProductDataCount after = countExtendedProductData();		
+
+		var after = countExtendedProductData();
 		assertExpectedRowNumInserted(before, after, 2);
 		assertEquals(2, after.tags - before.tags);
 		assertEquals(2, after.brands - before.brands);
@@ -1424,23 +1426,23 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVWithResetTagsFlag() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 		importProperties.put("update_stocks", true);
 		importProperties.put("reset_tags", true);
         
 		Long productId = 200003L;
-		ProductEntity productBefore = helper.getProductFullData(productId);
+		var productBefore = helper.getProductFullData(productId);
 		assertEquals(1, productBefore.getTags().size());		
 		long tagId = productBefore.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
 		assertEquals("this is the id of the tag that will be removed from the product", 22007L, tagId);
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductEntity productAfter = helper.getProductFullData(productId);
+
+		var productAfter = helper.getProductFullData(productId);
 		assertEquals(1, productAfter.getTags().size());		
 		long newTagId = productAfter.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
 		assertEquals("this is the id of the tag that te product should have", 22001L, newTagId);
@@ -1451,30 +1453,156 @@ public class DataImportApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void uploadProductCSVSetWeights() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
+		var importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
 
 		Long variantId = 310003L;
-		ProductVariantsEntity variantBefore = variantRepo.findById(variantId).get();
+		var variantBefore = variantRepo.findById(variantId).get();
 		assertEquals(ZERO, variantBefore.getWeight());
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 
 		result.andExpect(status().is(200));
 
-		ProductVariantsEntity variantAfter = variantRepo.findById(variantId).get();
+		var variantAfter = variantRepo.findById(variantId).get();
 		assertNotNull(variantAfter.getWeight());
 		assertEquals(new BigDecimal(5.5), variantAfter.getWeight());
-		ProductVariantsEntity newAddedVariant = variantRepo
+		var newAddedVariant = variantRepo
 				.findByBarcodeAndProductEntity_OrganizationId("87847777EW", 99001L).get(0);
 		assertEquals(new BigDecimal(5.5), newAddedVariant.getWeight());
 	}
 
 
 
+
+	@Test
+	public void updateStockByStoreManagerInvalidFlag1Test() throws Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stock", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(406));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+	}
+
+
+
+
+	@Test
+	public void updateStockByStoreManagerInvalidFlag2Test() throws Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", false);
+		importProperties.put("insert_new_products", true);
+		importProperties.put("update_stock", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(406));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+	}
+
+
+
+	@Test
+	public void updateStockByStoreManagerInvalidFlag3Test() throws Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("insert_new_products", false);
+		importProperties.put("delete_old_products", true);
+		importProperties.put("update_stock", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(406));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+	}
+
+
+
+	@Test
+	public void updateStockByStoreManagerInvalidFlag4Test() throws Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("reset_tags", true);
+		importProperties.put("delete_old_products", false);
+		importProperties.put("update_stock", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(406));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+	}
+
+
+
+	@Test
+	public void updateStockByStoreManagerInvalidShopTest() throws Exception {
+		var otherShop = TEST_IMPORT_SHOP;
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", otherShop);
+		importProperties.put("insert_new_products", false);
+		importProperties.put("update_stock", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST, "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(406));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+	}
+
+
+	@Test
+	public void updateStockByStoreManagerTest() throws IOException, Exception {
+		var importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("insert_new_products", false);
+		importProperties.put("update_stocks", true);
+
+		var before = countProductData();
+
+		var result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "TTTRRR", csvFileUpdate, importProperties);
+
+		result.andExpect(status().is(200));
+
+		var after = countProductData();
+		assertExpectedRowNumInserted(before, after, 0);
+
+		assertOnlyStockDataSaved();
+
+		var report = readImportReport(result);
+		assertEquals(0, report.getCreatedProducts().size());
+		assertEquals(1, report.getUpdatedProducts().size());
+		assertTrue(report.getErrors().isEmpty());
+	}
+
+
+
 	private void validateImportReportForNewCreatedTagsAndBrands(ResultActions result)
 			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
-		ImportProductContext report = readImportReport(result);
+		var report = readImportReport(result);
 		assertEquals(2, report.getCreatedTags().size());
 		assertEquals(2, report.getCreatedBrands().size());
 		assertEquals(2, report.getCreatedProducts().size());
@@ -1490,14 +1618,14 @@ public class DataImportApiTest {
 
 	private ImportProductContext readImportReport(ResultActions result)
 			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
-		String reportStr = 
+		var reportStr =
 				result
 				.andReturn()
 				.getResponse()
 				.getContentAsString();
-		
-		ObjectMapper mapper = new ObjectMapper();
-		ImportProductContext report = mapper.readValue(reportStr, ImportProductContext.class);
+
+		var mapper = new ObjectMapper();
+		var report = mapper.readValue(reportStr, ImportProductContext.class);
 		return report;
 	}
 
@@ -1507,8 +1635,8 @@ public class DataImportApiTest {
 
 
 	private void assertNewTagsAndBrandsImported() {
-		Set<String> newTags= setOf("new squish", "new hill equipment");
-		Set<String> newBrands = setOf("new brand","shiny new brand");
+		var newTags= setOf("new squish", "new hill equipment");
+		var newBrands = setOf("new brand","shiny new brand");
 		assertEquals(2, tagsRepo.findByNameLowerCaseInAndOrganizationEntity_Id(newTags, 99001L).size());
         assertEquals(2, brandsRepo.findByNameInAndRemoved(newBrands, 0).size());
 	}
@@ -1518,14 +1646,21 @@ public class DataImportApiTest {
 	
 
 	private void assertProductUpdatedDataSavedWithStock() {
-		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		var updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
         assertTestVariantUpdated(updatedVariant);
-        
-        ProductEntity updatedProduct = updatedVariant.getProductEntity();
+
+		var updatedProduct = updatedVariant.getProductEntity();
         assertTestProductUpdated(updatedProduct);
-        
-        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
+
+		var updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
         assertTestStockUpdated(updatedStocks);
+	}
+
+
+
+	private void assertStockUpdatedDataSaved() {
+		var updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
+		assertTestStockUpdated(updatedStocks);
 	}
 
 
@@ -1566,23 +1701,23 @@ public class DataImportApiTest {
 	
 	
 	private void assertProductDataImported(Long shopId, ExpectedSavedData expected) {
-		
-		
-		List<StocksEntity> stocks = helper.getShopStocksFullData(shopId);
-        List<ProductVariantsEntity> variants = 
+
+
+		var stocks = helper.getShopStocksFullData(shopId);
+		var variants =
         		stocks
         		.stream()
 				.map(StocksEntity::getProductVariantsEntity)
 				.map(variant -> variantRepo.getVariantFullData(variant.getId()).get())
 				.collect(toList());
 
-        List<Long> productIds =
+		var productIds =
         		variants
         		.stream()
 				.map(ProductVariantsEntity::getProductEntity)
 				.map(ProductEntity::getId)
-				.collect(toList()); 
-        Set<ProductEntity> products = productRepo.findFullDataByIdIn(productIds);
+				.collect(toList());
+		var products = productRepo.findFullDataByIdIn(productIds);
 
         
         assertEquals(expected.getStocksNum().intValue() , stocks.size());
@@ -1680,7 +1815,7 @@ public class DataImportApiTest {
 
 
 	private ExpectedSavedData getExpectedAllNewData() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 		
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -1705,7 +1840,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedNewDataGroupedByKey() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 		
 		data.setQuantities( setOf(101,102, 22) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("15.23")));
@@ -1730,7 +1865,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedUpdateDataGroupExistingVariants() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 		
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("8.25")));
@@ -1755,7 +1890,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedAllNewVariantsData() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 		
 		data.setQuantities( setOf(101,102,45) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -1808,21 +1943,18 @@ public class DataImportApiTest {
 	
 	private Set<JSONObject> createNewVariantsExpectedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
-		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
-		JSONObject spec3 = createFeatureSpec("L", "Browny");
-		JSONObject spec4 = createFeatureSpec("XXXL", "PINKY");
+		var spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		var spec2 = createFeatureSpec("M", "Fo7loqy");
+		var spec3 = createFeatureSpec("L", "Browny");
+		var spec4 = createFeatureSpec("XXXL", "PINKY");
 		specs.addAll( Arrays.asList(spec1, spec2, spec3, spec4));
 		return specs;
 	}
 
 
 
-
-
-
 	private ExpectedSavedData getExpectedNewAndUpdatedDataWithStocks() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -1846,10 +1978,8 @@ public class DataImportApiTest {
 
 
 
-
-
 	private ExpectedSavedData getExpectedNewAndUpdatedDataWithInvisibleAttributes() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -1875,7 +2005,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedUpdatedDataWithStocks() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101) );
 		data.setPrices( setOf(new BigDecimal("10.25")));
@@ -1896,14 +2026,38 @@ public class DataImportApiTest {
 		
 		return data;
 	}
-	
+
+
+
+	private ExpectedSavedData getExpectedUpdatedStocks() {
+		var data = new ExpectedSavedData();
+
+		data.setQuantities( setOf(101) );
+		data.setPrices( setOf(new BigDecimal("10.25")));
+		data.setCurrencies( setOf(EGP));
+
+		data.setBarcodes( setOf("TT232222") );
+		data.setProductNames( setOf("Product to update") );
+		data.setVariantsPNames(setOf("u_shoe") );
+		data.setProductPNames(setOf("u_shoe") );
+		data.setDescriptions( setOf("old desc") );
+		data.setTags( setOf() );
+		data.setBrands( setOf(101L) );
+		data.setFeatureSpecs(  setOf( new JSONObject()));
+		data.setExtraAttributes(  setOf());
+		data.setStocksNum(1);
+		data.setDiscounts(setOf(ZERO));
+		data.setExtraAttributesTypes(setOf());
+
+		return data;
+	}
 	
 	
 	
 	
 	
 	private ExpectedSavedData getExpectedUpdatedDataWithNullFeatures() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101) );
 		data.setPrices( setOf(new BigDecimal("10.25")));
@@ -1929,7 +2083,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedUpdatedDataForMultipleTags() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101) );
 		data.setPrices( setOf(new BigDecimal("10.25")));
@@ -1955,7 +2109,7 @@ public class DataImportApiTest {
 
 
 	private ExpectedSavedData getExpectedUpdatedDataForMultipleWithDifferentCaseTags() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101) );
 		data.setPrices( setOf(new BigDecimal("10.25")));
@@ -1981,7 +2135,7 @@ public class DataImportApiTest {
 
 
 	private ExpectedSavedData getExpectedUpdatedDataWithUnits() {
-		ExpectedSavedData data = new ExpectedSavedData();
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101, 102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -2017,7 +2171,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedNewAndUpdatedDataWithoutStocks() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(30,102) );
 		data.setPrices( setOf(new BigDecimal("15"), new BigDecimal("88.6")));
@@ -2081,8 +2235,8 @@ public class DataImportApiTest {
 	
 	private Set<JSONObject> createExpectedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
-		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
+		var spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		var spec2 = createFeatureSpec("M", "Fo7loqy");
 		specs.addAll( asList(spec1,spec2));
 		return specs;
 	}
@@ -2091,7 +2245,7 @@ public class DataImportApiTest {
 	
 	private Set<JSONObject> createExpectedFeautreSpecOnlyUpdatedProducts() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		var spec1 = createFeatureSpec("XXL", "Lettuce Heart");
 		specs.addAll( asList(spec1));
 		return specs;
 	}
@@ -2103,7 +2257,7 @@ public class DataImportApiTest {
 	
 	private Set<JSONObject> createExpectedNonChangedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = createFeatureSpec("6XL", "purple");
+		var spec1 = createFeatureSpec("6XL", "purple");
 		specs.addAll( asList(spec1));
 		return specs;
 	}
@@ -2113,7 +2267,7 @@ public class DataImportApiTest {
 	
 	private Set<JSONObject> createExpectedFeautreSpecForOnlyUpdatedProduct() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		var spec1 = createFeatureSpec("XXL", "Lettuce Heart");
 		specs.addAll( asList(spec1));
 		return specs;
 	}
@@ -2126,7 +2280,7 @@ public class DataImportApiTest {
 
 
 	private JSONObject createFeatureSpec(String size, String color) {
-		JSONObject spec1 = new JSONObject();
+		var spec1 = new JSONObject();
 		spec1.put("7001", size);
 		spec1.put("7002", color);
 		return spec1;
@@ -2138,7 +2292,7 @@ public class DataImportApiTest {
 
 
 	private ExpectedSavedData getExpectedNewOnlyAndUpdatedStocks() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
@@ -2165,7 +2319,7 @@ public class DataImportApiTest {
 	
 	
 	private ExpectedSavedData getExpectedNewOnlyWithoutStocks() {
-		ExpectedSavedData data = new ExpectedSavedData();		
+		var data = new ExpectedSavedData();
 
 		data.setQuantities( setOf(30,102) );
 		data.setPrices( setOf(new BigDecimal("15"), new BigDecimal("88.6")));
@@ -2205,8 +2359,8 @@ public class DataImportApiTest {
 
 	private Set<JSONObject> createNewProductOnlyExpectedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
-		JSONObject spec1 = new JSONObject("{}") ;
-		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
+		var spec1 = new JSONObject("{}") ;
+		var spec2 = createFeatureSpec("M", "Fo7loqy");
 		specs.addAll( Arrays.asList(spec1,spec2));
 		return specs;
 	}
@@ -2268,8 +2422,8 @@ public class DataImportApiTest {
 
 
 	private JSONObject createDataImportProperties() {
-		
-		JSONObject json = new JSONObject();
+
+		var json = new JSONObject();
 		json.put("dryrun", false);
 		json.put("update_product", false);
 		json.put("update_stocks", false);
@@ -2286,7 +2440,7 @@ public class DataImportApiTest {
 
 	private ResultActions uploadProductCsv(String url, String token, Resource csv, JSONObject importProperties)
 			throws IOException, Exception {
-		MockMultipartFile filePart = new MockMultipartFile("csv", csv.getFilename(), "text/csv", csv.getInputStream());
+		var filePart = new MockMultipartFile("csv", csv.getFilename(), "text/csv", csv.getInputStream());
         
      	return uploadProductCsv(url, token, filePart, importProperties);
 	}
@@ -2298,10 +2452,10 @@ public class DataImportApiTest {
 
 	private ResultActions uploadProductCsv(String url, String token, MockMultipartFile filePart,
 			JSONObject importProperties) throws Exception {
-		MockPart jsonPart = new MockPart("properties", "properties",  importProperties.toString().getBytes());		
+		var jsonPart = new MockPart("properties", "properties",  importProperties.toString().getBytes());
 		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-		
-		 ResultActions result = 
+
+		var result =
 		    mockMvc.perform(MockMvcRequestBuilders
 		    				.multipart(url)
 			                 .file(filePart)
