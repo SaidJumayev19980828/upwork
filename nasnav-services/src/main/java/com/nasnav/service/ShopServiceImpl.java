@@ -38,6 +38,7 @@ import java.util.Optional;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -179,11 +180,11 @@ public class ShopServiceImpl implements ShopService {
         SubQueryExpression productsQuery = getProductsQuery(predicate);
         SubQueryExpression collectionsQuery = getCollectionsQuery(predicate);
         SQLQuery query = queryFactory.select((Expressions.template(ShopRepresentationObject.class,"*")))
-                .from(new SQLQuery<>().union( productsQuery,collectionsQuery).as("total"));
+                .from(new SQLQuery<>().union( productsQuery,collectionsQuery).as("total"))
+                .limit(10);
 
         return template.query(query.getSQL().getSQL(),
                 new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
-
     }
 
     private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
@@ -211,13 +212,15 @@ public class ShopServiceImpl implements ShopService {
         if (param.getOrgId() != null) {
             predicate.and(product.organizationId.eq(param.getOrgId()));
         }
-        if (param.getAreaId() != null) {
-            predicate.and(area.id.eq(param.getAreaId()));
-        }
         if (param.getProductType() != null) {
             predicate.and(product.productType.in(param.getProductType()));
         }
-        if (param.getLongitude() != null && param.getLatitude() != null) {
+        if (!anyIsNull(param.getMinLongitude(), param.getMinLatitude(), param.getMaxLongitude(), param.getMaxLatitude())) {
+            predicate.and(address.latitude.between(param.getMinLatitude(), param.getMaxLatitude()))
+                    .and(address.longitude.between(param.getMinLongitude(), param.getMaxLongitude()));
+        } else if (param.getAreaId() != null) {
+            predicate.and(area.id.eq(param.getAreaId()));
+        } else if (!anyIsNull(param.getLongitude(), param.getLatitude())) {
             Double minLat, maxLat, minLong, maxLong, radius;
             radius = ofNullable(param.getRadius()).map(r -> r/100).orElse(0.1);
             minLong = getMinOrMaxLongitude(param.getLongitude(), radius ,225 );
