@@ -703,13 +703,13 @@ public class ProductService {
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
 
-		Prices prices = getProductPrices(predicate, finalParams, stock);
+		Prices prices = getProductPrices(fromProductsClause, fromCollectionsClause);
 
-		List<Organization_BrandRepresentationObject> brands = getProductBrands(predicate, finalParams, product);
+		List<Organization_BrandRepresentationObject> brands = getProductBrands(fromProductsClause, fromCollectionsClause);
 
-		List<TagsRepresentationObject> tags = getProductTags(predicate, finalParams);
+		List<TagsRepresentationObject> tags = getProductTags(fromProductsClause, fromCollectionsClause);
 
-		Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause);
+		Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause, fromCollectionsClause );
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, tags, variantsFeatures);
 
@@ -717,12 +717,10 @@ public class ProductService {
 	}
 
 
-	private Prices getProductPrices(BooleanBuilder predicate, ProductSearchParam finalParams, QStocks stock) {
-		SQLQuery<?> finalProductsQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
-		SQLQuery<?> finalCollectionsQuery = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
-
-		SubQueryExpression products = finalProductsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
-		SubQueryExpression collections = finalCollectionsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+	private Prices getProductPrices(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause) {
+		QStocks stock = QStocks.stocks;
+		SubQueryExpression products = fromProductsClause.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+		SubQueryExpression collections = fromCollectionsClause.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
 
 		SQLQuery<?> sqlQuery = new SQLQuery<>();
 		SQLQuery<?> query = queryFactory
@@ -735,20 +733,18 @@ public class ProductService {
 
 
 
-	private List<Organization_BrandRepresentationObject> getProductBrands(BooleanBuilder predicate, ProductSearchParam finalParams, QProducts product) {
+	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause) {
 		QBrands brand = QBrands.brands;
-
-		SQLQuery<?> finalProductsQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
-		SQLQuery<?> finalCollectionsQuery = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
+		QProducts product = QProducts.products;
 
 		SubQueryExpression products = queryFactory
 				.select(brand.id, brand.name, brand.priority)
 				.from(brand)
-				.where(brand.id.in(finalProductsQuery.select(product.brandId)));
+				.where(brand.id.in(fromProductsClause.select(product.brandId)));
 		SubQueryExpression collections = queryFactory
 				.select(brand.id, brand.name, brand.priority)
 				.from(brand)
-				.where(brand.id.in(finalCollectionsQuery.select(product.brandId)));
+				.where(brand.id.in(fromCollectionsClause.select(product.brandId)));
 
 		SQLQuery<?> sqlQuery = new SQLQuery<>();
 		SQLQuery<?> query = queryFactory
@@ -762,17 +758,14 @@ public class ProductService {
 	}
 
 
-	private List<TagsRepresentationObject> getProductTags(BooleanBuilder predicate, ProductSearchParam finalParams) {
+	private List<TagsRepresentationObject> getProductTags(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause) {
 		QTags tag = QTags.tags;
 		QProducts product = QProducts.products;
 		QProductTags productTag = QProductTags.productTags;
 
-		SQLQuery<?> finalProductsQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
-		SQLQuery<?> finalCollectionsQuery = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
-
 		SQLQuery<?> sqlQuery = new SQLQuery<>();
-		SubQueryExpression union = sqlQuery.union(finalProductsQuery.select(product.id),
-				finalCollectionsQuery.select(product.id));
+		SubQueryExpression union = sqlQuery.union(fromProductsClause.select(product.id),
+				fromCollectionsClause.select(product.id));
 		SQLQuery<?> tags = queryFactory
 				.select(tag.id, tag.name, tag.alias, tag.metadata, tag.pName.as("pname"), tag.categoryId)
 				.from(tag)
@@ -787,7 +780,7 @@ public class ProductService {
 	}
 
 
-	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> baseQuery) throws SQLException {
+	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> fromProductsClaus, SQLQuery<?> fromCollectionsClaus) {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
 
@@ -796,7 +789,7 @@ public class ProductService {
 						.select(
 								Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
 								Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
-						.from(baseQuery
+						.from(fromProductsClaus
 								.select(variant.featureSpec).as("product_variants"))
 						.where(variant.featureSpec.isNotNull()
 								.and(variant.featureSpec.ne("{}")));
@@ -3237,7 +3230,7 @@ public class ProductService {
 		return dto;
 	}
 
-	
+
 
 	private List<VariantDTO> getItemsDtoList(ProductCollectionEntity entity, List<ProductImageDTO> productsAndVariantsImages) {
 		return entity
