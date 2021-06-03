@@ -265,7 +265,8 @@ public class ShopServiceImpl implements ShopService {
                 .leftJoin(address).on(shop.addressId.eq(address.id))
                 .leftJoin(area).on(address.areaId.eq(area.id))
                 .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                .where(predicate);
+                .where(predicate)
+                .orderBy(shop.priority.desc());
         return productsQuery;
     }
 
@@ -293,7 +294,8 @@ public class ShopServiceImpl implements ShopService {
                 .leftJoin(address).on(shop.addressId.eq(address.id))
                 .leftJoin(area).on(address.areaId.eq(area.id))
                 .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                .where(predicate);
+                .where(predicate)
+                .orderBy(shop.priority.desc());
         return collectionsQuery;
     }
 

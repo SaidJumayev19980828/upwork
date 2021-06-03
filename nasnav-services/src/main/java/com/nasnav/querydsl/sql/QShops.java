@@ -112,7 +112,7 @@ public class QShops extends com.querydsl.sql.RelationalPathBase<QShops> {
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(isWarehouse, ColumnMetadata.named("is_warehouse").withIndex(15).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(logo, ColumnMetadata.named("logo").withIndex(8).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(logo, ColumnMetadata.named("dark_logo").withIndex(17).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(darkLogo, ColumnMetadata.named("dark_logo").withIndex(17).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(name, ColumnMetadata.named("name").withIndex(2).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(5).ofType(Types.BIGINT).withSize(19));
         addMetadata(phoneNumber, ColumnMetadata.named("phone_number").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
