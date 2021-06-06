@@ -12,6 +12,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static java.util.stream.Collectors.toMap;
+
 @Entity
 @Table(name="return_request_item")
 @Data
@@ -106,6 +108,11 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setProductCode(variant.getProductCode());
             dto.setSku(variant.getSku());
             dto.setSubOrderId(subOrder.getId());
+            dto.setVariantFeatures(
+                    variant
+                    .getFeatureValues()
+                    .stream()
+                    .collect(toMap(f -> f.getFeature().getName(), VariantFeatureValueEntity::getValue)));
         }
 
         dto.setReceivedQuantity(getReceivedQuantity());
