@@ -455,53 +455,18 @@ public class ProductService {
 		if(variant == null || !hasFeatures(variant)) {
 			return emptyMap();
 		}
-		return parseVariantFeatures(variant.getFeatureSpec(), 1);
+		return parseVariantFeatures(variant, 1);
 	}
 
 
 
-	public Map<String, String> parseVariantFeatures(String variantFeatures, Integer returnedName) {
-		String normalizedStr = ofNullable(variantFeatures).orElse("{}");
-		JacksonJsonParser parser = new JacksonJsonParser();
-		Map<String, Object> keyValueMap =  parser.parseMap(normalizedStr);
-		return keyValueMap.entrySet()
+	public Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName) {
+		return variant
+				.getFeatureValues()
 				.stream()
-				.map(e -> getVariantFeatureMapEntry(e, returnedName))
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(toMap(Map.Entry::getKey , Map.Entry::getValue));
+				.collect(toMap(f -> returnedName.equals(0) ? f.getFeature().getName() : f.getFeature().getPname(),
+								VariantFeatureValueEntity::getValue));
 	}
-
-
-
-
-
-	private Optional<Map.Entry<String,String>> getVariantFeatureMapEntry(Map.Entry<String,Object> entry, Integer returnedName) {
-		if(anyIsNull(entry, entry.getKey())) {
-			return empty();
-		}
-
-		Integer id = Integer.parseInt(entry.getKey());
-		return	productFeaturesRepository
-				.findById(id)
-				.map(feature -> createFeatureKeyValuePair(entry, feature, returnedName));
-	}
-
-
-
-	private SimpleEntry<String,String> createFeatureKeyValuePair(Map.Entry<String, Object> entry,
-																 ProductFeaturesEntity featureOptional, Integer returnedName) {
-		if (returnedName.equals(0))
-			return new AbstractMap.SimpleEntry<>(
-					featureOptional.getName()
-					, entry.getValue().toString());
-
-		return new AbstractMap.SimpleEntry<>(
-				featureOptional.getPname()
-				, entry.getValue().toString());
-	}
-
-
 
 
 

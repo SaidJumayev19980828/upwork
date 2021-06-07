@@ -17,6 +17,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 
 	@Query("select distinct v from ProductVariantsEntity v" +
+			" left join fetch v.featureValues featureValue " +
+			" left join fetch featureValue.feature feature " +
 			" left join fetch v.productEntity p " +
 			" left join fetch v.stocks s " +
 			" where p.id = :id")

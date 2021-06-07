@@ -951,7 +951,7 @@ public class OrderServiceImpl implements OrderService {
 
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
-		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
+		item.setVariantFeatures(parseVariantFeatures(variant, 0));
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
 
@@ -1365,8 +1365,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
-		return productService.parseVariantFeatures(featureSpec, returnedName);
+	private Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName) {
+		return productService.parseVariantFeatures(variant, returnedName);
 	}
 
 

@@ -83,6 +83,12 @@ public class ProductVariantsEntity {
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
 
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<VariantFeatureValueEntity> featureValues;
+
     private BigDecimal weight;
 
     public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {

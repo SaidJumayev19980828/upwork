@@ -275,7 +275,7 @@ public class CartServiceImpl implements CartService{
     }
 
 
-    public List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
+    public List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems) {
         return cartItems
                 .stream()
                 .map(this::createCartItemDto)
@@ -284,21 +284,18 @@ public class CartServiceImpl implements CartService{
 
 
 
-
-
-    private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
-        return productService.parseVariantFeatures(featureSpec, returnedName);
-    }
-
-
-
-    private CartItem createCartItemDto(CartItemData itemData) {
+    private CartItem createCartItemDto(CartItemEntity itemData) {
         CartItem itemDto = new CartItem();
 
-        Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
+        StocksEntity stock = itemData.getStock();
+        ProductVariantsEntity variant = stock.getProductVariantsEntity();
+        ProductEntity product = variant.getProductEntity();
+        BrandsEntity brand = product.getb();
+        Map<String,String> variantFeatures = productService.parseVariantFeatures(itemData.getStock().getProductVariantsEntity(), 0);
         Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
 
-        itemDto.setBrandId(itemData.getBrandId());
+
+        itemDto.setBrandId( product.getBrandId(););
         itemDto.setBrandLogo(itemData.getBrandLogo());
         itemDto.setBrandName(itemData.getBrandName());
 
