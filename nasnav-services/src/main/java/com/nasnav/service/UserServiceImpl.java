@@ -145,8 +145,9 @@ public class UserServiceImpl implements UserService {
 
 	private void sendActivationMail(UserEntity userEntity, String redirectUrl) {
 		try {
-			Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl);
-			mailService.send(userEntity.getEmail(), ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
+			String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
+			Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl, orgName);
+			mailService.send(userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			logger.error(e, e);
@@ -157,13 +158,12 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl) {
+	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl, String orgName) {
 		String domain = domainService.getBackendUrl();
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
 
 		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
 		String orgLogo = domain + "/files/"+ orgService.getOrgLogo(userEntity.getOrganizationId());
-		String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
 		String year = LocalDateTime.now().getYear()+"";
 
 		Map<String, String> parametersMap = new HashMap<>();
