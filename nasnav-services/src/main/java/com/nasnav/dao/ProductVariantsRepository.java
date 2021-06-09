@@ -44,6 +44,14 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 													 @Param("name") String name,
 													 Pageable pageable);
 
+	@Query("SELECT variant FROM ProductVariantsEntity variant " +
+			" INNER JOIN FETCH variant.productEntity prod " +
+			" INNER JOIN OrganizationEntity org on prod.organizationId = org.id " +
+			" where org.yeshteryState = 1 and variant.removed = 0 and " +
+			" ( LOWER(variant.barcode) like %:name% or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%) "+
+			" order by variant.name ")
+	List<ProductVariantsEntity> findByYeshteryProducts(@Param("name") String name, Pageable pageable);
+
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
 			+ " where variant.id in :idList and variant.productEntity.removed = 0")
@@ -106,6 +114,13 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			"")
 	Long countByOrganizationId(@Param("orgId") Long orgId,
 													 @Param("name") String name);
+
+	@Query("SELECT count(variant.id) FROM ProductVariantsEntity variant " +
+			" INNER JOIN variant.productEntity prod " +
+			" INNER JOIN OrganizationEntity org on prod.organizationId = org.id " +
+			" where org.yeshteryState = 1 and variant.removed = 0 and " +
+			"(LOWER(variant.barcode) like %:name% or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%)" )
+	Long countByYeshteryProducts(@Param("name") String name);
 
     List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 

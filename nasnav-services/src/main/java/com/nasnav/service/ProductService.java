@@ -24,6 +24,7 @@ import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.request.VariantSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
@@ -73,6 +74,7 @@ import java.util.stream.StreamSupport;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
@@ -157,7 +159,8 @@ public class ProductService {
 
 	@Autowired
 	private TagsRepository orgTagRepo;
-
+	@Autowired
+	private OrganizationRepository orgRepo;
 	@Autowired
 	private ExtraAttributesRepository extraAttrRepo;
 
@@ -615,8 +618,9 @@ public class ProductService {
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QShops shop = QShops.shops;
+		QOrganizations organization = QOrganizations.organizations;
 
-		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant);
+		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant, organization);
 
 		List<OrderSpecifier> order = getProductQueryOrder(params, product, stock);
 
@@ -692,8 +696,9 @@ public class ProductService {
 		QProducts product = QProducts.products;
 		QShops shop = QShops.shops;
 		QProductVariants variant = QProductVariants.productVariants;
+		QOrganizations organization = QOrganizations.organizations;
 
-		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant);
+		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant, organization);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -847,14 +852,21 @@ public class ProductService {
 
 
 	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product
-			, QStocks stock, QShops shop, QProductVariants variant) {
+			, QStocks stock, QShops shop, QProductVariants variant, QOrganizations organization) {
 		BooleanBuilder predicate = new BooleanBuilder();
 
 		predicate.and(product.removed.eq(0));
 		predicate.and(product.hide.eq(false));
 
-		if(params.org_id != null)
-			predicate.and( product.organizationId.eq((params.org_id) ));
+		if (params.yeshtery_products) {
+			predicate.and(organization.yeshteryState.eq(1));
+		}
+		if (params.org_id != null) {
+			predicate.and(product.organizationId.eq((params.org_id)));
+		}
+		if (params.shop_id != null)  {
+			predicate.and( stock.shopId.eq(params.shop_id) );
+		}
 
 		if(params.brand_id != null)
 			predicate.and( product.brandId.eq(params.brand_id) );
@@ -874,9 +886,6 @@ public class ProductService {
 					.or(product.description.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
-
-		if(params.shop_id != null && params.org_id == null)
-			predicate.and( stock.shopId.eq(params.shop_id) );
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
@@ -918,7 +927,7 @@ public class ProductService {
 		if (params.count != null && params.count < 1)
 			throw new BusinessException("Count can be One or more", "", BAD_REQUEST);
 
-		if (params.org_id == null && params.shop_id == null)
+		if (params.org_id == null && params.shop_id == null && !params.yeshtery_products)
 			throw new BusinessException("Shop Id or Organization Id shall be provided", "", BAD_REQUEST);
 
 		if (params.minPrice != null && params.minPrice.compareTo(ZERO) < 0)
@@ -3252,18 +3261,16 @@ public class ProductService {
 
 
 	public VariantsResponse getVariants(Long orgId, String name, Integer start, Integer count) {
-		if (isBlankOrNull(start) || start < 0) {
-			start = 0;
-		}
-		if (isBlankOrNull(count) || count < 0) {
-			count = 10;
-		}
-
-		name = ofNullable(name.toLowerCase()).orElse("");
-		Long total = productVariantsRepository.countByOrganizationId(orgId, name);
+		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
+		Long total = productVariantsRepository.countByOrganizationId(orgId, params.getName());
+		PageRequest page = getQueryPage(params.getStart(), params.getCount());
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of((int)Math.floor(start/count), count));
+				productVariantsRepository.findByOrganizationId(orgId, params.getName(), page);
 
+		return prepareVariantsDtos(variantsEntities, total);
+	}
+
+	private VariantsResponse prepareVariantsDtos(List<ProductVariantsEntity> variantsEntities, Long total) {
 		List<Long> variantsIds = getVariantsIds(variantsEntities);
 		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;
 
@@ -3272,6 +3279,32 @@ public class ProductService {
 				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
 				.collect(toList());
 		return new VariantsResponse(total, variants);
+	}
+
+	public VariantsResponse getVariantsForYeshtery(String name, Integer start, Integer count) {
+		VariantSearchParam params = normalizeVariantSearchParam(name, start, count);
+		Long total = productVariantsRepository.countByYeshteryProducts(params.getName());
+		PageRequest page = getQueryPage(params.getStart(), params.getCount());
+		List<ProductVariantsEntity> variantsEntities =
+				productVariantsRepository.findByYeshteryProducts(params.getName(), page);
+
+		return prepareVariantsDtos(variantsEntities, total);
+	}
+
+	private VariantSearchParam normalizeVariantSearchParam(String name, Integer start, Integer count) {
+		VariantSearchParam params = new VariantSearchParam();
+		if (isBlankOrNull(start) || start < 0) {
+			params.setStart(0);
+		} else {
+			params.setStart(start);
+		}
+		if (isBlankOrNull(count) || count < 0 || count > 1000) {
+			params.setCount(10);
+		} else {
+			params.setCount(count);
+		}
+		params.setName(ofNullable(name.toLowerCase()).orElse(""));
+		return params;
 	}
 
 

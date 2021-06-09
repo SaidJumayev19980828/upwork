@@ -42,12 +42,14 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QShops shop = QShops.shops;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
-		QProductTags productTags = QProductTags.productTags;;
+		QProductTags productTags = QProductTags.productTags;
+		QOrganizations organization = QOrganizations.organizations;
 
 		SQLQuery<?> baseQuery = queryFactory.from(stock)
 				.innerJoin(shop).on(stock.shopId.eq(shop.id))
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
 				.innerJoin(product).on(variant.productId.eq(product.id))
+				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
 		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
@@ -67,12 +69,14 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductTags productTags = QProductTags.productTags;;
 		QProductCollections collection = QProductCollections.productCollections;
+		QOrganizations organization = QOrganizations.organizations;
 
 		SQLQuery<?> baseQuery = queryFactory.from(stock)
 				.innerJoin(shop).on(stock.shopId.eq(shop.id))
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
 				.innerJoin(collection).on(variant.id.eq(collection.variantId))
 				.innerJoin(product).on(product.id.eq(collection.productId))
+				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
 		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);

@@ -84,18 +84,22 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (71, 'testuser4@nasnav.com', 99001, 'ggr45r5',  100003);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (72, 'testuser5@nasnav.com', 99001, 'edddre2',  100004);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (73, 'testuser6@nasnav.com', 99001, 'TTTRRR',  100004);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '898dssd', now(), 70, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'ggr45r5', now(), 71, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, 'edddre2', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, 'TTTRRR', now(), 73, null);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into public.roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
+insert into public.roles(id, name,  organization_id) values(6, 'STORE_MANAGER', 99001);
 insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 
 
@@ -105,6 +109,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 72, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 73, 6);
 
 
 

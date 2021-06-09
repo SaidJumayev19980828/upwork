@@ -203,13 +203,13 @@ public class ShopThreeSixtyService {
 
     private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
-        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0);
-        if (shop == null) {
+        var shop = shopRepo.findByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0);
+        if (shop.isEmpty()) {
             if (entity.getShopsEntity() == null)
                 throw new BusinessException("Must provide shop_id to attach shop360s to it",
                         "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
         } else {
-            entity.setShopsEntity(shop);
+            entity.setShopsEntity(shop.get());
         }
         entity.setSceneName(shopName);
         shop360Repo.save(entity);

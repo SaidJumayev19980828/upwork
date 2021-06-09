@@ -14,6 +14,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
+import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,6 +37,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -48,6 +51,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -77,6 +81,9 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Autowired
 	private AppConfig config;
+
+	@Autowired
+	private UserServicesHelper helper;
 
 
 
@@ -374,8 +381,21 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
-	
-	
+	@Override
+	public Set<Roles> getCurrentUserRoles(){
+		return getCurrentUserRolesNames()
+				.stream()
+				.map(Roles::fromString)
+				.collect(toSet());
+	}
+
+
+	@Override
+	public boolean currentUserHasMaxRoleLevelOf(Roles role) {
+		var currentUserRoles = getCurrentUserRoles();
+		return helper.hasMaxRoleLevelOf(role, currentUserRoles);
+	}
+
 
 	@Override
 	public Long getCurrentUserOrganizationId() {
@@ -410,14 +430,22 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public Boolean userHasRole(Roles role) {
-		return ofNullable( SecurityContextHolder.getContext() )
-				.map(c -> c.getAuthentication())
+		return getCurrentUserRolesNames()
+				.stream()
+				.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+	}
+
+
+
+	private List<String> getCurrentUserRolesNames() {
+		return ofNullable(SecurityContextHolder.getContext())
+				.map(SecurityContext::getAuthentication)
 				.map(Authentication::getAuthorities)
 				.orElse(emptyList())
 				.stream()
 				.map(GrantedAuthority::getAuthority)
 				.filter(Objects::nonNull)
-				.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+				.collect(toList());
 	}
 
 

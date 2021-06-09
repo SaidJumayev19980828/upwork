@@ -77,7 +77,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> roles) {
 		Long orgId = employeeUserJson.orgId;
 		Long storeId = employeeUserJson.storeId;
-		boolean shopExists = shopRepo.existsByIdAndOrganizationEntity_Id(storeId, orgId);
+		boolean shopExists = shopRepo.existsByIdAndOrganizationEntity_IdAndRemoved(storeId, orgId, 0);
 		boolean newUserHasStoreRoles =
 				Stream.of(STORE_MANAGER.name(), STORE_EMPLOYEE.name())
 				.anyMatch(roles::contains);

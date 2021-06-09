@@ -164,11 +164,9 @@ public class ShopServiceImpl implements ShopService {
 
 
 	private  ShopsEntity validateAndReturnShop(ShopJsonDTO shopJson, OrganizationEntity org)  {
-		ShopsEntity shopsEntity = shopsRepository.findByIdAndOrganizationEntity_IdAndRemoved(shopJson.getId(), org.getId(), 0);
-        if ( shopsEntity == null) {
-            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopJson.getId());
-        }
-        return shopsEntity;
+		return shopsRepository
+                .findByIdAndOrganizationEntity_IdAndRemoved(shopJson.getId(), org.getId(), 0)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopJson.getId()));
 	}
     
     

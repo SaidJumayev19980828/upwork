@@ -30,6 +30,7 @@ public class ProductSearchParam {
     public Boolean show_free_products;
     public Boolean hide_empty_stocks;
     public Boolean include_out_of_stock;
+    public boolean yeshtery_products;
 
     public void setSort(ProductSortOptions sort) {
         this.sort = sort;
