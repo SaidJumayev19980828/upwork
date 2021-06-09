@@ -72,12 +72,17 @@ public class YeshteryController {
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name,
                                                            @RequestParam(name = "org_id", required = false) Long orgId,
                                                            @RequestParam(value = "area_id", required = false) Long areaId,
+                                                           @RequestParam(required = false) Double minLongitude,
+                                                           @RequestParam(required = false) Double maxLongitude,
+                                                           @RequestParam(required = false) Double minLatitude,
+                                                           @RequestParam(required = false) Double maxLatitude,
                                                            @RequestParam(required = false) Double longitude,
                                                            @RequestParam(required = false) Double latitude,
                                                            @RequestParam(required = false) Double radius,
                                                            @RequestParam(value = "search_in_tags", required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType) {
-        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
         return shopService.getLocationShops(param);
     }
 

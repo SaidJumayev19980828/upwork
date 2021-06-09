@@ -294,12 +294,17 @@ public class NavboxController {
 	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name,
 														   @RequestParam(name = "org_id") Long orgId,
 														   @RequestParam(value = "area_id", required = false) Long areaId,
+														   @RequestParam(required = false) Double minLongitude,
+														   @RequestParam(required = false) Double maxLongitude,
+														   @RequestParam(required = false) Double minLatitude,
+														   @RequestParam(required = false) Double maxLatitude,
 														   @RequestParam(required = false) Double longitude,
 														   @RequestParam(required = false) Double latitude,
 														   @RequestParam(required = false) Double radius,
 														   @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
 														   @RequestParam(value = "product_type", required = false) Integer[] productType) {
-		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, longitude, latitude, radius, false, searchInTags.booleanValue(), productType);
+		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+				longitude, latitude, radius, false, searchInTags.booleanValue(), productType);
 		return shopService.getLocationShops(param);
 	}
 
