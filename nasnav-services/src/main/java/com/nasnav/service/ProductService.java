@@ -647,7 +647,7 @@ public class ProductService {
 	}
 
 
-	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException, IllegalAccessException, InvocationTargetException, SQLException {
+	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException {
 		ProductSearchParam finalParams = getProductSearchParams(param);
 
 		QStocks stock = QStocks.stocks;
@@ -839,9 +839,6 @@ public class ProductService {
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
 
-
-		if (isNotBlankOrNull(params.features)) {
-		}
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));

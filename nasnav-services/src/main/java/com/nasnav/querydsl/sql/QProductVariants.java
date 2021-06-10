@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -52,13 +52,15 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
 
     public final com.querydsl.sql.ForeignKey<QProducts> productVariantsProductIdFkey = createForeignKey(productId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QSubProducts> productVariantsSubProductIdTempFkey = createForeignKey(subProductIdTemp, "id");
+    public final com.querydsl.sql.ForeignKey<QProductCollections> _productCollectionsVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public final com.querydsl.sql.ForeignKey<QStocks> _stocksVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public final com.querydsl.sql.ForeignKey<QProductImages> _productImagesVariantIdFkey = createInvForeignKey(id, "variant_id");
 
-    public final com.querydsl.sql.ForeignKey<QProductsExtraAttributes> _variantsExtraAttributesFk = createInvForeignKey(id, "variant_id");
+    public final com.querydsl.sql.ForeignKey<QVariantFeatureValues> _variantFeatureValuesVariantIdFkey = createInvForeignKey(id, "variant_id");
+
+    public final com.querydsl.sql.ForeignKey<QProductsExtraAttributes> _productsExtraAttributesVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public QProductVariants(String variable) {
         super(QProductVariants.class, forVariable(variable), "public", "product_variants");
@@ -92,12 +94,11 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(pName, ColumnMetadata.named("p_name").withIndex(5).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(productCode, ColumnMetadata.named("product_code").withIndex(10).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(productId, ColumnMetadata.named("product_id").withIndex(2).ofType(Types.BIGINT).withSize(19));
-        addMetadata(removed, ColumnMetadata.named("removed").withIndex(9).ofType(Types.INTEGER).withSize(10).notNull());
-        addMetadata(subProductIdTemp, ColumnMetadata.named("sub_product_id_temp").withIndex(8).ofType(Types.BIGINT).withSize(19));
-        addMetadata(sku, ColumnMetadata.named("sku").withIndex(10).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(productCode, ColumnMetadata.named("product_code").withIndex(11).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(weight, ColumnMetadata.named("weight").withIndex(12).ofType(Types.NUMERIC).withSize(10).withDigits(2));
+        addMetadata(removed, ColumnMetadata.named("removed").withIndex(8).ofType(Types.INTEGER).withSize(10).notNull());
+        addMetadata(sku, ColumnMetadata.named("sku").withIndex(9).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(weight, ColumnMetadata.named("weight").withIndex(11).ofType(Types.NUMERIC).withSize(131089).notNull());
     }
 
 }

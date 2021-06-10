@@ -7,6 +7,7 @@ import com.nasnav.dto.ProductSortOptions;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ public class ProductSearchParam {
     public Boolean hide_empty_stocks;
     public Boolean include_out_of_stock;
     public boolean yeshtery_products;
-    public Map<String, String> features;
+    public Map<String, List<String>> features;
 
     public void setSort(ProductSortOptions sort) {
         this.sort = sort;
