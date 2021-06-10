@@ -81,7 +81,8 @@ public class ProductApiTest {
 
 	@Autowired
 	private StockRepository stockRepo;
-
+	@Autowired
+	private BrandsRepository brandRepo;
 
 	@Autowired
 	private ProductImagesRepository imgRepo;
@@ -169,7 +170,6 @@ public class ProductApiTest {
 		product.put("product_id",id);
 		product.put("barcode","UPDATEDbARcODE");
 		product.put("name","updated product");
-		product.put("brand_id", JSONObject.NULL);
 
 		HttpEntity<?> request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
 
@@ -182,13 +182,12 @@ public class ProductApiTest {
 		validateCreatedProductResponse(response);
 
 		Long savedId = response.getBody().getProductId();
-		ProductEntity saved  = productRepository.findById(savedId).get();
+		ProductEntity saved  = productRepository.getById(savedId);
 
 		//modified properties should equal to new values
 		assertEquals(id , saved.getId());
 		assertEquals(product.getString("name"), saved.getName());
 		assertEquals(product.getString("barcode"), saved.getBarcode());
-		assertNull(saved.getBrandId());
 
 		//original values should remain the same
 		assertEquals("updated-product", saved.getPname());
@@ -222,7 +221,7 @@ public class ProductApiTest {
 		assertEquals(product.get("p_name"), saved.getPname());
 		assertEquals(product.get("description"), saved.getDescription());
 		assertEquals(product.get("barcode"), saved.getBarcode());
-		assertEquals(product.get("brand_id"), saved.getBrandId());
+		assertEquals(product.get("brand_id"), saved.getBrand().getId());
 		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user 
 	}
 
@@ -275,10 +274,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = postInvalidProductData(user, product);
 
-		Long id = new JSONObject(response.getBody()).getLong("product_id");
-		ProductEntity saved  = productRepository.findById(id).get();
-
-		validateCreatedProductData(product, saved, id, user.getOrganizationId());
+		assertEquals(406, response.getStatusCodeValue());
 	}
 
 
@@ -846,8 +842,9 @@ public class ProductApiTest {
 		Long maxProductId = jdbc.queryForObject("select max(id) from public.products", Long.class); 
 		
 		ProductEntity newProduct = new ProductEntity();
+		BrandsEntity brand = brandRepo.findById(101L).get();
 		newProduct.setName("new Product");
-		newProduct.setBrandId(101L);
+		newProduct.setBrand(brand);
 		newProduct.setOrganizationId(99001L);
 		
 		newProduct = productRepository.save(newProduct);

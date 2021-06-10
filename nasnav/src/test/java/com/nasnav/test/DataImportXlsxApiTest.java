@@ -1276,7 +1276,7 @@ public class DataImportXlsxApiTest {
 		assertEquals("TT232222", updatedProduct.getBarcode());
         assertEquals("Squishy shoes", updatedProduct.getName());
         assertEquals("squishy", updatedProduct.getDescription());
-        assertEquals(101L, updatedProduct.getBrandId().longValue());
+        assertEquals(101L, updatedProduct.getBrand().getId().longValue());
 	}
 
 	private void assertTestVariantUpdated(ProductVariantsEntity updatedVariant) {
@@ -1328,7 +1328,7 @@ public class DataImportXlsxApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
         assertTrue( propertyMultiValuesIn(products, this::getTags, expected.getTags()) );
-        assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
+        assertTrue( propertyValuesIn(products, p -> p.getBrand().getId(), expected.getBrands()) );
 	}
 
 	private Set<String> getExtraAttributesTypes(List<ProductVariantsEntity> variants) {

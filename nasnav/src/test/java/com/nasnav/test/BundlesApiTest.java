@@ -324,7 +324,7 @@ public class BundlesApiTest {
 		assertEquals(product.get("p_name"), saved.getPname());
 		assertEquals(product.get("description"), saved.getDescription());
 		assertEquals(product.get("barcode"), saved.getBarcode());
-		assertEquals(product.get("brand_id"), saved.getBrandId());
+		assertEquals(product.get("brand_id"), saved.getBrand().getId());
 		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user
 		assertEquals(ProductTypes.BUNDLE, saved.getProductType().intValue());
 	}

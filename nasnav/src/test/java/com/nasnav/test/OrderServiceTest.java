@@ -15,11 +15,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.dto.query.result.CartItemData;
+import com.nasnav.persistence.*;
 import com.nasnav.service.MailService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
@@ -958,11 +954,12 @@ public class OrderServiceTest {
 		Item stock1 = getStockItemQty(601L);
 		Item stock2 = getStockItemQty(602L);
 		//get cart count before
-		List<CartItemData> cartBefore = cartRepo.findCurrentCartItemsByUser_Id(88L); 
+		List<CartItemEntity> cartBefore = cartRepo.findCurrentCartItemsByUser_Id(88L);
 		boolean cartHasStk = 
 				cartBefore
 				.stream()
-				.map(CartItemData::getStockId)
+				.map(CartItemEntity::getStock)
+				.map(StocksEntity::getId)
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertTrue(cartHasStk);
 		
@@ -1010,11 +1007,12 @@ public class OrderServiceTest {
 
 
 	private void assertCartItemsRemoved() {
-		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L); 
+		List<CartItemEntity> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L);
 		boolean cartHasStkAfer = 
 				cartAfter
 				.stream()
-				.map(CartItemData::getStockId)
+				.map(CartItemEntity::getStock)
+				.map(StocksEntity::getId)
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertFalse(cartHasStkAfer);
 		assertFalse("if the cart had items not in the order, they should remain", cartAfter.isEmpty());

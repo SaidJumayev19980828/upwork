@@ -58,8 +58,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			+ " FROM ProductVariantsEntity variant "
 			+ " where variant.id in :idList and variant.productEntity.removed = 0")
 	List<VariantBasicData> findVariantBasicDataByIdIn(@Param("idList") List<Long> idList);
-	
-	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
+
+	@Query("select distinct variant from ProductVariantsEntity variant " +
+			" left join fetch variant.featureValues featureValues " +
+			" left join fetch featureValues.feature feature " +
+			" where variant.id in :idList")
+	List<ProductVariantsEntity> findByIdIn(@Param("idList") List<Long> idList);
 	
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
@@ -99,6 +103,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	
 	@Query("SELECT variant "
 			+ " FROM ProductVariantsEntity variant "
+			+ " left join fetch variant.featureValues featureValue "
+			+ " left join fetch featureValue.feature feature"
 			+ " left join fetch variant.productEntity product "
 			+ " left join fetch variant.stocks stocks "
 			+ " left join fetch variant.extraAttributes attr"

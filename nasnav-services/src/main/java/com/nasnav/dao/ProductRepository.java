@@ -57,6 +57,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 			+ " WHERE products.id in :productIdList")
 	Set<ProductEntity> findFullDataByIdIn(@Param("productIdList") List<Long> productIdList);
 
+	@Query("Select product from ProductEntity product left join fetch product.brand brand " +
+            " where product.id = :id")
+    ProductEntity getById(@Param("id") Long id);
 
     @Query(value = "SELECT Distinct t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
     Set<Long> getProductIdsByTagsList(@Param("tagsIds") Set<Long> tagsIds);

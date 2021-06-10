@@ -942,12 +942,13 @@ public class OrderServiceImpl implements OrderService {
 
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
+		BrandsEntity brand = product.getBrand();
 
 		item.setProductId(product.getId());
 		item.setName(product.getName());
 		item.setPname(product.getPname());
 		item.setProductType(product.getProductType());
-		item.setBrandId(product.getBrandId());
+		item.setBrandId(brand.getId());
 
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
@@ -2077,7 +2078,7 @@ public class OrderServiceImpl implements OrderService {
 		stock.map(StocksEntity::getId).ifPresent(promoItem::setStockId);
 		variant.map(ProductVariantsEntity::getId).ifPresent(promoItem::setVariantId);
 		product.map(ProductEntity::getId).ifPresent(promoItem::setProductId);
-		product.map(ProductEntity::getBrandId).ifPresent(promoItem::setBrandId);
+		product.map(ProductEntity::getBrand).ifPresent(brand -> promoItem.setBrandId(brand.getId()));
 		product.map(ProductEntity::getProductType).ifPresent(promoItem::setProductType);
 		variant.map(ProductVariantsEntity::getWeight).ifPresent(promoItem::setWeight);
 		stock.map(StocksEntity::getUnit).map(StockUnitEntity::getName).ifPresent(promoItem::setUnit);

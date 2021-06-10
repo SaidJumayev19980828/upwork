@@ -78,6 +78,7 @@ public enum ErrorCodes {
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+	,P$BRA$0004("No Brand id is provided!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
 	,P$FTR$0002("Feature is still used by some products!")

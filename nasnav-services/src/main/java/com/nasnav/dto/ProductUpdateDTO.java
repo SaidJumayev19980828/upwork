@@ -16,8 +16,10 @@ import lombok.NoArgsConstructor;
 public class ProductUpdateDTO  extends ProductEntity{
 	
 	private Operation operation;
-    
-    
+
+    @JsonProperty("brand_id")
+    private Long brandId;
+
 	@Override
     @JsonProperty("p_name")
     public void setPname(String pname) {

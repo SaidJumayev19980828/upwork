@@ -31,6 +31,7 @@ public class ProductVariantsEntity {
     public ProductVariantsEntity() {
         removed = 0;
         extraAttributes = new HashSet<>();
+        featureValues = new HashSet<>();
         weight = ZERO;
     }
 
@@ -83,7 +84,7 @@ public class ProductVariantsEntity {
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
 
-    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -104,7 +105,9 @@ public class ProductVariantsEntity {
         extraAttributes.add(extraAttr);
     }
 
-
+    public void addFeatureValues(Set<VariantFeatureValueEntity> featureValues) {
+        featureValues.addAll(featureValues);
+    }
 
     public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
         extraAttributes.remove(extraAttribute);

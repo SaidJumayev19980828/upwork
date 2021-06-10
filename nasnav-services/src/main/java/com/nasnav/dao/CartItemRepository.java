@@ -16,14 +16,14 @@ import com.nasnav.persistence.CartItemEntity;
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT item "
 			+ " FROM CartItemEntity item "
-			+ "	LEFT JOIN item.user user"			
-			+ " LEFT JOIN item.stock stock "
-			+ " LEFT JOIN stock.unit unit "
-			+ " LEFT JOIN stock.productVariantsEntity variant "
-			+ " LEFT JOIN variant.featureValues featureValues"
-			+ " LEFT JOIN featureValues.feature feature "
-			+ " LEFT JOIN variant.productEntity product "
-			+ " LEFT JOIN BrandsEntity brand on product.brandId = brand.id "
+			+ "	LEFT JOIN FETCH item.user user"
+			+ " LEFT JOIN FETCH item.stock stock "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.featureValues featureValues"
+			+ " LEFT JOIN FETCH featureValues.feature feature "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH product.brand brand "
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 

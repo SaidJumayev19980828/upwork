@@ -66,7 +66,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -75,8 +74,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
-import static com.nasnav.commons.utils.StringUtils.encodeUrl;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
@@ -96,7 +94,6 @@ import static java.util.Collections.*;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.beans.BeanUtils.copyProperties;
@@ -485,16 +482,12 @@ public class ProductService {
 
 
 	private List<VariantFeatureDTO> extractVariantFeatures(ProductVariantsEntity variant){
-		JacksonJsonParser parser = new JacksonJsonParser();
-		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
-		return keyValueMap
-				.keySet()
+		return variant
+				.getFeatureValues()
 				.stream()
-				.map(Integer::parseInt)
-				.map(productFeaturesRepository::findById)
-				.filter(optionalFeature -> optionalFeature != null && optionalFeature.isPresent())
-				.map(Optional::get)
+				.map(VariantFeatureValueEntity::getFeature)
 				.map(this::createVariantFeatureDTO)
+				.sorted(Comparator.comparing(VariantFeatureDTO::getName))
 				.collect(toList());
 	}
 
@@ -521,7 +514,7 @@ public class ProductService {
 
 
 	private boolean hasFeatures(ProductVariantsEntity variant) {
-		return variant.getFeatureSpec() != null && !variant.getFeatureSpec().isEmpty();
+		return !variant.getFeatureValues().isEmpty();
 	}
 
 	private List<ProductImageDTO> getProductImages(List<ProductImageDTO> productImages) {
@@ -555,7 +548,7 @@ public class ProductService {
 	}
 
 	@Transactional
-	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
+	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
 		SQLQuery<?> countStocks = getProductsQuery(params, true);
@@ -815,6 +808,7 @@ public class ProductService {
 
 		predicate.and(product.removed.eq(0));
 		predicate.and(product.hide.eq(false));
+		predicate.and( shop.removed.eq(0) );
 
 		if (params.yeshtery_products) {
 			predicate.and(organization.yeshteryState.eq(1));
@@ -845,6 +839,10 @@ public class ProductService {
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
 
+
+		if (isNotBlankOrNull(params.features)) {
+		}
+
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
 
@@ -856,14 +854,12 @@ public class ProductService {
 			predicate.and( stock.price.gt(ZERO));
 		}
 
-		predicate.and( shop.removed.eq(0) );
-
 		return predicate;
 	}
 
 
 
-	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
+	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException {
 		ProductSearchParam params = new ProductSearchParam();
 		copyProperties(oldParams, params);
 
@@ -1217,7 +1213,7 @@ public class ProductService {
 	private ProductUpdateCache createProductUpdateCache(List<String> productJsonList, Boolean isBundle) {
 		List<JSONObject> productsJson = productJsonList.stream().map(JSONObject::new).collect(toList());
 		Map<Long, ProductEntity> products = createProductCache(productsJson);
-		Map<Long, BrandBasicData> brands = createBrandsCache(productsJson);
+		Map<Long, BrandsEntity> brands = createBrandsCache(productsJson);
 
 		return new ProductUpdateCache(products, brands);
 	}
@@ -1246,13 +1242,13 @@ public class ProductService {
 
 
 
-	private Map<Long, BrandBasicData> createBrandsCache(List<JSONObject> productsJson) {
+	private Map<Long, BrandsEntity> createBrandsCache(List<JSONObject> productsJson) {
 		List<Long> brandIds = extractBrandIds(productsJson);
 
 		return mapInBatches(brandIds, 500, brandRepo::findByIdIn)
 				.stream()
 				.distinct()
-				.collect(toMap(BrandBasicData::getId, brand -> brand));
+				.collect(toMap(BrandsEntity::getId, brand -> brand));
 	}
 
 
@@ -1291,7 +1287,7 @@ public class ProductService {
 					.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, id));
 		}
 
-		updateProductEntityFromJson(entity, productJsonNode);
+		updateProductEntityFromJson(entity, productJsonNode, cache.getBrands());
 
 		return entity;
 	}
@@ -1299,7 +1295,7 @@ public class ProductService {
 
 
 
-	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode){
+	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode, Map<Long, BrandsEntity> brandsCache){
 		ProductUpdateDTO productDto = new ProductUpdateDTO();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		try {
@@ -1317,6 +1313,11 @@ public class ProductService {
 			}
 
 			copyProperties(productDto, entity);
+
+			if ( productDto.getBrandId() != null) {
+				BrandsEntity brand = brandsCache.get(productDto.getBrandId());
+				entity.setBrand(brand);
+			}
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$PRO$0006, productJsonNode.toString());
@@ -1413,7 +1414,7 @@ public class ProductService {
 
 		if(brandId.isMissingNode() || brandId.isNull()) //brand_id is optional and can be null
 		{
-			return;
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0004);
 		}
 
 		long id = brandId.asLong();
@@ -1423,7 +1424,8 @@ public class ProductService {
 
 		Long brandOrgId = ofNullable(cache.getBrands())
 				.map(map -> map.get(id))
-				.map(BrandBasicData::getOrgId)
+				.map(BrandsEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getId)
 				.orElse(-2L);
 
 		if( !Objects.equals(brandOrgId, orgId)) {
@@ -2350,19 +2352,10 @@ public class ProductService {
 
 	private void validateFeatures(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		Long userOrgId = securityService.getCurrentUserOrganizationId();
-		String features = variant.getFeatures();
-		if(isBlankOrNull( features )) {
-			throw new BusinessException(
-					"Invalid parameters [features], the product variant features can't be null nor Empty!"
-					, "INVALID PARAM:features"
-					, NOT_ACCEPTABLE);
-		}
-
-		if(!isJSONValid( features )) {
-			throw new BusinessException(
-					format("Invalid parameters [features], the product variant features should be a valid json string! The given value was [%s]" ,features )
-					, "INVALID PARAM:features"
-					, NOT_ACCEPTABLE);
+		Map<String, String> features = ofNullable(variant.getFeatures())
+				.orElse(new HashMap<>());
+		if(isBlankOrNull(features)) {
+			return;
 		}
 
 		if(hasInvalidFeatureKeys(features, cache.getOrganziationFeatures())) {
@@ -2376,10 +2369,9 @@ public class ProductService {
 
 
 
-	private boolean hasInvalidFeatureKeys(String features, Set<ProductFeaturesEntity> orgFeatures) {
+	private boolean hasInvalidFeatureKeys(Map<String, String> features, Set<ProductFeaturesEntity> orgFeatures) {
 		Set<Integer> productFeatureIds = orgFeatures.stream().map(ProductFeaturesEntity::getId).collect(toSet());
-		JSONObject featuresJson = new JSONObject(features);
-		return featuresJson
+		return features
 				.keySet()
 				.stream()
 				.map(Integer::valueOf)
@@ -2422,7 +2414,8 @@ public class ProductService {
 		}
 
 		if(variant.isUpdated("features")) {
-			entity.setFeatureSpec( variant.getFeatures() );
+			Set<VariantFeatureValueEntity> featuresValues = updateVariantFeatureValues(variant, entity, cache);
+			entity.addFeatureValues(featuresValues);
 		}
 
 		if(variant.isUpdated("sku")) {
@@ -2451,6 +2444,26 @@ public class ProductService {
 	}
 
 
+	private Set<VariantFeatureValueEntity> updateVariantFeatureValues(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
+		Set<VariantFeatureValueEntity> featuresValues = entity.getFeatureValues();
+		for (Map.Entry e : variant.getFeatures().entrySet()) {
+			ProductFeaturesEntity feature = cache.getOrganziationFeatures()
+					.stream()
+					.filter(f -> Objects.equals(f.getId(), Integer.parseInt(e.getKey().toString())))
+					.findFirst()
+					.get();
+			VariantFeatureValueEntity featureValue = featuresValues
+					.stream()
+					.filter(f -> Objects.equals(f.getFeature(), feature))
+					.findFirst()
+					.orElseGet(() -> new VariantFeatureValueEntity());
+			featureValue.setFeature(feature);
+			featureValue.setVariant(entity);
+			featureValue.setValue(e.getValue().toString());
+			featuresValues.add( featureValue );
+		}
+		return featuresValues;
+	}
 
 
 	private void saveExtraAttributesIntoEntity(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
@@ -2627,10 +2640,13 @@ public class ProductService {
 
 
 	private void setProductProperties(ProductRepresentationObject productRep, ProductEntity product) {
+		Long brandId = ofNullable(product.getBrand())
+				.map(BrandsEntity::getId)
+				.orElse(null);
 		productRep.setId(product.getId());
 		productRep.setName(product.getName());
 		productRep.setPname(product.getPname());
-		productRep.setBrandId(product.getBrandId());
+		productRep.setBrandId(brandId);
 		productRep.setCategoryId(product.getCategoryId());
 		productRep.setBarcode(product.getBarcode());
 		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
@@ -3365,7 +3381,7 @@ class VariantUpdateCache{
 @AllArgsConstructor
 class ProductUpdateCache{
 	private Map<Long, ProductEntity> products;
-	private Map<Long, BrandBasicData> brands;
+	private Map<Long, BrandsEntity> brands;
 }
 
 
