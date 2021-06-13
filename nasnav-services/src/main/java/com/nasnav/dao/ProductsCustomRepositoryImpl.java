@@ -55,9 +55,10 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
-		SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
-		if (variantFeaturesQuery != null)
+		if (isNotBlankOrNull(params.features)) {
+			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
 			baseQuery.where(variant.id.in(variantFeaturesQuery));
+		}
 
 		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
@@ -85,9 +86,10 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
-		SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
-		if (variantFeaturesQuery != null)
+		if (isNotBlankOrNull(params.features)) {
+			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
 			baseQuery.where(variant.id.in(variantFeaturesQuery));
+		}
 
 		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
@@ -101,10 +103,8 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QVariantFeatureValues featureValue = QVariantFeatureValues.variantFeatureValues;
 		BooleanBuilder featuresPredicate = new BooleanBuilder();
 
-		if (isNotBlankOrNull(params.features)) {
-			for (Map.Entry e : params.features.entrySet()) {
-				featuresPredicate.or(feature.name.eq(e.getKey().toString()).and(featureValue.value.in((List)e.getValue())));
-			}
+		for (Map.Entry e : params.features.entrySet()) {
+			featuresPredicate.or(feature.name.eq(e.getKey().toString()).and(featureValue.value.in((List)e.getValue())));
 		}
 
 		return query.select(featureValue.variantId)
