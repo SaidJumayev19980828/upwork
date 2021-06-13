@@ -738,37 +738,29 @@ public class ProductService {
 	}
 
 
-	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> fromProductsClaus, SQLQuery<?> fromCollectionsClaus) {
+	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause) {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
+		QVariantFeatureValues featureValue = QVariantFeatureValues.variantFeatureValues;
 
-		SQLQuery<?> featuresVal =
-				queryFactory
-						.select(
-								Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
-								Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
-						.from(fromProductsClaus
-								.select(variant.featureSpec).as("product_variants"))
-						.where(variant.featureSpec.isNotNull()
-								.and(variant.featureSpec.ne("{}")));
+		SQLQuery baseQuery = new SQLQuery();
+		baseQuery.union(fromProductsClause.select(variant.id), fromCollectionsClause.select(variant.id)).as("total");
 
-		SQLQuery<?> query = queryFactory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
-				Expressions.stringTemplate("name"),
-				Expressions.stringTemplate("p_name"),
-				Expressions.stringTemplate("features_val.feature_value").as("value")).distinct()
-				.from(featuresVal.as("features_val")).leftJoin(feature)
-				.on(feature.id.eq(Expressions.numberTemplate(Long.class, "features_val.id")));
+		SQLQuery query = queryFactory
+				.selectDistinct(feature.name, featureValue.value)
+				.from(featureValue)
+				.join(feature).on(feature.id.eq(featureValue.featureId))
+				.where(featureValue.variantId.in(baseQuery));
 
-		List<com.nasnav.dto.response.navbox.VariantFeatureDTO> variantsList =
+		var variantsList =
 				template.query(query.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(com.nasnav.dto.response.navbox.VariantFeatureDTO.class));
-
 
 		return variantsList
 				.stream()
 				.collect(
 						groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO::getName
-								, mapping(d -> d.getValue().replace("\"", ""), toList())));
+								, mapping(d -> d.getValue(), toList())));
 	}
 
 
@@ -2629,7 +2621,7 @@ public class ProductService {
 		productRep.setPrice( defaultStock.getPrice() );
 		productRep.setDiscount( defaultStock.getDiscount() );
 		productRep.setStockId( defaultStock.getId());
-		productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
+		productRep.setDefaultVariantFeatures( parseVariantFeatures(defaultStock.getProductVariantsEntity(), 1) );
 		if (defaultStock.getCurrency() != null) {
 			productRep.setCurrency( defaultStock.getCurrency().getValue());
 		}
