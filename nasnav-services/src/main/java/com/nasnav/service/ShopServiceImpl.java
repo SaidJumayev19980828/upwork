@@ -197,11 +197,11 @@ public class ShopServiceImpl implements ShopService {
         predicate.and(shop.removed.eq(0));
         if(param.getName() != null) {
             if (param.isSearchInTags()) {
-                predicate.and(product.name.likeIgnoreCase(param.getName())
-                        .or(tag.name.likeIgnoreCase(param.getName())));
+                predicate.and(product.name.likeIgnoreCase( "%" + param.getName() + "%")
+                        .or(tag.name.likeIgnoreCase("%" + param.getName() + "%")));
             }
             else {
-                predicate.and(product.name.likeIgnoreCase(param.getName()));
+                predicate.and(product.name.likeIgnoreCase("%" + param.getName() + "%"));
             }
         }
         if (param.isYeshteryState()) {
