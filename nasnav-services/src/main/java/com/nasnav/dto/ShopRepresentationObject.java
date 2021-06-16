@@ -2,6 +2,7 @@
 package com.nasnav.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -52,6 +53,6 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
 
     private Integer priority;
 
-    private Double latitude;
-    private Double longitude;
+    @JsonIgnore
+    private Long addressId;
 }

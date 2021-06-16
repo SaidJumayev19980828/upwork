@@ -1,26 +1,19 @@
 package com.nasnav.service;
 
 
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.*;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
-import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Path;
 import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLQuery;
@@ -34,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.cache.annotation.CacheResult;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
@@ -43,6 +37,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -61,6 +56,8 @@ public class ShopServiceImpl implements ShopService {
 
     @Autowired
     private StockRepository stockRepo;
+    @Autowired
+    private AddressRepository addressRepo;
 
     @Autowired
     private EmployeeUserRepository empUserRepo;
@@ -181,9 +178,26 @@ public class ShopServiceImpl implements ShopService {
                 .from(new SQLQuery<>().union( productsQuery,collectionsQuery).as("total"))
                 .limit(10);
 
-        return template.query(query.getSQL().getSQL(),
+        List<ShopRepresentationObject> shops = template.query(query.getSQL().getSQL(),
                 new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
+
+        List<Long> addressesIds = shops.stream().map(ShopRepresentationObject::getAddressId).collect(toList());
+        Map<Long, AddressRepObj> addresses = addressRepo.findByIdIn(addressesIds)
+                .stream()
+                .collect(toMap(AddressesEntity::getId, a -> (AddressRepObj) a.getRepresentation()));
+        shops.stream().map(s -> this.setShopAddress(s, addresses)).collect(toList());
+        return shops;
     }
+
+    private ShopRepresentationObject setShopAddress(ShopRepresentationObject shop, Map<Long, AddressRepObj> addresses) {
+        AddressRepObj address = addresses.get(shop.getAddressId());
+        if (address != null) {
+            shop.setAddress(address);
+        }
+        return shop;
+    }
+
+
 
     private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
         BooleanBuilder predicate = new BooleanBuilder();
@@ -252,7 +266,7 @@ public class ShopServiceImpl implements ShopService {
         QOrganizations organizations = QOrganizations.organizations;
 
         SQLQuery productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                shop.googlePlaceId, shop.isWarehouse, shop.priority, address.latitude, address.longitude)
+                shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
                 .distinct()
                 .from(stock)
                 .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -280,7 +294,7 @@ public class ShopServiceImpl implements ShopService {
         QAreas area = QAreas.areas;
         QOrganizations organizations = QOrganizations.organizations;
         SQLQuery collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                        shop.googlePlaceId, shop.isWarehouse, shop.priority, address.latitude, address.longitude)
+                        shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
                 .distinct()
                 .from(stock)
                 .innerJoin(shop).on(stock.shopId.eq(shop.id))
