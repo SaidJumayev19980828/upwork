@@ -28,8 +28,6 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
 
     public final StringPath description = createString("description");
 
-    public final StringPath featureSpec = createString("featureSpec");
-
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath name = createString("name");
@@ -90,7 +88,6 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
     public void addMetadata() {
         addMetadata(barcode, ColumnMetadata.named("barcode").withIndex(7).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(description, ColumnMetadata.named("description").withIndex(6).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(featureSpec, ColumnMetadata.named("feature_spec").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(pName, ColumnMetadata.named("p_name").withIndex(5).ofType(Types.VARCHAR).withSize(2147483647));

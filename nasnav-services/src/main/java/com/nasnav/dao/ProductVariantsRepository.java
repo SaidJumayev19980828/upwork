@@ -24,10 +24,6 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			" where p.id = :id")
 	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId);
 
-	List<ProductVariantsEntity> findByProductEntity_IdIn(List<Long> productIdsList);
-
-	ProductVariantsEntity findByIdAndProductEntity_Id(Long variantId, Long productId);
-
 	List<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 
 	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
@@ -73,9 +69,6 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
 
 	long countByProductEntity_organizationId(long l);
-
-	long countByProductEntity_organizationIdAndNameContainingIgnoreCase(long l, String name);
-
 	
 	@Transactional
     @Modifying
@@ -85,12 +78,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     		" (select id from products prod where prod.organization_id = :orgId)", nativeQuery = true )
 	void deleteAllByProductEntity_organizationId(@Param("orgId")Long orgId);
 
-	
-	@Query("select variant.id from ProductVariantsEntity variant where variant.id in :idList")
-	Set<Long> findExistingVariantsByIdIn(@Param("idList") List<Long> variantIdList);
-
-	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.organizationId = :orgId")
-	Set<Long> listVariantIdByOrganizationId(@Param("orgId")Long orgId);
+	@Query(value = "select variant from StocksEntity stock "
+					+" left join stock.productVariantsEntity variant"
+					+" left join variant.featureValues featureValues"
+					+" left join featureValues.feature feature"
+					+" where stock.id in :stockIds and variant.removed = 0")
+	List<ProductVariantsEntity> findByStockIdIn(@Param("stockIds") List<Long> stockIds);
 	
 	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.id in :idList")
 	Set<Long> findVariantIdByProductIdIn(@Param("idList") List<Long> productIdList);

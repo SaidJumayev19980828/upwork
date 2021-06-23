@@ -1,11 +1,8 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.TagsRepository;
-import com.nasnav.enumerations.Roles;
+import com.nasnav.dao.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
@@ -45,21 +42,22 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	@Autowired
 	private TagsRepository tagsRepo;
-	
 	@Autowired
 	private ProductFeaturesRepository feautreRepo;
-	
 	@Autowired
-	private SecurityService security;
-	
+	private ProductVariantsRepository variantsRepo;
 	@Autowired
 	private ProductExtraAttributesEntityRepository prodExtraAttributeRepo;
-	
-	@Autowired
-	private SQLQueryFactory queryFactory;
-
 	@Autowired
 	private ShopsRepository shopRepo;
+
+	@Autowired
+	private SecurityService security;
+	@Autowired
+	private ProductService productService;
+
+	@Autowired
+	private SQLQueryFactory queryFactory;
 
 	@Autowired
 	protected ImportExportHelper helper;
@@ -75,12 +73,18 @@ public class DataExportServiceImpl implements DataExportService{
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductExportedData.class));
 
+		List<Long> variantsIds = result.stream()
+				.map(ProductExportedData::getVariantId)
+				.collect(toList());
+		Map<Long, Map<String, String>> variantsFeaturesMap = variantsRepo.findByIdIn(variantsIds)
+				.stream()
+				.collect(toMap(ProductVariantsEntity::getId, variant -> productService.parseVariantFeatures(variant, 0)));
+
 		var extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
 		var productTags = createProductTagsMap(result);
-		var features = createFeaturesMap();
 		return result
 				.stream()
-				.map(product -> toCsvRow(product, productTags, features, extraAttributes))
+				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes))
 				.collect(toList());
 	}
 
@@ -120,19 +124,6 @@ public class DataExportServiceImpl implements DataExportService{
 				.collect(groupingBy(VariantExtraAtrribute::getVariantId));
 	}
 
-
-
-	private Map<Integer, ProductFeaturesEntity> createFeaturesMap() {
-		var orgId = security.getCurrentUserOrganizationId();
-		return feautreRepo
-				.findByOrganizationId(orgId)
-				.stream()
-				.collect(toMap(ProductFeaturesEntity::getId, t -> t));
-	}
-
-
-
-
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
 		var productIds =
 				result
@@ -151,7 +142,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 	private CsvRow toCsvRow(ProductExportedData productData
 			, Map<Long,List<ProductTagsBasicData>> productTags
-			, Map<Integer, ProductFeaturesEntity> features
+			, Map<Long, Map<String, String>> features
 			, Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
 		var row = createCsvRow(productData);
 		
@@ -176,12 +167,11 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private void setFeatures(CsvRow row, ProductExportedData productData,
-			Map<Integer, ProductFeaturesEntity> featuresMap) {
+							 Map<Long, Map<String, String>> featuresMap) {
 		var features =
 				ofNullable(productData)
-				.map(ProductExportedData::getFeatureSpec)
-				.flatMap(this::toFeaturesJson)
-				.map(json -> toFreaturesMap(json, featuresMap))
+				.map(ProductExportedData::getVariantId)
+				.map(id -> featuresMap.get(id))
 				.orElse(emptyMap());
 		
 		row.setFeatures(features);
@@ -281,7 +271,6 @@ public class DataExportServiceImpl implements DataExportService{
 											unit.name.as("unit_name"),
 											product.organizationId.as("organization_id"),
 											variant.id.as("variant_id"),
-											variant.featureSpec,
 											variant.barcode.as("barcode"),
 											brand.name.as("brand"),
 											product.description.as("description"),
@@ -321,7 +310,6 @@ public class DataExportServiceImpl implements DataExportService{
 											unit.name.as("unit_name"),
 											product.organizationId.as("organization_id"),
 											variant.id.as("variant_id"),
-											variant.featureSpec,
 											variant.barcode.as("barcode"),
 											brand.name.as("brand"),
 											product.description.as("description"),

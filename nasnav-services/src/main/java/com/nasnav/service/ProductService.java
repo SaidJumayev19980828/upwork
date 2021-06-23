@@ -622,7 +622,6 @@ public class ProductService {
 				product.organizationId.as("organization_id"),
 				stock.shopId.as("shop_id"),
 				variant.barcode.as("variant_barcode"),
-				variant.featureSpec,
 				variant.productCode,
 				variant.sku,
 				product.id,

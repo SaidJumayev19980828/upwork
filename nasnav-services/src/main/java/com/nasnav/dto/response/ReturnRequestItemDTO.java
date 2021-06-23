@@ -30,8 +30,6 @@ public class ReturnRequestItemDTO extends BaseRepresentationObject {
     private String productCode;
     private String sku;
     private Long variantId;
-    @JsonIgnore
-    private String featureSpec;
     private Map<String, String> variantFeatures;
     private BigDecimal price;
     private String coverImage;

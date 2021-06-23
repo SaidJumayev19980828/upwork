@@ -35,13 +35,9 @@ public class ProductVariantsEntity {
         weight = ZERO;
     }
 
-
     @Id
     @GeneratedValue(strategy=IDENTITY)
     private Long id;
-
-    @Column(name="feature_spec")
-    private String featureSpec="{}";
 
     @Column(name="name")
     private String name;

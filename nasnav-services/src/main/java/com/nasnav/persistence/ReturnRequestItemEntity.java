@@ -102,7 +102,6 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setShopName(shop.getName());
             dto.setPrice(totalPrice);
             dto.setVariantId(variant.getId());
-            dto.setFeatureSpec(variant.getFeatureSpec());
             dto.setProductName(product.getName());
             dto.setProductId(product.getId());
             dto.setProductCode(variant.getProductCode());
