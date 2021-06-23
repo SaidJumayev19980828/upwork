@@ -15,6 +15,9 @@ import com.nasnav.service.ShopService;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
+import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
+import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
+import com.nasnav.yeshtery.service.YeshteryRecommendationService;
 import com.nasnav.yeshtery.services.SeoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -67,6 +70,9 @@ public class YeshteryController {
 
     @Autowired
     private SeoService seoService;
+
+    @Autowired
+    private YeshteryRecommendationService recommendationService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name,
@@ -236,5 +242,50 @@ public class YeshteryController {
             @RequestParam(value = "type", required = true) SeoEntityType type,
             @RequestParam(value = "id", required = true)Long entityId) {
         return seoService.getSeoKeywords(entityId, type);
+    }
+
+    @Operation(description =  "return recommend product rating", summary = "getRecommendProductRating")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/rating", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationRatingData> getRecommendProductRating() {
+        return recommendationService.getListOfTopRatingProduct();
+    }
+
+    @Operation(description =  "return recommend product rating by tag", summary = "getRecommendProductRatingByTag")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/rating/tag", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationRatingData> getRecommendProductRatingByTag(@RequestParam(value = "tagid", required = true)Long tagId) {
+        return recommendationService.getListOfTopRatingProductByTag(tagId);
+    }
+
+    @Operation(description =  "return recommend product selling", summary = "getRecommendProductSelling")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/selling", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationSellingData> getRecommendProductSelling() {
+        return recommendationService.getListOfTopSellerProduct();
+    }
+
+    @Operation(description =  "return recommend product selling by tag", summary = "getRecommendProductSellingByTag")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/rating/tag", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByTag(@RequestParam(value = "tagid", required = true)Long tagId) {
+        return recommendationService.getListOfTopSellerProductByTag(tagId);
+    }
+
+    @Operation(description =  "return recommend product selling by shop", summary = "getRecommendProductSellingByShop")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/rating/shop", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShop(@RequestParam(value = "shopid", required = true)Long shopId) {
+        return recommendationService.getListOfTopSellerProductByShop(shopId);
     }
 }

@@ -1,6 +1,10 @@
 package com.nasnav.yeshtery.service;
 
 import com.nasnav.persistence.ProductEntity;
+import com.nasnav.service.SecurityService;
+import com.nasnav.yeshtery.dao.YeshteryRecommendationRepository;
+import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
+import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
@@ -16,11 +20,20 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.recommender.UserBasedRecommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Service
 public class YeshteryRecommendationServiceImpl implements YeshteryRecommendationService {
+
+    @Autowired
+    private SecurityService securityService;
+
+    @Autowired
+    private YeshteryRecommendationRepository recommendationRepository;
 
     @Override
     public List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId) {
@@ -64,23 +77,35 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     }
 
     @Override
-    public List<ProductEntity> getListOfTopSellerProduct() {
-        return null;
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProduct() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopSelling(orgId);
     }
 
     @Override
-    public List<ProductEntity> getListOfTopSellerProductByTag(int tagId) {
-        return null;
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopSellingByTag(orgId, tagId);
     }
 
     @Override
-    public List<ProductEntity> getListOfTopRatingProduct() {
-        return null;
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopSellingByShop(orgId, shopId);
     }
 
     @Override
-    public List<ProductEntity> getListOfTopRatingProductByTag(int tagId) {
-        return null;
+    public List<YeshteryRecommendationRatingData> getListOfTopRatingProduct() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopRating(orgId);
     }
+
+    @Override
+    public List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopRatingByTag(orgId, tagId);
+    }
+
+
 
 }
