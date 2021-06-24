@@ -78,10 +78,10 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     		" (select id from products prod where prod.organization_id = :orgId)", nativeQuery = true )
 	void deleteAllByProductEntity_organizationId(@Param("orgId")Long orgId);
 
-	@Query(value = "select variant from StocksEntity stock "
-					+" left join stock.productVariantsEntity variant"
-					+" left join variant.featureValues featureValues"
-					+" left join featureValues.feature feature"
+	@Query(value = "select distinct variant from ProductVariantsEntity variant"
+					+" inner join variant.stocks stock"
+					+" left join fetch variant.featureValues featureValues"
+					+" left join fetch featureValues.feature feature"
 					+" where stock.id in :stockIds and variant.removed = 0")
 	List<ProductVariantsEntity> findByStockIdIn(@Param("stockIds") List<Long> stockIds);
 	

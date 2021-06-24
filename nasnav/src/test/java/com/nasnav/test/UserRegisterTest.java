@@ -643,7 +643,7 @@ public class UserRegisterTest {
 			.verify(mailService)
 			.send(
 				  Mockito.eq("test@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
@@ -663,7 +663,7 @@ public class UserRegisterTest {
 				.verify(mailService)
 				.send(
 						Mockito.eq("test@nasnav.com")
-						, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+						, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 						, Mockito.anyString()
 						, Mockito.anyMap());
 	}
@@ -685,7 +685,7 @@ public class UserRegisterTest {
 			.verify(mailService)
 			.send(
 				  Mockito.eq("not.activated@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.eq("organization_1"+ ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
@@ -707,7 +707,7 @@ public class UserRegisterTest {
 			.verify(mailService)
 			.send(
 				  Mockito.eq("no.token.man@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.eq("organization_1" + ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
