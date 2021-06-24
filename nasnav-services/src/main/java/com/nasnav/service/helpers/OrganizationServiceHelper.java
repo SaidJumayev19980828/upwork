@@ -28,7 +28,7 @@ public class OrganizationServiceHelper  {
     }
 
     public Optional<SocialEntity> createSocialEntity(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization) throws BusinessException {
-        if (allIsNull(json.socialInstagram, json.socialTwitter, json.socialFacebook, json.socialYoutube, json.socialLnkedin, json.socialPinterest)){
+        if (allIsNull(json.socialInstagram, json.socialTwitter, json.socialFacebook, json.socialYoutube, json.socialLnkedin, json.socialPinterest, json.socialWhatsapp)){
             return empty();
         }
 
@@ -44,6 +44,7 @@ public class OrganizationServiceHelper  {
         validateAndSetYoutubeUrl(json.socialYoutube, socialEntity);
         validateAndSetLinkedIn(json.socialLnkedin, socialEntity);
         validateAndSetPinterest(json.socialPinterest, socialEntity);
+        validateAndSetWhatsapp(json.socialWhatsapp, socialEntity);
 
         return Optional.of(socialEntity);
     }
@@ -121,6 +122,17 @@ public class OrganizationServiceHelper  {
             }
             else {
                 socialEntity.setPinterest(url);
+            }
+        }
+    }
+
+    private void validateAndSetWhatsapp(String url, SocialEntity socialEntity) {
+        if (url != null){
+            if (url.equals("")) {
+                socialEntity.setWhatsapp(null);
+            }
+            else {
+                socialEntity.setWhatsapp(url);
             }
         }
     }

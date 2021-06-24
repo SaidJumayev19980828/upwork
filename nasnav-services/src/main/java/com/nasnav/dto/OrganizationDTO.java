@@ -76,6 +76,9 @@ public class OrganizationDTO {
         @JsonProperty("social_pinterest")
         public String socialPinterest;
 
+        @JsonProperty("social_whatsapp")
+        public String socialWhatsapp;
+
         @JsonProperty("extra_info")
         public Map<?,?> info;
 

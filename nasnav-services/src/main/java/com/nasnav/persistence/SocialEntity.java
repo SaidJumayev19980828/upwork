@@ -23,6 +23,7 @@ public class SocialEntity implements BaseEntity {
     private String youtube;
     private String linkedin;
     private String pinterest;
+    private String whatsapp;
     
 
 

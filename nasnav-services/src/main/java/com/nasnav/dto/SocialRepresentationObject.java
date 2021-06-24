@@ -21,4 +21,5 @@ public class SocialRepresentationObject extends BaseRepresentationObject{
     private String youtube;
     private String linkedin;
     private String pinterest;
+    private String whatsapp;
 }
