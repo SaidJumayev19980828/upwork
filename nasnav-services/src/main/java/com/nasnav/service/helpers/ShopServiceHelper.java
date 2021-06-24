@@ -77,6 +77,9 @@ public class ShopServiceHelper extends BeanUtils{
         if (shopJson.isUpdated("logo"))
             shopsEntity.setLogo(shopJson.getLogo());
 
+        if (shopJson.isUpdated("dark_logo"))
+            shopsEntity.setDarkLogo(shopJson.getDarkLogo());
+
         if (shopJson.isUpdated("placeId"))
             shopsEntity.setPlaceId(shopJson.getPlaceId());
 

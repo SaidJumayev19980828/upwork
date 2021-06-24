@@ -1,5 +1,6 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -293,5 +294,47 @@ public class NavBoxTest {
                 });
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(2, body.size());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shop_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getLocationShopsDifferentFilters() throws JsonProcessingException {
+        var response = template.getForEntity("/navbox/location_shops?org_id=99001", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ShopRepresentationObject> responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(4, responseBody.size());
+
+        // filter by area_id
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&area_id=1", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(2, responseBody.size());
+
+
+        // filter by product names
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&name=product_2", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(1, responseBody.size());
+        assertEquals(502, responseBody.get(0).getId().intValue());
+
+        // filter by tag names
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&name=tag_1", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(3, responseBody.size());
+
+        // filter by long and lat
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&latitude=30.056995&longitude=31.474868&radius=1", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(2, responseBody.size());
+
+        // filter by product type
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&product_type=2", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(1, responseBody.size());
     }
 }

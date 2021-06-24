@@ -1,16 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -21,11 +20,9 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QRoles extends com.querydsl.sql.RelationalPathBase<QRoles> {
 
-    private static final long serialVersionUID = 146854658;
+    private static final long serialVersionUID = 797450951;
 
     public static final QRoles roles = new QRoles("roles");
-
-    public final DateTimePath<java.sql.Timestamp> createdAt = createDateTime("createdAt", java.sql.Timestamp.class);
 
     public final NumberPath<Integer> id = createNumber("id", Integer.class);
 
@@ -33,11 +30,9 @@ public class QRoles extends com.querydsl.sql.RelationalPathBase<QRoles> {
 
     public final NumberPath<Long> organizationId = createNumber("organizationId", Long.class);
 
-    public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
-
     public final com.querydsl.sql.PrimaryKey<QRoles> rolesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> rolesOrganizationIdFkey = createForeignKey(organizationId, "id");
+    public final com.querydsl.sql.ForeignKey<QRoleEmployeeUsers> _roleEmployeeUsersRoleIdFkey = createInvForeignKey(id, "role_id");
 
     public QRoles(String variable) {
         super(QRoles.class, forVariable(variable), "public", "roles");
@@ -65,11 +60,9 @@ public class QRoles extends com.querydsl.sql.RelationalPathBase<QRoles> {
     }
 
     public void addMetadata() {
-        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(3).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(2).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(5).ofType(Types.BIGINT).withSize(19));
-        addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(4).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
+        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(3).ofType(Types.BIGINT).withSize(19));
     }
 
 }

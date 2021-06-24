@@ -2,6 +2,7 @@
 package com.nasnav.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -35,8 +36,9 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
 
     private AddressRepObj address;
 
-    @JsonProperty("logo")
     private String logo;
+    @JsonProperty("darl_logo")
+    private String darkLogo;
     private String banner;
     @JsonProperty("open")
     private OpenWorkingDays openWorkingDays;
@@ -50,4 +52,7 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     private Boolean isWarehouse;
 
     private Integer priority;
+
+    @JsonIgnore
+    private Long addressId;
 }

@@ -1,16 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -21,21 +20,23 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QCountries extends com.querydsl.sql.RelationalPathBase<QCountries> {
 
-    private static final long serialVersionUID = -2114964359;
+    private static final long serialVersionUID = 1364203966;
 
     public static final QCountries countries = new QCountries("countries");
 
-    public final DateTimePath<java.sql.Timestamp> createdAt = createDateTime("createdAt", java.sql.Timestamp.class);
+    public final StringPath currency = createString("currency");
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final StringPath name = createString("name");
+    public final NumberPath<Integer> isoCode = createNumber("isoCode", Integer.class);
 
-    public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
+    public final StringPath name = createString("name");
 
     public final com.querydsl.sql.PrimaryKey<QCountries> countriesPkey = createPrimaryKey(id);
 
     public final com.querydsl.sql.ForeignKey<QCities> _rails996e05be41Fk = createInvForeignKey(id, "country_id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> _organizationsCurrencyIsoFkey = createInvForeignKey(isoCode, "currency_iso");
 
     public QCountries(String variable) {
         super(QCountries.class, forVariable(variable), "public", "countries");
@@ -63,10 +64,10 @@ public class QCountries extends com.querydsl.sql.RelationalPathBase<QCountries> 
     }
 
     public void addMetadata() {
-        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(3).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
+        addMetadata(currency, ColumnMetadata.named("currency").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(isoCode, ColumnMetadata.named("iso_code").withIndex(3).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(2).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(4).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
     }
 
 }

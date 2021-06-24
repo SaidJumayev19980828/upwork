@@ -1,14 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -19,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QProductTags extends com.querydsl.sql.RelationalPathBase<QProductTags> {
 
-    private static final long serialVersionUID = -962026963;
+    private static final long serialVersionUID = 1034177074;
 
     public static final QProductTags productTags = new QProductTags("product_tags");
 
@@ -27,9 +28,9 @@ public class QProductTags extends com.querydsl.sql.RelationalPathBase<QProductTa
 
     public final NumberPath<Long> tagId = createNumber("tagId", Long.class);
 
-    public final com.querydsl.sql.ForeignKey<QTags> productTagsTagIdFkey = createForeignKey(tagId, "id");
-
     public final com.querydsl.sql.ForeignKey<QProducts> productTagsProductIdFkey = createForeignKey(productId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QTags> productTagsTagIdFkey = createForeignKey(tagId, "id");
 
     public QProductTags(String variable) {
         super(QProductTags.class, forVariable(variable), "public", "product_tags");

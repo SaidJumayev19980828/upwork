@@ -1,16 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.DateTimePath;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -21,11 +20,9 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QShopFloors extends com.querydsl.sql.RelationalPathBase<QShopFloors> {
 
-    private static final long serialVersionUID = -1635568808;
+    private static final long serialVersionUID = -1155533133;
 
     public static final QShopFloors shopFloors = new QShopFloors("shop_floors");
-
-    public final DateTimePath<java.sql.Timestamp> createdAt = createDateTime("createdAt", java.sql.Timestamp.class);
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
@@ -37,8 +34,6 @@ public class QShopFloors extends com.querydsl.sql.RelationalPathBase<QShopFloors
 
     public final NumberPath<Long> shop360Id = createNumber("shop360Id", Long.class);
 
-    public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
-
     public final com.querydsl.sql.PrimaryKey<QShopFloors> shopFloorsPkey = createPrimaryKey(id);
 
     public final com.querydsl.sql.ForeignKey<QShop360s> rails34316e0ca5Fk = createForeignKey(shop360Id, "id");
@@ -46,6 +41,8 @@ public class QShopFloors extends com.querydsl.sql.RelationalPathBase<QShopFloors
     public final com.querydsl.sql.ForeignKey<QOrganizations> rails6333433b00Fk = createForeignKey(organizationId, "id");
 
     public final com.querydsl.sql.ForeignKey<QShopSections> _railsF2b72e42c7Fk = createInvForeignKey(id, "shop_floor_id");
+
+    public final com.querydsl.sql.ForeignKey<QShop360Products> _shop360ProductsFloorIdFkey = createInvForeignKey(id, "floor_id");
 
     public QShopFloors(String variable) {
         super(QShopFloors.class, forVariable(variable), "public", "shop_floors");
@@ -73,13 +70,11 @@ public class QShopFloors extends com.querydsl.sql.RelationalPathBase<QShopFloors
     }
 
     public void addMetadata() {
-        addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(4).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(number, ColumnMetadata.named("number").withIndex(2).ofType(Types.INTEGER).withSize(10));
-        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(7).ofType(Types.BIGINT).withSize(19));
-        addMetadata(shop360Id, ColumnMetadata.named("shop360_id").withIndex(6).ofType(Types.BIGINT).withSize(19));
-        addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(5).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
+        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(5).ofType(Types.BIGINT).withSize(19));
+        addMetadata(shop360Id, ColumnMetadata.named("shop360_id").withIndex(4).ofType(Types.BIGINT).withSize(19));
     }
 
 }

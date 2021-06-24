@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QFiles extends com.querydsl.sql.RelationalPathBase<QFiles> {
 
-    private static final long serialVersionUID = 135593660;
+    private static final long serialVersionUID = 786189953;
 
     public static final QFiles files = new QFiles("files");
 
@@ -40,9 +40,13 @@ public class QFiles extends com.querydsl.sql.RelationalPathBase<QFiles> {
 
     public final com.querydsl.sql.ForeignKey<QOrganizations> filesOrganizationIdFkey = createForeignKey(organizationId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QProductImages> _productImagesFilesUrlKey = createInvForeignKey(url, "uri");
+    public final com.querydsl.sql.ForeignKey<QBrands> _brandsCoverUrlFkey = createInvForeignKey(url, "cover_url");
+
+    public final com.querydsl.sql.ForeignKey<QFilesResized> _filesResizedOriginalFileIdFkey = createInvForeignKey(id, "original_file_id");
 
     public final com.querydsl.sql.ForeignKey<QOrganizationImages> _organizationImagesUriFkey = createInvForeignKey(url, "uri");
+
+    public final com.querydsl.sql.ForeignKey<QProductImages> _productImagesUriFkey = createInvForeignKey(url, "uri");
 
     public QFiles(String variable) {
         super(QFiles.class, forVariable(variable), "public", "files");

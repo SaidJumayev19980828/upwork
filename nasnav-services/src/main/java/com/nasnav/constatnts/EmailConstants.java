@@ -21,7 +21,7 @@ public final class EmailConstants {
 
     public static final String ACCOUNT_EMAIL_PARAMETER = "#AccountEmail#";
 
-    public static final String ACTIVATION_ACCOUNT_EMAIL_SUBJECT = "NasNav Account Activation";
+    public static final String ACTIVATION_ACCOUNT_EMAIL_SUBJECT = " Account Activation";
 
     public static final String NEW_EMAIL_ACTIVATION_TEMPLATE = "mail_templates/new_mail_recovery_template.html";
     

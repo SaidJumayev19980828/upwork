@@ -11,6 +11,8 @@ import com.querydsl.core.types.Path;
 import com.querydsl.sql.ColumnMetadata;
 import java.sql.Types;
 
+import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+
 
 
 

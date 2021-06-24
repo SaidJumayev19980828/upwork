@@ -1,14 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -19,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QTagGraphEdges extends com.querydsl.sql.RelationalPathBase<QTagGraphEdges> {
 
-    private static final long serialVersionUID = 1664994343;
+    private static final long serialVersionUID = 166692588;
 
     public static final QTagGraphEdges tagGraphEdges = new QTagGraphEdges("tag_graph_edges");
 
@@ -31,9 +32,9 @@ public class QTagGraphEdges extends com.querydsl.sql.RelationalPathBase<QTagGrap
 
     public final com.querydsl.sql.PrimaryKey<QTagGraphEdges> tagGraphEdgesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagGraphEdgesParentFk = createForeignKey(parentId, "id");
+    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagEdgesChildIdFkey = createForeignKey(childId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagGraphEdgesChildFk = createForeignKey(childId, "id");
+    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagEdgesParentIdFkey = createForeignKey(parentId, "id");
 
     public QTagGraphEdges(String variable) {
         super(QTagGraphEdges.class, forVariable(variable), "public", "tag_graph_edges");

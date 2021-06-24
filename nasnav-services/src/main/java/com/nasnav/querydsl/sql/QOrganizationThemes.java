@@ -1,14 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
-import com.querydsl.core.types.PathMetadata;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
 import com.querydsl.core.types.dsl.*;
-import com.querydsl.sql.ColumnMetadata;
 
+import com.querydsl.core.types.PathMetadata;
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -19,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QOrganizationThemes extends com.querydsl.sql.RelationalPathBase<QOrganizationThemes> {
 
-    private static final long serialVersionUID = -250822984;
+    private static final long serialVersionUID = -2037778669;
 
     public static final QOrganizationThemes organizationThemes = new QOrganizationThemes("organization_themes");
 

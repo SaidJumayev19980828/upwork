@@ -1,15 +1,15 @@
 package com.nasnav.querydsl.sql;
 
-import com.querydsl.core.types.Path;
+import static com.querydsl.core.types.PathMetadataFactory.*;
+
+import com.querydsl.core.types.dsl.*;
+
 import com.querydsl.core.types.PathMetadata;
-import com.querydsl.core.types.dsl.NumberPath;
-import com.querydsl.core.types.dsl.StringPath;
-import com.querydsl.sql.ColumnMetadata;
-
 import javax.annotation.Generated;
-import java.sql.Types;
+import com.querydsl.core.types.Path;
 
-import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+import com.querydsl.sql.ColumnMetadata;
+import java.sql.Types;
 
 
 
@@ -20,7 +20,7 @@ import static com.querydsl.core.types.PathMetadataFactory.forVariable;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QOrganizationImages extends com.querydsl.sql.RelationalPathBase<QOrganizationImages> {
 
-    private static final long serialVersionUID = -561250970;
+    private static final long serialVersionUID = 1946760641;
 
     public static final QOrganizationImages organizationImages = new QOrganizationImages("organization_images");
 
@@ -36,13 +36,13 @@ public class QOrganizationImages extends com.querydsl.sql.RelationalPathBase<QOr
 
     public final com.querydsl.sql.PrimaryKey<QOrganizationImages> organizationImagesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizationImageTypes> organizationImagesTypeFk = createForeignKey(type, "id");
-
-    public final com.querydsl.sql.ForeignKey<QFiles> organizationImagesUriFkey = createForeignKey(uri, "url");
-
     public final com.querydsl.sql.ForeignKey<QOrganizations> organizationImagesOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public final com.querydsl.sql.ForeignKey<QShops> organizationImagesShopIdFkey = createForeignKey(shopId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizationImageTypes> organizationImagesTypeFk = createForeignKey(type, "id");
+
+    public final com.querydsl.sql.ForeignKey<QFiles> organizationImagesUriFkey = createForeignKey(uri, "url");
 
     public QOrganizationImages(String variable) {
         super(QOrganizationImages.class, forVariable(variable), "public", "organization_images");
