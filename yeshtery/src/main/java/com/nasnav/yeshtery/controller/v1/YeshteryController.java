@@ -43,13 +43,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
+/*
 @RestController
 @RequestMapping("/v1/yeshtery")
 @Tag(name = "Yeshtery Controller")
-@CrossOrigin("*")
+@CrossOrigin("*")*/
 public class YeshteryController {
-
+/*
     @Autowired
     private ShopService shopService;
     @Autowired
@@ -287,5 +287,5 @@ public class YeshteryController {
     @GetMapping(value="/recommend/rating/shop", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShop(@RequestParam(value = "shopid", required = true)Long shopId) {
         return recommendationService.getListOfTopSellerProductByShop(shopId);
-    }
+    }*/
 }

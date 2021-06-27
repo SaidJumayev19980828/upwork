@@ -7,12 +7,14 @@ import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
+import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLJDBCDataModel;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.model.JDBCDataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
@@ -20,9 +22,11 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.recommender.UserBasedRecommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.postgresql.ds.PGPoolingDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,21 +36,31 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     @Autowired
     private SecurityService securityService;
 
-    @Autowired
+    //@Autowired(required=true)
     private YeshteryRecommendationRepository recommendationRepository;
+
+    @Autowired
+    DataSource dataSource;
 
     @Override
     public List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            FastByIDMap<PreferenceArray> products = new FastByIDMap<>();
-            // Data
-            DataModel model = new GenericDataModel(products);
+            /*PGPoolingDataSource dataSource = new PGPoolingDataSource();
+            dataSource.setServerName(  "" );
+            dataSource.setDatabaseName( "" );
+            dataSource.setUser( "" );
+            dataSource.setPassword( "" );
+            dataSource.setMaxConnections(20);
+*/
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"recommend" , "userId",  "view", "rank", "time");
+
             ItemSimilarity itemSimilarity = new EuclideanDistanceSimilarity(model);
             Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
             List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : itemRecommendations) {
                 // add recommended items
+                long prodId = item.getItemID();
             }
         } catch (Exception e) {
             items.clear();
@@ -59,15 +73,21 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     public List<ProductEntity> getListOfUserSimilarityItemOrders(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            FastByIDMap<PreferenceArray> products = new FastByIDMap<>();
-            // Data
-            DataModel model = new GenericDataModel(products);
+            PGPoolingDataSource dataSource = new PGPoolingDataSource();
+            dataSource.setServerName(  "" );
+            dataSource.setDatabaseName( "" );
+            dataSource.setUser( "" );
+            dataSource.setPassword( "" );
+            dataSource.setMaxConnections(20);
+
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"recommend" , "userId",  "view", "rank", "time");
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);
             UserBasedRecommender recommender = new GenericUserBasedRecommender(model, neighborhood, similarity);
             List<RecommendedItem> recommendations = recommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : recommendations) {
                 // add recommended data
+                long prodId = item.getItemID();
             }
         } catch (Exception e) {
             items.clear();
