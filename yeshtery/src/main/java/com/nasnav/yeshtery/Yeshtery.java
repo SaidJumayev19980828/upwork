@@ -9,6 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -17,6 +18,7 @@ import java.util.Properties;
         ElasticsearchDataAutoConfiguration.class,
         ElasticsearchRestClientAutoConfiguration.class})
 @EnableCaching
+@EnableJpaRepositories(basePackages = {"com.nasnav.yeshtery.dao"})
 @ComponentScan({"com.nasnav"})
 public class Yeshtery{
 

@@ -20,8 +20,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN variants.productEntity product "
             + " LEFT JOIN product.tags tag "
             + " WHERE product.organizationId = :orgId "
-            + " group by product.id, tag.id, product.name "
-            + " order by sum(rating.rate) desc , count (rating.id) desc ")
+            + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationRatingData> findProductTopRating(@Param("orgId") Long orgId);
 
     @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData("
@@ -31,8 +30,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN variants.productEntity product "
             + " LEFT JOIN product.tags tag "
             + " WHERE product.organizationId = :orgId and tag.id = :tagId "
-            + " group by product.id, tag.id, product.name "
-            + " order by sum(rating.rate) desc , count (rating.id) desc ")
+            + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationRatingData> findProductTopRatingByTag(@Param("orgId") Long orgId, @Param("tagId") Long tagId);
 
     @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData("
@@ -44,8 +42,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN variant.productEntity product "
             + " LEFT JOIN product.tags tag "
             + " WHERE product.organizationId = :orgId "
-            + " group by product.id, tag.id, product.name "
-            + " order by count (orders.id) desc ")
+            + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationSellingData> findProductTopSelling(@Param("orgId") Long orgId);
 
     @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData("
@@ -57,8 +54,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN variant.productEntity product "
             + " LEFT JOIN product.tags tag "
             + " WHERE product.organizationId = :orgId and tag.id = :tagId"
-            + " group by product.id, tag.id, product.name "
-            + " order by count (orders.id) desc ")
+            + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationSellingData> findProductTopSellingByTag(@Param("orgId") Long orgId, @Param("tagId") Long tagId);
 
     @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData("
@@ -71,7 +67,6 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN product.tags tag "
             + " LEFT JOIN orders.shopsEntity shop "
             + " WHERE product.organizationId = :orgId and shop.id = :shopId"
-            + " group by product.id, tag.id, product.name "
-            + " order by count (orders.id) desc ")
+            + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationSellingData> findProductTopSellingByShop(@Param("orgId") Long orgId, @Param("shopId") Long shopId);
 }
