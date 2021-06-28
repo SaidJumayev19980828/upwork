@@ -6,6 +6,7 @@ import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ProductEntity;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.service.CategoryService;
@@ -43,13 +44,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-/*
+
 @RestController
 @RequestMapping("/v1/yeshtery")
 @Tag(name = "Yeshtery Controller")
-@CrossOrigin("*")*/
+@CrossOrigin("*")
 public class YeshteryController {
-/*
+
     @Autowired
     private ShopService shopService;
     @Autowired
@@ -287,5 +288,25 @@ public class YeshteryController {
     @GetMapping(value="/recommend/rating/shop", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShop(@RequestParam(value = "shopid", required = true)Long shopId) {
         return recommendationService.getListOfTopSellerProductByShop(shopId);
-    }*/
+    }
+
+    @Operation(description =  "return recommend similarity products", summary = "getListOfSimilarityProducts")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/similarityproducts", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductEntity> getListOfSimilarityProducts(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
+                                                           @RequestParam(required = true, value = "userid") Integer userId) {
+        return recommendationService.getListOfSimilarityProducts(recommendedItemsCount, userId);
+    }
+
+    @Operation(description =  "return recommend similarity item orders", summary = "getListOfUserSimilarityItemOrders")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/similarityitemorders", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductEntity> getListOfUserSimilarityItemOrders(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
+                                                                 @RequestParam(required = true, value = "userid") Integer userId) {
+        return recommendationService.getListOfUserSimilarityItemOrders(recommendedItemsCount, userId);
+    }
 }

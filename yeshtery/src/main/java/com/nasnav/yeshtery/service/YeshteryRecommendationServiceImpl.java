@@ -1,5 +1,7 @@
 package com.nasnav.yeshtery.service;
 
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.SecurityService;
 import com.nasnav.yeshtery.dao.YeshteryRecommendationRepository;
@@ -30,37 +32,37 @@ import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.stream.Collectors.toList;
+
 @Service
 public class YeshteryRecommendationServiceImpl implements YeshteryRecommendationService {
 
     @Autowired
     private SecurityService securityService;
 
-    //@Autowired(required=true)
+    @Autowired
     private YeshteryRecommendationRepository recommendationRepository;
 
     @Autowired
     DataSource dataSource;
 
+    @Autowired
+    ProductRepository productRepository;
+
     @Override
     public List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            /*PGPoolingDataSource dataSource = new PGPoolingDataSource();
-            dataSource.setServerName(  "" );
-            dataSource.setDatabaseName( "" );
-            dataSource.setUser( "" );
-            dataSource.setPassword( "" );
-            dataSource.setMaxConnections(20);
-*/
-            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"recommend" , "userId",  "view", "rank", "time");
-
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemvalue", "created");
             ItemSimilarity itemSimilarity = new EuclideanDistanceSimilarity(model);
             Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
             List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : itemRecommendations) {
                 // add recommended items
                 long prodId = item.getItemID();
+                return productRepository.findByProductId(prodId, true)
+                        .stream()
+                        .collect(toList());
             }
         } catch (Exception e) {
             items.clear();
@@ -73,21 +75,16 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     public List<ProductEntity> getListOfUserSimilarityItemOrders(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            PGPoolingDataSource dataSource = new PGPoolingDataSource();
-            dataSource.setServerName(  "" );
-            dataSource.setDatabaseName( "" );
-            dataSource.setUser( "" );
-            dataSource.setPassword( "" );
-            dataSource.setMaxConnections(20);
-
-            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"recommend" , "userId",  "view", "rank", "time");
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemvalue", "created");
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);
             UserBasedRecommender recommender = new GenericUserBasedRecommender(model, neighborhood, similarity);
             List<RecommendedItem> recommendations = recommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : recommendations) {
-                // add recommended data
                 long prodId = item.getItemID();
+                return productRepository.findByProductId(prodId, true)
+                        .stream()
+                        .collect(toList());
             }
         } catch (Exception e) {
             items.clear();
@@ -125,7 +122,5 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
         Long orgId = securityService.getCurrentUserOrganizationId();
         return recommendationRepository.findProductTopRatingByTag(orgId, tagId);
     }
-
-
 
 }
