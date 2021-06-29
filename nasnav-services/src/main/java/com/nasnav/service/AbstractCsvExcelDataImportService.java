@@ -182,6 +182,21 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     @Override
     public List<String> getProductImportTemplateHeaders() {
         var orgId = security.getCurrentUserOrganizationId();
+        var extraAttributes =
+                extraAttrRepo.findByOrganizationId(orgId)
+                        .stream()
+                        .map(ExtraAttributesEntity::getName)
+                        .sorted()
+                        .collect(toList());
+
+        List<String> baseHeaders = getProductImportTemplateHeadersWithoutExtraAttributes();
+        baseHeaders.addAll(extraAttributes);
+        return baseHeaders;
+    }
+
+    @Override
+    public List<String> getProductImportTemplateHeadersWithoutExtraAttributes() {
+        var orgId = security.getCurrentUserOrganizationId();
         var features =
                 productFeaturesRepo
                         .findByOrganizationId(orgId)
@@ -190,16 +205,8 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
                         .sorted()
                         .collect(toList());
 
-        var extraAttributes =
-                extraAttrRepo.findByOrganizationId(orgId)
-                        .stream()
-                        .map(ExtraAttributesEntity::getName)
-                        .sorted()
-                        .collect(toList());
-
         List<String> baseHeaders = new ArrayList<>(CSV_BASE_HEADERS);
         baseHeaders.addAll(features);
-        baseHeaders.addAll(extraAttributes);
         return baseHeaders;
     }
 
