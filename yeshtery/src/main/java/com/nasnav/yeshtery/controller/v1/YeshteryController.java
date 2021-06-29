@@ -276,7 +276,7 @@ public class YeshteryController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
     })
-    @GetMapping(value="/recommend/rating/tag", produces=MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value="/recommend/selling/tag", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<YeshteryRecommendationSellingData> getRecommendProductSellingByTagAPI(@RequestParam(value = "tagid", required = true)Long tagId) {
         return recommendationService.getListOfTopSellerProductByTag(tagId);
     }
@@ -285,9 +285,19 @@ public class YeshteryController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
     })
-    @GetMapping(value="/recommend/rating/shop", produces=MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value="/recommend/selling/shop", produces=MediaType.APPLICATION_JSON_VALUE)
     public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopAPI(@RequestParam(value = "shopid", required = true)Long shopId) {
         return recommendationService.getListOfTopSellerProductByShop(shopId);
+    }
+
+    @Operation(description =  "return recommend product selling by shop & tag", summary = "getRecommendProductSellingByShopTag")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "OK")
+    })
+    @GetMapping(value="/recommend/selling/shoptag", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopTagAPI(@RequestParam(value = "tagid", required = true)Long tagId,
+                                                                                      @RequestParam(value = "shopid", required = true)Long shopId) {
+        return recommendationService.getListOfTopSellerProductByShopTag(shopId, tagId);
     }
 
     @Operation(description =  "return recommend similarity products", summary = "getListOfSimilarityProducts")

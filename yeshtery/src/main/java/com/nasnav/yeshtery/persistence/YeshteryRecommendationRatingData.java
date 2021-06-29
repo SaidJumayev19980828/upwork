@@ -13,9 +13,9 @@ public class YeshteryRecommendationRatingData {
     private String ProductName;
     private Long TotalCount;
     private Long TotalRate;
-    private int Rate;
+    private Long Rate;
 
-    public YeshteryRecommendationRatingData(Long ProductId, Long TagId, String ProductName, Long TotalCount, Long TotalRate, int Rate) {
+    public YeshteryRecommendationRatingData(Long ProductId, Long TagId, String ProductName, Long TotalCount, Long TotalRate, Long Rate) {
         this.ProductId = ProductId;
         this.TagId = TagId;
         this.ProductName = ProductName;

@@ -13,6 +13,7 @@ public interface YeshteryRecommendationService {
     List<YeshteryRecommendationSellingData> getListOfTopSellerProduct();
     List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId);
     List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId);
+    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId);
     List<YeshteryRecommendationRatingData> getListOfTopRatingProduct();
     List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId);
 }

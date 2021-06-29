@@ -34,7 +34,7 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     @Autowired
     private SecurityService securityService;
 
-    @Autowired(required=true)
+    @Autowired
     private YeshteryRecommendationRepository recommendationRepository;
 
     @Autowired
@@ -103,6 +103,12 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId) {
         Long orgId = securityService.getCurrentUserOrganizationId();
         return recommendationRepository.findProductTopSellingByShop(orgId, shopId);
+    }
+
+    @Override
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return recommendationRepository.findProductTopSellingByShopTag(orgId, shopId, tagId);
     }
 
     @Override
