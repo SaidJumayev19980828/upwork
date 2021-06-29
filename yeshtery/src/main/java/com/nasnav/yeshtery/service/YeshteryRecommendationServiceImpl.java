@@ -47,7 +47,7 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     public List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemvalue", "created");
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
             ItemSimilarity itemSimilarity = new EuclideanDistanceSimilarity(model);
             Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
             List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
@@ -69,7 +69,7 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     public List<ProductEntity> getListOfUserSimilarityItemOrders(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
-            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemvalue", "created");
+            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);
             UserBasedRecommender recommender = new GenericUserBasedRecommender(model, neighborhood, similarity);
