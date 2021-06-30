@@ -18,7 +18,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " FROM ProductRating rating "
             + "	LEFT JOIN rating.variant variants "
             + " LEFT JOIN variants.productEntity product "
-            + " WHERE product.organizationId = :orgId "
+            + " WHERE (coalesce(:orgId,-1) < 0) or product.organizationId = :orgId "
             + " group by product.id, product.name ")
     List<YeshteryRecommendationRatingData> findProductTopRating(@Param("orgId") Long orgId);
 
@@ -28,7 +28,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + "	LEFT JOIN rating.variant variants "
             + " LEFT JOIN variants.productEntity product "
             + " LEFT JOIN product.tags tag "
-            + " WHERE product.organizationId = :orgId and tag.id = :tagId "
+            + " WHERE ((coalesce(:orgId,-1) < 0) or product.organizationId = :orgId) and tag.id = :tagId "
             + " group by product.id, tag.id, product.name ")
     List<YeshteryRecommendationRatingData> findProductTopRatingByTag(@Param("orgId") Long orgId, @Param("tagId") Long tagId);
 
@@ -39,7 +39,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN basket.ordersEntity orders "
             + " LEFT JOIN stock.productVariantsEntity variant "
             + " LEFT JOIN variant.productEntity product "
-            + " WHERE product.organizationId = :orgId "
+            + " WHERE (coalesce(:orgId,-1) < 0) or product.organizationId = :orgId "
             + " group by product.id, product.name "
             + " order by count (orders.id) desc")
     List<YeshteryRecommendationSellingData> findProductTopSelling(@Param("orgId") Long orgId);
@@ -52,7 +52,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN stock.productVariantsEntity variant "
             + " LEFT JOIN variant.productEntity product "
             + " LEFT JOIN product.tags tag "
-            + " WHERE product.organizationId = :orgId and tag.id = :tagId"
+            + " WHERE ((coalesce(:orgId,-1) < 0) or product.organizationId = :orgId) and tag.id = :tagId"
             + " group by product.id, tag.id, product.name "
             + " order by count (orders.id) desc")
     List<YeshteryRecommendationSellingData> findProductTopSellingByTag(@Param("orgId") Long orgId, @Param("tagId") Long tagId);
@@ -65,7 +65,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN stock.productVariantsEntity variant "
             + " LEFT JOIN variant.productEntity product "
             + " LEFT JOIN orders.shopsEntity shop "
-            + " WHERE product.organizationId = :orgId and shop.id = :shopId"
+            + " WHERE ((coalesce(:orgId,-1) < 0) or product.organizationId = :orgId) and shop.id = :shopId"
             + " group by product.id, product.name "
             + " order by count (orders.id) desc")
     List<YeshteryRecommendationSellingData> findProductTopSellingByShop(@Param("orgId") Long orgId, @Param("shopId") Long shopId);
@@ -79,7 +79,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " LEFT JOIN variant.productEntity product "
             + " LEFT JOIN orders.shopsEntity shop "
             + " LEFT JOIN product.tags tag "
-            + " WHERE product.organizationId = :orgId and shop.id = :shopId and tag.id = :tagId "
+            + " WHERE ((coalesce(:orgId,-1) < 0) or product.organizationId = :orgId) and shop.id = :shopId and tag.id = :tagId "
             + " group by product.id, product.name, tag.id "
             + " order by count (orders.id) desc")
     List<YeshteryRecommendationSellingData> findProductTopSellingByShopTag(@Param("orgId") Long orgId, @Param("shopId") Long shopId, @Param("tagId") Long tagId);

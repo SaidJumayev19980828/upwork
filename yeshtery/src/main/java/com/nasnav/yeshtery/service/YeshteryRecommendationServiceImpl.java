@@ -32,9 +32,6 @@ import static java.util.stream.Collectors.toList;
 public class YeshteryRecommendationServiceImpl implements YeshteryRecommendationService {
 
     @Autowired
-    private SecurityService securityService;
-
-    @Autowired
     private YeshteryRecommendationRepository recommendationRepository;
 
     @Autowired
@@ -88,39 +85,33 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProduct() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProduct(Long orgId) {
         return recommendationRepository.findProductTopSelling(orgId);
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId, Long orgId) {
         return recommendationRepository.findProductTopSellingByTag(orgId, tagId);
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId, Long orgId) {
         return recommendationRepository.findProductTopSellingByShop(orgId, shopId);
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId, Long orgId) {
         return recommendationRepository.findProductTopSellingByShopTag(orgId, shopId, tagId);
     }
 
     @Override
-    public List<YeshteryRecommendationRatingData> getListOfTopRatingProduct() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+    public List<YeshteryRecommendationRatingData> getListOfTopRatingProduct(Long orgId) {
         return recommendationRepository.findProductTopRating(orgId);
     }
 
     @Override
-    public List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return recommendationRepository.findProductTopRatingByTag(orgId, tagId);
+    public List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId, Long orgId) {
+       return recommendationRepository.findProductTopRatingByTag(orgId, tagId);
     }
 
 }

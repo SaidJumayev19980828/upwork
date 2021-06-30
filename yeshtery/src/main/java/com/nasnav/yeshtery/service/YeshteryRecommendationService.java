@@ -10,10 +10,10 @@ public interface YeshteryRecommendationService {
 
     List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId);
     List<ProductEntity> getListOfUserSimilarityItemOrders(int recommendedItemsCount, int userId);
-    List<YeshteryRecommendationSellingData> getListOfTopSellerProduct();
-    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId);
-    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId);
-    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId);
-    List<YeshteryRecommendationRatingData> getListOfTopRatingProduct();
-    List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId);
+    List<YeshteryRecommendationSellingData> getListOfTopSellerProduct(Long orgId);
+    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId, Long orgId);
+    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId, Long orgId);
+    List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId, Long orgId);
+    List<YeshteryRecommendationRatingData> getListOfTopRatingProduct(Long orgId);
+    List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId, Long orgId);
 }
