@@ -39,8 +39,8 @@ public interface OrderService {
 
 	}
 
-	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
-	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
+	String BILL_EMAIL_SUBJECT = "Your Order has been Created at %s";
+	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected from %s";
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 

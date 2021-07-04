@@ -325,8 +325,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 					, NOT_ACCEPTABLE);
 		}
 		
-		validateProductOfImg(imgMetaData);		
-		
 		validateImgId(imgMetaData);
 		
 		if(file != null)
@@ -338,10 +336,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private void validateImgId(ProductImageUpdateDTO imgMetaData) throws BusinessException {
-		//based on previous validations assert imageId is provided 
+		//based on previous validations assert imageId is provided
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		Long imgId = imgMetaData.getImageId();
 		
-		if( !productImagesRepository.existsById(imgId))
+		if( !productImagesRepository.existsByIdAndProductEntity_OrganizationId(imgId, orgId))
 			throw new BusinessException(
 					String.format("No product image exists with id: %d !", imgId)
 					, "INVALID PARAM:image_id"

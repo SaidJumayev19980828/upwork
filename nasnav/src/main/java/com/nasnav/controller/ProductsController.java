@@ -116,7 +116,7 @@ public class ProductsController {
             consumes = MULTIPART_FORM_DATA_VALUE)
     public ProductImageUpdateResponse updateProductImage(
             @RequestHeader(name = "User-Token", required = false) String token,
-            @RequestPart("image") @Valid MultipartFile file,
+            @RequestPart(value = "image", required = false) @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
             		throws BusinessException {
 

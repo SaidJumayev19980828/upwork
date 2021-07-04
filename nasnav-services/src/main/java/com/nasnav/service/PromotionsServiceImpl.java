@@ -338,6 +338,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public Long updatePromotion(PromotionDTO promotion) {
+		if (promotion.getTypeId() == null) {
+			promotion.setTypeId(0);
+		}
 		validatePromotion(promotion);
 		
 		PromotionsEntity entity = createPromotionsEntity(promotion);

@@ -448,7 +448,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void sendBillEmail(MetaOrderEntity order) {
-		Long orderId = order.getId();
+		String orgName = order.getOrganization().getName();
 		
 		Optional<String> email = 
 				ofNullable(order)
@@ -459,7 +459,7 @@ public class OrderServiceImpl implements OrderService {
 			return;
 		}
 		
-		String subject = format(BILL_EMAIL_SUBJECT, orderId);
+		String subject = format(BILL_EMAIL_SUBJECT, orgName);
 		Map<String,Object> parametersMap = createBillEmailParams(order);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
@@ -2385,9 +2385,9 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void sendRejectionEmailToCustomer(OrdersEntity subOrder, String rejectionReason) {
-		
+		String orgName = subOrder.getOrganizationEntity().getName();
 		String to = subOrder.getMetaOrder().getUser().getEmail();
-		String subject = ORDER_REJECT_SUBJECT;
+		String subject = format(ORDER_REJECT_SUBJECT, orgName);
 		List<String> bcc = getOrganizationManagersEmails(subOrder);
 		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
 		String template = ORDER_REJECT_TEMPLATE;

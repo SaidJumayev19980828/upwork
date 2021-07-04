@@ -31,6 +31,8 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	boolean existsByUri(String uri);
 
+	boolean existsByIdAndProductEntity_OrganizationId(Long id, Long orgId);
+
 	void deleteByProductEntity_Id(Long productId);
 
 	@Transactional
