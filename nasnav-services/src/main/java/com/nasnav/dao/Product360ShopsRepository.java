@@ -26,7 +26,7 @@ public interface Product360ShopsRepository extends JpaRepository<Shop360Products
     List<ProductPositionDTO> findProductsPositionsFullData(@Param("id") Long id,
                                                            @Param("published") short published);
 
-    @Query("select ps from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = 1")
+    @Query("select ps from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = 1 and ps.productEntity.removed = 0")
     List<Shop360ProductsEntity> findProductsPositionsByShopId(@Param("id") Long id);
 
     List<Shop360ProductsEntity> findByProductEntity_IdInAndPublished(List<Long> ids, Short published);
