@@ -318,10 +318,10 @@ public class FileService {
 					, INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	@CacheResult(cacheName = FILES)
 	public String getResourceInternalUrl(String url) {
 		String modUrl = reformUrl(url);
@@ -336,22 +336,26 @@ public class FileService {
 	@CacheResult(cacheName = IMGS_RESIZED)
 	public String getResizedImageInternalUrl(String url, Integer width, Integer height, String type) {
 		String modUrl = reformUrl(url);
-		final String fileType = getImageType(url, type)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 		FileEntity originalFile = ofNullable(filesRepo.findByUrl(modUrl))
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
+		final String fileType = getImageType(url, type, originalFile.getMimetype())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 
 		if (!originalFile.getMimetype().contains("image")) {
 			return STATIC_FILES_URL + "/" + originalFile.getLocation();
 		}
+		try {
+			FilesResizedEntity resizedFile = getResizedFiles(originalFile, width, height)
+					.stream()
+					.filter(f -> f.getImageUrl().endsWith(fileType))
+					.findFirst()
+					.orElseGet(() -> createResizedImageEntity(originalFile, width, height, fileType));
 
-		FilesResizedEntity resizedFile = getResizedFiles(originalFile, width, height)
-				.stream()
-				.filter(f -> f.getImageUrl().endsWith(fileType))
-				.findFirst()
-				.orElseGet(() -> createResizedImageEntity(originalFile, width, height, fileType));
-
-		return STATIC_FILES_URL + "/" + resizedFile.getImageUrl();
+			return STATIC_FILES_URL + "/" + resizedFile.getImageUrl();
+		} catch (Exception e) {
+			logger.error("Couldn't resize image : " + e.getMessage());
+			return STATIC_FILES_URL + "/" + originalFile.getLocation();
+		}
 	}
 
 
@@ -419,7 +423,7 @@ public class FileService {
 
 	private List<FilesResizedEntity> getResizedFiles(FileEntity originalFile, Integer width, Integer height) {
 		List<FilesResizedEntity> resizedFiles;
-		 if (isOnlyHeightProvided(width, height) ){
+		if (isOnlyHeightProvided(width, height) ){
 			resizedFiles = filesResizedRepo.findByOriginalFileAndHeightAndWidthIsNull(originalFile, height);
 		} else if (isOnlyWidthProvided(width, height)) {
 			resizedFiles = filesResizedRepo.findByOriginalFileAndWidthAndHeightIsNull(originalFile, width);
@@ -455,11 +459,11 @@ public class FileService {
 
 
 
-	private Optional<String> getImageType(String fileName, String type) {
+	private Optional<String> getImageType(String fileName, String type, String mimeType) {
 		if (nonNull(type) && SUPPORTED_IMAGE_FORMATS.contains(type.toLowerCase())) {
 			return ofNullable(type.toLowerCase());
 		}
-		return ofNullable(getFileExtension(fileName));
+		return ofNullable(mimeType.substring(mimeType.indexOf("/")+1));
 	}
 
 
@@ -535,13 +539,13 @@ public class FileService {
 	private List<FileEntity> getImagesFiles(List<OrganizationImagesEntity> orgImages, List<ProductImagesEntity> prodImages) {
 		List<String> allUrls =
 				orgImages
-				.stream()
-				.map(OrganizationImagesEntity::getUri)
-				.collect(toList());
+						.stream()
+						.map(OrganizationImagesEntity::getUri)
+						.collect(toList());
 		prodImages
-			.stream()
-			.map(ProductImagesEntity::getUri)
-			.forEach(allUrls::add);
+				.stream()
+				.map(ProductImagesEntity::getUri)
+				.forEach(allUrls::add);
 		return mapInBatches(allUrls, 500
 				, batch -> filesRepo.findByUrlInAndMimetypeContaining(batch, "image"));
 	}
@@ -567,7 +571,7 @@ public class FileService {
 
 
 	private List<ImageInfo> toImageInfo(FileEntity originalFile, Map<String, List<OrganizationImagesEntity>> orgImages,
-									   Map<String, List<ProductImagesEntity>> productsImages) {
+										Map<String, List<ProductImagesEntity>> productsImages) {
 		String originalFileUrl = originalFile.getUrl();
 		if (productsImages.containsKey(originalFileUrl)) {
 			return toProductImageInfo(originalFile, productsImages);
@@ -616,7 +620,7 @@ public class FileService {
 
 	private Optional<ImageInfo> createProductImageInfo(FileEntity originalFile, ProductImagesEntity prodImg){
 		return createNewImageInfo(originalFile)
-			.map(info -> addProductAndVariantInfo(info, prodImg));
+				.map(info -> addProductAndVariantInfo(info, prodImg));
 	}
 
 
