@@ -57,8 +57,17 @@ public class ProductServiceTransactions {
 		processInBatches(productIds, 5000, productRepo::deleteAllByIdIn);
 	}
 
-
-
+		public void deleteVariants(List<Long> variantIds, Boolean forceDelete) {
+		if (isBlankOrNull(variantIds)){
+			return;
+		}
+		processInBatches(variantIds, 5000, cartRepo::deleteByVariantIdIn);
+		processInBatches(variantIds, 5000, stockRepo::setVariantStocksQuantityZero);
+		if (forceDelete) {
+			processInBatches(variantIds, 5000, collectionItemRepo::deleteItemsByVariantIds);
+		}
+		processInBatches(variantIds, 5000, variantRepo::deleteByIdIn);
+	}
 
 	public void deleteBundle(Long bundleId){
 		List<Long> idAsList = singletonList(bundleId);

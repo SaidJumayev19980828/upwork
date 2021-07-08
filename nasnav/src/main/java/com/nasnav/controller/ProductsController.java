@@ -101,7 +101,12 @@ public class ProductsController {
     }
 	
 	
-	
+	@DeleteMapping("variant")
+    public void deleteVariants(@RequestHeader(name = "User-Token", required = false) String token,
+                               @RequestParam("variant_id") List<Long> variantIds,
+                               @RequestParam(value = "force_delete_collection_items", required = false, defaultValue = "false") Boolean forceDelete){
+	    productService.deleteVariants(variantIds, forceDelete);
+    }
 	
 	
     @ApiResponses(value = {

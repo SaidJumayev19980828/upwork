@@ -82,6 +82,16 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			" LEFT JOIN variant.productEntity product" +
 			" WHERE product.id in :productIds)")
 	void deleteByProductIdIn(@Param("productIds") List<Long> productIds);
+
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM CartItemEntity cart WHERE cart.id in" +
+			" (SELECT item.id " +
+			" FROM CartItemEntity item " +
+			" LEFT JOIN item.stock stock" +
+			" LEFT JOIN stock.productVariantsEntity variant" +
+			" WHERE variant.id in :variantIds)")
+	void deleteByVariantIdIn(@Param("variantIds") List<Long> variantIds);
 	
 	@Transactional
 	@Modifying

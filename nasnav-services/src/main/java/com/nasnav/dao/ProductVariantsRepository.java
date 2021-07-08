@@ -68,7 +68,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	long countByProductEntity_organizationId(long l);
 
-	long countByProductEntity_organizationIdAndNameContainingIgnoreCase(long l, String name);
+	Long countByIdInAndProductEntity_organizationId(List<Long> ids, Long orgId);
 
 	
 	@Transactional
@@ -93,6 +93,11 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     @Modifying
     @Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.productEntity.id in :idList")
 	void deleteAllByProductIdIn(@Param("idList") List<Long> idList);
+
+	@Transactional
+	@Modifying
+	@Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.id in :idList")
+	void deleteByIdIn(@Param("idList") List<Long> idList);
 	
 	
 	@Query("SELECT variant "

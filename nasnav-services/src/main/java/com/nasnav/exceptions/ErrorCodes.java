@@ -53,6 +53,8 @@ public enum ErrorCodes {
 	,P$VAR$006("Rate must be between 0 and 5")
 	,P$VAR$007("User can rate only bought products!")
 	,P$VAR$008("Missing Extra Attribute name!")
+	,P$VAR$009("Failed to delete variants [%s]!")
+	,P$VAR$010("User can't delete variants from another org!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")

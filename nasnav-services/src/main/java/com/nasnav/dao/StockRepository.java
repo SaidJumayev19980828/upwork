@@ -164,6 +164,12 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 			"(select v from ProductVariantsEntity v where v.productEntity.id in :productIds)")
 	void setProductStocksQuantityZero(@Param("productIds") List<Long> productIds);
 
+	@Transactional
+	@Modifying
+	@Query(value = "update StocksEntity s set s.quantity = 0 where s.productVariantsEntity in " +
+			"(select v from ProductVariantsEntity v where v.id in :variantIds)")
+	void setVariantStocksQuantityZero(@Param("variantIds") List<Long> variantIds);
+
 	Long countByShopsEntity_Id(long shopId);
 
 

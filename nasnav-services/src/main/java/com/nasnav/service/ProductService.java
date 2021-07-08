@@ -1488,6 +1488,27 @@ public class ProductService {
 		return new ProductsDeleteResponse(true, productIds);
 	}
 
+	public void deleteVariants(List<Long> variantIds, Boolean forceDeleteCollectionItems) {
+		validateVariantsToDelete(variantIds, forceDeleteCollectionItems);
+		try {
+			transactions.deleteVariants(variantIds, forceDeleteCollectionItems);
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$009, e.getMessage());
+		}
+	}
+
+	private void validateVariantsToDelete(List<Long> variantIds, Boolean forceDeleteCollectionItems) {
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
+		long variantsCount = productVariantsRepository.countByIdInAndProductEntity_organizationId(variantIds, userOrgId);
+		if (variantsCount < variantIds.size()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$010);
+		}
+		if (!forceDeleteCollectionItems && collectionItemRepo.countByItem_IdInAndItem_ProductEntity_OrganizationId(variantIds, userOrgId) > 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0014);
+		}
+	}
+
 	private void validateVariantsExistenceInCollections(List<Long> productIds, Boolean forceDelete) {
 		if (!forceDelete && collectionItemRepo.countByItem_ProductEntity_IdIn(productIds) > 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0014);

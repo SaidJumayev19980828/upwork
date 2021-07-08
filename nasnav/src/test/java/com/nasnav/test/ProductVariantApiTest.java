@@ -28,9 +28,11 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -38,6 +40,7 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
@@ -352,7 +355,23 @@ public class ProductVariantApiTest {
 		
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
+
+	@Test
+	public void deleteVariants() {
+		var request = getHttpEntity("131415");
+		var response = template.exchange("/product/variant?variant_id=310002&variant_id=310006", DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		List<ProductVariantsEntity> deletedVariants = variantRepo.findByIdIn(asList(310002, 310006));
+		deletedVariants.stream().forEach(v -> assertTrue(v.getRemoved() == 1));
+	}
+
+	@Test
+	public void deleteVariantsInDifferentOrg() {
+		var request = getHttpEntity("131415");
+		var response = template.exchange("/product/variant?variant_id=310001", DELETE, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
 
 	private JSONObject createProductVariantRequest() {
 		JSONObject extraAttributes =
