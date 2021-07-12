@@ -245,82 +245,34 @@ public class YeshteryController {
         return seoService.getSeoKeywords(entityId, type);
     }
 
-    @Operation(description =  "return recommend product rating", summary = "getRecommendProductRating")
+    @Operation(description =  "return recommend product rating by tag & org", summary = "getRecommendProductRating")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
     })
     @GetMapping(value="/recommend/rating", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationRatingData> getRecommendProductRating(@RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopRatingProduct(orgId);
+    public List<YeshteryRecommendationRatingData> getRecommendProductRating(@RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId,
+                                                                            @RequestParam(value = "tagid", required = false, defaultValue = "-1")Long tagId) {
+        return recommendationService.getListOfTopRatingProduct(orgId, tagId);
     }
 
-    @Operation(description =  "return recommend product rating by tag", summary = "getRecommendProductRatingByTag")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/rating/tag", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationRatingData> getRecommendProductRatingByTagAPI(@RequestParam(value = "tagid", required = true)Long tagId,
-                                                                                    @RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopRatingProductByTag(tagId, orgId);
-    }
-
-    @Operation(description =  "return recommend product selling", summary = "getRecommendProductSelling")
+    @Operation(description =  "return recommend product selling by shop & tag & org", summary = "getRecommendProductSelling")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
     })
     @GetMapping(value="/recommend/selling", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationSellingData> getRecommendProductSellingAPI(@RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopSellerProduct(orgId);
+    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopTagAPI(@RequestParam(value = "tagid" , required = false, defaultValue = "-1")Long tagId,
+                                                                                          @RequestParam(value = "shopid", required = false, defaultValue = "-1")Long shopId,
+                                                                                          @RequestParam(value = "orgid" , required = false, defaultValue = "-1")Long orgId) {
+        return recommendationService.getListOfTopSellerProduct(shopId, tagId, orgId);
     }
 
-    @Operation(description =  "return recommend product selling by tag", summary = "getRecommendProductSellingByTag")
+    @Operation(description =  "return recommend similarity products", summary = "getListOfSimilarityAPI")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
     })
-    @GetMapping(value="/recommend/selling/tag", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByTagAPI(@RequestParam(value = "tagid", required = true)Long tagId,
-                                                                                      @RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopSellerProductByTag(tagId, orgId);
-    }
-
-    @Operation(description =  "return recommend product selling by shop", summary = "getRecommendProductSellingByShop")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/selling/shop", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopAPI(@RequestParam(value = "shopid", required = true)Long shopId,
-                                                                                       @RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopSellerProductByShop(shopId, orgId);
-    }
-
-    @Operation(description =  "return recommend product selling by shop & tag", summary = "getRecommendProductSellingByShopTag")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/selling/shoptag", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopTagAPI(@RequestParam(value = "tagid", required = true)Long tagId,
-                                                                                          @RequestParam(value = "shopid", required = true)Long shopId,
-                                                                                          @RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopSellerProductByShopTag(shopId, tagId, orgId);
-    }
-
-    @Operation(description =  "return recommend similarity products", summary = "getListOfSimilarityProducts")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/similarityproducts", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductEntity> getListOfSimilarityProductsAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
-                                                           @RequestParam(required = true, value = "userid") Integer userId) {
-        return recommendationService.getListOfSimilarityProducts(recommendedItemsCount, userId);
-    }
-
-    @Operation(description =  "return recommend similarity item orders", summary = "getListOfUserSimilarityItemOrders")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/similarityitemorders", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductEntity> getListOfUserSimilarityItemOrdersAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
-                                                                 @RequestParam(required = true, value = "userid") Integer userId) {
-        return recommendationService.getListOfUserSimilarityItemOrders(recommendedItemsCount, userId);
+    @GetMapping(value="/recommend/similarity", produces=MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductEntity> getListOfSimilarityAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
+                                                              @RequestParam(required = true, value = "userid") Integer userId) {
+        return recommendationService.getListOfSimilarity(recommendedItemsCount, userId);
     }
 }

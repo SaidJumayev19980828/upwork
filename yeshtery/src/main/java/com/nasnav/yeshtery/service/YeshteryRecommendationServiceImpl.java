@@ -2,7 +2,6 @@ package com.nasnav.yeshtery.service;
 
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.service.SecurityService;
 import com.nasnav.yeshtery.dao.YeshteryRecommendationRepository;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
@@ -26,8 +25,6 @@ import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 @Service
 public class YeshteryRecommendationServiceImpl implements YeshteryRecommendationService {
 
@@ -41,7 +38,7 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     ProductRepository productRepository;
 
     @Override
-    public List<ProductEntity> getListOfSimilarityProducts(int recommendedItemsCount, int userId) {
+    public List<ProductEntity> getListOfSimilarity(int recommendedItemsCount, int userId) {
         List<ProductEntity> items = new ArrayList<>();
         try {
             JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
@@ -49,33 +46,20 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
             Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
             List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : itemRecommendations) {
-                // add recommended items
                 long prodId = item.getItemID();
-                return productRepository.findByProductId(prodId, true)
-                        .stream()
-                        .collect(toList());
+                items.add(productRepository.findProductDataById(prodId, true));
             }
-        } catch (Exception e) {
-            items.clear();
-            System.out.println(e);
-        }
-        return items;
-    }
-
-    @Override
-    public List<ProductEntity> getListOfUserSimilarityItemOrders(int recommendedItemsCount, int userId) {
-        List<ProductEntity> items = new ArrayList<>();
-        try {
-            JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
+            //
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);
             UserBasedRecommender recommender = new GenericUserBasedRecommender(model, neighborhood, similarity);
             List<RecommendedItem> recommendations = recommender.recommend(userId, recommendedItemsCount);
             for (RecommendedItem item : recommendations) {
                 long prodId = item.getItemID();
-                return productRepository.findByProductId(prodId, true)
-                        .stream()
-                        .collect(toList());
+                if (items.contains(prodId)){
+                    continue;
+                }
+                items.add(productRepository.findProductDataById(prodId, true));
             }
         } catch (Exception e) {
             items.clear();
@@ -85,33 +69,12 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProduct(Long orgId) {
-        return recommendationRepository.findProductTopSelling(orgId);
+    public List<YeshteryRecommendationSellingData> getListOfTopSellerProduct(Long shopId, Long tagId, Long orgId) {
+        return recommendationRepository.findProductTopSelling(orgId, shopId, tagId);
     }
 
     @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByTag(Long tagId, Long orgId) {
-        return recommendationRepository.findProductTopSellingByTag(orgId, tagId);
+    public List<YeshteryRecommendationRatingData> getListOfTopRatingProduct(Long orgId, Long tagId) {
+        return recommendationRepository.findProductTopRating(orgId, tagId);
     }
-
-    @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShop(Long shopId, Long orgId) {
-        return recommendationRepository.findProductTopSellingByShop(orgId, shopId);
-    }
-
-    @Override
-    public List<YeshteryRecommendationSellingData> getListOfTopSellerProductByShopTag(Long shopId, Long tagId, Long orgId) {
-        return recommendationRepository.findProductTopSellingByShopTag(orgId, shopId, tagId);
-    }
-
-    @Override
-    public List<YeshteryRecommendationRatingData> getListOfTopRatingProduct(Long orgId) {
-        return recommendationRepository.findProductTopRating(orgId);
-    }
-
-    @Override
-    public List<YeshteryRecommendationRatingData> getListOfTopRatingProductByTag(Long tagId, Long orgId) {
-       return recommendationRepository.findProductTopRatingByTag(orgId, tagId);
-    }
-
 }

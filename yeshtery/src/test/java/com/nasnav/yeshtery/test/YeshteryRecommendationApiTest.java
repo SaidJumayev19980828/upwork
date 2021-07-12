@@ -47,7 +47,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductRatingRecommendByTagTest() {
         var tagId = 11661L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -55,14 +55,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductRatingRecommendByTagWithOrgNotExistsTest() {
         var tagId = 11661L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductRatingRecommendWithoutOrgByTagTest() {
         var tagId = 11661L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -70,7 +70,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductRatingRecommendByTagNotExistsTest() {
         var tagId = 301L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -78,14 +78,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductRatingRecommendByTagNotExistsWithOrgNotExistsTest() {
         var tagId = 301L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductRatingRecommendByTagNotExistsWithoutOrgTest() {
         var tagId = 301L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/rating/tag?tagid="+tagId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/rating?tagid="+tagId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -113,7 +113,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByTagTest() {
         var tagId = 11661L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -121,14 +121,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByTagWithOrgNotExistsTest() {
         var tagId = 11661L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductSellingRecommendByTagWithoutOrgTest() {
         var tagId = 11661L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -136,7 +136,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByTagNotExistsTest() {
         var tagId = 301L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -144,14 +144,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByTagNotExistsWithOrgNotExistsTest() {
         var tagId = 301L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductSellingRecommendByTagNotExistsWithoutOrgTest() {
         var tagId = 301L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/tag?tagid="+tagId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -159,7 +159,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopTest() {
         var shopId = 528L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -167,14 +167,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopWithOrgNotExistsTest() {
         var shopId = 528L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductSellingRecommendByShopWithoutOrgTest() {
         var shopId = 528L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -182,7 +182,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopNotExistsTest() {
         var shopId = 305L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -190,14 +190,14 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopNotExistsWithOrgNotExistsTest() {
         var shopId = 305L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     public void getProductSellingRecommendByShopNotExistsWithoutOrgTest() {
         var shopId = 305L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -206,7 +206,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 528L;
         var tagId = 11661L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -215,7 +215,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 528L;
         var tagId = 11661L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -223,7 +223,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopTagWithoutOrgTest() {
         var shopId = 528L;
         var tagId = 11661L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -232,7 +232,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 528L;
         var tagId = 301L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -241,7 +241,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 528L;
         var tagId = 301L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -249,7 +249,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopTagNotExistsTagWithoutOrgTest() {
         var shopId = 528L;
         var tagId = 301L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -258,7 +258,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 305L;
         var tagId = 11661L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -267,7 +267,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 305L;
         var tagId = 11661L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -275,7 +275,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopTagNotExistsShopWithoutOrgTest() {
         var shopId = 305L;
         var tagId = 11661L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -284,7 +284,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 305L;
         var tagId = 301L;
         var orgId = 66L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -293,7 +293,7 @@ public class YeshteryRecommendationApiTest {
         var shopId = 305L;
         var tagId = 301L;
         var orgId = 23L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId+"&orgid="+orgId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -301,7 +301,7 @@ public class YeshteryRecommendationApiTest {
     public void getProductSellingRecommendByShopTagNotExistsWithoutOrgTest() {
         var shopId = 305L;
         var tagId = 301L;
-        var response = template.getForEntity("/v1/yeshtery/recommend/selling/shop?tagid="+tagId+"&shopid="+shopId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/selling?tagid="+tagId+"&shopid="+shopId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -309,7 +309,7 @@ public class YeshteryRecommendationApiTest {
     public void getSimilarityProductTest() {
         var itemCounts = 2;
         var userId = 331;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityproducts?itemcounts="+itemCounts+"&userid="+userId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/similarity?itemcounts="+itemCounts+"&userid="+userId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -317,7 +317,7 @@ public class YeshteryRecommendationApiTest {
     public void getSimilarityProductNotExistUserTest() {
         var itemCounts = 2;
         var userId = 112;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityproducts?itemcounts="+itemCounts+"&userid="+userId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/similarity?itemcounts="+itemCounts+"&userid="+userId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -325,7 +325,7 @@ public class YeshteryRecommendationApiTest {
     public void getSimilarityProductWithZeroCountTest() {
         var itemCounts = 0;
         var userId = 331;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityproducts?itemcounts="+itemCounts+"&userid="+userId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/similarity?itemcounts="+itemCounts+"&userid="+userId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
@@ -333,39 +333,8 @@ public class YeshteryRecommendationApiTest {
     public void getSimilarityProductWithZeroCountAndNotExistsUserTest() {
         var itemCounts = 0;
         var userId = 112;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityproducts?itemcounts="+itemCounts+"&userid="+userId, String.class);
+        var response = template.getForEntity("/v1/yeshtery/recommend/similarity?itemcounts="+itemCounts+"&userid="+userId, String.class);
         assertEquals(200, response.getStatusCodeValue());
     }
 
-    @Test
-    public void getSimilarityOrdersTest() {
-        var itemCounts = 2;
-        var userId = 331;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityitemorders?itemcounts="+itemCounts+"&userid="+userId, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-    }
-
-    @Test
-    public void getSimilarityOrdersNotExistUserTest() {
-        var itemCounts = 2;
-        var userId = 112;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityitemorders?itemcounts="+itemCounts+"&userid="+userId, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-    }
-
-    @Test
-    public void getSimilarityOrdersWithZeroCountTest() {
-        var itemCounts = 0;
-        var userId = 331;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityitemorders?itemcounts="+itemCounts+"&userid="+userId, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-    }
-
-    @Test
-    public void getSimilarityOrdersWithZeroCountAndNotExistsUserTest() {
-        var itemCounts = 0;
-        var userId = 112;
-        var response = template.getForEntity("/v1/yeshtery/recommend/similarityitemorders?itemcounts="+itemCounts+"&userid="+userId, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-    }
 }

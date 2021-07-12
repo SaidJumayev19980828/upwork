@@ -1,6 +1,5 @@
 package com.nasnav.yeshtery.persistence;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,15 +8,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class YeshteryRecommendationRatingData {
     private Long ProductId;
-    private Long TagId;
     private String ProductName;
     private Long TotalCount;
     private Long TotalRate;
     private Long Rate;
 
-    public YeshteryRecommendationRatingData(Long ProductId, Long TagId, String ProductName, Long TotalCount, Long TotalRate, Long Rate) {
+    public YeshteryRecommendationRatingData(Long ProductId, String ProductName, Long TotalCount, Long TotalRate, Long Rate) {
         this.ProductId = ProductId;
-        this.TagId = TagId;
         this.ProductName = ProductName;
         this.TotalCount = TotalCount;
         this.TotalRate = TotalRate;
