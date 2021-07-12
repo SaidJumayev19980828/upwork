@@ -87,6 +87,7 @@ public class OrganizationManagmentTest {
         String youtubeUrl = "https://www.youtube.com/";
         String linkedinUrl = "https://www.linkedin.com/";
         String pinterestUrl = "https://www.pinterest.com/";
+        String whatsappUrl = "https://www.whatsapp.com/";
         String body = json()
                 .put("description", "this company is old and unique")
                 .put("social_twitter", twitterUrl)
@@ -95,6 +96,7 @@ public class OrganizationManagmentTest {
                 .put("social_youtube", youtubeUrl)
                 .put("social_linkedin", linkedinUrl)
                 .put("social_pinterest", pinterestUrl)
+                .put("social_whatsapp", whatsappUrl)
                 .toString();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
@@ -109,6 +111,7 @@ public class OrganizationManagmentTest {
         assertEquals(youtubeUrl, socialEntity.getYoutube());
         assertEquals(linkedinUrl, socialEntity.getLinkedin());
         assertEquals(pinterestUrl, socialEntity.getPinterest());
+        assertEquals(whatsappUrl, socialEntity.getWhatsapp());
     }
 
 

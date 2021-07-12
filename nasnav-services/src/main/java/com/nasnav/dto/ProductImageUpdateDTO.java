@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import static com.nasnav.dto.Required.*;
+
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
@@ -25,11 +27,11 @@ public class ProductImageUpdateDTO extends BaseJsonDTO {
 	@Override
 	
 	protected void initRequiredProperties() {
-		setPropertyAsRequired("productId", Required.ALWAYS);
-		setPropertyAsRequired("operation", Required.ALWAYS);
-		setPropertyAsRequired("imageId", Required.FOR_UPDATE);		
-		setPropertyAsRequired("type", Required.FOR_CREATE);
-		setPropertyAsRequired("priority", Required.FOR_CREATE);
+		setPropertyAsRequired("productId", FOR_CREATE);
+		setPropertyAsRequired("operation", ALWAYS);
+		setPropertyAsRequired("imageId", FOR_UPDATE);
+		setPropertyAsRequired("type", FOR_CREATE);
+		setPropertyAsRequired("priority", FOR_CREATE);
 	}
 	
 	

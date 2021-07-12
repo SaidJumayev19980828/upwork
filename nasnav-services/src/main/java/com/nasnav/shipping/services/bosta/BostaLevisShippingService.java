@@ -143,7 +143,7 @@ public class BostaLevisShippingService implements ShippingService{
 
 	private static final List<Integer> deliveredStateMapping = asList(22, 40, 25, 26, 23, 45);
 
-	private static final List<Integer> failedStateMapping = asList(55, 80);
+	private static final List<Integer> failedStateMapping = asList(55, 80, 47, 48);
 
 	
 	

@@ -12,6 +12,7 @@ import java.util.Set;
 
 public interface ProductCollectionItemRepository extends JpaRepository<ProductCollectionItemEntity, Long> {
 
+    Long countByItem_IdInAndItem_ProductEntity_OrganizationId(List<Long> variantIds, Long orgId);
     Long countByItem_ProductEntity_IdIn(List<Long> productIds);
     Long countByItem_ProductEntity_OrganizationId(Long orgId);
 
@@ -24,6 +25,11 @@ public interface ProductCollectionItemRepository extends JpaRepository<ProductCo
     @Modifying
     @Query("delete from ProductCollectionItemEntity item where item.item.id in (select v.id from ProductVariantsEntity v where v.productEntity.id in :productIds) ")
     void deleteItemsByProductIds(@Param("productIds") List<Long> productIds);
+
+    @Transactional
+    @Modifying
+    @Query("delete from ProductCollectionItemEntity item where item.item.id in :variantIds ")
+    void deleteItemsByVariantIds(@Param("variantIds") List<Long> variantIds);
 
     @Transactional
     @Modifying

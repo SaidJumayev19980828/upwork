@@ -69,7 +69,10 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
 
 	long countByProductEntity_organizationId(long l);
-	
+
+	Long countByIdInAndProductEntity_organizationId(List<Long> ids, Long orgId);
+
+
 	@Transactional
     @Modifying
     @Query( value = "update product_variants " + 
@@ -92,7 +95,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     @Modifying
     @Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.productEntity.id in :idList")
 	void deleteAllByProductIdIn(@Param("idList") List<Long> idList);
-	
+
+	@Transactional
+	@Modifying
+	@Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.id in :idList")
+	void deleteByIdIn(@Param("idList") List<Long> idList);
+
 	
 	@Query("SELECT variant "
 			+ " FROM ProductVariantsEntity variant "
