@@ -186,12 +186,16 @@ public class OrganizationServiceImpl implements OrganizationService {
         setBrands(orgRepObj);
         setImages(orgRepObj);
         setPublicSettings(orgRepObj);
+        setDomain(orgRepObj);
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
 
         return orgRepObj;
     }
 
-
+    private void setDomain(OrganizationRepresentationObject obj) {
+        String domain = domainService.getOrganizationDomainAndSubDir(obj.getId());
+        obj.setDomain(domain);
+    }
 
     private void setSocialEntity(OrganizationRepresentationObject orgRepObj) {
         socialRepository

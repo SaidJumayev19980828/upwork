@@ -32,7 +32,7 @@ public enum ShippingStatus {
         return Arrays.stream(ShippingStatus.values())
                      .filter(s -> s.value == value)
                      .findFirst()
-                     .map(s -> s.name())
-                     .orElseGet(() -> ERROR.name());
+                     .map(Enum::name)
+                     .orElseGet(ERROR::name);
     }
 }

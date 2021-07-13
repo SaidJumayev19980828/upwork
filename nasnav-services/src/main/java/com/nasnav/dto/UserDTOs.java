@@ -9,16 +9,14 @@ public class UserDTOs {
     @Getter
     @Schema(name = "User Registration Data")
     public static class UserRegistrationObject {
-        @Schema(name = "User's email", example = "testuser@nasnav.com", required = true)
-        @JsonProperty("email")
+        @Schema(example = "testuser@nasnav.com", required = true)
         public String email;
 
-        @Schema(name = "Organization id that client wants to log into", example = "123", required = true)
+        @Schema(example = "123", required = true)
         @JsonProperty("org_id")
         public Long orgId;
 
-    	@Schema(name = "User's name", example = "John Smith", required = true)
-        @JsonProperty("name")
+    	@Schema(example = "John Smith", required = true)
         public String name;
 
         @JsonProperty("phone_number")
@@ -37,7 +35,7 @@ public class UserDTOs {
         public Boolean confirmationFlag;
         @JsonProperty("redirect_url")
         private String redirectUrl;
-
+        private String avatar;
         @JsonProperty("phone_number")
         private String phoneNumber;
     }
@@ -45,19 +43,16 @@ public class UserDTOs {
     @Getter
     @Schema(name = "Password Reset Data")
     public static class PasswordResetObject {
-        @Schema(name = "Password reset token", example = "224c793yXg5hXyuqX", required = true)
-        @JsonProperty("token")
+        @Schema(example = "224c793yXg5hXyuqX", required = true)
         public String token;
 
-        @Schema(name = "New user's password", example = "PaSSworD", required = true)
-        @JsonProperty("password")
+        @Schema(example = "PaSSworD", required = true)
         public String password;
 
-        @Schema(name = "true if user is employee", example = "true", required = false)
-        @JsonProperty("employee")
+        @Schema(example = "true")
         public boolean employee;
 
-        @Schema(name = "Organization id that client wants to log into", example = "123", required = true)
+        @Schema(example = "123", required = true)
         @JsonProperty("org_id")
         public Long orgId;
     }
@@ -65,19 +60,16 @@ public class UserDTOs {
     @Getter
     @Schema(name = "User Login Data")
     public static class UserLoginObject {
-        @Schema(name = "user's password", example = "PaSSworD", required = true)
-        @JsonProperty("password")
+        @Schema(example = "PaSSworD", required = true)
         public String password;
         
-        @Schema(name = "If user is an employee or not", example = "true", required = false)
-        @JsonProperty("employee")
+        @Schema(example = "true")
         public boolean employee;
 
-        @Schema(name = "User's email", example = "testuser@nasnav.com", required = true)
-        @JsonProperty("email")
+        @Schema(example = "testuser@nasnav.com", required = true)
         public String email;
 
-        @Schema(name = "Organization id that client wants to log into", example = "123", required = true)
+        @Schema(example = "123", required = true)
         @JsonProperty("org_id")
         public Long orgId;
 
@@ -88,75 +80,71 @@ public class UserDTOs {
     @Getter
     @Schema(name = "Employee User Creation Data")
 	public static class EmployeeUserCreationObject {
-        @Schema(name = "User's email", example = "testuser@nasnav.com", required = true)
-        @JsonProperty("email")
+        @Schema(example = "testuser@nasnav.com", required = true)
         public String email;
 
-        @Schema(name = "Organization id that client wants to log into", example = "123", required = true)
+        @Schema(example = "123", required = true)
         @JsonProperty("org_id")
         public Long orgId;
 
-    	@Schema(name = "User's name", example = "John Smith", required = true)
-        @JsonProperty("name")
+    	@Schema(example = "John Smith", required = true)
         public String name;
 
-        @Schema(name = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
-        @JsonProperty("role")
+        @Schema(example = "STORE_MANAGER,ORGANIZATION_EMPLOYEE", required = true)
         public String role;
         
-        @Schema(name = "Store Id", example = "1234", required = false)
+        @Schema(example = "1234")
         @JsonProperty("store_id")
         public Long storeId;
 
-        @Schema(name = "Avatar", example = "99001/avatar.jpg", required = false)
-        @JsonProperty("avatar")
+        @Schema(example = "99001/avatar.jpg")
         private String avatar;
     }
 
     @Getter
     @Schema(name = "User Updating Data")
     public static class EmployeeUserUpdatingObject {
-        @Schema(name = "Updated user id", example = "1234", required = false)
+        @Schema(example = "1234")
         @JsonProperty("updated_user_id")
         private Long updatedUserId;
 
-        @Schema(name = "If user is an employee or not", example = "true", required = false)
+        @Schema(example = "true")
         public boolean employee;
 
-        @Schema(name = "User's email", example = "testuser@nasnav.com", required = false)
+        @Schema(example = "testuser@nasnav.com")
         public String email;
 
-        @Schema(name = "Organization id that client wants to log into", example = "123", required = false)
+        @Schema(example = "123")
         @JsonProperty("org_id")
         public Long orgId;
 
-        @Schema(name = "User's name", example = "John Smith", required = false)
+        @Schema(example = "John Smith")
         private String name;
 
-        @Schema(name = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = false)
+        @Schema(example = "STORE_MANAGER,ORGANIZATION_EMPLOYEE")
         private String role;
 
-        @Schema(name = "Store Id", example = "1234", required = false)
+        @Schema(example = "1234")
         @JsonProperty("store_id")
         private Long storeId;
 
-        @Schema(name = "Avatar", example = "1234", required = false)
+        @Schema(example = "1234")
         private String avatar;
 
-        @Schema(name = "Gender", example = "Male", required = false)
+        @Schema(example = "Male")
         private String gender;
 
-        @Schema(name = "Birth Date", example = "08/08/2010", required = false)
+        @Schema(example = "08/08/2010")
         @JsonProperty("birth_date")
         private String birthDate;
 
-        @Schema(name = "Phone Number", example = "01012345678", required = false)
+        @Schema(example = "01012345678")
         @JsonProperty("phone_number")
         private String phoneNumber;
 
         private String mobile;
 
-        @Schema(name = "User Image", example = "/images/image_568.jpg", required = false)
+        @Schema(example = "/images/image_568.jpg")
         private String image;
 
         @JsonProperty("first_name")
@@ -164,7 +152,5 @@ public class UserDTOs {
 
         @JsonProperty("last_name")
         private String lastName;
-
-
     }
 }
