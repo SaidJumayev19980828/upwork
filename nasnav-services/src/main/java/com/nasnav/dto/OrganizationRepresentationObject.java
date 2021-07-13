@@ -86,5 +86,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Map<String,String> settings;
     private Integer matomoSiteId;
     private YeshteryState yeshteryState;
+    private String domain;
 }
 

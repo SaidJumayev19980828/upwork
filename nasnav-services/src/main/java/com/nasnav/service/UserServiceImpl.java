@@ -200,6 +200,7 @@ public class UserServiceImpl implements UserService {
 		user.setOrganizationId(userJson.getOrgId());
 		user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
 		user.setPhoneNumber(userJson.getPhoneNumber());
+		user.setImage(userJson.getAvatar());
 		return user;
 	}
 
