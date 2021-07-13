@@ -13,7 +13,9 @@ import java.util.Set;
 
 public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
-    Optional<ShopsEntity> findByIdAndRemoved(Long id, Integer removed);
+    @Query("select s from ShopsEntity s left join fetch s.shop360s " +
+            "where s.id = :id and s.removed = 0")
+    Optional<ShopsEntity> findByIdAndRemoved(@Param("id") Long id);
 
     List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationId, Integer removed);
     

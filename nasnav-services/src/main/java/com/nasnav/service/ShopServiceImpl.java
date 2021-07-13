@@ -101,17 +101,15 @@ public class ShopServiceImpl implements ShopService {
 //    @CacheResult(cacheName = "shops_by_id")
     @Override
     public ShopRepresentationObject getShopById(Long shopId) {
+        ShopRepresentationObject shopRepObj = shopsRepository.findByIdAndRemoved(shopId)
+                .map(shop -> (ShopRepresentationObject) shop.getRepresentation())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopId));
 
-        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findByIdAndRemoved(shopId, 0);
-
-        if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
-            throw new RuntimeBusinessException(NOT_FOUND, S$0003);
-
-        ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
-        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360);
-        if(imageEntities != null && !imageEntities.isEmpty())
-            shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
-                                                       .collect(toList()));
+        List<OrganizationImagesRepresentationObject> images = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360)
+                .stream()
+                .map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
+                .collect(toList());
+        shopRepObj.setImages(images);
 
         return  shopRepObj;
     }
