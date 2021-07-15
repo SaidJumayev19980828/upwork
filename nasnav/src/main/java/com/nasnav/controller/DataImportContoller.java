@@ -5,8 +5,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -17,8 +15,6 @@ import java.io.IOException;
 import javax.validation.Valid;
 
 import com.nasnav.commons.utils.FilesUtils;
-import com.nasnav.service.CsvDataImportServiceImpl;
-import com.nasnav.service.ExcelDataImportServiceImpl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/upload")
-@Tag(name = "Data Import api")
 public class DataImportContoller {
 
 	@Autowired
@@ -42,11 +37,7 @@ public class DataImportContoller {
 	@Qualifier("excel")
 	private CsvExcelDataImportService excelDataImportService;
 
-
-	@ResponseStatus(HttpStatus.OK)
-	@PostMapping(value = "productlist",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "productlist", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportProductContext> importProductList(
     		@RequestHeader(name = "User-Token", required = false) String token,
             @RequestPart("csv") @Valid MultipartFile file,
@@ -65,10 +56,7 @@ public class DataImportContoller {
 		}			
     }
 
-	@ResponseStatus(HttpStatus.OK)
-	@PostMapping(value = "productlist/xlsx",
-			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-			consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "productlist/xlsx", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ImportProductContext> importProductListXLSX(
 			@RequestHeader(name = "User-Token", required = false) String token,
 			@RequestPart("xlsx") @Valid MultipartFile file,
@@ -86,11 +74,7 @@ public class DataImportContoller {
 		}
 	}
 
-
-	@ResponseStatus(HttpStatus.OK)
-	@PostMapping(value = "productlist/csv",
-			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-			consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "productlist/csv", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ImportProductContext> importProductListCSV(
 			@RequestHeader(name = "User-Token", required = false) String token,
 			@RequestPart("csv") @Valid MultipartFile file,
@@ -116,7 +100,6 @@ public class DataImportContoller {
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
 				.body(s.toString());
 	}
-
 
 	@GetMapping(value = "/productlist/xls/template")
 	@ResponseBody

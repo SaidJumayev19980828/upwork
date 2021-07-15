@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.service.CsvExcelDataExportService;
 
-
 @RestController
 @RequestMapping("/export")
 public class DataExportController {
@@ -54,7 +53,6 @@ public class DataExportController {
 					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
 					.body(s.toByteArray());
 	}
-
 
 	@GetMapping(value = "/products/csv")
 	@ResponseBody

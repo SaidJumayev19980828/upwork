@@ -143,6 +143,9 @@ public enum ErrorCodes {
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
 
+	,CAT$0001("Provided parent category[%d] doesn't exit!")
+	,CAT$0002("Missing or invalid category ID!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
 	,SUBAREA$002("Sub-Area with ID:[%d] doesn't match area with id[%d]!")

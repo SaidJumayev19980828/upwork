@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.organization.OrganizationCreationDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
@@ -28,9 +30,9 @@ public interface OrganizationService {
 
     List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId);
 
-    OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException;
+    OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException;
 
-    OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException;
+    OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException;
 
     List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId);
 
@@ -70,7 +72,7 @@ public interface OrganizationService {
 
     void removeSubscribedUser(String email);
 
-    LinkedHashMap getOrganizationPaymentGateways(Long orgId, String deliveryService);
+    LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(Long orgId, String deliveryService);
 
     List<ProductFeatureType> getProductFeatureTypes();
 

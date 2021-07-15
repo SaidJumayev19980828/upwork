@@ -4,6 +4,8 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.organization.OrganizationCreationDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.enumerations.ExtraAttributeType;
@@ -309,22 +311,21 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-
+    public OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException {
         OrganizationEntity organization;
-        if (json.id != null) {
-            organization = orgRepo.findOneById(json.id);
+        if (json.getId() != null) {
+            organization = orgRepo.findOneById(json.getId());
             if (organization == null)
-                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.id),
+                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.getId()),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
-            if (json.name != null) {
+            if (json.getName() != null) {
                 validateOrganizationName(json);
-                organization.setName(json.name);
+                organization.setName(json.getName());
 
             }
-            if (json.pname != null) {
+            if (json.getPname() != null) {
                 validateOrganizationPname(json);
-                organization.setPname(json.pname);
+                organization.setPname(json.getPname());
             }
         } else {
             organization = createNewOrganization(json);
@@ -337,61 +338,60 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
-    private OrganizationEntity createNewOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+    private OrganizationEntity createNewOrganization(OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationNameForCreate(json);
-        OrganizationEntity organization = organizationRepository.findByPname(json.pname);
+        OrganizationEntity organization = organizationRepository.findByPname(json.getPname());
         if (organization != null) {
             throw new BusinessException("INVALID_PARAM: p_name",
                     "Provided p_name is already used by another organization (id: " + organization.getId() +
                             ", name: " + organization.getName() + ")", NOT_ACCEPTABLE);
         }
         organization = new OrganizationEntity();
-        organization.setName(json.name);
-        organization.setPname(json.pname);
+        organization.setName(json.getName());
+        organization.setPname(json.getPname());
         return organization;
     }
 
 
-    private OrganizationEntity updateAdditionalOrganizationData(OrganizationDTO.OrganizationCreationDTO json,
-                                                                OrganizationEntity organization) {
-        if (json.id == null) {
+    private OrganizationEntity updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
+        if (json.getId() == null) {
             organization.setThemeId(0);
         }
-        if (json.ecommerce != null) {
-            organization.setEcommerce(json.ecommerce);
+        if (json.getEcommerce() != null) {
+            organization.setEcommerce(json.getEcommerce());
         }
-        if (json.googleToken != null) {
-            organization.setGoogleToken(json.googleToken);
+        if (json.getGoogleToken() != null) {
+            organization.setGoogleToken(json.getGoogleToken());
         }
-        if (json.currencyIso != null) {
-            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
+        if (json.getCurrencyIso() != null) {
+            CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
             organization.setCountry(country);
         }
-        if(nonNull(json.yeshteryState)){
-            organization.setYeshteryState(json.yeshteryState.getValue());
+        if(nonNull(json.getYeshteryState())){
+            organization.setYeshteryState(json.getYeshteryState().getValue());
         }
         return organization;
     }
 
-    private void validateOrganizationNameForCreate(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (json.name == null) {
+    private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {
+        if (json.getName() == null) {
             throw new BusinessException("MISSING_PARAM: name", "Required Organization name is empty", NOT_ACCEPTABLE);
         }
         validateOrganizationName(json);
 
-        if (json.pname == null) {
+        if (json.getPname() == null) {
             throw new BusinessException("MISSING_PARAM: p_name", "Required Organization p_name is empty", NOT_ACCEPTABLE);
         }
         validateOrganizationPname(json);
     }
 
-    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (!validateName(json.name))
+    private void validateOrganizationName(OrganizationCreationDTO json) throws BusinessException {
+        if (!validateName(json.getName()))
             throw new BusinessException("INVALID_PARAM: name", "Required Organization name is invalid", NOT_ACCEPTABLE);
     }
 
-    private void validateOrganizationPname(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (!json.pname.equals(encodeUrl(json.pname)))
+    private void validateOrganizationPname(OrganizationCreationDTO json) throws BusinessException {
+        if (!json.getPname().equals(encodeUrl(json.getPname())))
             throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid", NOT_ACCEPTABLE);
     }
     
@@ -399,16 +399,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
     @Transactional
-    public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
-        if (json.description != null) {
-            organization.setDescription(json.description);
+        if (json.getDescription() != null) {
+            organization.setDescription(json.getDescription());
         }
-        if (json.info != null) {
-            organization.setExtraInfo(new JSONObject(json.info).toString());
+        if (json.getInfo() != null) {
+            organization.setExtraInfo(new JSONObject(json.getInfo()).toString());
         }
-        if (json.themeId != null) {
-            organization.setThemeId(json.themeId);
+        if (json.getThemeId() != null) {
+            organization.setThemeId(json.getThemeId());
         }
 
         if (file != null) {
@@ -1311,13 +1311,13 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public LinkedHashMap getOrganizationPaymentGateways(Long orgId, String deliveryService) {
+    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(Long orgId, String deliveryService) {
         List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
         if (gateways == null || gateways.size() == 0) {
             // no specific gateways defined for this org, use the default ones
             gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
         }
-        LinkedHashMap<String, Map> response = new LinkedHashMap();
+        LinkedHashMap<String, Map<String, String>> response = new LinkedHashMap();
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
             Map<String, String> body = new HashMap();
             if (deliveryService != null) {

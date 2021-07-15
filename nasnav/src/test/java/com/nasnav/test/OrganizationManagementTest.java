@@ -54,7 +54,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
-public class OrganizationManagmentTest {
+public class OrganizationManagementTest {
     @Value("classpath:sql/database_cleanup.sql")
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
@@ -98,7 +98,7 @@ public class OrganizationManagmentTest {
                 .put("social_pinterest", pinterestUrl)
                 .put("social_whatsapp", whatsappUrl)
                 .toString();
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
@@ -121,7 +121,7 @@ public class OrganizationManagmentTest {
     @Test
     public void updateOrganizationUnauthorizedUserTest() {
         String body = "{\"org_id\":99001, \"description\":\"this company is o8895ssffld and unique\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"abcdefg", MULTIPART_FORM_DATA);
@@ -136,7 +136,7 @@ public class OrganizationManagmentTest {
         String body = json()
                 .put("social_twitter", "htps://www.twitte.com/fortunestores")
                 .toString();
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -148,7 +148,7 @@ public class OrganizationManagmentTest {
         body = json()
                 .put("social_twitter", "")
                 .toString();
-        map = new LinkedMultiValueMap<String, Object>();
+        map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
         json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -160,7 +160,7 @@ public class OrganizationManagmentTest {
     @Test
     public void updateOrganizationInvalidLogoTest() {
         String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", databaseCleanup);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -315,7 +315,7 @@ public class OrganizationManagmentTest {
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
-        assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11001, 99002L));
+        assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11001, 99002L));
     }
 
 
@@ -356,8 +356,8 @@ public class OrganizationManagmentTest {
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11003",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
-        assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11003, 99002L));
-        assertTrue(!productExtraAttrRepo.existsById(11003L));
+        assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11003, 99002L));
+        assertFalse(productExtraAttrRepo.existsById(11003L));
     }
     
     
@@ -372,8 +372,8 @@ public class OrganizationManagmentTest {
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11004",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
-        assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11004, 99002L));
-        assertTrue(!productExtraAttrRepo.existsById(11004L));
+        assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11004, 99002L));
+        assertFalse(productExtraAttrRepo.existsById(11004L));
     }
 
 
@@ -423,7 +423,7 @@ public class OrganizationManagmentTest {
         
         assertEquals(200, res.getStatusCodeValue());
         
-        List<ShippingServiceRegistration> services = objectMapper.readValue(res.getBody(), new TypeReference<List<ShippingServiceRegistration>>() {});
+        List<ShippingServiceRegistration> services = objectMapper.readValue(res.getBody(), new TypeReference<>() {});
         assertEquals(1, services.size());
         assertEquals(DummyShippingService.ID, services.get(0).getServiceId());
         assertFalse(services.get(0).getServiceParameters().isEmpty());
@@ -656,7 +656,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteSubAreasNonExistingId(){
-        Long subAreaId = 988001L;
+        long subAreaId = 988001;
         HttpEntity<?> req = getHttpEntity("hijkllm");
         ResponseEntity<String> res =
                 template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
@@ -666,7 +666,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteSubAreasInvalidToken(){
-        Long subAreaId = 888001L;
+        long subAreaId = 888001;
         HttpEntity<?> req = getHttpEntity("invalid");
         ResponseEntity<String> res =
                 template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);
@@ -676,7 +676,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteSubAreasInvalidAuthZ(){
-        Long subAreaId = 888001L;
+        long subAreaId = 888001;
         HttpEntity<?> req = getHttpEntity("abcdefg");
         ResponseEntity<String> res =
                 template.exchange("/organization/sub_areas?sub_areas="+ subAreaId, DELETE, req, String.class);

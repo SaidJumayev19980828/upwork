@@ -165,8 +165,7 @@ public class NavBoxTest {
 
         //// testing extra attributes with false organization filter ////
         response = template.getForEntity("/navbox/attributes?org_id=403", String.class);
-        System.out.println(response.getBody());
-        assertNull("there are no attributes with organization = 403",response.getBody());
+        assertTrue("there are no attributes with organization = 403",response.getBody().equals("[]"));
     }
 
 

@@ -9,7 +9,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.CategoryResponse;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.TagResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,37 +50,24 @@ public class CategoryService {
 	Logger logger = LogManager.getLogger(getClass());
 
     @Autowired
-    private final BrandsRepository brandsRepository;
-
+    private BrandsRepository brandsRepository;
     @Autowired
-    private  CategoriesRepository categoryRepository;
-
+    private CategoriesRepository categoryRepository;
     @Autowired
-    private final ProductRepository productRepository;
-
+    private ProductRepository productRepository;
     @Autowired
     private TagsRepository orgTagsRepo;
-
     @Autowired
     private TagGraphEdgesRepository tagEdgesRepo;
-    
     @Autowired
     private TagGraphNodeRepository tagNodesRepo;
+	@Autowired
+	private OrganizationRepository orgRepo;
 
     @Autowired
     private SecurityService securityService;
 
-    @Autowired
-    private OrganizationRepository orgRepo;
 	public static final long DUMMY_ROOT_PARENT = -1L;
-
-
-	@Autowired
-    public CategoryService(BrandsRepository brandsRepository, ProductRepository productRepository) {
-        this.brandsRepository = brandsRepository;
-        this.productRepository = productRepository;
-    }
-
 
     public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
 		return ofNullable(orgTagsRepo.findById(tagId))
@@ -89,7 +75,6 @@ public class CategoryService {
 				.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
 				.orElseThrow(() -> new BusinessException("No tag found with given id!", "INVALID_PARAM: tag_id", HttpStatus.NOT_FOUND));
 	}
-
     
 //    @CacheResult(cacheName = "organizations_categories")
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
@@ -119,65 +104,72 @@ public class CategoryService {
 					.collect(toList());
     }
     
-    
+    public CategoryResponse addOrUpdateCategory(CategoryDTO categoryDTO) {
+		String operation = ofNullable(categoryDTO.getOperation())
+				.filter(o -> o.equals("create") || o.equals("update"))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007));
+		CategoriesEntity category = new CategoriesEntity();
+		if (operation.equals("update"))
+			category = updateCategory(categoryDTO);
+		else if (operation.equals("create"))
+			category = createCategory(categoryDTO);
+		return new CategoryResponse(category.getId());
+	}
     
 
-    public CategoryResponse createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
-        if (categoryJson.getName() == null) {
-            throw new BusinessException("MISSING_PARAM: name", "No category name is provided", HttpStatus.NOT_ACCEPTABLE);
-        } else if (!StringUtils.validateName(categoryJson.getName())) {
-            throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": name",
-                    "Provided name is not valid", HttpStatus.NOT_ACCEPTABLE);
-        }
+    public CategoriesEntity createCategory(CategoryDTO categoryJson) {
+		validateCategoryCreation(categoryJson);
         CategoriesEntity categoriesEntity = new CategoriesEntity();
         categoriesEntity.setName(categoryJson.getName());
         categoriesEntity.setLogo(categoryJson.getLogo());
         if (categoryJson.getParentId() != null) {
-            if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
-                categoriesEntity.setParentId(categoryJson.getParentId());
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": parent_id",
-                        "Provided parent category doesn't exit", HttpStatus.NOT_ACCEPTABLE);
-            }
+        	categoriesEntity.setParentId(categoryJson.getParentId());
         }
         categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
-        categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+		return categoryRepository.save(categoriesEntity);
     }
 
+    private void validateCategoryCreation(CategoryDTO categoryJson) {
+		validateCategoryName(categoryJson);
+		validateCategoryParent(categoryJson);
+	}
+
+	private void validateCategoryParent(CategoryDTO categoryJson) {
+		if (categoryJson.getParentId() != null) {
+			if (!categoryRepository.existsById(categoryJson.getParentId())) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, CAT$0001, categoryJson.getParentId());
+			}
+		}
+	}
+
+    private void validateCategoryName(CategoryDTO categoryJson) {
+		if (categoryJson.getName() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "name");
+		} else if (!StringUtils.validateName(categoryJson.getName())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, categoryJson.getName());
+		}
+	}
     
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, ORGANIZATIONS_TAG_TREES})
-    public CategoryResponse updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
-        if (categoryJson.getId() == null) {
-            throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!categoryRepository.findById(categoryJson.getId()).isPresent()){
-            throw new BusinessException("EntityNotFound: category", "No category entity found with provided ID",
-                    HttpStatus.NOT_ACCEPTABLE);
-        }
-        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
+    public CategoriesEntity updateCategory(CategoryDTO categoryJson) {
+        CategoriesEntity category = ofNullable(categoryJson.getId())
+				.map(categoryRepository::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, CAT$0002));
         if (categoryJson.getName() != null) {
-            if (StringUtils.validateName(categoryJson.getName())) {
-            categoriesEntity.setName(categoryJson.getName());
-            categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid",
-                        HttpStatus.NOT_ACCEPTABLE);
-            }
+            validateCategoryName(categoryJson);
+			category.setName(categoryJson.getName());
+			category.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         }
         if (categoryJson.getLogo() != null)
-            categoriesEntity.setLogo(categoryJson.getLogo());
+			category.setLogo(categoryJson.getLogo());
         if (categoryJson.getParentId() != null) {
-            if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
-                categoriesEntity.setParentId(categoryJson.getParentId());
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": parent_id",
-                        "Provided parent category doesn't exit", HttpStatus.NOT_ACCEPTABLE);
-            }
+        	validateCategoryParent(categoryJson);
+			category.setParentId(categoryJson.getParentId());
         }
-        categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+		return categoryRepository.save(category);
     }
 
 
