@@ -136,8 +136,8 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 	
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockAdditionalData("
-			+ " stock.id, stock.currency, "
-			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address"
+			+ " stock.id, stock.currency, variant.id, "
+			+ " variant.barcode,  product.name, shop.id, address"
 			+ ", product.organizationId, stock.discount) "
 			+ " FROM StocksEntity stock "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
@@ -163,6 +163,12 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 	@Query(value = "update StocksEntity s set s.quantity = 0 where s.productVariantsEntity in " +
 			"(select v from ProductVariantsEntity v where v.productEntity.id in :productIds)")
 	void setProductStocksQuantityZero(@Param("productIds") List<Long> productIds);
+
+	@Transactional
+	@Modifying
+	@Query(value = "update StocksEntity s set s.quantity = 0 where s.productVariantsEntity in " +
+			"(select v from ProductVariantsEntity v where v.id in :variantIds)")
+	void setVariantStocksQuantityZero(@Param("variantIds") List<Long> variantIds);
 
 	Long countByShopsEntity_Id(long shopId);
 

@@ -461,8 +461,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems
             , Map<Long, Optional<String>> variantCoverImgs) {
         for(ReturnRequestItemDTO dto : requestItems) {
-            Map<String, String> variantFeatures = productService.parseVariantFeatures(dto.getFeatureSpec(), 0);
-            dto.setVariantFeatures(variantFeatures);
             variantCoverImgs
                     .get(dto.getVariantId())
                     .ifPresent(dto::setCoverImage);
@@ -737,7 +735,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         BigDecimal price = orderItem.getPrice();
         String thumb = variantsCoverImages.get(variant.getId()).orElse("NA");
         String currency = ofNullable(getTransactionCurrency(orderItem.getCurrency())).orElse(EGP).name();
-        Map<String, String> variantFeatures = productService.parseVariantFeatures(variant.getFeatureSpec(), 0);
+        Map<String, String> variantFeatures = productService.parseVariantFeatures(variant, 0);
 
         ReturnShipmentItem item = new ReturnShipmentItem();
         item.setName(product.getName());

@@ -11,6 +11,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import static java.util.Optional.ofNullable;
 
 @Entity
 @Table(name="shipment")
@@ -58,13 +61,18 @@ public class ShipmentEntity implements BaseEntity {
 	public BaseRepresentationObject getRepresentation() {
 		String status = 
 				ShippingStatus.getShippingStatusName(this.status);
-		
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/YYYY");
+		String shippingFrom = ofNullable(getFrom()).map(formatter::format).orElse("");
+		String shippingTo = ofNullable(getTo()).map(formatter::format).orElse("");
+		ShippingEta eta = new ShippingEta(getFrom(), getTo(), shippingFrom, shippingTo);
+
 		Shipment shipment = new Shipment();
 		shipment.setServiceId(getShippingServiceId());
 		shipment.setServiceName(getShippingServiceId());
 		shipment.setExternalId(getExternalId());
 		shipment.setShippingFee(getShippingFee());
-		shipment.setShippingEta(new ShippingEta(getFrom(), getTo()));
+		shipment.setShippingEta(eta);
 		shipment.setTrackingNumber(getTrackNumber());
 		shipment.setStatus(status);
 		return shipment;

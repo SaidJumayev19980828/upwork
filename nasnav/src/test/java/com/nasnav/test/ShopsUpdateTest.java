@@ -228,14 +228,14 @@ public class ShopsUpdateTest {
         HttpEntity<Object> request = getHttpEntity(body.toString(),"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        ShopsEntity oldShop = shopsRepository.findByIdAndRemoved(jsonResponse.getLong("store_id"), 0).get();
+        ShopsEntity oldShop = shopsRepository.findByIdAndRemoved(jsonResponse.getLong("store_id")).get();
 
         // delete the created shop
         response = template.exchange("/shop/delete?shop_id="+oldShop.getId(),
                                         DELETE, request, String.class);
 
         assertEquals(200, response.getStatusCodeValue());
-        assertFalse(shopsRepository.findByIdAndRemoved(oldShop.getId(), 0).isPresent());
+        assertFalse(shopsRepository.findByIdAndRemoved(oldShop.getId()).isPresent());
     }
 
 

@@ -7,6 +7,7 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.VariantFeatureValueEntity;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
@@ -28,9 +29,11 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -38,6 +41,7 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
@@ -158,7 +162,7 @@ public class ProductVariantApiTest {
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 	}
 	
 	
@@ -217,10 +221,10 @@ public class ProductVariantApiTest {
 		assertEquals(json.getString("barcode"), saved.getBarcode());
 		assertEquals(json.getLong("product_id"), saved.getProductEntity().getId().longValue() );
 		assertEquals(json.getString("description"), saved.getDescription());
-		assertEquals(json.getString("features"), saved.getFeatureSpec());
+		assertTrue(assertFeatureValuesSaved(json.getString("features"), saved));
 		assertEquals(json.getString("sku"), saved.getSku());
 		assertEquals(json.getString("product_code"), saved.getProductCode());
-		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
+		assertEquals("shoe-color-black-shoe-size-37", saved.getPname());
 		assertEquals(new BigDecimal(5.5), saved.getWeight());
 		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
@@ -265,7 +269,7 @@ public class ProductVariantApiTest {
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", TEST_VARIANT_ID);
 		json.put("name", "updated");
-		json.put("features", "{\"234\": 30, \"235\": \"WHITE\"}");
+		json.put("features", "{\"234\": \"30\", \"235\": \"WHITE\"}");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
@@ -281,14 +285,22 @@ public class ProductVariantApiTest {
 		ProductVariantsEntity saved = helper.getVariantFullData(id);
 		
 		assertEquals(json.getString("name"), saved.getName());
-		assertEquals(json.get("features"), saved.getFeatureSpec());
+		assertTrue(assertFeatureValuesSaved(json.getString("features"), saved));
 		assertEquals(before.getBarcode(), saved.getBarcode());
 		assertEquals(before.getProductEntity().getId(), saved.getProductEntity().getId() );
 		assertEquals(before.getDescription(), saved.getDescription());
 	}
 	
 
-
+	private boolean assertFeatureValuesSaved(String expectedFeatures, ProductVariantsEntity variant) {
+		String features = new JSONObject(variant.getFeatureValues()
+				.stream()
+				.collect(toMap(f -> f.getFeature().getId(), VariantFeatureValueEntity::getValue)))
+				.toString();
+		if (expectedFeatures.contains(features))
+			return false;
+		return true;
+	}
 	
 	
 	@Test
@@ -340,7 +352,7 @@ public class ProductVariantApiTest {
 		BaseUserEntity user = empRepo.getById(69L); 
 		
 		JSONObject json = createProductVariantRequest();
-		json.put("features", "{\"888888\": 37, \"235\": \"BLack\"}");
+		json.put("features", "{\"888888\": \"37\", \"235\": \"BLack\"}");
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
@@ -352,7 +364,23 @@ public class ProductVariantApiTest {
 		
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
+
+	@Test
+	public void deleteVariants() {
+		var request = getHttpEntity("131415");
+		var response = template.exchange("/product/variant?variant_id=310002&variant_id=310006", DELETE, request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		List<ProductVariantsEntity> deletedVariants = variantRepo.findByIdIn(asList(310002, 310006));
+		deletedVariants.stream().forEach(v -> assertTrue(v.getRemoved() == 1));
+	}
+
+	@Test
+	public void deleteVariantsInDifferentOrg() {
+		var request = getHttpEntity("131415");
+		var response = template.exchange("/product/variant?variant_id=310001", DELETE, request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
 
 	private JSONObject createProductVariantRequest() {
 		JSONObject extraAttributes =
@@ -360,7 +388,7 @@ public class ProductVariantApiTest {
 				.put("extra", "Cool Add-on")
 				.put("Model", "D2R2")
 				.put("$INV", "you can't see me!");
-		JSONObject features = json().put("234", 37).put("235", "Black");
+		JSONObject features = json().put("234", "37").put("235", "Black");
 
 		JSONObject json = new JSONObject();
 		json.put("product_id", TEST_PRODUCT_ID);

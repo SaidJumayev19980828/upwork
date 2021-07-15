@@ -48,8 +48,8 @@ INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, remov
 
 
 -- dummy products
-insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
-insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id, brand_id, category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 101, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id, brand_id, category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 101, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode) 
 VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232222');
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, removed) VALUES(200004, 'removed product' , now() , now(), 0 , 99001, 201, 1);

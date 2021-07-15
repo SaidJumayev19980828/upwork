@@ -88,6 +88,7 @@ public class TestHelper {
 			stock.getShopsEntity();
 			stock.getProductVariantsEntity().getId();
 			stock.getProductVariantsEntity().getProductEntity().getId();
+			stock.getProductVariantsEntity().getFeatureValues();
 			stock.getOrganizationEntity();
 		};
 		

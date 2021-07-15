@@ -53,6 +53,8 @@ public enum ErrorCodes {
 	,P$VAR$006("Rate must be between 0 and 5")
 	,P$VAR$007("User can rate only bought products!")
 	,P$VAR$008("Missing Extra Attribute name!")
+	,P$VAR$009("Failed to delete variants [%s]!")
+	,P$VAR$010("User can't delete variants from another org!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
@@ -78,6 +80,7 @@ public enum ErrorCodes {
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+	,P$BRA$0004("No Brand id is provided!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
 	,P$FTR$0002("Feature is still used by some products!")

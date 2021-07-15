@@ -98,7 +98,10 @@ public class ProductServiceTest {
 
 	@Autowired
 	private StockRepository stockRepository;
-
+	@Autowired
+	private BrandsRepository brandRepo;
+	@Autowired
+	private VariantFeatureValuesRepository featureValuesRepo;
 	@Autowired
 	private ShopsRepository shopsRepository;
 
@@ -126,7 +129,7 @@ public class ProductServiceTest {
 	private final String PRODUCT_VARIANT_P_NAME = "lipstick color";
 	private final String PRODUCT_FEATURE_1_VALUE = "red";
 	private final String PRODUCT_FEATURE_2_VALUE = "strawberry";
-	private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
+	private final String PRODUCT_FEATURE_1_NAME = "Lipstick Color";
 	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
 	private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";
 	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick_flavour";
@@ -180,7 +183,7 @@ public class ProductServiceTest {
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-	public void getProductAndNoShopProvied() {
+	public void getProductAndNoShopProvided() {
 
 		ProductTestData testData = createProductTestDataWithMultipleStocks();
 
@@ -380,8 +383,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 
@@ -400,8 +404,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariantWithExtraAttributes(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariantWithExtraAttributes(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 
@@ -420,8 +425,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1WithExtraData(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2WithExtraData(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariantWithInvisibleExtraAttributes(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariantWithInvisibleExtraAttributes(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 
@@ -439,8 +445,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 1);
 		return testData;
 	}
@@ -456,8 +463,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 2);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 		return testData;
@@ -475,8 +483,9 @@ public class ProductServiceTest {
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
-		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity);
+		testData.featureValue_1 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_1, PRODUCT_FEATURE_1_VALUE);
+		testData.featureValue_2 = createDummySpecValues(testData.productVariantsEntity, testData.productFeaturesEntity_2, PRODUCT_FEATURE_2_VALUE);
 		testData.shopEntities = createDummyShops(org, 2);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities, ZERO);
 		return testData;
@@ -501,12 +510,13 @@ public class ProductServiceTest {
 
 	private ProductEntity createDummyProduct() {
 		ProductEntity productEntity = new ProductEntity();
+		BrandsEntity brand = brandRepo.findById(101L).get();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
-		productEntity.setBrandId(101L);
+		productEntity.setBrand(brand);
 		productEntity = productRepository.save(productEntity);
 
 		return productEntity;
@@ -549,6 +559,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
 		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1.setLevel(0);
+		productFeaturesEntity_1.setExtraData("{}");
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 		return productFeaturesEntity_1;
 	}
@@ -560,6 +571,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
 		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2.setLevel(0);
+		productFeaturesEntity_2.setExtraData("{}");
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 		return productFeaturesEntity_2;
 	}
@@ -591,19 +603,19 @@ public class ProductServiceTest {
 	}
 
 
-	private String createDummySpecValues(ProductFeaturesEntity productFeaturesEntity_1,
-										 ProductFeaturesEntity productFeaturesEntity_2) {
-		return FEATURE_SEPC_TEMPLATE
-				.replace("FEATURE_ID_1", productFeaturesEntity_1.getId() + "")
-				.replace("FEATURE_ID_2", productFeaturesEntity_2.getId() + "");
+	private VariantFeatureValueEntity createDummySpecValues(ProductVariantsEntity variant, ProductFeaturesEntity feature, String value) {
+		VariantFeatureValueEntity entity = new VariantFeatureValueEntity();
+		entity.setVariant(variant);
+		entity.setFeature(feature);
+		entity.setValue(value);
+		return featureValuesRepo.save(entity);
 	}
 
 
-	private ProductVariantsEntity createDummyVariant(ProductEntity productEntity, String spec) {
+	private ProductVariantsEntity createDummyVariant(ProductEntity productEntity) {
 		ProductVariantsEntity productVariantsEntity = new ProductVariantsEntity();
 		productVariantsEntity.setBarcode(PRODUCT_VARIANT_BARCODE);
 		productVariantsEntity.setName(PRODUCT_VARIANT_NAME);
-		productVariantsEntity.setFeatureSpec(spec);
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
@@ -612,16 +624,16 @@ public class ProductServiceTest {
 	}
 
 
-	private ProductVariantsEntity createDummyVariantWithExtraAttributes(ProductEntity productEntity, String spec) {
-		ProductVariantsEntity variant = createDummyVariant(productEntity, spec);
+	private ProductVariantsEntity createDummyVariantWithExtraAttributes(ProductEntity productEntity) {
+		ProductVariantsEntity variant = createDummyVariant(productEntity);
 		Set<ProductExtraAttributesEntity> extraAttributes = createDummyExtraAttr(variant);
 		extraAttributes.forEach(variant::addExtraAttribute);
 		return productVariantsRepository.save(variant);
 	}
 
 
-	private ProductVariantsEntity createDummyVariantWithInvisibleExtraAttributes(ProductEntity productEntity, String spec) {
-		ProductVariantsEntity variant = createDummyVariant(productEntity, spec);
+	private ProductVariantsEntity createDummyVariantWithInvisibleExtraAttributes(ProductEntity productEntity) {
+		ProductVariantsEntity variant = createDummyVariant(productEntity);
 		Set<ProductExtraAttributesEntity> extraAttributes = createInvisibleDummyExtraAttr(variant);
 		extraAttributes.forEach(variant::addExtraAttribute);
 		return productVariantsRepository.save(variant);
@@ -737,6 +749,8 @@ public class ProductServiceTest {
 		fileRepository.delete(testData.imgFile);
 		testData.stocksEntities.forEach(stockRepository::delete);
 		testData.shopEntities.forEach(shopsRepository::delete);
+		featureValuesRepo.delete(testData.featureValue_1);
+		featureValuesRepo.delete(testData.featureValue_2);
 		productVariantsRepository.delete(testData.productVariantsEntity);
 		productFeaturesRepository.delete(testData.productFeaturesEntity_1);
 		productFeaturesRepository.delete(testData.productFeaturesEntity_2);
@@ -1364,6 +1378,8 @@ class ProductTestData{
 	ProductEntity productEntity;		
 	ProductFeaturesEntity productFeaturesEntity_1;
 	ProductFeaturesEntity productFeaturesEntity_2;
+	VariantFeatureValueEntity featureValue_1;
+	VariantFeatureValueEntity featureValue_2;
 	ProductVariantsEntity productVariantsEntity;
 	List<ShopsEntity> shopEntities ;
 	List<StocksEntity> stocksEntities;

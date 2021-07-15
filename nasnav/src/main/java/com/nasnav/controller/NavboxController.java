@@ -139,7 +139,7 @@ public class NavboxController {
 			@ApiResponse(responseCode = " 204" ,description = "Empty product list"),
 			@ApiResponse(responseCode = " 400" ,description = "Invalid query parameters"), })
 	@GetMapping("/products")
-	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
+	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException {
 
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 
@@ -149,6 +149,21 @@ public class NavboxController {
 		return new ResponseEntity<>(productsResponse, OK);
 	}
 
+	@Operation(description =  "Get list of products (POST version)", summary = "productList")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = " 200" ,description = "OK"),
+			@ApiResponse(responseCode = " 204" ,description = "Empty product list"),
+			@ApiResponse(responseCode = " 400" ,description = "Invalid query parameters"), })
+	@PostMapping("/products")
+	public ResponseEntity<?> getProductsWithFeaturesFilter(@RequestBody ProductSearchParam productSearchParam) throws BusinessException {
+
+		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
+
+		if (productsResponse == null)
+			return new ResponseEntity<>(NO_CONTENT);
+
+		return new ResponseEntity<>(productsResponse, OK);
+	}
 
 
 

@@ -142,7 +142,7 @@ public class YeshteryController {
     }
 
     @GetMapping("products")
-    public ProductsResponse getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
+    public ProductsResponse getProducts(ProductSearchParam productSearchParam) throws BusinessException {
         productSearchParam.setYeshtery_products(true);
         return productService.getProducts(productSearchParam);
     }

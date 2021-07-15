@@ -1,6 +1,8 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.constatnts.EntityConstants.Operation;
@@ -9,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import static com.nasnav.dto.Required.*;
 
@@ -24,7 +27,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String name;	
 	private String description;
 	private String barcode;
-	private String features;
+	private Map<String, String> features;
 	private String extraAttr;
 	private String sku;
 	private String productCode;
@@ -39,7 +42,6 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 		setPropertyAsRequired("productId", ALWAYS);
 		setPropertyAsRequired("operation", ALWAYS);
 		setPropertyAsRequired("variantId", FOR_UPDATE);
-		setPropertyAsRequired("features", FOR_CREATE);		
 	}
 
 
@@ -79,11 +81,18 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	}
 
 
-	public void setFeatures(String features) {
+	public void setFeatures(String features)  {
+		ObjectMapper objectMapper=new ObjectMapper();
+		try {
+			setPropertyAsUpdated("features");
+			this.features = objectMapper.readValue(features, Map.class);
+		} catch (JsonProcessingException e){}
+	}
+
+	public void setFeatures(Map<String, String> features) {
 		setPropertyAsUpdated("features");
 		this.features = features;
 	}
-
 
 	public void setPname(String pname) {
 		setPropertyAsUpdated("pname");

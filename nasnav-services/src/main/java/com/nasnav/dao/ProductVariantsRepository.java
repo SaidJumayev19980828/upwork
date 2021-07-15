@@ -17,14 +17,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 
 	@Query("select distinct v from ProductVariantsEntity v" +
+			" left join fetch v.featureValues featureValue " +
+			" left join fetch featureValue.feature feature " +
 			" left join fetch v.productEntity p " +
 			" left join fetch v.stocks s " +
 			" where p.id = :id")
 	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId);
-
-	List<ProductVariantsEntity> findByProductEntity_IdIn(List<Long> productIdsList);
-
-	ProductVariantsEntity findByIdAndProductEntity_Id(Long variantId, Long productId);
 
 	List<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 
@@ -56,8 +54,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			+ " FROM ProductVariantsEntity variant "
 			+ " where variant.id in :idList and variant.productEntity.removed = 0")
 	List<VariantBasicData> findVariantBasicDataByIdIn(@Param("idList") List<Long> idList);
-	
-	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
+
+	@Query("select distinct variant from ProductVariantsEntity variant " +
+			" left join fetch variant.featureValues featureValues " +
+			" left join fetch featureValues.feature feature " +
+			" where variant.id in :idList")
+	List<ProductVariantsEntity> findByIdIn(@Param("idList") List<Long> idList);
 	
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
@@ -68,9 +70,9 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	long countByProductEntity_organizationId(long l);
 
-	long countByProductEntity_organizationIdAndNameContainingIgnoreCase(long l, String name);
+	Long countByIdInAndProductEntity_organizationId(List<Long> ids, Long orgId);
 
-	
+
 	@Transactional
     @Modifying
     @Query( value = "update product_variants " + 
@@ -79,12 +81,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     		" (select id from products prod where prod.organization_id = :orgId)", nativeQuery = true )
 	void deleteAllByProductEntity_organizationId(@Param("orgId")Long orgId);
 
-	
-	@Query("select variant.id from ProductVariantsEntity variant where variant.id in :idList")
-	Set<Long> findExistingVariantsByIdIn(@Param("idList") List<Long> variantIdList);
-
-	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.organizationId = :orgId")
-	Set<Long> listVariantIdByOrganizationId(@Param("orgId")Long orgId);
+	@Query(value = "select distinct variant from ProductVariantsEntity variant"
+					+" inner join variant.stocks stock"
+					+" left join fetch variant.featureValues featureValues"
+					+" left join fetch featureValues.feature feature"
+					+" where stock.id in :stockIds and variant.removed = 0")
+	List<ProductVariantsEntity> findByStockIdIn(@Param("stockIds") List<Long> stockIds);
 	
 	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.id in :idList")
 	Set<Long> findVariantIdByProductIdIn(@Param("idList") List<Long> productIdList);
@@ -93,10 +95,17 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     @Modifying
     @Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.productEntity.id in :idList")
 	void deleteAllByProductIdIn(@Param("idList") List<Long> idList);
-	
+
+	@Transactional
+	@Modifying
+	@Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.id in :idList")
+	void deleteByIdIn(@Param("idList") List<Long> idList);
+
 	
 	@Query("SELECT variant "
 			+ " FROM ProductVariantsEntity variant "
+			+ " left join fetch variant.featureValues featureValue "
+			+ " left join fetch featureValue.feature feature"
 			+ " left join fetch variant.productEntity product "
 			+ " left join fetch variant.stocks stocks "
 			+ " left join fetch variant.extraAttributes attr"

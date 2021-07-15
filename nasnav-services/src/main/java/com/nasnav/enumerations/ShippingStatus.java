@@ -18,7 +18,8 @@ public enum ShippingStatus {
     DELIVERED(45),
     CANCELED(50),
     FAILED(55),
-    RETURNED(60);
+    RETURNED(60),
+    ERROR(-1);
 
     @Getter
     private Integer value;
@@ -31,7 +32,7 @@ public enum ShippingStatus {
         return Arrays.stream(ShippingStatus.values())
                      .filter(s -> s.value == value)
                      .findFirst()
-                     .map(s -> s.name())
-                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ENUM$0001));
+                     .map(Enum::name)
+                     .orElseGet(ERROR::name);
     }
 }

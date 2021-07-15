@@ -116,7 +116,7 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 	}
 
 	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
-		List<String> defaultTemplateHeaders = getProductImportTemplateHeaders();
+		List<String> defaultTemplateHeaders = getProductImportTemplateHeadersWithoutExtraAttributes();
 		
 		ColumnMapping mapper = createAttrToColMapping(metaData);		
 		

@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -275,7 +272,7 @@ public class CartServiceImpl implements CartService{
     }
 
 
-    public List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
+    public List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems) {
         return cartItems
                 .stream()
                 .map(this::createCartItemDto)
@@ -284,41 +281,43 @@ public class CartServiceImpl implements CartService{
 
 
 
-
-
-    private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
-        return productService.parseVariantFeatures(featureSpec, returnedName);
-    }
-
-
-
-    private CartItem createCartItemDto(CartItemData itemData) {
+    private CartItem createCartItemDto(CartItemEntity itemData) {
         CartItem itemDto = new CartItem();
 
-        Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
+        StocksEntity stock = itemData.getStock();
+        ProductVariantsEntity variant = stock.getProductVariantsEntity();
+        ProductEntity product = variant.getProductEntity();
+        BrandsEntity brand = product.getBrand();
+        UserEntity user = itemData.getUser();
+        String unit = ofNullable(stock.getUnit())
+                .map(StockUnitEntity::getName)
+                .orElse("");
+        Map<String,String> variantFeatures = ofNullable(productService.parseVariantFeatures(variant, 0))
+                .orElse(new HashMap<>());
         Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
 
-        itemDto.setBrandId(itemData.getBrandId());
-        itemDto.setBrandLogo(itemData.getBrandLogo());
-        itemDto.setBrandName(itemData.getBrandName());
+        itemDto.setBrandId( brand.getId());
+        itemDto.setBrandLogo(brand.getLogo());
+        itemDto.setBrandName(brand.getName());
 
-        itemDto.setCoverImg(itemData.getCoverImg());
-        itemDto.setPrice(itemData.getPrice());
+        itemDto.setCoverImg(itemData.getCoverImage());
+        itemDto.setPrice(stock.getPrice());
         itemDto.setQuantity(itemData.getQuantity());
         itemDto.setVariantFeatures(variantFeatures);
-        itemDto.setName(itemData.getProductName());
-        itemDto.setWeight(itemData.getWeight());
-        itemDto.setUnit(itemData.getUnit());
+        itemDto.setName(product.getName());
+        itemDto.setWeight(variant.getWeight());
+        itemDto.setUnit(unit);
 
         itemDto.setId(itemData.getId());
-        itemDto.setProductId(itemData.getProductId());
-        itemDto.setVariantId(itemData.getVariantId());
-        itemDto.setVariantName(itemData.getVariantName());
-        itemDto.setProductType(itemData.getProductType());
-        itemDto.setStockId(itemData.getStockId());
-        itemDto.setDiscount(itemData.getDiscount());
+        itemDto.setProductId(product.getId());
+        itemDto.setVariantId(variant.getId());
+        itemDto.setVariantName(variant.getName());
+        itemDto.setProductType(product.getProductType());
+        itemDto.setStockId(stock.getId());
+        itemDto.setDiscount(stock.getDiscount());
         itemDto.setAdditionalData(additionalData);
-        itemDto.setUserId(itemData.getUserId());
+        itemDto.setUserId(user.getId());
+
         return itemDto;
     }
 

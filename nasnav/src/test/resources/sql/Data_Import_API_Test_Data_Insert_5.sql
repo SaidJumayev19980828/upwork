@@ -61,6 +61,8 @@ insert into public.product_variants(id, "name" , product_id ,barcode, p_name, de
     values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc', '{"7002":"purple", "7001":"6XL"}');
 insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310004, 'var', 200002, '910HIJK', '{}');
 
+insert into public.variant_feature_values values(310001, 310003, 7001, '6XL');
+insert into public.variant_feature_values values(310002, 310003, 7002, 'purple');
 
 -- stocks for variants
 insert into public.stocks(id, shop_id  , variant_id , quantity , price,  organization_id)
