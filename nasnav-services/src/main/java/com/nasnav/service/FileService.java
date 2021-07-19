@@ -338,7 +338,7 @@ public class FileService {
 		String modUrl = reformUrl(url);
 		FileEntity originalFile = ofNullable(filesRepo.findByUrl(modUrl))
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
-		final String fileType = getImageType(url, type, originalFile.getMimetype())
+		final String fileType = getImageType(type, originalFile.getMimetype())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 
 		if (!originalFile.getMimetype().contains("image")) {
@@ -459,7 +459,7 @@ public class FileService {
 
 
 
-	private Optional<String> getImageType(String fileName, String type, String mimeType) {
+	private Optional<String> getImageType(String type, String mimeType) {
 		if (nonNull(type) && SUPPORTED_IMAGE_FORMATS.contains(type.toLowerCase())) {
 			return ofNullable(type.toLowerCase());
 		}
