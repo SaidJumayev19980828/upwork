@@ -14,6 +14,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.ShopResponse;
 import lombok.Builder;
 import lombok.Data;
+import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -563,23 +564,19 @@ public class ShopThreeSixtyService {
 	}
 
 
-    private String resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException, BusinessException {
+    private String resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException {
         this.basePath = Paths.get(appConfig.getBasePathStr());
         Path location = basePath.resolve(image.getLocation());
 
-        BufferedImage inputImage = ImageIO.read(new File(location.toString()));
+        BufferedImage inputImage = ImageIO.read(location.toFile());
         int imageHeight = (int) (imageWidth * (inputImage.getHeight()/(inputImage.getWidth()*1.0)));
-        BufferedImage outputImage = new BufferedImage(imageWidth,
-                imageHeight, inputImage.getType());
-
-
-        Graphics2D g2d = outputImage.createGraphics();
-        g2d.drawImage(inputImage, 0, 0, imageWidth, imageHeight, null);
-        g2d.dispose();
-
+        var outputImageFile = new ByteArrayOutputStream();
         String imageName = getResizedImageName(image.getUrl().substring(image.getUrl().lastIndexOf('/')+1), imageWidth);
-        ByteArrayOutputStream outputImageFile = new ByteArrayOutputStream();
-        ImageIO.write(outputImage, "jpg", outputImageFile );
+
+        Thumbnails.of(inputImage)
+                .height(imageHeight)
+                .outputFormat("jpg")
+                .toOutputStream(outputImageFile);
 
         MultipartFile multipartFile = fileSvc.getCommonsMultipartFile("fileItem",
                 imageName, "image/jpg", outputImageFile );
