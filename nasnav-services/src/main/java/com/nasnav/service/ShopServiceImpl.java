@@ -200,6 +200,7 @@ public class ShopServiceImpl implements ShopService {
     private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
         BooleanBuilder predicate = new BooleanBuilder();
         QShops shop = QShops.shops;
+        QProductVariants variant = QProductVariants.productVariants;
         QProducts product = QProducts.products;
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
@@ -207,6 +208,8 @@ public class ShopServiceImpl implements ShopService {
         QOrganizations organization = QOrganizations.organizations;
 
         predicate.and(shop.removed.eq(0));
+        predicate.and(product.removed.eq(0));
+        predicate.and(variant.removed.eq(0));
         if(param.getName() != null) {
             if (param.isSearchInTags()) {
                 predicate.and(product.name.likeIgnoreCase( "%" + param.getName() + "%")
