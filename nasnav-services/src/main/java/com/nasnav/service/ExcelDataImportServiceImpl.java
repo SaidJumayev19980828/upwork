@@ -109,7 +109,8 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				String headerName = sheet.getRow(0).getCell(cell.getColumnIndex()).getStringCellValue();
 				var propertyName = getColumnHeaderMapping(headerName);
 				Object value = getCellValue(cell);
-				BeanUtils.setProperty(line, propertyName, value);
+				if (value != null)
+					BeanUtils.setProperty(line, propertyName, value);
 			}
 			lines.add(line);
 		}
@@ -134,11 +135,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 	private static Object getCellValue(Cell cell ){
 		switch (cell.getCellType())
 		{
-			case Cell.CELL_TYPE_NUMERIC:
+			case NUMERIC:
 				return BigDecimal.valueOf(cell.getNumericCellValue()).toString();
-			case Cell.CELL_TYPE_STRING:
+			case STRING:
 				return cell.getStringCellValue();
-			case Cell.CELL_TYPE_BOOLEAN:
+			case BOOLEAN:
 				return Boolean.toString(cell.getBooleanCellValue());
 		}
 		return null;
