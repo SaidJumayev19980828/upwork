@@ -42,13 +42,6 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
         List<ProductEntity> items = new ArrayList<>();
         try {
             JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
-            ItemSimilarity itemSimilarity = new EuclideanDistanceSimilarity(model);
-            Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
-            List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
-            for (RecommendedItem item : itemRecommendations) {
-                long prodId = item.getItemID();
-                items.add(productRepository.findProductDataById(prodId, true));
-            }
             //
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);
