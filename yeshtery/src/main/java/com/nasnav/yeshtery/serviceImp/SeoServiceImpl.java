@@ -1,6 +1,5 @@
-package com.nasnav.yeshtery.services;
+package com.nasnav.yeshtery.serviceImp;
 
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.SeoKeywordRepository;
 import com.nasnav.dao.TagsRepository;
@@ -9,6 +8,7 @@ import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.SeoKeywordEntity;
 import com.nasnav.service.SecurityService;
+import com.nasnav.yeshtery.services.SeoService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,13 +18,10 @@ import java.util.Map;
 
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.SeoEntityType.*;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
