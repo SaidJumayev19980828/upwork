@@ -833,6 +833,35 @@ public class CartTest {
 	}
 
 	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSameCityTestWithNullAddress() {
+		Long userId = 88L;
+		Cart initialCart = cartService.getUserCart(userId);
+		//---------------------------------------------------------------
+		String requestBody = createCartCheckoutBody().put("customer_address", JSONObject.NULL).toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter =
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+
+		assertEquals(OK, res.getStatusCode());
+		assertEquals(2, cart.getItems().size());
+		assertTrue("The optimization should pick stocks from a shop in cairo that can provide most items"
+				, asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+		assertTrue(res.getBody().getTotalChanged());
+
+		//---------------------------------------------------------------
+		Cart cartAfter = cartService.getUserCart(userId);
+
+		assertEquals(initialCart, cartAfter);
+	}
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSelectShopWithHighestStockTest() {
