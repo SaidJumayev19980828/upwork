@@ -1,11 +1,11 @@
-package com.nasnav.yeshtery.serviceImp;
+package com.nasnav.yeshtery.services.impl;
 
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.yeshtery.dao.YeshteryRecommendationRepository;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
-import com.nasnav.yeshtery.services.YeshteryRecommendationService;
+import com.nasnav.yeshtery.services.interfaces.YeshteryRecommendationService;
 import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLJDBCDataModel;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;

@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.serviceImp;
+package com.nasnav.yeshtery.services.impl;
 
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.SeoKeywordRepository;
@@ -8,7 +8,7 @@ import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.SeoKeywordEntity;
 import com.nasnav.service.SecurityService;
-import com.nasnav.yeshtery.services.SeoService;
+import com.nasnav.yeshtery.services.interfaces.SeoService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
