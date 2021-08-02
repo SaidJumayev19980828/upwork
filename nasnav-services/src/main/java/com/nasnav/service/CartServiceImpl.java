@@ -17,9 +17,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -105,14 +107,7 @@ public class CartServiceImpl implements CartService{
                 return getUserCart(user.getId());
             }
         }
-
-        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
-
-        cartItem.setUser((UserEntity) user);
-        cartItem.setStock(stock);
-        cartItem.setQuantity(item.getQuantity());
-        cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
-        cartItem.setAdditionalData(additionalDataJson);
+        cartItem = createCartItemEntity(cartItem, (UserEntity) user, stock, item);
         cartItemRepo.save(cartItem);
 
         return getUserCart(user.getId());
@@ -121,9 +116,55 @@ public class CartServiceImpl implements CartService{
 
 
 
+    @Override
+    @Transactional
+    public Cart addCartItems(List<CartItem> items){
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
 
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        cartItemRepo.deleteByUser_Id(user.getId());
 
+        Map<Long, StocksEntity> stocksEntityMap = getCartStocks(items, orgId);
+        List<CartItemEntity> itemsToSave = new ArrayList<>();
+        for (CartItem item : items) {
+            StocksEntity stock = ofNullable(stocksEntityMap.get(item.getStockId()))
+                            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0001, item.getStockId()));
+            validateCartItem(stock, item);
 
+            if (item.getQuantity().equals(0)) {
+               continue;
+            }
+            CartItemEntity cartItem = new CartItemEntity();
+            cartItem = createCartItemEntity(cartItem, (UserEntity) user, stock, item);
+            itemsToSave.add(cartItem);
+        }
+        cartItemRepo.saveAll(itemsToSave);
+        return getUserCart(user.getId());
+    }
+
+    private CartItemEntity createCartItemEntity(CartItemEntity cartItem, UserEntity user, StocksEntity stock, CartItem item) {
+        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
+        cartItem.setUser(user);
+        cartItem.setStock(stock);
+        cartItem.setQuantity(item.getQuantity());
+        cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
+        cartItem.setAdditionalData(additionalDataJson);
+        return cartItem;
+    }
+
+    private Map<Long, StocksEntity> getCartStocks(List<CartItem> items, Long orgId) {
+        Set<Long> cartStockIds = items
+                .stream()
+                .map(CartItem::getStockId)
+                .collect(Collectors.toSet());
+        return stockRepository
+                .findByIdInAndOrganizationEntity_Id(cartStockIds, orgId)
+                .stream()
+                .collect(toMap(StocksEntity::getId, s -> s));
+    }
 
     private String getItemCoverImage(String coverImage, StocksEntity stock) {
         if (coverImage != null) {

@@ -65,7 +65,6 @@ public class CartTest {
 	@Autowired
 	private CartItemRepository cartItemRepo;
 
-	
 	@Autowired
 	private OrderService orderService;
 
@@ -95,11 +94,7 @@ public class CartTest {
 
         assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
-	
-	
-	
-	
-	
+
 	@Test
 	public void getCartNoAuthN() {
         HttpEntity<?> request =  getHttpEntity("101112");
@@ -108,10 +103,7 @@ public class CartTest {
 
         assertEquals(FORBIDDEN, response.getStatusCode());
 	}
-	
-	
-	
-	
+
 	@Test 
 	public void getCartSuccess() {
         HttpEntity<?> request =  getHttpEntity("123");
@@ -122,10 +114,6 @@ public class CartTest {
         assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
 	}
-
-
-
-
 
 	private void assertProductNamesReturned(ResponseEntity<Cart> response) {
 		List<String> expectedProductNames = asList("product_1", "product_4");
@@ -138,7 +126,6 @@ public class CartTest {
         		.allMatch(name -> expectedProductNames.contains(name));
         assertTrue(isProductNamesReturned);
 	}
-
 
 	@Test
 	public void addCartItemZeroQuantity() {
@@ -156,13 +143,10 @@ public class CartTest {
 		assertEquals(itemsCountBefore - 1 , response.getBody().getItems().size());
 	}
 
-
 	@Test
 	public void addCartItemSuccess() {
 		addCartItems(88L, 606L, 1);
 	}
-
-
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
@@ -196,9 +180,6 @@ public class CartTest {
 		assertEquals(collectionId, item.getProductId().intValue());
 		assertEquals(productType, item.getProductType().intValue());
 	}
-
-
-
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
@@ -235,8 +216,6 @@ public class CartTest {
 		assertEquals(productType, item.getProductType().intValue());
 	}
 
-
-
 	private CartItem getCartItemOfStock(Long stockId, ResponseEntity<Cart> response) {
 		return	response
 				.getBody()
@@ -246,8 +225,6 @@ public class CartTest {
 				.findFirst()
 				.get();
 	}
-
-
 
 	private void addCartItems(Long userId, Long stockId, Integer quantity) {
 		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
@@ -262,9 +239,45 @@ public class CartTest {
 		assertEquals(itemsCountBefore + 1 , response.getBody().getItems().size());
 	}
 
+	@Test
+	public void addCartItemsSuccess() {
+		addCartItemsTest(88L);
+	}
 
-	
-	
+	private void addCartItemsTest(Long userId) {
+		List<JSONObject> items = createCartItems();
+
+		HttpEntity<?> request =  getHttpEntity(items.toString(),"123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/items", POST, request, Cart.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(2 , response.getBody().getItems().size());
+		assertEquals(607, response.getBody().getItems().get(0).getStockId().intValue());
+		assertEquals(606, response.getBody().getItems().get(1).getStockId().intValue());
+
+	}
+
+	@Test
+	public void addCartItemsNoAuthz() {
+		List<JSONObject> items = createCartItems();
+		HttpEntity<?> request =  getHttpEntity(items.toString(), "NOT FOUND");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/items", POST, request, Cart.class);
+
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
+	public void addCartItemsNoAuthN() {
+		List<JSONObject> items = createCartItems();
+		HttpEntity<?> request =  getHttpEntity(items.toString(), "101112");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/items", POST, request, Cart.class);
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
 	@Test
 	public void addCartItemNoStock() {
 		JSONObject item = createCartItem();
@@ -276,8 +289,6 @@ public class CartTest {
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-
-
 	
 	@Test
 	public void addCartItemNoQuantity() {
@@ -291,10 +302,6 @@ public class CartTest {
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
-	
-	
-	
-
 	@Test
 	public void addCartItemNegativeQuantity() {
 		JSONObject item = createCartItem();
@@ -307,8 +314,6 @@ public class CartTest {
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
-
-	
 	@Test
 	public void addCartNoAuthz() {
 		JSONObject item = createCartItem();
@@ -319,9 +324,6 @@ public class CartTest {
 		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 
-	
-	
-
 	@Test
 	public void addCartNoAuthN() {
 		JSONObject item = createCartItem();
@@ -331,7 +333,6 @@ public class CartTest {
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
-
 
 	@Test
 	public void deleteCartItemSuccess() {
@@ -345,8 +346,6 @@ public class CartTest {
 		assertEquals(itemsCountBefore - 1 , response.getBody().getItems().size());
 	}
 
-
-
 	@Test
 	public void removeCartNoAuthz() {
 		Long itemId = cartItemRepo.findCurrentCartItemsByUser_Id(88L).get(0).getId();
@@ -356,7 +355,6 @@ public class CartTest {
 
 		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
-
 
 	@Test
 	public void removeCartNoAuthN() {
@@ -368,7 +366,6 @@ public class CartTest {
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 
-
 	private JSONObject createCartItem(Long stockId, Integer quantity) {
 		JSONObject item = new JSONObject();
 		item.put("stock_id", stockId);
@@ -377,20 +374,25 @@ public class CartTest {
 
 		return item;
 	}
-	
+
+	private List<JSONObject> createCartItems() {
+		List<JSONObject> items = new ArrayList<>();
+
+		items.add(createCartItem(607L, 1));
+		items.add(createCartItem(606L, 2));
+
+		return items;
+	}
 	
 	private JSONObject createCartItem() {
 		return createCartItem(606L, 1);
 	}
 
-
 	@Test
 	public void checkoutCartSuccess() {
 		checkoutCart();
 	}
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -399,11 +401,6 @@ public class CartTest {
 		
 		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5840") ,new BigDecimal("51"));
 	}
-	
-	
-	
-	
-	
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
@@ -419,9 +416,7 @@ public class CartTest {
 				
 		assertEquals(630002L, promoId.longValue());
 	}
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -434,10 +429,7 @@ public class CartTest {
 		
 		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
 	}
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -453,11 +445,6 @@ public class CartTest {
 		assertEquals(630002L, promoId.longValue());
 	}
 
-	
-	
-	
-	
-	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -473,10 +460,6 @@ public class CartTest {
 		assertEquals(630003L, promoId.longValue());
 	}
 
-
-
-
-
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -488,9 +471,6 @@ public class CartTest {
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
 	}
-
-
-
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
@@ -507,11 +487,6 @@ public class CartTest {
 		assertEquals(630006L, promoId.longValue());
 	}
 
-	
-	
-	
-	
-	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -533,12 +508,7 @@ public class CartTest {
 				+ " as the prices didn't change, the optimization will be done silently."
 					, asList(607L, 608L, 612L).stream().allMatch(orderStocks::contains));
 	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_8.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -550,10 +520,6 @@ public class CartTest {
 		assertEquals("failure in optimization due to different prices will return an error.", 406, res.getStatusCodeValue());
 	}
 
-
-
-
-
 	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
@@ -561,10 +527,6 @@ public class CartTest {
 		
 		return body;
 	}
-
-
-
-
 
 	private Order checkOutCart(JSONObject requestBody, BigDecimal total, BigDecimal subTotal, BigDecimal shippingFee) {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
@@ -588,15 +550,11 @@ public class CartTest {
 		return order;
 	}
 
-
-
 	private void assertItemDataJsonCreated(Order order) {
 		Set<BasketItem> returnedItems = getBasketItemFromResponse(order);
 		Set<BasketItem> savedItemsData = parseItemsDataJson(order);
 		assertEquals(savedItemsData, returnedItems);
 	}
-
-
 
 	private Set<BasketItem> getBasketItemFromResponse(Order order) {
 		return order
@@ -609,8 +567,6 @@ public class CartTest {
 				.peek(clone -> clone.setId(null)) //save item data json don't include the basket Item Id
 				.collect(toSet());
 	}
-
-
 
 	private Set<BasketItem> parseItemsDataJson(Order order) {
 		return order
@@ -627,15 +583,11 @@ public class CartTest {
 				.collect(toSet());
 	}
 
-
-
 	private BasketItem cloneBasketItem(BasketItem source){
 		BasketItem target = new BasketItem();
 		BeanUtils.copyProperties(source, target);
 		return target;
 	}
-
-
 
 	private BasketItem parseAsBasketItem(String itemData){
 		try {
@@ -646,8 +598,6 @@ public class CartTest {
 		}
 	}
 
-
-
 	private BigDecimal getSubOrderShippingSum(Order order) {
 		return order
 				.getSubOrders()
@@ -657,10 +607,6 @@ public class CartTest {
 				.reduce(ZERO, BigDecimal::add);
 	}
 
-
-
-
-
 	private BigDecimal getSubOrderTotalSum(Order order) {
 		return order
 		.getSubOrders()
@@ -668,10 +614,6 @@ public class CartTest {
 		.map(SubOrder::getTotal)
 		.reduce(ZERO, BigDecimal::add);
 	}
-
-
-
-
 
 	private BigDecimal getSubOrderSubTotalSum(Order order) {
 		return order
@@ -681,7 +623,6 @@ public class CartTest {
 		.reduce(ZERO, BigDecimal::add);
 	}
 
-
 	@Test
 	public void checkoutCartNoAuthZ() {
 		HttpEntity<?> request =  getHttpEntity("not_found");
@@ -690,7 +631,6 @@ public class CartTest {
 		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 
-
 	@Test
 	public void checkoutCartNoAuthN() {
 		HttpEntity<?> request =  getHttpEntity("101112");
@@ -698,7 +638,6 @@ public class CartTest {
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
-
 
 	@Test
 	public void checkoutCartNoAddressId() {
@@ -710,7 +649,6 @@ public class CartTest {
 		assertEquals(406, response.getStatusCodeValue());
 	}
 
-
 	@Test
 	public void checkoutCartInvalidAddressId() {
 		JSONObject body = new JSONObject();
@@ -720,7 +658,6 @@ public class CartTest {
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}
-
 
 	@Test
 	public void checkoutCartDifferentCurrencies() {
@@ -739,7 +676,6 @@ public class CartTest {
 		assertEquals(406, res.getStatusCodeValue());
 	}
 
-
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -750,9 +686,6 @@ public class CartTest {
 		ResponseEntity<String> res = template.postForEntity("/cart/checkout", request, String.class);
 		assertEquals(406, res.getStatusCodeValue());
 	}
-
-	
-	
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_3.sql"})
@@ -767,7 +700,6 @@ public class CartTest {
 		assertTrue(res.getBody().contains("O$CRT$0005"));
 	}
 
-
 	private JSONObject createCartCheckoutBody() {
 		JSONObject body = new JSONObject();
 		Map<String, String> additionalData = new HashMap<>();
@@ -780,8 +712,6 @@ public class CartTest {
 
 		return body;
 	}
-
-
 
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
@@ -808,11 +738,7 @@ public class CartTest {
 		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
 		.forEach(mgr -> confrimOrder(order, mgr));
 	}
-	
-	
-	
-	
-	
+
 // TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
@@ -835,11 +761,7 @@ public class CartTest {
 		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
 		.forEach(mgr -> rejectOrder(order, mgr));
 	}
-	
-	
-	
-	
-	
+
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
@@ -863,10 +785,7 @@ public class CartTest {
 		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+orderId, request, String.class);
 		assertEquals(OK, res.getStatusCode());
 	}
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -883,8 +802,6 @@ public class CartTest {
 		
 		assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 	}
-	
-
 	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
@@ -914,12 +831,7 @@ public class CartTest {
 		
 		assertEquals(initialCart, cartAfter);
 	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -943,10 +855,6 @@ public class CartTest {
 				+ "and the third remaining stock from another shop in cairo with less stock quantity"
 					, asList(607L, 608L, 612L).stream().allMatch(stockIdsAfter::contains));
 	}
-	
-	
-	
-	
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
@@ -973,11 +881,7 @@ public class CartTest {
 		assertTrue("The optimization should pick the stocks from a the given shop even if it is in another city."
 					, asList(601L, 602L, 603L).stream().allMatch(stockIdsAfter::contains));
 	}
-	
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -1005,12 +909,7 @@ public class CartTest {
 				+ " which should be in the same city and with highest average stock."
 					, asList(607L, 611L, 612L).stream().allMatch(stockIdsAfter::contains));
 	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	public void optimizeCartNoAuthz() {
         HttpEntity<?> request =  getHttpEntity("NOT FOUND");
@@ -1019,11 +918,7 @@ public class CartTest {
 
         assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
-	
-	
-	
-	
-	
+
 	@Test
 	public void optimizeCartNoAuthN() {
         HttpEntity<?> request =  getHttpEntity("101112");
@@ -1032,9 +927,7 @@ public class CartTest {
 
         assertEquals(FORBIDDEN, response.getStatusCode());
 	}
-	
-	
-	
+
 	//TODO: invalid parameter json test
 	
 
@@ -1065,10 +958,6 @@ public class CartTest {
 		.forEach(subOrder -> assertEquals(STORE_CONFIRMED.getValue(), subOrder.getStatus()));
 	}
 
-
-
-
-
 	private void assertOrdersStatusBeforeCheckout(Long unpaidOrderId, Long cancelPaymentOrderId, Long paidOrderId, Long errorPaymentOrderId) {
 		MetaOrderEntity unpaidOrder = metaOrderRepo.findFullDataById(unpaidOrderId).get();
 		MetaOrderEntity cancelPaymentOrder = metaOrderRepo.findFullDataById(cancelPaymentOrderId).get();
@@ -1091,9 +980,6 @@ public class CartTest {
 		.stream()
 		.forEach(subOrder -> assertEquals(STORE_CONFIRMED.getValue(), subOrder.getStatus()));
 	}
-	
-
-
 
 	private void confrimOrder(Order order, ShopManager mgr) {
 		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
@@ -1110,10 +996,7 @@ public class CartTest {
 		assertNotNull(shipment.getExternalId());
 		assertEquals(STORE_CONFIRMED.getValue(), orderEntity.getStatus());
 	}
-	
-	
-	
-	
+
 	private void rejectOrder(Order order, ShopManager mgr) {
 		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
 		HttpEntity<?> request = createOrderRejectRequest(subOrderId, "oops!", mgr.getManagerAuthToken()); 
@@ -1126,10 +1009,7 @@ public class CartTest {
 		assertNull(shipment.getExternalId());
 		assertEquals(STORE_CANCELLED.getValue(), orderEntity.getStatus());
 	}
-	
-	
-	
-	
+
 	private HttpEntity<?> createOrderRejectRequest(Long orderId, String rejectionReason, String authToken) {
 		String requestBody = 
 				json()
@@ -1138,9 +1018,6 @@ public class CartTest {
 				.toString();
 		return getHttpEntity(requestBody, authToken);
 	}
-	
-	
-
 
 	private Long getSubOrderIdOfShop(Order order, Long shopId) {
 		return order
@@ -1151,10 +1028,7 @@ public class CartTest {
 				.findFirst()
 				.get();
 	}
-	
-	
-	
-	
+
 	private JSONObject createCartCheckoutBodyForCompleteCycleTest() {
 		JSONObject body = new JSONObject();
 		Map<String, String> additionalData = new HashMap<>();
@@ -1164,10 +1038,7 @@ public class CartTest {
 		body.put("notes", "come after dinner");
 		return body;
 	}
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -1191,10 +1062,7 @@ public class CartTest {
 		assertTrue("The optimization should pick stocks from warehouse only"
 					, asList(613L, 614L, 615L).stream().allMatch(orderStocks::contains));	
 	}
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -1208,10 +1076,6 @@ public class CartTest {
 		assertEquals(500, res.getStatusCodeValue());
 	}
 
-
-
-
-
 	private void clearWarehouseOptimizationParameters() {
 		OrganizationCartOptimizationEntity entity = 
 				orgOptimizerRepo
@@ -1220,10 +1084,7 @@ public class CartTest {
 		entity.setParameters("{}");
 		orgOptimizerRepo.save(entity);
 	}
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_11.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -1234,7 +1095,6 @@ public class CartTest {
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(406, res.getStatusCodeValue());
 	}
-
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_12.sql"})
@@ -1248,7 +1108,6 @@ public class CartTest {
 		assertEquals(2, response.getBody().getItems().size());
 		assertProductNamesReturned(response);
 	}
-
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_12.sql"})

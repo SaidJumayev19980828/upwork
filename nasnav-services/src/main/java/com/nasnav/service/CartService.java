@@ -15,6 +15,7 @@ public interface CartService {
     Cart getCart();
     Cart getUserCart(Long userId);
     Cart addCartItem(CartItem item);
+    Cart addCartItems(List<CartItem> item);
     Cart deleteCartItem(Long itemId);
     Order checkoutCart(CartCheckoutDTO dto);
     BigDecimal calculateCartTotal();
