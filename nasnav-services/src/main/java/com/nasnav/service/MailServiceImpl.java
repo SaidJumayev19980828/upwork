@@ -56,30 +56,31 @@ public class MailServiceImpl implements MailService {
     
 
     @Override
-    public void send(String to, String subject, String body) throws MessagingException {
-        sendMessage(asList(to), subject, emptyList(), body);
+    public void send(String org, String to, String subject, String body) throws MessagingException {
+        sendMessage(org, asList(to), subject, emptyList(), body);
     }
     
     
     
     
     
-    private void sendMessage(List<String> to, String subject, List<String> cc, String body) throws MessagingException {
-    	sendMessage(to, subject, cc, emptyList(), body, emptyList());
+    private void sendMessage(String org, List<String> to, String subject, List<String> cc, String body) throws MessagingException {
+    	sendMessage(org, to, subject, cc, emptyList(), body, emptyList());
     }
     
     
     
     
     
-    private void sendMessage(List<String> to, String subject, List<String> cc
+    private void sendMessage(String org, List<String> to, String subject, List<String> cc
             , List<String> bcc,String body ,List<MailAttachment> attachments) throws MessagingException {
         if (mailSender == null) {
             return;
         }
+        String orgSender = org + " <" + config.mailSenderAddress + ">";
         final MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-        helper.setFrom(config.mailSenderAddress);
+        helper.setFrom(orgSender);
         helper.setTo(to.toArray(new String[0]));
         helper.setSubject(subject);
         helper.setText(body, true);
@@ -104,55 +105,55 @@ public class MailServiceImpl implements MailService {
 
 
     @Override
-    public void send(String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+    public void send(String org, String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
         String body = createBodyFromTemplate(template, parametersMap);
-        sendMessage(asList(to), subject, emptyList(), body);
+        sendMessage(org, asList(to), subject, emptyList(), body);
     }
     
     
     
     @Override
-    public void send(String to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+    public void send(String org, String to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
         String body = createBodyFromTemplate(template, parametersMap);
-        sendMessage(asList(to), subject, cc, body);
+        sendMessage(org, asList(to), subject, cc, body);
+    }
+
+
+
+
+    @Override
+    public void send(String org, List<String> to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+        String body = createBodyFromTemplate(template, parametersMap);
+        sendMessage(org, to, subject, cc, body);
     }
     
     
     
     
     @Override
-    public void send(List<String> to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
-        String body = createBodyFromTemplate(template, parametersMap);
-        sendMessage(to, subject, cc, body);
-    }
-    
-    
-    
-    
-    @Override
-    public void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, String template, Map<String, Object> parametersMap) throws IOException, MessagingException {
+    public void sendThymeleafTemplateMail(String org, List<String> to, String subject, List<String> cc, String template, Map<String, Object> parametersMap) throws MessagingException {
         String body = createBodyFromThymeleafTemplate(template, parametersMap);
-        sendMessage(to, subject, cc, body);
+        sendMessage(org, to, subject, cc, body);
     }
     
     
     
     
     @Override
-	public void sendThymeleafTemplateMail(String to, String subject, String template,
+	public void sendThymeleafTemplateMail(String org, String to, String subject, String template,
 			Map<String, Object> parametersMap) throws MessagingException {
     	String body = createBodyFromThymeleafTemplate(template, parametersMap);
-    	sendMessage(asList(to), subject, emptyList(), body);
+    	sendMessage(org, asList(to), subject, emptyList(), body);
 	}
 
 
 
 
     @Override
-    public void sendThymeleafTemplateMail(String to, String subject, String template, Map<String, Object> parametersMap
+    public void sendThymeleafTemplateMail(String org, String to, String subject, String template, Map<String, Object> parametersMap
             , List<MailAttachment> attachments) throws MessagingException {
         String body = createBodyFromThymeleafTemplate(template, parametersMap);
-        sendMessage(asList(to), subject, emptyList(), emptyList(), body, attachments);
+        sendMessage(org, asList(to), subject, emptyList(), emptyList(), body, attachments);
     }
 
 
@@ -197,9 +198,9 @@ public class MailServiceImpl implements MailService {
 
 
 	@Override
-	public void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, List<String> bcc,
-			String template, Map<String, Object> parametersMap) throws IOException, MessagingException {
+	public void sendThymeleafTemplateMail(String org, List<String> to, String subject, List<String> cc, List<String> bcc,
+			String template, Map<String, Object> parametersMap) throws MessagingException {
 		 String body = createBodyFromThymeleafTemplate(template, parametersMap);
-	     sendMessage(to, subject, cc, bcc, body, emptyList());
+	     sendMessage(org, to, subject, cc, bcc, body, emptyList());
 	}
 }

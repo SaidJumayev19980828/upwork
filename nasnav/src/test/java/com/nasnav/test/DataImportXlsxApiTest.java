@@ -1276,7 +1276,7 @@ public class DataImportXlsxApiTest {
 		assertEquals("TT232222", updatedProduct.getBarcode());
         assertEquals("Squishy shoes", updatedProduct.getName());
         assertEquals("squishy", updatedProduct.getDescription());
-        assertEquals(101L, updatedProduct.getBrandId().longValue());
+        assertEquals(101L, updatedProduct.getBrand().getId().longValue());
 	}
 
 	private void assertTestVariantUpdated(ProductVariantsEntity updatedVariant) {
@@ -1320,7 +1320,7 @@ public class DataImportXlsxApiTest {
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getVariantDescriptions()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getSku, expected.getSku()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getProductCode, expected.getProductCodes()) );
-        assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
+        assertTrue( featuresValuesIn(variants, expected.getFeatureSpecs()) );
         assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
         assertEquals( expected.getExtraAttributesTypes(), getExtraAttributesTypes(variants));
 
@@ -1328,7 +1328,7 @@ public class DataImportXlsxApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
         assertTrue( propertyMultiValuesIn(products, this::getTags, expected.getTags()) );
-        assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
+        assertTrue( propertyValuesIn(products, p -> p.getBrand().getId(), expected.getBrands()) );
 	}
 
 	private Set<String> getExtraAttributesTypes(List<ProductVariantsEntity> variants) {
@@ -1821,6 +1821,20 @@ public class DataImportXlsxApiTest {
 				.equals(expectedValues);
 	}
 
+	private boolean featuresValuesIn(List<ProductVariantsEntity> variants, Set<JSONObject> expectedSpecs) {
+		for (JSONObject json : expectedSpecs){
+			if (json.similar(new JSONObject("{}")))
+				return true;
+		}
+		for(ProductVariantsEntity variant : variants) {
+			JSONObject json = new JSONObject(variant.getFeatureValues()
+					.stream()
+					.collect(toMap(f -> f.getFeature().getId(), VariantFeatureValueEntity::getValue)));
+			if (expectedSpecs.stream().noneMatch(expected -> expected.similar(json)))
+				return false;
+		}
+		return true;
+	}
 
 	private <T,V>  boolean  propertyMultiValuesIn(Collection<T> entityList, Function<T,? extends Collection<V>> getter, Set<V> expectedValues) {
 		return entityList

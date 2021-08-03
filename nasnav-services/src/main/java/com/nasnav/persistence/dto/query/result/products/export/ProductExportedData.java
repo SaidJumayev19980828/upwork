@@ -15,7 +15,6 @@ public class ProductExportedData {
 	protected String brand;
 	protected Integer quantity;
 	protected BigDecimal price;
-	protected String featureSpec;
 	protected String productGroupKey;
 	protected BigDecimal discount;
 	protected Long productId;

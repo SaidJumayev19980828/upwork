@@ -3,7 +3,6 @@ package com.nasnav.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
 import com.nasnav.commons.json.jackson.RawObject;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.MapBuilder;
@@ -39,7 +38,6 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.*;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
 import static com.nasnav.enumerations.ShippingStatus.*;
@@ -76,58 +74,43 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			.getMap();
 
 	@Autowired
-	private AppConfig config;
-
-	@Autowired
 	private OrganizationShippingServiceRepository orgShippingServiceRepo;
-	
 	@Autowired
 	private CartItemRepository cartRepo;
-	
-	@Autowired
-	@Setter
-	private SecurityService securityService;
-	
 	@Autowired
 	private AddressRepository addressRepo;
-	
 	@Autowired
 	private StockRepository stockRepo;
-	
-	@Autowired
-	private ObjectMapper jsonMapper;
-	
 	@Autowired
 	private UserRepository userRepo;
-
 	@Autowired
 	private ShipmentRepository shipmentRepo;
 	@Autowired
-	private OrdersRepository ordersRepo;
-
-	@Autowired
-	private DomainService domainService;
-	
-	@Autowired
-    private ShippingServiceFactory shippingServiceFactory;
-	
-	@Autowired
-	private OrderService orderService;
-	@Autowired
-	private PromotionsService promotionsService;
-	
+	private ShopsRepository shopRepo;
 	@Autowired
 	private PaymentsRepository paymentRepo;
-
 	@Autowired
 	private ReturnShipmentRepository returnShipmentRepo;
-
 	@Autowired
 	private ReturnRequestItemRepository returnedItemRepo;
 
 	@Autowired
-	private ShopsRepository shopRepo;
+	@Setter
+	private SecurityService securityService;
+	@Autowired
+	private DomainService domainService;
+	@Autowired
+	private OrderService orderService;
+	@Autowired
+	private PromotionsService promotionsService;
+	@Autowired
+	private ProductService productService;
 
+	@Autowired
+	private ObjectMapper jsonMapper;
+
+	@Autowired
+    private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -805,31 +788,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		return ofNullable(orderItem)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
-				.map(ProductVariantsEntity::getFeatureSpec)
-				.map(this::parseFeatureSpec)
+				.map(v -> productService.parseVariantFeatures(v, 0))
+				.map(Map::toString)
 				.orElse(null);
 	}
-
-
-
-
-
-	private String parseFeatureSpec(String featureSpecJson) {
-		JSONObject json = new JSONObject(featureSpecJson);
-		return json
-				.toMap()
-				.values()
-				.stream()
-				.map(Object::toString)
-				.collect(
-						collectingAndThen(
-								joining("/")
-								, str -> format("{%s}", str)));
-	}
-
-
-
-
 
 	private Integer getQuantity(BasketsEntity orderItem) {
 		return ofNullable(orderItem)

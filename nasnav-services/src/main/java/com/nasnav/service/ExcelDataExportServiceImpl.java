@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.BidiMap;
+import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -47,8 +50,14 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		writeFileHeaders(headers, sheet);
 
 		Map<Integer, String> indexToHeader = new HashMap<>();
-		for(int i =0; i< headers.size(); i++){
-			indexToHeader.put(i, headers.get(i));
+		BidiMap map = new TreeBidiMap(PRODUCT_DATA_TO_COLUMN_MAPPING);
+		for(int i =0; i< headers.size(); i++) {
+			if (map.containsValue(headers.get(i))) {
+				indexToHeader.put(i, map.getKey((headers.get(i))) +"");
+			}
+			else {
+				indexToHeader.put(i, headers.get(i));
+			}
 		}
 
 		data.forEach(line ->  createNewRow(sheet, indexToHeader, line));
@@ -64,12 +73,6 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		Row row = sheet.createRow(0);
 
 		headers.forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
-		Map<String, String> specialColumns = CsvExcelDataImportService.PRODUCT_DATA_SPECIAL_MAPPING;
-		specialColumns
-				.keySet()
-				.stream()
-				.filter(map-> headers.contains(map))
-				.forEach((key) -> replaceSpecialColumns(headers, specialColumns, key));
 	}
 
 	private void replaceSpecialColumns(List<String> headers, Map<String, String> specialColumns, String key) {

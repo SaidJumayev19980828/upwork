@@ -85,12 +85,10 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id, feature_spec ) values(310001, 'var' 	, 1001, '{"234":"66"
-}');
+insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1001);
 insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1001);
-insert into public.product_variants(id, "name" , product_id, feature_spec ) values(310004, 'var' 	, 1004, '{"234":"45"
-}');
+insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
 insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
@@ -98,6 +96,11 @@ insert into public.product_variants(id, "name" , product_id ) values(310008, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1008);
 insert into public.product_variants(id, "name" , product_id ) values(310010, 'var' 	, 1008);
 
+insert into public.variant_feature_values values(100001, 310001, 234, '66');
+insert into public.variant_feature_values values(100002, 310004, 234, '45');
+insert into public.variant_feature_values values(100003, 310004, 235, 'Blue');
+insert into public.variant_feature_values values(100004, 310002, 235, 'Yellow');
+insert into public.variant_feature_values values(100005, 310009, 235, 'Yellow');
 
 --inserting stocks
 

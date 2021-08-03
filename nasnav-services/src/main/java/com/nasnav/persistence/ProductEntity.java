@@ -85,9 +85,13 @@ public class ProductEntity {
 
     @Column(name="organization_id")
     private Long organizationId;
-    
-    @Column(name="brand_id")
-    private Long brandId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "brand_id", nullable = false)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private BrandsEntity brand;
 
     @Column(name="category_id")
     @Setter(value = NONE)

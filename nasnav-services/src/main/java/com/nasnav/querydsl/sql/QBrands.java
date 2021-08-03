@@ -11,6 +11,8 @@ import com.querydsl.core.types.Path;
 import com.querydsl.sql.ColumnMetadata;
 import java.sql.Types;
 
+import static com.querydsl.core.types.PathMetadataFactory.forVariable;
+
 
 
 
@@ -20,7 +22,7 @@ import java.sql.Types;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QBrands extends com.querydsl.sql.RelationalPathBase<QBrands> {
 
-    private static final long serialVersionUID = -1504439550;
+    private static final long serialVersionUID = -198088153;
 
     public static final QBrands brands = new QBrands("brands");
 
@@ -54,9 +56,9 @@ public class QBrands extends com.querydsl.sql.RelationalPathBase<QBrands> {
 
     public final com.querydsl.sql.ForeignKey<QOrganizations> brandsOrganizationIdFkey = createForeignKey(organizationId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QProducts> _productsBrandIdFkey = createInvForeignKey(id, "brand_id");
-
     public final com.querydsl.sql.ForeignKey<QShops> _shopsBrandIdFkey = createInvForeignKey(id, "brand_id");
+
+    public final com.querydsl.sql.ForeignKey<QProducts> _productsBrandIdFkey = createInvForeignKey(id, "brand_id");
 
     public QBrands(String variable) {
         super(QBrands.class, forVariable(variable), "public", "brands");

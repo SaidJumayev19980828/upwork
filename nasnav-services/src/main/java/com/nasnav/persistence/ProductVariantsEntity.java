@@ -31,16 +31,13 @@ public class ProductVariantsEntity {
     public ProductVariantsEntity() {
         removed = 0;
         extraAttributes = new HashSet<>();
+        featureValues = new HashSet<>();
         weight = ZERO;
     }
-
 
     @Id
     @GeneratedValue(strategy=IDENTITY)
     private Long id;
-
-    @Column(name="feature_spec")
-    private String featureSpec="{}";
 
     @Column(name="name")
     private String name;
@@ -83,6 +80,12 @@ public class ProductVariantsEntity {
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
 
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<VariantFeatureValueEntity> featureValues;
+
     private BigDecimal weight;
 
     public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
@@ -98,7 +101,9 @@ public class ProductVariantsEntity {
         extraAttributes.add(extraAttr);
     }
 
-
+    public void addFeatureValues(Set<VariantFeatureValueEntity> featureValues) {
+        featureValues.addAll(featureValues);
+    }
 
     public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
         extraAttributes.remove(extraAttribute);

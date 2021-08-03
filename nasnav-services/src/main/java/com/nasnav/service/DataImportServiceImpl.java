@@ -106,9 +106,11 @@ public class DataImportServiceImpl implements DataImportService {
 //    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
     public ImportProductContext importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException, ImportProductException {
     	ImportProductContext context = new ImportProductContext(productImportDTOS, productImportMetadata);
-    	
-    	importNonExistingBrands(context);    	
-    	importNonExistingTags(context);
+
+    	if (productImportMetadata.isInsertNewProducts() || productImportMetadata.isUpdateProduct()) {
+			importNonExistingBrands(context);
+			importNonExistingTags(context);
+		}
     	
     	DataImportCachedData cache = createRequiredDataCache(productImportDTOS);
     	
@@ -932,8 +934,8 @@ public class DataImportServiceImpl implements DataImportService {
 
     private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
     	Map<String,String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
-    	
-        String features = getFeaturesAsJsonString(row, featureNameToIdMapping);        
+
+		Map<String,String> features = getFeatures(row, featureNameToIdMapping);
         String extraAtrributes = getExtraAttrAsJsonString(row);        
         StockUpdateDTO variantStock = createStockDto(row, importMetaData);
 
@@ -960,9 +962,8 @@ public class DataImportServiceImpl implements DataImportService {
         		.getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache());
         if(variantBasicData.isPresent()){
         	setVariantDtoAsUpdated(variant, variantBasicData.get(), features);
-        }else {
-        	String newVariantFeatures = isNotBlankOrNull(features)? features : "{}";
-        	variant.setFeatures(newVariantFeatures);
+        }else if (isNotBlankOrNull(features)) {
+        	variant.setFeatures(features);
         }
 
         return variant;
@@ -972,7 +973,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, VariantBasicData variantEntity, String features) {
+	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, VariantBasicData variantEntity, Map<String,String> features) {
 		variant.setVariantId(variantEntity.getVariantId());
 		variant.setOperation(EntityConstants.Operation.UPDATE);
 		variant.getStock().setVariantId(variantEntity.getVariantId());
@@ -996,12 +997,10 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private String getFeaturesAsJsonString(ProductImportDTO row, Map<String, String> featureNameToIdMapping) {
+	private Map<String, String> getFeatures(ProductImportDTO row, Map<String, String> featureNameToIdMapping) {
 		return ofNullable(row.getFeatures())
 				.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
-				.filter(map -> !map.isEmpty())	//if no features are provided, return null 
-				.map(JSONObject::new)
-				.map(JSONObject::toString)
+				.filter(map -> !map.isEmpty())	//if no features are provided, return empty map
 				.orElse(null);
 	}
     

@@ -190,7 +190,7 @@ public class UserController {
     @ResponseStatus(OK)
     public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
                                       @RequestParam (value = "org_id", required = false) Long orgId,
-                                      @RequestParam (value = "store_id", required = false) Long storeId,
+                                      @RequestParam (value = "shop_id", required = false) Long storeId,
                                       @RequestParam (value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }

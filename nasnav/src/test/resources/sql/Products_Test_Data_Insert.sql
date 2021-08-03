@@ -65,9 +65,11 @@ insert into public.product_variants(id, "name" , product_id ) values(310007, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
 insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
 
-update public.product_variants 
-set feature_spec = '{"7001":"Blue", "7002":"XL"}'
-where id = 310005;
+insert into public.product_features(id, name, organization_id) values (310001, 'Color', 99001);
+insert into public.product_features(id, name, organization_id) values (310002, 'Size', 99001);
+
+insert into public.variant_feature_values values(310001, 310005, 310001, 'Blue');
+insert into public.variant_feature_values values(310002, 310005, 310002, 'XL');
 
 -- mulitple variant for product #1002
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);

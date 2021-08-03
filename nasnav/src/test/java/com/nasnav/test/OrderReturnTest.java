@@ -113,7 +113,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq("user2@nasnav.com")
+                    Mockito.eq("organization_1")
+                    , Mockito.eq("user2@nasnav.com")
                     , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
                     , Mockito.anyString()
                     , Mockito.anyMap());
@@ -149,7 +150,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq("user1@nasnav.com")
+                    Mockito.eq("organization_1")
+                    , Mockito.eq("user1@nasnav.com")
                     , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
                     , Mockito.anyString()
                     , Mockito.anyMap());
@@ -780,7 +782,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq(asList("testuser2@nasnav.com"))
+                    Mockito.eq("organization_1")
+                    , Mockito.eq(asList("testuser2@nasnav.com"))
                     , Mockito.eq(String.format(ORDER_RETURN_NOTIFY_SUBJECT,response.getBody()))
                     , Mockito.anyList()
                     , Mockito.anyString()
@@ -964,7 +967,8 @@ public class OrderReturnTest {
         Mockito
                 .verify(mailService)
                 .sendThymeleafTemplateMail(
-                        Mockito.eq("user1@nasnav.com")
+                        Mockito.eq("organization_1")
+                        , Mockito.eq("user1@nasnav.com")
                         , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
                         , Mockito.anyString()
                         , Mockito.anyMap()

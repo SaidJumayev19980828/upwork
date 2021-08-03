@@ -4,6 +4,7 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
@@ -19,5 +20,5 @@ public interface CartService {
     BigDecimal calculateCartTotal();
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
     List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
-    List<CartItem> toCartItemsDto(List<CartItemData> cartItems);
+    List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
 }

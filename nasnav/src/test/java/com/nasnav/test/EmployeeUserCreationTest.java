@@ -245,7 +245,7 @@ public class EmployeeUserCreationTest {
 				.put("name", "Ahmed")
 				.put("email", TestUserEmail)
 				.put("org_id", 99001)
-				.put("store_id", 502)
+				.put("shop_id", 502)
 				.put("role", "STORE_EMPLOYEE")
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "131415");
@@ -465,7 +465,7 @@ public class EmployeeUserCreationTest {
 				.put("name", "Ahmed")
 				.put("email", "Adminuser@nasnav.com")
 				.put("org_id", 99001)
-				.put("store_id", anotherStoreThanAdminStore)
+				.put("shop_id", anotherStoreThanAdminStore)
 				.put("role", "STORE_MANAGER")
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
@@ -849,11 +849,11 @@ public class EmployeeUserCreationTest {
 		assertEquals(7, response.getBody().size());
 
 		// store_id filter
-		response = template.exchange("/user/list?store_id=501", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?shop_id=501", GET,header, java.util.List.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(7, response.getBody().size());
 
-		response = template.exchange("/user/list?store_id=502", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?shop_id=502", GET,header, java.util.List.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(10, response.getBody().size());
 
@@ -931,7 +931,7 @@ public class EmployeeUserCreationTest {
 		assertEquals(response.getBody().size(), 7);
 
 		// trying to filter with store_id not exits in the organization
-		response = template.exchange("/user/list?store_id=501", GET, header, java.util.List.class);
+		response = template.exchange("/user/list?shop_id=501", GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
@@ -1105,7 +1105,7 @@ public class EmployeeUserCreationTest {
 				json()
 					.put("updated_user_id", id)
 					.put("employee", true)
-					.put("store_id", 501)
+					.put("shop_id", 501)
 					.toString();
 
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
@@ -1153,7 +1153,7 @@ public class EmployeeUserCreationTest {
 				json()
 						.put("updated_user_id", id)
 						.put("employee", true)
-						.put("store_id", newShop)
+						.put("shop_id", newShop)
 						.toString();
 
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");

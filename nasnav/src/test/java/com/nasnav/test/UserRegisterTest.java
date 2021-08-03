@@ -642,8 +642,9 @@ public class UserRegisterTest {
 		Mockito
 			.verify(mailService)
 			.send(
-				  Mockito.eq("test@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				  Mockito.eq("organization_1")
+				, Mockito.eq("test@nasnav.com")
+				, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
@@ -662,8 +663,9 @@ public class UserRegisterTest {
 		Mockito
 				.verify(mailService)
 				.send(
-						Mockito.eq("test@nasnav.com")
-						, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+						  Mockito.eq("organization_1")
+						, Mockito.eq("test@nasnav.com")
+						, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 						, Mockito.anyString()
 						, Mockito.anyMap());
 	}
@@ -683,9 +685,9 @@ public class UserRegisterTest {
 		Assert.assertEquals( 200, response.getStatusCodeValue());
 		Mockito
 			.verify(mailService)
-			.send(
-				  Mockito.eq("not.activated@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+			.send(Mockito.eq("organization_1")
+				, Mockito.eq("not.activated@nasnav.com")
+				, Mockito.eq("organization_1"+ ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
@@ -705,9 +707,9 @@ public class UserRegisterTest {
 		Assert.assertEquals( 200, response.getStatusCodeValue());
 		Mockito
 			.verify(mailService)
-			.send(
-				  Mockito.eq("no.token.man@nasnav.com")
-				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+			.send(Mockito.eq("organization_1")
+				,Mockito.eq("no.token.man@nasnav.com")
+				, Mockito.eq("organization_1" + ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
@@ -729,7 +731,8 @@ public class UserRegisterTest {
 		Mockito
 			.verify(mailService, never())
 			.send(
-				  Mockito.eq("no.token.man@nasnav.com")
+				  Mockito.eq("organization_1")
+				, Mockito.eq("no.token.man@nasnav.com")
 				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());

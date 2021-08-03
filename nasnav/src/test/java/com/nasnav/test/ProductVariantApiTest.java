@@ -7,6 +7,7 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.VariantFeatureValueEntity;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
@@ -161,7 +162,7 @@ public class ProductVariantApiTest {
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 	}
 	
 	
@@ -220,10 +221,10 @@ public class ProductVariantApiTest {
 		assertEquals(json.getString("barcode"), saved.getBarcode());
 		assertEquals(json.getLong("product_id"), saved.getProductEntity().getId().longValue() );
 		assertEquals(json.getString("description"), saved.getDescription());
-		assertEquals(json.getString("features"), saved.getFeatureSpec());
+		assertTrue(assertFeatureValuesSaved(json.getString("features"), saved));
 		assertEquals(json.getString("sku"), saved.getSku());
 		assertEquals(json.getString("product_code"), saved.getProductCode());
-		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
+		assertEquals("shoe-color-black-shoe-size-37", saved.getPname());
 		assertEquals(new BigDecimal(5.5), saved.getWeight());
 		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
@@ -268,7 +269,7 @@ public class ProductVariantApiTest {
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", TEST_VARIANT_ID);
 		json.put("name", "updated");
-		json.put("features", "{\"234\": 30, \"235\": \"WHITE\"}");
+		json.put("features", "{\"234\": \"30\", \"235\": \"WHITE\"}");
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
@@ -284,14 +285,22 @@ public class ProductVariantApiTest {
 		ProductVariantsEntity saved = helper.getVariantFullData(id);
 		
 		assertEquals(json.getString("name"), saved.getName());
-		assertEquals(json.get("features"), saved.getFeatureSpec());
+		assertTrue(assertFeatureValuesSaved(json.getString("features"), saved));
 		assertEquals(before.getBarcode(), saved.getBarcode());
 		assertEquals(before.getProductEntity().getId(), saved.getProductEntity().getId() );
 		assertEquals(before.getDescription(), saved.getDescription());
 	}
 	
 
-
+	private boolean assertFeatureValuesSaved(String expectedFeatures, ProductVariantsEntity variant) {
+		String features = new JSONObject(variant.getFeatureValues()
+				.stream()
+				.collect(toMap(f -> f.getFeature().getId(), VariantFeatureValueEntity::getValue)))
+				.toString();
+		if (expectedFeatures.contains(features))
+			return false;
+		return true;
+	}
 	
 	
 	@Test
@@ -343,7 +352,7 @@ public class ProductVariantApiTest {
 		BaseUserEntity user = empRepo.getById(69L); 
 		
 		JSONObject json = createProductVariantRequest();
-		json.put("features", "{\"888888\": 37, \"235\": \"BLack\"}");
+		json.put("features", "{\"888888\": \"37\", \"235\": \"BLack\"}");
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
@@ -379,7 +388,7 @@ public class ProductVariantApiTest {
 				.put("extra", "Cool Add-on")
 				.put("Model", "D2R2")
 				.put("$INV", "you can't see me!");
-		JSONObject features = json().put("234", 37).put("235", "Black");
+		JSONObject features = json().put("234", "37").put("235", "Black");
 
 		JSONObject json = new JSONObject();
 		json.put("product_id", TEST_PRODUCT_ID);

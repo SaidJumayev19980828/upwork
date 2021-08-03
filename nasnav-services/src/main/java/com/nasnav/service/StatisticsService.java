@@ -165,14 +165,14 @@ public class StatisticsService {
     }
 
     private StatisticsCartItem toCartItem(CartItemEntity entity) {
-        var  item = new StatisticsCartItem();
+        var item = new StatisticsCartItem();
         StocksEntity stock = entity.getStock();
         ProductVariantsEntity variant = stock.getProductVariantsEntity();
         ProductEntity product = variant.getProductEntity();
         item.setId(entity.getId());
         item.setCoverImg(entity.getCoverImage());
         item.setStockId(stock.getId());
-        item.setQuantity(stock.getQuantity());
+        item.setQuantity(entity.getQuantity());
         item.setPrice(stock.getPrice());
         item.setDiscount(stock.getDiscount());
         item.setVariantId(variant.getId());

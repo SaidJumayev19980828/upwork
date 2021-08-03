@@ -147,7 +147,7 @@ public class UserServiceImpl implements UserService {
 		try {
 			String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
 			Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl, orgName);
-			mailService.send(userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
+			mailService.send(orgName, userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			logger.error(e, e);
@@ -200,6 +200,7 @@ public class UserServiceImpl implements UserService {
 		user.setOrganizationId(userJson.getOrgId());
 		user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
 		user.setPhoneNumber(userJson.getPhoneNumber());
+		user.setImage(userJson.getAvatar());
 		return user;
 	}
 
@@ -235,7 +236,7 @@ public class UserServiceImpl implements UserService {
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
-		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "store_id", "role"};
+		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
@@ -440,6 +441,7 @@ public class UserServiceImpl implements UserService {
 	
 	private void sendRecoveryMail(UserEntity userEntity) {
 		String userName = ofNullable(userEntity.getName()).orElse("User");
+		String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
 			Map<String, String> parametersMap = new HashMap<>();
@@ -447,7 +449,7 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER,
 					appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
 			// send Recovery mail to user
-			this.mailService.send(userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
+			this.mailService.send(orgName, userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
 					CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
@@ -732,7 +734,7 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put("orgLogo", orgLogo);
 			parametersMap.put("orgName", orgName);
 			parametersMap.put("year", year);
-			mailService.send(email, "Subscribe to newsletter",
+			mailService.send(orgName, email, "Subscribe to newsletter",
 					USER_SUBSCRIPTION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());

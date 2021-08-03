@@ -34,13 +34,13 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 	@Query(value = "update BrandsEntity b set b.removed = 1 where b.id = :id")
 	void setBrandHidden(@Param("id") Long id);
 
-	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.BrandBasicData(brand.id, brand.name, org.id) "
+	@Query("SELECT brand "
 			+ " FROM BrandsEntity brand "
 			+ " left join brand.organizationEntity org"
 			+ " WHERE brand.id in :ids and brand.removed = 0")
-	List<BrandBasicData> findByIdIn(@Param("ids")List<Long> ids);
+	List<BrandsEntity> findByIdIn(@Param("ids")List<Long> ids);
 
-	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join BrandsEntity b on p.brandId = b.id" +
+	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join p.brand b " +
 			"  where b.organizationEntity.id = :orgId and b.removed = 0 and p.removed = 0")
 	List<IdAndNamePair> getBrandIdAndNamePairs(@Param("orgId") Long orgId);
 

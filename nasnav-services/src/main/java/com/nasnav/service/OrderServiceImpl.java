@@ -108,73 +108,49 @@ public class OrderServiceImpl implements OrderService {
 	private EntityManager em;
 
 	@Autowired
-	private SecurityService securityService;
-
-	@Autowired
 	private ShopsRepository shopsRepo;
-
 	@Autowired
 	private AddressRepository addressRepo;
-
-	@Autowired
-	private IntegrationService integrationService;
-	
 	@Autowired
 	private CartItemRepository cartItemRepo;
-
-	@Autowired
-	private ProductService productService;
-	
 	@Autowired
 	private MetaOrderRepository metaOrderRepo;
-	
-	@Autowired
-	private ShippingManagementService shippingMgrService;
-	
 	@Autowired
 	private ShipmentRepository shipmentRepo;
-
 	@Autowired
 	private PaymentsRepository paymentsRepo;
-	
-	@Autowired
-	private ProductImageService imgService;
-	
-	@Autowired
-	private MailService mailService;
-	
-	@Autowired
-	private DomainService domainService;
-	
-	@Autowired
-	private AppConfig appConfig;
-	
 	@Autowired
 	private RoleEmployeeUserRepository empRoleRepo;
-
 	@Autowired
 	private UserRepository userRepo;
-
 	@Autowired
-	private OrganizationImagesRepository orgImagesRepo;
-	
-	@Autowired
-	private PromotionsService promoService;
-	
+	private ProductVariantsRepository variantsRepo;
 	@Autowired
 	private PromotionRepository promoRepo;
 
 	@Autowired
+	private SecurityService securityService;
+	@Autowired
+	private IntegrationService integrationService;
+	@Autowired
+	private ProductService productService;
+	@Autowired
+	private ShippingManagementService shippingMgrService;
+	@Autowired
+	private MailService mailService;
+	@Autowired
+	private DomainService domainService;
+	@Autowired
+	private PromotionsService promoService;
+	@Autowired
 	private CartOptimizationService cartOptimizationService;
+	@Autowired
+	private OrderReturnService orderReturnService;
 
 	@Autowired
 	private OrderServiceHelper orderServiceHelper;
-
 	@Autowired
 	private OrderEmailServiceHelper orderEmailHelper;
-
-	@Autowired
-	private OrderReturnService orderReturnService;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -349,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
-		
+		String orgName = securityService.getCurrentUserOrganization().getName();
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("New Order[%d] Created!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
@@ -360,7 +336,7 @@ public class OrderServiceImpl implements OrderService {
 				to = cc;
 				cc = emptyList();
 			}
-			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, to, subject, cc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
@@ -463,7 +439,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<String,Object> parametersMap = createBillEmailParams(order);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
-			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, email.get(), subject,  template, parametersMap);
 		} catch (MessagingException e) {
 			logger.error(e, e);
 		}
@@ -942,16 +918,17 @@ public class OrderServiceImpl implements OrderService {
 
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
+		BrandsEntity brand = product.getBrand();
 
 		item.setProductId(product.getId());
 		item.setName(product.getName());
 		item.setPname(product.getPname());
 		item.setProductType(product.getProductType());
-		item.setBrandId(product.getBrandId());
+		item.setBrandId(brand.getId());
 
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
-		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
+		item.setVariantFeatures(parseVariantFeatures(variant, 0));
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
 
@@ -1365,8 +1342,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
-		return productService.parseVariantFeatures(featureSpec, returnedName);
+	private Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName) {
+		return productService.parseVariantFeatures(variant, returnedName);
 	}
 
 
@@ -1622,7 +1599,10 @@ public class OrderServiceImpl implements OrderService {
 				.getItems()
 				.stream()
 				.map(CartItem::getStockId)
-				.collect(toList()); 
+				.collect(toList());
+		Map<Long, Map<String, String>> variantsFeaturesMap = variantsRepo.findByStockIdIn(cartStocks)
+				.stream()
+				.collect(toMap(ProductVariantsEntity::getId, variant -> parseVariantFeatures(variant, 0)));
 		Map<Long, StockAdditionalData> stockAdditionalDataCache = 
 				stockRepository
 				.findAdditionalDataByStockIdIn(cartStocks)
@@ -1630,7 +1610,7 @@ public class OrderServiceImpl implements OrderService {
 				.collect(groupingBy(StockAdditionalData::getStockId))
 				.entrySet()
 				.stream()
-				.map(this::createStockAdditionalDataEntry)
+				.map(stock -> this.createStockAdditionalDataEntry(stock, variantsFeaturesMap))
 				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 		
 		return optimizedCart
@@ -1643,13 +1623,15 @@ public class OrderServiceImpl implements OrderService {
 
 	
 	
-	private Map.Entry<Long, StockAdditionalData> createStockAdditionalDataEntry(Map.Entry<Long, List<StockAdditionalData>> entry){
+	private Map.Entry<Long, StockAdditionalData> createStockAdditionalDataEntry(Map.Entry<Long, List<StockAdditionalData>> entry,
+																				Map<Long, Map<String, String>> features){
 		StockAdditionalData data = 
 				entry
 				.getValue()
 				.stream()
 				.findFirst()
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, entry.getKey()));
+		data.setFeatures(features.get(data.getVariantId()));
 		return new SimpleEntry<Long, StockAdditionalData>(entry.getKey(), data);
 	}
 	
@@ -1665,7 +1647,7 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, item.getStockId()));
 		CartCheckoutData checkoutData = new CartCheckoutData();
 		checkoutData.setCurrency(stockData.getCurrency());
-		checkoutData.setFeatureSpec(stockData.getVariantSpecs());
+		checkoutData.setFeatures(stockData.getFeatures());
 		checkoutData.setId(item.getId());
 		checkoutData.setOrganizationId(stockData.getOrganizationId());
 		checkoutData.setPrice(item.getPrice());
@@ -2077,7 +2059,7 @@ public class OrderServiceImpl implements OrderService {
 		stock.map(StocksEntity::getId).ifPresent(promoItem::setStockId);
 		variant.map(ProductVariantsEntity::getId).ifPresent(promoItem::setVariantId);
 		product.map(ProductEntity::getId).ifPresent(promoItem::setProductId);
-		product.map(ProductEntity::getBrandId).ifPresent(promoItem::setBrandId);
+		product.map(ProductEntity::getBrand).ifPresent(brand -> promoItem.setBrandId(brand.getId()));
 		product.map(ProductEntity::getProductType).ifPresent(promoItem::setProductType);
 		variant.map(ProductVariantsEntity::getWeight).ifPresent(promoItem::setWeight);
 		stock.map(StocksEntity::getUnit).map(StockUnitEntity::getName).ifPresent(promoItem::setUnit);
@@ -2392,7 +2374,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
 		String template = ORDER_REJECT_TEMPLATE;
 		try {
-			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, asList(to), subject, emptyList(), bcc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
@@ -2433,7 +2415,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void sendOrderCancellationNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
-		
+
+		String orgName = securityService.getCurrentUserOrganization().getName();
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("Order[%d] was Cancelled!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
@@ -2444,7 +2427,7 @@ public class OrderServiceImpl implements OrderService {
 				to = cc;
 				cc = emptyList();
 			}
-			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, to, subject, cc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}

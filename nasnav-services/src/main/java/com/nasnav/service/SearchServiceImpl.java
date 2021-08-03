@@ -467,7 +467,7 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private List<Product> getProductsBatch(OrganizationEntity org, Map<Long, List<CsvRow>> extraData, double batchSize, int i) throws BusinessException, InvocationTargetException, IllegalAccessException {
+    private List<Product> getProductsBatch(OrganizationEntity org, Map<Long, List<CsvRow>> extraData, double batchSize, int i) throws BusinessException {
         var start = (int)(batchSize * i);
         var params = new ProductSearchParam();
         params.org_id = org.getId();
@@ -490,7 +490,7 @@ public class SearchServiceImpl implements SearchService{
         params.start = 0;
         try {
             return  productService.getProducts(params).getTotal();
-        } catch (BusinessException|InvocationTargetException|IllegalAccessException e) {
+        } catch (BusinessException e) {
             logger.error(e,e);
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, SRCH$SYNC$0001, orgId);
         }
