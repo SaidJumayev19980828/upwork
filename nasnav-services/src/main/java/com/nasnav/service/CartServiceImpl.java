@@ -1,28 +1,41 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.service.sendpulse.SendPulseService;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
+import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
+import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -40,6 +53,8 @@ public class CartServiceImpl implements CartService{
 
     @Autowired
     private CartItemRepository cartItemRepo;
+    @Autowired
+    private PromotionRepository promotionRepo;
 
     @Autowired
     private ProductService productService;
@@ -49,12 +64,25 @@ public class CartServiceImpl implements CartService{
 
     @Autowired
     private ProductImageService imgService;
+    @Autowired
+    private DomainService domainService;
 
     @Autowired
     private OrderService orderService;
-
+    @Autowired
+    private StatisticsService statisticsService;
+    @Autowired
+    private MailService mailService;
+    @Autowired
+    private OrderEmailServiceHelper orderEmailHelper;
     @Autowired
     private CartServiceHelper cartServiceHelper;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private SettingRepository settingRepo;
+    @Autowired
+    private AppConfig config;
 
     @Override
     public Cart getCart() {
@@ -343,5 +371,126 @@ public class CartServiceImpl implements CartService{
         return saveCart(newCart);
     }
 
+    @Override
+    public void sendAbandonedCartEmails(AbandonedCartsMail dto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        List<UserCartInfo> carts = getUsersCarts(dto, org.getId());
+        if (carts.isEmpty()) {
+            return;
+        }
+        String orgName = org.getName();
+        String email = getOrganizationEmail(org.getId());
+        String sendPulseId = getOrganizationEmailData("smtp_id", org.getId()); //"3c0513f28e004549e2eeae04ba9a32bc"
+        String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId()); //"a6d6c681f43fbb237156fab7e07cd652"
+        SendPulseService service = new SendPulseService(sendPulseId, sendPulseKey);
+        for(UserCartInfo info : carts) {
+            Map<String,Object> variables = createUserCartEmailBody(info, dto);
+            String body = mailService.createBodyFromThymeleafTemplate(ABANDONED_CART_TEMPLATE, variables);
+            service.smtpSendMail(orgName, email, info.getName(), info.getEmail(),
+                    body, "Abandoned Cart at "+orgName, null);
+        }
+    }
 
+    private String getOrganizationEmail(Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(ORG_EMAIL.name(), orgId)
+                .map(SettingEntity::getSettingName)
+                .orElse(config.mailSenderAddress);
+    }
+
+    private String getOrganizationEmailData(String setting, Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(setting, orgId)
+                .map(SettingEntity::getSettingValue)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SETTING$0001, setting));
+    }
+
+    private Map<String,Object> createUserCartEmailBody(UserCartInfo info, AbandonedCartsMail dto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        Long orgId = org.getId();
+        Map<String, Object> params = createOrgPropertiesParams(org);
+        if (dto.getPromo() != null) {
+            PromotionsEntity promo = promotionRepo.findByCodeAndOrganization_IdAndActiveNow(dto.getPromo(), orgId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, dto.getPromo()));
+            var discountData = readJsonStrAsMap(promo.getDiscountJson());
+            String discount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+                    .map(v -> v+"")
+                    .orElse(getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
+                            .map(v -> v+"%")
+                            .orElse("0%"));
+            params.put("promo", promo.getCode());
+            params.put("promoValue", discount);
+        }
+        params.put("items", info.getItems());
+        params.put("userName", info.getName());
+        return params;
+    }
+
+    private Optional<BigDecimal> getOptionalBigDecimal(Map<String, Object> map, String key) {
+        return ofNullable(map.get(key)).map(BigDecimal.class::cast);
+    }
+
+    private Map<String, Object> setNumbersAsBigDecimals(Map<String, Object> initialData) {
+        return initialData
+                .entrySet()
+                .stream()
+                .map(this::doSetNumbersAsBigDecimals)
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Map<String,Object> readJsonStrAsMap(String jsonStr){
+        String rectified = ofNullable(jsonStr).orElse("{}");
+        try {
+            Map<String,Object> initialData = objectMapper.readValue(rectified, new TypeReference<Map<String,Object>>(){});
+            if (initialData == null)
+                initialData = new LinkedHashMap<>();
+            return setNumbersAsBigDecimals(initialData);
+        } catch (Exception e) {
+            logger.error(e,e);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
+        }
+    }
+
+    private Map<String, Object> createOrgPropertiesParams(OrganizationEntity org) {
+        String domain = domainService.getBackendUrl();
+        String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
+        String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
+        String orgName = org.getName();
+        String year = LocalDateTime.now().getYear()+"";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("orgDomain", orgDomain);
+        params.put("domain", domain);
+        params.put("orgName", orgName);
+        params.put("orgLogo", orgLogo);
+        params.put("year", year);
+
+        return params;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map.Entry<String,Object> doSetNumbersAsBigDecimals(Map.Entry<String, Object> entry){
+        return ofNullable(entry.getValue())
+                .map(Object::toString)
+                .filter(NumberUtils::isParsable)
+                .map(BigDecimal::new)
+                .map(Object.class::cast)
+                .map(val -> new AbstractMap.SimpleEntry<>(entry.getKey(), val))
+                .map(Map.Entry.class::cast)
+                .orElse(entry);
+    }
+
+    private List<UserCartInfo> getUsersCarts(AbandonedCartsMail dto, Long orgId) {
+        List<CartItemEntity> cartEntities;
+        if (isNullOrEmpty(dto.getUserIds())) {
+            cartEntities = cartItemRepo.findCartsByUsersIdAndOrg_Id(dto.getUserIds(), orgId);
+        } else {
+            cartEntities = cartItemRepo.findUsersCartsOrg_Id(orgId);
+        }
+        return cartEntities
+                .stream()
+                .collect(groupingBy(CartItemEntity::getUser))
+                .entrySet()
+                .stream()
+                .map(statisticsService::toUserCartInfo)
+                .collect(toList());
+    }
 }
