@@ -182,6 +182,7 @@
             <groupId>org.apache.mahout</groupId>
             <artifactId>mahout-core</artifactId>
             <version>14.1</version>
+            <classifier>javadoc</classifier>
         </dependency>
     </dependencies>
 
