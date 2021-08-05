@@ -2168,12 +2168,12 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<Long> itemStocks = 
+		Set<Long> itemStocks =
 				cartItems
 				.getCheckOutData()
 				.stream()
 				.map(CartCheckoutData::getStockId)
-				.collect(toList());
+				.collect(toSet());
 		
 		Map<Long, StocksEntity> stocksCache = 
 				stockRepository

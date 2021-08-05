@@ -1,22 +1,19 @@
-package com.nasnav.yeshtery.service;
+package com.nasnav.yeshtery.services.impl;
 
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.yeshtery.dao.YeshteryRecommendationRepository;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
+import com.nasnav.yeshtery.services.interfaces.YeshteryRecommendationService;
 import org.apache.mahout.cf.taste.impl.model.jdbc.PostgreSQLJDBCDataModel;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
-import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.JDBCDataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
-import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.recommender.UserBasedRecommender;
-import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,13 +39,6 @@ public class YeshteryRecommendationServiceImpl implements YeshteryRecommendation
         List<ProductEntity> items = new ArrayList<>();
         try {
             JDBCDataModel model = new PostgreSQLJDBCDataModel( dataSource  ,"orders_product_v" , "userid",  "itemid", "itemid", "created");
-            ItemSimilarity itemSimilarity = new EuclideanDistanceSimilarity(model);
-            Recommender itemRecommender = new GenericItemBasedRecommender(model, itemSimilarity);
-            List<RecommendedItem> itemRecommendations = itemRecommender.recommend(userId, recommendedItemsCount);
-            for (RecommendedItem item : itemRecommendations) {
-                long prodId = item.getItemID();
-                items.add(productRepository.findProductDataById(prodId, true));
-            }
             //
             UserSimilarity similarity = new PearsonCorrelationSimilarity(model);
             UserNeighborhood neighborhood = new ThresholdUserNeighborhood(0.1, similarity, model);

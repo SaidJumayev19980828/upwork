@@ -70,7 +70,6 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		else if(userEntity instanceof UserEntity)
 			return userRepo.saveAndFlush((UserEntity)userEntity);
 		else
-			//TODO : need error code for that  
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0004);
 	}
 

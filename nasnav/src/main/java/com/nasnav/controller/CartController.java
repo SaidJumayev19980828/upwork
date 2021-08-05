@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -58,6 +59,17 @@ public class CartController {
 		return cartService.addCartItem(item);
 	}
 
+
+	@Operation(description =  "add items to the cart", summary = "addCartItems")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = " 200" ,description = "OK"),
+			@ApiResponse(responseCode = " 403" ,description = "employee user can't have cart"),
+			@ApiResponse(responseCode = " 406" ,description = "stock not found")
+	})
+	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody List<CartItem> items) {
+		return cartService.addCartItems(items);
+	}
 
 
 	@Operation(description =  "delete an item from the cart", summary = "deleteCartItem")

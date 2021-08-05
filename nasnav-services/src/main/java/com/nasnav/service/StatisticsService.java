@@ -32,6 +32,8 @@ public class StatisticsService {
 
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private ProductService productService;
 
     @Autowired
     private OrdersRepository ordersRepo;
@@ -148,7 +150,7 @@ public class StatisticsService {
                 .collect(toList());
     }
 
-    private UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map) {
+    public UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map) {
         UserCartInfo info = new UserCartInfo();
         UserEntity user = map.getKey();
         var items = map
@@ -169,6 +171,8 @@ public class StatisticsService {
         StocksEntity stock = entity.getStock();
         ProductVariantsEntity variant = stock.getProductVariantsEntity();
         ProductEntity product = variant.getProductEntity();
+        Map<String,String> variantFeatures = ofNullable(productService.parseVariantFeatures(variant, 0))
+                .orElse(new HashMap<>());
         item.setId(entity.getId());
         item.setCoverImg(entity.getCoverImage());
         item.setStockId(stock.getId());
@@ -177,6 +181,7 @@ public class StatisticsService {
         item.setDiscount(stock.getDiscount());
         item.setVariantId(variant.getId());
         item.setVariantName(variant.getName());
+        item.setVariantFeatures(variantFeatures);
         item.setProductId(product.getId());
         item.setBarcode(product.getBarcode());
         item.setName(product.getName());
