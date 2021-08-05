@@ -106,9 +106,11 @@ public class DataImportServiceImpl implements DataImportService {
 //    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
     public ImportProductContext importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException, ImportProductException {
     	ImportProductContext context = new ImportProductContext(productImportDTOS, productImportMetadata);
-    	
-    	importNonExistingBrands(context);    	
-    	importNonExistingTags(context);
+
+    	if (productImportMetadata.isInsertNewProducts() || productImportMetadata.isUpdateProduct()) {
+			importNonExistingBrands(context);
+			importNonExistingTags(context);
+		}
     	
     	DataImportCachedData cache = createRequiredDataCache(productImportDTOS);
     	

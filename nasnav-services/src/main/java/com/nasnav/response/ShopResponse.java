@@ -8,6 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class ShopResponse {
 
-    @JsonProperty(value = "store_id")
+    @JsonProperty(value = "shop_id")
     private Long storeId;
 }

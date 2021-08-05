@@ -4,13 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.UserAddressEntity;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,12 +71,25 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartOptimizationHelper helper;
+
+	@Autowired
+	private UserAddressRepository userAddressRepo;
 	
 	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
+		if (dto.getAddressId() == null) {
+			Long addressId = userAddressRepo
+					.findByUser_Id(securityService.getCurrentUser().getId())
+					.stream()
+					.findFirst()
+					.map(UserAddressEntity::getAddress)
+					.map(AddressesEntity::getId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,O$RET$0019)); 
+			dto.setAddressId(addressId);
+		}
 		var optimizedCart = createOptimizedCart(dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
 		var returnedCart = getCartObject(optimizedCart);

@@ -28,7 +28,7 @@ public class UserApiResponse {
     private String email;
     @JsonProperty(value = "organization_id")
     private Long organizationId;
-    @JsonProperty(value = "store_id")
+    @JsonProperty(value = "shop_id")
     private Long storeId;
     @JsonProperty(value = "org_url")
     private String orgUrl;

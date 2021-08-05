@@ -236,7 +236,7 @@ public class UserServiceImpl implements UserService {
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
-		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "store_id", "role"};
+		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 

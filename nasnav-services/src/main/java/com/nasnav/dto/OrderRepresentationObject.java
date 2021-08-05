@@ -15,7 +15,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "user_id",
-        "store_id",
+        "shop_id",
         "order_id",
         "price",
         "status"
