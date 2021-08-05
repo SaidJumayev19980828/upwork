@@ -440,8 +440,8 @@ public class CartServiceImpl implements CartService{
         }
         String orgName = org.getName();
         String email = getOrganizationEmail(org.getId());
-        String sendPulseId = getOrganizationEmailData("smtp_id", org.getId()); //"3c0513f28e004549e2eeae04ba9a32bc"
-        String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId()); //"a6d6c681f43fbb237156fab7e07cd652"
+        String sendPulseId = getOrganizationEmailData("smtp_id", org.getId());
+        String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId());
         SendPulseService service = new SendPulseService(sendPulseId, sendPulseKey);
         for(UserCartInfo info : carts) {
             Map<String,Object> variables = createUserCartEmailBody(info, dto);
@@ -453,7 +453,7 @@ public class CartServiceImpl implements CartService{
 
     private String getOrganizationEmail(Long orgId) {
         return settingRepo.findBySettingNameAndOrganization_Id(ORG_EMAIL.name(), orgId)
-                .map(SettingEntity::getSettingName)
+                .map(SettingEntity::getSettingValue)
                 .orElse(config.mailSenderAddress);
     }
 
