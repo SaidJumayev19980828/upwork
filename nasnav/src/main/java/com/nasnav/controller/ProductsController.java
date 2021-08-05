@@ -103,7 +103,7 @@ public class ProductsController {
     }
 
     @GetMapping(value = "bundles", produces = APPLICATION_JSON_VALUE)
-    public BundleResponse getBundles(@RequestParam BundleSearchParam params) throws BusinessException {
+    public BundleResponse getBundles(BundleSearchParam params) throws BusinessException {
 		return productService.getBundles(params);
     }
 

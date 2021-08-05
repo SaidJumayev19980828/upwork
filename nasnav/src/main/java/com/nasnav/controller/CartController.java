@@ -40,25 +40,12 @@ public class CartController {
 		return cartService.addCartItem(item);
 	}
 
-
-	@Operation(description =  "add items to the cart", summary = "addCartItems")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = " 200" ,description = "OK"),
-			@ApiResponse(responseCode = " 403" ,description = "employee user can't have cart"),
-			@ApiResponse(responseCode = " 406" ,description = "stock not found")
-	})
-	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
-	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody List<CartItem> items) {
+	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
+	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken,
+							 @RequestBody List<CartItem> items) {
 		return cartService.addCartItems(items);
 	}
 
-
-	@Operation(description =  "delete an item from the cart", summary = "deleteCartItem")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = " 200" ,description = "OK"),
-			@ApiResponse(responseCode = " 403" ,description = "employee user can't delete cart item"),
-			@ApiResponse(responseCode = " 406" ,description = "item not found")
-	})
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
 	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken,
 							   @RequestParam("item_id") Long itemId) {
@@ -79,7 +66,7 @@ public class CartController {
 
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)
 	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
-										@RequestParam(value = "promo", required = false) String promoCode) {
+													   @RequestParam(value = "promo", required = false) String promoCode) {
 		return promoService.calcPromoDiscountForCart(promoCode);
 	}
 }
