@@ -643,8 +643,10 @@ public class UserServiceImpl implements UserService {
 	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
-		if(user == null || !(user instanceof UserEntity)) {
+		if(user == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId);
+		}else if (! (user instanceof UserEntity)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
 		}else if(!isUserDeactivated(user)){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
 		}else if(resendRequestedTooSoon(accountInfo)) {
