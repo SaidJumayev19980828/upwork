@@ -37,6 +37,8 @@ public class CartServiceImpl implements CartService{
 
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private PromotionsService promoService;
 
     @Autowired
     private CartItemRepository cartItemRepo;
@@ -65,7 +67,14 @@ public class CartServiceImpl implements CartService{
         return getUserCart(user.getId());
     }
 
-
+    @Override
+    public Cart getCart(String promocode) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        return getUserCart(user.getId(), promocode);
+    }
 
 
     @Override
@@ -73,6 +82,16 @@ public class CartServiceImpl implements CartService{
         Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
+        cart.setSubTotal(calculateCartTotal(cart));
+        return cart;
+    }
+
+    @Override
+    public Cart getUserCart(Long userId, String promocode) {
+        Cart cart = getUserCart(userId);
+        cart.setPromos(promoService.calcPromoDiscountForCart(promocode));
+        cart.setDiscount(cart.getPromos().getTotalDiscount());
+        cart.setTotal(cart.getSubTotal().subtract(cart.getDiscount()));
         return cart;
     }
 

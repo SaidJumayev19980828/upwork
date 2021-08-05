@@ -1,11 +1,11 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
 import com.nasnav.service.PromotionsService;
@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -41,8 +40,9 @@ public class CartController {
 			@ApiResponse(responseCode = " 406" ,description = "invalid search parameter")
 	})
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
-		return cartService.getCart();
+	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+						@RequestParam(value = "promo", required = false) String promoCode) {
+		return cartService.getCart(promoCode);
 	}
 
 
@@ -109,8 +109,8 @@ public class CartController {
 			@ApiResponse(responseCode = " 406" ,description = "Invalid parameters")
 	})
 	@GetMapping(value = "/promo/discount", produces=APPLICATION_JSON_VALUE)
-	public BigDecimal calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
-										@RequestParam(value = "promo", required = false) String promoCode) {
+	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
+													   @RequestParam(value = "promo", required = false) String promoCode) {
 		return promoService.calcPromoDiscountForCart(promoCode);
 	}
 }

@@ -79,7 +79,7 @@ public class DomainServiceImpl implements DomainService{
 		DomainUpdateDTO dto = new DomainUpdateDTO();
 		dto.setId(domainsEntity.getId());
 		dto.setDomain(domain);
-		dto.setSubDirectroy(domainsEntity.getSubdir());
+		dto.setSubDirectory(domainsEntity.getSubdir());
 		dto.setPriority(domainsEntity.getPriority());
 		return dto;
 	}
@@ -150,14 +150,14 @@ public class DomainServiceImpl implements DomainService{
 		Long id = ofNullable(dto.getId()).orElse(-1L);
 		Long orgId = dto.getOrganizationId();
 		String domain = dto.getDomain().startsWith("http") ? dto.getDomain(): "http://" + dto.getDomain();
-		String subDir = ofNullable(dto.getSubDirectroy()).orElse("");
+		String subDir = ofNullable(dto.getSubDirectory()).orElse("");
 		domain = validateDomainCharacters(domain + "/" + subDir).getHost();
 		OrganizationDomainsEntity domainEntity =
 				domainRepo
 						.findByIdAndOrganizationEntity_Id(id, orgId)
 						.orElse(new OrganizationDomainsEntity());
-		if (domainRepo.existsByDomainAndSubdir(domain, dto.getSubDirectroy()) && domainEntity.getId() == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0021, dto.getDomain()+","+ dto.getSubDirectroy());
+		if (domainRepo.existsByDomainAndSubdir(domain, dto.getSubDirectory()) && domainEntity.getId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0021, dto.getDomain()+","+ dto.getSubDirectory());
 		}
 
 		OrganizationEntity organizationEntity =
@@ -168,7 +168,7 @@ public class DomainServiceImpl implements DomainService{
 		Integer priority = ofNullable(dto.getPriority()).orElse(0);
 
 		domainEntity.setDomain(domain);
-		domainEntity.setSubdir(dto.getSubDirectroy());
+		domainEntity.setSubdir(dto.getSubDirectory());
 		domainEntity.setOrganizationEntity(organizationEntity);
 		domainEntity.setPriority(priority);
 

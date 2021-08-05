@@ -11,7 +11,7 @@ import lombok.Data;
 public class DomainUpdateDTO {
 	private Long id;
 	private String domain;
-	private String subDirectroy;
+	private String subDirectory;
 	private Long organizationId;
 	private Integer priority;
 }

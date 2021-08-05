@@ -325,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
-		String orgName = securityService.getCurrentUserOrganization().getName();
+		String orgName = order.getOrganizationEntity().getName();
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("New Order[%d] Created!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
@@ -2015,7 +2015,7 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(ZERO, BigDecimal::add);
 
 		var promoItems = getPromoItems(subOrders);
-		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode());
+		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode()).getTotalDiscount();
 
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
