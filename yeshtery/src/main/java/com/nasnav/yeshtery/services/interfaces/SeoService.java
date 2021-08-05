@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.services;
+package com.nasnav.yeshtery.services.interfaces;
 
 import com.nasnav.dto.SeoKeywordsDTO;
 import com.nasnav.enumerations.SeoEntityType;

@@ -97,7 +97,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 				BUY_X_GET_Y_FROM_TAG, this::getDiscountBasedOnTagsList,
 				TOTAL_CART_ITEMS_QUANTITY, this::calculateDiscountBasedOnTotalQty,
 				TOTAL_CART_ITEMS_VALUE, this::calculateDiscountBasedOnTotalValue,
-				PROMO_CODE, this::calcPromoDiscount);
+				PROMO_CODE, this::calcPromoDiscount,
+				PROMO_CODE_FROM_BRAND, this::calcPromoDiscountFromSpecificBrands,
+				PROMO_CODE_FROM_TAG, this::calcPromoDiscountFromSpecificTags,
+				PROMO_CODE_FROM_PRODUCT, this::calcPromoDiscountFromSpecificProducts);
 	}
 
 
@@ -133,7 +136,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public BigDecimal calcPromoDiscountForCart(String promoCode) {
+	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode) {
 		var cart = cartService.getCart();
 		BigDecimal cartTotal = cartService.calculateCartTotal();
 		var promoItems = toPromoItems(cart.getItems());
@@ -449,7 +452,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}
-		if (Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
+		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
+		if (asList(PROMO_CODE, PROMO_CODE_FROM_PRODUCT, PROMO_CODE_FROM_TAG, PROMO_CODE_FROM_BRAND).contains(promoType)) {
 			if (promotion.getCode() == null) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
 			}
@@ -481,11 +485,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items,
-												   BigDecimal totalCartValue, String promoCode) {
+	public AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode) {
 		var calculators =  getPromoCalculators(promoCode);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
+		List<Map<String, Object>> appliedPromosData = new ArrayList<>();
 		for(var calc: calculators){
 			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
 			var result = calc.getCalcFunction().apply(info);
@@ -497,6 +501,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 			if(calculatorWasApplied(result, calculatorDiscount)){
 				removeConsumedItems(itemsState, result);
 				discountAccumulator = discountAccumulator.add(calculatorDiscount);
+				String promoName = ofNullable(calc.getPromoEntity().getCode())
+						.orElse(calc.getPromoEntity().getIdentifier());
+				Map<String, Object> appliedPromoData = new HashMap<>();
+				appliedPromoData.put("promo_name", promoName);
+				appliedPromoData.put("applied_items", result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
+				appliedPromoData.put("discount", calculatorDiscount);
+				appliedPromosData.add(appliedPromoData);
 			}
 
 			var isStopOtherPromos = false; //should be fetched later from the promotion entity
@@ -504,7 +515,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 				break;
 			}
 		}
-		return discountAccumulator;
+		AppliedPromotionsResponse response = new AppliedPromotionsResponse();
+
+		response.setTotalDiscount(discountAccumulator);
+		response.setAppliedPromos(appliedPromosData);
+		return response;
 	}
 
 
@@ -650,7 +665,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private  PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
+	private PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
 		var promoCode = info.promoCode;
 		var subTotal = info.totalItemsValue;
 		if (isBlankOrNull(promoCode)) {
@@ -661,6 +676,45 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 		var discount = getDiscount(subTotal, promo);
 		var consumedItems = consumeAllItems(info);
+		return new PromoCalcResult(discount, consumedItems);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificBrands(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedProducts= getAllowedProductsPerBrand(info, constraints)
+				.stream()
+				.map(PromoItemDto::getProductId)
+				.collect(toSet());
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificTags(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
+		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificProducts(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedProducts = constraints.getProducts().getIds();
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountForSpecificItems(PromoInfoContainer info, Set<Long> allowedProducts) {
+		var applicableItems = getAllowedProductsPerProducts(info, allowedProducts);
+
+		var promoCode = info.promoCode;
+		var subTotal = applicableItems.stream().map(this::calcTotalValue).reduce(ZERO, BigDecimal::add);
+		if (isBlankOrNull(promoCode)) {
+			return emptyResult();
+		}
+		PromotionsEntity promo = info.promo;
+		validatePromoCode(promoCode, promo, subTotal);
+
+		var discount = getDiscount(subTotal, promo);
+
+		var consumedItems = consumeSubsetItems(info, applicableItems);
 		return new PromoCalcResult(discount, consumedItems);
 	}
 
@@ -734,16 +788,26 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnBrandsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedBrands = constraints.getBrands().getIds();
-		var  applicableItems =
-				promoInfoContainer
-				.items
-				.stream()
-				.filter(i -> allowedBrands.contains(i.getBrandId()))
-				.collect(toList());
+		var applicableItems= getAllowedProductsPerBrand(promoInfoContainer, constraints);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
+	private List<PromoItemDto> getAllowedProductsPerBrand(PromoInfoContainer promoInfoContainer, PromosConstraints constraints) {
+		var allowedBrands = constraints.getBrands().getIds();
+		return promoInfoContainer
+						.items
+						.stream()
+						.filter(i -> allowedBrands.contains(i.getBrandId()))
+						.collect(toList());
+	}
+
+	private List<PromoItemDto> getAllowedProductsPerProducts(PromoInfoContainer promoInfoContainer, Set<Long> allowedProducts) {
+		return promoInfoContainer
+						.items
+						.stream()
+						.filter(i -> allowedProducts.contains(i.getProductId()))
+						.collect(toList());
+	}
 
 
 	private PromoCalcResult getPromoCalcResult(PromosConstraints constraints, List<PromoItemDto> applicableItems) {
@@ -810,12 +874,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
 		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
 		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
-		var applicableItems =
-				promoInfoContainer
-				.items
-				.stream()
-				.filter(i -> allowedProducts.contains(i.getProductId()))
-				.collect(toList());
+		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
@@ -824,11 +883,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private PromoCalcResult getDiscountBasedOnProductsList(PromoInfoContainer promoInfoContainer) {
 		var constraints = getPromoConstraints(promoInfoContainer.promo);
 		var allowedProducts = constraints.getProducts().getIds();
-		var applicableItems =
-				promoInfoContainer.items
-				.stream()
-				.filter(i -> allowedProducts.contains(i.getProductId()))
-				.collect(toList());
+		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
@@ -925,6 +980,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private Set<PromoItemDiscount> consumeAllItems(PromoInfoContainer info) {
 		return info.items
 				.stream()
+				.map(item -> new PromoItemDiscount(item, ZERO))
+				.collect(toSet());
+	}
+
+	private Set<PromoItemDiscount> consumeSubsetItems(PromoInfoContainer info, List<PromoItemDto> appliedItems) {
+		return info.items
+				.stream()
+				.filter(item -> appliedItems.contains(item))
 				.map(item -> new PromoItemDiscount(item, ZERO))
 				.collect(toSet());
 	}

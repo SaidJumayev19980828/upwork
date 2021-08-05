@@ -116,9 +116,9 @@ public class UserController {
 
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
     public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                      @RequestParam (value = "org_id", required = false) Long orgId,
-                                                      @RequestParam (value = "store_id", required = false) Long storeId,
-                                                      @RequestParam (required = false) String role) {
+                                      @RequestParam (value = "org_id", required = false) Long orgId,
+                                      @RequestParam (value = "shop_id", required = false) Long storeId,
+                                      @RequestParam (value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
 

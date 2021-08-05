@@ -3,6 +3,7 @@ package com.nasnav.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
@@ -10,14 +11,14 @@ import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
 
-import java.math.BigDecimal;
+import java.util.Map;
 
 public interface PromotionsService {
 	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
 
 	Long updatePromotion(PromotionDTO promotion);
 
-	BigDecimal calcPromoDiscountForCart(String promoCode);
+	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode);
 
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
 
@@ -28,7 +29,7 @@ public interface PromotionsService {
 
     void removePromotion(Long promotionId);
 
-    BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode);
+	AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode);
 
 	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue);
 }

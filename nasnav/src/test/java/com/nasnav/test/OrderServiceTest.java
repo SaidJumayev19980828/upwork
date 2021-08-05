@@ -1043,7 +1043,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq("user1@nasnav.com")
+			Mockito.eq("organization_1")
+			, Mockito.eq("user1@nasnav.com")
 			, Mockito.eq(BILL_EMAIL_SUBJECT)
 			, Mockito.anyString()
 			, Mockito.anyMap());
@@ -1051,7 +1052,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1060,7 +1062,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1249,7 +1252,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("user1@nasnav.com"))
+			Mockito.eq("organization_1")
+			,Mockito.eq(asList("user1@nasnav.com"))
 			, Mockito.eq(ORDER_REJECT_SUBJECT)
 			, Mockito.anyList()
 			, Mockito.eq(asList("testuser3@nasnav.com"))
@@ -1350,7 +1354,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1359,7 +1364,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1405,7 +1411,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1414,7 +1421,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()

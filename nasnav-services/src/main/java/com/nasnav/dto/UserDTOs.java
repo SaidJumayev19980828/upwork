@@ -94,7 +94,7 @@ public class UserDTOs {
         public String role;
         
         @Schema(example = "1234")
-        @JsonProperty("store_id")
+        @JsonProperty("shop_id")
         public Long storeId;
 
         @Schema(example = "99001/avatar.jpg")
@@ -125,7 +125,7 @@ public class UserDTOs {
         private String role;
 
         @Schema(example = "1234")
-        @JsonProperty("store_id")
+        @JsonProperty("shop_id")
         private Long storeId;
 
         @Schema(example = "1234")

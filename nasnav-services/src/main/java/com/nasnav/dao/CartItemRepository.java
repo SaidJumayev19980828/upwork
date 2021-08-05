@@ -49,6 +49,18 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " order by item.createdAt desc ")
 	List<CartItemEntity> findUsersCartsOrg_Id(@Param("orgId") Long orgId);
 
+	@Query("SELECT item "
+			+ " FROM CartItemEntity item "
+			+ "	LEFT JOIN item.user user"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.productEntity product "
+			+ " WHERE product.organizationId = :orgId and user.id in :userIds"
+			+ " and product.removed = 0 and variant.removed = 0 "
+			+ " order by item.createdAt desc ")
+	List<CartItemEntity> findCartsByUsersIdAndOrg_Id(@Param("userIds")List<Long> userIds,
+													 @Param("orgId") Long orgId);
+
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 	CartItemEntity findByStock_IdAndUser_Id(Long stockId, Long userId);
 

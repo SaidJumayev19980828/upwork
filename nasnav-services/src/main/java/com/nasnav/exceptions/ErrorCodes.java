@@ -98,7 +98,7 @@ public enum ErrorCodes {
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
 	,GEN$0003("Couldn't send mail, reason[%s]")
-	,GEN$0004("Unknown User Entity Type]")
+	,GEN$0004("Unknown User Entity Type")
 	,GEN$0005("the provided url is malformed!")
 	,GEN$0006("Couldn't resize image [%s]")
 	,GEN$0007("Must provide width or height!")

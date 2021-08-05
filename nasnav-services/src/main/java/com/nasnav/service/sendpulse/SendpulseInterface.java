@@ -1,0 +1,52 @@
+package com.nasnav.service.sendpulse;
+
+import java.util.Map;
+
+public interface SendpulseInterface {
+    public Map<String, Object> createAddressBook(String bookName );
+    public Map<String, Object> editAddressBook( int id , String newname);
+    public Map<String, Object> removeAddressBook( int id );
+    public Map<String, Object> listAddressBooks( int limit, int offset);
+    public Map<String, Object> getBookInfo( int id );
+    public Map<String, Object> getEmailsFromBook( int id );
+    public Map<String, Object> addEmails( int bookId , String emails);
+    public Map<String, Object> removeEmails( int bookId , String emails);
+    public Map<String, Object> getEmailInfo( int bookId, String email );
+    public Map<String, Object> campaignCost( int bookId );
+    public Map<String, Object> listCampaigns( int limit, int offset);
+    public Map<String, Object> getCampaignInfo( int id );
+    public Map<String, Object> campaignStatByCountries( int id );
+    public Map<String, Object> campaignStatByReferrals( int id );
+    public Map<String, Object> createCampaign( String senderName, String senderEmail, String subject, String body, int bookId, String name, String attachments);
+    public Map<String, Object> cancelCampaign( int id );
+    public Map<String, Object> listSenders();
+    public Map<String, Object> addSender( String senderName,String senderEmail );
+    public Map<String, Object> removeSender( String email );
+    public Map<String, Object> activateSender( String email, String code );
+    public Map<String, Object> getSenderActivationMail( String email );
+    public Map<String, Object> getEmailGlobalInfo( String email );
+    public Map<String, Object> removeEmailFromAllBooks( String email );
+    public Map<String, Object> emailStatByCampaigns( String email );
+    public Map<String, Object> getBlackList();
+    public Map<String, Object> addToBlackList( String emails);
+    public Map<String, Object> removeFromBlackList( String emails );
+    public Map<String, Object> getBalance( String currency);
+    public Map<String, Object> smtpListEmails( int limit, int offset, String fromDate, String toDate, String sender, String recipient);
+    public Map<String, Object> smtpGetEmailInfoById( String id );
+    public Map<String, Object> smtpUnsubscribeEmails( String emails );
+    public Map<String, Object> smtpRemoveFromUnsubscribe( String emails );
+    public Map<String, Object> smtpListIP();
+    public Map<String, Object> smtpListAllowedDomains();
+    public Map<String, Object> smtpAddDomain( String email );
+    public Map<String, Object> smtpVerifyDomain( String email );
+    public Map<String, Object> smtpSendMail( Map<String, Object> emailData );
+    public Map<String, Object> pushListCampaigns(int limit, int offset);
+    public Map<String, Object> pushCampaignInfo( int id );
+    public Map<String, Object> pushCountWebsites();
+    public Map<String, Object> pushListWebsites(int limit, int offset);
+    public Map<String, Object> pushListWebsiteVariables( int id);
+    public Map<String, Object> pushListWebsiteSubscriptions(int id,int limit, int offset);
+    public Map<String, Object> pushCountWebsiteSubscriptions( int id);
+    public Map<String, Object> pushSetSubscriptionState( int id, int state);
+    public Map<String, Object> createPushTask( Map<String, Object> taskinfo, Map<String, Object> additionalParams);
+}

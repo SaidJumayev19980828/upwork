@@ -520,6 +520,11 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private void sendReturnRequestConfirmationEmail(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
+        String orgName = ofNullable(request)
+                .map(ReturnRequestEntity::getMetaOrder)
+                .map(MetaOrderEntity::getOrganization)
+                .map(OrganizationEntity::getName)
+                .orElse("Nasnav");
         Optional<String> email =
                 ofNullable(request)
                         .map(ReturnRequestEntity::getMetaOrder)
@@ -533,7 +538,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         List<MailAttachment> airwayBills = createReturnConfirmMailAttachments(trackers);
         String template = ORDER_RETURN_CONFIRM_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap, airwayBills);
+            mailService.sendThymeleafTemplateMail(orgName, email.get(), subject,  template, parametersMap, airwayBills);
         } catch (MessagingException e) {
             logger.error(e, e);
         }
@@ -754,13 +759,14 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     private void sendRejectionEmailToCustomer(ReturnRequestEntity request, String rejectionReason, Long orgId) {
 
+        String orgName = request.getMetaOrder().getOrganization().getName();
         String to = request.getMetaOrder().getUser().getEmail();
         String subject = ORDER_RETURN_REJECT_SUBJECT;
         List<String> bcc = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
         Map<String,Object> parametersMap = createRejectionEmailParams(request, rejectionReason);
         String template = ORDER_RETURN_REJECT_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+            mailService.sendThymeleafTemplateMail(orgName, asList(to), subject, emptyList(), bcc, template, parametersMap);
         } catch (IOException | MessagingException e) {
             logger.error(e, e);
         }
@@ -785,6 +791,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     private void sendOrderReturnNotificationEmail(Long returnRequestId) {
         Long orgId = securityService.getCurrentUserOrganizationId();
+        String orgName = securityService.getCurrentUserOrganization().getName();
         ReturnRequestEntity request =
                 returnRequestRepo
                         .findByReturnRequestId(returnRequestId, orgId)
@@ -797,7 +804,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Map<String,Object> parametersMap = createOrderReturnNotificationEmailParams(request);
         String template = ORDER_RETURN_NOTIFICATION_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(emails ,subject, emptyList(),  template, parametersMap);
+            mailService.sendThymeleafTemplateMail(orgName, emails ,subject, emptyList(),  template, parametersMap);
         } catch (MessagingException | IOException e) {
             logger.error(e, e);
         }
@@ -1129,10 +1136,10 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private void sendItemReceivedEmailToCustomer(Long returnRequestId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
         ReturnRequestEntity request =
                 returnRequestRepo
-                        .findByReturnRequestId(returnRequestId, orgId)
+                        .findByReturnRequestId(returnRequestId, org.getId())
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
         Optional<String> email =
                 ofNullable(request)
@@ -1146,7 +1153,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Map<String,Object> parametersMap = createReturnItemsReceiptionEmailParams(request);
         String template = ORDER_RETURN_RECEIVED_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+            mailService.sendThymeleafTemplateMail(org.getName(), email.get(), subject,  template, parametersMap);
         } catch (MessagingException e) {
             logger.error(e, e);
         }

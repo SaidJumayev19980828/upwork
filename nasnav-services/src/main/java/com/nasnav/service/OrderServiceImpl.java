@@ -325,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
-		
+		String orgName = order.getOrganizationEntity().getName();
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("New Order[%d] Created!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
@@ -336,7 +336,7 @@ public class OrderServiceImpl implements OrderService {
 				to = cc;
 				cc = emptyList();
 			}
-			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, to, subject, cc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
@@ -439,7 +439,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<String,Object> parametersMap = createBillEmailParams(order);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
-			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, email.get(), subject,  template, parametersMap);
 		} catch (MessagingException e) {
 			logger.error(e, e);
 		}
@@ -2015,7 +2015,7 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(ZERO, BigDecimal::add);
 
 		var promoItems = getPromoItems(subOrders);
-		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode());
+		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode()).getTotalDiscount();
 
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
@@ -2168,12 +2168,12 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<Long> itemStocks = 
+		Set<Long> itemStocks =
 				cartItems
 				.getCheckOutData()
 				.stream()
 				.map(CartCheckoutData::getStockId)
-				.collect(toList());
+				.collect(toSet());
 		
 		Map<Long, StocksEntity> stocksCache = 
 				stockRepository
@@ -2374,7 +2374,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
 		String template = ORDER_REJECT_TEMPLATE;
 		try {
-			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, asList(to), subject, emptyList(), bcc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
@@ -2415,7 +2415,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void sendOrderCancellationNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
-		
+
+		String orgName = securityService.getCurrentUserOrganization().getName();
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("Order[%d] was Cancelled!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
@@ -2426,7 +2427,7 @@ public class OrderServiceImpl implements OrderService {
 				to = cc;
 				cc = emptyList();
 			}
-			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(orgName, to, subject, cc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
