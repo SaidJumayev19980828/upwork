@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.service;
+package com.nasnav.yeshtery.services.interfaces;
 
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
