@@ -479,6 +479,11 @@ public class CartServiceImpl implements CartService{
             params.put("promo", promo.getCode());
             params.put("promoValue", discount);
         }
+        info.getItems().forEach(item -> {
+            BigDecimal discount = ofNullable(item.getDiscount()).orElse(ZERO);
+            BigDecimal totalPrice = (item.getPrice().subtract(discount)).multiply(new BigDecimal(item.getQuantity()));
+            item.setPrice(totalPrice);
+        });
         params.put("items", info.getItems());
         params.put("userName", info.getName());
         return params;
