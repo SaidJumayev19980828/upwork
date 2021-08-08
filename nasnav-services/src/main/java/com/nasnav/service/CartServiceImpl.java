@@ -513,6 +513,7 @@ public class CartServiceImpl implements CartService{
         String domain = domainService.getBackendUrl();
         String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
         String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
+        String cartUrl = domain + "/cart";
         String orgName = org.getName();
         String year = LocalDateTime.now().getYear()+"";
 
@@ -522,6 +523,8 @@ public class CartServiceImpl implements CartService{
         params.put("orgName", orgName);
         params.put("orgLogo", orgLogo);
         params.put("year", year);
+        params.put("cartUrl", cartUrl);
+        params.put("currency", org.getCountry().getCurrency());
 
         return params;
     }
