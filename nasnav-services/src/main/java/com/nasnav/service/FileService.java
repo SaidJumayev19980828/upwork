@@ -295,12 +295,13 @@ public class FileService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url));
 	}
 
-
+	public void deleteFileByUrl(String url) {
+		FileEntity file = filesRepo.findByUrl(url);
+		deleteFile(file);
+	}
 
 	@CacheEvict(cacheNames = {FILES})
-	public void deleteFileByUrl(String url) throws BusinessException{
-		FileEntity file = filesRepo.findByUrl(url);
-
+	public void deleteFile(FileEntity file) {
 		if(file == null) 	//if file doesn't exist in database, then job's done!
 			return;
 
@@ -312,14 +313,15 @@ public class FileService {
 			Files.deleteIfExists(path);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException(
-					format("Failed to delete file with url[%s] at location [%s]", url, path.toString())
-					, "FAILURE"
-					, INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR,GEN$0023, file.getUrl(), path.toString());
 		}
 	}
 
-
+	public void deleteOrganizationFile(String fileName) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		FileEntity file = filesRepo.findByUrlEndsWithAndOrganization_Id(fileName, orgId);
+		deleteFile(file);
+	}
 
 
 	@CacheResult(cacheName = FILES)

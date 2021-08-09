@@ -116,6 +116,7 @@ public enum ErrorCodes {
 	,GEN$0019("Failed to read resource[%s]!")
 	,GEN$0021("Domain and subdir already exist[%s]!")
 	,GEN$0022("Missing required parameters!")
+	,GEN$0023("Failed to delete file with url[%s] at location [%s]")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")

@@ -12,6 +12,7 @@ public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 	boolean existsByLocation(String uniqueLocation);
 
 	FileEntity findByUrl(String url);
+	FileEntity findByUrlEndsWithAndOrganization_Id(String url, Long orgId);
 
 	List<FileEntity> findByOrganization_IdAndMimetypeContaining(Long id, String mimeType);
 

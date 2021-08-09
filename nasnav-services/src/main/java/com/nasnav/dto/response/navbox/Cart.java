@@ -18,7 +18,7 @@ public class Cart {
 	private List<CartItem> items;
 	private BigDecimal total;
 	private BigDecimal discount;
-	private BigDecimal subTotal;
+	private BigDecimal subtotal;
 	private AppliedPromotionsResponse promos;
 
 	public Cart(List<CartItem> items) {

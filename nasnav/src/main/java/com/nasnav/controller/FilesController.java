@@ -49,4 +49,10 @@ public class FilesController {
 		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
 		dispatcher.forward(request, resp);
     }
+
+    @DeleteMapping
+    public void deleteFile(@RequestHeader (name = "User-Token", required = false) String userToken,
+                           @RequestParam("file_name") String fileName) {
+        fileService.deleteOrganizationFile(fileName);
+    }
 }

@@ -112,7 +112,7 @@ public class CartServiceImpl implements CartService{
         Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
-        cart.setSubTotal(calculateCartTotal(cart));
+        cart.setSubtotal(calculateCartTotal(cart));
         return cart;
     }
 
@@ -121,7 +121,7 @@ public class CartServiceImpl implements CartService{
         Cart cart = getUserCart(userId);
         cart.setPromos(promoService.calcPromoDiscountForCart(promocode));
         cart.setDiscount(cart.getPromos().getTotalDiscount());
-        cart.setTotal(cart.getSubTotal().subtract(cart.getDiscount()));
+        cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
     }
 
@@ -518,7 +518,7 @@ public class CartServiceImpl implements CartService{
         String domain = domainService.getBackendUrl();
         String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
         String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
-        String cartUrl = domain + "/cart";
+        String cartUrl = orgDomain + "/cart";
         String orgName = org.getName();
         String year = LocalDateTime.now().getYear()+"";
 
@@ -548,7 +548,7 @@ public class CartServiceImpl implements CartService{
 
     private List<UserCartInfo> getUsersCarts(AbandonedCartsMail dto, Long orgId) {
         List<CartItemEntity> cartEntities;
-        if (isNullOrEmpty(dto.getUserIds())) {
+        if (!isNullOrEmpty(dto.getUserIds())) {
             cartEntities = cartItemRepo.findCartsByUsersIdAndOrg_Id(dto.getUserIds(), orgId);
         } else {
             cartEntities = cartItemRepo.findUsersCartsOrg_Id(orgId);

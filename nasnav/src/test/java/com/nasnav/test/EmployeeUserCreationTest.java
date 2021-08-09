@@ -878,24 +878,24 @@ public class EmployeeUserCreationTest {
 		assertEquals(2, response.getBody().size());
 
 		// role and store_id filter
-		response = template.exchange("/user/list?role=STORE_MANAGER&store_id=501", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?role=STORE_MANAGER&shop_id=501", GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(2, response.getBody().size());
 
 		// org_id and store_id filter
-		response = template.exchange("/user/list?org_id=99001&store_id=502", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99001&shop_id=502", GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(10, response.getBody().size());
 
 		// org_id and store_id and role filter
-		response = template.exchange("/user/list?org_id=99001&store_id=502&role=STORE_MANAGER", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99001&shop_id=502&role=STORE_MANAGER", GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(2, response.getBody().size());
 
-		response = template.exchange("/user/list?org_id=99002&store_id=501&role=STORE_MANAGER", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99002&shop_id=501&role=STORE_MANAGER", GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(2, response.getBody().size());
