@@ -39,6 +39,7 @@ import javax.persistence.criteria.*;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
 import lombok.Data;
@@ -136,14 +137,20 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode) {
-		var cart = cartService.getCart();
-		BigDecimal cartTotal = cartService.calculateCartTotal();
+	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart) {
+		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
 		var promoItems = toPromoItems(cart.getItems());
 		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
 	}
 
-
+	@Override
+	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode) {
+		Long userId = securityService.getCurrentUser().getId();
+		var cart = cartService.getUserCart(userId);
+		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
+		var promoItems = toPromoItems(cart.getItems());
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+	}
 
 	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
 		return cartItems
@@ -567,7 +574,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var orgId = securityService.getCurrentUserOrganizationId();
 		var promos = promoRepo
 				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
-		if (promoCode != null && promos.size() == 0) {
+		if (promoCode != null && !promoCode.equals("")&& promos.size() == 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
 		}
 		return promos.stream().map(this::getCalculator).collect(toList());

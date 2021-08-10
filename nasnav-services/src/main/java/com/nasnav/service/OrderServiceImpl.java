@@ -974,6 +974,9 @@ public class OrderServiceImpl implements OrderService {
 		item.setCurrency(currency);
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
+		if(entity.getStocksEntity().getQuantity() < 10) {
+			item.setAvailableStock(entity.getStocksEntity().getQuantity());
+		}
 	}
 
 

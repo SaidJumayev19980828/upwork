@@ -23,5 +23,7 @@ public class Cart {
 
 	public Cart(List<CartItem> items) {
 		this.items = items;
+		total = discount = subtotal = BigDecimal.ZERO;
+		promos = new AppliedPromotionsResponse();
 	}
 }

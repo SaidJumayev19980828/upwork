@@ -305,6 +305,7 @@
 					<div th:with="price=${item.price * item.quantity}">
 						<p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${item.currency}"/>
 					</div>
+					<span style="font-weight: bolder; color: red" th:if="${item.availableStock != null}" th:text="'AVAILABLE STOCK: ' + ${item.availableStock}"/>
 				</tr>
 				</tbody>
 			</table>

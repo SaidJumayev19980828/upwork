@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,4 +14,9 @@ import java.util.Map;
 public class AppliedPromotionsResponse {
     private BigDecimal totalDiscount;
     private List<Map<String, Object>> appliedPromos;
+
+    public AppliedPromotionsResponse() {
+        totalDiscount = BigDecimal.ZERO;
+        appliedPromos = new ArrayList<>();
+    }
 }

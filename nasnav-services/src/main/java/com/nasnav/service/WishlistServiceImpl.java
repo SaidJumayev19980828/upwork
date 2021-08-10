@@ -140,7 +140,7 @@ public class WishlistServiceImpl implements WishlistService{
         Long stockId = wishlistRepo.findWishlistItemStockId(itemId, user.getId());
         Integer qty = ofNullable(item.getQuantity()).orElse(1);
         CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData());
-        return cartService.addCartItem(cartItem);
+        return cartService.addCartItem(cartItem, null);
     }
 
 

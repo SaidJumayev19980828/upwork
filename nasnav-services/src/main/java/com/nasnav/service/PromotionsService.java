@@ -8,10 +8,9 @@ import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
-
-import java.util.Map;
 
 public interface PromotionsService {
 	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
@@ -19,6 +18,7 @@ public interface PromotionsService {
 	Long updatePromotion(PromotionDTO promotion);
 
 	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode);
+	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart);
 
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
 

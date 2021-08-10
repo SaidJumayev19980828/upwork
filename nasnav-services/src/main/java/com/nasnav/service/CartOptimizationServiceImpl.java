@@ -62,6 +62,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartService cartService;
+	@Autowired
+	private PromotionsService promoService;
 	
 	@Autowired
 	private SecurityService securityService;
@@ -93,6 +95,10 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		var optimizedCart = createOptimizedCart(dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
 		var returnedCart = getCartObject(optimizedCart);
+		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
+		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
+		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
+		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
 		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
 	}
 
@@ -127,7 +133,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart();
+		var cart = cartService.getCart(dto.getPromoCode());
 		
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}

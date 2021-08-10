@@ -30,26 +30,29 @@ public class CartController {
 
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
 	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-						@RequestParam(value = "promo", required = false) String promoCode) {
+						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
 		return cartService.getCart(promoCode);
 	}
 
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken,
-							@RequestBody CartItem item) {
-		return cartService.addCartItem(item);
+							@RequestBody CartItem item,
+							@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
+		return cartService.addCartItem(item, promoCode);
 	}
 
 	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
 	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 @RequestBody List<CartItem> items) {
-		return cartService.addCartItems(items);
+							 @RequestBody List<CartItem> items,
+							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
+		return cartService.addCartItems(items, promoCode);
 	}
 
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
 	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken,
-							   @RequestParam("item_id") Long itemId) {
-		return cartService.deleteCartItem(itemId);
+							   @RequestParam("item_id") Long itemId,
+							   @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
+		return cartService.deleteCartItem(itemId, promoCode);
 	}
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
