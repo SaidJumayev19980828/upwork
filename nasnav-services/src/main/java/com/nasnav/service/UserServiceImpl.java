@@ -121,7 +121,7 @@ public class UserServiceImpl implements UserService {
 		Long orgId = userJson.getOrgId();
 
 		OrganizationEntity org = orgRepo.findById(orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001));
 
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());

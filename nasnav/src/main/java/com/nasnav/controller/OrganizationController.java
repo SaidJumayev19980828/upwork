@@ -14,6 +14,7 @@ import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
@@ -35,7 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
@@ -137,9 +140,13 @@ public class OrganizationController {
     }
 
     @DeleteMapping(value = "image", produces = APPLICATION_JSON_VALUE)
-    public boolean deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
-                                      @RequestParam("image_id") @Valid Long imageId) throws BusinessException {
-        return orgService.deleteImage(imageId);
+    public void deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
+                                      @RequestParam(value = "image_id", required = false) Long imageId,
+                                      @RequestParam(value = "url", required = false) String url) throws BusinessException {
+        if (imageId == null && url == null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
+        }
+        orgService.deleteImage(imageId, url);
     }
 
     @PostMapping(value = "tag", produces = APPLICATION_JSON_VALUE)

@@ -46,7 +46,7 @@ public interface OrganizationService {
 
     ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException;
 
-    boolean deleteImage(Long imgId) throws BusinessException;
+    void deleteImage(Long imgId, String url);
 
     Pair getOrganizationAndSubdirsByUrl(String urlString);
 

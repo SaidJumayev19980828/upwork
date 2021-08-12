@@ -104,7 +104,7 @@ public class FileService {
 	public String saveFile(MultipartFile file, Long orgId) {
 
 		if(orgId != null && !orgRepo.existsById(orgId)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001, orgId);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
 		if(isBlankOrNull(file.getOriginalFilename()) ) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
@@ -319,7 +319,7 @@ public class FileService {
 
 	public void deleteOrganizationFile(String fileName) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		FileEntity file = filesRepo.findByUrlEndsWithAndOrganization_Id(fileName, orgId);
+		FileEntity file = filesRepo.findByUrlAndOrganization_Id(fileName, orgId);
 		deleteFile(file);
 	}
 

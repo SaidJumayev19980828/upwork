@@ -171,7 +171,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
     public OrganizationRepresentationObject getOrganizationById(Long organizationId) {
         OrganizationEntity organizationEntity = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$0001, organizationId));
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
 
         return getOrganizationAdditionalData(organizationEntity);
     }
@@ -997,40 +997,22 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public boolean deleteImage(Long imgId) throws BusinessException {
-        OrganizationImagesEntity img = 
-        		organizationImagesRepository
-        		.findById(imgId)
-                .orElseThrow(()-> new BusinessException(
-                					"No Image exists with id ["+ imgId+"] !"
-                					,"INVALID PARAM:image_id"
-                					, NOT_ACCEPTABLE));
-        validateImgToDelete(img);
-
-        organizationImagesRepository.deleteById(imgId);
+    public void deleteImage(Long imgId, String url) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        OrganizationImagesEntity img = new OrganizationImagesEntity();
+        if (imgId != null) {
+            img = organizationImagesRepository
+                    .findByIdAndOrganizationEntity_Id(imgId, orgId)
+                    .orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0001, imgId));
+        } else if (url != null){
+            img = organizationImagesRepository
+                    .findByUriAndOrganizationEntity_Id(url, orgId)
+                    .orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0002, url));
+        }
+        organizationImagesRepository.deleteById(img.getId());
 
         fileService.deleteFileByUrl(img.getUri());
-
-        return true;
     }
-    
-    
-    
-
-    private void validateImgToDelete(OrganizationImagesEntity img) throws BusinessException {
-        Long orgId = img.getOrganizationEntity().getId();
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-
-        if(!user.getOrganizationId().equals(orgId)) {
-            throw new BusinessException(
-                    format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
-                    , "UNAUTHRORIZED", FORBIDDEN);
-        }
-    }
-
-    
     
     
     @Override

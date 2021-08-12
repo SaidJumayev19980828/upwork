@@ -134,8 +134,6 @@ public enum ErrorCodes {
 
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
-	,ORG$0001("No organization found with ID[%d]!")
-
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
@@ -143,6 +141,10 @@ public enum ErrorCodes {
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
+
+	,ORG$IMG$0001("No Image exists with id [%d]!")
+	,ORG$IMG$0002("No Image exists with url [%s]!")
+	,ORG$IMG$0003("Must provide either image_id or url!")
 
 	,CAT$0001("Provided parent category[%d] doesn't exit!")
 	,CAT$0002("Missing or invalid category ID!")

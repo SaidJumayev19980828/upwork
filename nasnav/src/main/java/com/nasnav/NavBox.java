@@ -37,6 +37,7 @@ public class NavBox
         properties.put("server.compression.mime-types", "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
         properties.put("server.compression.min-response-size", 1024);
         properties.put("springdoc.swagger-ui.docExpansion", "none");
+        properties.put("springdoc.writer-with-order-by-keys", true);
         
         //---------------------------------------------------------------
         
