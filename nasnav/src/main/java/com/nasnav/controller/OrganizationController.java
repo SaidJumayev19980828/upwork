@@ -114,7 +114,7 @@ public class OrganizationController {
 
     @PostMapping(value = "products_feature", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
-                                                             @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
+                                                             @RequestBody ProductFeatureUpdateDTO featureDto) {
         return orgService.updateProductFeature(featureDto);
     }
 

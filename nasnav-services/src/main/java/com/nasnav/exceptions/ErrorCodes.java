@@ -141,6 +141,7 @@ public enum ErrorCodes {
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
+	,ORG$FTR$0003("Invalid parameters [feature_id], no feature exists with id [%d]!")
 
 	,ORG$IMG$0001("No Image exists with id [%d]!")
 	,ORG$IMG$0002("No Image exists with url [%s]!")

@@ -42,7 +42,7 @@ public interface OrganizationService {
 
     List<ProductFeatureDTO> getProductFeatures(Long orgId);
 
-    ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) throws BusinessException;
+    ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto);
 
     ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException;
 

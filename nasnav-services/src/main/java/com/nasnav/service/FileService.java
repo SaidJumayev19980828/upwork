@@ -22,6 +22,7 @@ import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.zip.ZipInputStream;
 
 import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
@@ -49,7 +49,6 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
@@ -300,7 +299,8 @@ public class FileService {
 		deleteFile(file);
 	}
 
-	@CacheEvict(cacheNames = {FILES})
+	@Transactional
+	@CacheEvict(cacheNames = {FILES, IMGS_RESIZED})
 	public void deleteFile(FileEntity file) {
 		if(file == null) 	//if file doesn't exist in database, then job's done!
 			return;
@@ -308,8 +308,12 @@ public class FileService {
 		Path path = basePath.resolve(file.getLocation());
 
 		try {
+			for(FilesResizedEntity resizedEntity : filesResizedRepo.findByOriginalFile(file)) {
+				Path resizedPath = basePath.resolve(resizedEntity.getImageUrl());
+				filesResizedRepo.deleteById(resizedEntity.getId());
+				Files.deleteIfExists(resizedPath);
+			}
 			filesRepo.delete(file);
-			filesResizedRepo.deleteByOriginalFile(file);
 			Files.deleteIfExists(path);
 		} catch (IOException e) {
 			logger.error(e,e);

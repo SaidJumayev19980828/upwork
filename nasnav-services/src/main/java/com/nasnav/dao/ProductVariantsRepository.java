@@ -15,6 +15,11 @@ import java.util.Set;
 
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
+	@Query("select variant from ProductVariantsEntity variant " +
+			"left join fetch variant.featureValues value " +
+			"left join fetch value.feature feature " +
+			"where variant.id = :variantId")
+	ProductVariantsEntity findByVariantId(@Param("variantId") Long variantId);
 
 	@Query("select distinct v from ProductVariantsEntity v" +
 			" left join fetch v.featureValues featureValue " +

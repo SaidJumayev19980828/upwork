@@ -583,14 +583,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @Transactional
-    public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-		Long orgId = user.getOrganizationId();
+    public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+		Long orgId = org.getId();
 
 		validateProductFeature(featureDto, orgId);
-		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, orgId);
-        entity = featureRepo.save(entity);
+		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, org);
 
 		return new ProductFeatureUpdateResponse(entity.getId());
 	}
@@ -706,14 +704,15 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
-    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
+    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, OrganizationEntity org) {
 		ProductFeaturesEntity entity = new ProductFeaturesEntity();
-		entity.setOrganization( orgRepo.findById(orgId).get() );
+		entity.setOrganization( org );
 		
 		Operation opr = featureDto.getOperation();
 		
 		if( opr.equals( Operation.UPDATE)) {			
-			entity = featureRepo.findById( featureDto.getFeatureId()).get();
+			entity = featureRepo.findByIdAndOrganization_Id( featureDto.getFeatureId(), org.getId() )
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0003, featureDto.getFeatureId()));
 		}
 		if(featureDto.isUpdated("name")){
 			entity.setName( featureDto.getName()); 
@@ -725,7 +724,11 @@ public class OrganizationServiceImpl implements OrganizationService {
 			entity.setDescription( featureDto.getDescription() );
 		}
         if(featureDto.isUpdated("level")) {
-            entity.setLevel( featureDto.getLevel() );
+            if (opr.equals( Operation.CREATE) && featureDto.getLevel() == 0) {
+                entity.setLevel(0);
+            } else {
+                entity.setLevel( featureDto.getLevel() );
+            }
         }
         if(featureDto.isUpdated("type")) {
             var type = ofNullable(featureDto.getType()).orElse(STRING).getValue();
@@ -736,7 +739,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             }
         }
 
-		return entity;
+		return featureRepo.save(entity);
 	}
 	
 	
@@ -757,98 +760,42 @@ public class OrganizationServiceImpl implements OrganizationService {
 	
 	
 
-	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) throws BusinessException {
+	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) {
 		if(!featureDto.areRequiredAlwaysPropertiesPresent()) {
-			throw new BusinessException(
-					"Missing required parameters !" 
-					, "MISSING PARAM"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
 		}
-		
+
 		Operation opr = featureDto.getOperation();
-		
-		validateOperation(opr);
+		validateOperation(featureDto.getOperation());
 		
 		if(opr.equals(Operation.CREATE)) {
 			validateProductFeatureForCreate(featureDto, orgId);
 		}else if(opr.equals(Operation.UPDATE)) {
-			validateProductFeatureForUpdate(featureDto, orgId);
+			validateProductFeatureForUpdate(featureDto);
 		}
 	}
-	
-	
-	
-	
 
-	private void validateOperation(Operation opr) throws BusinessException {
+	private void validateOperation(Operation opr) {
 		if(opr == null) {
-			throw new BusinessException(
-					"Missing required parameters [operation]!" 
-					, "MISSING PARAM:operation"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "operation");
 		}
-		
-		if(!opr.equals(Operation.CREATE) &&
-				!opr.equals(Operation.UPDATE)) {
-			throw new BusinessException(
-					format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue())
-					, "INVALID PARAM:operation"
-					, NOT_ACCEPTABLE);
+		if(!opr.equals(Operation.CREATE) && !opr.equals(Operation.UPDATE)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
 		}
 	}
-	
-	
-	
-	
 
-	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto, Long userOrgId) throws BusinessException {
+	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto) {
 		if(!featureDto.areRequiredForUpdatePropertiesProvided()) {
-			throw new BusinessException(
-					"Missing required parameters !" 
-					, "MISSING PARAM"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
 		}
-		
-		Integer id = featureDto.getFeatureId();
-		Optional<ProductFeaturesEntity> featureOptional= featureRepo.findById( id );
-		
-		if( !featureOptional.isPresent()) {
-			throw new BusinessException(
-					format("Invalid parameters [feature_id], no feature exists with id [%d]!", id)
-					, "INVALID PARAM:feature_id"
-					, NOT_ACCEPTABLE);
-		}
-		Long featureOrgId = featureOptional.map(ProductFeaturesEntity::getOrganization)
-										   .map(OrganizationEntity::getId)
-										   .orElseThrow(
-												   () -> new BusinessException(
-															format("Feature of id[%d], Doesn't follow any organization!", id)
-															, "INTERNAL SERVER ERROR"
-															, INTERNAL_SERVER_ERROR)
-												   );
-		if(!Objects.equals(featureOrgId, userOrgId)) {
-			throw new BusinessException(
-					format("Feature of id[%d], can't be changed by a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId)
-					, "INVALID PARAM:feature_id"
-					, FORBIDDEN);
-		}
-		if(featureDto.isUpdated("name") &&
-				isBlankOrNull(featureDto.getName())) {
-			throw new BusinessException(
-					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
-					, "INVALID PARAM:name"
-					, NOT_ACCEPTABLE);
+		if(featureDto.isUpdated("name") && isBlankOrNull(featureDto.getName())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
 		}		
 	}
-	
-	
 
 	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId){
 		if(!featureDto.areRequiredForCreatePropertiesProvided()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
-		}
-		if(!organizationRepository.existsById( orgId )) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
 		if(isBlankOrNull(featureDto.getName())) {
 		    throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);

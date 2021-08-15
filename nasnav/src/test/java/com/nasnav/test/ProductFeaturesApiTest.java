@@ -311,7 +311,7 @@ public class ProductFeaturesApiTest {
 															, String.class
 															);
 		
-		assertEquals(FORBIDDEN, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
 
