@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nasnav.persistence.CartItemEntity;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
-	@Query("SELECT item "
+	@Query("SELECT distinct item "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN FETCH item.user user"
 			+ " LEFT JOIN FETCH item.stock stock "

@@ -135,8 +135,13 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 	private static Object getCellValue(Cell cell ){
 		switch (cell.getCellType())
 		{
-			case NUMERIC:
-				return BigDecimal.valueOf(cell.getNumericCellValue()).toString();
+			case NUMERIC: {
+				double number = cell.getNumericCellValue();
+				if (number == (int) number) {
+					return (int) number;
+				}
+				return BigDecimal.valueOf(cell.getNumericCellValue());
+			}
 			case STRING:
 				return cell.getStringCellValue();
 			case BOOLEAN:

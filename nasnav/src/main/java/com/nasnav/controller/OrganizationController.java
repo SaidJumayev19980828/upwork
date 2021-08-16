@@ -142,7 +142,7 @@ public class OrganizationController {
     @DeleteMapping(value = "image", produces = APPLICATION_JSON_VALUE)
     public void deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam(value = "image_id", required = false) Long imageId,
-                                      @RequestParam(value = "url", required = false) String url) throws BusinessException {
+                                      @RequestParam(value = "url", required = false) String url) {
         if (imageId == null && url == null) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
         }
