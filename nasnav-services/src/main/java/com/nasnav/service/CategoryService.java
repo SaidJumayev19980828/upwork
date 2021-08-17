@@ -539,7 +539,9 @@ public class CategoryService {
 												Map<Long, TagGraphNodeEntity> tagsNodesCache) {
 		List<TagGraphNodeEntity> childrenNodes = createSubTreesForChildrenNodes(node, tagsMap, tagsNodesCache);
 		TagGraphNodeEntity	savedNode = createTagTreeNode(node, tagsMap, tagsNodesCache);
-		
+
+		removeDuplicateTagsInTheSameLevel(childrenNodes);
+
 		childrenNodes
 		 .stream()
 		 .map(child -> new TagGraphEdgesEntity(savedNode, child))
@@ -549,7 +551,20 @@ public class CategoryService {
 	}
 
 
-
+	private void removeDuplicateTagsInTheSameLevel(List<TagGraphNodeEntity> childrenNodes) {
+		Set<TagsEntity> uniqueTags = new HashSet<>();
+		List<TagGraphNodeEntity> nodesToCheck = new ArrayList<>(childrenNodes);
+		if (childrenNodes != null && !childrenNodes.isEmpty()) {
+			for (TagGraphNodeEntity n : nodesToCheck) {
+				if (uniqueTags.contains(n.getTag())) {
+					childrenNodes.remove(n);
+				}
+				else {
+					uniqueTags.add(n.getTag());
+				}
+			}
+		}
+	}
 
 
 	private TagGraphNodeEntity createTagTreeNode(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap,
