@@ -252,13 +252,23 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional
 	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		validateAddressDTO(addressDTO);
 		AddressDTO newAddressEntity = doUpdateUserAddressesImmutably(addressDTO);
 		setAsPrincipleAddressIfNeeded(addressDTO, newAddressEntity);
 		return newAddressEntity;
 	}
 
-
-
+	private void validateAddressDTO(AddressDTO addressDTO) {
+		if (addressDTO.getAddressLine1() == null || addressDTO.getAddressLine1().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "address_line_1");
+		}
+		if (addressDTO.getAreaId() == null || addressDTO.getAreaId() < 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "area_id");
+		}
+		if (addressDTO.getPhoneNumber() == null || addressDTO.getPhoneNumber().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "phone_number");
+		}
+	}
 
 	private void setAsPrincipleAddressIfNeeded(AddressDTO addressDTO, AddressDTO newAddress) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
@@ -376,23 +386,6 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-
-
-	private void validateName(String name) {
-		if (!StringUtils.validateName(name)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
-		}
-	}
-
-
-
-	private void validateEmail(String email) {
-		if (!StringUtils.validateEmail(email)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0004, email);
-		}
-	}
-
-
 	@Override
 	public void deleteUser(Long userId) {
 		userRepository.deleteById(userId);
@@ -456,12 +449,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	/**
-	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
-	 * never used before.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
+
 	private String generateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -471,12 +459,6 @@ public class UserServiceImpl implements UserService {
 		return generatedToken;
 	}
 
-	/**
-	 * regenerate ResetPasswordToken and if token already exists, make recursive
-	 * call until generating new ResetPasswordToken.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
 	private String reGenerateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -527,8 +509,7 @@ public class UserServiceImpl implements UserService {
 		Boolean isEmp = ofNullable(isEmployee).orElse(false);
 		Long requiredUserId = ofNullable(userId).orElse(currentUser.getId());		
 				
-		BaseUserEntity user = 
-				commonUserRepo.findById(requiredUserId, isEmp)
+		BaseUserEntity user = commonUserRepo.findById(requiredUserId, isEmp)
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		
 		return getUserRepresentationWithUserRoles(user);
@@ -559,8 +540,6 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private RedirectView redirectUser(String authToken, String loginUrl) {
-		//String loginUrl = buildOrgLoginPageUrl(orgId);
-		
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
 		attributes.addAttribute("auth_token", authToken);
 		
