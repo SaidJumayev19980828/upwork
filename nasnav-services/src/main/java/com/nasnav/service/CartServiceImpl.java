@@ -443,6 +443,7 @@ public class CartServiceImpl implements CartService{
         });
         params.put("items", info.getItems());
         params.put("userName", info.getName());
+        params.put("hasRec", false);
         return params;
     }
 
