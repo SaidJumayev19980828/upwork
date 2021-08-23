@@ -107,9 +107,18 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public Cart getUserCart(Long userId, String promocode) {
+    public Cart getUserCart(Long userId, String promoCode) {
         Cart cart = getUserCart(userId);
-        cart.setPromos(promoService.calcPromoDiscountForCart(promocode, cart));
+        if (promoCode != null && !promoCode.equals("")) {
+            if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, securityService.getCurrentUserOrganizationId())) {
+                cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
+                cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
+            } else {
+                cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+            }
+        } else {
+            cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+        }
         cart.setDiscount(cart.getPromos().getTotalDiscount());
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;

@@ -14,9 +14,11 @@ import java.util.Map;
 public class AppliedPromotionsResponse {
     private BigDecimal totalDiscount;
     private List<Map<String, Object>> appliedPromos;
+    private String error;
 
     public AppliedPromotionsResponse() {
         totalDiscount = BigDecimal.ZERO;
         appliedPromos = new ArrayList<>();
+        error = "";
     }
 }
