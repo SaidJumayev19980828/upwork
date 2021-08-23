@@ -466,6 +466,11 @@ public class SallabShippingService implements ShippingService{
 		return Optional.empty();
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
 
 }
 

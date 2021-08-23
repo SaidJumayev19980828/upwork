@@ -511,6 +511,17 @@ public class ClickNShipShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        String serverUrl = getServiceParam(SERVER_URL);
+        ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
+        Base64.Encoder encoder = Base64.getEncoder();
+        return client
+                .printWaybill(AUTH_TOKEN, airwayBillNumber)
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(byte[].class))
+                .map(fileDataBytes -> encoder.encodeToString(fileDataBytes));
+    }
 
 
     private void validateParams(ServiceParameter param) {

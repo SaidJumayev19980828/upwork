@@ -34,6 +34,7 @@ import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dao.*;
@@ -72,6 +73,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private Logger logger = LogManager.getLogger();
 
+	@PersistenceContext
 	@Autowired
 	private EntityManager entityMgr;
 	@Autowired

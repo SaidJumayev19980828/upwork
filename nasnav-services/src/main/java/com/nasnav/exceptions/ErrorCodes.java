@@ -70,6 +70,7 @@ public enum ErrorCodes {
 	,P$PRO$0012("No collection exists with ID[%d]!")
 	,P$PRO$0013("No collections exists with ID %s!")
 	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
+	,P$PRO$0015("Product with id [%d] has no stocks!")
 
 	,P$IMPORT$0001("Store Manager is allowed only to update stocks!")
 	,P$IMPORT$0002("Store Manager cannot access stocks of another shop!")

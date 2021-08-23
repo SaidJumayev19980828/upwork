@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -76,6 +77,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     public static final int MAX_RETURN_TIME_WINDOW = 14;
 
+    @PersistenceContext
     @Autowired
     private EntityManager em;
 

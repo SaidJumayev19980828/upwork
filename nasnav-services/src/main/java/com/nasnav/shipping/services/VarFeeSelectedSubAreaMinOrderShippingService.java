@@ -275,4 +275,9 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
     public Optional<Long> getPickupShop(String additionalParametersJson) {
         return Optional.empty();
     }
+
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        return Mono.empty();
+    }
 }

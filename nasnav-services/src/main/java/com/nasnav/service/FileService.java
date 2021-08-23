@@ -348,6 +348,7 @@ public class FileService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 
 		if (!originalFile.getMimetype().contains("image")) {
+			logger.error(String.format("Couldn't resize image : file has mimetype [%s]!", originalFile.getMimetype()));
 			return STATIC_FILES_URL + "/" + originalFile.getLocation();
 		}
 		try {

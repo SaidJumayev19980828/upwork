@@ -570,6 +570,24 @@ public class BostaLevisShippingService implements ShippingService{
 		return empty();
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		var serverUrl =
+				ofNullable(paramMap.get(SERVER_URL))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
+		var authToken =
+				ofNullable(paramMap.get(AUTH_TOKEN_PARAM))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, AUTH_TOKEN_PARAM, SERVICE_ID));
+		var client = new BostaWebClient(serverUrl);
+
+		return client
+				.createAirwayBill(authToken, airwayBillNumber)
+				.filter(res -> res.rawStatusCode() < 400)
+				.flatMap(res -> res.bodyToMono(CreateAwbResponse.class))
+				.map(CreateAwbResponse::getData)
+				.defaultIfEmpty("");
+	}
+
 
 	private Integer getShippingStatus(Integer state) {
 		if (enRouteStateMapping.contains(state)) {

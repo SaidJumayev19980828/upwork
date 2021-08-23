@@ -8,10 +8,7 @@ import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
-import com.nasnav.dto.response.CartOptimizationStrategyDTO;
-import com.nasnav.dto.response.OrgThemeRepObj;
-import com.nasnav.dto.response.PromotionDTO;
-import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -214,6 +211,12 @@ public class OrganizationController {
     @GetMapping(value = "shipping/service", produces = APPLICATION_JSON_VALUE)
     public List<ShippingServiceRegistration> listShippingServices(@RequestHeader (name = "User-Token", required = false) String userToken) {
         return shippingMngService.listShippingServices();
+    }
+
+    @GetMapping(value = "shipping/airway_bill", produces = APPLICATION_JSON_VALUE)
+    public OrderConfirmResponseDTO getShippingAirwayBill(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                                         @RequestParam("order_id") Long orderId) {
+        return shippingMngService.getShippingAirwayBill(orderId);
     }
 
     @GetMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)

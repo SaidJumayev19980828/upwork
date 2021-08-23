@@ -211,6 +211,10 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        return Mono.empty();
+    }
 
 
     private void setEtaMinutesMin(Map<String, String> serviceParams) {

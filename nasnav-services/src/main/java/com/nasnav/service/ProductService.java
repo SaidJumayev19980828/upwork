@@ -59,6 +59,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -139,6 +140,7 @@ public class ProductService {
 	@Autowired
 	private BrandsRepository brandRepo;
 
+	@PersistenceContext
 	@Autowired
 	private EntityManager em;
 

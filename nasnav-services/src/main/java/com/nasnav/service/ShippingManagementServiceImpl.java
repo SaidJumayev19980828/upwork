@@ -9,6 +9,7 @@ import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.*;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -35,6 +36,7 @@ import reactor.core.publisher.Mono;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -93,6 +95,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private ReturnShipmentRepository returnShipmentRepo;
 	@Autowired
 	private ReturnRequestItemRepository returnedItemRepo;
+	@Autowired
+	private OrdersRepository orderRepo;
 
 	@Autowired
 	@Setter
@@ -986,6 +990,24 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	public Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId) {
 		return shippingServiceFactory
 				.getServiceInfo(shippingServiceId);
+	}
+
+	@Override
+	public OrderConfirmResponseDTO getShippingAirwayBill(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getAirwayBill(airwayBillNo))
+				.get()
+				.blockOptional(Duration.ofSeconds(5))
+				.map(file -> new OrderConfirmResponseDTO(file, "Airway Bill.pdf", "application/pdf"))
+				.orElseGet(() -> new OrderConfirmResponseDTO());
 	}
 
 

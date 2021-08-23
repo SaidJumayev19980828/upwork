@@ -51,4 +51,6 @@ public interface ShippingService {
 	ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params);
 
 	Optional<Long> getPickupShop(String additionalParametersJson);
+
+	Mono<String> getAirwayBill(String airwayBillNumber);
 }

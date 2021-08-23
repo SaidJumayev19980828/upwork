@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -103,7 +104,8 @@ public class OrderServiceImpl implements OrderService {
 	private final UserServicesHelper userServicesHelper;
 	
 	private Logger logger = LogManager.getLogger();
-	
+
+	@PersistenceContext
 	@Autowired
 	private EntityManager em;
 
