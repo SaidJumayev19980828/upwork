@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -1686,6 +1687,10 @@ public class OrderServiceImpl implements OrderService {
 		return getOrderResponse(order);
 	}
 
+	@Override
+	public String trackOrder(Long orderId) {
+		return shippingMgrService.getTrackingUrl(orderId);
+	}
 
 
 	private void validateCartCheckoutDTO(CartCheckoutDTO dto){

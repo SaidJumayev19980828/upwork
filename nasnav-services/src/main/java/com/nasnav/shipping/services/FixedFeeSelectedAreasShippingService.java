@@ -216,6 +216,11 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
         return Mono.empty();
     }
 
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
+    }
+
 
     private void setEtaMinutesMin(Map<String, String> serviceParams) {
         firstExistingValueOf(

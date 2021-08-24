@@ -275,6 +275,11 @@ public class PickupFromShop implements ShippingService{
 		return Mono.empty();
 	}
 
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
+
 
 	@Override
 	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {

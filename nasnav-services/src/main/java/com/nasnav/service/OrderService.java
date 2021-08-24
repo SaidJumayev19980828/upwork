@@ -72,4 +72,6 @@ public interface OrderService {
 	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
 
 	Order createOrder(CartCheckoutDTO dto);
+
+	String trackOrder(Long orderId);
 }

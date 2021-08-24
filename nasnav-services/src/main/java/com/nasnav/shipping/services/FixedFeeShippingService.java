@@ -238,6 +238,11 @@ public class FixedFeeShippingService implements ShippingService {
         return Mono.empty();
     }
 
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
+    }
+
 
     private void setEtaDaysMin(Map<String, String> serviceParams) {
         ofNullable(serviceParams.get(ETA_DAYS_MIN))

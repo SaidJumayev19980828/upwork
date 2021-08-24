@@ -57,6 +57,12 @@ public class OrdersController {
 		return  this.orderService.getOrdersList(params);
 	}
 
+	@GetMapping(value = "track_info", produces = APPLICATION_JSON_VALUE)
+	public String trackOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
+									  @RequestParam("order_id") Long orderId) {
+		return orderService.trackOrder(orderId);
+	}
+
 	@GetMapping(value = "/meta_order/list/user", produces = APPLICATION_JSON_VALUE )
 	public List<MetaOrderBasicInfo> getMetaOrderList(@RequestHeader(name = "User-Token", required = false) String userToken) {
 		return orderService.getMetaOrderList();

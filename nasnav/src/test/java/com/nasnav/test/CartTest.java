@@ -240,11 +240,7 @@ public class CartTest {
 	}
 
 	@Test
-	public void addCartItemsSuccess() {
-		addCartItemsTest(88L);
-	}
-
-	private void addCartItemsTest(Long userId) {
+	public void addCartItemsTest() {
 		List<JSONObject> items = createCartItems();
 
 		HttpEntity<?> request =  getHttpEntity(items.toString(),"123");
@@ -253,8 +249,7 @@ public class CartTest {
 
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(2 , response.getBody().getItems().size());
-		assertEquals(607, response.getBody().getItems().get(0).getStockId().intValue());
-		assertEquals(606, response.getBody().getItems().get(1).getStockId().intValue());
+		response.getBody().getItems().stream().forEach(i -> assertTrue(asList(606, 607).contains(i.getStockId().intValue())));
 
 	}
 

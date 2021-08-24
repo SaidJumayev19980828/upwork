@@ -129,6 +129,11 @@ public class DummyShippingService implements ShippingService {
 		return Mono.empty();
 	}
 
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
+
 
 	private ShippingEta getFlatEta() {
 		return new ShippingEta(now().plusDays(1), now().plusDays(2));

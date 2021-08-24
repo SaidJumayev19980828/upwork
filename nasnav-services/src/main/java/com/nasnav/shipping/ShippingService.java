@@ -53,4 +53,6 @@ public interface ShippingService {
 	Optional<Long> getPickupShop(String additionalParametersJson);
 
 	Mono<String> getAirwayBill(String airwayBillNumber);
+
+	String getTrackingUrl(String trackingNumber);
 }

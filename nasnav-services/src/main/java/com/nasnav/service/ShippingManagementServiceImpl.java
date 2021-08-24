@@ -1010,6 +1010,21 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElseGet(() -> new OrderConfirmResponseDTO());
 	}
 
+	@Override
+	public String getTrackingUrl(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getTrackingUrl(airwayBillNo))
+				.orElse("");
+	}
+
 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
 			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {

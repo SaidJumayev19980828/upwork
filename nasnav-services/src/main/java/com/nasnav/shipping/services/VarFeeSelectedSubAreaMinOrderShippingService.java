@@ -280,4 +280,9 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
     public Mono<String> getAirwayBill(String airwayBillNumber) {
         return Mono.empty();
     }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
+    }
 }

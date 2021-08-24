@@ -97,5 +97,6 @@ INSERT INTO public.organization_shipping_service values('CLICKNSHIP', 99001, '{
         "SERVER_URL": "https://api.clicknship.com.ng",
         "USER_NAME": "cnsdemoapiacct",
         "PASSWORD": "ClickNShip$12345",
-        "GRANT_TYPE": "password"
+        "GRANT_TYPE": "password",
+        "TRACKING_URL": "https://clicknship.com.ng/GuestOperations/ShipmentTrackerGuest.aspx?WaybillNumber="
       }', 99001);

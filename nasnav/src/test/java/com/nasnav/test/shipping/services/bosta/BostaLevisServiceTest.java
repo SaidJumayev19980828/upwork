@@ -34,7 +34,8 @@ import static org.junit.Assert.*;
 @PropertySource("classpath:test.database.properties")
 @DirtiesContext
 public class BostaLevisServiceTest {
-	
+
+	private final String trackingUrl = "https://bosta.co/tracking-shipment/?lang=en&track_num=";
 	private final String token = "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357";
     private String id = "yM1ngytZ0";
     private String server = "";
@@ -136,7 +137,8 @@ public class BostaLevisServiceTest {
 	
 
 	private List<ServiceParameter> createServiceParams() {
-		return asList(new ServiceParameter(AUTH_TOKEN_PARAM,token)
+		return asList(new ServiceParameter(TRACKING_URL,trackingUrl)
+				, new ServiceParameter(AUTH_TOKEN_PARAM,token)
 				, new ServiceParameter(BUSINESS_ID_PARAM, id)
 				, new ServiceParameter(SERVER_URL, server)
 				, new ServiceParameter(WEBHOOK_URL, webhook)

@@ -470,6 +470,11 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		return Mono.empty();
 	}
 
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
+
 
 	private ReturnShipmentTracker createReturnShipmentTracker(ShippingDetails item){
 		return new ReturnShipmentTracker(new ShipmentTracker(item), RETURN_EMAIL_MSG);

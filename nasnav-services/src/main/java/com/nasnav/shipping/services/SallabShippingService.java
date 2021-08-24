@@ -471,6 +471,11 @@ public class SallabShippingService implements ShippingService{
 		return Mono.empty();
 	}
 
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
+
 
 }
 

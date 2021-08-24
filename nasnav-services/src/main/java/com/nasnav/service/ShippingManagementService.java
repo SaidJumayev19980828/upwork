@@ -37,4 +37,5 @@ public interface ShippingManagementService {
 	boolean isPickupService(String shippingServiceId);
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
 	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
+	String getTrackingUrl(Long orderId);
 }
