@@ -1,18 +1,13 @@
 package com.nasnav.enumerations;
 
-import com.nasnav.exceptions.RuntimeBusinessException;
 import lombok.Getter;
-
 import java.util.Arrays;
-
-import static com.nasnav.exceptions.ErrorCodes.ENUM$0001;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public enum ShippingStatus {
 
 
     DRAFT(0),
-    REQUSTED(1),
+    REQUESTED(1),
     EN_ROUTE(10),
     PICKED_UP(20),
     DELIVERED(45),

@@ -1,10 +1,12 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopThreeSixtyService;
@@ -35,8 +37,8 @@ public class ShopThreeSixtyController {
     }
 
     @GetMapping(value = "/sections", produces = APPLICATION_JSON_VALUE)
-    public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List> res = new HashMap<>();
+    public Map<String, List<ShopFloorDTO>> getShop360Sections(@RequestParam("shop_id") Long shopId) {
+        Map<String, List<ShopFloorDTO>> res = new HashMap<>();
         res.put("floors", shop360Svc.getSections(shopId));
         return res;
     }
@@ -90,13 +92,14 @@ public class ShopThreeSixtyController {
     }
 
     @GetMapping(value = "/products", produces = APPLICATION_JSON_VALUE)
-    public LinkedHashMap getShop360products(@RequestParam("shop_id") Long shopId,
-                                            @RequestParam(required = false) String name,
-                                            @RequestParam(required = false, defaultValue = "5") Integer count,
-                                            @RequestParam(value = "product_type", required = false) Integer productType,
-                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
-                                            @RequestParam(value = "published", required = false) Short published,
-                                            @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock) throws BusinessException {
+    public LinkedHashMap<String, List<ThreeSixtyProductsDTO>> getShop360products(
+             @RequestParam("shop_id") Long shopId,
+             @RequestParam(required = false) String name,
+             @RequestParam(required = false, defaultValue = "5") Integer count,
+             @RequestParam(value = "product_type", required = false) Integer productType,
+             @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
+             @RequestParam(value = "published", required = false) Short published,
+             @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock) throws BusinessException {
         return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360, includeOutOfStock);
     }
 

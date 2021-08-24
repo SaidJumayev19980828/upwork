@@ -40,7 +40,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.service.OrderReturnService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.time.LocalDateTime.now;
@@ -1009,7 +1009,7 @@ public class OrderReturnTest {
     private boolean isAllHasRequestedStatus(List<ReturnShipmentEntity> shipments) {
         return shipments
                 .stream()
-                .allMatch(shp -> REQUSTED.getValue().equals(shp.getStatus()));
+                .allMatch(shp -> REQUESTED.getValue().equals(shp.getStatus()));
     }
 
 

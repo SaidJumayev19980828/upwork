@@ -24,15 +24,11 @@ public class NasnavAccessDeniedHandler implements AccessDeniedHandler {
 
 		response.getWriter().write(jsonInString);
 	}
-	
-	
-	
 
 	private String createResponseBody() throws JsonProcessingException {
 		BaseResponse body = new BaseResponse(false);
-		ObjectMapper mapper = new ObjectMapper();		
-		String jsonInString = mapper.writeValueAsString(body);
-		return jsonInString;
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writeValueAsString(body);
 	}
 
 }

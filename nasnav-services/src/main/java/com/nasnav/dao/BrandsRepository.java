@@ -2,9 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.service.model.IdAndNamePair;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;

@@ -1038,7 +1038,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ReturnShipmentEntity returnShipment = new ReturnShipmentEntity();
 		returnShipment.setExternalId(tracker.getShipmentExternalId());
 		returnShipment.setShippingServiceId(shippingServiceId);
-		returnShipment.setStatus(REQUSTED.getValue());
+		returnShipment.setStatus(REQUESTED.getValue());
 		returnShipment.setTrackNumber(tracker.getTracker());
 		returnShipment = returnShipmentRepo.save(returnShipment);
 		addReturnedItemsToReturnShipment(tracker, returnShipment);

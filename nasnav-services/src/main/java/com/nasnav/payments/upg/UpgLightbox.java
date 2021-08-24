@@ -44,7 +44,7 @@ public class UpgLightbox {
 		JSONObject jsonObject = null;
 		try {
 			jsonObject = new JSONObject(content);
-		} catch (JSONException ex) { ; }
+		} catch (JSONException ex) {  }
 		if (jsonObject == null) {
 			upgLogger.error("Unable to parse the response: {}", content);
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process the response received from the gateway\"}", BAD_GATEWAY);
@@ -100,7 +100,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, MetaOrderEntity metaOrderEntity, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
+	public static PaymentEntity verifyPayment(JSONObject json, MetaOrderEntity metaOrderEntity, Logger upgLogger, UpgAccount account, OrderService orderService) {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
@@ -117,7 +117,7 @@ public class UpgLightbox {
 		long paidAmount = 0;
 		try {
 			paidAmount = Long.parseLong(json.getString("Amount"));
-		} catch (Exception ex) {;}
+		} catch (Exception ex) {}
 
 		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderEntity.getId());
 		if (orderValue == null) {

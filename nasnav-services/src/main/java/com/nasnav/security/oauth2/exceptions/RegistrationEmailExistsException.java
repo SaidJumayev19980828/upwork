@@ -5,7 +5,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
-public class RegisterationEmailExistsException extends AuthenticationException {
+public class RegistrationEmailExistsException extends AuthenticationException {
 
 	/**
 	 * 
@@ -13,7 +13,7 @@ public class RegisterationEmailExistsException extends AuthenticationException {
 	private static final long serialVersionUID = 5894536L;
 	
 
-	public RegisterationEmailExistsException(String format) {
+	public RegistrationEmailExistsException(String format) {
 		super(format);
 	}
 
