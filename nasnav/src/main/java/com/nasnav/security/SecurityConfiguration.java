@@ -79,6 +79,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/cancel"						,HttpMethod.POST	, setOf(CUSTOMER)),
 						patternOf( "/order/meta_order/list/user"		,HttpMethod.GET		, setOf(CUSTOMER)),
+						patternOf( "/order/track_info"					,HttpMethod.GET		, setOf(CUSTOMER)),
 						patternOf( "/order/return/reject"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/order/return/confirm"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/order/return/received_item"		,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
