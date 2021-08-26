@@ -196,9 +196,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 		ZoneId zoneId = ZoneId.of("UTC");
 		PromotionDTO dto = new PromotionDTO();
 		dto.setCode(entity.getCode());
-		dto.setConstrains(readJsonStrAsMap(entity.getConstrainsJson()));
+		try {
+			dto.setConstrains(readJsonStrAsMap(entity.getConstrainsJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setCreatedOn(entity.getCreatedOn());
-		dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		try {
+			dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setEndDate(entity.getDateEnd().atZone(zoneId));
 		dto.setId(entity.getId());
 		dto.setIdentifier(entity.getIdentifier());
@@ -211,11 +215,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setPriority(entity.getPriority());
 		return dto;
 	}
-	
-	
-	
-	
-	
+
 	
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
