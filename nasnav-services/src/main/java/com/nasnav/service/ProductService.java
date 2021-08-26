@@ -20,7 +20,6 @@ import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;

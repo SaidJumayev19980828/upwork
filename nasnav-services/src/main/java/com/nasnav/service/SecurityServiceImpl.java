@@ -13,7 +13,7 @@ import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
 import lombok.AllArgsConstructor;
@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -492,7 +491,7 @@ public class SecurityServiceImpl implements SecurityService {
 		return oAuthUserRepo
 				.findByLoginToken(socialLoginToken)
 				.map(OAuth2UserEntity::getUser)
-				.orElseThrow(() -> new InCompleteOAuthRegisteration());
+				.orElseThrow(() -> new InCompleteOAuthRegistration());
 	}
 
 

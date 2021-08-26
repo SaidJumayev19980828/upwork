@@ -5,7 +5,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -19,7 +18,6 @@ import com.nasnav.commons.utils.FilesUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/upload")
-public class DataImportContoller {
+public class DataImportController {
 
 	@Autowired
 	@Qualifier("csv")

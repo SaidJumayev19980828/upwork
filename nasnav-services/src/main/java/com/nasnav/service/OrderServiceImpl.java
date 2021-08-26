@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
@@ -35,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.view.RedirectView;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -64,7 +62,7 @@ import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.getTransactionCurrency;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -1463,7 +1461,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		shipment.setExternalId(tracker.getShipmentExternalId());
 		shipment.setTrackNumber(tracker.getTracker());
-		shipment.setStatus(REQUSTED.getValue());
+		shipment.setStatus(REQUESTED.getValue());
 		ShipmentEntity saved = shipmentRepo.save(shipment);
 		order.setShipment(saved);
 	}

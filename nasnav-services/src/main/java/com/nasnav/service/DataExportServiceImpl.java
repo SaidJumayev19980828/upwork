@@ -7,7 +7,7 @@ import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
-import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAtrribute;
+import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAttribute;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
@@ -112,8 +112,8 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 
-	private Map<Long, List<VariantExtraAtrribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
-		List<VariantExtraAtrribute> variantAttributes = emptyList();
+	private Map<Long, List<VariantExtraAttribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
+		List<VariantExtraAttribute> variantAttributes = emptyList();
 		if(shopId != null){
 			variantAttributes =  prodExtraAttributeRepo.findByVariantShopId(shopId);
 		}else{
@@ -121,7 +121,7 @@ public class DataExportServiceImpl implements DataExportService{
 		}
 		return variantAttributes
 				.stream()
-				.collect(groupingBy(VariantExtraAtrribute::getVariantId));
+				.collect(groupingBy(VariantExtraAttribute::getVariantId));
 	}
 
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
@@ -143,7 +143,7 @@ public class DataExportServiceImpl implements DataExportService{
 	private CsvRow toCsvRow(ProductExportedData productData
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Long, Map<String, String>> features
-			, Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
+			, Map<Long, List<VariantExtraAttribute>> extraAttributes) {
 		var row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
@@ -155,12 +155,12 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	
 	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
-			Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
+			Map<Long, List<VariantExtraAttribute>> extraAttributes) {
 		var extraAttrMap  =
 				extraAttributes
 				.getOrDefault(productData.getVariantId(), emptyList())
 				.stream()
-				.collect(toMap(VariantExtraAtrribute::getName, VariantExtraAtrribute::getValue));
+				.collect(toMap(VariantExtraAttribute::getName, VariantExtraAttribute::getValue));
 		row.setExtraAttributes(extraAttrMap);
 	}
 
