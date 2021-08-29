@@ -27,8 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -301,4 +300,18 @@ public class ShopsUpdateTest {
         assertEquals(505, firstShop.getId().intValue());
     }
 
+    @Test
+    public void setShopsPriority() {
+        String json = jsonArray()
+                .put(json()
+                    .put("shop_id", 505)
+                    .put("priority", 3)
+                )
+                .toString();
+        HttpEntity request = getHttpEntity(json, "161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/priority", request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        ShopsEntity shop = shopsRepository.findById(505L).get();
+        assertEquals(3, shop.getPriority().intValue());
+    }
 }
