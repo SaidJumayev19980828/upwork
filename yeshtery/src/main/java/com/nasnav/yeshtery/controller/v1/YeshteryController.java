@@ -150,17 +150,18 @@ public class YeshteryController {
         return addressService.getCountries(hideEmptyCities, null);
     }
 
-    @GetMapping( path="files/{path}")
+    @GetMapping( path="files/{orgId}/{url}")
     public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @PathVariable Long orgId,
                              @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
         String resourceInternalUrl;
         if (height != null || width != null) {
-            resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(orgId+"/"+url, width, height, type);
         } else {
-            resourceInternalUrl = fileService.getResourceInternalUrl(url);
+            resourceInternalUrl = fileService.getResourceInternalUrl(orgId+"/"+url);
         }
         resp.setStatus(HttpStatus.OK.value());
 
