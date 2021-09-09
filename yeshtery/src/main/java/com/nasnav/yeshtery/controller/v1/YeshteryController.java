@@ -158,10 +158,11 @@ public class YeshteryController {
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
         String resourceInternalUrl;
+        String modUrl = "/"+orgId+"/"+url;
         if (height != null || width != null) {
-            resourceInternalUrl = fileService.getResizedImageInternalUrl(orgId+"/"+url, width, height, type);
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(modUrl, width, height, type);
         } else {
-            resourceInternalUrl = fileService.getResourceInternalUrl(orgId+"/"+url);
+            resourceInternalUrl = fileService.getResourceInternalUrl(modUrl);
         }
         resp.setStatus(HttpStatus.OK.value());
 
