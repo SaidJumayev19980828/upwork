@@ -340,7 +340,7 @@ public class FileService {
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
 		final String fileType = getImageType(url, type, originalFile.getMimetype())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
-
+		logger.debug("Requesting resized image " + url + ", to size: {" + width + "} x {" + height + "}");
 		if (!originalFile.getMimetype().contains("image")) {
 			return STATIC_FILES_URL + "/" + originalFile.getLocation();
 		}
@@ -360,6 +360,7 @@ public class FileService {
 
 
 	private FilesResizedEntity createResizedImageEntity(FileEntity originalFile, Integer width, Integer height, String fileType) {
+		logger.debug("Creating resized image " + originalFile.getOriginalFileName() + ", to size: {" + width + "} x {" + height + "}");
 		try {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
@@ -367,6 +368,7 @@ public class FileService {
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
 			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
+			logger.debug("Image resized");
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
 		}catch (Exception e) {
@@ -443,6 +445,8 @@ public class FileService {
 		resizedFile.setWidth(width);
 		resizedFile.setHeight(height);
 		resizedFile.setImageUrl(getUrl(multipartFile.getOriginalFilename(), orgId));
+		logger.debug("Creating entity: " + getUrl(multipartFile.getOriginalFilename(), orgId));
+
 		return filesResizedRepo.save(resizedFile);
 	}
 
