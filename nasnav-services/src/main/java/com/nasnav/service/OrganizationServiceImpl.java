@@ -34,8 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -185,7 +183,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         setSocialEntity(orgRepObj);
         setThemeSettings(orgRepObj);
-        setBrands(orgRepObj);
         setImages(orgRepObj);
         setPublicSettings(orgRepObj);
         setDomain(orgRepObj);
@@ -435,22 +432,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         return new OrganizationResponse(organization.getId(), 0);
     }
-
-
-
-
-    @Override
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
-        List<Organization_BrandRepresentationObject> brands = null;
-        if (orgId == null)
-            return brands;
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0);
-        brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
-                 .collect(toList());
-        return brands;
-    }
-
-
 
 
     private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo,

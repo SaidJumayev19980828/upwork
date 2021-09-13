@@ -16,10 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
@@ -33,8 +30,6 @@ public interface OrganizationService {
     OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException;
 
     OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException;
-
-    List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId);
 
     OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover);
 
