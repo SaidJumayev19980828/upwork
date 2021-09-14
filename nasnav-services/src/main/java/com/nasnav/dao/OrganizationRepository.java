@@ -26,6 +26,16 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     @Query("select o.id from OrganizationEntity o where o.yeshteryState = 1")
     List<Long> findByYeshteryState();
 
+    @Query("select distinct o from OrganizationEntity o left join fetch o.shops shop where o.yeshteryState = 1")
+    List<OrganizationEntity> findYeshteryOrganizations();
+
+    @Query("select distinct o from OrganizationEntity o " +
+            " left join ProductEntity p on p.organizationId = o.id " +
+            " left join p.tags t " +
+            " left join fetch o.shops shop " +
+            " where o.yeshteryState = 1 and t.categoriesEntity.id in :ids")
+    List<OrganizationEntity> findYeshteryOrganizationsFilterByCategory(@Param("ids") List<Long> ids);
+
     OrganizationEntity findByIdAndThemeId(Long id, Integer themeId);
 
     boolean existsByIdAndThemeId(Long id, Integer themeId);

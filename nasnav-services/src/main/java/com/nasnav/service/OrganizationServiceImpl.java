@@ -8,6 +8,7 @@ import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
@@ -34,8 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -233,17 +232,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     private void setImages(OrganizationRepresentationObject orgRepObj) {
+            orgRepObj.setImages(getOrganizationImages(orgRepObj.getId()));
+    }
+
+    private List<OrganizationImagesRepresentationObject> getOrganizationImages(Long orgId) {
         List <OrganizationImagesEntity> orgImgEntities =
-                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgId, asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
-            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities
+            return orgImgEntities
                     .stream()
                     .map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation()))
                     .collect(toList());
-            orgRepObj.setImages(imagesList);
         }
+        return null;
     }
-
 
 
     private void setPublicSettings(OrganizationRepresentationObject orgRepObj) {
@@ -607,7 +609,34 @@ public class OrganizationServiceImpl implements OrganizationService {
             .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0001, featureId));
     }
 
+    @Override
+    public List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds) {
+        List<OrganizationEntity> orgs;
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            orgs = organizationRepository.findYeshteryOrganizationsFilterByCategory(categoryIds);
+        }
+        else {
+            orgs = organizationRepository.findYeshteryOrganizations();
+        }
+        return orgs
+                .stream()
+                .map(this::toYeshteryOrganizationDto)
+                .collect(toList());
+    }
 
+    private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
+        YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
+        dto.setId(org.getId());
+        dto.setName(org.getName());
+        dto.setDescription(org.getDescription());
+        dto.setImages(getOrganizationImages(org.getId()));
+        dto.setShops(getOrganizationShopsDto(org));
+        return dto;
+    }
+
+    private List<ShopRepresentationObject> getOrganizationShopsDto(OrganizationEntity org) {
+        return org.getShops().stream().map(s -> (ShopRepresentationObject) s.getRepresentation()).collect(toList());
+    }
 
     private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {
         featureRepo.delete(feature);

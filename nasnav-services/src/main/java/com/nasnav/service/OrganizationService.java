@@ -4,6 +4,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
@@ -81,4 +82,6 @@ public interface OrganizationService {
     Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature);
 
     void removeProductFeature(Integer featureId);
+
+    List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds);
 }

@@ -3,6 +3,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
@@ -63,7 +64,8 @@ public class YeshteryController {
     private SearchService searchService;
     @Autowired
     private ShopThreeSixtyService shop360Svc;
-
+    @Autowired
+    private OrganizationService organizationService;
     @Autowired
     private CategoryService categoryService;
 
@@ -96,6 +98,11 @@ public class YeshteryController {
     @GetMapping(value = "/related_products", produces = APPLICATION_JSON_VALUE)
     public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
         return productService.getRelatedProducts(productId);
+    }
+
+    @GetMapping(value = "/organizations", produces = APPLICATION_JSON_VALUE)
+    public List<YeshteryOrganizationDTO> getRelatedProducts(@RequestParam(value = "category_id", required = false) List<Long> categoryIds) {
+        return organizationService.getYeshteryOrganizations(categoryIds);
     }
 
     @GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
