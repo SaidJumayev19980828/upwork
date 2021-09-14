@@ -829,7 +829,9 @@ public class ProductService {
 					.or(product.id.like("%" + params.name + "%"))
 					.or(product.description.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
-					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
+					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") )
+					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
+			);
 
 
 		if(params.product_type != null)

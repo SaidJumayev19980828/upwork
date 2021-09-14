@@ -438,7 +438,7 @@ public class CartServiceImpl implements CartService{
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, dto.getPromo()));
             var discountData = readJsonStrAsMap(promo.getDiscountJson());
             String discount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-                    .map(v -> v+"")
+                    .map(v -> v+" "+ org.getCountry().getCurrency())
                     .orElse(getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
                             .map(v -> v+"%")
                             .orElse("0%"));

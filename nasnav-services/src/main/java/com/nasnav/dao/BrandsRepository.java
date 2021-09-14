@@ -46,6 +46,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
 			" from BrandsEntity b " +
 			" left join b.organizationEntity org " +
-			" where org.yeshteryState = 1 order by b.name")
+			" where org.yeshteryState = 1 and b.removed = 0 order by b.name")
 	PageImpl<Organization_BrandRepresentationObject> findByOrganizationEntity_YeshteryState(Pageable page);
 }
