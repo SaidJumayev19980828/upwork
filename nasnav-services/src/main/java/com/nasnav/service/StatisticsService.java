@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
@@ -214,6 +215,7 @@ class UserCartInfo {
     Long id;
     String name;
     String email;
+    @JsonProperty("phone_number")
     String phoneNumber;
     List<StatisticsCartItem> items;
 }
