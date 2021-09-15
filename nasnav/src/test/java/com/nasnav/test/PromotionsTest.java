@@ -517,7 +517,9 @@ public class PromotionsTest {
 				.put("end_date", end)
 				.put("status", "ACTIVE")
 				.put("code", "GIVE-YOUR-MONEY-OR-ELSE-...")
-				.put("constrains", json().put("amount_max", 1000))
+				.put("constrains", json()
+						.put("discount_value_max", 1000)
+						.put("cart_amount_min", 1))
 				.put("discount", json().put("percentage", 20))
 				.put("type_id", 0);
 	}
