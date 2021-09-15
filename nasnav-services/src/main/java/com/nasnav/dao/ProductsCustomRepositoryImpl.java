@@ -60,9 +60,9 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 			baseQuery.where(variant.id.in(variantFeaturesQuery));
 		}
 
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
+		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
-			baseQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+			baseQuery.where(product.id.in(productTagsQuery));
 
 		return baseQuery;
 	}
@@ -91,9 +91,9 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 			baseQuery.where(variant.id.in(variantFeaturesQuery));
 		}
 
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
+		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
-			baseQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+			baseQuery.where(product.id.in(productTagsQuery));
 
 		return baseQuery;
 	}
@@ -129,6 +129,19 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 								.groupBy(productTags.productId)
 								.having(productTags.tagId.count().eq((long) params.getTags().size()))
 								.as("productTags"));
+	}
+
+	@Override
+	public SQLQuery<Long> getProductTagsByNameQuery(ProductSearchParam params) {
+		if (params.getName() == null)
+			return null;
+
+		QTags tag = QTags.tags;
+		QProductTags productTags = QProductTags.productTags;
+		return select(productTags.productId)
+				.from(productTags)
+				.join(tag).on(tag.id.eq(productTags.tagId))
+				.where(tag.name.likeIgnoreCase(params.getName()));
 	}
 
 	

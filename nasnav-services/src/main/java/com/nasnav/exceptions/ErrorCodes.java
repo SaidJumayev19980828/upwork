@@ -128,7 +128,15 @@ public enum ErrorCodes {
 
 	,S$360$0001("No 360 shop found!")
 	,S$360$0002("No scene found with ID[%d]!")
+	,S$360$0003("Must provide shop_id to attach shop360s to it")
+	,S$360$0004("There exists shop360 attached to this shop already!")
+	,S$360$0005("Must provide type for JsonData (web or mobile)")
 	,S$360$F$0001("floor [%d] number can't be null!")
+	,S$360$F$0002("No floor found")
+	,S$360$F$0003("Provided floor No. [%d] doesn't exist!")
+	,S$360$S$0002("No section found")
+	,S$360$S$0003("Provided section No. [%d] doesn't exist!")
+	,S$360$S$0004("Provided scene No. [%d] doesn't exist!")
 	,S$360$PRO$POS$001("%s is linked to products positions!, please confirm if you want to delete them too")
 
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
@@ -292,6 +300,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0012("Invalid promo type_id[%d]!")
 	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
 	,PROMO$PARAM$0014("Usage limit exceeded max value!")
+	,PROMO$PARAM$0015("Missing parameter[%s] in given promotion [%s]!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")

@@ -37,10 +37,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -107,13 +104,14 @@ public class YeshteryController {
 
     @GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
     public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {
-        return brandService.getBrandById(brandId);
+        return brandService.getBrandById(brandId, true);
     }
 
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
     public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
-                                                                              @RequestParam(required = false, defaultValue = "10") Integer count) {
-        return brandService.getYeshteryBrands(start, count);
+                                                                              @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                              @RequestParam(value = "brand_id", required = false) Set<Long> brands) {
+        return brandService.getYeshteryBrands(start, count, brands);
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
@@ -215,7 +213,7 @@ public class YeshteryController {
 
     @GetMapping(value = "/360view/shops", produces = MediaType.APPLICATION_JSON_VALUE)
     public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
-        return shop360Svc.getThreeSixtyShops(shopId);
+        return shop360Svc.getThreeSixtyShops(shopId, true);
     }
 
     @GetMapping(value = "/360view/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)

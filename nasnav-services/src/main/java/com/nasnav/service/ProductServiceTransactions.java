@@ -57,7 +57,7 @@ public class ProductServiceTransactions {
 		processInBatches(productIds, 5000, productRepo::deleteAllByIdIn);
 	}
 
-		public void deleteVariants(List<Long> variantIds, Boolean forceDelete) {
+	public void deleteVariants(List<Long> variantIds, Boolean forceDelete) {
 		if (isBlankOrNull(variantIds)){
 			return;
 		}

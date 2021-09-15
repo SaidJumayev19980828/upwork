@@ -54,7 +54,7 @@ public class NavboxController {
 
 	@GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
 	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {
-		return brandService.getBrandById(brandId);
+		return brandService.getBrandById(brandId, false);
 	}
 
 	@GetMapping(value = "/organization", produces = APPLICATION_JSON_VALUE)

@@ -20,6 +20,11 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
     Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
+	@Query("select b from BrandsEntity b " +
+			" left join fetch b.organizationEntity o "+
+			" where b.id = :id and o.yeshteryState = 1")
+	Optional<BrandsEntity> findYeshteryBrandById(@Param("id") Long id);
+
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
 	boolean existsByIdAndRemoved(Long brandId, Integer removed);
 
@@ -48,4 +53,12 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" left join b.organizationEntity org " +
 			" where org.yeshteryState = 1 and b.removed = 0 order by b.name")
 	PageImpl<Organization_BrandRepresentationObject> findByOrganizationEntity_YeshteryState(Pageable page);
+
+	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
+			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
+			" from BrandsEntity b " +
+			" left join b.organizationEntity org " +
+			" where b.id in :ids and org.yeshteryState = 1 and b.removed = 0 order by b.name")
+	PageImpl<Organization_BrandRepresentationObject> findByIdInAndOrganizationEntity_YeshteryState(@Param("ids")Set<Long>ids,
+																								   Pageable page);
 }
