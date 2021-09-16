@@ -4,6 +4,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
@@ -65,6 +66,8 @@ public class YeshteryController {
     private OrganizationService organizationService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private ReviewService reviewService;
 
     @Autowired
     private SeoService seoService;
@@ -119,6 +122,11 @@ public class YeshteryController {
                                         @RequestParam(required = false, defaultValue = "0") Integer start,
                                         @RequestParam(required = false, defaultValue = "10") Integer count) {
         return productService.getVariantsForYeshtery(name, start, count);
+    }
+
+    @GetMapping(value="/review", produces = APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
+        return reviewService.getYeshteryVariantRatings(variantId);
     }
 
     @GetMapping(value = "collection", produces = APPLICATION_JSON_VALUE)

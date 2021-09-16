@@ -27,4 +27,13 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             " where v.id = :variantId and r.approved = true" +
             " order by r.submissionDate desc")
     List<ProductRating> findApprovedVariantRatings(@Param("variantId") Long variantId);
+
+    @Query("select r from ProductRating r" +
+            " join fetch r.variant v" +
+            " join fetch v.productEntity p" +
+            " join fetch OrganizationEntity org on p.organizationId = org.id" +
+            " join fetch r.user u" +
+            " where v.id = :variantId and r.approved = true and org.yeshteryState = 1" +
+            " order by r.submissionDate desc")
+    List<ProductRating> findApprovedYeshteryVariantRatings(@Param("variantId") Long variantId);
 }
