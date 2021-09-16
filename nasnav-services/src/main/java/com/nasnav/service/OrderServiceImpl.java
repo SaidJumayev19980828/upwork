@@ -843,11 +843,14 @@ public class OrderServiceImpl implements OrderService {
 
 	private void setOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator,
 												   DetailedOrderRepObject obj) {
+		String notes = ofNullable(entity.getMetaOrder())
+				.map(MetaOrderEntity::getNotes)
+				.orElse("");
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
-		obj.setNotes(entity.getMetaOrder().getNotes());
+		obj.setNotes(notes);
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
