@@ -61,6 +61,7 @@ import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
@@ -128,6 +129,8 @@ public class OrderServiceImpl implements OrderService {
 	private ProductVariantsRepository variantsRepo;
 	@Autowired
 	private PromotionRepository promoRepo;
+	@Autowired
+	private SettingRepository settingRepo;
 
 	@Autowired
 	private SecurityService securityService;
@@ -961,11 +964,16 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = price.multiply(entity.getQuantity());
+		OrganizationEntity org = entity.getOrdersEntity().getOrganizationEntity();
 		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
-		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
+		CountriesEntity country = org.getCountry();
 		String currencyValue = ofNullable(country).map(CountriesEntity::getCurrency).orElse("");
 		Boolean isReturnable = orderReturnService.isReturnable(entity);
 		String unitName = getUnit(entity);
+		Integer quantityLimit = settingRepo.findBySettingNameAndOrganization_Id(STOCK_ALERT_LIMIT.name(), org.getId())
+				.map(SettingEntity::getSettingValue)
+				.map(Integer::parseInt)
+				.orElse(10);
 
 		item.setId(entity.getId());
 		item.setUnit(unitName);
@@ -978,7 +986,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setCurrency(currency);
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		if(entity.getStocksEntity().getQuantity() < 10) {
+
+		if(entity.getStocksEntity().getQuantity() < quantityLimit) {
 			item.setAvailableStock(entity.getStocksEntity().getQuantity());
 		}
 	}
