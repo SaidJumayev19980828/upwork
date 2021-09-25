@@ -1,8 +1,8 @@
 package com.nasnav.yeshtery.services.interfaces;
 
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
-import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
+import com.nasnav.persistence.YeshteryRecommendationRatingData;
+import com.nasnav.persistence.YeshteryRecommendationSellingData;
 
 import java.util.List;
 

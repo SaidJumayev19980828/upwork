@@ -21,4 +21,10 @@ public interface OrderReturnService {
     Long createReturnRequest(ReturnRequestItemsDTO itemsList);
     void receiveItems(ReceivedItemsDTO returnedItems);
     boolean isReturnable(BasketsEntity basketsEntity);
+    ReturnRequestsResponse getYeshteryOrderReturnRequests(ReturnRequestSearchParams params);
+    ReturnRequestDTO getYeshteryOrderReturnRequest(Long id);
+    void confirmYeshteryReturnRequest(Long id);
+    void rejectYeshteryReturnRequest(ReturnRequestRejectDTO dto);
+    Long createYeshteryReturnRequest(ReturnRequestItemsDTO itemsList);
+
 }

@@ -3,6 +3,7 @@ package com.nasnav.yeshtery;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
@@ -19,6 +20,7 @@ import java.util.Properties;
         ElasticsearchRestClientAutoConfiguration.class})
 @EnableCaching
 @EnableJpaRepositories(basePackages = {"com.nasnav.yeshtery.dao"})
+@EntityScan("com.nansav.persistence")
 @ComponentScan({"com.nasnav"})
 public class Yeshtery{
 

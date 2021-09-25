@@ -5,7 +5,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
-import com.nasnav.persistence.listeners.UserEntityListener;
+import com.nasnav.persistence.listeners.YeshteryUserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -21,10 +21,10 @@ import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 
 @Data
 @Entity
-@EntityListeners(UserEntityListener.class)
-@Table(name = "users")
+@EntityListeners(YeshteryUserEntityListener.class)
+@Table(name = "yeshtery_users")
 @EqualsAndHashCode(callSuper=false)
-public class UserEntity extends BaseUserEntity{
+public class YeshteryUserEntity extends BaseYeshteryUserEntity {
 
     @Column(name="user_name")
     private String name;
@@ -49,8 +49,8 @@ public class UserEntity extends BaseUserEntity{
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @JoinTable(name = "user_addresses"
-            ,joinColumns = {@JoinColumn(name="user_id")}
+    @JoinTable(name = "yeshtery_user_addresses"
+            ,joinColumns = {@JoinColumn(name="yeshtery_user_id")}
             ,inverseJoinColumns = {@JoinColumn(name="address_id")})
     private Set<AddressesEntity> addresses;
 
@@ -58,25 +58,20 @@ public class UserEntity extends BaseUserEntity{
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<UserAddressEntity> userAddresses;
-
-
-    @Column(name = "yeshtery_user_id")
-    private Long yeshteryUserId;
+    private Set<YeshteryUserAddressEntity> userAddresses;
 
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
 
     public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
 
-    public UserEntity() {
+    public YeshteryUserEntity() {
     	this.setUserStatus(NOT_ACTIVATED.getValue());
     	addresses = new HashSet<>();
     }
 
-    
-    public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
-    	UserEntity user = new UserEntity();
+    public static YeshteryUserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
+        YeshteryUserEntity user = new YeshteryUserEntity();
         user.setName(userJson.name);
         user.setEmail(userJson.email);
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
@@ -85,8 +80,7 @@ public class UserEntity extends BaseUserEntity{
         user.setPhoneNumber(userJson.getPhoneNumber());
         return user;
     }
-    
-    
+
     @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();

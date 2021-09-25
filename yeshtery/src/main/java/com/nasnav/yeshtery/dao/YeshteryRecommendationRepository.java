@@ -1,8 +1,8 @@
 package com.nasnav.yeshtery.dao;
 
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData;
-import com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData;
+import com.nasnav.persistence.YeshteryRecommendationRatingData;
+import com.nasnav.persistence.YeshteryRecommendationSellingData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface YeshteryRecommendationRepository extends JpaRepository<ProductEntity, Long> {
 
-    @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationRatingData("
+    @Query("SELECT new com.nasnav.persistence.YeshteryRecommendationRatingData("
             + "product.id, product.name, count (rating.id), sum (rating.rate), (sum(rating.rate) / count (rating.id)) ) "
             + " FROM ProductRating rating "
             + "	LEFT JOIN rating.variant variants "
@@ -23,7 +23,7 @@ public interface YeshteryRecommendationRepository extends JpaRepository<ProductE
             + " group by product.id, product.name ")
     List<YeshteryRecommendationRatingData> findProductTopRating(@Param("orgId") Long orgId, @Param("tagId") Long tagId);
 
-    @Query("SELECT new com.nasnav.yeshtery.persistence.YeshteryRecommendationSellingData("
+    @Query("SELECT new com.nasnav.persistence.YeshteryRecommendationSellingData("
             + "product.id, product.name, count (orders.id))"
             + " FROM BasketsEntity basket "
             + "	LEFT JOIN basket.stocksEntity stock "

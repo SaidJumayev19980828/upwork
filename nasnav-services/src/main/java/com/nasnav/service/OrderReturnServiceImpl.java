@@ -1375,4 +1375,44 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         }
     }
 
+
+    @Override
+    public ReturnRequestsResponse getYeshteryOrderReturnRequests(ReturnRequestSearchParams params) {
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequests(params);
+        }
+        return null;
+    }
+
+    @Override
+    public ReturnRequestDTO getYeshteryOrderReturnRequest(Long id){
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequest(id);
+        }
+        return null;
+    }
+    @Override
+    @Transactional(rollbackFor = Throwable.class)
+    public void confirmYeshteryReturnRequest(Long requestId) {
+        if (securityService.getYeshteryState() == 1) {
+            confirmReturnRequest(requestId);
+        }
+        return;
+    }
+    @Override
+    @Transactional
+    public void rejectYeshteryReturnRequest(ReturnRequestRejectDTO dto) {
+        if (securityService.getYeshteryState() == 1) {
+            rejectReturnRequest(dto);
+        }
+        return;
+    }
+    @Override
+    public Long createYeshteryReturnRequest(ReturnRequestItemsDTO itemsList) {
+        if (securityService.getYeshteryState() == 1) {
+            return createReturnRequest(itemsList);
+        }
+        return null;
+    }
+
 }

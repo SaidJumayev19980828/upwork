@@ -1025,6 +1025,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElse("");
 	}
 
+	@Override
+	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId) {
+		if (securityService.getYeshteryState() == 1) {
+			return getShippingOffers(customerAddrId);
+		}
+		return null;
+	}
+
 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
 			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {

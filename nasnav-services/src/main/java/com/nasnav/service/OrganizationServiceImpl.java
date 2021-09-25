@@ -607,6 +607,11 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .collect(toList());
     }
 
+    @Override
+    public List<OrganizationEntity> getYeshteryOrgs() {
+        return organizationRepository.findByYeshteryState(1);
+    }
+
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());

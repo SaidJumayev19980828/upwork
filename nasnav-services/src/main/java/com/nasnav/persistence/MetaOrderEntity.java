@@ -71,6 +71,19 @@ public class MetaOrderEntity implements BaseEntity {
     , inverseJoinColumns = {@JoinColumn(name="promotion")})
     private Set<PromotionsEntity> promotions;
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "yeshtery_meta_order_id", referencedColumnName = "id")
+    @Exclude
+    @ToString.Exclude
+    private MetaOrderEntity subMetaOrder;
+
+    @OneToMany(mappedBy = "subMetaOrder", cascade = {PERSIST, MERGE, REMOVE})
+    @Exclude
+    @ToString.Exclude
+    private Set<MetaOrderEntity> subMetaOrders;
+
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         return new BaseRepresentationObject();
@@ -93,8 +106,13 @@ public class MetaOrderEntity implements BaseEntity {
         subOrder.setMetaOrder(null);
         subOrders.remove(subOrder);
     }
-    
-    
+
+    public void addSubMetaOrder(MetaOrderEntity subMetaOrder){
+        subMetaOrder.setSubMetaOrder(subMetaOrder);
+        subMetaOrders.add(subMetaOrder);
+    }
+
+
     public void addPromotion(PromotionsEntity promotion) {
     	promotions.add(promotion);
     }

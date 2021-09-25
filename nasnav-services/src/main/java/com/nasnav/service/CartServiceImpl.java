@@ -89,12 +89,12 @@ public class CartServiceImpl implements CartService{
     private AppConfig config;
 
     @Override
-    public Cart getCart(String promocode) {
+    public Cart getCart(String promoCode) {
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
-        return getUserCart(user.getId(), promocode);
+        return getUserCart(user.getId(), promoCode);
     }
 
     @Override
@@ -108,9 +108,14 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public Cart getUserCart(Long userId, String promoCode) {
+        return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId());   
+    }
+    
+    
+    private Cart getUserCart(Long userId, String promoCode, Long orgId) {
         Cart cart = getUserCart(userId);
         if (promoCode != null && !promoCode.equals("")) {
-            if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, securityService.getCurrentUserOrganizationId())) {
+            if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
                 cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
                 cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
             } else {
@@ -131,7 +136,12 @@ public class CartServiceImpl implements CartService{
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
 
-        Long orgId = securityService.getCurrentUserOrganizationId();
+        Long orgId;
+        if(item.getOrgId() != null && item.getOrgId() > 0){
+            orgId = item.getOrgId();
+        } else {
+            orgId = securityService.getCurrentUserOrganizationId();
+        }
         StocksEntity stock =
                 ofNullable(item.getStockId())
                         .map(id -> stockRepository.findByIdAndOrganizationId(id, orgId))
@@ -149,7 +159,7 @@ public class CartServiceImpl implements CartService{
                 return getUserCart(user.getId(), promoCode);
             }
         }
-        cartItem = createCartItemEntity(cartItem, (UserEntity) user, stock, item);
+        createCartItemEntity(cartItem, (UserEntity) user, stock, item);
         cartItemRepo.save(cartItem);
 
         return getUserCart(user.getId(), promoCode);
@@ -180,21 +190,20 @@ public class CartServiceImpl implements CartService{
                continue;
             }
             CartItemEntity cartItem = new CartItemEntity();
-            cartItem = createCartItemEntity(cartItem, (UserEntity) user, stock, item);
+            createCartItemEntity(cartItem, (UserEntity) user, stock, item);
             itemsToSave.add(cartItem);
         }
         cartItemRepo.saveAll(itemsToSave);
         return getUserCart(user.getId(), promoCode);
     }
 
-    private CartItemEntity createCartItemEntity(CartItemEntity cartItem, UserEntity user, StocksEntity stock, CartItem item) {
+    private void createCartItemEntity(CartItemEntity cartItem, UserEntity user, StocksEntity stock, CartItem item) {
         String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
         cartItem.setUser(user);
         cartItem.setStock(stock);
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
         cartItem.setAdditionalData(additionalDataJson);
-        return cartItem;
     }
 
     private Map<Long, StocksEntity> getCartStocks(List<CartItem> items, Long orgId) {
@@ -528,4 +537,20 @@ public class CartServiceImpl implements CartService{
                 .map(statisticsService::toUserCartInfo)
                 .collect(toList());
     }
+
+    @Override
+    public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Long stockId){
+            BaseUserEntity user = securityService.getCurrentUser();
+            if(user instanceof EmployeeUserEntity) {
+                throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+            }
+            cartItemRepo.deleteByIdAndUser_IdAndStock_Id(itemId, user.getId(), stockId);
+            return getUserCart(user.getId(), promoCode);
+    }
+
+    @Override
+    public Order checkoutYeshteryCart(CartCheckoutDTO dto) {
+        return orderService.createYeshteryOrder(dto);
+    }
+
 }

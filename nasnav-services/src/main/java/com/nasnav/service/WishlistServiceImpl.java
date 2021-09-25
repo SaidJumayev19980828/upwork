@@ -143,7 +143,40 @@ public class WishlistServiceImpl implements WishlistService{
         return cartService.addCartItem(cartItem, null);
     }
 
+    @Override
+    @Transactional
+    public Wishlist addYeshteryWishlistItem(WishlistItem item) {
+        if (securityService.getYeshteryState() == 1){
+            return addWishlistItem(item);
+        }
+        return null;
+    }
 
+    @Override
+    @Transactional
+    public Wishlist deleteYeshteryWishlistItem(Long itemId) {
+        if (securityService.getYeshteryState() == 1){
+            deleteWishlistItem(itemId);
+        }
+        return null;
+    }
+
+    @Override
+    public Wishlist getYeshteryWishlist() {
+        if (securityService.getYeshteryState() == 1){
+            getWishlist();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity item) {
+        if (securityService.getYeshteryState() == 1){
+            return moveWishlistItemsToCart(item);
+        }
+        return null;
+    }
 
 
     private List<WishlistItem> toCartItemsDto(List<WishlistItemEntity> cartItems) {

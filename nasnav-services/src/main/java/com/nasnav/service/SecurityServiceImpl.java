@@ -388,6 +388,11 @@ public class SecurityServiceImpl implements SecurityService {
 				.collect(toSet());
 	}
 
+	@Override
+	public Integer getYeshteryState() {
+		return getCurrentUserOrganization().getYeshteryState();
+	}
+
 
 	@Override
 	public boolean currentUserHasMaxRoleLevelOf(Roles role) {

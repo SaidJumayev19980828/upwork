@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.persistence;
+package com.nasnav.persistence;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -23,6 +23,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	
 	
 	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
 			+ " LEFT JOIN FETCH meta.subOrders subOrder "
@@ -36,6 +37,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 
 
 	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
 			+ " LEFT JOIN FETCH meta.subOrders subOrder "
@@ -52,6 +54,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 																  @Param("orgId") Long orgId);
 
 	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
 			+ " LEFT JOIN FETCH meta.subOrders subOrder "
@@ -68,6 +71,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	Optional<MetaOrderEntity> findByMetaOrderId(@Param("id") Long id);
 
 	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
 			+ " LEFT JOIN FETCH meta.subOrders subOrder "
@@ -85,6 +89,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 														 @Param("orgId") Long orgId);
 
 	@Query("SELECT DISTINCT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
 			+ " LEFT JOIN FETCH meta.subOrders subOrder "
@@ -179,5 +184,27 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	List<OrderStatisticsInfo> getOrderCountStatisticsPerMonth(@Param("orgId") Long orgId,
 															  @Param("statuses") List<Integer> statuses,
 															  @Param("startDate") LocalDateTime startDate);
+
+	@Query("SELECT distinct new com.nasnav.dto.MetaOrderBasicInfo(" +
+			"meta.id, meta.createdAt, meta.status, meta.grandTotal"
+			+ ", pay.operator, shipment.shippingServiceId, sum(basket.quantity) "
+			+ ", pay.status) "
+			+ "FROM MetaOrderEntity meta "
+			+ "LEFT JOIN meta.subMetaOrders subMetaOrder "
+			+ "LEFT JOIN subMetaOrder.subOrders subOrder "
+			+ "LEFT JOIN subOrder.basketsEntity basket "
+			+ "LEFT JOIN subOrder.shipment shipment "
+			+ "LEFT JOIN PaymentEntity pay on meta.id = pay.metaOrderId "
+			+ "LEFT JOIN meta.user user "
+			+ "LEFT JOIN meta.organization org "
+			+ "WHERE user.id = :userId AND org.id = :orgId "
+			+ " AND meta.status != 10 "
+			+ "group by meta.id, meta.createdAt, meta.status, meta.grandTotal"
+			+ " , pay.operator, shipment.shippingServiceId, pay.status")
+	List<MetaOrderBasicInfo> getYeshteryMetaOrderList(@Param("userId") Long userId,
+													  @Param("orgId") Long orgId);
+
+
+
 }
 

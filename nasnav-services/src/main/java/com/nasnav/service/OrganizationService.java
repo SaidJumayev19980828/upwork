@@ -8,6 +8,7 @@ import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.OrganizationResponse;
@@ -79,4 +80,7 @@ public interface OrganizationService {
     void removeProductFeature(Integer featureId);
 
     List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds);
+
+    List<OrganizationEntity> getYeshteryOrgs();
+
 }

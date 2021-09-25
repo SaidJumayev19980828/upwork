@@ -70,6 +70,10 @@ public class ShopsEntity implements BaseEntity{
     @lombok.ToString.Exclude
     private Set<ShopThreeSixtyEntity> shop360s;
 
+
+    @Column(name = "yeshtery_state")
+    private Integer yeshteryState;
+
     public ShopsEntity() {
     	this.isWarehouse = 0;
     }
