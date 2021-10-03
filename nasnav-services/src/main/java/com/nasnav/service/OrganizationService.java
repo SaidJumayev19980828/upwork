@@ -83,4 +83,5 @@ public interface OrganizationService {
 
     List<OrganizationEntity> getYeshteryOrgs();
 
+    OrganizationRepresentationObject getYeshteryOrgInfo() throws BusinessException;
 }

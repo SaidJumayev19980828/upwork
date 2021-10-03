@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
-import static com.nasnav.yeshtery.YeshteryConstants.API_PATH;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
@@ -356,4 +355,8 @@ public class YeshteryController {
         return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 
+    @GetMapping(value = "/orginfo")
+    public OrganizationRepresentationObject getOrgInfo() throws BusinessException {
+        return organizationService.getYeshteryOrgInfo();
+    }
 }

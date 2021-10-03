@@ -77,6 +77,7 @@ import static org.springframework.http.HttpStatus.*;
 public class OrganizationServiceImpl implements OrganizationService {
     public static final String EXTRA_ATTRIBUTE_ID = "extra_attribute_id";
     public static final Set<Integer> FEATURE_TYPE_WITH_EXTRA_DATA = setOf(IMG_SWATCH.getValue(), COLOR.getValue());
+    private static final String YESHTERY_ORG_NAME = "Yeshtery";
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -610,6 +611,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public List<OrganizationEntity> getYeshteryOrgs() {
         return organizationRepository.findByYeshteryState(1);
+    }
+
+    @Override
+    public OrganizationRepresentationObject getYeshteryOrgInfo() throws BusinessException {
+        return getOrganizationByName(YESHTERY_ORG_NAME);
     }
 
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
