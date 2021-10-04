@@ -23,9 +23,9 @@ import java.util.*;
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
 
-    OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException;
+    OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException;
 
-    OrganizationRepresentationObject getOrganizationById(Long organizationId);
+    OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState);
 
     List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId);
 
@@ -45,7 +45,7 @@ public interface OrganizationService {
 
     void deleteImage(Long imgId, String url);
 
-    Pair getOrganizationAndSubdirsByUrl(String urlString);
+    Pair getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState);
 
     void deleteExtraAttribute(Integer attrId);
 
@@ -82,6 +82,4 @@ public interface OrganizationService {
     List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds);
 
     List<OrganizationEntity> getYeshteryOrgs();
-
-    OrganizationRepresentationObject getYeshteryOrgInfo() throws BusinessException;
 }

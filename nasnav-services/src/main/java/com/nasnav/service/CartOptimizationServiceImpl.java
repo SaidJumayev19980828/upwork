@@ -92,12 +92,13 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		}
 		var optimizedCart = createOptimizedCart(dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
+		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart);
 		var returnedCart = getCartObject(optimizedCart);
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
 		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
-		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
+		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
 	}
 
 
@@ -119,6 +120,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.orElse(emptyList())
 				.stream()
 				.anyMatch(OptimizedCartItem::getPriceChanged);
+	}
+
+	private boolean isAnyItemChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+				.map(OptimizedCart::getCartItems)
+				.orElse(emptyList())
+				.stream()
+				.anyMatch(OptimizedCartItem::getItemChanged);
 	}
 
 

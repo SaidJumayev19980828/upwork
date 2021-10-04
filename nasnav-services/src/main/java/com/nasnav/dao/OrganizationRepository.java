@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 public interface OrganizationRepository extends JpaRepository<OrganizationEntity, Long> {
 
@@ -18,7 +19,11 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
 
     OrganizationEntity findOneById(Long id);
 
+    Optional<OrganizationEntity> findByIdAndYeshteryState(Long id, Integer yeshteryState);
+
     OrganizationEntity findByPname(String pname);
+
+    OrganizationEntity findByPnameAndYeshteryState(String pname, Integer yeshteryState);
 
     @Query("select o.id from OrganizationEntity o where o.themeId = :themeId")
     Set<Long> findByThemeId(@Param("themeId") Integer themeId);

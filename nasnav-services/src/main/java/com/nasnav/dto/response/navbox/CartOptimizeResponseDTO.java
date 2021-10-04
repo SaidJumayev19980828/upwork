@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CartOptimizeResponseDTO {
 	private Boolean totalChanged;
+	private Boolean itemsChanged;
 	private Cart cart;
 }

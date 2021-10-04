@@ -77,7 +77,6 @@ import static org.springframework.http.HttpStatus.*;
 public class OrganizationServiceImpl implements OrganizationService {
     public static final String EXTRA_ATTRIBUTE_ID = "extra_attribute_id";
     public static final Set<Integer> FEATURE_TYPE_WITH_EXTRA_DATA = setOf(IMG_SWATCH.getValue(), COLOR.getValue());
-    private static final String YESHTERY_ORG_NAME = "Yeshtery";
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -154,8 +153,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_NAME)
-    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
-        OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
+    public OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException {
+        OrganizationEntity organizationEntity = organizationRepository.findByPnameAndYeshteryState(organizationName, yeshteryState);
         if (organizationEntity == null)
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
 
@@ -169,8 +168,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
-    public OrganizationRepresentationObject getOrganizationById(Long organizationId) {
-        OrganizationEntity organizationEntity = organizationRepository.findById(organizationId)
+    public OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState) {
+        OrganizationEntity organizationEntity = organizationRepository.findByIdAndYeshteryState(organizationId, yeshteryState)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
 
         return getOrganizationAdditionalData(organizationEntity);
@@ -613,11 +612,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationRepository.findByYeshteryState(1);
     }
 
-    @Override
-    public OrganizationRepresentationObject getYeshteryOrgInfo() throws BusinessException {
-        return getOrganizationByName(YESHTERY_ORG_NAME);
-    }
-
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());
@@ -987,7 +981,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
-    public Pair getOrganizationAndSubdirsByUrl(String urlString) {
+    public Pair getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState) {
         urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
         URIBuilder url = domainService.validateDomainCharacters(urlString);
 
@@ -1014,7 +1008,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    } else {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
 	    	subDir = null;
-	    }    	
+	    }
+        if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
+            return new Pair(0L, 0L);
+        }
 	    
 //	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
 	    
@@ -1183,7 +1180,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
-        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl());
+        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
         Long orgId = domain.getFirst();
         if (orgId.intValue() == 0) {
             return createEmptyResponseEntity();
