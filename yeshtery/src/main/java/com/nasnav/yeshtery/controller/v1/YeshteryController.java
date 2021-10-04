@@ -91,7 +91,7 @@ public class YeshteryController {
 
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
-    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false, defaultValue = "") String name,
+    public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,
                                                            @RequestParam(name = "org_id", required = false) Long orgId,
                                                            @RequestParam(value = "area_id", required = false) Long areaId,
                                                            @RequestParam(required = false) Double minLongitude,
@@ -133,7 +133,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
-    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,
+    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,                                                                                                                                                                                                  
                                         @RequestParam(required = false, defaultValue = "0") Integer start,
                                         @RequestParam(required = false, defaultValue = "10") Integer count) {
         return productService.getVariantsForYeshtery(name, start, count);
