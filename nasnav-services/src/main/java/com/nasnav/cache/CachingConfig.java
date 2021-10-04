@@ -47,6 +47,7 @@ public class CachingConfig extends CachingConfigurerSupport{
             , USERS_BY_TOKENS
             , IMGS_RESIZED
             , COUNTRIES
+            , SEO_KEYWORDS
     		);
  
        

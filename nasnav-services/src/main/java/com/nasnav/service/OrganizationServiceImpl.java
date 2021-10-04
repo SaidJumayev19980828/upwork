@@ -1009,9 +1009,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
 	    	subDir = null;
 	    }
-        if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
-            return new Pair(0L, 0L);
-        }
+	    if (orgDom != null)
+            if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
+                return new Pair(0L, 0L);
+            }
 	    
 //	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
 	    

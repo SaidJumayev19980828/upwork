@@ -604,6 +604,7 @@ public class OrderServiceTest {
 		order.setMetaOrderId(310001L);
 		order.setDiscount(ZERO);
 		order.setPaymentOperator("S.C.A.M");
+		order.setNotes("");
 		return order;
 	}
 	
