@@ -39,6 +39,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 
@@ -47,7 +49,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @Tag(name = "Yeshtery Controller")
 @CrossOrigin("*")
 @EnableJpaRepositories
-@Tag(name = "Yeshtery common apis.")
 public class YeshteryController {
 
     static final String API_PATH = YeshteryConstants.API_PATH +"/";
@@ -133,7 +134,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
-    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,                                                                                                                                                                                                  
+    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,
                                         @RequestParam(required = false, defaultValue = "0") Integer start,
                                         @RequestParam(required = false, defaultValue = "10") Integer count) {
         return productService.getVariantsForYeshtery(name, start, count);
@@ -360,8 +361,22 @@ public class YeshteryController {
         return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 
-    @GetMapping(value = "/orginfo")
-    public OrganizationRepresentationObject getOrgInfo() throws BusinessException {
-        return organizationService.getYeshteryOrgInfo();
+    @GetMapping(value = "/organization")
+    public OrganizationRepresentationObject getOrgInfo(@RequestParam(name = "p_name", required = false) String organizationName,
+                                                       @RequestParam(name = "org_id", required = false) Long organizationId,
+                                                       @RequestParam(name = "url", required = false) String url) throws BusinessException {
+        if (allIsNull(organizationName, organizationId, url))
+            throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
+
+        if (organizationName != null)
+            return organizationService.getOrganizationByName(organizationName, 1);
+
+        if (url != null) {
+            Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 1);
+            OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst(), 1);
+            orgObj.setSubDir(domain.getSecond());
+            return orgObj;
+        }
+        return organizationService.getOrganizationById(organizationId, 1);
     }
 }

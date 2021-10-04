@@ -583,7 +583,7 @@ public class ProductFeaturesApiTest {
 
 	@Test
 	public void deleteFeatureSuccess(){
-		var featureId = 234;
+		var featureId = 238;
 
 		Optional<?> featureBefore = featureRepo.findById(featureId);
 		assertTrue(featureBefore.isPresent());

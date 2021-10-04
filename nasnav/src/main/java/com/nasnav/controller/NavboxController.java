@@ -67,15 +67,15 @@ public class NavboxController {
 			throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
 
 		if (organizationName != null)
-			return organizationService.getOrganizationByName(organizationName);
+			return organizationService.getOrganizationByName(organizationName, 0);
 
 		if (url != null) {
-			Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
-			OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst());
+			Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 0);
+			OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst(), 0);
 			orgObj.setSubDir(domain.getSecond());
 			return orgObj;
 		}
-		return organizationService.getOrganizationById(organizationId);
+		return organizationService.getOrganizationById(organizationId, 0);
 	}
 
 	@GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
@@ -183,7 +183,7 @@ public class NavboxController {
 
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) {
-		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
+		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 0);
 		return new ResponseEntity<>("{\"id\":" + domain.getFirst() + ", \"sub_dir\":" + domain.getSecond() + "}", HttpStatus.OK);
 	}
 

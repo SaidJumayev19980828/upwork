@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.nasnav.cache.Caches.SEO_KEYWORDS;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.SeoEntityType.*;
@@ -126,7 +127,7 @@ public class SeoServiceImpl implements SeoService{
 
 
     @Override
-    @CacheResult(cacheName = "seo_keyword")
+    @CacheResult(cacheName = SEO_KEYWORDS)
     public List<SeoKeywordsDTO> getSeoKeywords(Long orgId, Long entityId, SeoEntityType type) {
         if(isNull(orgId) || (isNull(entityId) ^ isNull(type))){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, format("{orgId:%d, entityId:%d, type:%s}", orgId, entityId, type));

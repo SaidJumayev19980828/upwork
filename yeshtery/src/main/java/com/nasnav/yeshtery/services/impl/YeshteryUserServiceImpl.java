@@ -361,7 +361,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void sendActivationMail(YeshteryUserEntity userEntity, String redirectUrl) {
         try {
-            OrganizationRepresentationObject organization = orgService.getOrganizationById(userEntity.getOrganizationId());
+            OrganizationRepresentationObject organization = orgService.getOrganizationById(userEntity.getOrganizationId(), 1);
             Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl);
             mailService.send(organization.getName(), userEntity.getEmail(), ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
                     NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
