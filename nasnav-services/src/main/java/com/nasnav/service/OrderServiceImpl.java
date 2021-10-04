@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
@@ -35,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.view.RedirectView;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -63,8 +61,9 @@ import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.getTransactionCurrency;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -104,7 +103,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private final UserServicesHelper userServicesHelper;
 	
-	private Logger logger = LogManager.getLogger();
+	private final Logger logger = LogManager.getLogger();
 
 	@PersistenceContext
 	@Autowired
@@ -130,6 +129,8 @@ public class OrderServiceImpl implements OrderService {
 	private ProductVariantsRepository variantsRepo;
 	@Autowired
 	private PromotionRepository promoRepo;
+	@Autowired
+	private SettingRepository settingRepo;
 
 	@Autowired
 	private SecurityService securityService;
@@ -157,6 +158,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private OrganizationRepository organizationRepository;
+
+	@Autowired
+	private UserService userService;
 
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
@@ -248,13 +255,13 @@ public class OrderServiceImpl implements OrderService {
 		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name()) )  {
 			Long orgId = empUser.getOrganizationId();
 			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
-			if (!order.isPresent()) {
+			if (order.isEmpty()) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId);
 			}
 		} else if ( employeeUserRoles.contains(STORE_MANAGER.name())) {
 			Long shopId = empUser.getShopId();
 			order = ordersRepository.findByIdAndShopsEntity_Id(orderId, shopId);
-			if (!order.isPresent()) {
+			if (order.isEmpty()) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, shopId, orderId);
 			}
 		}
@@ -263,13 +270,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
-	private void throwInvalidOrderException(String msg, Object... msgParams) throws BusinessException {
-		throw getInvalidOrderException(msg, msgParams);
-	}
-	
-	
-	
 	
 	private void throwRuntimeInvalidOrderException(String msg, Object... msgParams){
 		throw getInvalidRuntimeOrderException(msg, msgParams);
@@ -746,7 +746,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
+	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
@@ -845,11 +845,14 @@ public class OrderServiceImpl implements OrderService {
 
 	private void setOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator,
 												   DetailedOrderRepObject obj) {
+		String notes = ofNullable(entity.getMetaOrder())
+				.map(MetaOrderEntity::getNotes)
+				.orElse("");
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
-		obj.setNotes(entity.getMetaOrder().getNotes());
+		obj.setNotes(notes);
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
@@ -960,11 +963,16 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = price.multiply(entity.getQuantity());
+		OrganizationEntity org = entity.getOrdersEntity().getOrganizationEntity();
 		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
-		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
+		CountriesEntity country = org.getCountry();
 		String currencyValue = ofNullable(country).map(CountriesEntity::getCurrency).orElse("");
 		Boolean isReturnable = orderReturnService.isReturnable(entity);
 		String unitName = getUnit(entity);
+		Integer quantityLimit = settingRepo.findBySettingNameAndOrganization_Id(STOCK_ALERT_LIMIT.name(), org.getId())
+				.map(SettingEntity::getSettingValue)
+				.map(Integer::parseInt)
+				.orElse(10);
 
 		item.setId(entity.getId());
 		item.setUnit(unitName);
@@ -977,7 +985,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setCurrency(currency);
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		if(entity.getStocksEntity().getQuantity() < 10) {
+
+		if(entity.getStocksEntity().getQuantity() < quantityLimit) {
 			item.setAvailableStock(entity.getStocksEntity().getQuantity());
 		}
 	}
@@ -1463,7 +1472,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		shipment.setExternalId(tracker.getShipmentExternalId());
 		shipment.setTrackNumber(tracker.getTracker());
-		shipment.setStatus(REQUSTED.getValue());
+		shipment.setStatus(REQUESTED.getValue());
 		ShipmentEntity saved = shipmentRepo.save(shipment);
 		order.setShipment(saved);
 	}
@@ -1485,16 +1494,12 @@ public class OrderServiceImpl implements OrderService {
 		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CONFIRMED);
 	}
 	
-	
-	
-	
+
 	private boolean isAllOtherOrdersRejected(Long orderId, MetaOrderEntity metaOrder) {
 		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CANCELLED);
 	}
 	
-	
-	
-	
+
 	private boolean isAllOtherOrdersHaveStatus(Long orderId, MetaOrderEntity metaOrder, OrderStatus status) {
 		return metaOrder
 				.getSubOrders()
@@ -1502,9 +1507,7 @@ public class OrderServiceImpl implements OrderService {
 				.filter(ord -> !Objects.equals(ord.getId(), orderId))
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
-	
-	
-	
+
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {
 		if (metaOrderId == null) {
@@ -1534,9 +1537,6 @@ public class OrderServiceImpl implements OrderService {
 		abandonedOrders.forEach(this::discardAbandonedOrder);
 	}
 
-
-	
-	
 	
 	private void discardAbandonedOrder(MetaOrderEntity metaOrder) {
 		updateOrderStatus(metaOrder, DISCARDED);
@@ -1567,21 +1567,34 @@ public class OrderServiceImpl implements OrderService {
 	private CartItemsGroupedByShopId getAndValidateCheckoutData(CartCheckoutDTO checkoutDto) {
 		//TODO: this should be moved to checkOut main method, and then passes
 		//the optimized cart to the rest of the logic.
-		Cart optimizedCart = optimizeCartForCheckout(checkoutDto); 
+		Cart optimizedCart = optimizeCartForCheckout(checkoutDto);
 		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart);
-		
+
 		validateCartCheckoutItems(userCartItems);
-		
+
 		shippingMgrService.validateCartForShipping(userCartItems, checkoutDto);
 
 		return userCartItems
 				.stream()
 				.collect(collectingAndThen(
-							groupingBy(CartCheckoutData::getShopId)
-							, CartItemsGroupedByShopId::new));
+						groupingBy(CartCheckoutData::getShopId)
+						, CartItemsGroupedByShopId::new));
 	}
 
-	
+
+
+	private CartItemsGroupedByOrgId getAndValidateCheckoutDataByOrgId(CartCheckoutDTO checkoutDto) {
+		Cart optimizedCart = optimizeCartForCheckout(checkoutDto);
+		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart);
+
+		return  userCartItems
+				.stream()
+				.collect(collectingAndThen(
+						groupingBy(CartCheckoutData::getOrganizationId)
+						, CartItemsGroupedByOrgId::new));
+	}
+
+
 
 
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
@@ -1692,6 +1705,101 @@ public class OrderServiceImpl implements OrderService {
 		return shippingMgrService.getTrackingUrl(orderId);
 	}
 
+	@Override
+	public void updateExistingYeshteryOrder(OrderJsonDto orderJson) {
+		updateExistingOrder(orderJson);
+	}
+
+
+	@Override
+	public DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
+		return getOrderInfo(orderId, detailsLevel);
+	}
+
+	@Override
+	public List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException {
+		return getOrdersList(params);
+	}
+
+	@Override
+	public MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		AddressesEntity userAddress =
+				addressRepo
+						.findByIdAndUserId(dto.getAddressId(), user.getId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
+
+		CartItemsGroupedByOrgId checkOutData = getAndValidateCheckoutDataByOrgId(dto);
+		MetaOrderEntity order = createYeshteryOrder( checkOutData, userAddress, dto );
+		return order;
+	}
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public Order createYeshteryOrder(CartCheckoutDTO dto) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
+
+		cancelAbandonedOrders();
+
+		validateCartCheckoutDTO(dto);
+
+		MetaOrderEntity order = createYeshteryMetaOrder(dto);
+
+		return getOrderResponse(order);
+	}
+
+	@Override
+	public List<MetaOrderBasicInfo> getYeshteryMetaOrderList() {
+		BaseUserEntity user = securityService.getCurrentUser();
+		return metaOrderRepo.getYeshteryMetaOrderList(user.getId(), user.getOrganizationId())
+				.stream()
+				.map(this::setOrderStatus)
+				.map(this::setPaymentStatus)
+				.collect(toList());
+	}
+
+	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+		Optional<PromotionsEntity> promotion=
+				ofNullable(dto.getPromoCode())
+						.flatMap(promoCode ->
+								promoRepo
+										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
+
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
+		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+
+		BigDecimal subTotal = calculateSubTotal(subOrders);
+		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
+		BigDecimal total = calculateTotal(subOrders);
+		BigDecimal discounts = calculateDiscounts(subOrders);
+
+
+		MetaOrderEntity order = new MetaOrderEntity();
+		order.setOrganization(org);
+		order.setUser(user);
+		order.setStatus(CLIENT_CONFIRMED.getValue());
+		order.setGrandTotal(total);
+		order.setSubTotal(subTotal);
+		order.setShippingTotal(shippingFeeTotal);
+		order.setDiscounts(discounts);
+		order.setNotes(dto.getNotes());
+		subOrders.forEach(order::addSubOrder);
+		promotion.ifPresent(order::addPromotion);
+
+		return metaOrderRepo.save(order);
+	}
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void cancelYeshteryOrder(Long metaOrderId) {
+		cancelOrder(metaOrderId);
+	}
 
 	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
 		if (dto.getAddressId() == null) {
@@ -1879,22 +1987,27 @@ public class OrderServiceImpl implements OrderService {
 
 	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		UserEntity user = (UserEntity)securityService.getCurrentUser();
-		Optional<PromotionsEntity> promotion= 
+		return createOrder(shopCartsMap, address, dto, org.getId());
+	}
+
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, Long orgId) {
+		UserEntity user = (UserEntity) securityService.getCurrentUser();
+		OrganizationEntity org = organizationRepository.findById(orgId).get();
+		Optional<PromotionsEntity> promotion =
 				ofNullable(dto.getPromoCode())
-				.flatMap(promoCode -> 
-							promoRepo
-							.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
-		
+						.flatMap(promoCode ->
+								promoRepo
+										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
+
 		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
 		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
-		
+
 		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
 		BigDecimal total = calculateTotal(subOrders);
 		BigDecimal discounts = calculateDiscounts(subOrders);
-		
-		
+
+
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
@@ -1906,12 +2019,9 @@ public class OrderServiceImpl implements OrderService {
 		order.setNotes(dto.getNotes());
 		subOrders.forEach(order::addSubOrder);
 		promotion.ifPresent(order::addPromotion);
-		
+
 		return metaOrderRepo.save(order);
 	}
-
-
-
 
 
 	private BigDecimal calculateDiscounts(Set<OrdersEntity> subOrders) {
@@ -2539,6 +2649,15 @@ class CartItemsGroupedByShopId extends HashMap<Long, List<CartCheckoutData>>{
 }
 
 
+class CartItemsGroupedByOrgId extends HashMap<Long, List<CartCheckoutData>>{
+
+	private static final long serialVersionUID = 166855415L;
+
+	public CartItemsGroupedByOrgId(Map<Long, List<CartCheckoutData>> map) {
+		super(map);
+	}
+}
+
 
 
 @Data
@@ -2577,4 +2696,11 @@ class ReturnShipmentItem{
 	private Integer receivedQuantity;
 	private String sku;
 	private String productCode;
+}
+
+@Data
+@AllArgsConstructor
+class CartItemsForOrg{
+	private OrganizationEntity organization;
+	private List<CartItemsForShop> checkOutData;
 }

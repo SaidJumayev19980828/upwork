@@ -66,4 +66,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Long getNewCustomersCountPerMonth(@Param("orgId") Long orgId,
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);
+
+	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
+
+    void deleteByYeshteryUserId(Long yeshteryUserId);
 }

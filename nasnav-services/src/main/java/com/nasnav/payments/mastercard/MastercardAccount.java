@@ -33,7 +33,7 @@ public class MastercardAccount extends Account {
         this.icon = "/icons/mastercard.svg";
         try {
             this.flavor = Integer.parseInt(props.getProperty("mcard.flavor"));
-        } catch (Exception ex) { ; }
+        } catch (Exception ex) {  }
         if (this.flavor <= 0) {
             this.flavor = MastercardService.FLAVOR_BASIC;
         }

@@ -76,4 +76,9 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     List<IdAndNamePair> getTagIdAndNamePairs(@Param("orgId") Long orgId);
 
     boolean existsByIdAndOrganizationEntity_Id(Long tagId, Long orgId);
+
+    @Query("SELECT tag FROM TagsEntity tag " +
+            " WHERE lower(tag.name) = :categoryName ")
+    List<TagsEntity> findByCategoriesEntity_NameOrderByName(String categoryName);
+
 }

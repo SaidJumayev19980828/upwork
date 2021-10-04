@@ -15,4 +15,5 @@ public interface ProductsCustomRepository {
 
 	SQLQuery<?> getCollectionsBaseQuery(BooleanBuilder predicate, ProductSearchParam params);
 
+	SQLQuery<Long> getProductTagsByNameQuery(ProductSearchParam params);
 }

@@ -196,9 +196,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 		ZoneId zoneId = ZoneId.of("UTC");
 		PromotionDTO dto = new PromotionDTO();
 		dto.setCode(entity.getCode());
-		dto.setConstrains(readJsonStrAsMap(entity.getConstrainsJson()));
+		try {
+			dto.setConstrains(readJsonStr(entity.getConstrainsJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setCreatedOn(entity.getCreatedOn());
-		dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		try {
+			dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setEndDate(entity.getDateEnd().atZone(zoneId));
 		dto.setId(entity.getId());
 		dto.setIdentifier(entity.getIdentifier());
@@ -211,11 +215,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setPriority(entity.getPriority());
 		return dto;
 	}
-	
-	
-	
-	
-	
+
 	
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
@@ -224,6 +224,15 @@ public class PromotionsServiceImpl implements PromotionsService {
 			if (initialData == null)
 				initialData = new LinkedHashMap<>();
 			return setNumbersAsBigDecimals(initialData);
+		} catch (Exception e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
+		}
+	}
+
+	private PromosConstraints readJsonStr(String jsonStr){
+		try {
+			return objectMapper.readValue(jsonStr, PromosConstraints.class);
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
@@ -359,8 +368,120 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoRepo.save(entity).getId();
 	}
 
+	private void validatePromotionDiscount(PromotionDTO promotion, PromotionType promoType) {
+		if (!asList(BUY_X_GET_Y_FROM_BRAND, BUY_X_GET_Y_FROM_TAG, BUY_X_GET_Y_FROM_PRODUCT).contains(promoType)) {
+			Map<String, Object> discountsMap = promotion.getDiscount();
+			if (discountsMap.get(DISCOUNT_PERCENT) == null && discountsMap.get(DISCOUNT_AMOUNT) == null) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, "amount or percentage", promotion.getIdentifier());
+			}
+		}
+	}
 
+	private void validatePromotionConstraints(PromotionDTO promotion) {
+		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
+		switch (promoType) {
+			case PROMO_CODE:
+			case TOTAL_CART_ITEMS_VALUE:
+			case SHIPPING:
+			{
+				validatePromoCodeConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_BRAND: {
+				validatePromoBrandsConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_TAG: {
+				validatePromoTagsConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_PRODUCT: {
+				validatePromoProductsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_BRAND: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoBrandsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_TAG: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoTagsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_PRODUCT: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoProductsConstraint(promotion);
+				break;
+			}
+			case TOTAL_CART_ITEMS_QUANTITY: {
+				validateTotalCartItemsConstraint(promotion);
+				break;
+			}
+		}
+	}
 
+	private void validatePromoCartAmountMinConstraint(PromotionDTO promotion) {
+		BigDecimal cartAmountMin = promotion.getConstrains().getCartAmountMin();
+		if (isBlankOrNull(cartAmountMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, MIN_AMOUNT_PROP, promotion.getIdentifier());
+		}
+	}
+	private void validatePromoDiscountValueMaxConstraint(PromotionDTO promotion) {
+		BigDecimal discountValueMax = promotion.getConstrains().getDiscountValueMax();
+		if (isBlankOrNull(discountValueMax)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, DISCOUNT_AMOUNT_MAX, promotion.getIdentifier());
+		}
+	}
+
+	private void validatePromoCodeConstraint(PromotionDTO promotion) {
+		validatePromoCartAmountMinConstraint(promotion);
+		validatePromoDiscountValueMaxConstraint(promotion);
+	}
+
+	private void validateTotalCartItemsConstraint(PromotionDTO promotion) {
+		Long cartQuantityMin = promotion.getConstrains().getCartQuantityMin();
+		if (isBlankOrNull(cartQuantityMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, MIN_QUANTITY_PROP, promotion.getIdentifier());
+		}
+		validatePromoDiscountValueMaxConstraint(promotion);
+	}
+
+	private void validatePromoBrandsConstraint(PromotionDTO promotion) {
+		Set<Long> brands = promotion.getConstrains().getBrands();
+		if (isBlankOrNull(brands)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_BRANDS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoTagsConstraint(PromotionDTO promotion) {
+		Set<Long> tags = promotion.getConstrains().getTags();
+		if (isBlankOrNull(tags)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_TAGS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoProductsConstraint(PromotionDTO promotion) {
+		Set<Long> products = promotion.getConstrains().getProducts();
+		if (isBlankOrNull(products)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_PRODUCTS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoBuyXGetYConstraints(PromotionDTO promotion) {
+		Integer productsToGive = promotion.getConstrains().getProductToGive();
+		Integer productQuantityMin = promotion.getConstrains().getProductQuantityMin();
+
+		if (isBlankOrNull(productsToGive)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, PRODUCTS_TO_GIVE, promotion.getIdentifier());
+		}
+		if (isBlankOrNull(productQuantityMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, PRODUCT_QUANTITY_MIN, promotion.getIdentifier());
+		}
+	}
 
 
 
@@ -389,7 +510,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.orElse(null);
 		
 		entity.setCode(codeUpperCase);
-		entity.setConstrainsJson(serializeMap(promotion.getConstrains()));
+		entity.setConstrainsJson(serializeDTO(promotion.getConstrains()));
 		entity.setCreatedBy(user);
 		entity.setDateEnd(promotion.getEndDate().toLocalDateTime());
 		entity.setDateStart(promotion.getStartDate().toLocalDateTime());
@@ -439,7 +560,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 	}
 
-
+	private String serializeDTO(PromosConstraints dto) {
+		try {
+			return objectMapper.writeValueAsString(dto);
+		} catch (JsonProcessingException e) {
+			logger.error(e,e);
+			return "{}";
+		}
+	}
 
 
 
@@ -463,7 +591,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
 		if (asList(PROMO_CODE, PROMO_CODE_FROM_PRODUCT, PROMO_CODE_FROM_TAG, PROMO_CODE_FROM_BRAND).contains(promoType)) {
-			if (promotion.getCode() == null) {
+			if (isBlankOrNull(promotion.getCode())) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
 			}
 			if (isCodeRepeated(promotion)) {
@@ -471,6 +599,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 						, PROMO$PARAM$0006, promotion.getCode());
 			}
 		}
+
+		validatePromotionConstraints(promotion);
+		validatePromotionDiscount(promotion, promoType);
 	}
 
 
@@ -699,14 +830,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult calcPromoDiscountFromSpecificTags(PromoInfoContainer info) {
 		var constraints = getPromoConstraints(info.promo);
-		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
+		var allowedTags = ofNullable(constraints.getTags()).orElse(emptySet());
 		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
 		return calcPromoDiscountForSpecificItems(info, allowedProducts);
 	}
 
 	private PromoCalcResult calcPromoDiscountFromSpecificProducts(PromoInfoContainer info) {
 		var constraints = getPromoConstraints(info.promo);
-		var allowedProducts = constraints.getProducts().getIds();
+		var allowedProducts = constraints.getProducts();
 		return calcPromoDiscountForSpecificItems(info, allowedProducts);
 	}
 
@@ -802,7 +933,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private List<PromoItemDto> getAllowedProductsPerBrand(PromoInfoContainer promoInfoContainer, PromosConstraints constraints) {
-		var allowedBrands = constraints.getBrands().getIds();
+		var allowedBrands = constraints.getBrands();
 		return promoInfoContainer
 						.items
 						.stream()
@@ -881,7 +1012,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnTagsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
+		var allowedTags = ofNullable(constraints.getTags()).orElse(emptySet());
 		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
 		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
@@ -891,7 +1022,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnProductsList(PromoInfoContainer promoInfoContainer) {
 		var constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedProducts = constraints.getProducts().getIds();
+		var allowedProducts = constraints.getProducts();
 		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
 	}

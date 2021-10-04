@@ -15,5 +15,5 @@ public enum OrderFailedStatus {
 	//@JsonProperty("INVALID_ORDER")
 	INVALID_ORDER,	//	406	order does not exist
 	//@JsonProperty("INVALID_STATUS")
-	INVALID_STATUS;	//406	order status cannot be changed to the requested
+	INVALID_STATUS	//406	order status cannot be changed to the requested
 }

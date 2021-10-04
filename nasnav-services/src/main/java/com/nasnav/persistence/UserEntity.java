@@ -60,6 +60,10 @@ public class UserEntity extends BaseUserEntity{
     @EqualsAndHashCode.Exclude
     private Set<UserAddressEntity> userAddresses;
 
+
+    @Column(name = "yeshtery_user_id")
+    private Long yeshteryUserId;
+
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
 

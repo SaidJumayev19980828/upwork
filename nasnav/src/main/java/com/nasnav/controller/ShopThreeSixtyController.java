@@ -1,10 +1,12 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopThreeSixtyService;
@@ -35,26 +37,26 @@ public class ShopThreeSixtyController {
     }
 
     @GetMapping(value = "/sections", produces = APPLICATION_JSON_VALUE)
-    public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List> res = new HashMap<>();
+    public Map<String, List<ShopFloorDTO>> getShop360Sections(@RequestParam("shop_id") Long shopId) {
+        Map<String, List<ShopFloorDTO>> res = new HashMap<>();
         res.put("floors", shop360Svc.getSections(shopId));
         return res;
     }
 
     @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
     public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
-        return shop360Svc.getThreeSixtyShops(shopId);
+        return shop360Svc.getThreeSixtyShops(shopId, false);
     }
 
     @PostMapping(value = "/publish", produces = APPLICATION_JSON_VALUE)
     public ShopResponse publishJsonData(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                        @RequestParam ("shop_id")Long shopId) throws BusinessException {
+                                        @RequestParam ("shop_id")Long shopId) {
         return shop360Svc.publishJsonData(shopId);
     }
 
     @PostMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
     public ShopResponse updateThreeSixtyShop(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                             @RequestBody ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+                                             @RequestBody ShopThreeSixtyDTO shopThreeSixtyDTO) {
         return shop360Svc.updateThreeSixtyShop(shopThreeSixtyDTO);
     }
 
@@ -62,7 +64,7 @@ public class ShopThreeSixtyController {
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                      @RequestParam("shop_id") Long shopId,
                                                      @RequestParam String type,
-                                                     @RequestBody String json_data) throws BusinessException, UnsupportedEncodingException {
+                                                     @RequestBody String json_data) throws UnsupportedEncodingException {
         return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, json_data);
     }
 
@@ -90,19 +92,20 @@ public class ShopThreeSixtyController {
     }
 
     @GetMapping(value = "/products", produces = APPLICATION_JSON_VALUE)
-    public LinkedHashMap getShop360products(@RequestParam("shop_id") Long shopId,
-                                            @RequestParam(required = false) String name,
-                                            @RequestParam(required = false, defaultValue = "5") Integer count,
-                                            @RequestParam(value = "product_type", required = false) Integer productType,
-                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
-                                            @RequestParam(value = "published", required = false) Short published,
-                                            @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock) throws BusinessException {
+    public LinkedHashMap<String, List<ThreeSixtyProductsDTO>> getShop360products(
+             @RequestParam("shop_id") Long shopId,
+             @RequestParam(required = false) String name,
+             @RequestParam(required = false, defaultValue = "5") Integer count,
+             @RequestParam(value = "product_type", required = false) Integer productType,
+             @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
+             @RequestParam(value = "published", required = false) Short published,
+             @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock) throws BusinessException {
         return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360, includeOutOfStock);
     }
 
     @DeleteMapping(value = "/floors")
     public void deleteShop360Floors(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                    @RequestParam("shop_id") Long shopId) throws BusinessException {
+                                    @RequestParam("shop_id") Long shopId) {
         shop360Svc.deleteShop360Floors(shopId);
     }
 
@@ -110,24 +113,21 @@ public class ShopThreeSixtyController {
     public void deleteShop360Floor(@RequestHeader(name = "User-Token", required = false) String userToken,
                                    @RequestParam("shop_id") Long shopId,
                                    @RequestParam("floor_id") Long floorId,
-                                   @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm
-                                  ) throws BusinessException {
+                                   @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) {
         shop360Svc.deleteShop360Floor(shopId, floorId, confirm);
     }
 
     @DeleteMapping(value = "/section")
     public void deleteShop360Section(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                     @RequestParam("shop_id") Long shopId,
                                      @RequestParam("section_id") Long sectionId,
                                      @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) throws BusinessException {
-        shop360Svc.deleteShop360Section(shopId, sectionId, confirm);
+        shop360Svc.deleteShop360Section(sectionId, confirm);
     }
 
     @DeleteMapping(value = "/scene")
     public void deleteShop360Scene(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                   @RequestParam("shop_id") Long shopId,
                                    @RequestParam("scene_id") Long sceneId,
-                                   @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) throws BusinessException {
-        shop360Svc.deleteShop360Scene(shopId, sceneId, confirm);
+                                   @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) {
+        shop360Svc.deleteShop360Scene(sceneId, confirm);
     }
 }

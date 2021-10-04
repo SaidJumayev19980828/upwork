@@ -48,4 +48,7 @@ public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntit
 			" inner join node.tag t" +
 			" where t.organizationEntity.id = :orgId")
 	List<IdAndNamePair> getTagNodeIdAndNamePairs(@Param("orgId") Long orgId);
+
+	@Query("select node from TagGraphNodeEntity node order by node.id" )
+	List<TagGraphNodeEntity> findByTag();
 }

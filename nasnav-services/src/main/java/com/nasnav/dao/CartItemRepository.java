@@ -46,6 +46,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
 			+ " WHERE product.organizationId = :orgId and product.removed = 0 and variant.removed = 0 "
+			+ " and user.userStatus = 201 "
 			+ " order by item.createdAt desc ")
 	List<CartItemEntity> findUsersCartsOrg_Id(@Param("orgId") Long orgId);
 
@@ -56,7 +57,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
 			+ " WHERE product.organizationId = :orgId and user.id in :userIds"
-			+ " and product.removed = 0 and variant.removed = 0 "
+			+ " and product.removed = 0 and variant.removed = 0  and user.userStatus = 201 "
 			+ " order by item.createdAt desc ")
 	List<CartItemEntity> findCartsByUsersIdAndOrg_Id(@Param("userIds")List<Long> userIds,
 													 @Param("orgId") Long orgId);
@@ -198,4 +199,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " AND usr.id = :user_id"
 			+ ")")
 	void deleteByVariantIdInAndUser_Id(@Param("variant_ids")List<Long> variantIds, @Param("user_id")Long userId);
+
+	@Transactional
+	@Modifying
+	void deleteByIdAndUser_IdAndStock_Id(Long itemId, Long userId, Long stockId);
 }

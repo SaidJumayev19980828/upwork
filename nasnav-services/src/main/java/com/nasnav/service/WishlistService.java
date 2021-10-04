@@ -14,4 +14,11 @@ public interface WishlistService {
     Wishlist getWishlist();
 
     Cart moveWishlistItemsToCart(WishlistItemQuantity items);
+
+    Wishlist addYeshteryWishlistItem(WishlistItem item);
+    Wishlist deleteYeshteryWishlistItem(Long itemId);
+    Wishlist getYeshteryWishlist();
+
+    Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity items);
+
 }

@@ -179,7 +179,7 @@ public class ProductsController {
 
     @DeleteMapping("all")
     public void deleteAllProducts(@RequestHeader(name = "User-Token", required = false) String token,
-                                  @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed) throws BusinessException {
+                                  @RequestParam(name = "confirmed",defaultValue = "false") boolean isConfirmed) throws BusinessException {
     	productService.deleteAllProducts(isConfirmed);
     }
 

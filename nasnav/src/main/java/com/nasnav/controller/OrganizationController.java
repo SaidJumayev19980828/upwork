@@ -78,7 +78,7 @@ public class OrganizationController {
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
     public List<Organization_BrandRepresentationObject> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return orgService.getOrganizationBrands(orgId);
+        return brandService.getOrganizationBrands(orgId);
     }
 
     @PostMapping(value = "brand", produces = APPLICATION_JSON_VALUE, consumes = {"multipart/form-data"})

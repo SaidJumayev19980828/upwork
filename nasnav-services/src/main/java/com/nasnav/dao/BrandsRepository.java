@@ -2,9 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.service.model.IdAndNamePair;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
@@ -21,6 +19,11 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
     Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
+
+	@Query("select b from BrandsEntity b " +
+			" left join fetch b.organizationEntity o "+
+			" where b.id = :id and o.yeshteryState = 1")
+	Optional<BrandsEntity> findYeshteryBrandById(@Param("id") Long id);
 
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
 	boolean existsByIdAndRemoved(Long brandId, Integer removed);
@@ -48,6 +51,14 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
 			" from BrandsEntity b " +
 			" left join b.organizationEntity org " +
-			" where org.yeshteryState = 1 order by b.name")
+			" where org.yeshteryState = 1 and b.removed = 0 order by b.name")
 	PageImpl<Organization_BrandRepresentationObject> findByOrganizationEntity_YeshteryState(Pageable page);
+
+	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
+			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
+			" from BrandsEntity b " +
+			" left join b.organizationEntity org " +
+			" where b.id in :ids and org.yeshteryState = 1 and b.removed = 0 order by b.name")
+	PageImpl<Organization_BrandRepresentationObject> findByIdInAndOrganizationEntity_YeshteryState(@Param("ids")Set<Long>ids,
+																								   Pageable page);
 }

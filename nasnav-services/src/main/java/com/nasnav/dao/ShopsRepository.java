@@ -81,4 +81,7 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
 
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long storeId, Long orgId, int removed);
+
+    List<ShopsEntity> findByYeshteryStateAndRemovedOrderByPriorityDesc(Integer yeshteryState, Integer removed);
+
 }

@@ -6,7 +6,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
@@ -143,7 +143,7 @@ public class UserController {
     	try {
     		UserApiResponse body = securityService.socialLogin(socialLoginToken);
     		return response.body(body);
-    	}catch(InCompleteOAuthRegisteration e) {
+    	}catch(InCompleteOAuthRegistration e) {
     		//change it to forward to a server rendered page
     		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
     							.header(HttpHeaders.LOCATION, OAUTH_ENTER_EMAIL_PAGE + socialLoginToken)

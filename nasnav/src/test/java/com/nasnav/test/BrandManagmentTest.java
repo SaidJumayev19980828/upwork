@@ -239,7 +239,7 @@ public class BrandManagmentTest {
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         LinkedHashMap<?, ?> mapRes = (LinkedHashMap<?, ?>) response.getBody();
-        Organization_BrandRepresentationObject brand = brandSvc.getBrandById(((Integer) mapRes.get("brand_id")).longValue());
+        Organization_BrandRepresentationObject brand = brandSvc.getBrandById(((Integer) mapRes.get("brand_id")).longValue(), false);
 
         assertEquals("p-name", brand.getPname());
         assertEquals(200, response.getStatusCode().value());

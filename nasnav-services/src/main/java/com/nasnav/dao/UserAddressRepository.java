@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserAddressRepository extends JpaRepository<UserAddressEntity, Long> {
 
@@ -19,4 +20,6 @@ public interface UserAddressRepository extends JpaRepository<UserAddressEntity, 
             " left join fetch a.subAreasEntity subArea "+
             " where usr.id = :userId order by ua.principal desc")
     List<UserAddressEntity> findByUser_Id(@Param("userId") Long userId);
+
+    Optional<UserAddressEntity> findFirstByUser_IdOrderByPrincipalDesc(Long userId);
 }

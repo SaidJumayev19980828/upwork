@@ -38,4 +38,6 @@ public interface ShippingManagementService {
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
 	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
 	String getTrackingUrl(Long orderId);
+	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress);
+
 }

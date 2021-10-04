@@ -84,9 +84,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
 		if (dto.getAddressId() == null) {
 			Long addressId = userAddressRepo
-					.findByUser_Id(securityService.getCurrentUser().getId())
-					.stream()
-					.findFirst()
+					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
 					.map(UserAddressEntity::getAddress)
 					.map(AddressesEntity::getId)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,O$RET$0019)); 

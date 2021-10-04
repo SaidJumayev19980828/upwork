@@ -845,6 +845,38 @@ public class CategoryService {
     	dto.setParent(entity.getParentId());
     	return dto;
 	}
+
+	public List<TagsRepresentationObject> getYeshteryTags(String categoryName) {
+		if (securityService.getYeshteryState() == 1) {
+			List<TagsEntity> tagsEntities;
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameOrderByName(categoryName);
+			return tagsEntities
+					.stream()
+					.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
+					.collect(toList());
+		}
+		return null;
+	}
+
+	@CacheResult(cacheName = ORGANIZATIONS_TAG_TREES)
+	public List<TagsTreeNodeDTO> getYeshteryTagsTree() throws BusinessException {
+
+		Graph<TagGraphNodeEntity, DefaultEdge> graph = buildYeshteryTagGraph();
+
+		return convertToTagTree(graph);
+	}
+
+	private Graph<TagGraphNodeEntity, DefaultEdge> buildYeshteryTagGraph() {
+		List<TagGraphNodeEntity> nodes = tagNodesRepo.findByTag();
+		List<TagGraphEdgesEntity> edges = tagEdgesRepo.findAllYeshteryTagGraph(1);
+
+		Graph<TagGraphNodeEntity, DefaultEdge> graph = new DirectedAcyclicGraph<>(DefaultEdge.class);
+		nodes.forEach(graph::addVertex);
+		edges.forEach(edge -> graph.addEdge(edge.getParent(), edge.getChild()));
+
+		return graph;
+	}
+
 }
 
 
