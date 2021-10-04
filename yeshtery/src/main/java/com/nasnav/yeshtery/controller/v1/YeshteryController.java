@@ -239,6 +239,11 @@ public class YeshteryController {
         return shop360Svc.getThreeSixtyShops(shopId, true);
     }
 
+    @GetMapping(value = "/360view/shop", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ShopRepresentationObject getShopById(@RequestParam("shop_id") Long shopId) {
+        return shopService.getShopById(shopId);
+    }
+
     @GetMapping(value = "/360view/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ProductsPositionDTO getShop360ProductsPositions(@RequestParam("shop_id") Long shopId,
                                                            @RequestParam(defaultValue = "2") short published,
