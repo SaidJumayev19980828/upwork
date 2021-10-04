@@ -361,7 +361,7 @@ public class YeshteryController {
         return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 
-    @GetMapping(value = "/orginfo")
+    @GetMapping(value = "/organization")
     public OrganizationRepresentationObject getOrgInfo(@RequestParam(name = "p_name", required = false) String organizationName,
                                                        @RequestParam(name = "org_id", required = false) Long organizationId,
                                                        @RequestParam(name = "url", required = false) String url) throws BusinessException {
