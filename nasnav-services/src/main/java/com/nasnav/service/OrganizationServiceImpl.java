@@ -154,7 +154,13 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_NAME)
     public OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException {
-        OrganizationEntity organizationEntity = organizationRepository.findByPnameAndYeshteryState(organizationName, yeshteryState);
+
+        OrganizationEntity organizationEntity;
+        if (yeshteryState == 1) {
+            organizationEntity = organizationRepository.findByPnameAndYeshteryState(organizationName, yeshteryState);
+        } else {
+            organizationEntity = organizationRepository.findByPname(organizationName);
+        }
         if (organizationEntity == null)
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
 
@@ -169,8 +175,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
     public OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState) {
-        OrganizationEntity organizationEntity = organizationRepository.findByIdAndYeshteryState(organizationId, yeshteryState)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+        OrganizationEntity organizationEntity;
+        if (yeshteryState == 1) {
+            organizationEntity = organizationRepository.findByIdAndYeshteryState(organizationId, yeshteryState)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+        } else {
+            organizationEntity = organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+        }
 
         return getOrganizationAdditionalData(organizationEntity);
     }
