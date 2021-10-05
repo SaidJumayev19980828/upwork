@@ -26,11 +26,11 @@ public interface OrderService {
 
 
 
-    public class OrderValue {
-		public BigDecimal amount;
-		public TransactionCurrency currency;
+     class OrderValue {
+		 public  BigDecimal amount;
+		 public  TransactionCurrency currency;
 
-		public String toString() {
+		 public String toString() {
 			if (amount == null) {
 				return "NULL";
 			}
@@ -44,26 +44,26 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
-	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
+	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
 	void finalizeOrder(Long orderId) throws BusinessException;
 
-	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
+	 void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
-	public OrderConfirmResponseDTO confrimOrder(Long orderId);
+	 OrderConfirmResponseDTO confrimOrder(Long orderId);
 
-	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
+	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id);
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
-	public OrderValue getMetaOrderTotalValue(long metaOrderId);
+	 OrderValue getMetaOrderTotalValue(long metaOrderId);
 
-	public void rejectOrder(OrderRejectDTO dto);
+	 void rejectOrder(OrderRejectDTO dto);
 
-	public void cancelOrder(Long metaOrderId);
+	 void cancelOrder(Long metaOrderId);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
@@ -72,4 +72,15 @@ public interface OrderService {
 	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
 
 	Order createOrder(CartCheckoutDTO dto);
+
+	String trackOrder(Long orderId);
+	void updateExistingYeshteryOrder(OrderJsonDto orderJson);
+
+	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+
+	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
+	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
+	void cancelYeshteryOrder(Long metaOrderId);
+	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
+	Order createYeshteryOrder(CartCheckoutDTO dto);
 }

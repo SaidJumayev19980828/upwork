@@ -2,9 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.service.model.IdAndNamePair;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
@@ -22,6 +20,11 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
     Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
+	@Query("select b from BrandsEntity b " +
+			" left join fetch b.organizationEntity o "+
+			" where b.id = :id and o.yeshteryState = 1")
+	Optional<BrandsEntity> findYeshteryBrandById(@Param("id") Long id);
+
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
 	boolean existsByIdAndRemoved(Long brandId, Integer removed);
 
@@ -34,13 +37,13 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 	@Query(value = "update BrandsEntity b set b.removed = 1 where b.id = :id")
 	void setBrandHidden(@Param("id") Long id);
 
-	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.BrandBasicData(brand.id, brand.name, org.id) "
+	@Query("SELECT brand "
 			+ " FROM BrandsEntity brand "
 			+ " left join brand.organizationEntity org"
 			+ " WHERE brand.id in :ids and brand.removed = 0")
-	List<BrandBasicData> findByIdIn(@Param("ids")List<Long> ids);
+	List<BrandsEntity> findByIdIn(@Param("ids")List<Long> ids);
 
-	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join BrandsEntity b on p.brandId = b.id" +
+	@Query(value = "select distinct new com.nasnav.service.model.IdAndNamePair(b.id, b.pname) from ProductEntity p left join p.brand b " +
 			"  where b.organizationEntity.id = :orgId and b.removed = 0 and p.removed = 0")
 	List<IdAndNamePair> getBrandIdAndNamePairs(@Param("orgId") Long orgId);
 
@@ -48,6 +51,14 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
 			" from BrandsEntity b " +
 			" left join b.organizationEntity org " +
-			" where org.yeshteryState = 1 order by b.name")
+			" where org.yeshteryState = 1 and b.removed = 0 order by b.name")
 	PageImpl<Organization_BrandRepresentationObject> findByOrganizationEntity_YeshteryState(Pageable page);
+
+	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
+			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
+			" from BrandsEntity b " +
+			" left join b.organizationEntity org " +
+			" where b.id in :ids and org.yeshteryState = 1 and b.removed = 0 order by b.name")
+	PageImpl<Organization_BrandRepresentationObject> findByIdInAndOrganizationEntity_YeshteryState(@Param("ids")Set<Long>ids,
+																								   Pageable page);
 }

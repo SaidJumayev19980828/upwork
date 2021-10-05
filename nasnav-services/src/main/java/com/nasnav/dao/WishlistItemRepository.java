@@ -12,20 +12,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity, Long> {
-	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
-			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec, variant.weight"
-			+ " , item.coverImage, stock.price, item.quantity"
-			+ " , brand.id, brand.name, brand.logo, product.name, product.productType, stock.discount"
-			+ " , item.additionalData, unit.name) "
+
+	@Query("SELECT item "
 			+ " FROM WishlistItemEntity item "
-			+ "	LEFT JOIN item.user user"			
-			+ " LEFT JOIN item.stock stock "
-			+ " LEFT JOIN stock.unit unit "
-			+ " LEFT JOIN stock.productVariantsEntity variant "
-			+ " LEFT JOIN variant.productEntity product "
-			+ " LEFT JOIN BrandsEntity brand on product.brandId = brand.id "
-			+ " WHERE user.id = :user_id")
-	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
+			+ "	LEFT JOIN FETCH item.user user"
+			+ " LEFT JOIN FETCH item.stock stock "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.featureValues featureValues"
+			+ " LEFT JOIN FETCH featureValues.feature feature "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH product.brand brand "
+			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
+	List<WishlistItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);

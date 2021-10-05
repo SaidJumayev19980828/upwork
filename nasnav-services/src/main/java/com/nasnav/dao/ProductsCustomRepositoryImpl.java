@@ -12,8 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.querydsl.sql.SQLExpressions.select;
 
 @Repository
@@ -52,10 +55,14 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
+		if (isNotBlankOrNull(params.features)) {
+			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
+			baseQuery.where(variant.id.in(variantFeaturesQuery));
+		}
 
+		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
-			baseQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+			baseQuery.where(product.id.in(productTagsQuery));
 
 		return baseQuery;
 	}
@@ -79,14 +86,34 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
+		if (isNotBlankOrNull(params.features)) {
+			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
+			baseQuery.where(variant.id.in(variantFeaturesQuery));
+		}
 
+		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
-			baseQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+			baseQuery.where(product.id.in(productTagsQuery));
 
 		return baseQuery;
 	}
 
+	private SQLQuery<Long> getVariantFeaturesQuery(SQLQueryFactory query, ProductSearchParam params) {
+		QProductFeatures feature = QProductFeatures.productFeatures;
+		QVariantFeatureValues featureValue = QVariantFeatureValues.variantFeatureValues;
+		BooleanBuilder featuresPredicate = new BooleanBuilder();
+
+		for (Map.Entry e : params.features.entrySet()) {
+			featuresPredicate.or(feature.name.eq(e.getKey().toString()).and(featureValue.value.in((List)e.getValue())));
+		}
+
+		return query.select(featureValue.variantId)
+				.from(featureValue)
+				.join(feature).on(feature.id.eq(featureValue.featureId))
+				.where(featuresPredicate)
+				.groupBy(featureValue.variantId)
+				.having(featureValue.countDistinct().eq((long)params.features.size()));
+	}
 
 	private SQLQuery<Long> getProductTagsQuery(SQLQueryFactory query, QProductTags productTags, ProductSearchParam params) {
 		if (params.getTags() == null)
@@ -102,6 +129,19 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 								.groupBy(productTags.productId)
 								.having(productTags.tagId.count().eq((long) params.getTags().size()))
 								.as("productTags"));
+	}
+
+	@Override
+	public SQLQuery<Long> getProductTagsByNameQuery(ProductSearchParam params) {
+		if (params.getName() == null)
+			return null;
+
+		QTags tag = QTags.tags;
+		QProductTags productTags = QProductTags.productTags;
+		return select(productTags.productId)
+				.from(productTags)
+				.join(tag).on(tag.id.eq(productTags.tagId))
+				.where(tag.name.likeIgnoreCase(params.getName()));
 	}
 
 	

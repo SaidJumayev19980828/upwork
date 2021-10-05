@@ -4,8 +4,11 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.organization.OrganizationCreationDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
@@ -32,8 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -152,8 +153,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_NAME)
-    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
-        OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
+    public OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException {
+
+        OrganizationEntity organizationEntity;
+        if (yeshteryState == 1) {
+            organizationEntity = organizationRepository.findByPnameAndYeshteryState(organizationName, yeshteryState);
+        } else {
+            organizationEntity = organizationRepository.findByPname(organizationName);
+        }
         if (organizationEntity == null)
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
 
@@ -167,9 +174,15 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
-    public OrganizationRepresentationObject getOrganizationById(Long organizationId) {
-        OrganizationEntity organizationEntity = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$0001, organizationId));
+    public OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState) {
+        OrganizationEntity organizationEntity;
+        if (yeshteryState == 1) {
+            organizationEntity = organizationRepository.findByIdAndYeshteryState(organizationId, yeshteryState)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+        } else {
+            organizationEntity = organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+        }
 
         return getOrganizationAdditionalData(organizationEntity);
     }
@@ -183,15 +196,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         setSocialEntity(orgRepObj);
         setThemeSettings(orgRepObj);
-        setBrands(orgRepObj);
         setImages(orgRepObj);
         setPublicSettings(orgRepObj);
+        setDomain(orgRepObj);
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
 
         return orgRepObj;
     }
 
-
+    private void setDomain(OrganizationRepresentationObject obj) {
+        String domain = domainService.getOrganizationDomainAndSubDir(obj.getId());
+        obj.setDomain(domain);
+    }
 
     private void setSocialEntity(OrganizationRepresentationObject orgRepObj) {
         socialRepository
@@ -227,17 +243,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     private void setImages(OrganizationRepresentationObject orgRepObj) {
+            orgRepObj.setImages(getOrganizationImages(orgRepObj.getId()));
+    }
+
+    private List<OrganizationImagesRepresentationObject> getOrganizationImages(Long orgId) {
         List <OrganizationImagesEntity> orgImgEntities =
-                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+                organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgId, asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
-            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities
+            return orgImgEntities
                     .stream()
                     .map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation()))
                     .collect(toList());
-            orgRepObj.setImages(imagesList);
         }
+        return null;
     }
-
 
 
     private void setPublicSettings(OrganizationRepresentationObject orgRepObj) {
@@ -305,22 +324,21 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-
+    public OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException {
         OrganizationEntity organization;
-        if (json.id != null) {
-            organization = orgRepo.findOneById(json.id);
+        if (json.getId() != null) {
+            organization = orgRepo.findOneById(json.getId());
             if (organization == null)
-                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.id),
+                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.getId()),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
-            if (json.name != null) {
+            if (json.getName() != null) {
                 validateOrganizationName(json);
-                organization.setName(json.name);
+                organization.setName(json.getName());
 
             }
-            if (json.pname != null) {
+            if (json.getPname() != null) {
                 validateOrganizationPname(json);
-                organization.setPname(json.pname);
+                organization.setPname(json.getPname());
             }
         } else {
             organization = createNewOrganization(json);
@@ -333,61 +351,60 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
-    private OrganizationEntity createNewOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+    private OrganizationEntity createNewOrganization(OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationNameForCreate(json);
-        OrganizationEntity organization = organizationRepository.findByPname(json.pname);
+        OrganizationEntity organization = organizationRepository.findByPname(json.getPname());
         if (organization != null) {
             throw new BusinessException("INVALID_PARAM: p_name",
                     "Provided p_name is already used by another organization (id: " + organization.getId() +
                             ", name: " + organization.getName() + ")", NOT_ACCEPTABLE);
         }
         organization = new OrganizationEntity();
-        organization.setName(json.name);
-        organization.setPname(json.pname);
+        organization.setName(json.getName());
+        organization.setPname(json.getPname());
         return organization;
     }
 
 
-    private OrganizationEntity updateAdditionalOrganizationData(OrganizationDTO.OrganizationCreationDTO json,
-                                                                OrganizationEntity organization) {
-        if (json.id == null) {
+    private OrganizationEntity updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
+        if (json.getId() == null) {
             organization.setThemeId(0);
         }
-        if (json.ecommerce != null) {
-            organization.setEcommerce(json.ecommerce);
+        if (json.getEcommerce() != null) {
+            organization.setEcommerce(json.getEcommerce());
         }
-        if (json.googleToken != null) {
-            organization.setGoogleToken(json.googleToken);
+        if (json.getGoogleToken() != null) {
+            organization.setGoogleToken(json.getGoogleToken());
         }
-        if (json.currencyIso != null) {
-            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
+        if (json.getCurrencyIso() != null) {
+            CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
             organization.setCountry(country);
         }
-        if(nonNull(json.yeshteryState)){
-            organization.setYeshteryState(json.yeshteryState.getValue());
+        if(nonNull(json.getYeshteryState())){
+            organization.setYeshteryState(json.getYeshteryState().getValue());
         }
         return organization;
     }
 
-    private void validateOrganizationNameForCreate(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (json.name == null) {
+    private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {
+        if (json.getName() == null) {
             throw new BusinessException("MISSING_PARAM: name", "Required Organization name is empty", NOT_ACCEPTABLE);
         }
         validateOrganizationName(json);
 
-        if (json.pname == null) {
+        if (json.getPname() == null) {
             throw new BusinessException("MISSING_PARAM: p_name", "Required Organization p_name is empty", NOT_ACCEPTABLE);
         }
         validateOrganizationPname(json);
     }
 
-    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (!validateName(json.name))
+    private void validateOrganizationName(OrganizationCreationDTO json) throws BusinessException {
+        if (!validateName(json.getName()))
             throw new BusinessException("INVALID_PARAM: name", "Required Organization name is invalid", NOT_ACCEPTABLE);
     }
 
-    private void validateOrganizationPname(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (!json.pname.equals(encodeUrl(json.pname)))
+    private void validateOrganizationPname(OrganizationCreationDTO json) throws BusinessException {
+        if (!json.getPname().equals(encodeUrl(json.getPname())))
             throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid", NOT_ACCEPTABLE);
     }
     
@@ -395,16 +412,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
     @Transactional
-    public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
-        if (json.description != null) {
-            organization.setDescription(json.description);
+        if (json.getDescription() != null) {
+            organization.setDescription(json.getDescription());
         }
-        if (json.info != null) {
-            organization.setExtraInfo(new JSONObject(json.info).toString());
+        if (json.getInfo() != null) {
+            organization.setExtraInfo(new JSONObject(json.getInfo()).toString());
         }
-        if (json.themeId != null) {
-            organization.setThemeId(json.themeId);
+        if (json.getThemeId() != null) {
+            organization.setThemeId(json.getThemeId());
         }
 
         if (file != null) {
@@ -431,22 +448,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         return new OrganizationResponse(organization.getId(), 0);
     }
-
-
-
-
-    @Override
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
-        List<Organization_BrandRepresentationObject> brands = null;
-        if (orgId == null)
-            return brands;
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0);
-        brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
-                 .collect(toList());
-        return brands;
-    }
-
-
 
 
     private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo,
@@ -579,14 +580,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @Transactional
-    public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-		Long orgId = user.getOrganizationId();
+    public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+		Long orgId = org.getId();
 
 		validateProductFeature(featureDto, orgId);
-		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, orgId);
-        entity = featureRepo.save(entity);
+		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, org);
 
 		return new ProductFeatureUpdateResponse(entity.getId());
 	}
@@ -605,7 +604,39 @@ public class OrganizationServiceImpl implements OrganizationService {
             .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0001, featureId));
     }
 
+    @Override
+    public List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds) {
+        List<OrganizationEntity> orgs;
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            orgs = organizationRepository.findYeshteryOrganizationsFilterByCategory(categoryIds);
+        }
+        else {
+            orgs = organizationRepository.findYeshteryOrganizations();
+        }
+        return orgs
+                .stream()
+                .map(this::toYeshteryOrganizationDto)
+                .collect(toList());
+    }
 
+    @Override
+    public List<OrganizationEntity> getYeshteryOrgs() {
+        return organizationRepository.findByYeshteryState(1);
+    }
+
+    private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
+        YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
+        dto.setId(org.getId());
+        dto.setName(org.getName());
+        dto.setDescription(org.getDescription());
+        dto.setImages(getOrganizationImages(org.getId()));
+        dto.setShops(getOrganizationShopsDto(org));
+        return dto;
+    }
+
+    private List<ShopRepresentationObject> getOrganizationShopsDto(OrganizationEntity org) {
+        return org.getShops().stream().map(s -> (ShopRepresentationObject) s.getRepresentation()).collect(toList());
+    }
 
     private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {
         featureRepo.delete(feature);
@@ -702,14 +733,15 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
-    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
+    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, OrganizationEntity org) {
 		ProductFeaturesEntity entity = new ProductFeaturesEntity();
-		entity.setOrganization( orgRepo.findById(orgId).get() );
+		entity.setOrganization( org );
 		
 		Operation opr = featureDto.getOperation();
 		
 		if( opr.equals( Operation.UPDATE)) {			
-			entity = featureRepo.findById( featureDto.getFeatureId()).get();
+			entity = featureRepo.findByIdAndOrganization_Id( featureDto.getFeatureId(), org.getId() )
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0003, featureDto.getFeatureId()));
 		}
 		if(featureDto.isUpdated("name")){
 			entity.setName( featureDto.getName()); 
@@ -721,7 +753,11 @@ public class OrganizationServiceImpl implements OrganizationService {
 			entity.setDescription( featureDto.getDescription() );
 		}
         if(featureDto.isUpdated("level")) {
-            entity.setLevel( featureDto.getLevel() );
+            if (opr.equals( Operation.CREATE) && featureDto.getLevel() == 0) {
+                entity.setLevel(0);
+            } else {
+                entity.setLevel( featureDto.getLevel() );
+            }
         }
         if(featureDto.isUpdated("type")) {
             var type = ofNullable(featureDto.getType()).orElse(STRING).getValue();
@@ -732,7 +768,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             }
         }
 
-		return entity;
+		return featureRepo.save(entity);
 	}
 	
 	
@@ -753,98 +789,42 @@ public class OrganizationServiceImpl implements OrganizationService {
 	
 	
 
-	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) throws BusinessException {
+	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) {
 		if(!featureDto.areRequiredAlwaysPropertiesPresent()) {
-			throw new BusinessException(
-					"Missing required parameters !" 
-					, "MISSING PARAM"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
 		}
-		
+
 		Operation opr = featureDto.getOperation();
-		
-		validateOperation(opr);
+		validateOperation(featureDto.getOperation());
 		
 		if(opr.equals(Operation.CREATE)) {
 			validateProductFeatureForCreate(featureDto, orgId);
 		}else if(opr.equals(Operation.UPDATE)) {
-			validateProductFeatureForUpdate(featureDto, orgId);
+			validateProductFeatureForUpdate(featureDto);
 		}
 	}
-	
-	
-	
-	
 
-	private void validateOperation(Operation opr) throws BusinessException {
+	private void validateOperation(Operation opr) {
 		if(opr == null) {
-			throw new BusinessException(
-					"Missing required parameters [operation]!" 
-					, "MISSING PARAM:operation"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "operation");
 		}
-		
-		if(!opr.equals(Operation.CREATE) &&
-				!opr.equals(Operation.UPDATE)) {
-			throw new BusinessException(
-					format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue())
-					, "INVALID PARAM:operation"
-					, NOT_ACCEPTABLE);
+		if(!opr.equals(Operation.CREATE) && !opr.equals(Operation.UPDATE)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
 		}
 	}
-	
-	
-	
-	
 
-	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto, Long userOrgId) throws BusinessException {
+	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto) {
 		if(!featureDto.areRequiredForUpdatePropertiesProvided()) {
-			throw new BusinessException(
-					"Missing required parameters !" 
-					, "MISSING PARAM"
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
 		}
-		
-		Integer id = featureDto.getFeatureId();
-		Optional<ProductFeaturesEntity> featureOptional= featureRepo.findById( id );
-		
-		if( !featureOptional.isPresent()) {
-			throw new BusinessException(
-					format("Invalid parameters [feature_id], no feature exists with id [%d]!", id)
-					, "INVALID PARAM:feature_id"
-					, NOT_ACCEPTABLE);
-		}
-		Long featureOrgId = featureOptional.map(ProductFeaturesEntity::getOrganization)
-										   .map(OrganizationEntity::getId)
-										   .orElseThrow(
-												   () -> new BusinessException(
-															format("Feature of id[%d], Doesn't follow any organization!", id)
-															, "INTERNAL SERVER ERROR"
-															, INTERNAL_SERVER_ERROR)
-												   );
-		if(!Objects.equals(featureOrgId, userOrgId)) {
-			throw new BusinessException(
-					format("Feature of id[%d], can't be changed by a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId)
-					, "INVALID PARAM:feature_id"
-					, FORBIDDEN);
-		}
-		if(featureDto.isUpdated("name") &&
-				isBlankOrNull(featureDto.getName())) {
-			throw new BusinessException(
-					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
-					, "INVALID PARAM:name"
-					, NOT_ACCEPTABLE);
+		if(featureDto.isUpdated("name") && isBlankOrNull(featureDto.getName())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
 		}		
 	}
-	
-	
 
 	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId){
 		if(!featureDto.areRequiredForCreatePropertiesProvided()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
-		}
-		if(!organizationRepository.existsById( orgId )) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
 		if(isBlankOrNull(featureDto.getName())) {
 		    throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
@@ -993,45 +973,27 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public boolean deleteImage(Long imgId) throws BusinessException {
-        OrganizationImagesEntity img = 
-        		organizationImagesRepository
-        		.findById(imgId)
-                .orElseThrow(()-> new BusinessException(
-                					"No Image exists with id ["+ imgId+"] !"
-                					,"INVALID PARAM:image_id"
-                					, NOT_ACCEPTABLE));
-        validateImgToDelete(img);
-
-        organizationImagesRepository.deleteById(imgId);
+    public void deleteImage(Long imgId, String url) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        OrganizationImagesEntity img = new OrganizationImagesEntity();
+        if (imgId != null) {
+            img = organizationImagesRepository
+                    .findByIdAndOrganizationEntity_Id(imgId, orgId)
+                    .orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0001, imgId));
+        } else if (url != null){
+            img = organizationImagesRepository
+                    .findByUriAndOrganizationEntity_Id(url, orgId)
+                    .orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0002, url));
+        }
+        organizationImagesRepository.deleteById(img.getId());
 
         fileService.deleteFileByUrl(img.getUri());
-
-        return true;
     }
-    
-    
-    
-
-    private void validateImgToDelete(OrganizationImagesEntity img) throws BusinessException {
-        Long orgId = img.getOrganizationEntity().getId();
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-
-        if(!user.getOrganizationId().equals(orgId)) {
-            throw new BusinessException(
-                    format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
-                    , "UNAUTHRORIZED", FORBIDDEN);
-        }
-    }
-
-    
     
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
-    public Pair getOrganizationAndSubdirsByUrl(String urlString) {
+    public Pair getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState) {
         urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
         URIBuilder url = domainService.validateDomainCharacters(urlString);
 
@@ -1058,7 +1020,11 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    } else {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
 	    	subDir = null;
-	    }    	
+	    }
+	    if (orgDom != null)
+            if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
+                return new Pair(0L, 0L);
+            }
 	    
 //	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
 	    
@@ -1227,7 +1193,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
-        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl());
+        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
         Long orgId = domain.getFirst();
         if (orgId.intValue() == 0) {
             return createEmptyResponseEntity();
@@ -1307,13 +1273,13 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public LinkedHashMap getOrganizationPaymentGateways(Long orgId, String deliveryService) {
+    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(Long orgId, String deliveryService) {
         List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
         if (gateways == null || gateways.size() == 0) {
             // no specific gateways defined for this org, use the default ones
             gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
         }
-        LinkedHashMap<String, Map> response = new LinkedHashMap();
+        LinkedHashMap<String, Map<String, String>> response = new LinkedHashMap();
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
             Map<String, String> body = new HashMap();
             if (deliveryService != null) {

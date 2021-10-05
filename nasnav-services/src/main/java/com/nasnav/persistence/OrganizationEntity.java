@@ -67,6 +67,12 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "yeshtery_state")
     private Integer yeshteryState;
 
+    @OneToMany(mappedBy = "organizationEntity")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<ShopsEntity> shops;
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;

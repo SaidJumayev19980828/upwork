@@ -31,7 +31,7 @@ public class CartItem {
 	private Long userId;
 	private BigDecimal weight;
 	private String unit;
-	
+	private Long orgId;
 	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {
 		this.stockId = stockId;

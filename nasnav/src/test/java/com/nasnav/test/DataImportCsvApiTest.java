@@ -14,9 +14,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -1496,7 +1494,7 @@ public class DataImportCsvApiTest {
 		assertEquals("TT232222", updatedProduct.getBarcode());
         assertEquals("Squishy shoes", updatedProduct.getName());
         assertEquals("squishy", updatedProduct.getDescription());
-        assertEquals(101L, updatedProduct.getBrandId().longValue());
+        assertEquals(101L, updatedProduct.getBrand().getId().longValue());
 	}
 
 
@@ -1548,7 +1546,7 @@ public class DataImportCsvApiTest {
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getVariantDescriptions()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getSku, expected.getSku()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getProductCode, expected.getProductCodes()) );
-        assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
+        assertTrue( featuresValuesIn(variants, expected.getFeatureSpecs()) );
         assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
         assertEquals( expected.getExtraAttributesTypes(), getExtraAttributesTypes(variants));
 
@@ -1556,7 +1554,7 @@ public class DataImportCsvApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
         assertTrue( propertyMultiValuesIn(products, this::getTags, expected.getTags()) );
-        assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
+        assertTrue( propertyValuesIn(products, p -> p.getBrand().getId(), expected.getBrands()) );
 	}
 
 
@@ -1623,7 +1621,20 @@ public class DataImportCsvApiTest {
 	}
 
 
-
+	private boolean featuresValuesIn(List<ProductVariantsEntity> variants, Set<JSONObject> expectedSpecs) {
+		for (JSONObject json : expectedSpecs){
+			if (json.similar(new JSONObject("{}")))
+				return true;
+		}
+		for(ProductVariantsEntity variant : variants) {
+			JSONObject json = new JSONObject(variant.getFeatureValues()
+					.stream()
+					.collect(toMap(f -> f.getFeature().getId(), VariantFeatureValueEntity::getValue)));
+			if (expectedSpecs.stream().noneMatch(expected -> expected.similar(json)))
+				return false;
+		}
+		return true;
+	}
 
 
 

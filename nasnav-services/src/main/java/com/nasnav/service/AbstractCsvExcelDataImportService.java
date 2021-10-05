@@ -42,9 +42,6 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     protected ProductFeaturesRepository featureRepo;
 
     @Autowired
-    protected ProductFeaturesRepository productFeaturesRepo;
-
-    @Autowired
     protected DataImportService dataImportService;
 
     @Autowired
@@ -198,7 +195,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     public List<String> getProductImportTemplateHeadersWithoutExtraAttributes() {
         var orgId = security.getCurrentUserOrganizationId();
         var features =
-                productFeaturesRepo
+                featureRepo
                         .findByOrganizationId(orgId)
                         .stream()
                         .map(ProductFeaturesEntity::getName)

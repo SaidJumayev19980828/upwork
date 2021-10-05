@@ -16,7 +16,11 @@ public enum PromotionType {
     TOTAL_CART_ITEMS_VALUE(3),
     TOTAL_CART_ITEMS_QUANTITY(4),
     BUY_X_GET_Y_FROM_TAG(5),
-    BUY_X_GET_Y_FROM_PRODUCT(6);
+    BUY_X_GET_Y_FROM_PRODUCT(6),
+    PROMO_CODE_FROM_BRAND(7),
+    PROMO_CODE_FROM_TAG(8),
+    PROMO_CODE_FROM_PRODUCT(9);
+
 
     @Getter
     private Integer value;

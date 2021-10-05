@@ -80,17 +80,23 @@ public class ReviewServiceImpl implements ReviewService{
 
     @Override
     public List<ProductRateRepresentationObject> getProductRatings(Long variantId) {
-        return  productRatingRepo.findApprovedVariantRatings(variantId)
-                .stream()
-                .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
-                .collect(toList());
+        return  toReviewDtoList(productRatingRepo.findApprovedVariantRatings(variantId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getYeshteryVariantRatings(Long variantId) {
+        return toReviewDtoList(productRatingRepo.findApprovedYeshteryVariantRatings(variantId));
     }
 
 
     @Override
     public List<ProductRateRepresentationObject> getProductsRatings() {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        return productRatingRepo.findUnapprovedVariantsRatings(orgId)
+        return toReviewDtoList(productRatingRepo.findUnapprovedVariantsRatings(orgId));
+    }
+
+    private List<ProductRateRepresentationObject> toReviewDtoList(List<ProductRating> ratings) {
+        return ratings
                 .stream()
                 .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
                 .collect(toList());

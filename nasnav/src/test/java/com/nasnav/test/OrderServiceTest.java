@@ -15,11 +15,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.dto.query.result.CartItemData;
+import com.nasnav.persistence.*;
 import com.nasnav.service.MailService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
@@ -58,7 +54,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
 import static com.nasnav.service.OrderService.ORDER_REJECT_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -608,6 +604,7 @@ public class OrderServiceTest {
 		order.setMetaOrderId(310001L);
 		order.setDiscount(ZERO);
 		order.setPaymentOperator("S.C.A.M");
+		order.setNotes("");
 		return order;
 	}
 	
@@ -841,7 +838,7 @@ public class OrderServiceTest {
 		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getMetaOrder().getStatus());
 		assertNotNull(subOrderAfter.getShipment().getExternalId());
 		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
-		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
+		assertEquals(REQUESTED.getValue(), subOrderAfter.getShipment().getStatus());
 	}
 
 
@@ -958,11 +955,12 @@ public class OrderServiceTest {
 		Item stock1 = getStockItemQty(601L);
 		Item stock2 = getStockItemQty(602L);
 		//get cart count before
-		List<CartItemData> cartBefore = cartRepo.findCurrentCartItemsByUser_Id(88L); 
+		List<CartItemEntity> cartBefore = cartRepo.findCurrentCartItemsByUser_Id(88L);
 		boolean cartHasStk = 
 				cartBefore
 				.stream()
-				.map(CartItemData::getStockId)
+				.map(CartItemEntity::getStock)
+				.map(StocksEntity::getId)
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertTrue(cartHasStk);
 		
@@ -1010,11 +1008,12 @@ public class OrderServiceTest {
 
 
 	private void assertCartItemsRemoved() {
-		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L); 
+		List<CartItemEntity> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L);
 		boolean cartHasStkAfer = 
 				cartAfter
 				.stream()
-				.map(CartItemData::getStockId)
+				.map(CartItemEntity::getStock)
+				.map(StocksEntity::getId)
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertFalse(cartHasStkAfer);
 		assertFalse("if the cart had items not in the order, they should remain", cartAfter.isEmpty());
@@ -1045,7 +1044,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq("user1@nasnav.com")
+			Mockito.eq("organization_1")
+			, Mockito.eq("user1@nasnav.com")
 			, Mockito.eq(BILL_EMAIL_SUBJECT)
 			, Mockito.anyString()
 			, Mockito.anyMap());
@@ -1053,7 +1053,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1062,7 +1063,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1251,7 +1253,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("user1@nasnav.com"))
+			Mockito.eq("organization_1")
+			,Mockito.eq(asList("user1@nasnav.com"))
 			, Mockito.eq(ORDER_REJECT_SUBJECT)
 			, Mockito.anyList()
 			, Mockito.eq(asList("testuser3@nasnav.com"))
@@ -1352,7 +1355,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1361,7 +1365,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1407,7 +1412,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser6@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
@@ -1416,7 +1422,8 @@ public class OrderServiceTest {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(
-			  Mockito.eq(asList("testuser7@nasnav.com"))
+			Mockito.eq("organization_1")
+			, Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()

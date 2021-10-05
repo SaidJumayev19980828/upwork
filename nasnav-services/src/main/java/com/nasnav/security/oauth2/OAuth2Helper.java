@@ -8,7 +8,7 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.persistence.OAuth2ProviderEntity;
 import com.nasnav.persistence.OAuth2UserEntity;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.security.oauth2.exceptions.RegisterationEmailExistsException;
+import com.nasnav.security.oauth2.exceptions.RegistrationEmailExistsException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +46,7 @@ public class OAuth2Helper {
     	
     	Boolean emailExists = userRepo.existsByEmailIgnoreCaseAndOrganizationId(email, orgId);
     	if(emailExists) {
-    		throw new RegisterationEmailExistsException( format(EMAIL_EXISTS, email, provider));
+    		throw new RegistrationEmailExistsException( format(EMAIL_EXISTS, email, provider));
     	}
     	
     	UserEntity nasnavUser = registerNasnavUser(user, orgId);    	

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -139,13 +140,46 @@ public class WishlistServiceImpl implements WishlistService{
         Long stockId = wishlistRepo.findWishlistItemStockId(itemId, user.getId());
         Integer qty = ofNullable(item.getQuantity()).orElse(1);
         CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData());
-        return cartService.addCartItem(cartItem);
+        return cartService.addCartItem(cartItem, null);
+    }
+
+    @Override
+    @Transactional
+    public Wishlist addYeshteryWishlistItem(WishlistItem item) {
+        if (securityService.getYeshteryState() == 1){
+            return addWishlistItem(item);
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public Wishlist deleteYeshteryWishlistItem(Long itemId) {
+        if (securityService.getYeshteryState() == 1){
+            deleteWishlistItem(itemId);
+        }
+        return null;
+    }
+
+    @Override
+    public Wishlist getYeshteryWishlist() {
+        if (securityService.getYeshteryState() == 1){
+            getWishlist();
+        }
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity item) {
+        if (securityService.getYeshteryState() == 1){
+            return moveWishlistItemsToCart(item);
+        }
+        return null;
     }
 
 
-
-
-    private List<WishlistItem> toCartItemsDto(List<CartItemData> cartItems) {
+    private List<WishlistItem> toCartItemsDto(List<WishlistItemEntity> cartItems) {
         return cartItems
                 .stream()
                 .map(this::createWishlistItemDto)
@@ -156,39 +190,43 @@ public class WishlistServiceImpl implements WishlistService{
 
 
 
-    private WishlistItem createWishlistItemDto(CartItemData itemData) {
+    private WishlistItem createWishlistItemDto(WishlistItemEntity itemData) {
         WishlistItem itemDto = new WishlistItem();
 
-        Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
+        StocksEntity stock = itemData.getStock();
+        ProductVariantsEntity variant = stock.getProductVariantsEntity();
+        ProductEntity product = variant.getProductEntity();
+        BrandsEntity brand = product.getBrand();
+        UserEntity user = itemData.getUser();
+        String unit = ofNullable(stock.getUnit())
+                .map(StockUnitEntity::getName)
+                .orElse("");
+        Map<String,String> variantFeatures = ofNullable(productService.parseVariantFeatures(variant, 0))
+                .orElse(new HashMap<>());
         Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
 
-        itemDto.setBrandId(itemData.getBrandId());
-        itemDto.setBrandLogo(itemData.getBrandLogo());
-        itemDto.setBrandName(itemData.getBrandName());
+        itemDto.setBrandId( brand.getId());
+        itemDto.setBrandLogo(brand.getLogo());
+        itemDto.setBrandName(brand.getName());
 
-        itemDto.setCoverImg(itemData.getCoverImg());
-        itemDto.setPrice(itemData.getPrice());
+        itemDto.setCoverImg(itemData.getCoverImage());
+        itemDto.setPrice(stock.getPrice());
         itemDto.setQuantity(itemData.getQuantity());
         itemDto.setVariantFeatures(variantFeatures);
-        itemDto.setName(itemData.getProductName());
-        itemDto.setWeight(itemData.getWeight());
-        itemDto.setUnit(itemData.getUnit());
+        itemDto.setName(product.getName());
+        itemDto.setWeight(variant.getWeight());
+        itemDto.setUnit(unit);
 
         itemDto.setId(itemData.getId());
-        itemDto.setProductId(itemData.getProductId());
-        itemDto.setVariantId(itemData.getVariantId());
-        itemDto.setVariantName(itemData.getVariantName());
-        itemDto.setProductType(itemData.getProductType());
-        itemDto.setStockId(itemData.getStockId());
-        itemDto.setDiscount(itemData.getDiscount());
+        itemDto.setProductId(product.getId());
+        itemDto.setVariantId(variant.getId());
+        itemDto.setVariantName(variant.getName());
+        itemDto.setProductType(product.getProductType());
+        itemDto.setStockId(stock.getId());
+        itemDto.setDiscount(stock.getDiscount());
         itemDto.setAdditionalData(additionalData);
+        itemDto.setUserId(user.getId());
 
         return itemDto;
-    }
-
-
-
-    private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
-        return productService.parseVariantFeatures(featureSpec, returnedName);
     }
 }

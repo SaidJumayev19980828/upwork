@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 
@@ -132,12 +133,12 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 										   @Param("orgId") Long orgId);
 
 
-	List<StocksEntity> findByIdInAndOrganizationEntity_Id(List<Long> itemStocks, Long orgId);
+	List<StocksEntity> findByIdInAndOrganizationEntity_Id(Set<Long> itemStocks, Long orgId);
 	
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockAdditionalData("
-			+ " stock.id, stock.currency, "
-			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address"
+			+ " stock.id, stock.currency, variant.id, "
+			+ " variant.barcode,  product.name, shop.id, address"
 			+ ", product.organizationId, stock.discount) "
 			+ " FROM StocksEntity stock "
 			+ " LEFT JOIN stock.productVariantsEntity variant "

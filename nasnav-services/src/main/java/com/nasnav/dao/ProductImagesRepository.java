@@ -75,7 +75,13 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	Long countByProductEntity_OrganizationId(long l);
 
-	Set<ProductImagesEntity> findByProductEntity_IdAndTypeOrderByPriority(Long productId, int productImage);
+	@Query("select image.uri from ProductImagesEntity image " +
+			"left join image.productEntity product " +
+			"where product.id = :productId and product.organizationId = :orgId")
+	List<String> findUrlsByProductIdAndOrganizationId(@Param("productId") Long productId,
+														@Param("orgId") Long orgId);
+
+	Optional<ProductImagesEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
 
 
 

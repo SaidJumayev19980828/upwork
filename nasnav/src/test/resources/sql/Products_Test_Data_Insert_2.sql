@@ -44,12 +44,9 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22
 
 
 --inserting product features
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Lispstick Color', 'lipstick_color', 'whatever', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Lipstick Color', 'lipstick_color', 'whatever', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Lipstick flavour', 'lipstick_flavour', 'bla bla bla', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe material', 's-material', 'Material of the shoes', 99001);
-
-
-
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
@@ -72,7 +69,24 @@ INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, d
 VALUES(80001,1002, '{"234": 20, "235": "white"}', 'orginal variant', 'orginal_variant', 'we need to update this in tests', 'BCF559354');
 
 
-
+insert into public.variant_feature_values values(310001, 310001, 234, '40');
+insert into public.variant_feature_values values(310002, 310001, 235, 'pink');
+insert into public.variant_feature_values values(310003, 310002, 234, '41');
+insert into public.variant_feature_values values(310004, 310002, 235, 'grey');
+insert into public.variant_feature_values values(310005, 310003, 234, '42');
+insert into public.variant_feature_values values(310006, 310003, 235, 'black');
+insert into public.variant_feature_values values(310007, 310004, 234, '43');
+insert into public.variant_feature_values values(310008, 310004, 235, 'white');
+insert into public.variant_feature_values values(310009, 310005, 234, '44');
+insert into public.variant_feature_values values(310010, 310005, 235, 'brown');
+insert into public.variant_feature_values values(310011, 310006, 234, '45');
+insert into public.variant_feature_values values(310012, 310006, 235, 'blue');
+insert into public.variant_feature_values values(310013, 310007, 234, '46');
+insert into public.variant_feature_values values(310014, 310007, 235, 'lattece heart');
+insert into public.variant_feature_values values(310015, 310008, 234, '47');
+insert into public.variant_feature_values values(310016, 310008, 235, 'elephant tooth');
+insert into public.variant_feature_values values(310017, 80001, 234, '20');
+insert into public.variant_feature_values values(310018, 80001, 235, 'white');
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 6, 99002, 600.0, 310001);

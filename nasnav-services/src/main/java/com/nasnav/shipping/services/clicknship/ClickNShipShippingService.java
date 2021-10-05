@@ -62,6 +62,7 @@ public class ClickNShipShippingService implements ShippingService {
                     "Please make sure to print the attached airway bills and provide them to the " +
                     "delivery agent.";
 
+    public static final String TRACKING_URL = "TRACKING_URL";
     public static String AUTH_TOKEN = "AUTH_TOKEN";
     public static final String SERVER_URL = "SERVER_URL";
     public static final String USER_NAME = "USER_NAME";
@@ -73,7 +74,8 @@ public class ClickNShipShippingService implements ShippingService {
             asList( new Parameter(SERVER_URL, STRING)
                     , new Parameter(USER_NAME, STRING)
                     , new Parameter(PASSWORD, STRING)
-                    , new Parameter(GRANT_TYPE, STRING));
+                    , new Parameter(GRANT_TYPE, STRING)
+                    , new Parameter(TRACKING_URL, STRING));
 
     private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION = emptyList();
 
@@ -511,6 +513,24 @@ public class ClickNShipShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        String serverUrl = getServiceParam(SERVER_URL);
+        ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
+        Base64.Encoder encoder = Base64.getEncoder();
+        return client
+                .printWaybill(AUTH_TOKEN, airwayBillNumber)
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(byte[].class))
+                .map(fileDataBytes -> encoder.encodeToString(fileDataBytes));
+    }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        var baseTrackingUrl = ofNullable(paramMap.get(TRACKING_URL))
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, TRACKING_URL, SERVICE_ID));
+        return baseTrackingUrl+trackingNumber;
+    }
 
 
     private void validateParams(ServiceParameter param) {

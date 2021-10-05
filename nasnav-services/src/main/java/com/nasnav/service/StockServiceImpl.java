@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
@@ -29,10 +30,11 @@ import java.util.stream.StreamSupport;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0002;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -66,28 +68,26 @@ public class StockServiceImpl implements StockService {
     
     @Autowired
     private CachingHelper cachingHelper;
-    
+
+	@PersistenceContext
     @Autowired
     private EntityManager entityManager;
 
-    public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
-        Optional<ProductEntity> prodOpt = productRepo.findById(productId);
-        
-        if(prodOpt == null || !prodOpt.isPresent())
-            throw new BusinessException(
-            		String.format("No product exists with id [%d]!",productId)
-            		, "INVALID PARAM:product_id"
-            		, NOT_ACCEPTABLE);
+    public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
+        ProductEntity product = productRepo.findById(productId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
 
-        List<StocksEntity> stocks  = stockRepo.findByProductIdAndShopsId(productId, shopId);;
+        List<StocksEntity> stocks  = product
+				.getProductVariants()
+				.stream()
+				.map(ProductVariantsEntity::getStocks)
+				.flatMap(Set::stream)
+				.collect(toList());
 
-        if(stocks == null || stocks.isEmpty())
-        	throw new BusinessException(
-            		String.format("Product with id [%d] has no stocks!",productId)
-            		, "INVALID PARAM:product_id"
-            		, NOT_ACCEPTABLE);
+        if (isNullOrEmpty(stocks))
+        	throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0015, productId);
 
-        stocks.stream().forEach(this::updateStockQuantity);
+        stocks.forEach(this::updateStockQuantity);
 
         return stocks;
     }
@@ -161,17 +161,14 @@ public class StockServiceImpl implements StockService {
 
 	@Override
 	public List<StocksEntity> getVariantStockForShop(Long variantId, Long shopId) {
-		List<StocksEntity> stocks  = new ArrayList<>();
+		List<StocksEntity> stocks;
 		if(shopId != null) {
 			stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variantId);
 		}else {
 			stocks  = stockRepo.findByProductVariantsEntity_Id(variantId);
 		}
-		
-        if(stocks == null )
-        	stocks  = new ArrayList<>();
 
-        stocks.stream().forEach(this::updateStockQuantity);
+        stocks.forEach(this::updateStockQuantity);
 
         return stocks;
 	}
@@ -218,8 +215,8 @@ public class StockServiceImpl implements StockService {
 		}
 		
 		if(stockUpdateReq.getCurrency() != null) {
-			TransactionCurrency currecny = TransactionCurrency.getTransactionCurrency( stockUpdateReq.getCurrency());
-			stock.setCurrency( currecny );
+			TransactionCurrency currency = TransactionCurrency.getTransactionCurrency( stockUpdateReq.getCurrency());
+			stock.setCurrency( currency );
 		}
 		
 		if(stockUpdateReq.getDiscount() != null) {
@@ -589,7 +586,6 @@ public class StockServiceImpl implements StockService {
 		boolean invalidCurrency = asList( TransactionCurrency.values() )
 										.stream()
 										.map(TransactionCurrency::getValue)
-										.map(Integer::valueOf)
 										.noneMatch(val -> Objects.equals(currency, val));
 		if(invalidCurrency ) {
 			throw new BusinessException(
@@ -662,19 +658,19 @@ public class StockServiceImpl implements StockService {
 
 
 
-	private StocksEntity reduceNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
+	private void reduceNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
 		int newQuantity = stocksEntity.getQuantity() - ofNullable(quantity).orElse(0).intValue();
 		stocksEntity.setQuantity(newQuantity);
-		return stockRepo.save(stocksEntity);
+		stockRepo.save(stocksEntity);
 	}
 	
 	
 	
 	
-	private StocksEntity incrementNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
+	private void incrementNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
 		int newQuantity = stocksEntity.getQuantity() + ofNullable(quantity).orElse(0).intValue();
 		stocksEntity.setQuantity(newQuantity);
-		return stockRepo.save(stocksEntity);
+		stockRepo.save(stocksEntity);
 	}
 
 

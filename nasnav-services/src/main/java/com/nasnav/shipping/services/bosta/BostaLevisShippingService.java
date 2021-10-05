@@ -70,6 +70,7 @@ public class BostaLevisShippingService implements ShippingService{
 			"Please make sure to print the attached airway bills and provide them to the " +
 			"delivery agent.";
 
+	public static final String TRACKING_URL = "TRACKING_URL";
 	public static final String AUTH_TOKEN_PARAM = "AUTH_TOKEN";
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
@@ -87,7 +88,8 @@ public class BostaLevisShippingService implements ShippingService{
 					, new Parameter(CAIRO_PRICE, NUMBER)
 					, new Parameter(ALEXANDRIA_PRICE, NUMBER)
 					, new Parameter(DELTA_CANAL_PRICE, NUMBER)
-					, new Parameter(UPPER_EGYPT_PRICE, NUMBER));
+					, new Parameter(UPPER_EGYPT_PRICE, NUMBER)
+					, new Parameter(TRACKING_URL, STRING));
 	
 	private static final ShippingPeriodAndPrice CAIRO_SHIPPING = 
 			new ShippingPeriodAndPrice(
@@ -568,6 +570,31 @@ public class BostaLevisShippingService implements ShippingService{
 	@Override
 	public Optional<Long> getPickupShop(String additionalParametersJson) {
 		return empty();
+	}
+
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		var serverUrl =
+				ofNullable(paramMap.get(SERVER_URL))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
+		var authToken =
+				ofNullable(paramMap.get(AUTH_TOKEN_PARAM))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, AUTH_TOKEN_PARAM, SERVICE_ID));
+		var client = new BostaWebClient(serverUrl);
+
+		return client
+				.createAirwayBill(authToken, airwayBillNumber)
+				.filter(res -> res.rawStatusCode() < 400)
+				.flatMap(res -> res.bodyToMono(CreateAwbResponse.class))
+				.map(CreateAwbResponse::getData)
+				.defaultIfEmpty("");
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		var baseTrackingUrl = ofNullable(paramMap.get(TRACKING_URL))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, TRACKING_URL, SERVICE_ID));
+		return baseTrackingUrl+trackingNumber;
 	}
 
 

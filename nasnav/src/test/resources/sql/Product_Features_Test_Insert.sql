@@ -65,6 +65,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(238,'size', 'size', 'Size', 99001);
 
 
 -- insert products
@@ -77,6 +78,8 @@ VALUES(80001,1001, '{"235": "white"}', 'orginal variant', 'orginal_variant', 'ha
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode, removed)
 VALUES(80002,1001, '{"234": "45"}', 'orginal variant', 'orginal_variant', 'removed', 'AFDSSDF214', 1);
 
+insert into public.variant_feature_values values(80001, 80001, 235, 'white');
+insert into public.variant_feature_values values(80002, 80002, 234, '45');
 
 --inserting product stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 6, 99001, 600.0, 80001);

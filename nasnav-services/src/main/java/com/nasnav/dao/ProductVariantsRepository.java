@@ -15,16 +15,19 @@ import java.util.Set;
 
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
+	@Query("select variant from ProductVariantsEntity variant " +
+			"left join fetch variant.featureValues value " +
+			"left join fetch value.feature feature " +
+			"where variant.id = :variantId")
+	ProductVariantsEntity findByVariantId(@Param("variantId") Long variantId);
 
 	@Query("select distinct v from ProductVariantsEntity v" +
+			" left join fetch v.featureValues featureValue " +
+			" left join fetch featureValue.feature feature " +
 			" left join fetch v.productEntity p " +
 			" left join fetch v.stocks s " +
 			" where p.id = :id")
 	List<ProductVariantsEntity> findByProductEntity_Id(@Param("id") Long productId);
-
-	List<ProductVariantsEntity> findByProductEntity_IdIn(List<Long> productIdsList);
-
-	ProductVariantsEntity findByIdAndProductEntity_Id(Long variantId, Long productId);
 
 	List<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 
@@ -56,8 +59,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			+ " FROM ProductVariantsEntity variant "
 			+ " where variant.id in :idList and variant.productEntity.removed = 0")
 	List<VariantBasicData> findVariantBasicDataByIdIn(@Param("idList") List<Long> idList);
-	
-	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
+
+	@Query("select distinct variant from ProductVariantsEntity variant " +
+			" left join fetch variant.featureValues featureValues " +
+			" left join fetch featureValues.feature feature " +
+			" where variant.id in :idList")
+	List<ProductVariantsEntity> findByIdIn(@Param("idList") List<Long> idList);
 	
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
@@ -70,7 +77,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	Long countByIdInAndProductEntity_organizationId(List<Long> ids, Long orgId);
 
-	
+
 	@Transactional
     @Modifying
     @Query( value = "update product_variants " + 
@@ -79,12 +86,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     		" (select id from products prod where prod.organization_id = :orgId)", nativeQuery = true )
 	void deleteAllByProductEntity_organizationId(@Param("orgId")Long orgId);
 
-	
-	@Query("select variant.id from ProductVariantsEntity variant where variant.id in :idList")
-	Set<Long> findExistingVariantsByIdIn(@Param("idList") List<Long> variantIdList);
-
-	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.organizationId = :orgId")
-	Set<Long> listVariantIdByOrganizationId(@Param("orgId")Long orgId);
+	@Query(value = "select distinct variant from ProductVariantsEntity variant"
+					+" inner join variant.stocks stock"
+					+" left join fetch variant.featureValues featureValues"
+					+" left join fetch featureValues.feature feature"
+					+" where stock.id in :stockIds and variant.removed = 0")
+	List<ProductVariantsEntity> findByStockIdIn(@Param("stockIds") List<Long> stockIds);
 	
 	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.id in :idList")
 	Set<Long> findVariantIdByProductIdIn(@Param("idList") List<Long> productIdList);
@@ -98,10 +105,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Modifying
 	@Query( value = "update ProductVariantsEntity variant set variant.removed = 1 where variant.id in :idList")
 	void deleteByIdIn(@Param("idList") List<Long> idList);
-	
+
 	
 	@Query("SELECT variant "
 			+ " FROM ProductVariantsEntity variant "
+			+ " left join fetch variant.featureValues featureValue "
+			+ " left join fetch featureValue.feature feature"
 			+ " left join fetch variant.productEntity product "
 			+ " left join fetch variant.stocks stocks "
 			+ " left join fetch variant.extraAttributes attr"
@@ -129,20 +138,10 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
     List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 
-
-    @Query(value =
-			"with org_variants as (\n" +
-			"    select \n" +
-			"    (json_each(public.text_to_json(variant.feature_spec))).key::::int8 as feature_Id\n" +
-			"    ,variant.id \n" +
-			"    from public.product_variants variant\n" +
-			"    inner join public.products prod\n" +
-			"    on variant.product_id = prod.id\n" +
-			"    and prod.organization_id = :orgId\n" +
-			"    and prod.removed = 0\n" +
-			"    where variant.removed = 0\n" +
-			")\n" +
-			"select id from org_variants \n" +
-			"where feature_id = :featureId", nativeQuery = true)
-    List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
+	@Query("select feature.id from ProductVariantsEntity variant " +
+			" left join variant.featureValues featureValues " +
+			" left join featureValues.feature feature " +
+			" left join variant.productEntity product " +
+			" where feature.id = :featureId and product.organizationId = :orgId")
+	List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
 }

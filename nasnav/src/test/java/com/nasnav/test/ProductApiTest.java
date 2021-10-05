@@ -16,9 +16,9 @@ import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.test.commons.TestCommons;
+import junit.framework.TestCase;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.util.*;
 
+import static com.nasnav.commons.enums.SortOrder.ASC;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.dto.ProductSortOptions.ID;
+import static com.nasnav.dto.ProductSortOptions.NAME;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -81,7 +84,8 @@ public class ProductApiTest {
 
 	@Autowired
 	private StockRepository stockRepo;
-
+	@Autowired
+	private BrandsRepository brandRepo;
 
 	@Autowired
 	private ProductImagesRepository imgRepo;
@@ -119,7 +123,7 @@ public class ProductApiTest {
 						, request
 						, String.class);
 
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 
 		JSONObject body = new JSONObject(response.getBody());
 		assertFalse(body.getBoolean("success"));
@@ -147,7 +151,7 @@ public class ProductApiTest {
 
 
 	private void validateCreatedProductResponse(ResponseEntity<ProductUpdateResponse> response) {
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		ProductUpdateResponse body = response.getBody();
 		assertNotEquals(body.getProductId() , Long.valueOf(0L));
 		assertTrue(productRepository.existsById(body.getProductId()));
@@ -169,7 +173,6 @@ public class ProductApiTest {
 		product.put("product_id",id);
 		product.put("barcode","UPDATEDbARcODE");
 		product.put("name","updated product");
-		product.put("brand_id", JSONObject.NULL);
 
 		HttpEntity<?> request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
 
@@ -182,18 +185,17 @@ public class ProductApiTest {
 		validateCreatedProductResponse(response);
 
 		Long savedId = response.getBody().getProductId();
-		ProductEntity saved  = productRepository.findById(savedId).get();
+		ProductEntity saved  = productRepository.getById(savedId);
 
 		//modified properties should equal to new values
-		assertEquals(id , saved.getId());
+		TestCase.assertEquals(id , saved.getId());
 		assertEquals(product.getString("name"), saved.getName());
 		assertEquals(product.getString("barcode"), saved.getBarcode());
-		assertNull(saved.getBrandId());
 
 		//original values should remain the same
 		assertEquals("updated-product", saved.getPname());
 		assertEquals(originalProduct.getDescription(), saved.getDescription());
-		assertEquals(user.getOrganizationId() , saved.getOrganizationId());
+		TestCase.assertEquals(user.getOrganizationId() , saved.getOrganizationId());
 	}
 
 
@@ -217,13 +219,13 @@ public class ProductApiTest {
 
 
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
-		assertEquals(id , saved.getId());
-		assertEquals(product.get("name"), saved.getName());
-		assertEquals(product.get("p_name"), saved.getPname());
-		assertEquals(product.get("description"), saved.getDescription());
-		assertEquals(product.get("barcode"), saved.getBarcode());
-		assertEquals(product.get("brand_id"), saved.getBrandId());
-		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user 
+		TestCase.assertEquals(id , saved.getId());
+		TestCase.assertEquals(product.get("name"), saved.getName());
+		TestCase.assertEquals(product.get("p_name"), saved.getPname());
+		TestCase.assertEquals(product.get("description"), saved.getDescription());
+		TestCase.assertEquals(product.get("barcode"), saved.getBarcode());
+		TestCase.assertEquals(product.get("brand_id"), saved.getBrand().getId());
+		TestCase.assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user
 	}
 
 
@@ -275,10 +277,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = postInvalidProductData(user, product);
 
-		Long id = new JSONObject(response.getBody()).getLong("product_id");
-		ProductEntity saved  = productRepository.findById(id).get();
-
-		validateCreatedProductData(product, saved, id, user.getOrganizationId());
+		assertEquals(406, response.getStatusCodeValue());
 	}
 
 
@@ -391,7 +390,7 @@ public class ProductApiTest {
 	private void validateErrorResponse(ResponseEntity<String> response) {
 		JSONObject body = new JSONObject(response.getBody());
 
-		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		TestCase.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue(body.has("message"));
 		assertTrue(body.has("error"));
 	}
@@ -583,9 +582,9 @@ public class ProductApiTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ProductsDeleteResponse body = mapper.readValue(response.getBody(), ProductsDeleteResponse.class);
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue(body.isSuccess());
-		assertEquals(productId, body.getProductIds().get(0));
+		TestCase.assertEquals(productId, body.getProductIds().get(0));
 	}
 
 
@@ -600,7 +599,7 @@ public class ProductApiTest {
 
 
 	private void assertProductHasRemovedFlag(Long productId) {
-		assertEquals(1L , countProductWithId(productId).longValue());
+		TestCase.assertEquals(1L , countProductWithId(productId).longValue());
 		assertTrue( productHasRemovedFlag(productId) );
 	}
 
@@ -674,7 +673,7 @@ public class ProductApiTest {
 
 		JSONObject body = new JSONObject(response.getBody());
 
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 		assertFalse(body.getBoolean("success"));
 	}
 
@@ -692,7 +691,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
-		assertEquals(FORBIDDEN, response.getStatusCode());
+		TestCase.assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 
 
@@ -714,7 +713,7 @@ public class ProductApiTest {
 
 		JSONObject body = new JSONObject(response.getBody());
 
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 		assertFalse(body.getBoolean("success"));
 	}
 
@@ -732,7 +731,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertFalse("assert product was soft deleted", productRepository.existsById(productId));
 		assertNotEquals("assert stocks were not deleted", 0L, stocks.size());
 	}
@@ -753,7 +752,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertFalse("assert product was soft deleted", productRepository.existsById(productId));
 
 		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);
@@ -775,7 +774,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
-		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		TestCase.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
 	}
 
@@ -796,7 +795,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertFalse("assert product was deleted", productRepository.existsById(productId));
 	}
 
@@ -846,8 +845,9 @@ public class ProductApiTest {
 		Long maxProductId = jdbc.queryForObject("select max(id) from public.products", Long.class); 
 		
 		ProductEntity newProduct = new ProductEntity();
+		BrandsEntity brand = brandRepo.findById(101L).get();
 		newProduct.setName("new Product");
-		newProduct.setBrandId(101L);
+		newProduct.setBrand(brand);
 		newProduct.setOrganizationId(99001L);
 		
 		newProduct = productRepository.save(newProduct);
@@ -871,44 +871,55 @@ public class ProductApiTest {
 		param.org_id = 99001L;
 
 		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		JSONObject res = new JSONObject(response.getBody());
-		Assert.assertEquals(3, res.getInt("total"));
+		ProductsResponse res = response.getBody();
+		assertEquals(3, res.getTotal().intValue());
 
 		// filter by name
 		param.name = "product_1";
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		res = new JSONObject(response.getBody());
-		Assert.assertEquals(1, res.getInt("total"));
+		res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
 
 		// filter by brand_id
 		param.name = null;
 		param.brand_id = 101L;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		res = new JSONObject(response.getBody());
-		Assert.assertEquals(1, res.getInt("total"));
+		res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
 
 		// filter by tag
 		param.brand_id = null;
 		param.tags = setOf(5001L);
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		res = new JSONObject(response.getBody());
-		Assert.assertEquals(2, res.getInt("total"));
+		res = response.getBody();
+		assertEquals(2, res.getTotal().intValue());
 
 		// filter by start
 		param.tags = null;
 		param.start = 2;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		res = new JSONObject(response.getBody());
-		Assert.assertEquals(3, res.getInt("total"));
-		Assert.assertEquals(1, res.getJSONArray("products").length());
+		res = response.getBody();
+		assertEquals(3, res.getTotal().intValue());
+		assertEquals(1, res.getProducts().size());
 
 		// filter by count
 		param.start = null;
 		param.count = 1;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
-		res = new JSONObject(response.getBody());
-		Assert.assertEquals(3, res.getInt("total"));
-		Assert.assertEquals(1, res.getJSONArray("products").length());
+		res = response.getBody();
+		assertEquals(3, res.getTotal().intValue());
+		assertEquals(1, res.getProducts().size());
+
+		//filter by tags name
+		param.count = null;
+		param.name = "tag_1";
+		param.sort = ID;
+		param.order = ASC;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = response.getBody();
+		assertEquals(2, res.getTotal().intValue());
+		assertEquals(1001, res.getProducts().get(0).getId().intValue());
+		assertEquals(1005, res.getProducts().get(1).getId().intValue());
 	}
 
     @Test
@@ -924,16 +935,16 @@ public class ProductApiTest {
 
         List<ProductRepresentationObject> productRepObj = productsRes.getProducts();
         for(int i=0;i<productRepObj.size()-1;i++)
-            Assert.assertTrue(productRepObj.get(i).getId() < productRepObj.get(i+1).getId());
+            assertTrue(productRepObj.get(i).getId() < productRepObj.get(i+1).getId());
 
         // sorting by name ASC
-        param.sort = ProductSortOptions.NAME;
+        param.sort = NAME;
         response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
         productsRes = response.getBody();
 
         productRepObj = productsRes.getProducts();
         for(int i=0;i<productRepObj.size()-1;i++)
-            Assert.assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) <= 0);
+            assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) <= 0);
 
 		// sorting by p_name ASC
 		param.sort = ProductSortOptions.P_NAME;
@@ -943,7 +954,7 @@ public class ProductApiTest {
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
 			if (productRepObj.get(i).getPname() != null && productRepObj.get(i+1).getPname() != null)
-				Assert.assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) <= 0);
+				assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) <= 0);
 
 
 		// sorting by price ASC
@@ -953,7 +964,7 @@ public class ProductApiTest {
 
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
-			Assert.assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) <= 0);
+			assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) <= 0);
 
 
 
@@ -965,16 +976,16 @@ public class ProductApiTest {
 
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
-			Assert.assertTrue(productRepObj.get(i).getId() > productRepObj.get(i+1).getId());
+			assertTrue(productRepObj.get(i).getId() > productRepObj.get(i+1).getId());
 
 		// sorting by name ASC
-		param.sort = ProductSortOptions.NAME;
+		param.sort = NAME;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		productsRes = response.getBody();
 
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
-			Assert.assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) >= 0);
+			assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) >= 0);
 
 		// sorting by p_name ASC
 		param.sort = ProductSortOptions.P_NAME;
@@ -984,7 +995,7 @@ public class ProductApiTest {
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
 			if (productRepObj.get(i).getPname() != null && productRepObj.get(i+1).getPname() != null)
-				Assert.assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) >= 0);
+				assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) >= 0);
 
 
 		// sorting by price ASC
@@ -994,7 +1005,7 @@ public class ProductApiTest {
 
 		productRepObj = productsRes.getProducts();
 		for(int i=0;i<productRepObj.size()-1;i++)
-			Assert.assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) >= 0);
+			assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) >= 0);
     }
     
     
@@ -1015,7 +1026,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = runUpdateTagsRequest(user, productIds, tagsIds);
 		
 		//---------------------------------------------------------------------
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		TestCase.assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertFalse("assert products have tags now", allProductsHaveNoTags(productIds));		
 		assertTrue("each product should have the 2 tags", allProductsHaveTags(productIds, tags) );
     }
@@ -1033,16 +1044,16 @@ public class ProductApiTest {
 		ResponseEntity<ProductsFiltersResponse> response =
 				template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
 
-		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(2, response.getBody().getBrands().size());
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(2, response.getBody().getBrands().size());
 
 
 		//trying to filter products by nonlinked tags
 		tagsList.add(0L); tagsList.add(5002L);
 		param.tags = tagsList;
 		response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
-		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(0, response.getBody().getBrands().size());
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(0, response.getBody().getBrands().size());
 	}
 
 
@@ -1097,7 +1108,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = 
 				template.exchange("/product/all" ,DELETE, request, String.class);
 		
-		assertEquals(UNAUTHORIZED, response.getStatusCode());
+		TestCase.assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 	
 	
@@ -1112,7 +1123,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = 
 				template.exchange("/product/all" ,DELETE, request, String.class);
 		
-		assertEquals(FORBIDDEN, response.getStatusCode());
+		TestCase.assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -1142,7 +1153,7 @@ public class ProductApiTest {
 		ResponseEntity<String> response = 
 				template.exchange("/product/all?confirmed=true" ,DELETE, request, String.class);
 		
-		assertEquals(OK, response.getStatusCode());
+		TestCase.assertEquals(OK, response.getStatusCode());
 
 		//----------------------------------------------------------
 		assertDataDeleted(org, otherOrg, productCountOtherOrgBefore, variantCountOtherOrgBefore,
@@ -1166,13 +1177,13 @@ public class ProductApiTest {
 		ResponseEntity<String> response = 
 				template.exchange("/product/hide?hide=true&product_id=" ,POST, request, String.class);
 		
-		assertEquals(OK, response.getStatusCode());
+		TestCase.assertEquals(OK, response.getStatusCode());
 		
 		long unhiddenProductsAfter = productRepository.countByHideAndOrganizationId(false, orgId);
 		long hiddenProductsAfter = productRepository.countByHideAndOrganizationId(true, orgId);
 		
-		assertEquals("all products have no images in the test", 0L, unhiddenProductsAfter);
-		assertEquals("all products with no images will be hidden", unhiddenProductsBefore, hiddenProductsAfter);
+		TestCase.assertEquals("all products have no images in the test", 0L, unhiddenProductsAfter);
+		TestCase.assertEquals("all products with no images will be hidden", unhiddenProductsBefore, hiddenProductsAfter);
 	}
 
 
@@ -1182,7 +1193,7 @@ public class ProductApiTest {
 	public void productListHideApiTest() {
 		Long orgId = 99002L;
 		long unhiddenProductsBefore = productRepository.countByHideAndOrganizationId(false, orgId);
-		assertEquals(10L, unhiddenProductsBefore);
+		TestCase.assertEquals(10L, unhiddenProductsBefore);
 
 		HttpEntity<?> request =  getHttpEntity( "131415");
 
@@ -1190,13 +1201,13 @@ public class ProductApiTest {
 				template.exchange("/product/hide?hide=true&product_id=1013&product_id=1014" ,
 						POST, request, String.class);
 
-		assertEquals(OK, response.getStatusCode());
+		TestCase.assertEquals(OK, response.getStatusCode());
 
 		long unhiddenProductsAfter = productRepository.countByHideAndOrganizationId(false, orgId);
 		long hiddenProductsAfter = productRepository.countByHideAndOrganizationId(true, orgId);
 
-		assertEquals(8L, unhiddenProductsAfter);
-		assertEquals(2L, hiddenProductsAfter);
+		TestCase.assertEquals(8L, unhiddenProductsAfter);
+		TestCase.assertEquals(2L, hiddenProductsAfter);
 	}
 
 	
@@ -1216,16 +1227,16 @@ public class ProductApiTest {
 		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(otherOrg);
 		long ordersCountOtherOrgAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
 		
-		assertEquals(0L, productCountAfter);
-		assertEquals(0L, variantCountAfter);
-		assertEquals(0L, collectionItemsAfter);
-		assertEquals(0L, bundlesCountAfter);
+		TestCase.assertEquals(0L, productCountAfter);
+		TestCase.assertEquals(0L, variantCountAfter);
+		TestCase.assertEquals(0L, collectionItemsAfter);
+		TestCase.assertEquals(0L, bundlesCountAfter);
 
-		assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
-		assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
-		assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);
-		assertEquals(ordersCountOtherOrgBefore, ordersCountOtherOrgAfter);
-		assertEquals(collectionItemsCountOtherOrgBefore, collectionItemsCountOtherOrgAfter);
+		TestCase.assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
+		TestCase.assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
+		TestCase.assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);
+		TestCase.assertEquals(ordersCountOtherOrgBefore, ordersCountOtherOrgAfter);
+		TestCase.assertEquals(collectionItemsCountOtherOrgBefore, collectionItemsCountOtherOrgAfter);
 	}
 
 
@@ -1248,6 +1259,45 @@ public class ProductApiTest {
 		assertNotEquals(0L, bundlesCountOtherOrgBefore);
 		assertNotEquals(0L, ordersCountOtherOrgBefore);
 	}
-	
-	
+
+
+	@Test
+	public void testGetProductsFilterByVariantFeatures() {
+		Map<String, List<String>> features = Map.of(
+				"Color", List.of("red"),
+				"Size", List.of("XL"));
+
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99001L;
+		param.setOrder("asc");
+		param.setSort(NAME);
+		param.setFeatures(features);
+
+		HttpEntity request = getHttpEntity(param);
+		ResponseEntity<ProductsResponse> response = template.postForEntity("/navbox/products", request, ProductsResponse.class);
+		ProductsResponse res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
+		assertEquals(1001, res.getProducts().get(0).getId().intValue());
+
+		features = Map.of(
+				"Color", List.of("blue"),
+				"Size", List.of("L"));
+		param.setFeatures(features);
+		getHttpEntity(param);
+		response = template.postForEntity("/navbox/products", request, ProductsResponse.class);
+		res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
+		assertEquals(1004, res.getProducts().get(0).getId().intValue());
+
+		features = Map.of(
+				"Color", List.of("red"),
+				"Size", List.of("XL", "XXL"));
+		param.setFeatures(features);
+		getHttpEntity(param);
+		response = template.postForEntity("/navbox/products", request, ProductsResponse.class);
+		res = response.getBody();
+		assertEquals(2, res.getTotal().intValue());
+		assertEquals(1001, res.getProducts().get(0).getId().intValue());
+		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+	}
 }

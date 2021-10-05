@@ -73,6 +73,15 @@ insert into public.product_variants(id, "name" , product_id ) values(310012, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310013, 'var' 	, 1013);
 insert into public.product_variants(id, "name" , product_id ) values(310014, 'var' 	, 1014);
 
+insert into public.product_features (id, name, p_name, organization_id) values(310001, 'Color', 'color', 99001);
+insert into public.product_features (id, name, p_name, organization_id) values(310002, 'Size', 'size', 99001);
+
+insert into public.variant_feature_values values(310001, 310001, 310001, 'red');
+insert into public.variant_feature_values values(310002, 310001, 310002, 'XL');
+insert into public.variant_feature_values values(310003, 310004, 310001, 'blue');
+insert into public.variant_feature_values values(310004, 310004, 310002, 'L');
+insert into public.variant_feature_values values(310005, 310005, 310001, 'red');
+insert into public.variant_feature_values values(310006, 310005, 310002, 'XXL');
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 6, 99002, 600.0, 310001);

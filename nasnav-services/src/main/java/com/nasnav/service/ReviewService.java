@@ -11,4 +11,5 @@ public interface ReviewService {
     void approveRate(Long rateId);
     List<ProductRateRepresentationObject> getProductRatings(Long variantId);
     List<ProductRateRepresentationObject> getProductsRatings();
+    List<ProductRateRepresentationObject> getYeshteryVariantRatings(Long variantId);
 }

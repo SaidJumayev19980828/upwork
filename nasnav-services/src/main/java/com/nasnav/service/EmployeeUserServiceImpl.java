@@ -284,18 +284,18 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				if ( collectionContainsAnyOf(userRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE")) {
 					orgId = user.getOrganizationId();
 					if (userRoles.contains("ORGANIZATION_ADMIN")) {
-                        roles = Roles.getOrganizationAdminPrelivedge();
+                        roles = Roles.getOrganizationAdminPrivilege();
 					} else if (userRoles.contains("ORGANIZATION_MANAGER")) {
-                        roles = Roles.getOrganizationManagerPrelivedge();
+                        roles = Roles.getOrganizationManagerPrivilege();
 					} else {
-                        roles = Roles.getOrganizationEmployeePrelivedge();
+                        roles = Roles.getOrganizationEmployeePrivilege();
 					}
 				}
                 else if (collectionContainsAnyOf(userRoles, "STORE_MANAGER", "STORE_EMPLOYEE")) {
                     orgId = user.getOrganizationId();
                     storeId = user.getShopId();
                     if (userRoles.contains("STORE_MANAGER")) {
-                        roles = Roles.getStoreManagerPrelivedge();
+                        roles = Roles.getStoreManagerPrivilege();
                     } else
                         roles.add("STORE_EMPLOYEE");
                 }

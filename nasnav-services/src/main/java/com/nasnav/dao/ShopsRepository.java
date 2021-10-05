@@ -13,7 +13,9 @@ import java.util.Set;
 
 public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
-    Optional<ShopsEntity> findByIdAndRemoved(Long id, Integer removed);
+    @Query("select s from ShopsEntity s left join fetch s.shop360s " +
+            "where s.id = :id and s.removed = 0")
+    Optional<ShopsEntity> findByIdAndRemoved(@Param("id") Long id);
 
     List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationId, Integer removed);
     
@@ -73,9 +75,13 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 			+ " LEFT JOIN FETCH address.areasEntity area "
 			+ " LEFT JOIN FETCH area.citiesEntity city "
 			+ " LEFT JOIN FETCH city.countriesEntity country "
+            + " LEFT JOIN FETCH shop.shop360s shop360s"
 			+ " WHERE shop.id = :id")
 	Optional<ShopsEntity> findShopFullData(@Param("id")Long id);
 
 
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long storeId, Long orgId, int removed);
+
+    List<ShopsEntity> findByYeshteryStateAndRemovedOrderByPriorityDesc(Integer yeshteryState, Integer removed);
+
 }

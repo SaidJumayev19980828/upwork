@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.Cart;
@@ -418,10 +419,11 @@ public class PromotionsTest {
 		String url = isNull(promoCode)?
 						"/cart/promo/discount": format("/cart/promo/discount?promo=%s", promoCode);
 		HttpEntity<?> req = getHttpEntity("123");
-		ResponseEntity<BigDecimal> res =
-				template.exchange(url, GET, req, BigDecimal.class);
+		ResponseEntity<AppliedPromotionsResponse> res =
+				template.exchange(url, GET, req, AppliedPromotionsResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
-		return res.getBody();
+		System.out.println(res.getBody().toString());
+		return res.getBody().getTotalDiscount();
 	}
 
 
@@ -515,7 +517,9 @@ public class PromotionsTest {
 				.put("end_date", end)
 				.put("status", "ACTIVE")
 				.put("code", "GIVE-YOUR-MONEY-OR-ELSE-...")
-				.put("constrains", json().put("amount_max", 1000))
+				.put("constrains", json()
+						.put("discount_value_max", 1000)
+						.put("cart_amount_min", 1))
 				.put("discount", json().put("percentage", 20))
 				.put("type_id", 0);
 	}

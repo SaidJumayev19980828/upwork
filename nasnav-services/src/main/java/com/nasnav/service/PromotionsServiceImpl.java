@@ -34,11 +34,13 @@ import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
 import lombok.Data;
@@ -71,6 +73,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private Logger logger = LogManager.getLogger();
 
+	@PersistenceContext
 	@Autowired
 	private EntityManager entityMgr;
 	@Autowired
@@ -97,7 +100,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 				BUY_X_GET_Y_FROM_TAG, this::getDiscountBasedOnTagsList,
 				TOTAL_CART_ITEMS_QUANTITY, this::calculateDiscountBasedOnTotalQty,
 				TOTAL_CART_ITEMS_VALUE, this::calculateDiscountBasedOnTotalValue,
-				PROMO_CODE, this::calcPromoDiscount);
+				PROMO_CODE, this::calcPromoDiscount,
+				PROMO_CODE_FROM_BRAND, this::calcPromoDiscountFromSpecificBrands,
+				PROMO_CODE_FROM_TAG, this::calcPromoDiscountFromSpecificTags,
+				PROMO_CODE_FROM_PRODUCT, this::calcPromoDiscountFromSpecificProducts);
 	}
 
 
@@ -133,14 +139,20 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public BigDecimal calcPromoDiscountForCart(String promoCode) {
-		var cart = cartService.getCart();
-		BigDecimal cartTotal = cartService.calculateCartTotal();
+	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart) {
+		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
 		var promoItems = toPromoItems(cart.getItems());
 		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
 	}
 
-
+	@Override
+	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode) {
+		Long userId = securityService.getCurrentUser().getId();
+		var cart = cartService.getUserCart(userId);
+		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
+		var promoItems = toPromoItems(cart.getItems());
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+	}
 
 	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
 		return cartItems
@@ -184,9 +196,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 		ZoneId zoneId = ZoneId.of("UTC");
 		PromotionDTO dto = new PromotionDTO();
 		dto.setCode(entity.getCode());
-		dto.setConstrains(readJsonStrAsMap(entity.getConstrainsJson()));
+		try {
+			dto.setConstrains(readJsonStr(entity.getConstrainsJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setCreatedOn(entity.getCreatedOn());
-		dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		try {
+			dto.setDiscount(readJsonStrAsMap(entity.getDiscountJson()));
+		} catch (RuntimeBusinessException e) {}
 		dto.setEndDate(entity.getDateEnd().atZone(zoneId));
 		dto.setId(entity.getId());
 		dto.setIdentifier(entity.getIdentifier());
@@ -199,11 +215,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setPriority(entity.getPriority());
 		return dto;
 	}
-	
-	
-	
-	
-	
+
 	
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
@@ -212,6 +224,15 @@ public class PromotionsServiceImpl implements PromotionsService {
 			if (initialData == null)
 				initialData = new LinkedHashMap<>();
 			return setNumbersAsBigDecimals(initialData);
+		} catch (Exception e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
+		}
+	}
+
+	private PromosConstraints readJsonStr(String jsonStr){
+		try {
+			return objectMapper.readValue(jsonStr, PromosConstraints.class);
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
@@ -347,8 +368,120 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoRepo.save(entity).getId();
 	}
 
+	private void validatePromotionDiscount(PromotionDTO promotion, PromotionType promoType) {
+		if (!asList(BUY_X_GET_Y_FROM_BRAND, BUY_X_GET_Y_FROM_TAG, BUY_X_GET_Y_FROM_PRODUCT).contains(promoType)) {
+			Map<String, Object> discountsMap = promotion.getDiscount();
+			if (discountsMap.get(DISCOUNT_PERCENT) == null && discountsMap.get(DISCOUNT_AMOUNT) == null) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, "amount or percentage", promotion.getIdentifier());
+			}
+		}
+	}
 
+	private void validatePromotionConstraints(PromotionDTO promotion) {
+		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
+		switch (promoType) {
+			case PROMO_CODE:
+			case TOTAL_CART_ITEMS_VALUE:
+			case SHIPPING:
+			{
+				validatePromoCodeConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_BRAND: {
+				validatePromoBrandsConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_TAG: {
+				validatePromoTagsConstraint(promotion);
+				break;
+			}
+			case PROMO_CODE_FROM_PRODUCT: {
+				validatePromoProductsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_BRAND: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoBrandsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_TAG: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoTagsConstraint(promotion);
+				break;
+			}
+			case BUY_X_GET_Y_FROM_PRODUCT: {
+				validatePromoBuyXGetYConstraints(promotion);
+				validatePromoProductsConstraint(promotion);
+				break;
+			}
+			case TOTAL_CART_ITEMS_QUANTITY: {
+				validateTotalCartItemsConstraint(promotion);
+				break;
+			}
+		}
+	}
 
+	private void validatePromoCartAmountMinConstraint(PromotionDTO promotion) {
+		BigDecimal cartAmountMin = promotion.getConstrains().getCartAmountMin();
+		if (isBlankOrNull(cartAmountMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, MIN_AMOUNT_PROP, promotion.getIdentifier());
+		}
+	}
+	private void validatePromoDiscountValueMaxConstraint(PromotionDTO promotion) {
+		BigDecimal discountValueMax = promotion.getConstrains().getDiscountValueMax();
+		if (isBlankOrNull(discountValueMax)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, DISCOUNT_AMOUNT_MAX, promotion.getIdentifier());
+		}
+	}
+
+	private void validatePromoCodeConstraint(PromotionDTO promotion) {
+		validatePromoCartAmountMinConstraint(promotion);
+		validatePromoDiscountValueMaxConstraint(promotion);
+	}
+
+	private void validateTotalCartItemsConstraint(PromotionDTO promotion) {
+		Long cartQuantityMin = promotion.getConstrains().getCartQuantityMin();
+		if (isBlankOrNull(cartQuantityMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, MIN_QUANTITY_PROP, promotion.getIdentifier());
+		}
+		validatePromoDiscountValueMaxConstraint(promotion);
+	}
+
+	private void validatePromoBrandsConstraint(PromotionDTO promotion) {
+		Set<Long> brands = promotion.getConstrains().getBrands();
+		if (isBlankOrNull(brands)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_BRANDS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoTagsConstraint(PromotionDTO promotion) {
+		Set<Long> tags = promotion.getConstrains().getTags();
+		if (isBlankOrNull(tags)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_TAGS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoProductsConstraint(PromotionDTO promotion) {
+		Set<Long> products = promotion.getConstrains().getProducts();
+		if (isBlankOrNull(products)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_PRODUCTS, promotion.getIdentifier());
+		}
+		validatePromoCodeConstraint(promotion);
+	}
+
+	private void validatePromoBuyXGetYConstraints(PromotionDTO promotion) {
+		Integer productsToGive = promotion.getConstrains().getProductToGive();
+		Integer productQuantityMin = promotion.getConstrains().getProductQuantityMin();
+
+		if (isBlankOrNull(productsToGive)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, PRODUCTS_TO_GIVE, promotion.getIdentifier());
+		}
+		if (isBlankOrNull(productQuantityMin)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, PRODUCT_QUANTITY_MIN, promotion.getIdentifier());
+		}
+	}
 
 
 
@@ -377,7 +510,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.orElse(null);
 		
 		entity.setCode(codeUpperCase);
-		entity.setConstrainsJson(serializeMap(promotion.getConstrains()));
+		entity.setConstrainsJson(serializeDTO(promotion.getConstrains()));
 		entity.setCreatedBy(user);
 		entity.setDateEnd(promotion.getEndDate().toLocalDateTime());
 		entity.setDateStart(promotion.getStartDate().toLocalDateTime());
@@ -427,7 +560,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 	}
 
-
+	private String serializeDTO(PromosConstraints dto) {
+		try {
+			return objectMapper.writeValueAsString(dto);
+		} catch (JsonProcessingException e) {
+			logger.error(e,e);
+			return "{}";
+		}
+	}
 
 
 
@@ -449,8 +589,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 					, PROMO$PARAM$0004);
 		}
-		if (Objects.equals(PromotionType.getPromotionType(promotion.getTypeId()), PromotionType.PROMO_CODE)) {
-			if (promotion.getCode() == null) {
+		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
+		if (asList(PROMO_CODE, PROMO_CODE_FROM_PRODUCT, PROMO_CODE_FROM_TAG, PROMO_CODE_FROM_BRAND).contains(promoType)) {
+			if (isBlankOrNull(promotion.getCode())) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0013, promotion.getTypeId());
 			}
 			if (isCodeRepeated(promotion)) {
@@ -458,6 +599,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 						, PROMO$PARAM$0006, promotion.getCode());
 			}
 		}
+
+		validatePromotionConstraints(promotion);
+		validatePromotionDiscount(promotion, promoType);
 	}
 
 
@@ -481,11 +625,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public BigDecimal calculateAllApplicablePromos(List<PromoItemDto> items,
-												   BigDecimal totalCartValue, String promoCode) {
+	public AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode) {
 		var calculators =  getPromoCalculators(promoCode);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
+		List<Map<String, Object>> appliedPromosData = new ArrayList<>();
 		for(var calc: calculators){
 			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
 			var result = calc.getCalcFunction().apply(info);
@@ -497,6 +641,13 @@ public class PromotionsServiceImpl implements PromotionsService {
 			if(calculatorWasApplied(result, calculatorDiscount)){
 				removeConsumedItems(itemsState, result);
 				discountAccumulator = discountAccumulator.add(calculatorDiscount);
+				String promoName = ofNullable(calc.getPromoEntity().getCode())
+						.orElse(calc.getPromoEntity().getIdentifier());
+				Map<String, Object> appliedPromoData = new HashMap<>();
+				appliedPromoData.put("promo_name", promoName);
+				appliedPromoData.put("applied_items", result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
+				appliedPromoData.put("discount", calculatorDiscount);
+				appliedPromosData.add(appliedPromoData);
 			}
 
 			var isStopOtherPromos = false; //should be fetched later from the promotion entity
@@ -504,7 +655,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 				break;
 			}
 		}
-		return discountAccumulator;
+		AppliedPromotionsResponse response = new AppliedPromotionsResponse();
+
+		response.setTotalDiscount(discountAccumulator);
+		response.setAppliedPromos(appliedPromosData);
+		return response;
 	}
 
 
@@ -552,7 +707,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var orgId = securityService.getCurrentUserOrganizationId();
 		var promos = promoRepo
 				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
-		if (promoCode != null && promos.size() == 0) {
+		if (promoCode != null && !promoCode.equals("")&& promos.size() == 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
 		}
 		return promos.stream().map(this::getCalculator).collect(toList());
@@ -650,7 +805,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private  PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
+	private PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
 		var promoCode = info.promoCode;
 		var subTotal = info.totalItemsValue;
 		if (isBlankOrNull(promoCode)) {
@@ -661,6 +816,45 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 		var discount = getDiscount(subTotal, promo);
 		var consumedItems = consumeAllItems(info);
+		return new PromoCalcResult(discount, consumedItems);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificBrands(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedProducts= getAllowedProductsPerBrand(info, constraints)
+				.stream()
+				.map(PromoItemDto::getProductId)
+				.collect(toSet());
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificTags(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedTags = ofNullable(constraints.getTags()).orElse(emptySet());
+		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountFromSpecificProducts(PromoInfoContainer info) {
+		var constraints = getPromoConstraints(info.promo);
+		var allowedProducts = constraints.getProducts();
+		return calcPromoDiscountForSpecificItems(info, allowedProducts);
+	}
+
+	private PromoCalcResult calcPromoDiscountForSpecificItems(PromoInfoContainer info, Set<Long> allowedProducts) {
+		var applicableItems = getAllowedProductsPerProducts(info, allowedProducts);
+
+		var promoCode = info.promoCode;
+		var subTotal = applicableItems.stream().map(this::calcTotalValue).reduce(ZERO, BigDecimal::add);
+		if (isBlankOrNull(promoCode)) {
+			return emptyResult();
+		}
+		PromotionsEntity promo = info.promo;
+		validatePromoCode(promoCode, promo, subTotal);
+
+		var discount = getDiscount(subTotal, promo);
+
+		var consumedItems = consumeSubsetItems(info, applicableItems);
 		return new PromoCalcResult(discount, consumedItems);
 	}
 
@@ -734,16 +928,26 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnBrandsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedBrands = constraints.getBrands().getIds();
-		var  applicableItems =
-				promoInfoContainer
-				.items
-				.stream()
-				.filter(i -> allowedBrands.contains(i.getBrandId()))
-				.collect(toList());
+		var applicableItems= getAllowedProductsPerBrand(promoInfoContainer, constraints);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
+	private List<PromoItemDto> getAllowedProductsPerBrand(PromoInfoContainer promoInfoContainer, PromosConstraints constraints) {
+		var allowedBrands = constraints.getBrands();
+		return promoInfoContainer
+						.items
+						.stream()
+						.filter(i -> allowedBrands.contains(i.getBrandId()))
+						.collect(toList());
+	}
+
+	private List<PromoItemDto> getAllowedProductsPerProducts(PromoInfoContainer promoInfoContainer, Set<Long> allowedProducts) {
+		return promoInfoContainer
+						.items
+						.stream()
+						.filter(i -> allowedProducts.contains(i.getProductId()))
+						.collect(toList());
+	}
 
 
 	private PromoCalcResult getPromoCalcResult(PromosConstraints constraints, List<PromoItemDto> applicableItems) {
@@ -808,14 +1012,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnTagsList(PromoInfoContainer promoInfoContainer) {
 		PromosConstraints constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedTags = ofNullable(constraints.getTags()).map(AppliedTo::getIds).orElse(emptySet());
+		var allowedTags = ofNullable(constraints.getTags()).orElse(emptySet());
 		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
-		var applicableItems =
-				promoInfoContainer
-				.items
-				.stream()
-				.filter(i -> allowedProducts.contains(i.getProductId()))
-				.collect(toList());
+		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
@@ -823,12 +1022,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult getDiscountBasedOnProductsList(PromoInfoContainer promoInfoContainer) {
 		var constraints = getPromoConstraints(promoInfoContainer.promo);
-		var allowedProducts = constraints.getProducts().getIds();
-		var applicableItems =
-				promoInfoContainer.items
-				.stream()
-				.filter(i -> allowedProducts.contains(i.getProductId()))
-				.collect(toList());
+		var allowedProducts = constraints.getProducts();
+		var applicableItems = getAllowedProductsPerProducts(promoInfoContainer, allowedProducts);
 		return getPromoCalcResult(constraints, applicableItems);
 	}
 
@@ -925,6 +1120,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private Set<PromoItemDiscount> consumeAllItems(PromoInfoContainer info) {
 		return info.items
 				.stream()
+				.map(item -> new PromoItemDiscount(item, ZERO))
+				.collect(toSet());
+	}
+
+	private Set<PromoItemDiscount> consumeSubsetItems(PromoInfoContainer info, List<PromoItemDto> appliedItems) {
+		return info.items
+				.stream()
+				.filter(item -> appliedItems.contains(item))
 				.map(item -> new PromoItemDiscount(item, ZERO))
 				.collect(toSet());
 	}

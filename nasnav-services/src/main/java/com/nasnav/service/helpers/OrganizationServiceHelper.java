@@ -2,8 +2,7 @@ package com.nasnav.service.helpers;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.SocialRepository;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.exceptions.BusinessException;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SocialEntity;
@@ -19,16 +18,19 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class OrganizationServiceHelper  {
-
+    @Autowired
     private SocialRepository socialRepository;
 
-    @Autowired
-    public OrganizationServiceHelper(SocialRepository socialRepository){
-        this.socialRepository = socialRepository;
-    }
+    public Optional<SocialEntity> createSocialEntity(OrganizationModificationDTO json, OrganizationEntity organization) {
+        String instagram = json.getSocialInstagram();
+        String twitter = json.getSocialTwitter();
+        String facebook = json.getSocialFacebook();
+        String youtube = json.getSocialYoutube();
+        String linkedin = json.getSocialLinkedin();
+        String pinterest = json.getSocialPinterest();
+        String whatsapp = json.getSocialWhatsapp();
 
-    public Optional<SocialEntity> createSocialEntity(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization) throws BusinessException {
-        if (allIsNull(json.socialInstagram, json.socialTwitter, json.socialFacebook, json.socialYoutube, json.socialLnkedin, json.socialPinterest, json.socialWhatsapp)){
+        if (allIsNull(instagram, twitter, facebook, youtube, linkedin, pinterest, whatsapp)){
             return empty();
         }
 
@@ -38,18 +40,16 @@ public class OrganizationServiceHelper  {
                         .orElseGet(SocialEntity::new);
         socialEntity.setOrganizationEntity(organization);
 
-        validateAndSetTwitterUrl(json.socialTwitter, socialEntity);
-        validateAndSetFacebookUrl(json.socialFacebook, socialEntity);
-        validateAndSetInstagramUrl(json.socialInstagram, socialEntity);
-        validateAndSetYoutubeUrl(json.socialYoutube, socialEntity);
-        validateAndSetLinkedIn(json.socialLnkedin, socialEntity);
-        validateAndSetPinterest(json.socialPinterest, socialEntity);
-        validateAndSetWhatsapp(json.socialWhatsapp, socialEntity);
+        validateAndSetTwitterUrl(twitter, socialEntity);
+        validateAndSetFacebookUrl(facebook, socialEntity);
+        validateAndSetInstagramUrl(instagram, socialEntity);
+        validateAndSetYoutubeUrl(youtube, socialEntity);
+        validateAndSetLinkedIn(linkedin, socialEntity);
+        validateAndSetPinterest(pinterest, socialEntity);
+        validateAndSetWhatsapp(whatsapp, socialEntity);
 
         return Optional.of(socialEntity);
     }
-
-
 
     private void validateAndSetTwitterUrl(String url, SocialEntity socialEntity) {
         if (url != null) {
@@ -62,8 +62,6 @@ public class OrganizationServiceHelper  {
         }
     }
 
-
-
     private void validateAndSetFacebookUrl(String url, SocialEntity socialEntity) {
         if (url != null) {
             if (url.equals("")) {
@@ -75,8 +73,6 @@ public class OrganizationServiceHelper  {
         }
     }
 
-
-
     private void validateAndSetInstagramUrl(String url, SocialEntity socialEntity) {
         if (url != null) {
             if (StringUtils.validateUrl(url,"(http(s)?:\\/\\/)?(www\\.)?instagram\\.com\\/[A-Za-z0-9_\\-\\.]+\\/?.*")){
@@ -86,8 +82,6 @@ public class OrganizationServiceHelper  {
             }
         }
     }
-
-
 
     private void validateAndSetYoutubeUrl(String url, SocialEntity socialEntity) {
         if (url != null){
@@ -100,8 +94,6 @@ public class OrganizationServiceHelper  {
         }
     }
 
-
-
     private void validateAndSetLinkedIn(String url, SocialEntity socialEntity) {
         if (url != null){
             if (url.equals("")) {
@@ -112,8 +104,6 @@ public class OrganizationServiceHelper  {
             }
         }
     }
-
-
 
     private void validateAndSetPinterest(String url, SocialEntity socialEntity) {
         if (url != null){

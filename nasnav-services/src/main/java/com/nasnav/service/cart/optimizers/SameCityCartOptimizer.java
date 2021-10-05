@@ -120,7 +120,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 			BeanUtils.copyProperties(optimized, item);			
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.error(e,e);
-			return new OptimizedCartItem(item, false);
+			return new OptimizedCartItem(item, false, false);
 		}
 		BigDecimal itemPrice = ofNullable(item.getPrice()).orElse(ZERO);
 		BigDecimal itemDiscount = ofNullable(item.getDiscount()).orElse(ZERO);
@@ -130,11 +130,12 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 		boolean priceChanged = 
 				itemPrice.compareTo(stkPrice) != 0 
 					|| itemDiscount.compareTo(stkDiscount) != 0;
+		boolean itemChanged = !item.getStockId().equals(itemStk.getStockId());
 		optimized.setPrice(itemStk.getStockPrice());
 		optimized.setStockId(itemStk.getStockId());
 		optimized.setDiscount(itemStk.getDiscount());
 		optimized.setWeight(weight);
-		return new OptimizedCartItem(optimized, priceChanged);
+		return new OptimizedCartItem(optimized, priceChanged, itemChanged);
 	}
 
 

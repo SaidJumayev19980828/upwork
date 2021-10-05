@@ -90,7 +90,7 @@ public class CartOptimizationHelper {
             BeanUtils.copyProperties(optimized, item);
         } catch (IllegalAccessException | InvocationTargetException e) {
             logger.error(e,e);
-            return new OptimizedCartItem(item, false);
+            return new OptimizedCartItem(item, false, false);
         }
         StocksEntity stock =
                 ofNullable(item.getVariantId())
@@ -100,10 +100,11 @@ public class CartOptimizationHelper {
                                 () -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId()));
 
         boolean priceChanged = isPriceChanged(item, stock);
+        boolean itemChanged = isItemChanged(item, stock);
         optimized.setPrice(stock.getPrice());
         optimized.setStockId(stock.getId());
         optimized.setDiscount(stock.getDiscount());
-        return new OptimizedCartItem(optimized, priceChanged);
+        return new OptimizedCartItem(optimized, priceChanged, itemChanged);
     }
 
 
@@ -112,7 +113,9 @@ public class CartOptimizationHelper {
         return stock.getQuantity() >= item.getQuantity();
     }
 
-
+    private boolean isItemChanged(CartItem item, StocksEntity stock) {
+        return !item.getStockId().equals(stock.getId());
+    }
 
     private boolean isPriceChanged(CartItem item, StocksEntity stock) {
         BigDecimal itemPrice = ofNullable(item.getPrice()).orElse(ZERO);

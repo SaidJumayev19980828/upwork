@@ -9,4 +9,5 @@ import lombok.Data;
 public class OptimizedCartItem {
 	private CartItem cartItem;
 	private Boolean priceChanged;
+	private Boolean itemChanged;
 }

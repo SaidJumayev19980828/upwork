@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -76,6 +77,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     public static final int MAX_RETURN_TIME_WINDOW = 14;
 
+    @PersistenceContext
     @Autowired
     private EntityManager em;
 
@@ -461,8 +463,6 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems
             , Map<Long, Optional<String>> variantCoverImgs) {
         for(ReturnRequestItemDTO dto : requestItems) {
-            Map<String, String> variantFeatures = productService.parseVariantFeatures(dto.getFeatureSpec(), 0);
-            dto.setVariantFeatures(variantFeatures);
             variantCoverImgs
                     .get(dto.getVariantId())
                     .ifPresent(dto::setCoverImage);
@@ -522,6 +522,11 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private void sendReturnRequestConfirmationEmail(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
+        String orgName = ofNullable(request)
+                .map(ReturnRequestEntity::getMetaOrder)
+                .map(MetaOrderEntity::getOrganization)
+                .map(OrganizationEntity::getName)
+                .orElse("Nasnav");
         Optional<String> email =
                 ofNullable(request)
                         .map(ReturnRequestEntity::getMetaOrder)
@@ -535,7 +540,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         List<MailAttachment> airwayBills = createReturnConfirmMailAttachments(trackers);
         String template = ORDER_RETURN_CONFIRM_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap, airwayBills);
+            mailService.sendThymeleafTemplateMail(orgName, email.get(), subject,  template, parametersMap, airwayBills);
         } catch (MessagingException e) {
             logger.error(e, e);
         }
@@ -737,7 +742,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         BigDecimal price = orderItem.getPrice();
         String thumb = variantsCoverImages.get(variant.getId()).orElse("NA");
         String currency = ofNullable(getTransactionCurrency(orderItem.getCurrency())).orElse(EGP).name();
-        Map<String, String> variantFeatures = productService.parseVariantFeatures(variant.getFeatureSpec(), 0);
+        Map<String, String> variantFeatures = productService.parseVariantFeatures(variant, 0);
 
         ReturnShipmentItem item = new ReturnShipmentItem();
         item.setName(product.getName());
@@ -756,13 +761,14 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     private void sendRejectionEmailToCustomer(ReturnRequestEntity request, String rejectionReason, Long orgId) {
 
+        String orgName = request.getMetaOrder().getOrganization().getName();
         String to = request.getMetaOrder().getUser().getEmail();
         String subject = ORDER_RETURN_REJECT_SUBJECT;
         List<String> bcc = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
         Map<String,Object> parametersMap = createRejectionEmailParams(request, rejectionReason);
         String template = ORDER_RETURN_REJECT_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+            mailService.sendThymeleafTemplateMail(orgName, asList(to), subject, emptyList(), bcc, template, parametersMap);
         } catch (IOException | MessagingException e) {
             logger.error(e, e);
         }
@@ -787,6 +793,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     private void sendOrderReturnNotificationEmail(Long returnRequestId) {
         Long orgId = securityService.getCurrentUserOrganizationId();
+        String orgName = securityService.getCurrentUserOrganization().getName();
         ReturnRequestEntity request =
                 returnRequestRepo
                         .findByReturnRequestId(returnRequestId, orgId)
@@ -799,7 +806,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Map<String,Object> parametersMap = createOrderReturnNotificationEmailParams(request);
         String template = ORDER_RETURN_NOTIFICATION_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(emails ,subject, emptyList(),  template, parametersMap);
+            mailService.sendThymeleafTemplateMail(orgName, emails ,subject, emptyList(),  template, parametersMap);
         } catch (MessagingException | IOException e) {
             logger.error(e, e);
         }
@@ -1131,10 +1138,10 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private void sendItemReceivedEmailToCustomer(Long returnRequestId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
         ReturnRequestEntity request =
                 returnRequestRepo
-                        .findByReturnRequestId(returnRequestId, orgId)
+                        .findByReturnRequestId(returnRequestId, org.getId())
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
         Optional<String> email =
                 ofNullable(request)
@@ -1148,7 +1155,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Map<String,Object> parametersMap = createReturnItemsReceiptionEmailParams(request);
         String template = ORDER_RETURN_RECEIVED_TEMPLATE;
         try {
-            mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+            mailService.sendThymeleafTemplateMail(org.getName(), email.get(), subject,  template, parametersMap);
         } catch (MessagingException e) {
             logger.error(e, e);
         }
@@ -1366,6 +1373,46 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0010);
             }
         }
+    }
+
+
+    @Override
+    public ReturnRequestsResponse getYeshteryOrderReturnRequests(ReturnRequestSearchParams params) {
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequests(params);
+        }
+        return null;
+    }
+
+    @Override
+    public ReturnRequestDTO getYeshteryOrderReturnRequest(Long id){
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequest(id);
+        }
+        return null;
+    }
+    @Override
+    @Transactional(rollbackFor = Throwable.class)
+    public void confirmYeshteryReturnRequest(Long requestId) {
+        if (securityService.getYeshteryState() == 1) {
+            confirmReturnRequest(requestId);
+        }
+        return;
+    }
+    @Override
+    @Transactional
+    public void rejectYeshteryReturnRequest(ReturnRequestRejectDTO dto) {
+        if (securityService.getYeshteryState() == 1) {
+            rejectReturnRequest(dto);
+        }
+        return;
+    }
+    @Override
+    public Long createYeshteryReturnRequest(ReturnRequestItemsDTO itemsList) {
+        if (securityService.getYeshteryState() == 1) {
+            return createReturnRequest(itemsList);
+        }
+        return null;
     }
 
 }

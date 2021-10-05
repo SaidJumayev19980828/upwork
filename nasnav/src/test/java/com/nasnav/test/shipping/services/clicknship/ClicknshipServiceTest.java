@@ -81,6 +81,7 @@ public class ClicknshipServiceTest {
     public MockServerRule mockServerRule = new MockServerRule(this);
 
 
+    private String trackingUrl = "https://clicknship.com.ng/GuestOperations/ShipmentTrackerGuest.aspx?WaybillNumber=";
     private String token = "nBYCv3UXLzxYrO77JTzXc76geUKXU5bqDRuB-JsCc3wMmkweTbR0ZjiIvsDmXA5XNX_yJKh6CEVS1Ag_xioGHZyzuDTDvnygnPj6MRQBusT8EYcJzTJvE2ry1aZs1fCLY_4zD4EjULfXfNVSBVvof5CXOqHlfrYjEA7eiYOTYOd0TZz3v120Gaqjpur6a4HmvMFzY6FYvGRt-ONyIaPoxUvB5HVyI1Q3YZKiXCsAz3G3WRNZC-oO8TO60PNBx8viyhrU5bDNl-yEKkeh9yIoRd2V3rZRtKymcEoj1xYnxjYWu3XBRD_jgVY_65h2Bb3AnSB7j_qSHoZF3i3siyqGUp4OFOs6IFIh5pgLcBz6nha-cBz5W7u-S8pkQlSXPN-0FBAD6-GwpSxztaXKc0BGhUMbgh7ghWrPzSztdiMCVps";
     private static final String SERVER_URL = "https://api.clicknship.com.ng";
     private ClickNshipWebClient client;
@@ -341,7 +342,8 @@ public class ClicknshipServiceTest {
         return asList(new ServiceParameter("SERVER_URL", server)
                 , new ServiceParameter("USER_NAME", "cnsdemoapiacct")
                 , new ServiceParameter("PASSWORD", "ClickNShip$12345")
-                , new ServiceParameter("GRANT_TYPE", "password"));
+                , new ServiceParameter("GRANT_TYPE", "password")
+                , new ServiceParameter("TRACKING_URL", trackingUrl));
     }
 
 

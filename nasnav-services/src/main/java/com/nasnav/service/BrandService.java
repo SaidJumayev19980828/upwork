@@ -2,18 +2,21 @@ package com.nasnav.service;
 
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BrandsEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import javax.cache.annotation.CacheResult;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import java.util.*;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -25,6 +28,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public class BrandService {
 
+    @PersistenceContext
+    @Autowired
+    private EntityManager em;
+
     @Autowired
     private BrandsRepository brandsRepository;
     @Autowired
@@ -35,12 +42,13 @@ public class BrandService {
 
     
     @CacheResult(cacheName = BRANDS)
-    public Organization_BrandRepresentationObject getBrandById(Long brandId){
+    public Organization_BrandRepresentationObject getBrandById(Long brandId, boolean yeshteryState){
         if (brandId == null)
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0005);
+        Optional<BrandsEntity> brand = yeshteryState ? brandsRepository.findYeshteryBrandById(brandId) : brandsRepository.findById(brandId);
 
-        return brandsRepository.findById(brandId)
-                .map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
+        return brand
+                .map(b -> (Organization_BrandRepresentationObject) b.getRepresentation())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,GEN$0001,"brand", brandId));
     }
 
@@ -62,7 +70,7 @@ public class BrandService {
         brandsRepository.setBrandHidden(brandId);
     }
 
-    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count) {
+    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count, Set<Long> brandIds) {
         if (start < 0) {
             start = 0;
         }
@@ -70,7 +78,17 @@ public class BrandService {
             count = 10;
         }
         PageRequest page = getQueryPage(start, count);
+        if (brandIds != null && !brandIds.isEmpty())
+            return brandsRepository.findByIdInAndOrganizationEntity_YeshteryState(brandIds, page);
         return brandsRepository.findByOrganizationEntity_YeshteryState(page);
+
+    }
+
+    public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
+        return brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0)
+                .stream()
+                .map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
+                .collect(toList());
     }
 
 }

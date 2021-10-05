@@ -4,13 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.UserAddressEntity;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -59,6 +62,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartService cartService;
+	@Autowired
+	private PromotionsService promoService;
 	
 	@Autowired
 	private SecurityService securityService;
@@ -68,16 +73,32 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartOptimizationHelper helper;
+
+	@Autowired
+	private UserAddressRepository userAddressRepo;
 	
 	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
+		if (dto.getAddressId() == null) {
+			Long addressId = userAddressRepo
+					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
+					.map(UserAddressEntity::getAddress)
+					.map(AddressesEntity::getId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,O$RET$0019)); 
+			dto.setAddressId(addressId);
+		}
 		var optimizedCart = createOptimizedCart(dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
+		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart);
 		var returnedCart = getCartObject(optimizedCart);
-		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
+		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
+		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
+		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
+		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
+		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
 	}
 
 
@@ -101,6 +122,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.anyMatch(OptimizedCartItem::getPriceChanged);
 	}
 
+	private boolean isAnyItemChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+				.map(OptimizedCart::getCartItems)
+				.orElse(emptyList())
+				.stream()
+				.anyMatch(OptimizedCartItem::getItemChanged);
+	}
+
 
 	
 	private <T, Config> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
@@ -111,7 +140,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart();
+		var cart = cartService.getCart(dto.getPromoCode());
 		
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}

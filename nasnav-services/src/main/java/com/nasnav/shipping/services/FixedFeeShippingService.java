@@ -233,6 +233,15 @@ public class FixedFeeShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        return Mono.empty();
+    }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
+    }
 
 
     private void setEtaDaysMin(Map<String, String> serviceParams) {

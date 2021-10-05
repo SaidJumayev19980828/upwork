@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -26,7 +27,7 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long stockId;
     private boolean multipleVariants;
     private boolean hidden;
-    private String defaultVariantFeatures;
+    private Map<String, String> defaultVariantFeatures;
     private List<TagsRepresentationObject> tags;
     private String creationDate;
     private String updateDate;

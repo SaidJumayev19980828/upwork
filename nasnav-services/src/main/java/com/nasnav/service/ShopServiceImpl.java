@@ -6,6 +6,7 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.request.ShopIdAndPriority;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.querydsl.sql.*;
@@ -28,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.cache.annotation.CacheResult;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
@@ -36,8 +36,7 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -101,17 +100,15 @@ public class ShopServiceImpl implements ShopService {
 //    @CacheResult(cacheName = "shops_by_id")
     @Override
     public ShopRepresentationObject getShopById(Long shopId) {
+        ShopRepresentationObject shopRepObj = shopsRepository.findByIdAndRemoved(shopId)
+                .map(shop -> (ShopRepresentationObject) shop.getRepresentation())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopId));
 
-        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findByIdAndRemoved(shopId, 0);
-
-        if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
-            throw new RuntimeBusinessException(NOT_FOUND, S$0003);
-
-        ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
-        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360);
-        if(imageEntities != null && !imageEntities.isEmpty())
-            shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
-                                                       .collect(toList()));
+        List<OrganizationImagesRepresentationObject> images = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360)
+                .stream()
+                .map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
+                .collect(toList());
+        shopRepObj.setImages(images);
 
         return  shopRepObj;
     }
@@ -202,6 +199,7 @@ public class ShopServiceImpl implements ShopService {
     private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
         BooleanBuilder predicate = new BooleanBuilder();
         QShops shop = QShops.shops;
+        QProductVariants variant = QProductVariants.productVariants;
         QProducts product = QProducts.products;
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
@@ -209,6 +207,8 @@ public class ShopServiceImpl implements ShopService {
         QOrganizations organization = QOrganizations.organizations;
 
         predicate.and(shop.removed.eq(0));
+        predicate.and(product.removed.eq(0));
+        predicate.and(variant.removed.eq(0));
         if(param.getName() != null) {
             if (param.isSearchInTags()) {
                 predicate.and(product.name.likeIgnoreCase( "%" + param.getName() + "%")
@@ -325,6 +325,18 @@ public class ShopServiceImpl implements ShopService {
         stockRepo.setStocksQuantityZero(shopId);
 
         shopsRepository.setShopHidden(shopId);
+    }
+
+    @Override
+    @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
+    public void changeShopsPriority(List<ShopIdAndPriority> dto) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        Map<Long, Integer> shopsPrioritiesMap = dto.stream().collect(toMap(ShopIdAndPriority::getShopId, ShopIdAndPriority::getPriority));
+        List<ShopsEntity> entities = shopsRepository.findByIdInAndOrganizationEntity_IdAndRemoved( shopsPrioritiesMap.keySet(), orgId, 0);
+        entities.stream()
+                .filter(shop -> shopsPrioritiesMap.get(shop.getId()) != null)
+                .forEach(shop -> shop.setPriority(shopsPrioritiesMap.get(shop.getId())));
+        shopsRepository.saveAll(entities);
     }
 
 

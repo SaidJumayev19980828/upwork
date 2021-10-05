@@ -33,9 +33,9 @@ public class RoleServiceImpl implements RoleService {
 
 
     public boolean checkRoleOrder(String userRole, String requestedRole) {
-        Map<String,Set<String>> prelivedges = Roles.getAllPrevliges();
-        if (prelivedges.containsKey(userRole)) {
-            Set<String> roles = prelivedges.get(userRole);
+        Map<String,Set<String>> privileges = Roles.getAllPrivileges();
+        if (privileges.containsKey(userRole)) {
+            Set<String> roles = privileges.get(userRole);
             if (roles.contains(requestedRole))
                 return true;
         }

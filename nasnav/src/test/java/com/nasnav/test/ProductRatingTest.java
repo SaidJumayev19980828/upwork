@@ -134,7 +134,7 @@ public class ProductRatingTest {
         HttpEntity request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
 
-        assertEquals(406 , response.getStatusCodeValue());
+        assertEquals(200 , response.getStatusCodeValue());
     }
 
     @Test

@@ -121,7 +121,7 @@ public class UserServiceImpl implements UserService {
 		Long orgId = userJson.getOrgId();
 
 		OrganizationEntity org = orgRepo.findById(orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001));
 
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
@@ -147,7 +147,7 @@ public class UserServiceImpl implements UserService {
 		try {
 			String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
 			Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl, orgName);
-			mailService.send(userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
+			mailService.send(orgName, userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			logger.error(e, e);
@@ -200,6 +200,7 @@ public class UserServiceImpl implements UserService {
 		user.setOrganizationId(userJson.getOrgId());
 		user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
 		user.setPhoneNumber(userJson.getPhoneNumber());
+		user.setImage(userJson.getAvatar());
 		return user;
 	}
 
@@ -235,7 +236,7 @@ public class UserServiceImpl implements UserService {
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
-		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "store_id", "role"};
+		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
@@ -251,13 +252,23 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional
 	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		validateAddressDTO(addressDTO);
 		AddressDTO newAddressEntity = doUpdateUserAddressesImmutably(addressDTO);
 		setAsPrincipleAddressIfNeeded(addressDTO, newAddressEntity);
 		return newAddressEntity;
 	}
 
-
-
+	private void validateAddressDTO(AddressDTO addressDTO) {
+		if (addressDTO.getAddressLine1() == null || addressDTO.getAddressLine1().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "address_line_1");
+		}
+		if (addressDTO.getAreaId() == null || addressDTO.getAreaId() < 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "area_id");
+		}
+		if (addressDTO.getPhoneNumber() == null || addressDTO.getPhoneNumber().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "phone_number");
+		}
+	}
 
 	private void setAsPrincipleAddressIfNeeded(AddressDTO addressDTO, AddressDTO newAddress) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
@@ -375,23 +386,6 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-
-
-	private void validateName(String name) {
-		if (!StringUtils.validateName(name)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
-		}
-	}
-
-
-
-	private void validateEmail(String email) {
-		if (!StringUtils.validateEmail(email)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0004, email);
-		}
-	}
-
-
 	@Override
 	public void deleteUser(Long userId) {
 		userRepository.deleteById(userId);
@@ -440,6 +434,7 @@ public class UserServiceImpl implements UserService {
 	
 	private void sendRecoveryMail(UserEntity userEntity) {
 		String userName = ofNullable(userEntity.getName()).orElse("User");
+		String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
 			Map<String, String> parametersMap = new HashMap<>();
@@ -447,19 +442,14 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER,
 					appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
 			// send Recovery mail to user
-			this.mailService.send(userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
+			this.mailService.send(orgName, userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
 					CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
 		}
 	}
 
-	/**
-	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
-	 * never used before.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
+
 	private String generateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -469,12 +459,6 @@ public class UserServiceImpl implements UserService {
 		return generatedToken;
 	}
 
-	/**
-	 * regenerate ResetPasswordToken and if token already exists, make recursive
-	 * call until generating new ResetPasswordToken.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
 	private String reGenerateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -525,8 +509,7 @@ public class UserServiceImpl implements UserService {
 		Boolean isEmp = ofNullable(isEmployee).orElse(false);
 		Long requiredUserId = ofNullable(userId).orElse(currentUser.getId());		
 				
-		BaseUserEntity user = 
-				commonUserRepo.findById(requiredUserId, isEmp)
+		BaseUserEntity user = commonUserRepo.findById(requiredUserId, isEmp)
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		
 		return getUserRepresentationWithUserRoles(user);
@@ -557,8 +540,6 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private RedirectView redirectUser(String authToken, String loginUrl) {
-		//String loginUrl = buildOrgLoginPageUrl(orgId);
-		
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
 		attributes.addAttribute("auth_token", authToken);
 		
@@ -642,8 +623,10 @@ public class UserServiceImpl implements UserService {
 	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
-		if(user == null || !(user instanceof UserEntity)) {
+		if(user == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId);
+		}else if (! (user instanceof UserEntity)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
 		}else if(!isUserDeactivated(user)){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
 		}else if(resendRequestedTooSoon(accountInfo)) {
@@ -732,7 +715,7 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put("orgLogo", orgLogo);
 			parametersMap.put("orgName", orgName);
 			parametersMap.put("year", year);
-			mailService.send(email, "Subscribe to newsletter",
+			mailService.send(orgName, email, "Subscribe to newsletter",
 					USER_SUBSCRIPTION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());

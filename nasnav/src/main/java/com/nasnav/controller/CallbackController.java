@@ -16,7 +16,7 @@ import static java.lang.String.format;
 @CrossOrigin("*")
 public class CallbackController {
 	
-	private Logger logger = LogManager.getLogger(); 
+	private final Logger logger = LogManager.getLogger();
 
     @Autowired
     private ShippingManagementService shippingService;

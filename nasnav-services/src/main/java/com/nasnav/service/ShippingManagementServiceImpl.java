@@ -3,13 +3,13 @@ package com.nasnav.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.AppConfig;
 import com.nasnav.commons.json.jackson.RawObject;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.*;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -36,10 +36,10 @@ import reactor.core.publisher.Mono;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
 import static com.nasnav.enumerations.ShippingStatus.*;
@@ -76,58 +76,45 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			.getMap();
 
 	@Autowired
-	private AppConfig config;
-
-	@Autowired
 	private OrganizationShippingServiceRepository orgShippingServiceRepo;
-	
 	@Autowired
 	private CartItemRepository cartRepo;
-	
-	@Autowired
-	@Setter
-	private SecurityService securityService;
-	
 	@Autowired
 	private AddressRepository addressRepo;
-	
 	@Autowired
 	private StockRepository stockRepo;
-	
-	@Autowired
-	private ObjectMapper jsonMapper;
-	
 	@Autowired
 	private UserRepository userRepo;
-
 	@Autowired
 	private ShipmentRepository shipmentRepo;
 	@Autowired
-	private OrdersRepository ordersRepo;
+	private ShopsRepository shopRepo;
+	@Autowired
+	private PaymentsRepository paymentRepo;
+	@Autowired
+	private ReturnShipmentRepository returnShipmentRepo;
+	@Autowired
+	private ReturnRequestItemRepository returnedItemRepo;
+	@Autowired
+	private OrdersRepository orderRepo;
 
 	@Autowired
-	private DomainService domainService;
-	
+	@Setter
+	private SecurityService securityService;
 	@Autowired
-    private ShippingServiceFactory shippingServiceFactory;
-	
+	private DomainService domainService;
 	@Autowired
 	private OrderService orderService;
 	@Autowired
 	private PromotionsService promotionsService;
-	
 	@Autowired
-	private PaymentsRepository paymentRepo;
+	private ProductService productService;
 
 	@Autowired
-	private ReturnShipmentRepository returnShipmentRepo;
+	private ObjectMapper jsonMapper;
 
 	@Autowired
-	private ReturnRequestItemRepository returnedItemRepo;
-
-	@Autowired
-	private ShopsRepository shopRepo;
-
+    private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -805,31 +792,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		return ofNullable(orderItem)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
-				.map(ProductVariantsEntity::getFeatureSpec)
-				.map(this::parseFeatureSpec)
+				.map(v -> productService.parseVariantFeatures(v, 0))
+				.map(Map::toString)
 				.orElse(null);
 	}
-
-
-
-
-
-	private String parseFeatureSpec(String featureSpecJson) {
-		JSONObject json = new JSONObject(featureSpecJson);
-		return json
-				.toMap()
-				.values()
-				.stream()
-				.map(Object::toString)
-				.collect(
-						collectingAndThen(
-								joining("/")
-								, str -> format("{%s}", str)));
-	}
-
-
-
-
 
 	private Integer getQuantity(BasketsEntity orderItem) {
 		return ofNullable(orderItem)
@@ -1026,6 +992,47 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.getServiceInfo(shippingServiceId);
 	}
 
+	@Override
+	public OrderConfirmResponseDTO getShippingAirwayBill(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getAirwayBill(airwayBillNo))
+				.get()
+				.blockOptional(Duration.ofSeconds(5))
+				.map(file -> new OrderConfirmResponseDTO(file, "Airway Bill.pdf", "application/pdf"))
+				.orElseGet(() -> new OrderConfirmResponseDTO());
+	}
+
+	@Override
+	public String getTrackingUrl(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getTrackingUrl(airwayBillNo))
+				.orElse("");
+	}
+
+	@Override
+	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId) {
+		if (securityService.getYeshteryState() == 1) {
+			return getShippingOffers(customerAddrId);
+		}
+		return null;
+	}
+
 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
 			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {
@@ -1039,7 +1046,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ReturnShipmentEntity returnShipment = new ReturnShipmentEntity();
 		returnShipment.setExternalId(tracker.getShipmentExternalId());
 		returnShipment.setShippingServiceId(shippingServiceId);
-		returnShipment.setStatus(REQUSTED.getValue());
+		returnShipment.setStatus(REQUESTED.getValue());
 		returnShipment.setTrackNumber(tracker.getTracker());
 		returnShipment = returnShipmentRepo.save(returnShipment);
 		addReturnedItemsToReturnShipment(tracker, returnShipment);

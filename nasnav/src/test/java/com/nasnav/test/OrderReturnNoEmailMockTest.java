@@ -26,7 +26,7 @@ import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -283,7 +283,7 @@ public class OrderReturnNoEmailMockTest {
     private boolean isAllHasRequestedStatus(List<ReturnShipmentEntity> shipments) {
         return shipments
                 .stream()
-                .allMatch(shp -> REQUSTED.getValue().equals(shp.getStatus()));
+                .allMatch(shp -> REQUESTED.getValue().equals(shp.getStatus()));
     }
 
 

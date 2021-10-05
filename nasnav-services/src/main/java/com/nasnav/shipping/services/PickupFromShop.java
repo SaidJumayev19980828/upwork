@@ -270,6 +270,16 @@ public class PickupFromShop implements ShippingService{
 		}
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
+
 
 	@Override
 	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {

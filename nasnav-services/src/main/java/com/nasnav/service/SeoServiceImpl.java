@@ -6,16 +6,19 @@ import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.SeoKeywordsDTO;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SeoKeywordEntity;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.cache.annotation.CacheResult;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import static com.nasnav.cache.Caches.SEO_KEYWORDS;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.SeoEntityType.*;
@@ -45,6 +48,9 @@ public class SeoServiceImpl implements SeoService{
 
     @Autowired
     private SeoKeywordRepository seoRepo;
+
+    @Autowired
+    OrganizationService organizationService;
 
 
     @Override
@@ -121,21 +127,32 @@ public class SeoServiceImpl implements SeoService{
 
 
     @Override
+    @CacheResult(cacheName = SEO_KEYWORDS)
     public List<SeoKeywordsDTO> getSeoKeywords(Long orgId, Long entityId, SeoEntityType type) {
         if(isNull(orgId) || (isNull(entityId) ^ isNull(type))){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, format("{orgId:%d, entityId:%d, type:%s}", orgId, entityId, type));
         }
 
         List<SeoKeywordEntity> seoKeywordEntities = emptyList();
-        if(noneIsNull(entityId, type)){
+        if(noneIsNull(entityId, type, orgId)){
             seoKeywordEntities = seoRepo.findByEntityIdAndTypeIdAndOrganization_Id(entityId, type.getValue(), orgId);
-        }else if(nonNull(orgId)){
+        } else if(nonNull(orgId)){
             seoKeywordEntities = seoRepo.findByOrganization_Id(orgId);
+        } else if(noneIsNull(entityId, type)){
+            seoKeywordEntities = seoRepo.findByEntityIdAndTypeId(entityId, type.getValue());
         }
 
         return toSeoKeywordsDTOList(seoKeywordEntities);
     }
 
+    @Override
+    public List<SeoKeywordsDTO> getSeoKeywords(Long entityId, SeoEntityType type) {
+        return  organizationService.getYeshteryOrgs().stream()
+                .map(org -> getSeoKeywords(org.getId(), entityId, type))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+    }
 
 
     private List<SeoKeywordsDTO> toSeoKeywordsDTOList(List<SeoKeywordEntity> seoKeywordEntities) {

@@ -47,4 +47,6 @@ public interface SecurityService {
     boolean currentUserHasMaxRoleLevelOf(Roles role);
 
     Set<Roles> getCurrentUserRoles();
+
+    Integer getYeshteryState();
 }

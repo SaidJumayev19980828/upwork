@@ -27,8 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -64,7 +63,7 @@ public class ShopsUpdateTest {
         HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        shopsRepository.deleteById(jsonResponse.getLong("store_id"));
+        shopsRepository.deleteById(jsonResponse.getLong("shop_id"));
 
         assertEquals(200, response.getStatusCode().value());
 
@@ -128,7 +127,7 @@ public class ShopsUpdateTest {
 
         assertEquals(200, response.getStatusCode().value());
         
-        Long id = jsonResponse.getLong("store_id");
+        Long id = jsonResponse.getLong("shop_id");
         ShopsEntity saved = shopsRepository.findById(id).get();
         
         assertNotNull(saved.getOrganizationEntity());
@@ -163,7 +162,7 @@ public class ShopsUpdateTest {
         
 
         //get created shop entity
-        ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
+        ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("shop_id")).get();
         //update shop data and check if other data remain the same
         String bodyString = json().put("org_id", 99001)
                 .put("id", oldShop.getId())
@@ -174,7 +173,7 @@ public class ShopsUpdateTest {
         request = getHttpEntity(bodyString,"161718");
         response = template.postForEntity("/shop/update", request, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
+        ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("shop_id")).get();
 
         //check if unchanged data remains
         assertEquals(oldShop.getAddressesEntity().getFlatNumber(), newShop.getAddressesEntity().getFlatNumber());
@@ -186,7 +185,7 @@ public class ShopsUpdateTest {
         assertEquals("Different Shop", newShop.getName());
         assertEquals("dark logo value", newShop.getDarkLogo());
 
-        shopsRepository.deleteById(jsonResponse.getLong("store_id"));
+        shopsRepository.deleteById(jsonResponse.getLong("shop_id"));
     }
 
 
@@ -228,14 +227,14 @@ public class ShopsUpdateTest {
         HttpEntity<Object> request = getHttpEntity(body.toString(),"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        ShopsEntity oldShop = shopsRepository.findByIdAndRemoved(jsonResponse.getLong("store_id"), 0).get();
+        ShopsEntity oldShop = shopsRepository.findByIdAndRemoved(jsonResponse.getLong("shop_id")).get();
 
         // delete the created shop
         response = template.exchange("/shop/delete?shop_id="+oldShop.getId(),
                                         DELETE, request, String.class);
 
         assertEquals(200, response.getStatusCodeValue());
-        assertFalse(shopsRepository.findByIdAndRemoved(oldShop.getId(), 0).isPresent());
+        assertFalse(shopsRepository.findByIdAndRemoved(oldShop.getId()).isPresent());
     }
 
 
@@ -301,4 +300,18 @@ public class ShopsUpdateTest {
         assertEquals(505, firstShop.getId().intValue());
     }
 
+    @Test
+    public void setShopsPriority() {
+        String json = jsonArray()
+                .put(json()
+                    .put("shop_id", 505)
+                    .put("priority", 3)
+                )
+                .toString();
+        HttpEntity request = getHttpEntity(json, "161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/priority", request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        ShopsEntity shop = shopsRepository.findById(505L).get();
+        assertEquals(3, shop.getPriority().intValue());
+    }
 }

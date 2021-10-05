@@ -4,19 +4,13 @@ import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.RoleRepository;
-import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.RoleEmployeeUser;
+import com.nasnav.persistence.*;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
@@ -51,15 +45,18 @@ public class UserServicesHelper {
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private RoleService roleService;
 	private MailService mailService;
+	private OrganizationRepository organizationRepo;
 
 	@Autowired
 	public UserServicesHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
-							  RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService, MailService mailService) {
+							  RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService,
+							  MailService mailService, OrganizationRepository organizationRepo) {
 		this.employeeUserRepository = userRepository;
 		this.roleRepository = roleRepository;
 		this.roleEmployeeUserRepository = roleEmployeeUserRepository;
 		this.roleService = roleService;
 		this.mailService = mailService;
+		this.organizationRepo = organizationRepo;
 	}
 
 	@Autowired
@@ -386,12 +383,15 @@ public class UserServicesHelper {
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
 			String empName = ofNullable(employeeUserEntity.getName()).orElse("New User");
+			String orgName = organizationRepo.findById(employeeUserEntity.getOrganizationId())
+					.map(OrganizationEntity::getName)
+					.orElse("Nasnav");
 			Map<String, String> parametersMap = new HashMap<>();
 			parametersMap.put(EmailConstants.USERNAME_PARAMETER, empName);
 			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
 					appConfig.empMailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
 			// send Recovery mail to user
-			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
+			this.mailService.send(orgName, employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
 					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());

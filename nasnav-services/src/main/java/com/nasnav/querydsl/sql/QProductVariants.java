@@ -20,7 +20,7 @@ import java.sql.Types;
 @Generated("com.querydsl.sql.codegen.MetaDataSerializer")
 public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProductVariants> {
 
-    private static final long serialVersionUID = -1017617881;
+    private static final long serialVersionUID = 36324514;
 
     public static final QProductVariants productVariants = new QProductVariants("product_variants");
 
@@ -28,39 +28,37 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
 
     public final StringPath description = createString("description");
 
-    public final StringPath featureSpec = createString("featureSpec");
-
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final StringPath name = createString("name");
 
     public final StringPath pName = createString("pName");
-
+    
+    public final StringPath sku = createString("sku");
+    
     public final StringPath productCode = createString("productCode");
 
     public final NumberPath<Long> productId = createNumber("productId", Long.class);
 
     public final NumberPath<Integer> removed = createNumber("removed", Integer.class);
 
-    public final StringPath sku = createString("sku");
+    public final NumberPath<java.math.BigDecimal> weight = createNumber("weight", java.math.BigDecimal.class);
 
-    public final NumberPath<java.math.BigInteger> weight = createNumber("weight", java.math.BigInteger.class);
+    public final NumberPath<Long> subProductIdTemp = createNumber("subProductIdTemp", Long.class);
 
     public final com.querydsl.sql.PrimaryKey<QProductVariants> productVariantsPkey = createPrimaryKey(id);
 
     public final com.querydsl.sql.ForeignKey<QProducts> productVariantsProductIdFkey = createForeignKey(productId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QProductCollections> _productCollectionVarIdFk = createInvForeignKey(id, "variant_id");
-
     public final com.querydsl.sql.ForeignKey<QProductCollections> _productCollectionsVariantIdFkey = createInvForeignKey(id, "variant_id");
+
+    public final com.querydsl.sql.ForeignKey<QStocks> _stocksVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public final com.querydsl.sql.ForeignKey<QProductImages> _productImagesVariantIdFkey = createInvForeignKey(id, "variant_id");
 
-    public final com.querydsl.sql.ForeignKey<QProductRatings> _productRatingsVariantIdFkey = createInvForeignKey(id, "variant_id");
+    public final com.querydsl.sql.ForeignKey<QVariantFeatureValues> _variantFeatureValuesVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public final com.querydsl.sql.ForeignKey<QProductsExtraAttributes> _productsExtraAttributesVariantIdFkey = createInvForeignKey(id, "variant_id");
-
-    public final com.querydsl.sql.ForeignKey<QStocks> _stocksVariantIdFkey = createInvForeignKey(id, "variant_id");
 
     public QProductVariants(String variable) {
         super(QProductVariants.class, forVariable(variable), "public", "product_variants");
@@ -90,7 +88,6 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
     public void addMetadata() {
         addMetadata(barcode, ColumnMetadata.named("barcode").withIndex(7).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(description, ColumnMetadata.named("description").withIndex(6).ofType(Types.VARCHAR).withSize(2147483647));
-        addMetadata(featureSpec, ColumnMetadata.named("feature_spec").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(name, ColumnMetadata.named("name").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(pName, ColumnMetadata.named("p_name").withIndex(5).ofType(Types.VARCHAR).withSize(2147483647));

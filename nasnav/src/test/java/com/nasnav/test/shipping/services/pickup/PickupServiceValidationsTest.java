@@ -85,7 +85,7 @@ public class PickupServiceValidationsTest {
 
 	
 	private List<CartCheckoutData> getCheckoutDataFromCurrentCart() {
-		return orderService.createCheckoutData(cartService.getCart());
+		return orderService.createCheckoutData(cartService.getCart(null));
 	}
 
 

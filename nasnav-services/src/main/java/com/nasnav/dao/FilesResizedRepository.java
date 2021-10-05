@@ -15,6 +15,7 @@ public interface FilesResizedRepository extends JpaRepository<FilesResizedEntity
     List<FilesResizedEntity> findByOriginalFileAndHeightAndWidth(FileEntity file, Integer height, Integer width);
     List<FilesResizedEntity> findByOriginalFileAndHeightAndWidthIsNull(FileEntity file, Integer height);
     List<FilesResizedEntity> findByOriginalFileAndWidthAndHeightIsNull(FileEntity file, Integer width);
+    List<FilesResizedEntity> findByOriginalFile(FileEntity file);
 
     @Transactional
     @Modifying

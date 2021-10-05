@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.shipping.ShippingService;
@@ -35,4 +36,8 @@ public interface ShippingManagementService {
 	Optional<ShopsEntity> getPickupShop(ShipmentEntity shipment);
 	boolean isPickupService(String shippingServiceId);
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
+	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
+	String getTrackingUrl(Long orderId);
+	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress);
+
 }

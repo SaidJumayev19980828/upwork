@@ -465,6 +465,15 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		}
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
 
 
 	private ReturnShipmentTracker createReturnShipmentTracker(ShippingDetails item){

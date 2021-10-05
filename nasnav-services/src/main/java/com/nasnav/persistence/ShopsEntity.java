@@ -7,8 +7,10 @@ import com.nasnav.dto.ShopRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
+import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Table(name = "shops")
 @Entity
@@ -61,31 +63,34 @@ public class ShopsEntity implements BaseEntity{
     private Integer isWarehouse;
 
     private Integer priority;
-    
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "shopsEntity")
+    @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
+    private Set<ShopThreeSixtyEntity> shop360s;
+
+
+    @Column(name = "yeshtery_state")
+    private Integer yeshteryState;
+
     public ShopsEntity() {
     	this.isWarehouse = 0;
     }
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        ShopRepresentationObject shopRepresentationObject = new ShopRepresentationObject();
+        ShopRepresentationObject obj = new ShopRepresentationObject();
+        BeanUtils.copyProperties(this, obj);
 
-        shopRepresentationObject.setId(getId());
-        shopRepresentationObject.setLogo(getLogo());
-        shopRepresentationObject.setBanner(getBanner());
-        shopRepresentationObject.setDarkLogo(getDarkLogo());
-        shopRepresentationObject.setName(getName());
-        shopRepresentationObject.setPname(getPname());
-        shopRepresentationObject.setPlaceId(getPlaceId());
-        shopRepresentationObject.setIsWarehouse(getIsWarehouse() > 0);
-        shopRepresentationObject.setPriority(getPriority());
-
+        obj.setIsWarehouse(getIsWarehouse() > 0);
+        obj.setHas360(!(shop360s == null || shop360s.isEmpty()));
         if (getAddressesEntity() != null) {
-            shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
+            obj.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
         }
         //TODO why working days won't be returned from the API unlike getShopById API
         //TODO database to support from to time as multiple duration through day
-        shopRepresentationObject.setOpenWorkingDays(null);
-        return shopRepresentationObject;
+        obj.setOpenWorkingDays(null);
+        return obj;
     }
 }

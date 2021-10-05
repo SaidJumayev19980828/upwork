@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -18,7 +19,7 @@ public class CartCheckoutData {
     private Integer quantity;
     private String variantBarcode;
     private String productName;
-    private String featureSpec;
+    private Map<String, String> features;
     private Long shopId;
     private AddressesEntity shopAddress;
     private Long organizationId;

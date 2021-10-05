@@ -47,6 +47,7 @@ DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.units;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
+DELETE FROM public.variant_feature_values where feature_id in (select id from public.product_features where organization_id between 99000 and 99999);
 DELETE FROM public.product_features where organization_id between 99000 and 99999;
 DELETE FROM public.product_images WHERE
  product_id IN (SELECT id from public.products where organization_id between 99000 and 99999)
@@ -72,7 +73,7 @@ DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 = '630f3256-59bb-4b87-9600-60e64d028d68';
+DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 in ('630f3256-59bb-4b87-9600-60e64d028d68', 'Sesame street');
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges
 WHERE child_id IN (

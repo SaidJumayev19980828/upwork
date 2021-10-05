@@ -40,7 +40,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.service.OrderReturnService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.time.LocalDateTime.now;
@@ -113,7 +113,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq("user2@nasnav.com")
+                    Mockito.eq("organization_1")
+                    , Mockito.eq("user2@nasnav.com")
                     , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
                     , Mockito.anyString()
                     , Mockito.anyMap());
@@ -149,7 +150,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq("user1@nasnav.com")
+                    Mockito.eq("organization_1")
+                    , Mockito.eq("user1@nasnav.com")
                     , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
                     , Mockito.anyString()
                     , Mockito.anyMap());
@@ -780,7 +782,8 @@ public class OrderReturnTest {
         Mockito
             .verify(mailService)
             .sendThymeleafTemplateMail(
-                    Mockito.eq(asList("testuser2@nasnav.com"))
+                    Mockito.eq("organization_1")
+                    , Mockito.eq(asList("testuser2@nasnav.com"))
                     , Mockito.eq(String.format(ORDER_RETURN_NOTIFY_SUBJECT,response.getBody()))
                     , Mockito.anyList()
                     , Mockito.anyString()
@@ -964,7 +967,8 @@ public class OrderReturnTest {
         Mockito
                 .verify(mailService)
                 .sendThymeleafTemplateMail(
-                        Mockito.eq("user1@nasnav.com")
+                        Mockito.eq("organization_1")
+                        , Mockito.eq("user1@nasnav.com")
                         , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
                         , Mockito.anyString()
                         , Mockito.anyMap()
@@ -1005,7 +1009,7 @@ public class OrderReturnTest {
     private boolean isAllHasRequestedStatus(List<ReturnShipmentEntity> shipments) {
         return shipments
                 .stream()
-                .allMatch(shp -> REQUSTED.getValue().equals(shp.getStatus()));
+                .allMatch(shp -> REQUESTED.getValue().equals(shp.getStatus()));
     }
 
 
