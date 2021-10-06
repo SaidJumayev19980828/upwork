@@ -754,9 +754,13 @@ public class UserServiceImpl implements UserService {
 	}
 
 	public List<UserRepresentationObject> getUserList(){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return userRepository
-				.findByOrganizationId(orgId)
+		List<UserEntity> customers;
+		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			customers = userRepository.findAll();
+		} else {
+			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+		}
+		return customers
 				.stream()
 				.map(u -> u.getRepresentation())
 				.collect(toList());
