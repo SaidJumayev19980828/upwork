@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -17,7 +18,7 @@ public interface SecurityService {
 	
 	Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token);
 
-    UserApiResponse login(UserDTOs.UserLoginObject body) ;
+    UserApiResponse login(UserDTOs.UserLoginObject body, YeshteryState state) ;
 
     UserApiResponse logout(String token);
 
