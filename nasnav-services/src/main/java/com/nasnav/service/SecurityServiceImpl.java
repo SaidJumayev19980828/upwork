@@ -10,6 +10,7 @@ import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
@@ -185,13 +186,13 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse login(UserLoginObject loginData) {
+	public UserApiResponse login(UserLoginObject loginData, YeshteryState state) {
 
 		if(invalidLoginData(loginData)) {
 			throwInvalidCredentialsException();
 		}
 
-		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.getEmail(), loginData.getOrgId(), loginData.isEmployee());
+		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.getEmail(), loginData.getOrgId(), loginData.isEmployee(), state);
 
 		validateLoginUser(userEntity);
 		validateUserPassword(loginData, userEntity);
