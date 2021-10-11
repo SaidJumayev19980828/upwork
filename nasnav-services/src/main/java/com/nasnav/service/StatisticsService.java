@@ -5,7 +5,6 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
-import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.StatisticsCartItem;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.*;

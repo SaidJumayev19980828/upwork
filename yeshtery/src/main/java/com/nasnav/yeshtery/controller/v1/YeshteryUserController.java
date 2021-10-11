@@ -20,6 +20,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.nasnav.enumerations.YeshteryState.ACTIVE;
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
@@ -48,12 +49,10 @@ public class YeshteryUserController {
 
     @PostMapping(value = "login")
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) {
-        if (securityService.getYeshteryState() == 1) {
-            UserApiResponse userApiResponse = securityService.login(login);
-            response.addCookie(userApiResponse.getCookie());
-            return userApiResponse;
-        }
-        return null;
+
+        UserApiResponse userApiResponse = securityService.login(login, ACTIVE);
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
     }
 
     @PostMapping(value = "login/oauth2")

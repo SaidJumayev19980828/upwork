@@ -55,6 +55,7 @@ public enum ErrorCodes {
 	,P$VAR$008("Missing Extra Attribute name!")
 	,P$VAR$009("Failed to delete variants [%s]!")
 	,P$VAR$010("User can't delete variants from another org!")
+	,P$VAR$011("No variant with feature[%d] exists with id[%d]!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")

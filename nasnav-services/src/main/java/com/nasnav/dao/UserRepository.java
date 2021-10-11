@@ -67,6 +67,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);
 
+	@Query("select u from UserEntity u " +
+			" left join OrganizationEntity o on u.organizationId = o.id"+
+			" where LOWER(u.email) = LOWER(:email) and u.organizationId = :orgId and o.yeshteryState = 1")
+	UserEntity getYeshteryUserByEmail(@Param("email")String email,
+									  @Param("orgId")Long orgId);
+
 	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
 
     void deleteByYeshteryUserId(Long yeshteryUserId);
