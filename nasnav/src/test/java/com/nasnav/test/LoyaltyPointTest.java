@@ -65,7 +65,7 @@ public class LoyaltyPointTest {
     public void createLoyaltyPointType() {
         String body = json().put("name", "type 1").toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/type/update", request, String.class);
+        var response = template.postForEntity("/loyalty/type/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(typeRepository.findByName("type 1").isPresent());
         typeRepository.deleteByName("type 1");
@@ -75,7 +75,7 @@ public class LoyaltyPointTest {
     public void createLoyaltyPointTypeInvalidAuthZ() {
         String body = json().put("name", "type 1").toString();
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyaltypoint/type/update", request, String.class);
+        var response = template.postForEntity("/loyalty/type/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -83,7 +83,7 @@ public class LoyaltyPointTest {
     public void createLoyaltyPointTypeInvalidAuthN() {
         String body = json().put("name", "type 1").toString();
         var request = getHttpEntity(body, "101112");
-        var response = template.postForEntity("/loyaltypoint/type/update", request, String.class);
+        var response = template.postForEntity("/loyalty/type/update", request, String.class);
         assertEquals(403, response.getStatusCodeValue());
     }
 
@@ -94,7 +94,7 @@ public class LoyaltyPointTest {
                 .put("name", "type 1")
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/type/update", request, String.class);
+        var response = template.postForEntity("/loyalty/type/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(typeRepository.findByName("type 1").isPresent());
         typeRepository.deleteByName("type 1");
@@ -103,7 +103,7 @@ public class LoyaltyPointTest {
     @Test
     public void getLoyaltyPointType() throws JsonProcessingException {
         var request = getHttpEntity("abcdefg");
-        var response = template.exchange("/loyaltypoint/type/list", GET, request, String.class);
+        var response = template.exchange("/loyalty/type/list", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<LoyaltyPointTypeDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointTypeDTO>>() {});
         assertEquals(1, body.size());
@@ -115,10 +115,10 @@ public class LoyaltyPointTest {
     public void createAndGetLoyaltyPointConfig() throws JsonProcessingException {
         String body = createConfigJson().toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
-        response = template.exchange("/loyaltypoint/config/list", GET, request, String.class);
+        response = template.exchange("/loyalty/config/list", GET, request, String.class);
         List<LoyaltyPointConfigDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointConfigDTO>>() {});
         LoyaltyPointConfigDTO config = resBody.get(0);
         assertEquals("this is a configuration", config.getDescription());
@@ -134,42 +134,42 @@ public class LoyaltyPointTest {
                 .put("shop_id", NULL)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(406, response.getStatusCodeValue());
 
         body = createConfigJson()
                 .put("amount_from", NULL)
                 .toString();
         request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(406, response.getStatusCodeValue());
 
         body = createConfigJson()
                 .put("amount_to", NULL)
                 .toString();
         request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(406, response.getStatusCodeValue());
 
         body = createConfigJson()
                 .put("points", NULL)
                 .toString();
         request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(406, response.getStatusCodeValue());
     }
 
     @Test
     public void createLoyaltyPointConfigInvalidAuthN() {
         var request = getHttpEntity("invalid");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
     @Test
     public void createLoyaltyPointConfigInvalidAuthZ() {
         var request = getHttpEntity("101112");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(403, response.getStatusCodeValue());
     }
 
@@ -188,10 +188,10 @@ public class LoyaltyPointTest {
                 .put("id", 31001)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
-        response = template.exchange("/loyaltypoint/config/list", GET, request, String.class);
+        response = template.exchange("/loyalty/config/list", GET, request, String.class);
         List<LoyaltyPointConfigDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointConfigDTO>>() {});
         LoyaltyPointConfigDTO config = resBody.get(0);
         assertEquals("this is a configuration", config.getDescription());
@@ -207,7 +207,7 @@ public class LoyaltyPointTest {
                 .put("id", 31002)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(404, response.getStatusCodeValue());
     }
 
@@ -215,11 +215,11 @@ public class LoyaltyPointTest {
     public void createAndGetLoyaltyPoint() throws JsonProcessingException {
         String body = createLoyaltyPointJson().toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/update", request, String.class);
+        var response = template.postForEntity("/loyalty/points/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyaltypoint/list", GET, request, String.class);
+        response = template.exchange("/loyalty/points/list", GET, request, String.class);
         List<LoyaltyPointDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         LoyaltyPointDTO loyaltyPoint = resBody.get(0);
         assertEquals(3, resBody.size());
@@ -250,7 +250,7 @@ public class LoyaltyPointTest {
 
         //fetch available points
         request = getHttpEntity("123");
-        response = template.exchange("/loyaltypoint/check_points?code=code1", GET, request, String.class);
+        response = template.exchange("/loyalt/points/check?code=code1", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<RedeemPointsOfferDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         assertFalse(resBody.isEmpty());
@@ -259,7 +259,7 @@ public class LoyaltyPointTest {
 
         //obtain user points
         request = getHttpEntity("192021");
-        response = template.postForEntity("/loyaltypoint/redeem_points?point_id="+pointId+"&user_id="+userId, request, String.class);
+        response = template.postForEntity("/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(0, transactionRepo.findShopRedeemablePoints(userId, 501L));
     }
@@ -276,7 +276,7 @@ public class LoyaltyPointTest {
                 .put("is_active", true)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(familyRepository.findByFamilyName("family 1").isPresent());
         familyRepository.deleteByFamilyName("family 1");
@@ -293,7 +293,7 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyaltypoint/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -307,12 +307,12 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(familyRepository.findByFamilyName("family 1").isPresent());
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyaltypoint/family/list", GET, request, String.class);
+        response = template.exchange("/loyalty/family/list", GET, request, String.class);
         List<BoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         BoosterDTO booster = resBody.get(0);
         assertEquals(1, resBody.size());
@@ -337,7 +337,7 @@ public class LoyaltyPointTest {
                 .put("is_special", true)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier 1").isPresent());
         tierRepository.deleteByTierName("tier 1");
@@ -358,7 +358,7 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyaltypoint/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -376,12 +376,12 @@ public class LoyaltyPointTest {
                 .put("is_special", true)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier 1").isPresent());
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyaltypoint/tier/list", GET, request, String.class);
+        response = template.exchange("/loyalty/tier/list", GET, request, String.class);
         List<TierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         TierDTO tierDTO = resBody.get(0);
         assertEquals(1, resBody.size());
@@ -407,7 +407,7 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(boosterRepository.findByBoosterName("booster 1").isPresent());
         boosterRepository.deleteByBoosterName("booster 1");
@@ -429,7 +429,7 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyaltypoint/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -449,13 +449,13 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(boosterRepository.findByBoosterName("booster 1").isPresent());
 
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyaltypoint/booster/list", GET, request, String.class);
+        response = template.exchange("/loyalty/booster/list", GET, request, String.class);
         List<BoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         BoosterDTO booster = resBody.get(0);
         assertEquals(1, resBody.size());
@@ -474,7 +474,7 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/charityuser/update", request, String.class);
+        var response = template.postForEntity("/loyalty/charityuser/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(userCharityRepository.findByUser_IdAndCharity_Id(424L, 1L).isPresent());
         userCharityRepository.deleteByUser_IdAndCharity_Id(424L, 1L);
@@ -495,13 +495,9 @@ public class LoyaltyPointTest {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyaltypoint/gift/send", request, String.class);
+        var response = template.postForEntity("/loyalty/gift/send", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(giftRepository.findByEmail("mail@mail.com").isPresent());
         giftRepository.deleteByEmail("email@email.com");
     }
-
-    //Coins Drop
-
-
 }
