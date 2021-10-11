@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
+import static com.nasnav.enumerations.YeshteryState.DISABLED;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -68,7 +69,7 @@ public class UserController {
 
     @PostMapping(value = "login", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) {
-        UserApiResponse userApiResponse = securityService.login(login);
+        UserApiResponse userApiResponse = securityService.login(login, DISABLED);
         response.addCookie(userApiResponse.getCookie());
     	return userApiResponse;
     }

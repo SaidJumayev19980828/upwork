@@ -208,6 +208,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             checkUserActivation(user);
 
             activateUserInDB(user);
+            activateOrgUser(user);
             return login(user, false);
     }
 

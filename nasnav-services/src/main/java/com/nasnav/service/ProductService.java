@@ -2461,6 +2461,7 @@ public class ProductService {
 
 	private Set<VariantFeatureValueEntity> updateVariantFeatureValues(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
 		Set<VariantFeatureValueEntity> featuresValues = entity.getFeatureValues();
+		Set<VariantFeatureValueEntity> newFeaturesValues = new HashSet<>();
 		for (Map.Entry e : variant.getFeatures().entrySet()) {
 			ProductFeaturesEntity feature = cache.getOrganziationFeatures()
 					.stream()
@@ -2475,9 +2476,9 @@ public class ProductService {
 			featureValue.setFeature(feature);
 			featureValue.setVariant(entity);
 			featureValue.setValue(e.getValue().toString());
-			featuresValues.add( featureValue );
+			newFeaturesValues.add( featureValue );
 		}
-		return featuresValues;
+		return newFeaturesValues;
 	}
 
 
@@ -3277,6 +3278,19 @@ public class ProductService {
 				productVariantsRepository.findByYeshteryProducts(params.getName(), page);
 
 		return prepareVariantsDtos(variantsEntities, total);
+	}
+
+	public void deleteVariantFeatureValue(Long variantId, Integer featureId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		if (variantId != null) {
+			VariantFeatureValueEntity entity =
+					variantFeatureValuesRepo.findByVariantIdAndFeatureIdAndOrganizationId(orgId, variantId, featureId)
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$011, featureId, variantId));
+			variantFeatureValuesRepo.delete(entity);
+		} else {
+			Set<VariantFeatureValueEntity> entities = variantFeatureValuesRepo.findByFeatureIdAndOrganizationId(orgId, featureId);
+			variantFeatureValuesRepo.deleteAll(entities);
+		}
 	}
 
 	private VariantSearchParam normalizeVariantSearchParam(String name, Integer start, Integer count) {

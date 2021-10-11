@@ -102,7 +102,8 @@ public class ProductVariantsEntity {
     }
 
     public void addFeatureValues(Set<VariantFeatureValueEntity> featureValues) {
-        featureValues.addAll(featureValues);
+        this.featureValues.clear();
+        this.featureValues.addAll(featureValues);
     }
 
     public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {

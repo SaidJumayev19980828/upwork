@@ -311,43 +311,47 @@ public class YeshteryController {
     }
 
     @GetMapping(value="/cart",produces= APPLICATION_JSON_VALUE)
-    public Cart getYeshteryCart(
-            @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
+    public Cart getYeshteryCart(@RequestHeader(name = "User-Token", required = false) String token,
+                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
         return cartService.getCart(promoCode);
     }
 
     @PostMapping(value = "/cart/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart addCartItem(@RequestBody CartItem item,
+    public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestBody CartItem item,
                             @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
         return cartService.addCartItem(item, promoCode);
     }
 
     @DeleteMapping(value = "/cart/item", produces=APPLICATION_JSON_VALUE)
-    public Cart deleteCartItem(@RequestParam("item_id") Long itemId,
+    public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
+                               @RequestParam("item_id") Long itemId,
                                @RequestParam("stock_id") Long stockId,
                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
         return cartService.deleteYeshteryCartItem(itemId, promoCode, stockId);
     }
 
     @PostMapping(value = "/cart/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Order checkoutCart(@RequestBody CartCheckoutDTO dto) {
+    public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String token,
+                              @RequestBody CartCheckoutDTO dto) {
         return cartService.checkoutYeshteryCart(dto);
     }
 
 
     @GetMapping(path = "/shipping/offers", produces= APPLICATION_JSON_VALUE)
-    public List<ShippingOfferDTO> getShippingOffers(
-            @RequestParam("customer_address") Long customerAddress) {
+    public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
+                                                    @RequestParam("customer_address") Long customerAddress) {
         return shippingService.getYeshteryShippingOffers(customerAddress);
     }
 
     @GetMapping(value = "/wishlist")
-    public Wishlist getWishlist() {
+    public Wishlist getWishlist(@RequestHeader(name = "User-Token", required = false) String token) {
         return wishlistService.getYeshteryWishlist();
     }
 
     @PostMapping(value = "/wishlist/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Wishlist addWishlistItem(@RequestBody WishlistItem item) {
+    public Wishlist addWishlistItem(@RequestHeader(name = "User-Token", required = false) String token,
+                                    @RequestBody WishlistItem item) {
         return wishlistService.addYeshteryWishlistItem(item);
     }
 
@@ -357,7 +361,8 @@ public class YeshteryController {
     }
 
     @PostMapping(value = "/wishlist/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart moveWishlistItemIntoCart(@RequestBody WishlistItemQuantity items) {
+    public Cart moveWishlistItemIntoCart(@RequestHeader(name = "User-Token", required = false) String token,
+                                         @RequestBody WishlistItemQuantity items) {
         return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 

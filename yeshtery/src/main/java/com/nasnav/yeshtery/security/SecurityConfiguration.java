@@ -107,8 +107,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/yeshtery/user/recover")
                         , patternOf("/v1/yeshtery/user/login/**")
                         , patternOf("/v1/yeshtery/user/register")
-                        , patternOf( "/v1/yeshtery/user/subscribe")
-                        , patternOf( "/v1/yeshtery/user/subscribe/activate")
+                        , patternOf("/v1/yeshtery/user/register/activate")
+                        , patternOf("/v1/yeshtery/user/subscribe")
+                        , patternOf("/v1/yeshtery/user/subscribe/activate")
                         );
 
     AuthenticationProvider provider;
