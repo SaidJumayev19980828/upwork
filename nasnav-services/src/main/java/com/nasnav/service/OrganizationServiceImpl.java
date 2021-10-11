@@ -128,6 +128,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
+    private VariantFeatureValuesRepository variantFeatureValuesRepo;
+    @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
     @Autowired UserTokenRepository userTokenRepo;
     @Autowired
@@ -639,6 +641,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {
+        variantFeatureValuesRepo.deleteByFeature_Id(feature.getId());
         featureRepo.delete(feature);
         return feature;
     }
