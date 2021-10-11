@@ -1,12 +1,9 @@
 package com.nasnav.service;
 
+import com.nasnav.dao.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
@@ -87,6 +84,19 @@ public class CartServiceImpl implements CartService{
     private SettingRepository settingRepo;
     @Autowired
     private AppConfig config;
+
+    @Autowired
+    private TierServiceImp tierServiceImp;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CoinsDropService coinsDropService;
+    @Autowired
+    private MetaOrderRepository metaOrderRepository;
+    @Autowired
+    private BoosterRepository boosterRepository;
 
     @Override
     public Cart getCart(String promoCode) {
@@ -248,7 +258,24 @@ public class CartServiceImpl implements CartService{
 
 
     @Override
-    public Order checkoutCart(CartCheckoutDTO dto){
+    public Order checkoutCart(CartCheckoutDTO dto) {
+        Long userId = securityService.getCurrentUser().getId();
+        TierEntity tierEntity = tierServiceImp.getTierByAmount(orderService.countOrdersByUserId(userId));
+        UserEntity userEntity = userRepository.findById(userId).get();
+        userEntity.setTier(tierEntity);
+        userRepository.save(userEntity);
+        if (userEntity.getFamily() != null) {
+            Long familyId = userEntity.getFamily().getId();
+            Long orgId = securityService.getCurrentUserOrganizationId();
+            List<UserEntity> users = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
+            for (UserEntity user : users) {
+                Long userFamilyId = user.getId();
+                coinsDropService.giveUserCoinsNewFamilyPurchase(userFamilyId);
+            }
+        }
+        //
+        updateUserBoosterByPurchaseSize();
+        //
         return orderService.createOrder(dto);
     }
 
@@ -536,6 +563,29 @@ public class CartServiceImpl implements CartService{
                 .stream()
                 .map(statisticsService::toUserCartInfo)
                 .collect(toList());
+    }
+    private void updateUserBoosterByPurchaseSize() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
+        Integer purchaseCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userEntity.getId(), orgId);
+        BoosterEntity boosterEntity = null;
+        BoosterEntity userBoosterEntity = null;
+        List<BoosterEntity> boosterList = new ArrayList<>();
+        if (userEntity.getBooster() != null) {
+            userBoosterEntity = userEntity.getBooster();
+        }
+        boosterList = boosterRepository.getAllByPurchaseSize(purchaseCount);
+        int boosterSize = boosterList.size();
+        if (boosterSize > 0) {
+            boosterEntity = boosterList.get(boosterSize - 1);
+            if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
+                if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+                    return;
+                }
+            }
+            userEntity.setBooster(boosterEntity);
+        }
+        userRepository.save(userEntity);
     }
 
     @Override

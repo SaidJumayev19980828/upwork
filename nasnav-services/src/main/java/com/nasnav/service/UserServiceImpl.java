@@ -9,6 +9,7 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
+import com.nasnav.enumerations.LoyaltyEvents;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -92,6 +93,14 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private SubAreaRepository subAreaRepo;
+	@Autowired
+	CoinsDropService coinsDropService;
+	@Autowired
+	MetaOrderRepository metaOrderRepository;
+	@Autowired
+	TierService tierService;
+	@Autowired
+	BoosterRepository boosterRepository;
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -235,6 +244,16 @@ public class UserServiceImpl implements UserService {
 			userEntity = userRepository.saveAndFlush(userEntity);
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
+		}
+		if (isNotBlankOrNull(userJson.getFamilyId())) {
+			coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
+			updateUserBoosterByFamilyMember(userEntity.getId());
+		}
+		if (isNotBlankOrNull(userJson.getTierId())) {
+			coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+		}
+		if (isNotBlankOrNull(userJson.getFamilyId())) {
+			coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
@@ -525,6 +544,12 @@ public class UserServiceImpl implements UserService {
 		validateActivationRedirectUrl(redirect, user.getOrganizationId());
 		
 		activateUserInDB(user);
+		//
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Long userId = user.getId();
+		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().longValue()) != null) {
+			coinsDropService.giveUserCoinsSignUp(userId);
+		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
@@ -766,4 +791,95 @@ public class UserServiceImpl implements UserService {
 				.collect(toList());
 	}
 
+	@Override
+	public List<UserEntity> getUsersByOrganizationIdAndAllowReward(Long orgId, Boolean allowReward) {
+		return userRepository.getByOrganizationIdAndAllowReward(orgId, allowReward);
+	}
+
+	@Override
+	public void updateUserByFamilyId(Long familyId, Long userId) {
+		if (userId > 0 && familyId > 0) {
+			userRepository.updateUserWithFamilyId(familyId, userId);
+			UserEntity userEntity = userRepository.findById(userId).get();
+			if (userEntity.getFamily().getId() > 0) {
+				coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
+			}
+		}
+	}
+
+	@Override
+	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
+		if (tierId < 0) {
+			tierId = getTierIdByUserOrders(orgId, userId);
+		}
+		if (userId > 0 && tierId > 0) {
+			userRepository.updateUserWithTierId(tierId, userId);
+			UserEntity userEntity = userRepository.findById(userId).get();
+			if (userEntity.getTier().getId() > 0) {
+				coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+			}
+		}
+	}
+
+	@Override
+	public List<UserEntity> getUsersByFamilyId(Long familyId) {
+		return userRepository.findByFamily_Id(familyId);
+	}
+
+	@Override
+	public void updateUserByTierId(Long tierId, Long userId) {
+		if (userId > 0 && tierId > 0) {
+			userRepository.updateUserWithTierId(tierId, userId);
+			UserEntity userEntity = userRepository.findById(userId).get();
+			if (userEntity.getTier().getId() > 0) {
+				coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+			}
+		}
+	}
+
+	private Long getTierIdByUserOrders(Long orgId, Long userId) {
+		if (orgId < 0) {
+			orgId = securityService.getCurrentUserOrganizationId();
+		}
+		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
+		Long tierId = tierService.getTierByAmount(orderCount).getId();
+		if (tierId > 0) {
+			return tierId;
+		}
+		return -1L;
+	}
+
+	private void updateUserBoosterByFamilyMember(Long userId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		UserEntity userEntity = getUserEntityById(userId);
+		Long familyId = userEntity.getFamily().getId();
+		if (familyId < 0) {
+			return;
+		}
+		List<UserEntity> familyUsers = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
+		Integer familyCount = familyUsers.size();
+		if (familyCount < 0) {
+			return;
+		}
+		BoosterEntity boosterEntity = null;
+		BoosterEntity userBoosterEntity = null;
+		List<BoosterEntity> boosterList = new ArrayList<>();
+		if (userEntity.getBooster() != null) {
+			userBoosterEntity = userEntity.getBooster();
+		}
+		boosterList = boosterRepository.getAllByLinkedFamilyMember(familyCount+1);
+		if (boosterList.size() < 0) {
+			boosterList = boosterRepository.getAllByNumberFamilyChildren(familyCount);
+		}
+		if (boosterList.size() > 0) {
+			boosterEntity = boosterList.get(boosterList.size() - 1);
+			if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
+				if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+					return;
+				}
+			}
+			userEntity.setBooster(boosterEntity);
+		}
+		userRepository.save(userEntity);
+	}
 }

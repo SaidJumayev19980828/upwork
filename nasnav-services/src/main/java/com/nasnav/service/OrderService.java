@@ -73,6 +73,7 @@ public interface OrderService {
 
 	Order createOrder(CartCheckoutDTO dto);
 
+	Integer countOrdersByUserId(Long userId);
 	String trackOrder(Long orderId);
 	void updateExistingYeshteryOrder(OrderJsonDto orderJson);
 

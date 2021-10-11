@@ -95,6 +95,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     @Autowired
     private ProductImageService imgService;
+    @Autowired
+    private LoyaltyPointsService loyaltyPointsService;
 
     @Autowired
     private ProductService productService;
@@ -244,6 +246,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
             returnRequest.setStatus(RECEIVED.getValue());
             returnRequest = returnRequestRepo.save(returnRequest);
             increaseReturnRequestStock(returnRequest);
+
+            loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
 
             sendItemReceivedEmailToCustomer(returnRequest.getId());
             //TODO refund ??

@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRatingRepository;
-import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -10,6 +8,7 @@ import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
@@ -28,6 +27,10 @@ public class ReviewServiceImpl implements ReviewService{
     private ProductVariantsRepository productVariantsRepository;
     @Autowired
     private OrdersRepository ordersRepository;
+    @Autowired
+    private BoosterRepository boosterRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public void rateProduct(ProductRateDTO dto) {
@@ -40,6 +43,7 @@ public class ReviewServiceImpl implements ReviewService{
         ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(dto.getVariantId(), user.getOrganizationId())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
         createProductRate(dto, variant, user);
+        updateUserBoosterByFamilyMember(user.getId());
     }
 
 
@@ -100,5 +104,31 @@ public class ReviewServiceImpl implements ReviewService{
                 .stream()
                 .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
                 .collect(toList());
+    }
+
+    private void updateUserBoosterByFamilyMember(Long userId) {
+        if (userId < 0) {
+            userId = securityService.getCurrentUser().getId();
+        }
+        UserEntity userEntity = userRepository.findById(userId).get();
+        Integer reviewCounts = productRatingRepo.countTotalRatingByUserId(userId);
+        BoosterEntity boosterEntity = null;
+        BoosterEntity userBoosterEntity = null;
+        List<BoosterEntity> boosterList = new ArrayList<>();
+        if (userEntity.getBooster() != null) {
+            userBoosterEntity = userEntity.getBooster();
+        }
+        boosterList = boosterRepository.getAllByReviewProducts(reviewCounts);
+        int boosterSize = boosterList.size();
+        if (boosterSize > 0) {
+            boosterEntity = boosterList.get(boosterSize - 1);
+            if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
+                if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+                    return;
+                }
+            }
+            userEntity.setBooster(boosterEntity);
+        }
+        userRepository.save(userEntity);
     }
 }

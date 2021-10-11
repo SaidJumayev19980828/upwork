@@ -45,6 +45,9 @@ public class UserEntity extends BaseUserEntity{
     @CreationTimestamp
     private LocalDateTime creationTime;
 
+    @Column(name = "date_of_birth")
+    private LocalDateTime dateOfBirth;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
@@ -60,12 +63,41 @@ public class UserEntity extends BaseUserEntity{
     @EqualsAndHashCode.Exclude
     private Set<UserAddressEntity> userAddresses;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "family_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private FamilyEntity family;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tier_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private TierEntity tier;
+
+    @Column(name = "allow_reward")
+    private Boolean allowReward;
+
+    @Column(name = "tier_created_at")
+    private LocalDateTime tierCreatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booster_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private BoosterEntity booster;
+
+    @Column(name = "booster_created")
+    private LocalDateTime boosterCreated;
 
     @Column(name = "yeshtery_user_id")
     private Long yeshteryUserId;
 
-    public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
+    public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
     public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
 
@@ -97,7 +129,12 @@ public class UserEntity extends BaseUserEntity{
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
         obj.mobile = this.getMobile();
+        obj.familyId = this.getFamily().getId();
+        obj.tierId = this.getTier().getId();
+        obj.allowReward = this.getAllowReward();
         obj.setCreationDate(creationTime);
+        obj.setTierCreatedAt(this.getTierCreatedAt());
+        obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
 
         return obj;

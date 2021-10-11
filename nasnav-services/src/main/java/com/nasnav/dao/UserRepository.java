@@ -67,13 +67,35 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);
 
+	List<UserEntity> getByOrganizationIdAndAllowReward(Long orgId, Boolean allowReward);
+
+	/**
+	 * Get UserEntity by passed mobile and orgId.
+	 *
+	 * @param mobile mobile
+	 * @param orgId orgId
+	 * @return UserEntity
+	 */
+	UserEntity getByMobileAndOrganizationId(String mobile, Long orgId);
+
+	boolean existsByMobileIgnoreCaseAndOrganizationId(String mobile, Long orgId);
 	@Query("select u from UserEntity u " +
 			" left join OrganizationEntity o on u.organizationId = o.id"+
 			" where LOWER(u.email) = LOWER(:email) and u.organizationId = :orgId and o.yeshteryState = 1")
 	UserEntity getYeshteryUserByEmail(@Param("email")String email,
 									  @Param("orgId")Long orgId);
 
+	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
+
+	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
+	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
+
+	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
+	void updateUserWithTierId(@Param("tierId") Long tierId, @Param("userId") Long userId);
+
 	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
 
     void deleteByYeshteryUserId(Long yeshteryUserId);
+
+    List<UserEntity> findByFamily_Id(Long familyId);
 }

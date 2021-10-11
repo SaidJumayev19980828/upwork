@@ -28,6 +28,10 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             " order by r.submissionDate desc")
     List<ProductRating> findApprovedVariantRatings(@Param("variantId") Long variantId);
 
+    @Query("select count (r) from ProductRating r " +
+            " where r.approved = true and r.user.id = :userId")
+    Integer countTotalRatingByUserId(@Param("userId") Long userId);
+
     @Query("select r from ProductRating r" +
             " join fetch r.variant v" +
             " join fetch v.productEntity p" +

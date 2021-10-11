@@ -6,6 +6,7 @@ import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.security.UserAuthenticationData;
@@ -26,6 +27,7 @@ public interface SecurityService {
     
     Long getCurrentUserOrganizationId();
     Long getCurrentUserShopId();
+    ShopsEntity getCurrentUserShop();
     OrganizationEntity getCurrentUserOrganization();
 
     Boolean userHasRole(BaseUserEntity user, Roles role);

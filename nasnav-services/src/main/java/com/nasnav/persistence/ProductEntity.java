@@ -119,8 +119,20 @@ public class ProductEntity {
     public Integer getProductType(){
         return productType == null ? ProductTypes.DEFAULT : productType;
     }
-    
-    
+
+    @Column(name = "allow_reward")
+    private Boolean allowReward;
+
+    @Column(name = "buy_with_coins")
+    private Boolean buyWithCoins;
+
+    @Column(name = "only_buy_with_coins")
+    private Boolean onlyBuyWithCoins;
+
+    @OneToOne
+    @JoinColumn(name = "minimum_tier_id", referencedColumnName = "id")
+    @JsonIgnore
+    private TierEntity minimumTier;
 
     @OneToMany(mappedBy = "productEntity")
     @JsonIgnore

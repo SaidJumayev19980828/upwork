@@ -91,8 +91,6 @@ public class OrderServiceImpl implements OrderService {
 
 	private static final int ORDER_FULL_DETAILS_LEVEL = 3;
 
-	private static final Long NON_EXISTING_ORDER_ID = -1L;
-
 	private final OrdersRepository ordersRepository;
 
 	private final BasketRepository basketRepository;
@@ -109,6 +107,10 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private EntityManager em;
 
+	@Autowired
+	private SecurityService securityService;
+	@Autowired
+	private LoyaltyPointsService loyaltyPointsService;
 	@Autowired
 	private ShopsRepository shopsRepo;
 	@Autowired
@@ -132,8 +134,6 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private SettingRepository settingRepo;
 
-	@Autowired
-	private SecurityService securityService;
 	@Autowired
 	private IntegrationService integrationService;
 	@Autowired
@@ -643,6 +643,7 @@ public class OrderServiceImpl implements OrderService {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
 		updateOrderStatus(order, FINALIZED);
+		userService.updateUserByTierIdAndOrgId(0L, order.getUserId(), order.getOrganizationEntity().getId());
 	}
 	
 	
@@ -1368,7 +1369,7 @@ public class OrderServiceImpl implements OrderService {
 	public OrderConfirmResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
-		
+
 		confirmSubOrderAndMetaOrder(subOrder);
 		
 		return  shippingMgrService
@@ -1441,7 +1442,9 @@ public class OrderServiceImpl implements OrderService {
 
 	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
 		updateOrderStatus(order, STORE_CONFIRMED);
-		
+
+		loyaltyPointsService.createLoyaltyPointTransaction(order);
+
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
@@ -1700,6 +1703,11 @@ public class OrderServiceImpl implements OrderService {
 		return getOrderResponse(order);
 	}
 
+	@Override
+	public Integer countOrdersByUserId(Long userId) {
+		return ordersRepository.countAllByUserId(userId);
+	}
+	
 	@Override
 	public String trackOrder(Long orderId) {
 		return shippingMgrService.getTrackingUrl(orderId);

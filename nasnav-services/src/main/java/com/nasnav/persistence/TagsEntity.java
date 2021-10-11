@@ -42,6 +42,20 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @Column(name = "graph_id")
     private Integer graphId;
 
+    @Column(name = "allow_reward")
+    private Boolean allowReward;
+
+    @Column(name = "buy_with_coins")
+    private Boolean buyWithCoins;
+
+    @Column(name = "only_buy_with_coins")
+    private Boolean onlyBuyWithCoins;
+
+    @OneToOne
+    @JoinColumn(name = "minimum_tier_id", referencedColumnName = "id")
+    @JsonIgnore
+    private TierEntity minimumTier;
+
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @JsonIgnore
@@ -70,6 +84,10 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
         obj.setCategoryId(categoryId);
+        obj.setAllowReward(getAllowReward());
+        obj.setBuyWithCoins(getBuyWithCoins());
+        obj.setOnlyBuyWithCoins(getOnlyBuyWithCoins());
+        obj.setMinimumTierId(getMinimumTier().getId());
         
         return obj;
     }
