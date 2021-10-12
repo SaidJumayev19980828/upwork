@@ -19,7 +19,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @RequestMapping("/files")
 public class FilesController {
-	
+
 	@Autowired
 	private FileService fileService;
 
@@ -43,13 +43,13 @@ public class FilesController {
         String url = request.getRequestURI().replaceFirst("/files", "");
         String resourceInternalUrl;
 
-		logger.debug("Requesting image " + url + ", size: {" + width + "} x {" + height + "}");
+		logger.info("Requesting image " + url + ", size: {" + width + "} x {" + height + "}");
 		if (height != null || width != null) {
             resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);
         } else {
             resourceInternalUrl = fileService.getResourceInternalUrl(url);
         }
-		logger.debug("Resultant URL: " + resourceInternalUrl);
+		logger.info("Resultant URL: " + resourceInternalUrl);
 		resp.setStatus(HttpStatus.OK.value());
 
 		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
