@@ -143,9 +143,6 @@ ALTER TABLE public.products ADD buy_with_coins boolean NULL;
 ALTER TABLE public.products ADD only_buy_with_coins boolean NULL;
 ALTER TABLE public.products ADD minimum_tier_id bigint NULL;
 
-ALTER TABLE public.promotions ADD priority int4 NULL;
-ALTER TABLE public.shops ADD priority int4 NULL;
-
 
 ALTER TABLE public.users ADD allow_reward boolean NOT NULL DEFAULT true;
 ALTER TABLE public.users ADD tier_created_at timestamp NULL;
