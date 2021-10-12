@@ -515,11 +515,16 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 .orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
     }
 
-    public Optional<BaseYeshteryUserEntity> getCurrentUserOptional() {
-        return ofNullable( SecurityContextHolder.getContext() )
+    public Optional<YeshteryUserEntity> getCurrentUserOptional() {
+        // TODO should fetch yeshtery entity directly from YeshteryUserRepositoy
+        // related to CommonUserRepositoryImpl todo note
+        Long id =  ofNullable( SecurityContextHolder.getContext() )
                 .map(SecurityContext::getAuthentication)
                 .map(Authentication::getDetails)
-                .map(BaseYeshteryUserEntity.class::cast);
+                .map(UserEntity.class::cast)
+                .map(UserEntity::getYeshteryUserId)
+                .orElse(-1L);
+        return userRepository.findById(id);
     }
 
     public YeshteryUserApiResponse login(UserDTOs.UserLoginObject loginData) {
