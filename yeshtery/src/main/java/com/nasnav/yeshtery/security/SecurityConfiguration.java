@@ -111,6 +111,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/user/login/**")
                         , patternOf("/v1/user/register")
                         , patternOf("/v1/user/register/activate")
+                        , patternOf("/v1/user/register/activate/resend")
                         , patternOf("/v1/user/subscribe")
                         , patternOf("/v1/user/subscribe/activate")
                         );
