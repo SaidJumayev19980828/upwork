@@ -590,12 +590,12 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Long stockId){
+    public Cart deleteYeshteryCartItem(Long itemId, String promoCode){
             BaseUserEntity user = securityService.getCurrentUser();
             if(user instanceof EmployeeUserEntity) {
                 throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
             }
-            cartItemRepo.deleteByIdAndUser_IdAndStock_Id(itemId, user.getId(), stockId);
+            cartItemRepo.deleteByIdAndUser_IdAndStock_Id(itemId, user.getId());
             return getUserCart(user.getId(), promoCode);
     }
 

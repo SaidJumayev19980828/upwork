@@ -39,9 +39,8 @@ public class YeshteryCartController {
     @DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
     public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
                                @RequestParam("item_id") Long itemId,
-                               @RequestParam("stock_id") Long stockId,
                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.deleteYeshteryCartItem(itemId, promoCode, stockId);
+        return cartService.deleteYeshteryCartItem(itemId, promoCode);
     }
 
     @PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
