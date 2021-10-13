@@ -185,17 +185,23 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private void  createNewYeshtryUserForOrg(UserDTOs.UserRegistrationObjectV2 userJson, OrganizationEntity org, Long referencedUserId) {
+        Optional<UserEntity> userEntity = nasNavUserRepository.findByEmailAndOrganizationId(userJson.getEmail(), org.getId());
         UserEntity user = new UserEntity();
-        user.setName(userJson.getName());
-        user.setEmail(userJson.getEmail());
-        user.setOrganizationId(userJson.getOrgId());
-        user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
-        user.setPhoneNumber(userJson.getPhoneNumber());
-        user.setOrganizationId(org.getId());
-        user.setUserStatus(NOT_ACTIVATED.getValue());
-        String generatedToken = generateResetPasswordToken();
-        user.setResetPasswordToken(generatedToken);
-        user.setResetPasswordSentAt(now());
+        if(userEntity.isPresent()){
+            user = userEntity.get();
+        } else {
+            user.setName(userJson.getName());
+            user.setEmail(userJson.getEmail());
+            user.setOrganizationId(userJson.getOrgId());
+            user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
+            user.setPhoneNumber(userJson.getPhoneNumber());
+            user.setOrganizationId(org.getId());
+            user.setUserStatus(NOT_ACTIVATED.getValue());
+            String generatedToken = generateResetPasswordToken();
+            user.setResetPasswordToken(generatedToken);
+            user.setResetPasswordSentAt(now());
+            user.setAllowReward(true);
+        }
         user.setYeshteryUserId(referencedUserId);
         nasNavUserRepository.saveAndFlush(user);
     }

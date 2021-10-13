@@ -98,4 +98,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     void deleteByYeshteryUserId(Long yeshteryUserId);
 
     List<UserEntity> findByFamily_Id(Long familyId);
+
+    Optional<UserEntity> findByEmailAndOrganizationId(String email, Long orgId);
 }
