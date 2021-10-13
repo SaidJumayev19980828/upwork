@@ -51,7 +51,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @EnableJpaRepositories
 public class YeshteryController {
 
-    static final String API_PATH = YeshteryConstants.API_PATH +"/";
+    static final String API_PATH = YeshteryConstants.API_PATH +"/yeshtery";
 
     @Autowired
     private ShopService shopService;
@@ -79,17 +79,6 @@ public class YeshteryController {
 
     @Autowired
     private YeshteryRecommendationService recommendationService;
-
-
-    @Autowired
-    private CartService cartService;
-
-    @Autowired
-    private ShippingManagementService shippingService;
-
-    @Autowired
-    private WishlistService wishlistService;
-
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,
@@ -308,62 +297,6 @@ public class YeshteryController {
     public List<ProductEntity> getListOfSimilarityAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
                                                       @RequestParam(required = true, value = "userid") Integer userId) {
         return recommendationService.getListOfSimilarity(recommendedItemsCount, userId);
-    }
-
-    @GetMapping(value="/cart",produces= APPLICATION_JSON_VALUE)
-    public Cart getYeshteryCart(@RequestHeader(name = "User-Token", required = false) String token,
-                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.getCart(promoCode);
-    }
-
-    @PostMapping(value = "/cart/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String token,
-                            @RequestBody CartItem item,
-                            @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.addCartItem(item, promoCode);
-    }
-
-    @DeleteMapping(value = "/cart/item", produces=APPLICATION_JSON_VALUE)
-    public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
-                               @RequestParam("item_id") Long itemId,
-                               @RequestParam("stock_id") Long stockId,
-                               @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.deleteYeshteryCartItem(itemId, promoCode, stockId);
-    }
-
-    @PostMapping(value = "/cart/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String token,
-                              @RequestBody CartCheckoutDTO dto) {
-        return cartService.checkoutYeshteryCart(dto);
-    }
-
-
-    @GetMapping(path = "/shipping/offers", produces= APPLICATION_JSON_VALUE)
-    public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("customer_address") Long customerAddress) {
-        return shippingService.getYeshteryShippingOffers(customerAddress);
-    }
-
-    @GetMapping(value = "/wishlist")
-    public Wishlist getWishlist(@RequestHeader(name = "User-Token", required = false) String token) {
-        return wishlistService.getYeshteryWishlist();
-    }
-
-    @PostMapping(value = "/wishlist/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Wishlist addWishlistItem(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestBody WishlistItem item) {
-        return wishlistService.addYeshteryWishlistItem(item);
-    }
-
-    @DeleteMapping(value = "/wishlist/item", produces=APPLICATION_JSON_VALUE)
-    public Wishlist deleteWishlistItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
-        return wishlistService.deleteYeshteryWishlistItem(itemId);
-    }
-
-    @PostMapping(value = "/wishlist/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart moveWishlistItemIntoCart(@RequestHeader(name = "User-Token", required = false) String token,
-                                         @RequestBody WishlistItemQuantity items) {
-        return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 
     @GetMapping(value = "/organization")

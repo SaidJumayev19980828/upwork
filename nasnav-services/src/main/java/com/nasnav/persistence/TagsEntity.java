@@ -87,7 +87,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setAllowReward(getAllowReward());
         obj.setBuyWithCoins(getBuyWithCoins());
         obj.setOnlyBuyWithCoins(getOnlyBuyWithCoins());
-        obj.setMinimumTierId(getMinimumTier().getId());
+        if (getMinimumTier() != null)
+            obj.setMinimumTierId(getMinimumTier().getId());
         
         return obj;
     }

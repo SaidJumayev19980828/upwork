@@ -429,6 +429,7 @@ public class CartServiceImpl implements CartService{
         itemDto.setDiscount(stock.getDiscount());
         itemDto.setAdditionalData(additionalData);
         itemDto.setUserId(user.getId());
+        itemDto.setOrgId(product.getOrganizationId());
 
         return itemDto;
     }
