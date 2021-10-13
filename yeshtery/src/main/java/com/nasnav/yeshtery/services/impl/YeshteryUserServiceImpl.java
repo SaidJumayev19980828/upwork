@@ -88,6 +88,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private CommonYeshteryUserRepository commonUserRepo;
     @Autowired
+    private CommonUserRepository commonNasnavUserRepo;
+    @Autowired
     private UserSubscriptionRepository subsRepo;
     @Autowired
     private YeshteryUserTokenRepository userTokenRepo;
@@ -220,7 +222,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public UserRepresentationObject getYeshteryUserData(Long id, Boolean isEmployee) {
-        BaseYeshteryUserEntity currentUser = getCurrentUser();
+        BaseUserEntity currentUser = securityService.getCurrentUser();
 
         if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
             return getUserRepresentationWithUserRoles(currentUser);
@@ -229,8 +231,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         Boolean isEmp = ofNullable(isEmployee).orElse(false);
         Long requiredUserId = ofNullable(id).orElse(currentUser.getId());
 
-        BaseYeshteryUserEntity user =
-                commonUserRepo.findById(requiredUserId, isEmp);
+        BaseUserEntity user =
+                commonNasnavUserRepo.findById(requiredUserId, isEmp)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, requiredUserId));
 
         return getUserRepresentationWithUserRoles(user);
     }
@@ -430,7 +433,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         userRepository.save(user);
     }
 
-    private UserRepresentationObject getUserRepresentationWithUserRoles(BaseYeshteryUserEntity user) {
+    private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
         UserRepresentationObject userRepObj = user.getRepresentation();
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));

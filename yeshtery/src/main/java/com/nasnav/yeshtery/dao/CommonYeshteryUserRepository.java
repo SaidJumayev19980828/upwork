@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.dao;
 
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BaseYeshteryUserEntity;
 import org.springframework.stereotype.Repository;
 
@@ -8,6 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface CommonYeshteryUserRepository {
+    List<String> getUserRoles(BaseUserEntity user);
     List<String> getUserRoles(BaseYeshteryUserEntity user);
     BaseYeshteryUserEntity saveAndFlush(BaseYeshteryUserEntity userEntity) ;
     BaseYeshteryUserEntity getByEmailAndOrganizationId(String email, Long org_id);

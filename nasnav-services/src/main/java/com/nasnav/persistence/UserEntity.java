@@ -129,12 +129,15 @@ public class UserEntity extends BaseUserEntity{
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
         obj.mobile = this.getMobile();
-        obj.familyId = this.getFamily().getId();
-        obj.tierId = this.getTier().getId();
+        if (this.getFamily() != null)
+            obj.familyId = this.getFamily().getId();
+        if (this.getTier() != null)
+            obj.tierId = this.getTier().getId();
         obj.allowReward = this.getAllowReward();
         obj.setCreationDate(creationTime);
         obj.setTierCreatedAt(this.getTierCreatedAt());
-        obj.setBoosterId(this.booster.getId());
+        if (this.getBooster() != null)
+            obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
 
         return obj;
