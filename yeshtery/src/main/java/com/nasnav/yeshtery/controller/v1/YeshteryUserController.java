@@ -57,10 +57,7 @@ public class YeshteryUserController {
 
     @PostMapping(value = "login/oauth2")
     public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
-        if (securityService.getYeshteryState() != 1) {
-            return null;
-        }
-        //
+       //
         ResponseEntity.BodyBuilder response = ResponseEntity.ok();
         try {
             UserApiResponse body = securityService.socialLogin(socialLoginToken);
@@ -77,24 +74,18 @@ public class YeshteryUserController {
     public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
                                   HttpServletRequest request,
                                   HttpServletResponse response) {
-        if (securityService.getYeshteryState() == 1) {
-            if (token == null || token.isEmpty())
-                token = request.getCookies()[0].getValue();
-            UserApiResponse userApiResponse = securityService.logout(token);
-            response.addCookie(userApiResponse.getCookie());
-            return userApiResponse;
-        }
-        return null;
+        if (token == null || token.isEmpty())
+            token = request.getCookies()[0].getValue();
+        UserApiResponse userApiResponse = securityService.logout(token);
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
     }
 
     @PostMapping(value = "logout_all")
     public UserApiResponse logoutAll(HttpServletResponse response) {
-        if (securityService.getYeshteryState() == 1) {
-            UserApiResponse userApiResponse = securityService.logoutAll();
-            response.addCookie(userApiResponse.getCookie());
-            return userApiResponse;
-        }
-        return null;
+        UserApiResponse userApiResponse = securityService.logoutAll();
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
     }
 
     @PostMapping(value = "recover")

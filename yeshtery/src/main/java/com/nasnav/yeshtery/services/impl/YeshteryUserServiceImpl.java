@@ -237,7 +237,6 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public void resendActivationYeshteryEmail(ActivationEmailResendDTO accountInfo) {
-        if (securityService.getYeshteryState() == 1){
             String email = accountInfo.getEmail();
             Long orgId = accountInfo.getOrgId();
             BaseYeshteryUserEntity baseUser = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
@@ -250,7 +249,6 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             }
 
             sendActivationMail(user, accountInfo.getRedirectUrl());
-        }
     }
 
     @Override
