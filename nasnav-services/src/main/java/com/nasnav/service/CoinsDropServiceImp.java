@@ -75,9 +75,9 @@ public class CoinsDropServiceImp implements CoinsDropService {
     public void giveUsersCoinsBirthDay() {
         List<UserEntity> users = loadUsersAllowReward();
         for (UserEntity user : users) {
-            if (LocalDateTime.now().equals(user.getDateOfBirth())) {
+            if (LocalDate.now().equals(user.getDateOfBirth().toLocalDate())) {
                 Integer typeId = LoyaltyEvents.BIRTH_DAY.getValue();
-                giveUserCoinsByTypeId(user.getId(), typeId.longValue());
+                giveUserCoinsByTypeId(user, typeId.longValue());
             }
         }
     }
@@ -93,7 +93,7 @@ public class CoinsDropServiceImp implements CoinsDropService {
                 if (coin.getOfficialVacationDate() != null
                         && LocalDate.now().equals(coin.getOfficialVacationDate())) {
                     Integer typeId = LoyaltyEvents.GLOBAL_DATE_FESTIVAL.getValue();
-                    giveUserCoinsByTypeId(user.getId(), typeId.longValue());
+                    giveUserCoinsByTypeId(user, typeId.longValue());
                 }
             }
         }
@@ -106,43 +106,42 @@ public class CoinsDropServiceImp implements CoinsDropService {
         for (UserEntity user : users) {
             if (isRamadanPointTransaction(LocalDateTime.now().toLocalDate())) {
                 Integer typeId = LoyaltyEvents.GLOBAL_DATE_RAMADAN.getValue();
-                giveUserCoinsByTypeId(user.getId(), typeId.longValue());
+                giveUserCoinsByTypeId(user, typeId.longValue());
             }
         }
     }
 
     @Override
-    public void giveUserCoinsNewTier(Long userId) {
+    public void giveUserCoinsNewTier(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_TIER.getValue();
-        giveUserCoinsByTypeId(userId, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId.longValue());
     }
 
     @Override
-    public void giveUserCoinsInvitationUsers(Long userId) {
+    public void giveUserCoinsInvitationUsers(UserEntity user) {
         Integer typeId = LoyaltyEvents.CUSTOMER_INVITE.getValue();
-        giveUserCoinsByTypeId(userId, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId.longValue());
     }
 
     @Override
-    public void giveUserCoinsSignUp(Long userId) {
+    public void giveUserCoinsSignUp(UserEntity user) {
         Integer typeId = LoyaltyEvents.SIGN_UP.getValue();
-        giveUserCoinsByTypeId(userId, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId.longValue());
     }
 
     @Override
-    public void giveUserCoinsNewFamilyMember(Long userId) {
+    public void giveUserCoinsNewFamilyMember(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_FAMILY_MEMBER.getValue();
-        giveUserCoinsByTypeId(userId, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId.longValue());
     }
 
     @Override
-    public void giveUserCoinsNewFamilyPurchase(Long userId) {
+    public void giveUserCoinsNewFamilyPurchase(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_FAMILY_PURCHASE.getValue();
-        giveUserCoinsByTypeId(userId, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId.longValue());
     }
 
-    private void giveUserCoinsByTypeId(Long userId, Long typeId) {
-        UserEntity userEntity = userRepository.findById(userId).get();
+    private void giveUserCoinsByTypeId(UserEntity userEntity, Long typeId) {
         List<OrganizationEntity> organizations = organizationRepository.findAllOrganizations();
         for (OrganizationEntity org : organizations) {
             List<ShopsEntity> shops = shopsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(org.getId(), 0);
@@ -163,8 +162,7 @@ public class CoinsDropServiceImp implements CoinsDropService {
         
     }
     private List<UserEntity> loadUsersAllowReward() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return userService.getUsersByOrganizationIdAndAllowReward(orgId, true);
+        return userService.getYeshteryUsersByAllowReward(true);
     }
 
     private CoinsDropEntity createCoinsDropEntity(CoinsDropDTO coins) {

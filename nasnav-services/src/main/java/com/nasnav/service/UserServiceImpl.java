@@ -246,14 +246,14 @@ public class UserServiceImpl implements UserService {
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
 		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
+			coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 			updateUserBoosterByFamilyMember(userEntity.getId());
 		}
 		if (isNotBlankOrNull(userJson.getTierId())) {
-			coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+			coinsDropService.giveUserCoinsNewTier(userEntity);
 		}
 		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
+			coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
@@ -548,7 +548,7 @@ public class UserServiceImpl implements UserService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		Long userId = user.getId();
 		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().longValue()) != null) {
-			coinsDropService.giveUserCoinsSignUp(userId);
+			coinsDropService.giveUserCoinsSignUp(user);
 		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
@@ -792,8 +792,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public List<UserEntity> getUsersByOrganizationIdAndAllowReward(Long orgId, Boolean allowReward) {
-		return userRepository.getByOrganizationIdAndAllowReward(orgId, allowReward);
+	public List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward) {
+		return userRepository.findByYeshteryUserIdNotNullAndAllowReward(allowReward);
 	}
 
 	@Override
@@ -802,7 +802,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithFamilyId(familyId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getFamily().getId() > 0) {
-				coinsDropService.giveUserCoinsNewFamilyMember(userEntity.getId());
+				coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 			}
 		}
 	}
@@ -816,7 +816,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithTierId(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
-				coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+				coinsDropService.giveUserCoinsNewTier(userEntity);
 			}
 		}
 	}
@@ -832,7 +832,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithTierId(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
-				coinsDropService.giveUserCoinsNewTier(userEntity.getId());
+				coinsDropService.giveUserCoinsNewTier(userEntity);
 			}
 		}
 	}

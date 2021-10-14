@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dto.request.CoinsDropDTO;
 import com.nasnav.persistence.CoinsDropEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.CoinUpdateResponse;
 
 import java.util.List;
@@ -20,14 +21,14 @@ public interface CoinsDropService {
 
     void giveUsersCoinsOfficialRamadan();
 
-    void giveUserCoinsNewTier(Long userId);
+    void giveUserCoinsNewTier(UserEntity user);
 
-    void giveUserCoinsInvitationUsers(Long userId);
+    void giveUserCoinsInvitationUsers(UserEntity user);
 
-    void giveUserCoinsSignUp(Long userId);
+    void giveUserCoinsSignUp(UserEntity user);
 
-    void giveUserCoinsNewFamilyMember(Long userId);
+    void giveUserCoinsNewFamilyMember(UserEntity user);
 
-    void giveUserCoinsNewFamilyPurchase(Long userId);
+    void giveUserCoinsNewFamilyPurchase(UserEntity user);
 
 }

@@ -37,7 +37,7 @@ public interface UserService extends CommonUserServiceInterface{
 
     List<UserRepresentationObject> getUserList();
 
-    List<UserEntity> getUsersByOrganizationIdAndAllowReward(Long orgId, Boolean allowReward);
+    List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward);
 
     void updateUserByFamilyId(Long familyId, Long userId);
 

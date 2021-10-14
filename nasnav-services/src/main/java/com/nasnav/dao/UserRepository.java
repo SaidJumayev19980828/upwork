@@ -13,43 +13,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findById(Long id);
 
-	/**
-	 * Get UserEntity by passed email and orgId.
-	 *
-	 * @param email email
-	 * @param orgId orgId
-	 * @return UserEntity
-	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
-	@Query("select u.organizationId from UserEntity u where u.id = :userId")
-	Long findUserOrganizationId(@Param("userId") Long userId);
-
-	/**
-	 * Check if the passed resetPasswordToken already exist before or not.
-	 *
-	 * @param resetPasswordToken to be checked
-	 * @return true if esetPasswordToken already exists
-	 */
 	boolean existsByResetPasswordToken(String resetPasswordToken);
 
-	/**
-	 * Get userEntity by resetPasswordToken.
-	 *
-	 * @param resetPasswordToken
-	 * @return UserEntity
-	 */
 	Optional<UserEntity> getByResetPasswordToken(String resetPasswordToken);
 
-	/**
-	 * Check if the passed authenticationToken already exist before or not.
-	 *
-	 * @param authenticationToken to be checked
-	 * @return true if authenticationToken already exists
-	 */
 	boolean existsByAuthenticationToken(String authenticationToken);
-	
-	Optional<UserEntity> findByAuthenticationToken(String authToken);
 
 	UserEntity findByResetPasswordToken(String token);
 
@@ -67,15 +37,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);
 
-	List<UserEntity> getByOrganizationIdAndAllowReward(Long orgId, Boolean allowReward);
+	List<UserEntity> findByYeshteryUserIdNotNullAndAllowReward(Boolean allowReward);
 
-	/**
-	 * Get UserEntity by passed mobile and orgId.
-	 *
-	 * @param mobile mobile
-	 * @param orgId orgId
-	 * @return UserEntity
-	 */
 	UserEntity getByMobileAndOrganizationId(String mobile, Long orgId);
 
 	boolean existsByMobileIgnoreCaseAndOrganizationId(String mobile, Long orgId);

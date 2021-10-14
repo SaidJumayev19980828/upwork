@@ -88,6 +88,8 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 			try {
 				if (line.getFeatures().get(columnName) != null) {
 					value = line.getFeatures().get(columnName);
+				} else if (line.getExtraAttributes().get(columnName) != null) {
+						value = line.getExtraAttributes().get(columnName);
 				} else {
 					value = BeanUtils.getProperty(line, columnName);
 				}

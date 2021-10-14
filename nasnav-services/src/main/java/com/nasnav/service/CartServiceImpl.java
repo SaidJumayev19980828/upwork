@@ -269,8 +269,7 @@ public class CartServiceImpl implements CartService{
             Long orgId = securityService.getCurrentUserOrganizationId();
             List<UserEntity> users = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
             for (UserEntity user : users) {
-                Long userFamilyId = user.getId();
-                coinsDropService.giveUserCoinsNewFamilyPurchase(userFamilyId);
+                coinsDropService.giveUserCoinsNewFamilyPurchase(user);
             }
         }
         //
