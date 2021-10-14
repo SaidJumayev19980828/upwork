@@ -97,6 +97,9 @@ DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.sub_areas where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.tier;
+DELETE FROM public.family;
+DELETE FROM public.booster;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
@@ -106,4 +109,3 @@ DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
-DELETE FROM public.booster where id = 199001;

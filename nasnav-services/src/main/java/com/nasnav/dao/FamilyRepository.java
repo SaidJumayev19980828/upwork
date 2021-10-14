@@ -13,6 +13,8 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long> {
 
     List<FamilyEntity> getByOrganization_Id(Long orgId);
 
+    @Transactional
+    @Modifying
     void deleteByFamilyName(String familyName);
 
     Optional<FamilyEntity> findByFamilyName(String familyName);

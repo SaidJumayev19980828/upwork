@@ -146,7 +146,7 @@ public class BoosterServiceImp implements BoosterService {
 
     private void validateBoosterDTO(BoosterDTO dto) {
         Long orgId = securityService.getCurrentUserOrganizationId();
-		 if( dto != null && dto.getId()  > 0){
+		 if( dto != null && dto.getId() != null && dto.getId()  > 0){
             if (!boosterRepository.existsByIdAndOrganization_Id(dto.getId(), orgId)) {
                 throw new RuntimeBusinessException(NOT_FOUND, BOOSTER$PARAM$0002, dto.getId());
             }

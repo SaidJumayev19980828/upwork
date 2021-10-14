@@ -34,13 +34,11 @@ public class FamilyServiceImp implements FamilyService {
     }
 
     @Override
-    public List<FamilyEntity> listFamily() {
+    public List<FamilyEntity> listFamily(Long orgId) {
+        if (orgId > 0) {
+            return familyRepository.getByOrganization_Id(orgId);
+        }
         return familyRepository.findAll();
-    }
-
-    @Override
-    public List<FamilyEntity> listFamilyByOrgId(Long orgId) {
-        return familyRepository.getByOrganization_Id(orgId);
     }
 
     @Override

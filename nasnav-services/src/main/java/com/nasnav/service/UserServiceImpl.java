@@ -544,8 +544,8 @@ public class UserServiceImpl implements UserService {
 		validateActivationRedirectUrl(redirect, user.getOrganizationId());
 		
 		activateUserInDB(user);
-		//
-		Long orgId = securityService.getCurrentUserOrganizationId();
+		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
+		Long orgId = user.getOrganizationId();
 		Long userId = user.getId();
 		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().longValue()) != null) {
 			coinsDropService.giveUserCoinsSignUp(user);

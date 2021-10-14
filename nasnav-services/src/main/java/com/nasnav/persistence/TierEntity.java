@@ -58,7 +58,8 @@ public class TierEntity {
         TierDTO dto = new TierDTO();
         BeanUtils.copyProperties(this, dto);
         dto.setOrgId(organization.getId());
-        dto.setBoosterId(booster.getId());
+        if (booster != null)
+            dto.setBoosterId(booster.getId());
         return dto;
     }
 }

@@ -19,6 +19,7 @@ import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
@@ -48,11 +49,6 @@ public class TierServiceImp implements TierService {
     }
 
     @Override
-    public List<TierEntity> listTier() {
-        return tierRepository.findAll();
-    }
-
-    @Override
     public Optional<TierEntity> getTierById(Long id) {
         return tierRepository.findById(id);
     }
@@ -63,13 +59,20 @@ public class TierServiceImp implements TierService {
     }
 
     @Override
-    public List<TierEntity> getTierByOrganization_Id(Long orgId) {
-        return tierRepository.getByOrganization_Id(orgId);
-    }
-
-    @Override
-    public List<TierEntity> getTierByOrganization_IdAndIsSpecial(Long orgId, Boolean isSpecial) {
-        return tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial);
+    public List<TierDTO> getTiers(Long orgId, Boolean isSpecial) {
+        List<TierEntity> tierList;
+        if (orgId > 0) {
+            if (isSpecial) {
+                tierList = tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial);
+            } else {
+                tierList = tierRepository.getByOrganization_Id(orgId);
+            }
+        } else {
+            tierList = tierRepository.findAll();
+        }
+        return tierList.stream()
+                .map(TierEntity::getRepresentation)
+                .collect(toList());
     }
 
     @Override

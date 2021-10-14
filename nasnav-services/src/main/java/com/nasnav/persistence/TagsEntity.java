@@ -20,6 +20,9 @@ import static java.util.Optional.ofNullable;
 @EqualsAndHashCode(callSuper=false)
 public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
+    public TagsEntity() {
+        allowReward = false;
+    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

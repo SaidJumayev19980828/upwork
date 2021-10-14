@@ -104,6 +104,7 @@ public class UserEntity extends BaseUserEntity{
     public UserEntity() {
     	this.setUserStatus(NOT_ACTIVATED.getValue());
     	addresses = new HashSet<>();
+        allowReward = false;
     }
 
     

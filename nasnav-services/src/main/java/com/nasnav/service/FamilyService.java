@@ -12,8 +12,7 @@ import java.util.Optional;
 public interface FamilyService {
 
     void deleteFamily(Long id);
-    List<FamilyEntity> listFamily();
-    List<FamilyEntity> listFamilyByOrgId(Long orgId);
+    List<FamilyEntity> listFamily(Long orgId);
     FamilyUpdateResponse updateFamily(FamilyDTO family);
     void addNewMemberToFamily(Long userId, Long familyId);
     Optional<FamilyEntity> getFamilyById(Long familyId);

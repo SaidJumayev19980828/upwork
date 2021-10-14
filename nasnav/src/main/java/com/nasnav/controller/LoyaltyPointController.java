@@ -126,11 +126,8 @@ public class LoyaltyPointController {
 
     @GetMapping(value = "family/list")
     public List<FamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                                        @RequestParam(value = "org_id", required = false) Long orgId) {
-        if (orgId > 0) {
-            return familyService.listFamilyByOrgId(orgId);
-        }
-        return familyService.listFamily();
+                                        @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
+       return familyService.listFamily(orgId);
     }
 
     @PostMapping(value = "family/new_member")
@@ -167,16 +164,10 @@ public class LoyaltyPointController {
     }
 
     @GetMapping(value = "tier/list")
-    public List<TierEntity> getTier(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestParam(value = "org_id", required = false) Long orgId,
+    public List<TierDTO> getTier(@RequestHeader(name = "User-Token", required = false) String token,
+                                    @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId,
                                     @RequestParam(value = "is_special", required = false) Boolean isSpecial) {
-        if (orgId > 0) {
-            if (isSpecial) {
-                return tierService.getTierByOrganization_IdAndIsSpecial(orgId, isSpecial);
-            }
-            return tierService.getTierByOrganization_Id(orgId);
-        }
-        return tierService.listTier();
+        return tierService.getTiers(orgId, isSpecial);
     }
 
     @DeleteMapping(value = "tier/delete")
@@ -208,7 +199,7 @@ public class LoyaltyPointController {
 
     @GetMapping(value = "booster/list")
     public List<BoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                                          @RequestParam(value = "org_id", required = false) Long orgId) {
+                                          @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
         if (orgId > 0) {
             return boosterService.getBoosterByOrgId(orgId);
         }
