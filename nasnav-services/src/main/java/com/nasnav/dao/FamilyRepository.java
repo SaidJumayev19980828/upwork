@@ -15,8 +15,5 @@ public interface FamilyRepository extends JpaRepository<FamilyEntity, Long> {
 
     void deleteByFamilyName(String familyName);
 
-
-    @Transactional
-    @Modifying
     Optional<FamilyEntity> findByFamilyName(String familyName);
 }

@@ -31,7 +31,7 @@ VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  5010000000000000);
+VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  501);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, '161718', now(), 69, null);

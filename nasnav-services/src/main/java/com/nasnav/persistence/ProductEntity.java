@@ -60,6 +60,7 @@ public class ProductEntity {
 		removed = 0;
 		priority = 0;
         hide = false;
+        allowReward = false;
 		tags = new HashSet<>();
 	}
 	

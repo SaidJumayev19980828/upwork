@@ -594,7 +594,7 @@ public class CartServiceImpl implements CartService{
             if(user instanceof EmployeeUserEntity) {
                 throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
             }
-            cartItemRepo.deleteByIdAndUser_IdAndStock_Id(itemId, user.getId());
+            cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
             return getUserCart(user.getId(), promoCode);
     }
 
