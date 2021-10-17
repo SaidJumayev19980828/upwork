@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.services.interfaces;
 
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -15,4 +16,6 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     YeshteryUserApiResponse activateYeshteryUserAccount(String token) throws BusinessException;
     void subscribeYeshteryEmail(String email, Long orgId);
     RedirectView activateYeshterySubscribedEmail(String token, Long orgId);
+    AddressDTO updateUserAddress(AddressDTO addressDTO);
+    void removeUserAddress(Long id);
 }

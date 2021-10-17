@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static com.nasnav.enumerations.YeshteryState.ACTIVE;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryUserController.API_PATH)
@@ -128,4 +130,15 @@ public class YeshteryUserController {
         userService.resendActivationYeshteryEmail(accountInfo);
     }
 
+    @PutMapping(value = "/address", produces = APPLICATION_JSON_VALUE)
+    public AddressDTO updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                        @RequestBody AddressDTO address)  {
+        return userService.updateUserAddress(address);
+    }
+
+    @DeleteMapping(value = "/address")
+    public void updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                  @RequestParam Long id)  {
+        userService.removeUserAddress(id);
+    }
 }

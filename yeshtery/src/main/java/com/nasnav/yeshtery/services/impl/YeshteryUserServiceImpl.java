@@ -3,10 +3,7 @@ package com.nasnav.yeshtery.services.impl;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
@@ -97,8 +94,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private AppConfig config;
     @Autowired
     private UserRepository nasNavUserRepository;
-
-
+    @Autowired
+    private UserService nasNavUserService;
     @Autowired
     AppConfig appConfig;
 
@@ -307,6 +304,16 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             sub.setToken(null);
             subsRepo.save(sub);
             return new RedirectView(url);
+    }
+
+    @Override
+    public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+        return nasNavUserService.updateUserAddress(addressDTO);
+    }
+
+    @Override
+    public void removeUserAddress(Long id) {
+        nasNavUserService.removeUserAddress(id);
     }
 
     private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
