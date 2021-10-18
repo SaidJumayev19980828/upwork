@@ -141,4 +141,17 @@ public class YeshteryUserController {
                                   @RequestParam Long id)  {
         userService.removeUserAddress(id);
     }
+
+    @PostMapping(value = "update", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
+
+        return userService.updateUser(json);
+    }
+
+    @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
+    public void sendEmailRecovery(@RequestParam String email,
+                                  @RequestParam(value = "org_id") Long orgId) {
+        userService.sendEmailRecovery(email, orgId);
+    }
 }

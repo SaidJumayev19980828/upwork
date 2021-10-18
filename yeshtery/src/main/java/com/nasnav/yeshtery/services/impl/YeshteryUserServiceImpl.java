@@ -9,6 +9,7 @@ import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.yeshtery.dao.CommonYeshteryUserRepository;
@@ -314,6 +315,11 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Override
     public void removeUserAddress(Long id) {
         nasNavUserService.removeUserAddress(id);
+    }
+
+    @Override
+    public UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson) {
+        return nasNavUserService.updateUser(userJson);
     }
 
     private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
