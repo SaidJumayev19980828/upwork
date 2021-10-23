@@ -98,6 +98,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private UserService nasNavUserService;
     @Autowired
+    private UserTokenRepository nasnavUserTokenRepo;
+
+    @Autowired
     AppConfig appConfig;
 
 
@@ -119,9 +122,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public void sendEmailRecovery(String email, Long orgId) {
-        YeshteryUserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
+        UserEntity userEntity = nasNavUserRepository.getByEmailAndOrganizationId(email, orgId);
         generateResetPasswordToken(userEntity);
-        userEntity = userRepository.saveAndFlush(userEntity);
+        userEntity = nasNavUserRepository.saveAndFlush(userEntity);
         sendRecoveryMail(userEntity);
     }
 
@@ -135,7 +138,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
 
 
-    private void sendRecoveryMail(YeshteryUserEntity userEntity) {
+    private void sendRecoveryMail(UserEntity userEntity) {
         String userName = ofNullable(userEntity.getName()).orElse("User");
         String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
         try {
@@ -153,8 +156,34 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject body) {
-        return null;
+    @Transactional
+    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
+            userServicesHelper.validateNewPassword(data.password);
+            userServicesHelper.validateToken(data.token);
+            UserEntity userEntity = nasNavUserRepository.getByResetPasswordToken(data.token)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
+
+            userServicesHelper.checkResetPasswordTokenExpiry(userEntity.getResetPasswordSentAt());
+            userEntity.setResetPasswordToken(null);
+            userEntity.setResetPasswordSentAt(null);
+            userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+            userEntity = nasNavUserRepository.saveAndFlush(userEntity);
+
+            String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
+            String token = resetRecoveredUserTokens(userEntity);
+
+        return new YeshteryUserApiResponse(userEntity.getId(), orgDomain, token);
+    }
+
+
+
+    private String resetRecoveredUserTokens(UserEntity user) {
+        securityService.logoutAll(user);
+        UserTokensEntity tokenEntity = new UserTokensEntity();
+        tokenEntity.setUserEntity(user);
+        tokenEntity.setToken(generateUUIDToken());
+        tokenEntity = nasnavUserTokenRepo.save(tokenEntity);
+        return tokenEntity.getToken();
     }
 
     @Override
@@ -174,7 +203,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
             YeshteryUserEntity user = createNewUserEntity(userJson);
             setUserAsDeactivated(user);
-            generateResetPasswordToken(user);
+            generateYeshteryResetPasswordToken(user);
             userRepository.saveAndFlush(user);
 
             sendActivationMail(user, userJson.getRedirectUrl());
@@ -197,7 +226,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             user.setPhoneNumber(userJson.getPhoneNumber());
             user.setOrganizationId(org.getId());
             user.setUserStatus(NOT_ACTIVATED.getValue());
-            String generatedToken = generateResetPasswordToken();
+            String generatedToken = generatePasswordToken(user);
             user.setResetPasswordToken(generatedToken);
             user.setResetPasswordSentAt(now());
             user.setAllowReward(true);
@@ -245,7 +274,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
             YeshteryUserEntity user = (YeshteryUserEntity)baseUser;
             if(isUserDeactivated(user)) {
-                generateResetPasswordToken(user);
+                generateYeshteryResetPasswordToken(user);
                 userRepository.save(user);
             }
 
@@ -356,13 +385,24 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         user.setUserStatus(NOT_ACTIVATED.getValue());
     }
 
-    private void generateResetPasswordToken(YeshteryUserEntity userEntity) {
-        String generatedToken = generateResetPasswordToken();
+    private void generateResetPasswordToken(UserEntity userEntity) {
+        String generatedToken = generatePasswordToken(userEntity);
         userEntity.setResetPasswordToken(generatedToken);
         userEntity.setResetPasswordSentAt(now());
     }
 
-    private String generateResetPasswordToken() {
+
+    private void generateYeshteryResetPasswordToken(YeshteryUserEntity userEntity) {
+        String generatedToken = generateUUIDToken();
+        boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
+        if (existsByToken) {
+            generatedToken = reGenerateResetPasswordToken();
+        }
+        userEntity.setResetPasswordToken(generatedToken);
+        userEntity.setResetPasswordSentAt(now());
+    }
+
+    private String generatePasswordToken(UserEntity userEntity) {
         String generatedToken = generateUUIDToken();
         boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
         if (existsByToken) {
