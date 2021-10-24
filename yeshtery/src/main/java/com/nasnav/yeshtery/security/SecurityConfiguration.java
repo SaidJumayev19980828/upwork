@@ -106,6 +106,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
                         , patternOf("/v1/yeshtery/**"						, HttpMethod.GET)
+                        , patternOf("/v1/360view/**"						, HttpMethod.GET)
 
                         , patternOf("/v1/user/recover")
                         , patternOf("/v1/user/login/**")

@@ -2,10 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
-import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
@@ -65,8 +62,6 @@ public class YeshteryController {
     private FileService fileService;
     @Autowired
     private SearchService searchService;
-    @Autowired
-    private ShopThreeSixtyService shop360Svc;
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -208,54 +203,10 @@ public class YeshteryController {
         return categoryService.getCategoriesTree();
     }
 
-
-
-    @GetMapping(value = "/360view/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
-                                     @RequestParam String type,
-                                     @RequestParam(defaultValue = "true") Boolean published) {
-        return shop360Svc.getShop360JsonInfo(shopId, type, published);
-    }
-
-    @GetMapping(value = "/360view/sections", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List> res = new HashMap<>();
-        res.put("floors", shop360Svc.getSections(shopId));
-        return res;
-    }
-
-    @GetMapping(value = "/360view/shops", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
-        return shop360Svc.getThreeSixtyShops(shopId, true);
-    }
-
-    @GetMapping(value = "/360view/shop", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/shop", produces = MediaType.APPLICATION_JSON_VALUE)
     public ShopRepresentationObject getShopById(@RequestParam("shop_id") Long shopId) {
         return shopService.getShopById(shopId);
     }
-
-    @GetMapping(value = "/360view/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ProductsPositionDTO getShop360ProductsPositions(@RequestParam("shop_id") Long shopId,
-                                                           @RequestParam(defaultValue = "2") short published,
-                                                           @RequestParam(value = "scene_id", required = false) Long sceneId,
-                                                           @RequestParam(value = "section_id", required = false) Long sectionId,
-                                                           @RequestParam(value = "floor_id", required = false) Long floorId) {
-        return shop360Svc.getProductsPositions(shopId, published, sceneId, sectionId, floorId);
-    }
-
-    @GetMapping(value = "/360view/products", produces = MediaType.APPLICATION_JSON_VALUE)
-    public LinkedHashMap getShop360products(@RequestParam("shop_id") Long shopId,
-                                            @RequestParam(required = false) String name,
-                                            @RequestParam(required = false, defaultValue = "5") Integer count,
-                                            @RequestParam(value = "product_type", required = false) Integer productType,
-                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
-                                            @RequestParam(value = "published", required = false) Short published,
-                                            @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
-            throws BusinessException {
-        return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360, includeOutOfStock);
-    }
-
-
 
     @Operation(description =  "return seo keywords", summary = "getSeo")
     @ApiResponses(value = {
