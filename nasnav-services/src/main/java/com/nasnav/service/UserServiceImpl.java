@@ -547,7 +547,7 @@ public class UserServiceImpl implements UserService {
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
 		Long orgId = user.getOrganizationId();
 		Long userId = user.getId();
-		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().longValue()) != null) {
+		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
 			coinsDropService.giveUserCoinsSignUp(user);
 		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
@@ -858,7 +858,7 @@ public class UserServiceImpl implements UserService {
 		}
 		List<UserEntity> familyUsers = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
 		Integer familyCount = familyUsers.size();
-		if (familyCount < 0) {
+		if (familyCount == 0) {
 			return;
 		}
 		BoosterEntity boosterEntity = null;
@@ -868,7 +868,7 @@ public class UserServiceImpl implements UserService {
 			userBoosterEntity = userEntity.getBooster();
 		}
 		boosterList = boosterRepository.getAllByLinkedFamilyMember(familyCount+1);
-		if (boosterList.size() < 0) {
+		if (boosterList.isEmpty()) {
 			boosterList = boosterRepository.getAllByNumberFamilyChildren(familyCount);
 		}
 		if (boosterList.size() > 0) {

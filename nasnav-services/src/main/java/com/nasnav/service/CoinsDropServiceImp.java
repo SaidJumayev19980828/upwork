@@ -20,6 +20,8 @@ import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -65,7 +67,7 @@ public class CoinsDropServiceImp implements CoinsDropService {
     }
 
     @Override
-    public CoinsDropEntity getByOrganizationIdAndTypeId(Long orgId, Long typeId) {
+    public CoinsDropEntity getByOrganizationIdAndTypeId(Long orgId, Integer typeId) {
         return coinsDropRepository.getByOrganization_IdAndTypeId(orgId, typeId);
     }
 
@@ -75,9 +77,9 @@ public class CoinsDropServiceImp implements CoinsDropService {
     public void giveUsersCoinsBirthDay() {
         List<UserEntity> users = loadUsersAllowReward();
         for (UserEntity user : users) {
-            if (LocalDate.now().equals(user.getDateOfBirth().toLocalDate())) {
+            if (user.getDateOfBirth() != null && LocalDate.now().equals(user.getDateOfBirth().toLocalDate())) {
                 Integer typeId = LoyaltyEvents.BIRTH_DAY.getValue();
-                giveUserCoinsByTypeId(user, typeId.longValue());
+                giveUserCoinsByTypeId(user, typeId);
             }
         }
     }
@@ -86,14 +88,16 @@ public class CoinsDropServiceImp implements CoinsDropService {
     @Override
     public void giveUsersCoinsOfficialFestival() {
         List<UserEntity> users = loadUsersAllowReward();
-        Long orgId = securityService.getCurrentUserOrganizationId();
+        Set<Long> orgIds = users.stream()
+                .map(UserEntity::getOrganizationId)
+                .collect(Collectors.toSet());
         for (UserEntity user : users) {
-            List<CoinsDropEntity> coins = coinsDropRepository.findByOfficialVacationDateNotNullAndOrganization_Id(orgId);
+            List<CoinsDropEntity> coins = coinsDropRepository.findByOfficialVacationDateNotNullAndOrganization_IdIn(orgIds);
             for (CoinsDropEntity coin : coins) {
                 if (coin.getOfficialVacationDate() != null
                         && LocalDate.now().equals(coin.getOfficialVacationDate())) {
                     Integer typeId = LoyaltyEvents.GLOBAL_DATE_FESTIVAL.getValue();
-                    giveUserCoinsByTypeId(user, typeId.longValue());
+                    giveUserCoinsByTypeId(user, typeId);
                 }
             }
         }
@@ -104,9 +108,9 @@ public class CoinsDropServiceImp implements CoinsDropService {
     public void giveUsersCoinsOfficialRamadan() {
         List<UserEntity> users = loadUsersAllowReward();
         for (UserEntity user : users) {
-            if (isRamadanPointTransaction(LocalDateTime.now().toLocalDate())) {
+            if (isRamadanPointTransaction(LocalDateTime.now().toLocalDate(), user.getId())) {
                 Integer typeId = LoyaltyEvents.GLOBAL_DATE_RAMADAN.getValue();
-                giveUserCoinsByTypeId(user, typeId.longValue());
+                giveUserCoinsByTypeId(user, typeId);
             }
         }
     }
@@ -114,34 +118,34 @@ public class CoinsDropServiceImp implements CoinsDropService {
     @Override
     public void giveUserCoinsNewTier(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_TIER.getValue();
-        giveUserCoinsByTypeId(user, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId);
     }
 
     @Override
     public void giveUserCoinsInvitationUsers(UserEntity user) {
         Integer typeId = LoyaltyEvents.CUSTOMER_INVITE.getValue();
-        giveUserCoinsByTypeId(user, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId);
     }
 
     @Override
     public void giveUserCoinsSignUp(UserEntity user) {
         Integer typeId = LoyaltyEvents.SIGN_UP.getValue();
-        giveUserCoinsByTypeId(user, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId);
     }
 
     @Override
     public void giveUserCoinsNewFamilyMember(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_FAMILY_MEMBER.getValue();
-        giveUserCoinsByTypeId(user, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId);
     }
 
     @Override
     public void giveUserCoinsNewFamilyPurchase(UserEntity user) {
         Integer typeId = LoyaltyEvents.NEW_FAMILY_PURCHASE.getValue();
-        giveUserCoinsByTypeId(user, typeId.longValue());
+        giveUserCoinsByTypeId(user, typeId);
     }
 
-    private void giveUserCoinsByTypeId(UserEntity userEntity, Long typeId) {
+    private void giveUserCoinsByTypeId(UserEntity userEntity, Integer typeId) {
         List<OrganizationEntity> organizations = organizationRepository.findAllOrganizations();
         for (OrganizationEntity org : organizations) {
             List<ShopsEntity> shops = shopsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(org.getId(), 0);
@@ -149,7 +153,7 @@ public class CoinsDropServiceImp implements CoinsDropService {
         }
     }
 
-    private void updateUserCoinsByTypeIdAndShopId(Long orgId, UserEntity userEntity, Long typeId, Long shopId){
+    private void updateUserCoinsByTypeIdAndShopId(Long orgId, UserEntity userEntity, Integer typeId, Long shopId){
         CoinsDropEntity entity = coinsDropRepository.getByOrganization_IdAndTypeId(orgId, typeId);
         //Create Coins Drop Log
         coinsDropLogsService.updateCoinsDropLog(entity);
@@ -207,14 +211,13 @@ public class CoinsDropServiceImp implements CoinsDropService {
         }
     }
 
-    private Boolean isRamadanPointTransaction(LocalDate currentDate) {
+    private Boolean isRamadanPointTransaction(LocalDate currentDate, Long userId) {
         HijrahDate ramadan = HijrahDate.now()
                 .with(ChronoField.DAY_OF_MONTH, 1).with(ChronoField.MONTH_OF_YEAR, 9);
         LocalDate startRamadan = LocalDate.from(ramadan);
         LocalDate endRamadan = LocalDate.from(ramadan.with(TemporalAdjusters.lastDayOfMonth()));
         if (currentDate.isAfter(startRamadan) || currentDate.isBefore(endRamadan)) {
-            Long userId = securityService.getCurrentUser().getId();
-            Integer countTransaction = loyaltyTransactionRepository.getCoinsDropTransactionsByUser_IdAndCreatedAt(userId, startRamadan, endRamadan);
+             Integer countTransaction = loyaltyTransactionRepository.getCoinsDropTransactionsByUser_IdAndCreatedAt(userId, startRamadan, endRamadan);
              return (countTransaction <= 0);
         }
         return false;

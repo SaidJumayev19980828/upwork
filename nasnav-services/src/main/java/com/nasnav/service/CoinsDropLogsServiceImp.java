@@ -69,7 +69,7 @@ public class CoinsDropLogsServiceImp implements CoinsDropLogsService {
     private void validateCoinsDropLog(CoinsDropEntity coinsDropEntity) {
         if (anyIsNull(coinsDropEntity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE
-                    , COINS$PARAM$0003, coinsDropEntity.toString());
+                    , COINS$PARAM$0003, "coinsDropEntity");
         }
     }
 

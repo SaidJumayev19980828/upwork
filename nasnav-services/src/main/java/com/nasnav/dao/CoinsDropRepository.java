@@ -6,12 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface CoinsDropRepository extends JpaRepository<CoinsDropEntity, Long> {
 
     List<CoinsDropEntity> getByOrganization_Id(Long orgId);
 
-    CoinsDropEntity getByOrganization_IdAndTypeId(Long orgId, Long typeId);
+    CoinsDropEntity getByOrganization_IdAndTypeId(Long orgId, Integer typeId);
 
     @Query("select coins "
             + " FROM CoinsDropEntity coins "
@@ -21,7 +22,7 @@ public interface CoinsDropRepository extends JpaRepository<CoinsDropEntity, Long
     List<CoinsDropEntity> findByOrganization_IdAndTypeIdIn(@Param("orgId") Long orgId,
                                                             @Param("typeIds") List<Integer> typeIds);
 
-    List<CoinsDropEntity> findByOfficialVacationDateNotNullAndOrganization_Id(Long orgId);
+    List<CoinsDropEntity> findByOfficialVacationDateNotNullAndOrganization_IdIn(Set<Long> orgIds);
 
 
 }

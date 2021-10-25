@@ -13,7 +13,7 @@ public interface CoinsDropService {
 
     List<CoinsDropEntity> getByOrganizationId(Long orgId);
 
-    CoinsDropEntity getByOrganizationIdAndTypeId(Long orgId, Long typeId);
+    CoinsDropEntity getByOrganizationIdAndTypeId(Long orgId, Integer typeId);
 
     void giveUsersCoinsBirthDay();
 
