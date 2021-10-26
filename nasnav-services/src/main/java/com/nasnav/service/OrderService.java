@@ -11,9 +11,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
 
@@ -69,7 +67,7 @@ public interface OrderService {
 
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
 
-	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
+	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user);
 
 	Order createOrder(CartCheckoutDTO dto);
 

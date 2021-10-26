@@ -21,7 +21,7 @@ public interface ShippingManagementService {
 	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId);
 	void registerToShippingService(ShippingServiceRegistration registration);
 	void unregisterFromShippingService(String serviceId);
-	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto);
+	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId);
 	Optional<ShippingService> getShippingService(OrganizationShippingServiceEntity orgShippingService);
 	List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails, Long orgId);
 	public List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService);
