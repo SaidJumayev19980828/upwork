@@ -1558,7 +1558,7 @@ public class OrderServiceImpl implements OrderService {
 				.findByIdAndUserId(dto.getAddressId(), user.getId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
 
-		CartItemsGroupedByShopId checkOutData = getAndValidateCheckoutData(dto); 
+		CartItemsGroupedByShopId checkOutData = getAndValidateCheckoutData(dto);
 		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
 		return order;
 	}
@@ -1778,8 +1778,8 @@ public class OrderServiceImpl implements OrderService {
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
 
-		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
-		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
+		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto, org);
 
 		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
@@ -2007,8 +2007,8 @@ public class OrderServiceImpl implements OrderService {
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
 
-		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
-		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
+		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto, org);
 
 		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
@@ -2070,9 +2070,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private List<CartItemsForShop> groupCartItemsByShop(Map<Long, List<CartCheckoutData>> shopCartsMap) {
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		Map<Long,ShopsEntity> shopCache = createOrganizationShopsCache(org);
+	private List<CartItemsForShop> groupCartItemsByShop(Map<Long, List<CartCheckoutData>> shopCartsMap, OrganizationEntity org) {
+		Map<Long,ShopsEntity> shopCache = createOrganizationShopsCache(org.getId());
 		return shopCartsMap
 				.entrySet()
 				.stream()
@@ -2093,9 +2092,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private Map<Long, ShopsEntity> createOrganizationShopsCache(OrganizationEntity org) {
+	private Map<Long, ShopsEntity> createOrganizationShopsCache(Long orgId) {
 		return shopsRepo
-		.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(org.getId(), 0)
+		.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0)
 		.stream()
 		.collect(toMap(ShopsEntity::getId, shop -> shop));
 	}
@@ -2105,16 +2104,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Set<OrdersEntity> createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
-			CartCheckoutDTO dto) {
+			CartCheckoutDTO dto, OrganizationEntity org) {
 		Set<OrdersEntity> subOrders = 
 				cartDividedByShop
 				.stream()
-				.map(cartItems -> createSubOrder(cartItems, address, dto))
+				.map(cartItems -> createSubOrder(cartItems, address, dto, org))
 				.collect(toSet());
 		
-		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders);
+		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, org.getId());
 
-		addPromoDiscounts(dto, subOrders);
+		addPromoDiscounts(dto, subOrders, org.getId());
 		
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
@@ -2125,15 +2124,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders) {
+	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		return subOrders
 				.stream()
 				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
-				.collect(collectingAndThen(toList(), shippingMgrService::getOffersFromOrganizationShippingServices));
+				.collect(collectingAndThen(toList(), list -> shippingMgrService.getOffersFromOrganizationShippingServices(list, orgId)));
 	}
 
 
-	private void addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders) {
+	private void addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		OrdersEntity suborder = subOrders.stream().findFirst().get();
 		Long userId = suborder.getUserId();
 		BigDecimal subTotal =
@@ -2143,7 +2142,7 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(ZERO, BigDecimal::add);
 
 		var promoItems = getPromoItems(subOrders);
-		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode()).getTotalDiscount();
+		var promoDiscount = promoService.calculateAllApplicablePromos(promoItems, subTotal, dto.getPromoCode(), orgId).getTotalDiscount();
 
 		if(promoDiscount.compareTo(ZERO) == 0) {
 			return;
@@ -2249,11 +2248,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private OrdersEntity createSubOrder(CartItemsForShop cartItems,
-								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
-		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems);
+	private OrdersEntity createSubOrder(CartItemsForShop cartItems, AddressesEntity shippingAddress, CartCheckoutDTO dto,
+										OrganizationEntity org) {
+		Long orgId = org.getId();
+		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems, orgId);
 		
-		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems);
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org);
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
 		subOrder.setAmount(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
@@ -2294,8 +2294,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
+	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems, Long orgId) {
 		Set<Long> itemStocks =
 				cartItems
 				.getCheckOutData()
@@ -2369,9 +2368,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
-										CartItemsForShop cartItems) {
+										CartItemsForShop cartItems, OrganizationEntity org) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
 
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());

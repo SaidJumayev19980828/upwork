@@ -117,10 +117,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
-	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
+	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, Long orgId) {
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId);
-		
-		return getOffersFromOrganizationShippingServices(shippingDetails);
+		return getOffersFromOrganizationShippingServices(shippingDetails, orgId);
 	}
 
 
@@ -186,8 +185,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	@Override
-	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
+	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails, Long orgId) {
 		return Flux
 				.fromIterable(orgShippingServiceRepo.getByOrganization_Id(orgId))
 				.map(this::getShippingService)
@@ -1028,7 +1026,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	@Override
 	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId) {
 		if (securityService.getYeshteryState() == 1) {
-			return getShippingOffers(customerAddrId);
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			return getShippingOffers(customerAddrId, orgId);
 		}
 		return null;
 	}

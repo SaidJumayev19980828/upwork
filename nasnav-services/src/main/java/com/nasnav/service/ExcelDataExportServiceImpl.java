@@ -94,7 +94,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 					value = BeanUtils.getProperty(line, columnName);
 				}
 			} catch (Exception e) {
-				logger.error(e);
+				logger.error(e.getMessage());
 			}
 			newRow.createCell(key).setCellValue(value);
 		}

@@ -113,8 +113,9 @@ public class YeshteryController {
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
     public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
                                                                               @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                              @RequestParam(value = "org_id", required = false) Long orgId,
                                                                               @RequestParam(value = "brand_id", required = false) Set<Long> brands) {
-        return brandService.getYeshteryBrands(start, count, brands);
+        return brandService.getYeshteryBrands(start, count, orgId, brands);
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)

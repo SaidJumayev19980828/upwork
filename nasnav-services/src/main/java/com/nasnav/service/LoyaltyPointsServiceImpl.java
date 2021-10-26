@@ -234,7 +234,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         OrganizationEntity org = order.getOrganizationEntity();
         ShopsEntity shop = order.getShopsEntity();
         UserEntity user = order.getMetaOrder().getUser();
-        Integer amount = order.getTotal().intValue();
+        Integer amount = ofNullable(order)
+                .map(OrdersEntity::getTotal)
+                .map(BigDecimal::intValue)
+                .orElse(0);
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganizationIdAndShopIdAndAmount(org.getId(), shop.getId(), amount)
                 .stream()
                 .findFirst()
