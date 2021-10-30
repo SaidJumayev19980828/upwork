@@ -1,4 +1,4 @@
-package com.nasnav.controller;
+package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.GiftDTO;
 import com.nasnav.dto.request.*;
@@ -6,6 +6,7 @@ import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
+import com.nasnav.yeshtery.YeshteryConstants;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +17,11 @@ import java.util.Optional;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping("/loyalty")
+@RequestMapping(LoyaltyPointController.API_PATH)
 @Tag(name = "Loyalty Point Controller")
 @CrossOrigin("*")
 public class LoyaltyPointController {
+    static final String API_PATH = YeshteryConstants.API_PATH +"/loyalty";
 
     @Autowired
     private LoyaltyPointsService loyaltyPointsService;
