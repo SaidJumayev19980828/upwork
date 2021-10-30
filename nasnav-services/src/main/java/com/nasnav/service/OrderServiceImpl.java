@@ -1554,10 +1554,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user) {
 
-		AddressesEntity userAddress = 
-				addressRepo
-				.findByIdAndUserId(dto.getAddressId(), user.getId())
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
+		AddressesEntity userAddress = getAddressById(dto.getAddressId(), user.getId());
 
 		CartItemsGroupedById checkOutData = getAndValidateCheckoutData(dto, org);
 		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto, org, (UserEntity) user);
@@ -1565,7 +1562,11 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
+	private AddressesEntity getAddressById(Long addressId, Long userId) {
+		return addressRepo
+						.findByIdAndUserId(addressId, userId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressId));
+	}
 
 
 	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
@@ -1771,7 +1772,7 @@ public class OrderServiceImpl implements OrderService {
 		CartItemsGroupedByOrgId checkOutData = getAndValidateCheckoutDataByOrgId(dto);
 
 		// 2- create metaorder per org ... just call createOrder method
-		List<MetaOrderEntity> subMetaOrders = createMetaOrders(checkOutData);
+		List<MetaOrderEntity> subMetaOrders = createMetaOrders(checkOutData, dto);
 
 		// 3- link met orders with the main meta order
 		subMetaOrders.forEach(order::addSubMetaOrder);
@@ -1791,8 +1792,15 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-	private List<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData) {
-		return null;
+	private List<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, CartCheckoutDTO dto) {
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+		AddressesEntity address = getAddressById(dto.getAddressId(), user.getId());
+		List<MetaOrderEntity> yeshteryOrders = checkOutData
+				.entrySet()
+				.stream()
+				.map(c -> createYeshteryOrder(c.getValue(), address, dto, c.getKey()))
+				.collect(toList());
+		return yeshteryOrders;
 	}
 
 	@Override
@@ -1815,15 +1823,20 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public List<MetaOrderBasicInfo> getYeshteryMetaOrderList() {
 		BaseUserEntity user = securityService.getCurrentUser();
-		return metaOrderRepo.getYeshteryMetaOrderList(user.getId(), user.getOrganizationId())
+		Long yeshteryOrgId = getYeshteryOrgId();
+
+		return metaOrderRepo.getYeshteryMetaOrderList(user.getId(), yeshteryOrgId)
 				.stream()
 				.map(this::setOrderStatus)
 				.map(this::setPaymentStatus)
 				.collect(toList());
 	}
+	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, Long orgId) {
+		OrganizationEntity org = organizationRepository.findOneById(orgId);
+		return createYeshteryOrder(shopCartsMap, address, dto, org);
+	}
 
-	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
+	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, OrganizationEntity org) {
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 		Optional<PromotionsEntity> promotion=
 				ofNullable(dto.getPromoCode())
@@ -1832,7 +1845,7 @@ public class OrderServiceImpl implements OrderService {
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
 
 		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
-		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto, org);
+		Set<OrdersEntity> subOrders = createYeshterySubOrders(cartDividedByShop, address, dto, org);
 
 		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
@@ -2155,7 +2168,30 @@ public class OrderServiceImpl implements OrderService {
 		return subOrders;
 	}
 
+	private Set<OrdersEntity> createYeshterySubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
+											  CartCheckoutDTO dto, OrganizationEntity org) {
+		Set<OrdersEntity> subOrders =
+				cartDividedByShop
+						.stream()
+						.map(cartItems -> createSubOrder(cartItems, address, dto, org))
+						.collect(toSet());
+		Long yeshteryOrgId = getYeshteryOrgId();
+		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, yeshteryOrgId);
 
+		addPromoDiscounts(dto, subOrders, org.getId());
+
+		for(OrdersEntity subOrder : subOrders) {
+			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
+			subOrder.setTotal(calculateTotal(subOrder));
+		}
+		return subOrders;
+	}
+
+	private Long getYeshteryOrgId() {
+		return ofNullable(organizationRepository.findByPname(YESHTERY_PNAME))
+				.map(OrganizationEntity::getId)
+				.orElseThrow();
+	}
 
 	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		return subOrders

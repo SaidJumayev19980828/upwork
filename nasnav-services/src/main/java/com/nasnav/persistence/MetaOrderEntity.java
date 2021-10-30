@@ -93,6 +93,7 @@ public class MetaOrderEntity implements BaseEntity {
         subOrders = new HashSet<>();
         this.promotions = new HashSet<>();
         this.status = CLIENT_CONFIRMED.getValue();
+        subMetaOrders = new HashSet<>();
     }
 
     public void addSubOrder(OrdersEntity subOrder) {
