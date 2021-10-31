@@ -472,7 +472,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void checkUserActivation(YeshteryUserEntity user) {
         if (user == null)
-            throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006);
+            throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006, "");
 
         userServicesHelper.checkResetPasswordTokenExpiry(user.getResetPasswordSentAt());
 

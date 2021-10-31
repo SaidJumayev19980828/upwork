@@ -581,7 +581,7 @@ public class UserServiceImpl implements UserService {
 
 	private void checkUserActivation(UserEntity user) {
 		if (user == null)
-			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006);
+			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006, "");
 
 		userServicesHelper.checkResetPasswordTokenExpiry(user.getResetPasswordSentAt());
 
