@@ -109,8 +109,7 @@ public class MetaOrderEntity implements BaseEntity {
     }
 
     public void addSubMetaOrder(MetaOrderEntity subMetaOrder){
-        subMetaOrder.setSubMetaOrder(subMetaOrder);
-        subMetaOrders.add(subMetaOrder);
+        subMetaOrder.setSubMetaOrder(this);
     }
 
 
