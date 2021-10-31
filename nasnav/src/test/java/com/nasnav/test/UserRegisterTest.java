@@ -155,7 +155,7 @@ public class UserRegisterTest {
 		persistentUser.setEncryptedPassword("---");
 		persistentUser.setOrganizationId(organization.getId());
 		persistentUser.setUserStatus(ACTIVATED.getValue());
-		
+		persistentUser.setAllowReward(false);
 		return persistentUser;
 	}
 	

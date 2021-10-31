@@ -637,7 +637,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     private List<ShopRepresentationObject> getOrganizationShopsDto(OrganizationEntity org) {
-        return org.getShops().stream().map(s -> (ShopRepresentationObject) s.getRepresentation()).collect(toList());
+        return org.getShops()
+                .stream()
+                .filter(shop -> shop.getRemoved() == 0)
+                .map(s -> (ShopRepresentationObject) s.getRepresentation())
+                .collect(toList());
     }
 
     private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {

@@ -640,6 +640,7 @@ public class ProductService {
 				product.updatedAt.as("update_date"),
 				product.productType,
 				product.priority,
+				product.organizationId,
 				SQLExpressions.rowNumber()
 						.over()
 						.partitionBy(product.id)
@@ -2688,6 +2689,7 @@ public class ProductService {
 		copyProperties(representationObj, dto);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
+		dto.setOrganizationId( product.getOrganizationId() );
 		String coverImg = imgService.getProductCoverImage( product.getId() );
 		if (coverImg != null)
 			dto.setImageUrl( coverImg );

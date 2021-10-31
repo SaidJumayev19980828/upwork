@@ -200,7 +200,4 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ ")")
 	void deleteByVariantIdInAndUser_Id(@Param("variant_ids")List<Long> variantIds, @Param("user_id")Long userId);
 
-	@Transactional
-	@Modifying
-	void deleteByIdAndUser_IdAndStock_Id(Long itemId, Long userId, Long stockId);
 }

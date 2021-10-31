@@ -38,6 +38,7 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private List<Long> shops;
     private String productCode;
     private String sku;
+    private Long organizationId;
     private List<ProductImageDTO> images;
 
     public ProductRepresentationObject() {

@@ -31,6 +31,13 @@ public class CommonYeshteryUserRepositoryImpl implements CommonYeshteryUserRepos
        return getCustomerUserRoles();
     }
 
+    @Override
+    public List<String> getUserRoles(BaseUserEntity user) {
+        if(user == null)
+            return new ArrayList<>();
+        return getCustomerUserRoles();
+    }
+
     private List<String> getCustomerUserRoles() {
         // for now, return default role which is Customer
         return Collections.singletonList(Roles.CUSTOMER.name());

@@ -80,7 +80,7 @@ public class ProductVariantsEntity {
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
 
-    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

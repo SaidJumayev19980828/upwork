@@ -2,7 +2,7 @@
 
 --changeset bassam:add-loyalty-points-tables-missing-tables dbms:postgresql splitStatements:false failOnError:true
 
---comment: add 3 tables for loyalty points (loyalty_points, loyalty_point_types, loyalty_point_transactions)
+--comment: add  tables for loyalty points (booster, charity, coins_drop, coins_drop_logs, family, gift, tier, user_charity)
 
 
 CREATE TABLE public.booster (
@@ -12,7 +12,7 @@ CREATE TABLE public.booster (
 	review_products int4 NULL,
 	number_purchase_offline int4 NULL,
 	social_media_reviews int4 NULL,
-	organization_id int4 NULL,
+	organization_id int8 NULL,
 	level_booster int4 NULL,
 	activation_months int4 NULL,
 	id bigserial NOT NULL,
@@ -142,9 +142,6 @@ ALTER TABLE public.products ADD allow_reward boolean NOT NULL DEFAULT false;
 ALTER TABLE public.products ADD buy_with_coins boolean NULL;
 ALTER TABLE public.products ADD only_buy_with_coins boolean NULL;
 ALTER TABLE public.products ADD minimum_tier_id bigint NULL;
-
-ALTER TABLE public.promotions ADD priority int4 NULL;
-ALTER TABLE public.shops ADD priority int4 NULL;
 
 
 ALTER TABLE public.users ADD allow_reward boolean NOT NULL DEFAULT true;

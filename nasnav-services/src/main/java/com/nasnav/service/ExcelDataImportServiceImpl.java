@@ -103,7 +103,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
 		List<CsvRow> lines = new ArrayList<>();
 		List<String> featuresNames = featureRepo.findByOrganizationId(security.getCurrentUserOrganizationId())
-				.stream().map(ProductFeaturesEntity::getPname)
+				.stream().map(ProductFeaturesEntity::getName)
 				.collect(toList());
 		List<String> extraAttributesNames = extraAttrRepo.findByOrganizationId(security.getCurrentUserOrganizationId())
 				.stream().map(ExtraAttributesEntity::getName)

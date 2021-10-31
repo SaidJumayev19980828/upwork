@@ -18,7 +18,7 @@ public interface CartService {
     Cart addCartItem(CartItem item, String promoCode);
     Cart addCartItems(List<CartItem> items, String promoCode);
     Cart deleteCartItem(Long itemId, String promoCode);
-    Cart deleteYeshteryCartItem(Long itemId, String promoCode, Long stockId);
+    Cart deleteYeshteryCartItem(Long itemId, String promoCode);
     Order checkoutCart(CartCheckoutDTO dto);
     Order checkoutYeshteryCart(CartCheckoutDTO dto);
     BigDecimal calculateCartTotal(Cart cart);

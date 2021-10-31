@@ -126,6 +126,7 @@ public enum ErrorCodes {
 	,S$0004("Shop with id[%d] has invalid address id[%d]")
 	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
 	,S$0006("No shop id provided!")
+	,S$0007("No shop found with provided code[%s]!")
 
 	,S$360$0001("No 360 shop found!")
 	,S$360$0002("No scene found with ID[%d]!")
@@ -159,6 +160,20 @@ public enum ErrorCodes {
 
 	,CAT$0001("Provided parent category[%d] doesn't exit!")
 	,CAT$0002("Missing or invalid category ID!")
+
+	,ORG$LOY$0001("Missing loyalty point type name!")
+	,ORG$LOY$0002("Missing loyalty point properties!")
+	,ORG$LOY$0003("Invalid loyalty point type id!")
+	,ORG$LOY$0004("No loyalty point type exists with id[%d]!")
+	,ORG$LOY$0005("Loyalty point type linked to loyalty points!")
+	,ORG$LOY$0006("No loyalty point exists with id[%d]!")
+	,ORG$LOY$0007("Loyalty point linked to user transactions!")
+	,ORG$LOY$0008("Missing loyalty point config properties!")
+	,ORG$LOY$0009("Start date can't be after end date!")
+	,ORG$LOY$0010("Amount from can't be bigger than amount to!")
+	,ORG$LOY$0011("No loyalty point config exists with id[%d]!")
+	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
+	,ORG$LOY$0013("Use either amounts or ratio!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -319,8 +334,23 @@ public enum ErrorCodes {
 	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
 
 	,INTG$EVENT$0001("Failed to create instance of event of type[%s]!")
+
+	,COINS$PARAM$0001("No Coins Drop exists with id[%d]!")
+	,COINS$PARAM$0002("Cannot update coins drop with id[%d], only inactive coins drop can be update!")
+	,COINS$PARAM$0003("Missing parameters in given coins drop [%s]!")
+	,COINS$PARAM$0004("Invalid coins drop type_id[%d]!")
+	,TIERS$PARAM$0001("No Tier exists with id[%d]!")
+	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
+	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
+	,CHARITY$PARAM$0001("Missing Charity properties!")
+	,CHARITY$PARAM$0002("No Charity exists with id[%d]!")
+	,CHARITY$PARAM$0003("No Charity donation exists for user with id[%d]!")
+	,GIFT$PARAM$0001("Missing Gift properties!")
+	,FAMILY$PARAM$0001("Missing parameters in given family [%s]!")
+	,BOOSTER$PARAM$0001("Missing Booster properties!")
+	,BOOSTER$PARAM$0002("No Booster exists with id[%d]!")
 	;
-	
+
 	@Getter
 	@JsonValue
     private final String value;

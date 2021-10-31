@@ -70,7 +70,7 @@ public class BrandService {
         brandsRepository.setBrandHidden(brandId);
     }
 
-    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count, Set<Long> brandIds) {
+    public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count, Long orgId, Set<Long> brandIds) {
         if (start < 0) {
             start = 0;
         }
@@ -78,8 +78,13 @@ public class BrandService {
             count = 10;
         }
         PageRequest page = getQueryPage(start, count);
-        if (brandIds != null && !brandIds.isEmpty())
+        if ((brandIds != null && !brandIds.isEmpty()) && orgId == null) {
             return brandsRepository.findByIdInAndOrganizationEntity_YeshteryState(brandIds, page);
+        } else if ((brandIds != null && !brandIds.isEmpty()) && orgId != null) {
+            return brandsRepository.findByIdInAndYeshteryOrganization(brandIds, orgId, page);
+        } else if ((brandIds == null || brandIds.isEmpty()) && orgId != null) {
+            return brandsRepository.findByYeshteryOrganization(orgId, page);
+        }
         return brandsRepository.findByOrganizationEntity_YeshteryState(page);
 
     }
