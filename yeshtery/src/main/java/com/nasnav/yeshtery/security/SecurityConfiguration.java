@@ -74,17 +74,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						patternOf( "/**")
-            , patternOf( "/v1/yeshtery/user/list")
-            , patternOf( "/v1/yeshtery/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles())
-            , patternOf( "/v1/yeshtery/user/address"						,PUT                , setOf(CUSTOMER)),
-            patternOf( "/v1/yeshtery/user/address"						,HttpMethod.DELETE  , setOf(CUSTOMER)),
-            patternOf( "/v1/yeshtery/user/info"),
-            patternOf( "/v1/yeshtery/user/create"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) ),
-            patternOf( "/v1/yeshtery/user/update"											, getAllRoles() ),
-            patternOf( "/v1/yeshtery/user/logout"											, getAllRoles() ),
-            patternOf( "/v1/yeshtery/user/logout_all"										, getAllRoles() ),
-            patternOf( "/v1/yeshtery/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
-
+            , patternOf( "/v1/user/list")
+            , patternOf( "/v1/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles())
+            , patternOf( "/v1/user/address"					,PUT                , setOf(CUSTOMER))
+            , patternOf( "/v1/user/address"					,HttpMethod.DELETE  , setOf(CUSTOMER))
+            , patternOf( "/v1/user/info")
+            , patternOf( "/v1/user/create"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) )
+            , patternOf( "/v1/user/update"											, setOf(CUSTOMER) )
+            , patternOf( "/v1/user/logout"											, getAllRoles() )
+            , patternOf( "/v1/user/logout_all"										, getAllRoles() )
+            , patternOf( "/v1/user/suspend"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
+            , patternOf( "/v1/order/**"										    , getAllRoles())
+            , patternOf( "/v1/cart/**"										        , setOf(CUSTOMER))
+            , patternOf( "/v1/wishlist/**"										    , setOf(CUSTOMER))
+            , patternOf( "/v1/shipping/**"										    , setOf(CUSTOMER))
     );
 
    
@@ -103,13 +106,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
                         , patternOf("/v1/yeshtery/**"						, HttpMethod.GET)
+                        , patternOf("/v1/360view/**"						, HttpMethod.GET)
 
-                        , patternOf("/v1/yeshtery/user/recover")
-                        , patternOf("/v1/yeshtery/user/login/**")
-                        , patternOf("/v1/yeshtery/user/register")
-                        , patternOf("/v1/yeshtery/user/register/activate")
-                        , patternOf("/v1/yeshtery/user/subscribe")
-                        , patternOf("/v1/yeshtery/user/subscribe/activate")
+                        , patternOf("/v1/user/recover")
+                        , patternOf("/v1/user/login/**")
+                        , patternOf("/v1/user/register")
+                        , patternOf("/v1/user/register/activate")
+                        , patternOf("/v1/user/register/activate/resend")
+                        , patternOf("/v1/user/subscribe")
+                        , patternOf("/v1/user/subscribe/activate")
                         );
 
     AuthenticationProvider provider;

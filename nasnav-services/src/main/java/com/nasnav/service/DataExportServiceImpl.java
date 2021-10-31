@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
@@ -76,7 +77,7 @@ public class DataExportServiceImpl implements DataExportService{
 		List<Long> variantsIds = result.stream()
 				.map(ProductExportedData::getVariantId)
 				.collect(toList());
-		Map<Long, Map<String, String>> variantsFeaturesMap = variantsRepo.findByIdIn(variantsIds)
+		Map<Long, Map<String, String>> variantsFeaturesMap = mapInBatches(variantsIds, 1000, variantsRepo::findByIdIn)
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> productService.parseVariantFeatures(variant, 0)));
 

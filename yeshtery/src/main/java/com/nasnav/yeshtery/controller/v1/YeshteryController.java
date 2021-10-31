@@ -2,10 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
-import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
@@ -51,7 +48,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @EnableJpaRepositories
 public class YeshteryController {
 
-    static final String API_PATH = YeshteryConstants.API_PATH +"/";
+    static final String API_PATH = YeshteryConstants.API_PATH +"/yeshtery";
 
     @Autowired
     private ShopService shopService;
@@ -66,8 +63,6 @@ public class YeshteryController {
     @Autowired
     private SearchService searchService;
     @Autowired
-    private ShopThreeSixtyService shop360Svc;
-    @Autowired
     private OrganizationService organizationService;
     @Autowired
     private CategoryService categoryService;
@@ -79,17 +74,6 @@ public class YeshteryController {
 
     @Autowired
     private YeshteryRecommendationService recommendationService;
-
-
-    @Autowired
-    private CartService cartService;
-
-    @Autowired
-    private ShippingManagementService shippingService;
-
-    @Autowired
-    private WishlistService wishlistService;
-
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,
@@ -129,8 +113,9 @@ public class YeshteryController {
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
     public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
                                                                               @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                              @RequestParam(value = "org_id", required = false) Long orgId,
                                                                               @RequestParam(value = "brand_id", required = false) Set<Long> brands) {
-        return brandService.getYeshteryBrands(start, count, brands);
+        return brandService.getYeshteryBrands(start, count, orgId, brands);
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
@@ -219,54 +204,10 @@ public class YeshteryController {
         return categoryService.getCategoriesTree();
     }
 
-
-
-    @GetMapping(value = "/360view/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
-                                     @RequestParam String type,
-                                     @RequestParam(defaultValue = "true") Boolean published) {
-        return shop360Svc.getShop360JsonInfo(shopId, type, published);
-    }
-
-    @GetMapping(value = "/360view/sections", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List> res = new HashMap<>();
-        res.put("floors", shop360Svc.getSections(shopId));
-        return res;
-    }
-
-    @GetMapping(value = "/360view/shops", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
-        return shop360Svc.getThreeSixtyShops(shopId, true);
-    }
-
-    @GetMapping(value = "/360view/shop", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/shop", produces = MediaType.APPLICATION_JSON_VALUE)
     public ShopRepresentationObject getShopById(@RequestParam("shop_id") Long shopId) {
         return shopService.getShopById(shopId);
     }
-
-    @GetMapping(value = "/360view/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ProductsPositionDTO getShop360ProductsPositions(@RequestParam("shop_id") Long shopId,
-                                                           @RequestParam(defaultValue = "2") short published,
-                                                           @RequestParam(value = "scene_id", required = false) Long sceneId,
-                                                           @RequestParam(value = "section_id", required = false) Long sectionId,
-                                                           @RequestParam(value = "floor_id", required = false) Long floorId) {
-        return shop360Svc.getProductsPositions(shopId, published, sceneId, sectionId, floorId);
-    }
-
-    @GetMapping(value = "/360view/products", produces = MediaType.APPLICATION_JSON_VALUE)
-    public LinkedHashMap getShop360products(@RequestParam("shop_id") Long shopId,
-                                            @RequestParam(required = false) String name,
-                                            @RequestParam(required = false, defaultValue = "5") Integer count,
-                                            @RequestParam(value = "product_type", required = false) Integer productType,
-                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
-                                            @RequestParam(value = "published", required = false) Short published,
-                                            @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
-            throws BusinessException {
-        return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360, includeOutOfStock);
-    }
-
-
 
     @Operation(description =  "return seo keywords", summary = "getSeo")
     @ApiResponses(value = {
@@ -308,62 +249,6 @@ public class YeshteryController {
     public List<ProductEntity> getListOfSimilarityAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
                                                       @RequestParam(required = true, value = "userid") Integer userId) {
         return recommendationService.getListOfSimilarity(recommendedItemsCount, userId);
-    }
-
-    @GetMapping(value="/cart",produces= APPLICATION_JSON_VALUE)
-    public Cart getYeshteryCart(@RequestHeader(name = "User-Token", required = false) String token,
-                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.getCart(promoCode);
-    }
-
-    @PostMapping(value = "/cart/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String token,
-                            @RequestBody CartItem item,
-                            @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.addCartItem(item, promoCode);
-    }
-
-    @DeleteMapping(value = "/cart/item", produces=APPLICATION_JSON_VALUE)
-    public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
-                               @RequestParam("item_id") Long itemId,
-                               @RequestParam("stock_id") Long stockId,
-                               @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.deleteYeshteryCartItem(itemId, promoCode, stockId);
-    }
-
-    @PostMapping(value = "/cart/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String token,
-                              @RequestBody CartCheckoutDTO dto) {
-        return cartService.checkoutYeshteryCart(dto);
-    }
-
-
-    @GetMapping(path = "/shipping/offers", produces= APPLICATION_JSON_VALUE)
-    public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("customer_address") Long customerAddress) {
-        return shippingService.getYeshteryShippingOffers(customerAddress);
-    }
-
-    @GetMapping(value = "/wishlist")
-    public Wishlist getWishlist(@RequestHeader(name = "User-Token", required = false) String token) {
-        return wishlistService.getYeshteryWishlist();
-    }
-
-    @PostMapping(value = "/wishlist/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Wishlist addWishlistItem(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestBody WishlistItem item) {
-        return wishlistService.addYeshteryWishlistItem(item);
-    }
-
-    @DeleteMapping(value = "/wishlist/item", produces=APPLICATION_JSON_VALUE)
-    public Wishlist deleteWishlistItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
-        return wishlistService.deleteYeshteryWishlistItem(itemId);
-    }
-
-    @PostMapping(value = "/wishlist/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-    public Cart moveWishlistItemIntoCart(@RequestHeader(name = "User-Token", required = false) String token,
-                                         @RequestBody WishlistItemQuantity items) {
-        return wishlistService.moveYeshteryWishlistItemsToCart(items);
     }
 
     @GetMapping(value = "/organization")

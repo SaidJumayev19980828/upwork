@@ -1,0 +1,425 @@
+package com.nasnav.service;
+
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.LoyaltyPointConfigDTO;
+import com.nasnav.dto.request.LoyaltyPointDTO;
+import com.nasnav.dto.request.LoyaltyPointTypeDTO;
+import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
+import com.nasnav.response.LoyaltyPointDeleteResponse;
+import com.nasnav.response.LoyaltyPointsUpdateResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.math.BigDecimal.ZERO;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
+@Service
+public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
+    @Autowired
+    private SecurityService securityService;
+    @Autowired
+    private LoyaltyPointTypeRepository loyaltyPointTypeRepo;
+    @Autowired
+    private LoyaltyPointRepository loyaltyPointRepo;
+    @Autowired
+    private LoyaltyPointTransactionRepository loyaltyPointTransRepo;
+    @Autowired
+    private LoyaltyPointConfigRepository loyaltyPointConfigRepo;
+    @Autowired
+    private ShopsRepository shopsRepo;
+    @Autowired
+    private UserRepository userRepo;
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointType(LoyaltyPointTypeDTO dto) {
+        if (isBlankOrNull(dto.getName())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0001);
+        }
+        LoyaltyPointTypeEntity entity = ofNullable(dto.getId())
+                .map(loyaltyPointTypeRepo::findById)
+                .map(Optional::get)
+                .orElseGet(LoyaltyPointTypeEntity::new);
+        entity.setName(dto.getName());
+        loyaltyPointTypeRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(LoyaltyPointConfigDTO dto) {
+        validateLoyaltyPointConfigDTO(dto);
+        LoyaltyPointConfigEntity entity = prepareLoyaltyPointConfigEntity(dto);
+        loyaltyPointConfigRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    private LoyaltyPointConfigEntity prepareLoyaltyPointConfigEntity(LoyaltyPointConfigDTO dto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        Long orgId = org.getId();
+        LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByIdAndOrganization_Id(dto.getId(), orgId)
+                .orElseGet(LoyaltyPointConfigEntity::new);
+        if (dto.getDescription() != null) {
+            entity.setDescription(dto.getDescription());
+        }
+        if (dto.getAmountFrom() != null) {
+            entity.setAmountFrom(dto.getAmountFrom());
+        }
+        if (dto.getAmountTo() != null) {
+            entity.setAmountTo(dto.getAmountTo());
+        }
+        if (dto.getPoints() != null) {
+            entity.setPoints(dto.getPoints());
+        }
+        if(dto.getRatioFrom() != null){
+            entity.setRatioFrom(dto.getRatioFrom());
+        }
+        if(dto.getRatioTo() != null){
+            entity.setRatioTo(dto.getRatioTo());
+        }
+        if(dto.getCoefficient() != null){
+            entity.setCoefficient(dto.getCoefficient());
+        }
+        if (dto.getShopId() != null && dto.getShopId() > 0 ) {
+            ShopsEntity shop = shopsRepo.findByIdAndOrganizationEntity_IdAndRemoved(dto.getShopId(), orgId, 0)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, dto.getShopId()));
+            entity.setShop(shop);
+        }
+        if (dto.getIsActive() != null) {
+            entity.setIsActive(dto.getIsActive());
+        } else {
+            entity.setIsActive(true);
+        }
+        entity.setOrganization(org);
+        return entity;
+    }
+
+    private void validateLoyaltyPointConfigDTO(LoyaltyPointConfigDTO dto) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        if (dto.getId() == null) {
+            if (anyIsNull(dto, dto.getShopId())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0008);
+            }
+            if(!allIsNull( dto.getPoints(), dto.getAmountFrom(), dto.getAmountTo())
+                    && !allIsNull( dto.getCoefficient(), dto.getRatioFrom(), dto.getRatioTo())){
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0013);
+            }
+
+            if (!anyIsNull(dto.getAmountFrom(), dto.getAmountTo()) && dto.getAmountFrom() > (dto.getAmountTo())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0010);
+            }
+
+        } else {
+            if (!loyaltyPointConfigRepo.existsByIdAndOrganization_Id(dto.getId(), orgId)) {
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, dto.getId());
+            }
+        }
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPoint(LoyaltyPointDTO dto) {
+        validateLoyaltyPointDTO(dto);
+        LoyaltyPointEntity entity = prepareLoyaltyPointEntity(dto);
+        loyaltyPointRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public LoyaltyPointDeleteResponse deleteLoyaltyPointType(Long id) {
+        LoyaltyPointTypeEntity entity = loyaltyPointTypeRepo.findById(id)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0004, id));
+        if (loyaltyPointRepo.countByType_Id(id) > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0005);
+        }
+        loyaltyPointTypeRepo.delete(entity);
+        return new LoyaltyPointDeleteResponse(true, Arrays.asList(entity.getId()));
+    }
+
+    @Override
+    public LoyaltyPointDeleteResponse deleteLoyaltyPoint(Long id) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        LoyaltyPointEntity entity = loyaltyPointRepo.findByIdAndOrganization_Id(id, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, id));
+        if (loyaltyPointTransRepo.countByLoyaltyPoint_Id(id) > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0007);
+        }
+        loyaltyPointRepo.delete(entity);
+        return new LoyaltyPointDeleteResponse(true, Arrays.asList(entity.getId()));
+    }
+
+    @Override
+    public LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByIdAndOrganization_Id(id, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0011, id));
+        loyaltyPointConfigRepo.delete(entity);
+        return new LoyaltyPointDeleteResponse(true, Arrays.asList(entity.getId()));
+    }
+
+    @Override
+    @Transactional
+    public LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        LoyaltyPointEntity entity = loyaltyPointRepo.findByIdAndOrganization_Id(id, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, id));
+        entity.setEndDate(LocalDateTime.now());
+        loyaltyPointRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public void updateLoyaltyPointCharityTransaction(CharityEntity charity, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isDonate) {
+        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
+        entity.setPoints(points);
+        entity.setIsValid(true);
+        entity.setUser(user);
+        entity.setCharity(charity);
+        entity.setIsDonate(isDonate);
+        entity.setShop(shopEntity);
+        loyaltyPointTransRepo.save(entity);
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(GiftEntity gift, UserEntity user, Integer points, Boolean isGift) {
+        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
+        entity.setPoints(points);
+        entity.setIsValid(true);
+        entity.setUser(user);
+        entity.setGift(gift);
+        entity.setIsGift(isGift);
+        loyaltyPointTransRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(CoinsDropEntity coins, UserEntity user, Integer points,  ShopsEntity shopEntity,  Boolean isCoinsDrop) {
+        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
+        entity.setPoints(points);
+        entity.setIsValid(true);
+        entity.setUser(user);
+        entity.setCoinsDrop(coins);
+        entity.setIsCoinsDrop(isCoinsDrop);
+        entity.setShop(shopEntity);
+        loyaltyPointTransRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, Integer points) {
+        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
+        entity.setPoints(points);
+        entity.setShop(shop);
+        entity.setIsValid(true);
+        entity.setUser(user);
+        entity.setOrder(order);
+        loyaltyPointTransRepo.save(entity);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    @Override
+    public void createLoyaltyPointTransaction(OrdersEntity order) {
+        OrganizationEntity org = order.getOrganizationEntity();
+        ShopsEntity shop = order.getShopsEntity();
+        UserEntity user = order.getMetaOrder().getUser();
+        Integer amount = ofNullable(order)
+                .map(OrdersEntity::getTotal)
+                .map(BigDecimal::intValue)
+                .orElse(0);
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganizationIdAndShopIdAndAmount(org.getId(), shop.getId(), amount)
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (config == null) {
+            return;
+        }
+        updateLoyaltyPointTransaction(shop, user, order, config.getPoints());
+    }
+
+    @Override
+    public void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest) {
+        UserEntity user = returnRequest.getMetaOrder().getUser();
+        Set<BasketsEntity> baskets = returnRequest
+                .getReturnedItems()
+                .stream()
+                .map(ReturnRequestItemEntity::getBasket)
+                .collect(toSet());
+        OrganizationEntity org = returnRequest.getMetaOrder().getOrganization();
+        Set<OrdersEntity> orders = baskets
+                .stream()
+                .map(BasketsEntity::getOrdersEntity)
+                .collect(toSet());
+
+        setTransactionsInvalidForReturnedOrders(orders, user);
+
+        for(OrdersEntity order : orders) {
+            ShopsEntity shop = order.getShopsEntity();
+            BigDecimal amount = baskets
+                    .stream()
+                    .filter(b -> Objects.equals(b.getOrdersEntity(), order))
+                    .map(b -> (b.getPrice().subtract(b.getDiscount())).multiply(b.getQuantity()))
+                    .reduce(ZERO, BigDecimal::add)
+                    .subtract(order.getAmount());
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo
+                    .findByOrganizationIdAndShopIdAndAmount(org.getId(), shop.getId(), amount.intValue())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            if (config == null) {
+                return;
+            }
+            updateLoyaltyPointTransaction(shop, user, order, config.getPoints());
+        }
+    }
+
+    @Override
+    public LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        ShopsEntity shop = securityService.getCurrentUserShop();
+        LoyaltyPointEntity entity = loyaltyPointRepo.findByIdAndOrganization_Id(pointId, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, pointId));
+        UserEntity user = userRepo.findByIdAndOrganizationId(userId, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+
+        Integer availablePoints = getAvailablePoints(shop, user);
+        List<RedeemPointsOfferDTO> offers = getRedeemOffers(orgId, availablePoints);
+        if (!offers.stream().anyMatch(p -> p.getPointId() == pointId)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0012, pointId);
+        }
+
+        LoyaltyPointTransactionEntity transaction = new LoyaltyPointTransactionEntity();
+        transaction.setPoints(-1 * entity.getAmount());
+        transaction.setShop(shop);
+        transaction.setIsValid(true);
+        transaction.setUser(user);
+        transaction.setLoyaltyPoint(entity);
+        loyaltyPointTransRepo.save(transaction);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    private void setTransactionsInvalidForReturnedOrders(Set<OrdersEntity> orders, UserEntity user) {
+        Set<Long> orderIds = orders
+                .stream()
+                .map(OrdersEntity::getId)
+                .collect(toSet());
+        loyaltyPointTransRepo.setTransactionsNotValid(user.getId(), orderIds);
+    }
+
+    @Override
+    public List<LoyaltyPointDTO> listOrganizationLoyaltyPoints() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return loyaltyPointRepo.findByOrganization_IdOrderByEndDateDesc(orgId)
+                .stream()
+                .map(LoyaltyPointEntity::getRepresentation)
+                .collect(toList());
+    }
+
+    @Override
+    public List<LoyaltyPointTypeDTO> listLoyaltyPointTypes() {
+        return loyaltyPointTypeRepo.findAll()
+                .stream()
+                .map(LoyaltyPointTypeEntity::getRepresentation)
+                .collect(toList());
+    }
+
+    @Override
+    public List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return loyaltyPointConfigRepo.findByOrganization_IdOrderByCreatedAtDesc(orgId)
+                .stream()
+                .map(LoyaltyPointConfigEntity::getRepresentation)
+                .collect(toList());
+    }
+
+    @Override
+    public List<RedeemPointsOfferDTO> checkRedeemPoints(String code) {
+        UserEntity user = (UserEntity)securityService.getCurrentUser();
+        ShopsEntity shop = shopsRepo.findByCode(code)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0007, code));
+        Integer availablePoints = getAvailablePoints(shop, user);
+        return getRedeemOffers(user.getOrganizationId(), availablePoints);
+    }
+
+    private Integer getAvailablePoints(ShopsEntity shop, UserEntity user) {
+        if (shop.getAllowOtherPoints()) {
+            return loyaltyPointTransRepo.findAllRedeemablePoints(user.getId());
+        } else {
+            return loyaltyPointTransRepo.findShopRedeemablePoints(user.getId(), shop.getId());
+        }
+    }
+
+    private List<RedeemPointsOfferDTO> getRedeemOffers(Long orgId, Integer availablePoints) {
+        return loyaltyPointRepo
+                .findByOrganization_IdAndAmountLessThanEqual(orgId, availablePoints)
+                .stream()
+                .map(this::toRedeemPointsOfferDTO)
+                .collect(toList());
+    }
+
+    private RedeemPointsOfferDTO toRedeemPointsOfferDTO(LoyaltyPointEntity loyaltyPointEntity) {
+        RedeemPointsOfferDTO dto = new RedeemPointsOfferDTO();
+        dto.setPointId(loyaltyPointEntity.getId());
+        dto.setPoints(loyaltyPointEntity.getPoints());
+        return dto;
+    }
+
+
+    private LoyaltyPointEntity prepareLoyaltyPointEntity(LoyaltyPointDTO dto) {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        Long orgId = org.getId();
+        LoyaltyPointEntity entity = loyaltyPointRepo.findByIdAndOrganization_Id(dto.getId(), orgId)
+                .orElseGet(LoyaltyPointEntity::new);
+
+        if (dto.getDescription() != null) {
+            entity.setDescription(dto.getDescription());
+        }
+        if (dto.getTypeId() != null) {
+            LoyaltyPointTypeEntity type = loyaltyPointTypeRepo.findById(dto.getTypeId())
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0003));
+            entity.setType(type);
+        }
+        if (dto.getStartDate() != null) {
+            entity.setStartDate(dto.getStartDate());
+        }
+        if (dto.getEndDate() != null) {
+            entity.setEndDate(dto.getEndDate());
+        }
+        if (dto.getAmount() != null) {
+            entity.setAmount(dto.getAmount());
+        }
+        if (dto.getPoints() != null) {
+            entity.setPoints(dto.getPoints());
+        }
+        entity.setOrganization(org);
+        return entity;
+    }
+
+    private void validateLoyaltyPointDTO(LoyaltyPointDTO dto) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        if (dto.getId() == null) {
+            if (anyIsNull(dto, dto.getTypeId(),
+                    dto.getStartDate(), dto.getEndDate(), dto.getAmount(), dto.getPoints())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0002);
+            }
+            if (dto.getStartDate().isAfter(dto.getEndDate())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0009);
+            }
+        } else {
+            if (!loyaltyPointRepo.existsByIdAndOrganization_Id(dto.getId(), orgId)) {
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, dto.getId());
+            }
+        }
+    }
+}

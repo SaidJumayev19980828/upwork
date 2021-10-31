@@ -51,14 +51,31 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
 			" from BrandsEntity b " +
 			" left join b.organizationEntity org " +
-			" where org.yeshteryState = 1 and b.removed = 0 order by b.name")
+			" where org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
 	PageImpl<Organization_BrandRepresentationObject> findByOrganizationEntity_YeshteryState(Pageable page);
 
 	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
 			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
 			" from BrandsEntity b " +
 			" left join b.organizationEntity org " +
-			" where b.id in :ids and org.yeshteryState = 1 and b.removed = 0 order by b.name")
+			" where b.id in :ids and org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
 	PageImpl<Organization_BrandRepresentationObject> findByIdInAndOrganizationEntity_YeshteryState(@Param("ids")Set<Long>ids,
 																								   Pageable page);
+
+	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
+			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
+			" from BrandsEntity b " +
+			" left join b.organizationEntity org " +
+			" where b.id in :ids and org.id = :orgId and org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
+	PageImpl<Organization_BrandRepresentationObject> findByIdInAndYeshteryOrganization(@Param("ids")Set<Long>ids,
+																					   @Param("orgId") Long orgId,
+																					   Pageable page);
+
+	@Query("select new com.nasnav.dto.Organization_BrandRepresentationObject(b.id, b.name, b.pname, b.categoryId, " +
+			" b.logo, b.bannerImage, b.coverUrl, b.priority)"+
+			" from BrandsEntity b " +
+			" left join b.organizationEntity org " +
+			" where org.id = :orgId and org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
+	PageImpl<Organization_BrandRepresentationObject> findByYeshteryOrganization(@Param("orgId") Long orgId,
+																				Pageable page);
 }

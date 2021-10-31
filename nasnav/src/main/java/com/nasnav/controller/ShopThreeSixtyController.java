@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.dto.ShopFloorsRequestDTO;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
@@ -9,6 +10,7 @@ import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
+import com.nasnav.service.ShopService;
 import com.nasnav.service.ShopThreeSixtyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,8 @@ public class ShopThreeSixtyController {
 
     @Autowired
     private ShopThreeSixtyService shop360Svc;
+    @Autowired
+    private ShopService shopService;
     
     @GetMapping(value = "/json_data", produces = APPLICATION_JSON_VALUE)
     public String getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
@@ -46,6 +50,11 @@ public class ShopThreeSixtyController {
     @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
     public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
         return shop360Svc.getThreeSixtyShops(shopId, false);
+    }
+
+    @GetMapping(value = "/shop", produces = APPLICATION_JSON_VALUE)
+    public ShopRepresentationObject getShopById(@RequestParam(name = "shop_id") Long shopId) {
+        return shopService.getShopById(shopId);
     }
 
     @PostMapping(value = "/publish", produces = APPLICATION_JSON_VALUE)

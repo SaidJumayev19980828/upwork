@@ -185,6 +185,22 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 															  @Param("statuses") List<Integer> statuses,
 															  @Param("startDate") LocalDateTime startDate);
 
+	@Query("SELECT count (DISTINCT meta) FROM MetaOrderEntity meta "
+			+ " LEFT JOIN  meta.organization org "
+			+ " LEFT JOIN  meta.user usr "
+			+ " LEFT JOIN  meta.subOrders subOrder "
+			+ " LEFT JOIN  subOrder.shopsEntity shop "
+			+ " LEFT JOIN  subOrder.basketsEntity item "
+			+ " LEFT JOIN  subOrder.shipment shipment "
+			+ " LEFT JOIN  item.stocksEntity stock "
+			+ " LEFT JOIN  subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN  shop.addressesEntity shopAddr "
+			+ " LEFT JOIN  stock.productVariantsEntity variant "
+			+ " LEFT JOIN  variant.productEntity product "
+			+ " WHERE usr.id =:userId AND org.id = :orgId"
+			+ " AND meta.status = 8 ")
+	Integer countByUser_IdAndOrganization_IdAAndFinalizeStatus(@Param("userId") Long userId,
+														  @Param("orgId") Long orgId);
 	@Query("SELECT distinct new com.nasnav.dto.MetaOrderBasicInfo(" +
 			"meta.id, meta.createdAt, meta.status, meta.grandTotal"
 			+ ", pay.operator, shipment.shippingServiceId, sum(basket.quantity) "

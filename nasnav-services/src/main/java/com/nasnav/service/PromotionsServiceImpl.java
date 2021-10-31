@@ -142,7 +142,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart) {
 		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
 		var promoItems = toPromoItems(cart.getItems());
-		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode, orgId);
 	}
 
 	@Override
@@ -151,7 +152,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var cart = cartService.getUserCart(userId);
 		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
 		var promoItems = toPromoItems(cart.getItems());
-		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode, orgId);
 	}
 
 	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {
@@ -625,8 +627,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode) {
-		var calculators =  getPromoCalculators(promoCode);
+	public AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue,
+																  String promoCode, Long orgId) {
+		var calculators =  getPromoCalculators(promoCode, orgId);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
 		List<Map<String, Object>> appliedPromosData = new ArrayList<>();
@@ -702,9 +705,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private List<PromoCalculator> getPromoCalculators(String promoCode) {
+	private List<PromoCalculator> getPromoCalculators(String promoCode, Long orgId) {
 		var normalizedPromoCode = ofNullable(promoCode).map(String::toLowerCase).orElse("");
-		var orgId = securityService.getCurrentUserOrganizationId();
 		var promos = promoRepo
 				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
 		if (promoCode != null && !promoCode.equals("")&& promos.size() == 0) {

@@ -23,6 +23,11 @@ public class TagsRepresentationObject extends BaseRepresentationObject {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<TagsRepresentationObject> children;
 
+    private Boolean allowReward;
+    private Boolean buyWithCoins;
+    private Boolean onlyBuyWithCoins;
+    private Long minimumTierId;
+
     public TagsRepresentationObject() {
         children = new ArrayList<>();
     }

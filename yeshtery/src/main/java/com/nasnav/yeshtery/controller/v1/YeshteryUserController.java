@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static com.nasnav.enumerations.YeshteryState.ACTIVE;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryUserController.API_PATH)
@@ -57,10 +59,7 @@ public class YeshteryUserController {
 
     @PostMapping(value = "login/oauth2")
     public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
-        if (securityService.getYeshteryState() != 1) {
-            return null;
-        }
-        //
+       //
         ResponseEntity.BodyBuilder response = ResponseEntity.ok();
         try {
             UserApiResponse body = securityService.socialLogin(socialLoginToken);
@@ -77,24 +76,18 @@ public class YeshteryUserController {
     public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
                                   HttpServletRequest request,
                                   HttpServletResponse response) {
-        if (securityService.getYeshteryState() == 1) {
-            if (token == null || token.isEmpty())
-                token = request.getCookies()[0].getValue();
-            UserApiResponse userApiResponse = securityService.logout(token);
-            response.addCookie(userApiResponse.getCookie());
-            return userApiResponse;
-        }
-        return null;
+        if (token == null || token.isEmpty())
+            token = request.getCookies()[0].getValue();
+        UserApiResponse userApiResponse = securityService.logout(token);
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
     }
 
     @PostMapping(value = "logout_all")
     public UserApiResponse logoutAll(HttpServletResponse response) {
-        if (securityService.getYeshteryState() == 1) {
-            UserApiResponse userApiResponse = securityService.logoutAll();
-            response.addCookie(userApiResponse.getCookie());
-            return userApiResponse;
-        }
-        return null;
+        UserApiResponse userApiResponse = securityService.logoutAll();
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
     }
 
     @PostMapping(value = "recover")
@@ -137,4 +130,28 @@ public class YeshteryUserController {
         userService.resendActivationYeshteryEmail(accountInfo);
     }
 
+    @PutMapping(value = "/address", produces = APPLICATION_JSON_VALUE)
+    public AddressDTO updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                        @RequestBody AddressDTO address)  {
+        return userService.updateUserAddress(address);
+    }
+
+    @DeleteMapping(value = "/address")
+    public void updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                  @RequestParam Long id)  {
+        userService.removeUserAddress(id);
+    }
+
+    @PostMapping(value = "update", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
+
+        return userService.updateUser(json);
+    }
+
+    @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
+    public void sendEmailRecovery(@RequestParam String email,
+                                  @RequestParam(value = "org_id") Long orgId) {
+        userService.sendEmailRecovery(email, orgId);
+    }
 }

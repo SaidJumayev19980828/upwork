@@ -3,15 +3,13 @@ package com.nasnav.yeshtery.services.impl;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.yeshtery.dao.CommonYeshteryUserRepository;
@@ -88,6 +86,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private CommonYeshteryUserRepository commonUserRepo;
     @Autowired
+    private CommonUserRepository commonNasnavUserRepo;
+    @Autowired
     private UserSubscriptionRepository subsRepo;
     @Autowired
     private YeshteryUserTokenRepository userTokenRepo;
@@ -95,7 +95,10 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private AppConfig config;
     @Autowired
     private UserRepository nasNavUserRepository;
-
+    @Autowired
+    private UserService nasNavUserService;
+    @Autowired
+    private UserTokenRepository nasnavUserTokenRepo;
 
     @Autowired
     AppConfig appConfig;
@@ -119,9 +122,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public void sendEmailRecovery(String email, Long orgId) {
-        YeshteryUserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
+        UserEntity userEntity = nasNavUserRepository.getByEmailAndOrganizationId(email, orgId);
         generateResetPasswordToken(userEntity);
-        userEntity = userRepository.saveAndFlush(userEntity);
+        userEntity = nasNavUserRepository.saveAndFlush(userEntity);
         sendRecoveryMail(userEntity);
     }
 
@@ -135,7 +138,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
 
 
-    private void sendRecoveryMail(YeshteryUserEntity userEntity) {
+    private void sendRecoveryMail(UserEntity userEntity) {
         String userName = ofNullable(userEntity.getName()).orElse("User");
         String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
         try {
@@ -153,8 +156,34 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject body) {
-        return null;
+    @Transactional
+    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
+            userServicesHelper.validateNewPassword(data.password);
+            userServicesHelper.validateToken(data.token);
+            UserEntity userEntity = nasNavUserRepository.getByResetPasswordToken(data.token)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
+
+            userServicesHelper.checkResetPasswordTokenExpiry(userEntity.getResetPasswordSentAt());
+            userEntity.setResetPasswordToken(null);
+            userEntity.setResetPasswordSentAt(null);
+            userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+            userEntity = nasNavUserRepository.saveAndFlush(userEntity);
+
+            String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
+            String token = resetRecoveredUserTokens(userEntity);
+
+        return new YeshteryUserApiResponse(userEntity.getId(), orgDomain, token);
+    }
+
+
+
+    private String resetRecoveredUserTokens(UserEntity user) {
+        securityService.logoutAll(user);
+        UserTokensEntity tokenEntity = new UserTokensEntity();
+        tokenEntity.setUserEntity(user);
+        tokenEntity.setToken(generateUUIDToken());
+        tokenEntity = nasnavUserTokenRepo.save(tokenEntity);
+        return tokenEntity.getToken();
     }
 
     @Override
@@ -174,7 +203,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
             YeshteryUserEntity user = createNewUserEntity(userJson);
             setUserAsDeactivated(user);
-            generateResetPasswordToken(user);
+            generateYeshteryResetPasswordToken(user);
             userRepository.saveAndFlush(user);
 
             sendActivationMail(user, userJson.getRedirectUrl());
@@ -185,17 +214,23 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private void  createNewYeshtryUserForOrg(UserDTOs.UserRegistrationObjectV2 userJson, OrganizationEntity org, Long referencedUserId) {
+        Optional<UserEntity> userEntity = nasNavUserRepository.findByEmailAndOrganizationId(userJson.getEmail(), org.getId());
         UserEntity user = new UserEntity();
-        user.setName(userJson.getName());
-        user.setEmail(userJson.getEmail());
-        user.setOrganizationId(userJson.getOrgId());
-        user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
-        user.setPhoneNumber(userJson.getPhoneNumber());
-        user.setOrganizationId(org.getId());
-        user.setUserStatus(NOT_ACTIVATED.getValue());
-        String generatedToken = generateResetPasswordToken();
-        user.setResetPasswordToken(generatedToken);
-        user.setResetPasswordSentAt(now());
+        if(userEntity.isPresent()){
+            user = userEntity.get();
+        } else {
+            user.setName(userJson.getName());
+            user.setEmail(userJson.getEmail());
+            user.setOrganizationId(userJson.getOrgId());
+            user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
+            user.setPhoneNumber(userJson.getPhoneNumber());
+            user.setOrganizationId(org.getId());
+            user.setUserStatus(NOT_ACTIVATED.getValue());
+            String generatedToken = generatePasswordToken(user);
+            user.setResetPasswordToken(generatedToken);
+            user.setResetPasswordSentAt(now());
+            user.setAllowReward(true);
+        }
         user.setYeshteryUserId(referencedUserId);
         nasNavUserRepository.saveAndFlush(user);
     }
@@ -214,7 +249,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public UserRepresentationObject getYeshteryUserData(Long id, Boolean isEmployee) {
-        BaseYeshteryUserEntity currentUser = getCurrentUser();
+        BaseUserEntity currentUser = securityService.getCurrentUser();
 
         if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
             return getUserRepresentationWithUserRoles(currentUser);
@@ -223,15 +258,15 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         Boolean isEmp = ofNullable(isEmployee).orElse(false);
         Long requiredUserId = ofNullable(id).orElse(currentUser.getId());
 
-        BaseYeshteryUserEntity user =
-                commonUserRepo.findById(requiredUserId, isEmp);
+        BaseUserEntity user =
+                commonNasnavUserRepo.findById(requiredUserId, isEmp)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, requiredUserId));
 
         return getUserRepresentationWithUserRoles(user);
     }
 
     @Override
     public void resendActivationYeshteryEmail(ActivationEmailResendDTO accountInfo) {
-        if (securityService.getYeshteryState() == 1){
             String email = accountInfo.getEmail();
             Long orgId = accountInfo.getOrgId();
             BaseYeshteryUserEntity baseUser = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
@@ -239,12 +274,11 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
             YeshteryUserEntity user = (YeshteryUserEntity)baseUser;
             if(isUserDeactivated(user)) {
-                generateResetPasswordToken(user);
+                generateYeshteryResetPasswordToken(user);
                 userRepository.save(user);
             }
 
             sendActivationMail(user, accountInfo.getRedirectUrl());
-        }
     }
 
     @Override
@@ -302,6 +336,21 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             return new RedirectView(url);
     }
 
+    @Override
+    public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+        return nasNavUserService.updateUserAddress(addressDTO);
+    }
+
+    @Override
+    public void removeUserAddress(Long id) {
+        nasNavUserService.removeUserAddress(id);
+    }
+
+    @Override
+    public UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson) {
+        return nasNavUserService.updateUser(userJson);
+    }
+
     private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
         if (!userJson.confirmationFlag) {
             throw new EntityValidationException("Registration not confirmed by user!", null, NOT_ACCEPTABLE);
@@ -336,13 +385,24 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         user.setUserStatus(NOT_ACTIVATED.getValue());
     }
 
-    private void generateResetPasswordToken(YeshteryUserEntity userEntity) {
-        String generatedToken = generateResetPasswordToken();
+    private void generateResetPasswordToken(UserEntity userEntity) {
+        String generatedToken = generatePasswordToken(userEntity);
         userEntity.setResetPasswordToken(generatedToken);
         userEntity.setResetPasswordSentAt(now());
     }
 
-    private String generateResetPasswordToken() {
+
+    private void generateYeshteryResetPasswordToken(YeshteryUserEntity userEntity) {
+        String generatedToken = generateUUIDToken();
+        boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
+        if (existsByToken) {
+            generatedToken = reGenerateResetPasswordToken();
+        }
+        userEntity.setResetPasswordToken(generatedToken);
+        userEntity.setResetPasswordSentAt(now());
+    }
+
+    private String generatePasswordToken(UserEntity userEntity) {
         String generatedToken = generateUUIDToken();
         boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
         if (existsByToken) {
@@ -412,7 +472,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void checkUserActivation(YeshteryUserEntity user) {
         if (user == null)
-            throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006);
+            throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006, "");
 
         userServicesHelper.checkResetPasswordTokenExpiry(user.getResetPasswordSentAt());
 
@@ -426,7 +486,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         userRepository.save(user);
     }
 
-    private UserRepresentationObject getUserRepresentationWithUserRoles(BaseYeshteryUserEntity user) {
+    private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
         UserRepresentationObject userRepObj = user.getRepresentation();
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
@@ -515,11 +575,16 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 .orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
     }
 
-    public Optional<BaseYeshteryUserEntity> getCurrentUserOptional() {
-        return ofNullable( SecurityContextHolder.getContext() )
+    public Optional<YeshteryUserEntity> getCurrentUserOptional() {
+        // TODO should fetch yeshtery entity directly from YeshteryUserRepositoy
+        // related to CommonUserRepositoryImpl todo note
+        Long id =  ofNullable( SecurityContextHolder.getContext() )
                 .map(SecurityContext::getAuthentication)
                 .map(Authentication::getDetails)
-                .map(BaseYeshteryUserEntity.class::cast);
+                .map(UserEntity.class::cast)
+                .map(UserEntity::getYeshteryUserId)
+                .orElse(-1L);
+        return userRepository.findById(id);
     }
 
     public YeshteryUserApiResponse login(UserDTOs.UserLoginObject loginData) {

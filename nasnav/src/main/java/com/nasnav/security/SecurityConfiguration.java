@@ -150,6 +150,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/cart/**"												, setOf(CUSTOMER)),
 						patternOf( "/wishlist/**"											, setOf(CUSTOMER)),
 						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
+						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/list"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/type/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/family/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/tier/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/booster/**"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/config/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/check"									, setOf(CUSTOMER)),
+						patternOf("/loyalty/points/redeem"									, setOf(STORE_MANAGER)),
 						patternOf( "/**")
 						);
 

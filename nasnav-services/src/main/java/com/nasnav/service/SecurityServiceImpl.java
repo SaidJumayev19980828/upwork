@@ -3,10 +3,7 @@ package com.nasnav.service;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.OAuth2UserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
@@ -67,6 +64,8 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
+	@Autowired
+	private ShopsRepository shopsRepo;
 	
 	
 	@Autowired
@@ -416,6 +415,16 @@ public class SecurityServiceImpl implements SecurityService {
 				.filter(user -> user instanceof EmployeeUserEntity)
 				.map(user -> (EmployeeUserEntity)user)
 				.map(EmployeeUserEntity::getShopId)
+				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
+	}
+
+	@Override
+	public ShopsEntity getCurrentUserShop() {
+		return ofNullable( getCurrentUser() )
+				.filter(user -> user instanceof EmployeeUserEntity)
+				.map(user -> (EmployeeUserEntity)user)
+				.map(EmployeeUserEntity::getShopId)
+				.flatMap(shopsRepo::findById)
 				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
 	}
 

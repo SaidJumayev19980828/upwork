@@ -15,6 +15,10 @@ DELETE FROM public.shipment where id IN (
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.shipping_service;
+DELETE FROM public.loyalty_point_transactions where shop_id in (SELECT id FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.loyalty_point_config where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_points where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_point_types where id = 31001;
 DELETE FROM meta_orders_promotions;
 DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
@@ -93,6 +97,9 @@ DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.sub_areas where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.tier;
+DELETE FROM public.family;
+DELETE FROM public.booster;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
