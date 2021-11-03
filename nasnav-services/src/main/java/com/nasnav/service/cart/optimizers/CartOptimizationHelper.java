@@ -128,7 +128,8 @@ public class CartOptimizationHelper {
         BigDecimal stkDiscount = ofNullable(stock.getDiscount()).orElse(ZERO);
 
         return itemPrice.compareTo(stkPrice) != 0
-                || itemDiscount.compareTo(stkDiscount) != 0;
+                || itemDiscount.compareTo(stkDiscount) != 0
+                || stock.getQuantity().compareTo(item.getQuantity()) < 0;
     }
 
 
