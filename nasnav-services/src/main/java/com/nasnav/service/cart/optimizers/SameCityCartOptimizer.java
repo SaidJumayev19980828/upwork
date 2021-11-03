@@ -102,13 +102,8 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 
 
 	private Optional<OptimizedCartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderedByPriority) {
-		Optional<OptimizedCartItem> optimizedItem = 
-				getCartItemStockFromHighestPriorityShop(item, shopsOrderedByPriority)
+		return getCartItemStockFromHighestPriorityShop(item, shopsOrderedByPriority)
 				.map(itemStk -> createOptimizedCartItem(itemStk, item));
-		if(!optimizedItem.isPresent()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId());
-		}
-		return optimizedItem;
 	}
 
 

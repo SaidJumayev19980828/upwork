@@ -92,7 +92,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		}
 		var optimizedCart = createOptimizedCart(dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
-		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart);
+		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) ||
+				(optimizedCart.get().getCartItems().size() != cartService.getCart(dto.getPromoCode()).getItems().size());
 		var returnedCart = getCartObject(optimizedCart);
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));

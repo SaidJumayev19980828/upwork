@@ -1615,8 +1615,12 @@ public class OrderServiceImpl implements OrderService {
 		CartOptimizeResponseDTO optimizationResult = 
 				cartOptimizationService.optimizeCart(checkoutDto);
 		if(optimizationResult.getTotalChanged()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, " prices");
 		}
+		if(optimizationResult.getItemsChanged()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, "s");
+		}
+
 		return optimizationResult.getCart();
 	}
 
