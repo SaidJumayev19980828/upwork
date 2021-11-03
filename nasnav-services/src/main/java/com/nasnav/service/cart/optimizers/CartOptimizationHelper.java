@@ -95,9 +95,10 @@ public class CartOptimizationHelper {
         StocksEntity stock =
                 ofNullable(item.getVariantId())
                         .map(stocks::get)
-                        .filter(stk -> canFulfillRequiredQuantitiy(stk, item))
                         .orElseThrow(
                                 () -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId()));
+
+        reduceItemQuantityIfNeeded(stock, item, optimized);
 
         boolean priceChanged = isPriceChanged(item, stock);
         boolean itemChanged = isItemChanged(item, stock);
@@ -107,14 +108,17 @@ public class CartOptimizationHelper {
         return new OptimizedCartItem(optimized, priceChanged, itemChanged);
     }
 
-
+    private void reduceItemQuantityIfNeeded(StocksEntity stock, CartItem item, CartItem optimized) {
+        if (stock.getQuantity().compareTo(item.getQuantity()) < 0)
+            optimized.setQuantity(stock.getQuantity());
+    }
 
     private boolean canFulfillRequiredQuantitiy(StocksEntity stock, CartItem item) {
         return stock.getQuantity() >= item.getQuantity();
     }
 
     private boolean isItemChanged(CartItem item, StocksEntity stock) {
-        return !item.getStockId().equals(stock.getId());
+        return !item.getStockId().equals(stock.getId()) || stock.getQuantity().compareTo(item.getQuantity()) < 0;
     }
 
     private boolean isPriceChanged(CartItem item, StocksEntity stock) {
