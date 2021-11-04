@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.sanselan.Sanselan;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -370,7 +371,7 @@ public class FileService {
 		try {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
-			BufferedImage image = ImageIO.read(file);
+			BufferedImage image = Sanselan.getBufferedImage(file);
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
 			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
