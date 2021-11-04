@@ -18,7 +18,11 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
             "where s.id = :id and s.removed = 0")
     Optional<ShopsEntity> findByIdAndRemoved(@Param("id") Long id);
 
-    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationId, Integer removed);
+    @Query("select shop from ShopsEntity shop" +
+            " left join fetch shop.organizationEntity org" +
+            " where org.id = :orgId and shop.removed = :removed order by shop.priority desc")
+    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(@Param("orgId") Long organizationId,
+                                                                               @Param("removed") Integer removed);
     
     List<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(Long organizationId, Integer removed, Integer isWarehouse);
 
