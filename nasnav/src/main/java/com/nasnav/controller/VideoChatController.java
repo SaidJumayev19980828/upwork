@@ -4,13 +4,13 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import io.openvidu.java.client.*;
 import net.bytebuddy.utility.RandomString;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import org.json.simple.parser.JSONParser;
 
 @RestController
 @RequestMapping("/videochat")
@@ -30,12 +28,12 @@ public class VideoChatController {
 
     private OpenVidu openVidu;
 
-    private Map<String, Session> mapSessions = new ConcurrentHashMap<>();
+    private final Map<String, Session> mapSessions = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
-    private String OPENVIDU_URL = "http://34.125.116.133:5443/";
-    private String SECRET = "MY_SECRET";
+    private final String OPENVIDU_URL = "http://34.125.116.133:5443/";
+    private final String SECRET = "MY_SECRET";
 
 
     @Autowired
@@ -45,23 +43,17 @@ public class VideoChatController {
     private EmployeeUserService employeeUserService;
 
     @Autowired
-    public void initController(){
+    public void initController() {
         this.openVidu = new OpenVidu(OPENVIDU_URL, SECRET);
     }
 
     @RequestMapping(value = "/getSession", method = RequestMethod.POST)
-    public VideoChatResponse getToken(@RequestHeader (name = "User-Token", required = false) String userToken , @RequestParam(required = false) String sessionName) throws RuntimeBusinessException, OpenViduJavaClientException, OpenViduHttpException {
+    public VideoChatResponse getToken(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam(required = false) String sessionName) throws RuntimeBusinessException, OpenViduJavaClientException, OpenViduHttpException {
 
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
 
         Long orgId = securityService.getCurrentUserOrganizationId();
-
-
-
         String memberName = loggedInUser.getName();
-
-
-
 
         String serverData = "{\"serverData\": \"" + memberName + "\"}";
         ConnectionProperties connectionProperties = new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).data(serverData).role(OpenViduRole.PUBLISHER).build();
@@ -90,7 +82,7 @@ public class VideoChatController {
         try {
             List<UserRepresentationObject> employees = employeeUserService.getAvailableEmployeesByOrgId(orgId);
 
-            if(!(loggedInUser instanceof EmployeeUserEntity) && employees.isEmpty()){
+            if (!(loggedInUser instanceof EmployeeUserEntity) && employees.isEmpty()) {
                 // return json messag says we'll call you back
                 return new VideoChatResponse(false, "All employees are busy right now we'll call you back later", null, null, null);
             }
@@ -140,14 +132,4 @@ public class VideoChatController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    private ResponseEntity<JSONObject> getErrorResponse(Exception e) {
-        JSONObject json = new JSONObject();
-        json.put("cause", e.getCause());
-        json.put("error", e.getMessage());
-        json.put("exception", e.getClass());
-        return new ResponseEntity<>(json, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-
 }
