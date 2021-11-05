@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
@@ -358,6 +359,13 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		employeeUserRepository.save(user);
 	}
 
+	@Override
+	public List<UserRepresentationObject> getAvailableEmployeesByOrgId(Long orgId) {
+		return employeeUserRepository.findByOrganizationId(orgId)
+				.stream()
+				.map(user -> user.getRepresentation())
+				.collect(toList());
+	}
 
 
 	private EmployeeUserEntity getAndValidateEmployeeToSuspend(Long id) {
