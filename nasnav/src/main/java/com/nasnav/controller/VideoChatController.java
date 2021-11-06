@@ -4,22 +4,27 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import io.openvidu.java.client.*;
 import net.bytebuddy.utility.RandomString;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import org.json.simple.parser.JSONParser;
 
 @RestController
 @RequestMapping("/videochat")
@@ -28,12 +33,12 @@ public class VideoChatController {
 
     private OpenVidu openVidu;
 
-    private final Map<String, Session> mapSessions = new ConcurrentHashMap<>();
+    private Map<String, Session> mapSessions = new ConcurrentHashMap<>();
 
-    private final Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
+    private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
-    private final String OPENVIDU_URL = "http://34.125.116.133:5443/";
-    private final String SECRET = "MY_SECRET";
+    private String OPENVIDU_URL = "http://34.125.116.133:5443/";
+    private String SECRET = "MY_SECRET";
 
 
     @Autowired
@@ -47,18 +52,25 @@ public class VideoChatController {
         this.openVidu = new OpenVidu(OPENVIDU_URL, SECRET);
     }
 
-    @RequestMapping(value = "/getSession", method = RequestMethod.POST)
+    @RequestMapping(value = "/getAllSessions", method = RequestMethod.GET)
+    public List<String> getAllSessions() {
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+
+        List<String> sessions = new ArrayList<>();
+        sessions = this.mapSessions.keySet().stream().collect(Collectors.toList());
+
+        return sessions;
+    }
+
+    @GetMapping(value = "/getSession")
     public VideoChatResponse getToken(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam(required = false) String sessionName) throws RuntimeBusinessException, OpenViduJavaClientException, OpenViduHttpException {
 
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
 
         Long orgId = securityService.getCurrentUserOrganizationId();
-        String memberName = loggedInUser.getName();
 
-        String serverData = "{\"serverData\": \"" + memberName + "\"}";
-        ConnectionProperties connectionProperties = new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).data(serverData).role(OpenViduRole.PUBLISHER).build();
+        ConnectionProperties connectionProperties = new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).role(OpenViduRole.PUBLISHER).build();
 
-        JSONObject responseJson = new JSONObject();
 
         if (sessionName != null && this.mapSessions.get(sessionName) != null) {
             // Session already exists
@@ -67,10 +79,19 @@ public class VideoChatController {
 
                 String token = this.mapSessions.get(sessionName).createConnection(connectionProperties).getToken();
 
-                this.mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
+                this.mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
 
                 return new VideoChatResponse(true, null, token, null, sessionName);
-            } catch (Exception e1) {
+            }
+            catch(OpenViduHttpException ex){
+                if(ex.getStatus()==404) {
+                    this.mapSessions.remove(sessionName);
+                    this.mapSessionNamesTokens.remove(sessionName);
+                }
+                throw ex;
+
+            }
+            catch (Exception e1) {
                 throw e1;
             }
         }
@@ -102,13 +123,11 @@ public class VideoChatController {
         }
     }
 
-    @RequestMapping(value = "/remove-user", method = RequestMethod.POST)
-    public ResponseEntity<JSONObject> removeUser(@RequestBody String sessionNameToken, HttpSession httpSession)
+    @RequestMapping(value = "/remove-user", method = RequestMethod.GET)
+    public ResponseEntity<JSONObject> removeUser(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam String sessionName)
             throws Exception {
 
-        JSONObject sessionNameTokenJSON = (JSONObject) new JSONParser().parse(sessionNameToken);
-        String sessionName = (String) sessionNameTokenJSON.get("sessionName");
-        String token = (String) sessionNameTokenJSON.get("token");
+        String token = userToken;
 
         if (this.mapSessions.get(sessionName) != null && this.mapSessionNamesTokens.get(sessionName) != null) {
 
