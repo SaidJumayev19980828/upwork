@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifIFD0Directory;
 import com.google.common.net.MediaType;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
@@ -346,7 +350,7 @@ public class FileService {
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
 		final String fileType = getImageType(type, originalFile.getMimetype())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
-		logger.debug("Requesting resized image " + url + ", to size: {" + width + "} x {" + height + "}");
+
 		if (!originalFile.getMimetype().contains("image")) {
 			logger.error(String.format("Couldn't resize image : file has mimetype [%s]!", originalFile.getMimetype()));
 			return STATIC_FILES_URL + "/" + originalFile.getLocation();
@@ -367,14 +371,14 @@ public class FileService {
 
 
 	private FilesResizedEntity createResizedImageEntity(FileEntity originalFile, Integer width, Integer height, String fileType) {
-		logger.debug("Creating resized image " + originalFile.getOriginalFileName() + ", to size: {" + width + "} x {" + height + "}");
 		try {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
+			Metadata metadata = ImageMetadataReader.readMetadata(file);
 			BufferedImage image = ImageIO.read(file);
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
-			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
+			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName, metadata);
 			logger.debug("Image resized");
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
@@ -485,16 +489,39 @@ public class FileService {
 
 
 
-	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName) throws IOException {
+	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName,
+									  Metadata metadata) throws IOException, MetadataException {
+		int rotation = getImageRotation(metadata);
 		var imgOutStream = new ByteArrayOutputStream();
 		Thumbnails.of(image)
 				.width(targetWidth)
+				.rotate(rotation)
 				.outputFormat(fileType)
 				.toOutputStream(imgOutStream);
 		return getCommonsMultipartFile(resizedFileName, resizedFileName, fileType, imgOutStream);
 	}
 
+	private int getImageRotation(Metadata metadata)  {
+		try {
+			ExifIFD0Directory exifIFD0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+			int orientation = exifIFD0.getInt(ExifIFD0Directory.TAG_ORIENTATION);
 
+			switch (orientation) {
+				case 1: // [Exif IFD0] Orientation - Top, left side (Horizontal / normal)
+					return 0;
+				case 6: // [Exif IFD0] Orientation - Right side, top (Rotate 90 CW)
+					return 90;
+				case 3: // [Exif IFD0] Orientation - Bottom, right side (Rotate 180)
+					return 180;
+				case 8: // [Exif IFD0] Orientation - Left side, bottom (Rotate 270 CW)
+					return 270;
+				default:
+					return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+	}
 
 	public MultipartFile getCommonsMultipartFile(String fieldName, String resizedFileName, String fileType, ByteArrayOutputStream imgOutStream) throws IOException {
 		FileItem fileItem = createFileItem(fieldName, resizedFileName, fileType);

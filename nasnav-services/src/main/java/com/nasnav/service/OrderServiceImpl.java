@@ -1615,8 +1615,12 @@ public class OrderServiceImpl implements OrderService {
 		CartOptimizeResponseDTO optimizationResult = 
 				cartOptimizationService.optimizeCart(checkoutDto);
 		if(optimizationResult.getTotalChanged()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, " prices");
 		}
+		if(optimizationResult.getItemsChanged()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, "s");
+		}
+
 		return optimizationResult.getCart();
 	}
 
@@ -2126,13 +2130,14 @@ public class OrderServiceImpl implements OrderService {
 		return shopCartsMap
 				.entrySet()
 				.stream()
-				.map(entry -> getCartItemsForShop(entry, shopCache))
+				.map(entry -> getCartItemsForShop(entry, shopCache, org))
 				.collect(toList());
 	}
 
 
-	private CartItemsForShop getCartItemsForShop(Map.Entry<Long, List<CartCheckoutData>> entry, Map<Long,ShopsEntity> shopCache) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
+	private CartItemsForShop getCartItemsForShop(Map.Entry<Long, List<CartCheckoutData>> entry, Map<Long,ShopsEntity> shopCache,
+												 OrganizationEntity org) {
+		Long orgId = org.getId();
 		ShopsEntity shop = 
 				ofNullable(entry.getKey())
 				.map(shopCache::get)
@@ -2430,7 +2435,10 @@ public class OrderServiceImpl implements OrderService {
 		shipment.setStatus(DRAFT.getValue());
 		shipment.setShippingServiceId(dto.getServiceId());
 		if ( dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
-			shipment.setParameters("{}");
+			if (!shippingOffers.isEmpty() && shippingOffers.get(0).getType().equals("PICKUP")) { // for multiple pickup
+				shipment.setParameters("{\"SHOP_ID\":\"" + shipment.getSubOrder().getShopsEntity().getId()+"\"}");
+			} else
+				shipment.setParameters("{}");
 		} else {
 			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
 			shipment.setParameters(additionalData.toString());

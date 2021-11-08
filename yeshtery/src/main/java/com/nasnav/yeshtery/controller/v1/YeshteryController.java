@@ -269,4 +269,15 @@ public class YeshteryController {
         }
         return organizationService.getOrganizationById(organizationId, 1);
     }
+
+    @GetMapping(value ="/tagstree", produces = APPLICATION_JSON_VALUE)
+    public List<TagsTreeNodeDTO> getTagsTree(@RequestParam(name = "org_id") Long organizationId) throws BusinessException {
+        return categoryService.getOrganizationTagsTree(organizationId);
+    }
+
+    @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
+    public List<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
+                                                  @RequestParam(value = "category_name", required = false) String categoryName) {
+        return categoryService.getOrganizationTags(organizationId, categoryName);
+    }
 }

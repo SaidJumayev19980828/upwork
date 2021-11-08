@@ -223,7 +223,7 @@ public enum ErrorCodes {
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
-	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item%s!")
 
 	,O$NEW$0001("Failed to create order! Please try again!")
 	
