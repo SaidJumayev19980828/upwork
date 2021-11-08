@@ -15,4 +15,6 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role);
 
 	void suspendEmployeeAccount(Long id, Boolean suspend);
+
+	List<UserRepresentationObject> getAvailableEmployeesByOrgId(Long orgId);
 }

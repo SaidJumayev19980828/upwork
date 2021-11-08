@@ -91,8 +91,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 			dto.setAddressId(addressId);
 		}
 		var optimizedCart = createOptimizedCart(dto);
-		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
-		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart);
+		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
+		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
+		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var returnedCart = getCartObject(optimizedCart);
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
@@ -101,7 +102,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
 	}
 
-
+	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
+		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode).getItems().size();
+	}
 
 	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
 		return optimizedCart
