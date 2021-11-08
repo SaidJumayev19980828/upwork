@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifIFD0Directory;
 import com.google.common.net.MediaType;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
@@ -17,7 +21,6 @@ import lombok.NoArgsConstructor;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.sanselan.Sanselan;
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -371,10 +374,11 @@ public class FileService {
 		try {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
-			BufferedImage image = Sanselan.getBufferedImage(file);
+			Metadata metadata = ImageMetadataReader.readMetadata(file);
+			BufferedImage image = ImageIO.read(file);
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
-			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
+			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName, metadata);
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
 		}catch (Exception e) {
@@ -482,16 +486,39 @@ public class FileService {
 
 
 
-	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName) throws IOException {
+	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName,
+									  Metadata metadata) throws IOException, MetadataException {
+		int rotation = getImageRotation(metadata);
 		var imgOutStream = new ByteArrayOutputStream();
 		Thumbnails.of(image)
 				.width(targetWidth)
+				.rotate(rotation)
 				.outputFormat(fileType)
 				.toOutputStream(imgOutStream);
 		return getCommonsMultipartFile(resizedFileName, resizedFileName, fileType, imgOutStream);
 	}
 
+	private int getImageRotation(Metadata metadata)  {
+		try {
+			ExifIFD0Directory exifIFD0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+			int orientation = exifIFD0.getInt(ExifIFD0Directory.TAG_ORIENTATION);
 
+			switch (orientation) {
+				case 1: // [Exif IFD0] Orientation - Top, left side (Horizontal / normal)
+					return 0;
+				case 6: // [Exif IFD0] Orientation - Right side, top (Rotate 90 CW)
+					return 90;
+				case 3: // [Exif IFD0] Orientation - Bottom, right side (Rotate 180)
+					return 180;
+				case 8: // [Exif IFD0] Orientation - Left side, bottom (Rotate 270 CW)
+					return 270;
+				default:
+					return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+	}
 
 	public MultipartFile getCommonsMultipartFile(String fieldName, String resizedFileName, String fileType, ByteArrayOutputStream imgOutStream) throws IOException {
 		FileItem fileItem = createFileItem(fieldName, resizedFileName, fileType);
