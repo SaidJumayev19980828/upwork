@@ -169,7 +169,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	
 	
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
-			+ " variant.id, allStocks.id, shop.id, city.id"
+			+ " shop.organizationEntity.id, variant.id, allStocks.id, shop.id, city.id"
 			+ ", allStocks.quantity, allStocks.price , allStocks.discount)"
 			+ " FROM CartItemEntity item"
 			+ " LEFT JOIN item.stock stock "
@@ -184,6 +184,23 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " AND allStocks.quantity >= item.quantity "
 			+ " AND shop.removed = 0")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
+
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
+			+ " shop.organizationEntity.id, variant.id, allStocks.id, shop.id, city.id"
+			+ ", allStocks.quantity, allStocks.price , allStocks.discount)"
+			+ " FROM CartItemEntity item"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN item.user user "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.stocks  allStocks "
+			+ " LEFT JOIN allStocks.shopsEntity shop "
+			+ " LEFT JOIN shop.addressesEntity address "
+			+ " LEFT JOIN address.areasEntity area "
+			+ " LEFT JOIN area.citiesEntity city "
+			+ " WHERE user.id = :userId "
+			+ " AND allStocks.quantity >= item.quantity "
+			+ " AND shop.removed = 0 AND shop.id in :shopIds")
+	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId, @Param("shopIds") List<Long> shopIds);
 
 	
 	@Transactional

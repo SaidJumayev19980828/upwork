@@ -294,7 +294,18 @@ public class CartServiceImpl implements CartService{
     }
 
 
-
+    @Override
+    public List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops){
+        Long userId = securityService.getCurrentUser().getId();
+        return cartItemRepo
+                .getAllCartStocks(userId, shops)
+                .stream()
+                .collect(groupingBy(CartItemStock::getShopId))
+                .entrySet()
+                .stream()
+                .map(this::createShopFulfillingCart)
+                .collect(toList());
+    }
 
 
     @Override
@@ -342,7 +353,13 @@ public class CartServiceImpl implements CartService{
                         .filter(Objects::nonNull)
                         .findFirst()
                         .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0005));
-        return new ShopFulfillingCart(shopId, cityId, itemStocks);
+        Long orgId = itemStocks
+                .stream()
+                .map(CartItemStock::getOrgId)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$SHIP$0002));
+        return new ShopFulfillingCart(shopId, cityId, orgId, itemStocks);
     }
 
 

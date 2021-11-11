@@ -22,6 +22,7 @@ public interface CartService {
     Order checkoutCart(CartCheckoutDTO dto);
     Order checkoutYeshteryCart(CartCheckoutDTO dto);
     BigDecimal calculateCartTotal(Cart cart);
+    List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops);
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
     List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
     List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
