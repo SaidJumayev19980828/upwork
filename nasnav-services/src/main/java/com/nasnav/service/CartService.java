@@ -16,7 +16,8 @@ public interface CartService {
     Cart getUserCart(Long userId);
     Cart getUserCart(Long userId, String promoCode);
     Cart addCartItem(CartItem item, String promoCode);
-    Cart addCartItems(List<CartItem> items, String promoCode);
+    Cart addNasnavCartItems(List<CartItem> items, String promoCode);
+    Cart addYeshteryCartItems(List<CartItem> items, String promoCode);
     Cart deleteCartItem(Long itemId, String promoCode);
     Cart deleteYeshteryCartItem(Long itemId, String promoCode);
     Order checkoutCart(CartCheckoutDTO dto);

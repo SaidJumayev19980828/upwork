@@ -12,10 +12,7 @@ import java.util.Set;
 public class Parameter {
 	private String name;
 	private ParameterType type;
-	@JsonInclude(JsonInclude.Include.NON_EMPTY)
 	private List<String> options;
-	@JsonInclude(JsonInclude.Include.NON_EMPTY)
-	@JsonProperty(value = "options")
 	private Map<Long, Set<Long>> multipleOptions;
 	private boolean required;
 

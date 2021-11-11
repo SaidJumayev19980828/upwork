@@ -133,6 +133,7 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 										   @Param("orgId") Long orgId);
 
 
+	List<StocksEntity> findByIdInAndOrganizationEntity_IdIn(Set<Long> itemStocks, Set<Long> orgId);
 	List<StocksEntity> findByIdInAndOrganizationEntity_Id(Set<Long> itemStocks, Long orgId);
 	
 	

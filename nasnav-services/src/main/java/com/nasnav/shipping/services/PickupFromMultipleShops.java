@@ -1,5 +1,7 @@
 package com.nasnav.shipping.services;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.enumerations.ShippingStatus;
@@ -51,6 +53,7 @@ public class PickupFromMultipleShops implements ShippingService {
     private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION =
             asList(new Parameter(ORG_SHOPS, JSON));
 
+    @JsonProperty(value = "ORGS_WITH_SHOPS_MAP")
     private Map<Long, Set<Long>> allowedOrgsWithShops;
     private Integer etaDaysMin;
     private Integer etaDaysMax;
@@ -91,7 +94,8 @@ public class PickupFromMultipleShops implements ShippingService {
     }
 
     private void setAllowedOrgs(Map<String, String> serviceParams) {
-        allowedOrgsWithShops = mapper.convertValue(serviceParams.get(ORGS_WITH_SHOPS_MAP), Map.class);
+        JSONObject json = new JSONObject(serviceParams.get(ORGS_WITH_SHOPS_MAP));
+        allowedOrgsWithShops = mapper.convertValue(json.toMap(), new TypeReference<Map<Long, Set<Long>>>(){});
     }
 
     private void setEtaDaysMax(Map<String, String> serviceParams) {
@@ -123,7 +127,7 @@ public class PickupFromMultipleShops implements ShippingService {
     }
 
     private Map<Long, Set<Long>> getShopsThatCanProvideWholeCart() {
-        return cartService.getShopsThatCanProvideWholeCart()
+        return cartService.getShopsThatCanProvideCartItems()
                 .stream()
                 .filter(c -> allowedOrgsWithShops.containsKey(c.getOrgId()) && allowedOrgsWithShops.get(c.getOrgId()).contains(c.getShopId()))
                 .collect(groupingBy(ShopFulfillingCart::getOrgId, mapping(ShopFulfillingCart::getShopId, toSet())));

@@ -296,7 +296,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String type = ofNullable(param.getType())
 						.map(ParameterType::getValue)
 						.orElse(STRING.getValue());
-		return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
+		if (param.getOptions() != null && !param.getOptions().isEmpty()) {
+			return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
+		}
+		return new ShippingAdditionalDataDTO(param.getName(), type, param.getMultipleOptions());
 	}
 	
 	
