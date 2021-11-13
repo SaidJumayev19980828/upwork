@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -53,6 +54,9 @@ public class LoyaltyTierEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private LoyaltyBoosterEntity booster;
+
+    @Column( name = "cash_back_percentage")
+    private BigDecimal cashBackPercentage;
 
     public LoyaltyTierDTO getRepresentation() {
         LoyaltyTierDTO dto = new LoyaltyTierDTO();

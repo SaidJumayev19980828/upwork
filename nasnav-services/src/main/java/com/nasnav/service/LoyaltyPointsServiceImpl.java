@@ -246,7 +246,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Override
     public LoyaltyTierDTO getUserOrgTier(Long orgId) {
-        UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if(! (baseUser instanceof  UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity)baseUser;
         Optional<UserEntity> user = getUserEntity(orgId, currentUser);
 
         if(user.isEmpty()){

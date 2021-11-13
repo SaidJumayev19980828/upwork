@@ -35,10 +35,10 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     UserService userService;
 
     @Override
-    public LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tiers) {
-        validateTier(tiers);
+    public LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tier) {
+        validateTier(tier);
 
-        LoyaltyTierEntity entity = createTierEntity(tiers);
+        LoyaltyTierEntity entity = createTierEntity(tier);
         entity = tierRepository.save(entity);
         return new LoyaltyTierUpdateResponse(entity.getId());
     }
@@ -85,24 +85,28 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         userService.updateUserByTierId(tierId, userId);
     }
 
-    private LoyaltyTierEntity createTierEntity(LoyaltyTierDTO tiers) {
-        LoyaltyTierEntity entity = getOrCreateTierEntity(tiers);
-        if (isUpdateOperation(tiers) && !isInactiveTier(entity)) {
+    private LoyaltyTierEntity createTierEntity(LoyaltyTierDTO tier) {
+        LoyaltyTierEntity entity = getOrCreateTierEntity(tier);
+        if (isUpdateOperation(tier) && !isInactiveTier(entity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE
-                    , TIERS$PARAM$0002, tiers.getId());
+                    , TIERS$PARAM$0002, tier.getId());
         }
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
         entity.setOrganization(organization);
-        entity.setIsActive(tiers.getIsActive());
-        entity.setIsSpecial(tiers.getIsSpecial());
-        entity.setNoOfPurchaseFrom(tiers.getNoOfPurchaseFrom());
-        entity.setNoOfPurchaseTo(tiers.getNoOfPurchaseTo());
-        entity.setSellingPrice(tiers.getSellingPrice());
-        entity.setTierName(tiers.getTierName());
-        if (tiers != null && tiers.getIsSpecial()) {
+        entity.setIsActive(tier.getIsActive());
+        entity.setIsSpecial(tier.getIsSpecial());
+        entity.setNoOfPurchaseFrom(tier.getNoOfPurchaseFrom());
+        entity.setNoOfPurchaseTo(tier.getNoOfPurchaseTo());
+        entity.setSellingPrice(tier.getSellingPrice());
+        entity.setTierName(tier.getTierName());
+        entity.setCashBackPercentage(tier.getCashBackPercentage());
+
+        if (tier.getIsSpecial()) {
             entity.setBooster(null);
+        } else if(tier.getBoosterId() != null && tier.getBoosterId() > 0){
+            entity.setBooster(loyaltyBoosterRepository.findById(tier.getBoosterId()).get());
         } else {
-            entity.setBooster(loyaltyBoosterRepository.findById(tiers.getBoosterId()).get());
+            entity.setBooster(null);
         }
         return entity;
     }
@@ -121,12 +125,12 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
                         , TIERS$PARAM$0001, id));
     }
 
-    private boolean isUpdateOperation(LoyaltyTierDTO tiers) {
-        return nonNull(tiers.getId());
+    private boolean isUpdateOperation(LoyaltyTierDTO tier) {
+        return nonNull(tier.getId()) && tier.getId() > 0;
     }
 
-    private boolean isInactiveTier(LoyaltyTierEntity tiers) {
-        return Objects.equals(INACTIVE.getValue(), tiers.getIsActive());
+    private boolean isInactiveTier(LoyaltyTierEntity tier) {
+        return Objects.equals(INACTIVE.getValue(), tier.getIsActive());
     }
 
     private void validateTier(LoyaltyTierDTO tiers) {

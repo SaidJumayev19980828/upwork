@@ -51,3 +51,4 @@ ALTER TABLE public.loyalty_point_config DROP COLUMN amount_from;
 ALTER TABLE public.loyalty_point_config DROP COLUMN amount_to;
 ALTER TABLE public.loyalty_point_config DROP COLUMN points;
 
+ALTER TABLE public.loyalty_tier ADD cash_back_percentage numeric;

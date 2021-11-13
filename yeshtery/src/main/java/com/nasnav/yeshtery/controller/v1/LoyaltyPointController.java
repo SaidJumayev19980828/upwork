@@ -39,11 +39,29 @@ public class LoyaltyPointController {
     private LoyaltyBoosterService loyaltyBoosterService;
 
 
+    @GetMapping(value ="points")
+    public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long orgId){
+        return loyaltyPointsService.getUserPoints(orgId);
+    }
+
+    @GetMapping(value ="user_tier")
+    public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long orgId){
+        return loyaltyPointsService.getUserOrgTier(orgId);
+    }
+
+
+    // CRUD Ops
+
+    /**
+     * Config APIs
+     */
+
     @PostMapping(value = "config/update")
     public LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(@RequestHeader(name = "User-Token", required = false) String token,
                                                                 @RequestBody LoyaltyPointConfigDTO dto) {
         return  loyaltyPointsService.updateLoyaltyPointConfig(dto);
     }
+
 
     @DeleteMapping("config/delete")
     public LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(@RequestHeader(name = "User-Token", required = false) String token,
@@ -55,6 +73,12 @@ public class LoyaltyPointController {
     public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token) {
         return loyaltyPointsService.listLoyaltyPointConfigs();
     }
+
+
+    /**
+     * Type APIs
+     */
+
 
     @PostMapping(value = "type/update")
     public LoyaltyPointsUpdateResponse updateLoyaltyPointType(@RequestHeader(name = "User-Token", required = false) String token,
@@ -75,41 +99,6 @@ public class LoyaltyPointController {
     }
 
 
-    @PostMapping(value = "points/update")
-    public LoyaltyPointsUpdateResponse updateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                   @RequestBody LoyaltyPointDTO dto) {
-        return loyaltyPointsService.updateLoyaltyPoint(dto);
-    }
-
-    @DeleteMapping("points/delete")
-    public LoyaltyPointDeleteResponse deleteLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                   @RequestParam Long id) {
-        return loyaltyPointsService.deleteLoyaltyPoint(id);
-    }
-
-    @PostMapping("points/terminate")
-    public LoyaltyPointsUpdateResponse terminateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                                             @RequestParam Long id) {
-        return loyaltyPointsService.terminateLoyaltyPoint(id);
-    }
-
-    @GetMapping(value = "points/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyPointsService.listOrganizationLoyaltyPoints();
-    }
-
-    @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)
-    public List<RedeemPointsOfferDTO> checkRedeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                        @RequestParam String code) {
-        return loyaltyPointsService.checkRedeemPoints(code);
-    }
-
-    @PostMapping(value = "points/redeem")
-    public LoyaltyPointsUpdateResponse redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("point_id") Long pointId, @RequestParam("user_id") Long userId) {
-        return loyaltyPointsService.redeemPoints(pointId, userId);
-    }
-
     /***
      * Family APIs
      * **/
@@ -129,7 +118,7 @@ public class LoyaltyPointController {
     @GetMapping(value = "family/list")
     public List<LoyaltyFamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token,
                                                @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
-       return loyaltyFamilyService.listFamily(orgId);
+        return loyaltyFamilyService.listFamily(orgId);
     }
 
     @PostMapping(value = "family/new_member")
@@ -162,7 +151,7 @@ public class LoyaltyPointController {
     @PostMapping(value = "tier/update")
     public LoyaltyTierUpdateResponse createTier(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestBody LoyaltyTierDTO dto) {
-       return loyaltyTierService.updateTier(dto);
+        return loyaltyTierService.updateTier(dto);
     }
 
     @GetMapping(value = "tier/list")
@@ -185,6 +174,57 @@ public class LoyaltyPointController {
         if (tierId > 0 && userId > 0) {
             loyaltyTierService.addNewTierToUser(userId, tierId);
         }
+    }
+
+    /**
+     * Coins Drop APIs
+     *
+     */
+    @PostMapping(value = "coins_drop/update")
+    public LoyaltyCoinUpdateResponse createCoin(@RequestHeader(name = "User-Token", required = false) String token,
+                                                @RequestBody LoyaltyCoinsDropDTO dto) {
+        return loyaltyCoinsDropService.updateCoinsDrop(dto);
+    }
+
+    @GetMapping(value = "coins_drop/all")
+    public List<LoyaltyCoinsDropEntity> getCoinByOrgId(@RequestHeader(name = "User-Token", required = false) String token,
+                                                       @RequestParam(value = "org_id") Long orgId) {
+        return loyaltyCoinsDropService.getByOrganizationId(orgId);
+    }
+
+    @PostMapping(value = "points/update")
+    public LoyaltyPointsUpdateResponse updateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
+                                                          @RequestBody LoyaltyPointDTO dto) {
+        return loyaltyPointsService.updateLoyaltyPoint(dto);
+    }
+
+    @DeleteMapping("points/delete")
+    public LoyaltyPointDeleteResponse deleteLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
+                                                         @RequestParam Long id) {
+        return loyaltyPointsService.deleteLoyaltyPoint(id);
+    }
+
+    @PostMapping("points/terminate")
+    public LoyaltyPointsUpdateResponse terminateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
+                                                             @RequestParam Long id) {
+        return loyaltyPointsService.terminateLoyaltyPoint(id);
+    }
+
+    @GetMapping(value = "points/list", produces = APPLICATION_JSON_VALUE)
+    public List<LoyaltyPointDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyPointsService.listOrganizationLoyaltyPoints();
+    }
+
+    @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)
+    public List<RedeemPointsOfferDTO> checkRedeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
+                                                        @RequestParam String code) {
+        return loyaltyPointsService.checkRedeemPoints(code);
+    }
+
+    @PostMapping(value = "points/redeem")
+    public LoyaltyPointsUpdateResponse redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
+                                                    @RequestParam("point_id") Long pointId, @RequestParam("user_id") Long userId) {
+        return loyaltyPointsService.redeemPoints(pointId, userId);
     }
 
     @GetMapping(value = "booster")
@@ -234,7 +274,7 @@ public class LoyaltyPointController {
     @PostMapping(value = "charity/user/update")
     public LoyaltyCharityUpdateResponse createCharity(@RequestHeader(name = "User-Token", required = false) String token,
                                                       @RequestBody UserCharityDTO dto) {
-       return loyaltyCharityService.updateUserCharity(dto);
+        return loyaltyCharityService.updateUserCharity(dto);
     }
 
     @PostMapping(value = "charity/user/donate")
@@ -269,22 +309,6 @@ public class LoyaltyPointController {
             return loyaltyGiftService.getGiftsRedeemByUserReceiveId(userId);
         }
         return loyaltyGiftService.getGiftsNotRedeemByUserId(userId);
-    }
-
-    /**
-     * Coins Drop APIs
-     *
-     */
-    @PostMapping(value = "coins_drop/update")
-    public LoyaltyCoinUpdateResponse createCoin(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestBody LoyaltyCoinsDropDTO dto) {
-        return loyaltyCoinsDropService.updateCoinsDrop(dto);
-    }
-
-    @GetMapping(value = "coins_drop/all")
-    public List<LoyaltyCoinsDropEntity> getCoinByOrgId(@RequestHeader(name = "User-Token", required = false) String token,
-                                                       @RequestParam(value = "org_id") Long orgId) {
-        return loyaltyCoinsDropService.getByOrganizationId(orgId);
     }
 
 }
