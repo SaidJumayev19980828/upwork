@@ -157,7 +157,7 @@ public class LoyaltyPointController {
     @GetMapping(value = "tier/list")
     public List<LoyaltyTierDTO> getTier(@RequestHeader(name = "User-Token", required = false) String token,
                                         @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId,
-                                        @RequestParam(value = "is_special", required = false) Boolean isSpecial) {
+                                        @RequestParam(value = "is_special", required = false, defaultValue = "false") Boolean isSpecial) {
         return loyaltyTierService.getTiers(orgId, isSpecial);
     }
 

@@ -229,7 +229,7 @@ public class LoyaltyPointTest {
         request = getHttpEntity("192021");
         response = template.postForEntity("/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 501L));
+        assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 99001L));
     }
 
 

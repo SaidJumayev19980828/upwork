@@ -23,7 +23,7 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " where t.isValid = true and t.shop.allowOtherPoints = true and t.user.id = :userId")
     Integer findAllRedeemablePoints(@Param("userId") Long userId);
 
-    @Query("select sum(t.points) from LoyaltyPointTransactionEntity t" +
+    @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.isValid = true and t.organization.id = :orgId and t.user.id = :userId")
     Integer findOrgRedeemablePoints(@Param("userId") Long userId,
                                      @Param("orgId") Long orgId);
