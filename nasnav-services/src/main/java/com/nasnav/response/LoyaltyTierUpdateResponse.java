@@ -7,14 +7,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class LoyaltyPointDeleteResponse {
-    private boolean success;
-    private Long loyaltyId;
+public class LoyaltyTierUpdateResponse {
+	
+	private Long tierId;
 }

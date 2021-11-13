@@ -57,7 +57,7 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @OneToOne
     @JoinColumn(name = "minimum_tier_id", referencedColumnName = "id")
     @JsonIgnore
-    private TierEntity minimumTier;
+    private LoyaltyTierEntity minimumTier;
 
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")

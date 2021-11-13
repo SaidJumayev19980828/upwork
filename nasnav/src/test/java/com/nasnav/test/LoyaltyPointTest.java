@@ -7,7 +7,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
-import com.nasnav.persistence.FamilyEntity;
+import com.nasnav.persistence.LoyaltyFamilyEntity;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Ignore;
@@ -50,15 +50,15 @@ public class LoyaltyPointTest {
     @Autowired
     private LoyaltyPointTypeRepository typeRepository;
     @Autowired
-    private TierRepository tierRepository;
+    private LoyaltyTierRepository tierRepository;
     @Autowired
-    private BoosterRepository boosterRepository;
+    private LoyaltyBoosterRepository loyaltyBoosterRepository;
     @Autowired
-    private FamilyRepository familyRepository;
+    private LoyaltyFamilyRepository loyaltyFamilyRepository;
     @Autowired
     UserCharityRepository userCharityRepository;
     @Autowired
-    GiftRepository giftRepository;
+    LoyaltyGiftRepository loyaltyGiftRepository;
 
     @Autowired
     private LoyaltyPointTransactionRepository transactionRepo;
@@ -113,22 +113,6 @@ public class LoyaltyPointTest {
         assertEquals("old name", body.get(0).getName());
     }
 
-    @Test
-    public void createAndGetLoyaltyPointConfig() throws JsonProcessingException {
-        String body = createConfigJson().toString();
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/config/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        response = template.exchange("/loyalty/config/list", GET, request, String.class);
-        List<LoyaltyPointConfigDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointConfigDTO>>() {});
-        LoyaltyPointConfigDTO config = resBody.get(0);
-        assertEquals("this is a configuration", config.getDescription());
-        assertEquals(501, config.getShopId());
-        assertEquals(100, config.getAmountFrom());
-        assertEquals(1000, config.getAmountTo());
-        assertEquals(10, config.getPoints());
-    }
 
     @Test
     @Ignore
@@ -183,25 +167,6 @@ public class LoyaltyPointTest {
                 .put("amount_from", 100)
                 .put("amount_to", 1000)
                 .put("points", 10);
-    }
-
-    @Test
-    public void updateLoyaltyPointConfig() throws JsonProcessingException {
-        String body = createConfigJson()
-                .put("id", 31001)
-                .toString();
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/config/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        response = template.exchange("/loyalty/config/list", GET, request, String.class);
-        List<LoyaltyPointConfigDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointConfigDTO>>() {});
-        LoyaltyPointConfigDTO config = resBody.get(0);
-        assertEquals("this is a configuration", config.getDescription());
-        assertEquals(501, config.getShopId());
-        assertEquals(100, config.getAmountFrom());
-        assertEquals(1000, config.getAmountTo());
-        assertEquals(10, config.getPoints());
     }
 
     @Test
@@ -264,7 +229,7 @@ public class LoyaltyPointTest {
         request = getHttpEntity("192021");
         response = template.postForEntity("/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(0, transactionRepo.findShopRedeemablePoints(userId, 501L));
+        assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 501L));
     }
 
 
@@ -281,8 +246,8 @@ public class LoyaltyPointTest {
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(familyRepository.findByFamilyName("family 1").isPresent());
-        familyRepository.deleteByFamilyName("family 1");
+        assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
+        loyaltyFamilyRepository.deleteByFamilyName("family 1");
     }
 
 
@@ -312,16 +277,16 @@ public class LoyaltyPointTest {
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(familyRepository.findByFamilyName("family 1").isPresent());
+        assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
 
         request = getHttpEntity("abcdefg");
         response = template.exchange("/loyalty/family/list", GET, request, String.class);
-        List<FamilyEntity> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        FamilyEntity familyEntity = resBody.get(0);
+        List<LoyaltyFamilyEntity> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
+        LoyaltyFamilyEntity loyaltyFamilyEntity = resBody.get(0);
         assertEquals(1, resBody.size());
-        assertEquals("family 1", familyEntity.getFamilyName());
+        assertEquals("family 1", loyaltyFamilyEntity.getFamilyName());
 
-        familyRepository.deleteByFamilyName("family 1");
+        loyaltyFamilyRepository.deleteByFamilyName("family 1");
     }
 
 
@@ -385,10 +350,10 @@ public class LoyaltyPointTest {
 
         request = getHttpEntity("abcdefg");
         response = template.exchange("/loyalty/tier/list", GET, request, String.class);
-        List<TierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        TierDTO tierDTO = resBody.get(0);
+        List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
+        LoyaltyTierDTO loyaltyTierDTO = resBody.get(0);
         assertEquals(1, resBody.size());
-        assertEquals("tier 1", tierDTO.getTierName());
+        assertEquals("tier 1", loyaltyTierDTO.getTierName());
 
         tierRepository.deleteByTierName("tier 1");
     }
@@ -412,8 +377,8 @@ public class LoyaltyPointTest {
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(boosterRepository.findByBoosterName("booster 1").isPresent());
-        boosterRepository.deleteByBoosterName("booster 1");
+        assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
+        loyaltyBoosterRepository.deleteByBoosterName("booster 1");
     }
 
     @Test
@@ -454,17 +419,17 @@ public class LoyaltyPointTest {
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(boosterRepository.findByBoosterName("booster 1").isPresent());
+        assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
 
 
         request = getHttpEntity("abcdefg");
         response = template.exchange("/loyalty/booster/list", GET, request, String.class);
-        List<BoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        BoosterDTO booster = resBody.get(1);
+        List<LoyaltyBoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
+        LoyaltyBoosterDTO booster = resBody.get(1);
         assertEquals(2, resBody.size());
         assertEquals("booster 1", booster.getBoosterName());
 
-        boosterRepository.deleteByBoosterName("booster 1");
+        loyaltyBoosterRepository.deleteByBoosterName("booster 1");
     }
 
     //Charity
@@ -500,7 +465,7 @@ public class LoyaltyPointTest {
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/loyalty/gift/send", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(giftRepository.findByEmail("mail@mail.com").isPresent());
-        giftRepository.deleteByEmail("email@email.com");
+        assertTrue(loyaltyGiftRepository.findByEmail("mail@mail.com").isPresent());
+        loyaltyGiftRepository.deleteByEmail("email@email.com");
     }
 }
