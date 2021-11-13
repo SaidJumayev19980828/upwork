@@ -4,17 +4,15 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class LoyaltyPointConfigDTO {
+public class LoyaltyCoinsDropDTO {
     private Long id;
-    private String description;
+    private Integer typeId;
     private Long orgId;
-    private BigDecimal ratioFrom;
-    private BigDecimal ratioTo;
-    private BigDecimal coefficient;
     private Boolean isActive;
-    private LoyaltyTierDTO defaultTier;
+    private Integer amount;
+    private LocalDate officialVacationDate;
 }

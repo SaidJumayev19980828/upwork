@@ -31,7 +31,7 @@ public class UserCharityEntity {
     @JoinColumn(name = "charity_id")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private CharityEntity charity;
+    private LoyaltyCharityEntity charity;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

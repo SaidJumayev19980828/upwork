@@ -86,17 +86,17 @@ public class CartServiceImpl implements CartService{
     private AppConfig config;
 
     @Autowired
-    private TierServiceImp tierServiceImp;
+    private LoyaltyTierServiceImp tierServiceImp;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private CoinsDropService coinsDropService;
+    private LoyaltyCoinsDropService loyaltyCoinsDropService;
     @Autowired
     private MetaOrderRepository metaOrderRepository;
     @Autowired
-    private BoosterRepository boosterRepository;
+    private LoyaltyBoosterRepository loyaltyBoosterRepository;
 
     @Override
     public Cart getCart(String promoCode) {
@@ -260,16 +260,16 @@ public class CartServiceImpl implements CartService{
     @Override
     public Order checkoutCart(CartCheckoutDTO dto) {
         Long userId = securityService.getCurrentUser().getId();
-        TierEntity tierEntity = tierServiceImp.getTierByAmount(orderService.countOrdersByUserId(userId));
+        LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmount(orderService.countOrdersByUserId(userId));
         UserEntity userEntity = userRepository.findById(userId).get();
-        userEntity.setTier(tierEntity);
+        userEntity.setTier(loyaltyTierEntity);
         userRepository.save(userEntity);
         if (userEntity.getFamily() != null) {
             Long familyId = userEntity.getFamily().getId();
             Long orgId = securityService.getCurrentUserOrganizationId();
             List<UserEntity> users = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
             for (UserEntity user : users) {
-                coinsDropService.giveUserCoinsNewFamilyPurchase(user);
+                loyaltyCoinsDropService.giveUserCoinsNewFamilyPurchase(user);
             }
         }
         //
@@ -568,22 +568,22 @@ public class CartServiceImpl implements CartService{
         Long orgId = securityService.getCurrentUserOrganizationId();
         UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
         Integer purchaseCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userEntity.getId(), orgId);
-        BoosterEntity boosterEntity = null;
-        BoosterEntity userBoosterEntity = null;
-        List<BoosterEntity> boosterList = new ArrayList<>();
+        LoyaltyBoosterEntity loyaltyBoosterEntity = null;
+        LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
+        List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
         if (userEntity.getBooster() != null) {
-            userBoosterEntity = userEntity.getBooster();
+            userLoyaltyBoosterEntity = userEntity.getBooster();
         }
-        boosterList = boosterRepository.getAllByPurchaseSize(purchaseCount);
+        boosterList = loyaltyBoosterRepository.getAllByPurchaseSize(purchaseCount);
         int boosterSize = boosterList.size();
         if (boosterSize > 0) {
-            boosterEntity = boosterList.get(boosterSize - 1);
-            if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
-                if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+            loyaltyBoosterEntity = boosterList.get(boosterSize - 1);
+            if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
+                if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
                     return;
                 }
             }
-            userEntity.setBooster(boosterEntity);
+            userEntity.setBooster(loyaltyBoosterEntity);
         }
         userRepository.save(userEntity);
     }

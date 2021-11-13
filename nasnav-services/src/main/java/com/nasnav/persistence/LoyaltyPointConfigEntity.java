@@ -28,19 +28,6 @@ public class LoyaltyPointConfigEntity {
     @lombok.ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shop_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private ShopsEntity shop;
-
-    @Column(name = "amount_from")
-    private Integer amountFrom;
-
-    @Column(name = "amount_to")
-    private Integer amountTo;
-
     @Column(name = "ratio_from")
     private BigDecimal ratioFrom;
 
@@ -50,8 +37,6 @@ public class LoyaltyPointConfigEntity {
     @Column(name = "coefficient")
     private BigDecimal coefficient;
 
-    private Integer points;
-
     @Column(name = "is_active")
     private Boolean isActive;
 
@@ -59,10 +44,20 @@ public class LoyaltyPointConfigEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_tier_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private LoyaltyTierEntity defaultTier;
+
+
     public LoyaltyPointConfigDTO getRepresentation() {
         LoyaltyPointConfigDTO dto = new LoyaltyPointConfigDTO();
         BeanUtils.copyProperties(this, dto);
-        dto.setShopId(shop.getId());
+        if(defaultTier != null) {
+            dto.setDefaultTier(defaultTier.getRepresentation());
+        }
         return dto;
     }
 }
