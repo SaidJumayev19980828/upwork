@@ -146,6 +146,7 @@ public enum ErrorCodes {
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
+	,ORG$SHIP$0002("Couldn't get variant org_id!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")

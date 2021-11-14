@@ -51,7 +51,8 @@ public class CartServiceImpl implements CartService{
     private SecurityService securityService;
     @Autowired
     private PromotionsService promoService;
-
+    @Autowired
+    private OrganizationRepository organizationRepo;
     @Autowired
     private CartItemRepository cartItemRepo;
     @Autowired
@@ -180,27 +181,43 @@ public class CartServiceImpl implements CartService{
 
     @Override
     @Transactional
-    public Cart addCartItems(List<CartItem> items, String promoCode){
+    public Cart addNasnavCartItems(List<CartItem> items, String promoCode) {
         BaseUserEntity user = securityService.getCurrentUser();
-        if(user instanceof EmployeeUserEntity) {
+        if (user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
 
         Long orgId = securityService.getCurrentUserOrganizationId();
         cartItemRepo.deleteByUser_Id(user.getId());
 
-        Map<Long, StocksEntity> stocksEntityMap = getCartStocks(items, orgId);
+        return addCartItems(items, promoCode, Set.of(orgId), (UserEntity) user);
+    }
+
+    @Override
+    @Transactional
+    public Cart addYeshteryCartItems(List<CartItem> items, String promoCode){
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        cartItemRepo.deleteByUser_Id(user.getId());
+        Set<Long> yeshteryOrgsIds = organizationRepo.findIdByYeshteryState(1);
+        return addCartItems(items, promoCode, yeshteryOrgsIds, (UserEntity) user);
+    }
+
+    private Cart addCartItems(List<CartItem> items, String promoCode, Set<Long> orgIds, UserEntity user) {
+        Map<Long, StocksEntity> stocksEntityMap = getCartStocks(items, orgIds);
         List<CartItemEntity> itemsToSave = new ArrayList<>();
         for (CartItem item : items) {
             StocksEntity stock = ofNullable(stocksEntityMap.get(item.getStockId()))
-                            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0001, item.getStockId()));
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0001, item.getStockId()));
             validateCartItem(stock, item);
 
             if (item.getQuantity().equals(0)) {
-               continue;
+                continue;
             }
             CartItemEntity cartItem = new CartItemEntity();
-            createCartItemEntity(cartItem, (UserEntity) user, stock, item);
+            createCartItemEntity(cartItem, user, stock, item);
             itemsToSave.add(cartItem);
         }
         cartItemRepo.saveAll(itemsToSave);
@@ -216,13 +233,13 @@ public class CartServiceImpl implements CartService{
         cartItem.setAdditionalData(additionalDataJson);
     }
 
-    private Map<Long, StocksEntity> getCartStocks(List<CartItem> items, Long orgId) {
+    private Map<Long, StocksEntity> getCartStocks(List<CartItem> items, Set<Long> orgIds) {
         Set<Long> cartStockIds = items
                 .stream()
                 .map(CartItem::getStockId)
                 .collect(Collectors.toSet());
         return stockRepository
-                .findByIdInAndOrganizationEntity_Id(cartStockIds, orgId)
+                .findByIdInAndOrganizationEntity_IdIn(cartStockIds, orgIds)
                 .stream()
                 .collect(toMap(StocksEntity::getId, s -> s));
     }
@@ -294,7 +311,18 @@ public class CartServiceImpl implements CartService{
     }
 
 
-
+    @Override
+    public List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops){
+        Long userId = securityService.getCurrentUser().getId();
+        return cartItemRepo
+                .getAllCartStocks(userId, shops)
+                .stream()
+                .collect(groupingBy(CartItemStock::getShopId))
+                .entrySet()
+                .stream()
+                .map(this::createShopFulfillingCart)
+                .collect(toList());
+    }
 
 
     @Override
@@ -342,7 +370,13 @@ public class CartServiceImpl implements CartService{
                         .filter(Objects::nonNull)
                         .findFirst()
                         .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0005));
-        return new ShopFulfillingCart(shopId, cityId, itemStocks);
+        Long orgId = itemStocks
+                .stream()
+                .map(CartItemStock::getOrgId)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$SHIP$0002));
+        return new ShopFulfillingCart(shopId, cityId, orgId, itemStocks);
     }
 
 

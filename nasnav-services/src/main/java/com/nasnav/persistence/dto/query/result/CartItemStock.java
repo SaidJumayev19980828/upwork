@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CartItemStock {
+	private Long orgId;
 	private Long variantId;
 	private Long stockId;
 	private Long shopId;
