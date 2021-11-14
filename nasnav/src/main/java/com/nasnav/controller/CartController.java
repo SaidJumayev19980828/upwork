@@ -45,7 +45,7 @@ public class CartController {
 	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody List<CartItem> items,
 							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-		return cartService.addCartItems(items, promoCode);
+		return cartService.addNasnavCartItems(items, promoCode);
 	}
 
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
