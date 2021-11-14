@@ -51,7 +51,7 @@ public class PickupFromMultipleShops implements ShippingService {
                     new Parameter(ETA_DAYS_MAX, NUMBER, false));
 
     private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION =
-            asList(new Parameter(ORG_SHOPS, JSON));
+            asList(new Parameter(ORG_SHOPS, LONG_ARRAY));
 
     @JsonProperty(value = "ORGS_WITH_SHOPS_MAP")
     private Map<Long, Set<Long>> allowedOrgsWithShops;
