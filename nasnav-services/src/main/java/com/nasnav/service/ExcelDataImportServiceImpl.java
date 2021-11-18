@@ -120,13 +120,14 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				String headerName = sheet.getRow(0).getCell(cell.getColumnIndex()).getStringCellValue();
 				var propertyName = getColumnHeaderMapping(headerName);
 				Object value = getCellValue(cell);
-				if (value != null)
+				if (value != null) {
 					BeanUtils.setProperty(line, propertyName, value);
-				if (featuresNames.contains(propertyName)) {
-					features.put(propertyName, value.toString());
-				}
-				if (extraAttributesNames.contains(propertyName)) {
-					extraAttributes.put(propertyName, value.toString());
+					if (featuresNames.contains(propertyName)) {
+						features.put(propertyName, value.toString());
+					}
+					if (extraAttributesNames.contains(propertyName)) {
+						extraAttributes.put(propertyName, value.toString());
+					}
 				}
 			}
 			line.setFeatures(features);
