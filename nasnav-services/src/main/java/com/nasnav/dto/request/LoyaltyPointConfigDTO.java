@@ -11,12 +11,10 @@ import java.math.BigDecimal;
 public class LoyaltyPointConfigDTO {
     private Long id;
     private String description;
-    private Long shopId;
-    private Integer amountFrom;
-    private Integer amountTo;
-    private Integer points;
+    private Long orgId;
     private BigDecimal ratioFrom;
     private BigDecimal ratioTo;
     private BigDecimal coefficient;
     private Boolean isActive;
+    private LoyaltyTierDTO defaultTier;
 }

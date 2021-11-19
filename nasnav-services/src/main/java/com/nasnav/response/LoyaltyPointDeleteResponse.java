@@ -16,5 +16,5 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class LoyaltyPointDeleteResponse {
     private boolean success;
-    private List<Long> loyaltyIds;
+    private Long loyaltyId;
 }

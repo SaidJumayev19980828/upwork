@@ -43,6 +43,13 @@ public class LoyaltyPointTransactionEntity {
     @lombok.ToString.Exclude
     private ShopsEntity shop;
 
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "org_id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private OrganizationEntity organization;
+
     @OneToOne(fetch = LAZY)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -64,7 +71,7 @@ public class LoyaltyPointTransactionEntity {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private CharityEntity charity;
+    private LoyaltyCharityEntity charity;
 
     @Column(name = "is_donate")
     private Boolean isDonate;
@@ -74,7 +81,7 @@ public class LoyaltyPointTransactionEntity {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private GiftEntity gift;
+    private LoyaltyGiftEntity gift;
 
     @Column(name = "is_gift")
     private Boolean isGift;
@@ -84,7 +91,7 @@ public class LoyaltyPointTransactionEntity {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private CoinsDropEntity coinsDrop;
+    private LoyaltyCoinsDropEntity coinsDrop;
 
     @Column(name = "is_coins_drop")
     private Boolean isCoinsDrop;

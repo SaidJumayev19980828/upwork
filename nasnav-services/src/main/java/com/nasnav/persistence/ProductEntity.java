@@ -133,7 +133,7 @@ public class ProductEntity {
     @OneToOne
     @JoinColumn(name = "minimum_tier_id", referencedColumnName = "id")
     @JsonIgnore
-    private TierEntity minimumTier;
+    private LoyaltyTierEntity minimumTier;
 
     @OneToMany(mappedBy = "productEntity")
     @JsonIgnore

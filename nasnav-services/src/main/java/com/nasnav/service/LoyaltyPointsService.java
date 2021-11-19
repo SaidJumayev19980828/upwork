@@ -3,10 +3,12 @@ package com.nasnav.service;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
+import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
+import com.nasnav.response.LoyaltyUserPointsResponse;
 
 import java.util.List;
 
@@ -28,8 +30,10 @@ public interface LoyaltyPointsService {
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
-    void updateLoyaltyPointCharityTransaction(CharityEntity charity, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isDonate);
-    LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(GiftEntity gift, UserEntity user, Integer points, Boolean isGift);
-    LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(CoinsDropEntity coins, UserEntity user, Integer points, ShopsEntity shopEntity,  Boolean isCoinsDrop);
+    void updateLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isDonate);
+    LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, Integer points, Boolean isGift);
+    LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
+    LoyaltyUserPointsResponse getUserPoints(Long orgId);
+    LoyaltyTierDTO getUserOrgTier(Long orgId);
 }

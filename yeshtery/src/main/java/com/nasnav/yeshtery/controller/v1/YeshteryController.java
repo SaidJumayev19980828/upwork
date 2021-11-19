@@ -159,6 +159,12 @@ public class YeshteryController {
         return productService.getProducts(productSearchParam);
     }
 
+    @GetMapping(value = "filters", produces = APPLICATION_JSON_VALUE)
+    public ProductsFiltersResponse getProductsFilters(ProductSearchParam productSearchParam) throws BusinessException {
+        productSearchParam.setYeshtery_products(true);
+        return productService.getProductAvailableFilters(productSearchParam);
+    }
+
     @GetMapping(value="countries", produces=MediaType.APPLICATION_JSON_VALUE)
     public Map<String, CountriesRepObj> getCountries(@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities) {
         return addressService.getCountries(hideEmptyCities, null);

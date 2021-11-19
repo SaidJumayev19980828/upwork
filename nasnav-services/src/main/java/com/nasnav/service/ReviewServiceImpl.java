@@ -28,7 +28,7 @@ public class ReviewServiceImpl implements ReviewService{
     @Autowired
     private OrdersRepository ordersRepository;
     @Autowired
-    private BoosterRepository boosterRepository;
+    private LoyaltyBoosterRepository loyaltyBoosterRepository;
     @Autowired
     private UserRepository userRepository;
 
@@ -112,22 +112,22 @@ public class ReviewServiceImpl implements ReviewService{
         }
         UserEntity userEntity = userRepository.findById(userId).get();
         Integer reviewCounts = productRatingRepo.countTotalRatingByUserId(userId);
-        BoosterEntity boosterEntity = null;
-        BoosterEntity userBoosterEntity = null;
-        List<BoosterEntity> boosterList = new ArrayList<>();
+        LoyaltyBoosterEntity loyaltyBoosterEntity = null;
+        LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
+        List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
         if (userEntity.getBooster() != null) {
-            userBoosterEntity = userEntity.getBooster();
+            userLoyaltyBoosterEntity = userEntity.getBooster();
         }
-        boosterList = boosterRepository.getAllByReviewProducts(reviewCounts);
+        boosterList = loyaltyBoosterRepository.getAllByReviewProducts(reviewCounts);
         int boosterSize = boosterList.size();
         if (boosterSize > 0) {
-            boosterEntity = boosterList.get(boosterSize - 1);
-            if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
-                if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+            loyaltyBoosterEntity = boosterList.get(boosterSize - 1);
+            if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
+                if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
                     return;
                 }
             }
-            userEntity.setBooster(boosterEntity);
+            userEntity.setBooster(loyaltyBoosterEntity);
         }
         userRepository.save(userEntity);
     }

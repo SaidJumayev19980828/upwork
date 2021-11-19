@@ -467,7 +467,7 @@ public class DataImportXlsxApiTest {
 		result.andExpect(status().is(406));
 
 		ProductEntity product = variantRepo.getVariantFullData(310001L).get().getProductEntity();
-		assertEquals("Squishy shoes", product.getName());
+		assertEquals("Bundle Product#1", product.getName());
 
         Optional<IntegrationMappingEntity> mapping =
         		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(

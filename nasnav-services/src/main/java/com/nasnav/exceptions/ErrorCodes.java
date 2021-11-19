@@ -146,6 +146,7 @@ public enum ErrorCodes {
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
+	,ORG$SHIP$0002("Couldn't get variant org_id!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")
@@ -174,6 +175,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0011("No loyalty point config exists with id[%d]!")
 	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
 	,ORG$LOY$0013("Use either amounts or ratio!")
+	,ORG$LOY$0014("User is not linked to org with id[%d] !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
