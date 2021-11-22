@@ -2331,11 +2331,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private BigDecimal calculateSubTotal(OrdersEntity subOrder) {
-		return subOrder
+		BigDecimal value =  subOrder
 				.getBasketsEntity()
 				.stream()
 				.map(this::calcBasketItemValue)
 				.reduce(ZERO, BigDecimal::add);
+		if (value.precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0017);
+		}
+		return value;
 	}
 
 	
@@ -2388,9 +2392,15 @@ public class OrderServiceImpl implements OrderService {
 		if(stock.getQuantity() < data.getQuantity()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
 		}
+		if (new BigDecimal(data.getQuantity()).precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0016);
+		}
 		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = data.getPrice().subtract(discount);
 
+		if (totalPrice.precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0017);
+		}
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
 		basket.setPrice(totalPrice);

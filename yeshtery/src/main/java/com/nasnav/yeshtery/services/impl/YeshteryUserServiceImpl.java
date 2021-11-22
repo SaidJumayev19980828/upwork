@@ -122,17 +122,17 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public void sendEmailRecovery(String email, Long orgId) {
-        UserEntity userEntity = nasNavUserRepository.getByEmailAndOrganizationId(email, orgId);
+        UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
         generateResetPasswordToken(userEntity);
         userEntity = nasNavUserRepository.saveAndFlush(userEntity);
         sendRecoveryMail(userEntity);
     }
 
-    private YeshteryUserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
+    private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
         userServicesHelper.validateEmail(email);
         userServicesHelper.validateOrgId(orgId);
 
-        return ofNullable(userRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId))
+        return ofNullable(nasNavUserRepository.getByEmailAndOrganizationId(email, orgId))
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId));
     }
 
