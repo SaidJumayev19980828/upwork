@@ -2435,10 +2435,7 @@ public class OrderServiceImpl implements OrderService {
 		shipment.setStatus(DRAFT.getValue());
 		shipment.setShippingServiceId(dto.getServiceId());
 		if ( dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
-			if (!shippingOffers.isEmpty() && shippingOffers.get(0).getType().equals("PICKUP")) { // for multiple pickup
-				shipment.setParameters("{\"SHOP_ID\":\"" + shipment.getSubOrder().getShopsEntity().getId()+"\"}");
-			} else
-				shipment.setParameters("{}");
+			shipment.setParameters("{}");
 		} else {
 			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
 			shipment.setParameters(additionalData.toString());

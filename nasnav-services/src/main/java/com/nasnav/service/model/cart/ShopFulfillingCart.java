@@ -11,5 +11,6 @@ import java.util.List;
 public class ShopFulfillingCart {
 	private Long shopId;
 	private Long shopCityId;
+	private Long orgId;
 	private List<CartItemStock> cartItems;
 }

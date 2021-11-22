@@ -68,14 +68,14 @@ public class UserEntity extends BaseUserEntity{
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private FamilyEntity family;
+    private LoyaltyFamilyEntity family;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tier_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private TierEntity tier;
+    private LoyaltyTierEntity tier;
 
     @Column(name = "allow_reward")
     private Boolean allowReward;
@@ -88,7 +88,7 @@ public class UserEntity extends BaseUserEntity{
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private BoosterEntity booster;
+    private LoyaltyBoosterEntity booster;
 
     @Column(name = "booster_created")
     private LocalDateTime boosterCreated;

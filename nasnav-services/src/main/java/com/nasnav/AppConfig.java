@@ -20,6 +20,7 @@ public class AppConfig {
     @Value("${email.port}")        		public int    mailHostPort;
     @Value("${email.ssl}")         		public String mailUseSSL;
     @Value("${payment.properties_dir}") public String paymentPropertiesDir = "";
+    @Value("${payment.mastercard}")     public String paymentMastercardProps = "";
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     @Value("${environment.development}") public boolean develEnvironment = false;

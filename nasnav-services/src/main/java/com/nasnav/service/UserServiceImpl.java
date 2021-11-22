@@ -2,7 +2,6 @@ package com.nasnav.service;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
@@ -24,7 +23,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,13 +92,13 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private SubAreaRepository subAreaRepo;
 	@Autowired
-	CoinsDropService coinsDropService;
+	LoyaltyCoinsDropService loyaltyCoinsDropService;
 	@Autowired
 	MetaOrderRepository metaOrderRepository;
 	@Autowired
-	TierService tierService;
+    LoyaltyTierService loyaltyTierService;
 	@Autowired
-	BoosterRepository boosterRepository;
+    LoyaltyBoosterRepository loyaltyBoosterRepository;
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -246,14 +244,14 @@ public class UserServiceImpl implements UserService {
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
 		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 			updateUserBoosterByFamilyMember(userEntity.getId());
 		}
 		if (isNotBlankOrNull(userJson.getTierId())) {
-			coinsDropService.giveUserCoinsNewTier(userEntity);
+			loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
 		}
 		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
@@ -547,8 +545,8 @@ public class UserServiceImpl implements UserService {
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
 		Long orgId = user.getOrganizationId();
 		Long userId = user.getId();
-		if (userId > 0 && coinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
-			coinsDropService.giveUserCoinsSignUp(user);
+		if (userId > 0 && loyaltyCoinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
+			loyaltyCoinsDropService.giveUserCoinsSignUp(user);
 		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
@@ -802,7 +800,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithFamilyId(familyId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getFamily().getId() > 0) {
-				coinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+				loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 			}
 		}
 	}
@@ -816,7 +814,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithTierId(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
-				coinsDropService.giveUserCoinsNewTier(userEntity);
+				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
 			}
 		}
 	}
@@ -832,7 +830,7 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserWithTierId(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
-				coinsDropService.giveUserCoinsNewTier(userEntity);
+				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
 			}
 		}
 	}
@@ -842,7 +840,7 @@ public class UserServiceImpl implements UserService {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
-		Long tierId = tierService.getTierByAmount(orderCount).getId();
+		Long tierId = loyaltyTierService.getTierByAmount(orderCount).getId();
 		if (tierId > 0) {
 			return tierId;
 		}
@@ -861,24 +859,24 @@ public class UserServiceImpl implements UserService {
 		if (familyCount == 0) {
 			return;
 		}
-		BoosterEntity boosterEntity = null;
-		BoosterEntity userBoosterEntity = null;
-		List<BoosterEntity> boosterList = new ArrayList<>();
+		LoyaltyBoosterEntity loyaltyBoosterEntity = null;
+		LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
+		List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
 		if (userEntity.getBooster() != null) {
-			userBoosterEntity = userEntity.getBooster();
+			userLoyaltyBoosterEntity = userEntity.getBooster();
 		}
-		boosterList = boosterRepository.getAllByLinkedFamilyMember(familyCount+1);
+		boosterList = loyaltyBoosterRepository.getAllByLinkedFamilyMember(familyCount+1);
 		if (boosterList.isEmpty()) {
-			boosterList = boosterRepository.getAllByNumberFamilyChildren(familyCount);
+			boosterList = loyaltyBoosterRepository.getAllByNumberFamilyChildren(familyCount);
 		}
 		if (boosterList.size() > 0) {
-			boosterEntity = boosterList.get(boosterList.size() - 1);
-			if (userBoosterEntity != null && userBoosterEntity != boosterEntity) {
-				if (userBoosterEntity.getLevelBooster() > boosterEntity.getLevelBooster()) {
+			loyaltyBoosterEntity = boosterList.get(boosterList.size() - 1);
+			if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
+				if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
 					return;
 				}
 			}
-			userEntity.setBooster(boosterEntity);
+			userEntity.setBooster(loyaltyBoosterEntity);
 		}
 		userRepository.save(userEntity);
 	}
