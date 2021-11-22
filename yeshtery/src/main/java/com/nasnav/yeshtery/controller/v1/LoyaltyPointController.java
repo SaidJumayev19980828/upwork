@@ -37,6 +37,8 @@ public class LoyaltyPointController {
     private LoyaltyCoinsDropService loyaltyCoinsDropService;
     @Autowired
     private LoyaltyBoosterService loyaltyBoosterService;
+    @Autowired
+    private LoyaltyEventService loyaltyEventService;
 
 
     @GetMapping(value ="points")
@@ -309,6 +311,24 @@ public class LoyaltyPointController {
             return loyaltyGiftService.getGiftsRedeemByUserReceiveId(userId);
         }
         return loyaltyGiftService.getGiftsNotRedeemByUserId(userId);
+    }
+
+    /**
+     * Events API
+     */
+
+    @GetMapping("event")
+    public List<LoyaltyEventDTO> getAllEvents(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id") Long orgId){
+        return loyaltyEventService.getAllEvents(orgId);
+    }
+    @PostMapping("event")
+    public  LoyaltyEventUpdateResponse createUpdateEvent(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody LoyaltyEventDTO request){
+        return loyaltyEventService.createUpdateEvent(request);
+    }
+
+    @DeleteMapping("event/{id}")
+    public void deleteEvent(@RequestHeader(name = "User-Token", required = false) String token, @PathVariable Long id){
+        loyaltyEventService.deleteById(id);
     }
 
 }
