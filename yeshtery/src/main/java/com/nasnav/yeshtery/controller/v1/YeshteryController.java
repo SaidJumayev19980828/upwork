@@ -68,7 +68,8 @@ public class YeshteryController {
     private CategoryService categoryService;
     @Autowired
     private ReviewService reviewService;
-
+    @Autowired
+    private OrganizationService orgService;
     @Autowired
     private SeoService seoService;
 
@@ -285,5 +286,11 @@ public class YeshteryController {
     public List<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
                                                   @RequestParam(value = "category_name", required = false) String categoryName) {
         return categoryService.getOrganizationTags(organizationId, categoryName);
+    }
+
+    @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)
+    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+                                                                                     @RequestParam(value = "delivery", required = false) String deliveryService) {
+        return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
     }
 }
