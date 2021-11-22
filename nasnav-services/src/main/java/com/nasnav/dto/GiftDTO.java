@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class GiftDTO {
@@ -11,7 +13,7 @@ public class GiftDTO {
     private Long userFromId;
     private Long userToId;
     private Boolean isActive;
-    private Integer points;
+    private BigDecimal points;
     private String phoneNumber;
     private String email;
     private Boolean isRedeem;

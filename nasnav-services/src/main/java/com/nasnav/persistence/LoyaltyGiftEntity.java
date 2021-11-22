@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Data
 @Entity
@@ -34,7 +35,7 @@ public class LoyaltyGiftEntity {
     private UserEntity userTo;
 
     @Column(name = "points")
-    private Integer points;
+    private BigDecimal points;
 
     @Column(name = "email")
     private String email;

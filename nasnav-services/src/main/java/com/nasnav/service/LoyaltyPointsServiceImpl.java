@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -189,7 +190,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public void updateLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isDonate) {
+    public void updateLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -201,7 +202,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, Integer points, Boolean isGift) {
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -213,7 +214,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, Integer points, ShopsEntity shopEntity, Boolean isCoinsDrop) {
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -263,6 +264,11 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, orgId);
         }
         UserEntity userEntity = user.get();
+
+        return getLoyaltyTierDTO(orgId, userEntity);
+    }
+
+    private LoyaltyTierDTO getLoyaltyTierDTO(Long orgId, UserEntity userEntity) {
         if(userEntity.getTier() != null){
             return userEntity.getTier().getRepresentation();
         }
@@ -276,37 +282,49 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, Integer points) {
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setShop(shop);
         entity.setIsValid(true);
         entity.setUser(user);
         entity.setOrder(order);
+        entity.setOrganization(shop.getOrganizationEntity());
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
 
     @Override
     public void createLoyaltyPointTransaction(OrdersEntity order) {
-        // TODO Bassam FIXME
         OrganizationEntity org = order.getOrganizationEntity();
         ShopsEntity shop = order.getShopsEntity();
         UserEntity user = order.getMetaOrder().getUser();
-        Integer amount = ofNullable(order)        // TODO Bassam FIXME
+        BigDecimal amount = ofNullable(order)
                 .map(OrdersEntity::getTotal)
-                .map(BigDecimal::intValue)
-                .orElse(0);
+                .orElse(ZERO);
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE);
         if (config == null) {
             return;
         }
-        updateLoyaltyPointTransaction(shop, user, order, null); // TODO Bassam FIXME
+        LoyaltyTierDTO tier = getLoyaltyTierDTO(org.getId(), user);
+        BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
+        updateLoyaltyPointTransaction(shop, user, order, points);
+    }
+
+    private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
+        BigDecimal from = config.getRatioFrom();
+        BigDecimal to = config.getRatioTo();
+
+        if(anyIsNull(from, to , coefficient, amount)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0006, config.getOrganization().getId());
+        }
+        BigDecimal points = amount.multiply(coefficient).multiply(from).divide(to);
+        points = points.setScale(2, RoundingMode.HALF_EVEN);
+        return points;
     }
 
     @Override
     public void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest) {
-        // TODO Bassam FIXME
         UserEntity user = returnRequest.getMetaOrder().getUser();
         Set<BasketsEntity> baskets = returnRequest
                 .getReturnedItems()
@@ -326,7 +344,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             BigDecimal amount = baskets
                     .stream()
                     .filter(b -> Objects.equals(b.getOrdersEntity(), order))
-                    .map(b -> (b.getPrice().subtract(b.getDiscount())).multiply(b.getQuantity()))
+                    .map(basket -> (basket.getPrice().subtract(basket.getDiscount())).multiply(basket.getQuantity()))
                     .reduce(ZERO, BigDecimal::add)
                     .subtract(order.getAmount());
             LoyaltyPointConfigEntity config = loyaltyPointConfigRepo
@@ -334,7 +352,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             if (config == null) {
                 return;
             }
-            updateLoyaltyPointTransaction(shop, user, order, null); // TODO Bassam FIXME
+            LoyaltyTierDTO tier = this.getLoyaltyTierDTO(org.getId(), user);
+            BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
+            updateLoyaltyPointTransaction(shop, user, order, points.negate());
         }
     }
 
@@ -354,7 +374,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
 
         LoyaltyPointTransactionEntity transaction = new LoyaltyPointTransactionEntity();
-        transaction.setPoints(-1 * entity.getAmount());
+        transaction.setPoints(entity.getAmount());
         transaction.setShop(shop);
         transaction.setIsValid(true);
         transaction.setUser(user);
@@ -436,9 +456,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         LoyaltyPointEntity entity = loyaltyPointRepo.findByIdAndOrganization_Id(dto.getId(), orgId)
                 .orElseGet(LoyaltyPointEntity::new);
 
-        if(entity.getId() > 0 ) {
-            // TODO Bassam FIXME
-        }
         if (dto.getDescription() != null) {
             entity.setDescription(dto.getDescription());
         }
