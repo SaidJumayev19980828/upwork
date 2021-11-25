@@ -36,6 +36,16 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 	Long findWishlistItemStockId(@Param("itemId") Long itemId,
 								 @Param("userId") Long userId);
 
+	@Query("SELECT item "
+			+ " FROM WishlistItemEntity item "
+			+ "	LEFT JOIN item.user user"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.productEntity product "
+			+ " WHERE product.removed = 0 and variant.removed = 0 and user.userStatus = 201 "
+			+ " and item.additionalData like '%out_of_stock%'");
+	List<WishlistItemEntity> findUsersWishListsWithZeroStockQuantitiy();
+
 	@Transactional
 	@Modifying
 	void deleteByIdAndUser_Id(Long id, Long userId);

@@ -1,14 +1,18 @@
 package com.nasnav.service;
 
+import com.nasnav.AppConfig;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.service.helpers.CartServiceHelper;
+import com.nasnav.service.sendpulse.SendPulseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,15 +20,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
+import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class WishlistServiceImpl implements WishlistService{
+
+    @Autowired
+    private AppConfig config;
 
     @Autowired
     private ProductService productService;
@@ -34,14 +44,16 @@ public class WishlistServiceImpl implements WishlistService{
 
     @Autowired
     private SecurityService securityService;
-
+    @Autowired
+    private SettingRepository settingRepo;
     @Autowired
     private StockRepository stockRepo;
-
-
+    @Autowired
+    private OrganizationRepository orgRepo;
     @Autowired
     private ProductImageService imgService;
-
+    @Autowired
+    private MailService mailService;
     @Autowired
     private CartService cartService;
 
@@ -66,7 +78,7 @@ public class WishlistServiceImpl implements WishlistService{
                 ofNullable(wishlistRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
                         .orElse(new WishlistItemEntity());
 
-        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
+        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item, stock.getQuantity());
 
         wishlistItem.setUser((UserEntity) user);
         wishlistItem.setStock(stock);
@@ -178,6 +190,42 @@ public class WishlistServiceImpl implements WishlistService{
         return null;
     }
 
+    // run this method every day 1728000000 in milliseconds means 2 days
+    @Scheduled(fixedRate = 1728000000)
+    @Override
+    public void sendRestockedWishlistEmails() {
+        Map<UserEntity, List<WishlistItemEntity>> usersWishlists = wishlistRepo.findUsersWishListsWithZeroStockQuantitiy()
+                .stream()
+                .collect(groupingBy(WishlistItemEntity::getUser));
+
+        for(Map.Entry info : usersWishlists.entrySet()) {
+            UserEntity user = (UserEntity) info.getKey();
+            OrganizationEntity org = orgRepo.findOneById(user.getOrganizationId());
+            String orgName = org.getName();
+            String email = getOrganizationEmail(org.getId());
+
+            String sendPulseId = getOrganizationEmailData("smtp_id", org.getId());
+            String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId());
+            SendPulseService service = new SendPulseService(sendPulseId, sendPulseKey);
+
+            Map<String,Object> variables = createUserCartEmailBody(info);
+            String body = mailService.createBodyFromThymeleafTemplate(RESTOCKED_WISHLIST_TEMPLATE, variables);
+            service.smtpSendMail(orgName, email, user.getName(), user.getEmail(),
+                    body, "Items restocked at "+orgName, null);
+        }
+    }
+
+    private String getOrganizationEmail(Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(ORG_EMAIL.name(), orgId)
+                .map(SettingEntity::getSettingValue)
+                .orElse(config.mailSenderAddress);
+    }
+
+    private String getOrganizationEmailData(String setting, Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(setting, orgId)
+                .map(SettingEntity::getSettingValue)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SETTING$0001, setting));
+    }
 
     private List<WishlistItem> toCartItemsDto(List<WishlistItemEntity> cartItems) {
         return cartItems

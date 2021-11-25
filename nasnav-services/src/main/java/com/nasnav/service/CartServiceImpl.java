@@ -225,7 +225,7 @@ public class CartServiceImpl implements CartService{
     }
 
     private void createCartItemEntity(CartItemEntity cartItem, UserEntity user, StocksEntity stock, CartItem item) {
-        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item);
+        String additionalDataJson = cartServiceHelper.getAdditionalDataJsonString(item, stock.getQuantity());
         cartItem.setUser(user);
         cartItem.setStock(stock);
         cartItem.setQuantity(item.getQuantity());

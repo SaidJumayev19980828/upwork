@@ -21,4 +21,5 @@ public interface WishlistService {
 
     Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity items);
 
+    void sendRestockedWishlistEmails();
 }
