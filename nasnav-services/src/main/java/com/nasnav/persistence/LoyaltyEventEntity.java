@@ -35,6 +35,13 @@ public class LoyaltyEventEntity {
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
+    @ManyToOne
+    @JoinColumn(name = "loyalty_type_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private LoyaltyPointTypeEntity loyaltyType;
+
+
     public LoyaltyEventDTO getRepresentation(){
         LoyaltyEventDTO dto = new LoyaltyEventDTO();
         dto.setId(getId());
@@ -43,6 +50,9 @@ public class LoyaltyEventEntity {
         dto.setIsActive(getIsActive());
         dto.setStartDate(getStartDate());
         dto.setEndDate(getEndDate());
+        if(loyaltyType != null) {
+            dto.setLoyaltyTypeId(loyaltyType.getId());
+        }
         return  dto;
     }
 }

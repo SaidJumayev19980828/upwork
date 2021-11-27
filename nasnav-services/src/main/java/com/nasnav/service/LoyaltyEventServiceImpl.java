@@ -1,11 +1,13 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.LoyaltyEventRepository;
+import com.nasnav.dao.LoyaltyPointTypeRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.request.LoyaltyEventDTO;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.LoyaltyEventEntity;
+import com.nasnav.persistence.LoyaltyPointTypeEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.LoyaltyEventUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,8 @@ public class LoyaltyEventServiceImpl implements LoyaltyEventService {
     LoyaltyEventRepository loyaltyEventRepository;
     @Autowired
     OrganizationRepository organizationRepository;
+    @Autowired
+    LoyaltyPointTypeRepository loyaltyPointTypeRepository;
 
     @Override
     public LoyaltyEventUpdateResponse createUpdateEvent(LoyaltyEventDTO loyaltyEventDTO) {
@@ -37,6 +41,15 @@ public class LoyaltyEventServiceImpl implements LoyaltyEventService {
         if(org.isEmpty()) {
             throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.G$ORG$0001, loyaltyEventDTO.getOrganizationId());
         }
+
+        if(loyaltyEventDTO.getLoyaltyTypeId() > 0) {
+            Optional<LoyaltyPointTypeEntity> type = loyaltyPointTypeRepository.findById(loyaltyEventDTO.getLoyaltyTypeId());
+            if(type.isEmpty()) {
+                throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ORG$LOY$0004, loyaltyEventDTO.getLoyaltyTypeId());
+            }
+            entity.setLoyaltyType(type.get());
+        }
+
         entity.setName(loyaltyEventDTO.getName());
         entity.setIsActive(loyaltyEventDTO.getIsActive());
         entity.setStartDate(loyaltyEventDTO.getStartDate());
@@ -48,11 +61,11 @@ public class LoyaltyEventServiceImpl implements LoyaltyEventService {
 
     private LoyaltyEventEntity getLoyaltyEventEntity(Long id) {
         LoyaltyEventEntity entity;
-        Optional<LoyaltyEventEntity> entityExists = loyaltyEventRepository.findById(id);
-        if(entityExists.isEmpty()) {
+        Optional<LoyaltyEventEntity> loyaltyEvent = loyaltyEventRepository.findById(id);
+        if(loyaltyEvent.isEmpty()) {
             throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ORG$LOY$0016, id);
         }
-        entity = entityExists.get();
+        entity = loyaltyEvent.get();
         return entity;
     }
 

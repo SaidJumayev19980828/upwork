@@ -35,4 +35,8 @@ public class UserRepresentationObject {
     public LocalDateTime dateOfBirth;
     public LocalDateTime tierCreatedAt;
     public Long boosterId;
+
+    public String getReferral() {
+        return  "ref" + id;
+    }
 }

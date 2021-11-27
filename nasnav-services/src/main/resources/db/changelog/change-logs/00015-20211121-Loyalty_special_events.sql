@@ -18,7 +18,9 @@ CREATE TABLE public.loyalty_events (
        organization_id int8 not null,
        start_date timestamp without time zone,
        end_date timestamp without time zone ,
+       loyalty_type_id int8,
        is_active bool default true not null,
        CONSTRAINT loyalty_events_pk PRIMARY KEY (id),
-       CONSTRAINT loyalty_events_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+       CONSTRAINT loyalty_events_fk FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+       CONSTRAINT loyalty_events_type_fk FOREIGN KEY (loyalty_type_id) REFERENCES public.loyalty_point_types(id)
 );

@@ -16,5 +16,6 @@ public class LoyaltyEventDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Boolean isActive;
+    private Long loyaltyTypeId;
 
 }
