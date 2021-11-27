@@ -4,3 +4,4 @@
 
 --comment: add_loyalty_custom_columns
 alter table yeshtery_users add column referral varchar ;
+alter table loyalty_point_transactions add column amount numeric ;

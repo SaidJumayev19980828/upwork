@@ -166,6 +166,8 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private UserService userService;
 
+	@Autowired
+	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -812,13 +814,25 @@ public class OrderServiceImpl implements OrderService {
 		if (detailsLevel == 3) {
 			representation.setItems(basketItems);
 		}
-		
+
+		representation.setPoints(getOrderPoints(order));
+		if(!isNullOrEmpty(representation.getPoints())) {
+			BigDecimal totalPointAmount = representation.getPoints().stream().map(point -> ofNullable(point.getAmount()).orElse(ZERO))
+					.reduce(ZERO, BigDecimal::add);
+			representation.setTotalPointAmount(totalPointAmount);
+		}
 		return representation;
 	}
-	
-	
-	
-	
+
+	private List<LoyaltyOrderDetailDTO> getOrderPoints(OrdersEntity order) {
+		List<LoyaltyPointTransactionEntity>  points = loyaltyPointTransactionRepository.findByOrder_Id(order.getId());
+
+		return points
+				.stream()
+				.map(point -> new LoyaltyOrderDetailDTO(point.getAmount(), point.getPoints()))
+				.collect(Collectors.toList());
+	}
+
 
 	private void setOrderSummary(OrdersEntity entity, DetailedOrderRepObject obj) {
 		Long metaOrderId = 
@@ -2047,6 +2061,13 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setTotal(order.getTotal());
 		subOrder.setSubtotal(order.getAmount());
 		subOrder.setDiscount(order.getDiscounts());
+
+		subOrder.setPoints(getOrderPoints(order));
+		if(!isNullOrEmpty(subOrder.getPoints())) {
+			BigDecimal totalPointAmount = subOrder.getPoints().stream().map(point -> ofNullable(point.getAmount()).orElse(ZERO))
+					.reduce(ZERO, BigDecimal::add);
+			subOrder.setTotalPointAmount(totalPointAmount);
+		}
 		return subOrder;
 	}
 

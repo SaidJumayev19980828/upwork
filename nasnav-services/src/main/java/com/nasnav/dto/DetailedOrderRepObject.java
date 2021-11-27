@@ -45,4 +45,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private Long metaOrderId;
     private String shippingStatus;
     private BigDecimal discount;
+
+    @EqualsAndHashCode.Exclude
+    private List<LoyaltyOrderDetailDTO> points;
+    @JsonProperty("total_point_amount")
+    private BigDecimal totalPointAmount;
 }

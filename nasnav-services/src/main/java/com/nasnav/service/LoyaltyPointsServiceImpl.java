@@ -282,7 +282,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points) {
+    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setShop(shop);
@@ -290,6 +290,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         entity.setUser(user);
         entity.setOrder(order);
         entity.setOrganization(shop.getOrganizationEntity());
+        entity.setAmount(amount);
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
@@ -308,7 +309,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = getLoyaltyTierDTO(org.getId(), user);
         BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-        updateLoyaltyPointTransaction(shop, user, order, points);
+        updateLoyaltyPointTransaction(shop, user, order, points, amount);
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -354,7 +355,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             }
             LoyaltyTierDTO tier = this.getLoyaltyTierDTO(org.getId(), user);
             BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-            updateLoyaltyPointTransaction(shop, user, order, points.negate());
+            updateLoyaltyPointTransaction(shop, user, order, points.negate(), amount.negate());
         }
     }
 

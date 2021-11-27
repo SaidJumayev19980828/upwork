@@ -27,6 +27,8 @@ public class LoyaltyPointTransactionEntity {
 
     private BigDecimal points;
 
+    private BigDecimal amount;
+
     @Column(name = "is_valid")
     private Boolean isValid;
 
