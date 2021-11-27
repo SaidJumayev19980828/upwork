@@ -168,7 +168,10 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
-	
+
+	@Autowired
+	private LoyaltyPinsRepository loyaltyPinsRepository;
+
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
@@ -1381,11 +1384,17 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrderConfirmResponseDTO confrimOrder(Long orderId) {
+	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
+		if(!isNull(pinCode)) {
+			Optional<LoyaltyPinsEntity> pinEntity = loyaltyPinsRepository.findByUser_IdAndShop_IdAndPin(subOrder.getUserId(), subOrder.getShopsEntity().getId(), pinCode);
+			if(pinEntity.isEmpty()) {
+				throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0017, pinEntity);
+			}
+		}
 
-		confirmSubOrderAndMetaOrder(subOrder);
+		confirmSubOrderAndMetaOrder(subOrder, pointsAmount);
 		
 		return  shippingMgrService
 				.requestShipment(subOrder)
@@ -1455,10 +1464,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
+	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
 		updateOrderStatus(order, STORE_CONFIRMED);
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order);
+		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
 
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {

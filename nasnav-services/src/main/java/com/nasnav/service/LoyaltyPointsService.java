@@ -23,7 +23,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id);
     LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id);
     LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount);
-    void createLoyaltyPointTransaction(OrdersEntity order);
+    void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest);
     LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
     List<LoyaltyPointDTO> listOrganizationLoyaltyPoints();
@@ -37,4 +37,6 @@ public interface LoyaltyPointsService {
 
     LoyaltyUserPointsResponse getUserPoints(Long orgId);
     LoyaltyTierDTO getUserOrgTier(Long orgId);
+
+    String generateUserShopPinCode(Long shopId);
 }

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -57,6 +58,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Autowired
     private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private LoyaltyPinsRepository loyaltyPinsRepository;
 
     @Override
     public LoyaltyPointsUpdateResponse updateLoyaltyPointType(LoyaltyPointTypeDTO dto) {
@@ -268,6 +272,31 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         return getLoyaltyTierDTO(orgId, userEntity);
     }
 
+    @Override
+    public String generateUserShopPinCode(Long shopId) {
+
+        Optional<ShopsEntity> shop = shopsRepo.findById(shopId);
+        if(shop.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
+        }
+        BaseUserEntity user = securityService.getCurrentUser();
+
+        if(!(user instanceof UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001, user.getId());
+        }
+
+        SecureRandom random = new SecureRandom();
+        int num = random.nextInt(100000);
+        String formattedPin = String.format("%05d", num);
+
+        LoyaltyPinsEntity pinsEntity = new LoyaltyPinsEntity();
+        pinsEntity.setShop(shop.get());
+        pinsEntity.setUser((UserEntity) user);
+        pinsEntity.setPin(formattedPin);
+        loyaltyPinsRepository.save(pinsEntity);
+        return formattedPin;
+    }
+
     private LoyaltyTierDTO getLoyaltyTierDTO(Long orgId, UserEntity userEntity) {
         if(userEntity.getTier() != null){
             return userEntity.getTier().getRepresentation();
@@ -296,20 +325,18 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public void createLoyaltyPointTransaction(OrdersEntity order) {
+    public void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount) {
         OrganizationEntity org = order.getOrganizationEntity();
         ShopsEntity shop = order.getShopsEntity();
         UserEntity user = order.getMetaOrder().getUser();
-        BigDecimal amount = ofNullable(order)
-                .map(OrdersEntity::getTotal)
-                .orElse(ZERO);
+
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE);
         if (config == null) {
             return;
         }
         LoyaltyTierDTO tier = getLoyaltyTierDTO(org.getId(), user);
-        BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-        updateLoyaltyPointTransaction(shop, user, order, points, amount);
+        BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
+        updateLoyaltyPointTransaction(shop, user, order, points, pointsAmount);
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
