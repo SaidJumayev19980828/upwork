@@ -11,16 +11,20 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.sendpulse.SendPulseService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.RESTOCKED_WISHLIST_TEMPLATE;
 import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
@@ -41,7 +45,8 @@ public class WishlistServiceImpl implements WishlistService{
 
     @Autowired
     private WishlistItemRepository wishlistRepo;
-
+    @Autowired
+    private DomainService domainService;
     @Autowired
     private SecurityService securityService;
     @Autowired
@@ -56,7 +61,8 @@ public class WishlistServiceImpl implements WishlistService{
     private MailService mailService;
     @Autowired
     private CartService cartService;
-
+    @Autowired
+    private OrderEmailServiceHelper orderEmailHelper;
     @Autowired
     private CartServiceHelper cartServiceHelper;
 
@@ -194,12 +200,16 @@ public class WishlistServiceImpl implements WishlistService{
     @Scheduled(fixedRate = 1728000000)
     @Override
     public void sendRestockedWishlistEmails() {
-        Map<UserEntity, List<WishlistItemEntity>> usersWishlists = wishlistRepo.findUsersWishListsWithZeroStockQuantitiy()
+        Map<UserEntity, List<WishlistItemEntity>> usersWishlists = wishlistRepo.findUsersWishListsWithZeroStockQuantity()
                 .stream()
                 .collect(groupingBy(WishlistItemEntity::getUser));
 
         for(Map.Entry info : usersWishlists.entrySet()) {
             UserEntity user = (UserEntity) info.getKey();
+            List<WishlistMailItem> items = ((List<WishlistItemEntity>) info.getValue())
+                    .stream()
+                    .map(this::toWishlistMailItem)
+                    .collect(toList());
             OrganizationEntity org = orgRepo.findOneById(user.getOrganizationId());
             String orgName = org.getName();
             String email = getOrganizationEmail(org.getId());
@@ -208,11 +218,32 @@ public class WishlistServiceImpl implements WishlistService{
             String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId());
             SendPulseService service = new SendPulseService(sendPulseId, sendPulseKey);
 
-            Map<String,Object> variables = createUserCartEmailBody(info);
+            Map<String,Object> variables = createUserWishlistEmailBody(org, user, items);
             String body = mailService.createBodyFromThymeleafTemplate(RESTOCKED_WISHLIST_TEMPLATE, variables);
             service.smtpSendMail(orgName, email, user.getName(), user.getEmail(),
-                    body, "Items restocked at "+orgName, null);
+                    body, "Items back in stock "+orgName, null);
         }
+    }
+
+    private Map<String, Object> createUserWishlistEmailBody(OrganizationEntity org, UserEntity user, List<WishlistMailItem> items) {
+        String domain = domainService.getBackendUrl();
+        String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
+        String orgLogo = domain + "/files/"+ orderEmailHelper.getOrganizationLogo(org);
+        String wishlistUrl = orgDomain + "/wishlist";
+        String orgName = org.getName();
+        String year = LocalDateTime.now().getYear()+"";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("orgDomain", orgDomain);
+        params.put("domain", domain);
+        params.put("orgName", orgName);
+        params.put("orgLogo", orgLogo);
+        params.put("year", year);
+        params.put("wishlistUrl", wishlistUrl);
+        params.put("userName", user.getName());
+        params.put("items", items);
+
+        return params;
     }
 
     private String getOrganizationEmail(Long orgId) {
@@ -234,7 +265,11 @@ public class WishlistServiceImpl implements WishlistService{
                 .collect(toList());
     }
 
-
+    private WishlistMailItem toWishlistMailItem(WishlistItemEntity entity) {
+        String itemName = entity.getStock().getProductVariantsEntity().getName();
+        Map<String, String> variantFeatures = productService.parseVariantFeatures(entity.getStock().getProductVariantsEntity(), 0);
+        return new WishlistMailItem(itemName, entity.getCoverImage(), variantFeatures);
+    }
 
 
 
@@ -277,4 +312,12 @@ public class WishlistServiceImpl implements WishlistService{
 
         return itemDto;
     }
+}
+
+@Data
+@AllArgsConstructor
+class WishlistMailItem {
+    private String name;
+    private String coverImage;
+    private Map<String, String> variantFeatures;
 }

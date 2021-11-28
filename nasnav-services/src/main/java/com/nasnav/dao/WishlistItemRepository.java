@@ -13,7 +13,7 @@ import java.util.List;
 
 public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity, Long> {
 
-	@Query("SELECT item "
+	@Query("SELECT distinct item "
 			+ " FROM WishlistItemEntity item "
 			+ "	LEFT JOIN FETCH item.user user"
 			+ " LEFT JOIN FETCH item.stock stock "
@@ -36,15 +36,18 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 	Long findWishlistItemStockId(@Param("itemId") Long itemId,
 								 @Param("userId") Long userId);
 
-	@Query("SELECT item "
+	@Query("SELECT distinct item "
 			+ " FROM WishlistItemEntity item "
-			+ "	LEFT JOIN item.user user"
-			+ " LEFT JOIN item.stock stock "
-			+ " LEFT JOIN stock.productVariantsEntity variant "
-			+ " LEFT JOIN variant.productEntity product "
-			+ " WHERE product.removed = 0 and variant.removed = 0 and user.userStatus = 201 "
-			+ " and item.additionalData like '%out_of_stock%'");
-	List<WishlistItemEntity> findUsersWishListsWithZeroStockQuantitiy();
+			+ "	LEFT JOIN fetch item.user user"
+			+ " LEFT JOIN fetch item.stock stock "
+			+ " LEFT JOIN fetch stock.productVariantsEntity variant "
+			+ " LEFT JOIN fetch variant.featureValues featureValue "
+			+ " LEFT JOIN fetch featureValue.feature feature "
+			+ " LEFT JOIN fetch variant.productEntity product "
+			+ " WHERE stock.quantity is not null and stock.quantity > 0 and "
+			+ " product.removed = 0 and variant.removed = 0 and user.userStatus = 201 "
+			+ " and item.additionalData like '%out_of_stock%'")
+	List<WishlistItemEntity> findUsersWishListsWithZeroStockQuantity();
 
 	@Transactional
 	@Modifying

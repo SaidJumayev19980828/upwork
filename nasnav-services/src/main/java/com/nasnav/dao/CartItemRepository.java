@@ -27,7 +27,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
-	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartStatisticsData(" +
+	@Query("SELECT distinct new com.nasnav.persistence.dto.query.result.CartStatisticsData(" +
 			"variant.id, variant.name, variant.barcode, variant.productCode, variant.sku, sum(item.quantity), count (user.id)) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
@@ -39,7 +39,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " order by sum(item.quantity) desc , count (user.id) desc ")
 	List<CartStatisticsData> findCartVariantsByOrg_Id(@Param("orgId") Long orgId, Pageable pageable);
 
-	@Query("SELECT item "
+	@Query("SELECT distinct item "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
 			+ " LEFT JOIN item.stock stock "
@@ -50,7 +50,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " order by item.createdAt desc ")
 	List<CartItemEntity> findUsersCartsOrg_Id(@Param("orgId") Long orgId);
 
-	@Query("SELECT item "
+	@Query("SELECT distinct item "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
 			+ " LEFT JOIN item.stock stock "

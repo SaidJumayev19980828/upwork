@@ -223,7 +223,7 @@
                                                     <tr>
                                                         <td align="center"
                                                             style="font-family:'Josefin Sans', Arial, Helvetica, sans-serif;font-size: 30px;color: #000000;">
-                                                            Items restocked!
+                                                            Back in stock!
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -232,8 +232,8 @@
                                                     <tr>
                                                         <td align="center"
                                                             style="font-family:'Josefin Sans', Arial, Helvetica, sans-serif;font-size: 24px;color: #000000;">
-                                                            Some of the items you added to wishlist are avaliable not<br>Be sure to
-                                                            checkout before they sell out!
+                                                            Some of the items you added to wishlist are available now<br>
+                                                            Be sure to check it out before they sell out!
                                                         </td>
                                                     </tr>
 
@@ -252,7 +252,7 @@
                                                                         style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 13px;font-weight: 600;letter-spacing: 0.5px;">
 
 
-                                                                        <a th:href="${cartUrl}" target="_blank"
+                                                                        <a th:href="${wishlistUrl}" target="_blank"
                                                                            style="color: #ffffff">CHECK ITEMS</a>
                                                                     </td>
 
@@ -305,11 +305,6 @@
                                                     <td style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 13px;color: #666666;">
                                                         Item Details
                                                     </td>
-                                                    <td width="30">&nbsp;</td>
-                                                    <td align="right"
-                                                        style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 13px;color: #666666;">
-                                                        Items Price
-                                                    </td>
                                                 </tr>
                                             </table>
                                         </td>
@@ -341,7 +336,7 @@
                                                                     <td width="130"><img width="130"
                                                                                          style="display:block;width:100%;max-width:130px;"
                                                                                          alt="img"
-                                                                                         th:src="${domain} + '/files/' + ${item.coverImg}">
+                                                                                         th:src="${domain} + '/files/' + ${item.coverImage}">
                                                                     </td>
                                                                     <td width="20">&nbsp;</td>
                                                                     <td width="250">
@@ -351,26 +346,11 @@
                                                                                 <td th:text="${item.name}" style="font-family:'Josefin Sans', Arial, Helvetica, sans-serif;font-size: 18px;color: #000000;line-height: 21px;">
                                                                                 </td>
                                                                             </tr>
-                                                                            <tr>
-                                                                                <td th:text="'Quantity: ' + ${item.quantity}" style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 14px;color: #000000;line-height: 21px;">
-                                                                                </td>
-                                                                            </tr>
                                                                             <tr th:each="feature : ${item.variantFeatures}">
                                                                                 <td th:text="${feature.key} + ': ' + ${feature.value}" style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 14px;color: #000000;line-height: 21px;">
                                                                                 </td>
                                                                             </tr>
 
-                                                                        </table>
-                                                                    </td>
-                                                                    <td align="right" width="80">
-                                                                        <table border="0" width="80" cellpadding="0"
-                                                                               cellspacing="0">
-                                                                            <tr>
-                                                                                <td th:text="${item.price} +' '+ ${currency}"
-                                                                                    align="right"
-                                                                                    style="font-family:'Open Sans', Arial, Helvetica, sans-serif;font-size: 14px;color: #000000;">
-                                                                                </td>
-                                                                            </tr>
                                                                         </table>
                                                                     </td>
                                                                 </tr>
