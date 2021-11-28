@@ -74,7 +74,12 @@ public class WishlistServiceImpl implements WishlistService{
             throw new RuntimeBusinessException(FORBIDDEN, O$WISH$0001);
         }
 
-        Long orgId = securityService.getCurrentUserOrganizationId();
+        Long orgId;
+        if(item.getOrgId() != null && item.getOrgId() > 0){
+            orgId = item.getOrgId();
+        } else {
+            orgId = securityService.getCurrentUserOrganizationId();
+        }
         StocksEntity stock =
                 ofNullable(item.getStockId())
                         .map(id -> stockRepo.findByIdAndOrganizationId(id, orgId))
@@ -157,43 +162,8 @@ public class WishlistServiceImpl implements WishlistService{
         }
         Long stockId = wishlistRepo.findWishlistItemStockId(itemId, user.getId());
         Integer qty = ofNullable(item.getQuantity()).orElse(1);
-        CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData());
+        CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData(), item.getOrgId());
         return cartService.addCartItem(cartItem, null);
-    }
-
-    @Override
-    @Transactional
-    public Wishlist addYeshteryWishlistItem(WishlistItem item) {
-        if (securityService.getYeshteryState() == 1){
-            return addWishlistItem(item);
-        }
-        return null;
-    }
-
-    @Override
-    @Transactional
-    public Wishlist deleteYeshteryWishlistItem(Long itemId) {
-        if (securityService.getYeshteryState() == 1){
-            deleteWishlistItem(itemId);
-        }
-        return null;
-    }
-
-    @Override
-    public Wishlist getYeshteryWishlist() {
-        if (securityService.getYeshteryState() == 1){
-            getWishlist();
-        }
-        return null;
-    }
-
-    @Override
-    @Transactional
-    public Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity item) {
-        if (securityService.getYeshteryState() == 1){
-            return moveWishlistItemsToCart(item);
-        }
-        return null;
     }
 
     // run this method every day 1728000000 in milliseconds means 2 days

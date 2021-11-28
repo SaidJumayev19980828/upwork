@@ -484,7 +484,7 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 
-		Order orderResponse = this.getOrderResponse(order);
+		Order orderResponse = this.getOrderResponse(order, false);
 		normalizeOrderForEmailTemplate(orderResponse);
 
 		AddressRepObj deliveryAddress = getBillDeliveryAddress(order);
@@ -1717,7 +1717,7 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createMetaOrder(dto, org, user);
 
-		return getOrderResponse(order);
+		return getOrderResponse(order, false);
 	}
 
 	@Override
@@ -1821,7 +1821,7 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
 
-		return getOrderResponse(order);
+		return getOrderResponse(order, true);
 	}
 
 	@Override
@@ -1890,10 +1890,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Order getOrderResponse(MetaOrderEntity order) {
+	private Order getOrderResponse(MetaOrderEntity order, boolean yeshteryMetaorder) {
 		Order orderDto = setMetaOrderBasicData(order);
-
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order);
+		List<SubOrder> subOrders = new ArrayList<>();
+		if (yeshteryMetaorder) {
+			subOrders = createSubOrderDtoList(order);
+		}
+		else {
+			subOrders = createSubOrderDtoListForYeshteryMetaorder(order);
+		}
 		Boolean isCancelable = isCancelable(order);
 
 		orderDto.setSubOrders(subOrders);
@@ -1912,6 +1917,16 @@ public class OrderServiceImpl implements OrderService {
 		.stream()
 		.map(subOrder -> getSubOrder(subOrder))
 		.collect(toList());
+	}
+
+	private List<SubOrder> createSubOrderDtoListForYeshteryMetaorder(MetaOrderEntity order) {
+		return order
+				.getSubMetaOrders()
+				.stream()
+				.map(MetaOrderEntity::getSubOrders)
+				.flatMap(Set::stream)
+				.map(subOrder -> getSubOrder(subOrder))
+				.collect(toList());
 	}
 
 
@@ -1945,7 +1960,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public Order getMetaOrder(Long orderId){
+	public Order getMetaOrder(Long orderId, boolean yeshteryMetaorder){
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
@@ -1961,7 +1976,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		if (order.isPresent()) {
-			return getOrderResponse(order.get());
+			return getOrderResponse(order.get(), yeshteryMetaorder);
 		}
 		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
 	}
