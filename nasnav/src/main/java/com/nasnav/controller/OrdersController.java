@@ -49,7 +49,7 @@ public class OrdersController {
 	@GetMapping(value = "/meta_order/info", produces = APPLICATION_JSON_VALUE)
 	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestParam(name = "id") Long orderId)  {
-		return this.orderService.getMetaOrder(orderId);
+		return this.orderService.getMetaOrder(orderId, false);
 	}
 
 	@GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
