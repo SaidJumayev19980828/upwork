@@ -9,9 +9,11 @@ import com.nasnav.response.LoyaltyCharityUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.math.BigDecimal.ZERO;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -82,14 +84,14 @@ public class LoyaltyCharityServiceImp implements LoyaltyCharityService {
             donationValue = userTotalPoint * (userDonationPercentage / 100);
         }
 
-        Integer charityTotalPoint = loyaltyTransactionRepository.getByCharity_Id(charityId)
+        BigDecimal charityTotalPoint = loyaltyTransactionRepository.getByCharity_Id(charityId)
                 .stream()
-                .mapToInt(i -> i.getPoints())
-                .sum();
-        charityTotalPoint += donationValue;
+                .map(i -> i.getPoints())
+                .reduce(ZERO , BigDecimal::add);
+        charityTotalPoint = charityTotalPoint.add(BigDecimal.valueOf(donationValue.longValue()));
 
         loyaltyPointsService.updateLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint, shopEntity, true);
-        loyaltyPointsService.updateLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint * -1, shopEntity, false);
+        loyaltyPointsService.updateLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint.negate(), shopEntity, false);
 
     }
 

@@ -59,7 +59,7 @@ public class LoyaltyGiftServiceImp implements LoyaltyGiftService {
     public void updateOrCreateLoyaltyGiftTransaction(Long giftId) {
         LoyaltyGiftEntity loyaltyGiftEntity = loyaltyGiftRepository.findById(giftId).get();
         //
-        loyaltyPointsService.updateLoyaltyPointGiftTransaction(loyaltyGiftEntity, loyaltyGiftEntity.getUserFrom(), loyaltyGiftEntity.getPoints() * -1, true);
+        loyaltyPointsService.updateLoyaltyPointGiftTransaction(loyaltyGiftEntity, loyaltyGiftEntity.getUserFrom(), loyaltyGiftEntity.getPoints().negate(), true);
         loyaltyPointsService.updateLoyaltyPointGiftTransaction(loyaltyGiftEntity, loyaltyGiftEntity.getUserTo(), loyaltyGiftEntity.getPoints(), false);
     }
 

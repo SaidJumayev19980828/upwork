@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -13,6 +14,6 @@ public class LoyaltyCoinsDropDTO {
     private Integer typeId;
     private Long orgId;
     private Boolean isActive;
-    private Integer amount;
+    private BigDecimal amount;
     private LocalDate officialVacationDate;
 }

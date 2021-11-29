@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static javax.persistence.FetchType.LAZY;
@@ -24,7 +25,9 @@ public class LoyaltyPointTransactionEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    private Integer points;
+    private BigDecimal points;
+
+    private BigDecimal amount;
 
     @Column(name = "is_valid")
     private Boolean isValid;

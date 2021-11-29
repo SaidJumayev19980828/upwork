@@ -176,6 +176,9 @@ public enum ErrorCodes {
 	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
 	,ORG$LOY$0013("Use either amounts or ratio!")
 	,ORG$LOY$0014("User is not linked to org with id[%d] !")
+	,ORG$LOY$0015("Invalid loyalty config for org with id[%d] !")
+	,ORG$LOY$0016("no Loyalty event with id[%d] !")
+	,ORG$LOY$0017("Invalid Pin code [%s] !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

@@ -2,7 +2,6 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.GiftDTO;
 import com.nasnav.dto.request.*;
-import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
@@ -37,6 +36,8 @@ public class LoyaltyPointController {
     private LoyaltyCoinsDropService loyaltyCoinsDropService;
     @Autowired
     private LoyaltyBoosterService loyaltyBoosterService;
+    @Autowired
+    private LoyaltyEventService loyaltyEventService;
 
 
     @GetMapping(value ="points")
@@ -214,7 +215,7 @@ public class LoyaltyPointController {
     public List<LoyaltyPointDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token) {
         return loyaltyPointsService.listOrganizationLoyaltyPoints();
     }
-
+/*
     @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)
     public List<RedeemPointsOfferDTO> checkRedeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
                                                         @RequestParam String code) {
@@ -225,6 +226,12 @@ public class LoyaltyPointController {
     public LoyaltyPointsUpdateResponse redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
                                                     @RequestParam("point_id") Long pointId, @RequestParam("user_id") Long userId) {
         return loyaltyPointsService.redeemPoints(pointId, userId);
+    }
+*/
+
+    @GetMapping(value = "points/user/scan")
+    public String userScan(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long shopId) {
+        return loyaltyPointsService.generateUserShopPinCode(shopId);
     }
 
     @GetMapping(value = "booster")
@@ -309,6 +316,24 @@ public class LoyaltyPointController {
             return loyaltyGiftService.getGiftsRedeemByUserReceiveId(userId);
         }
         return loyaltyGiftService.getGiftsNotRedeemByUserId(userId);
+    }
+
+    /**
+     * Events API
+     */
+
+    @GetMapping("event")
+    public List<LoyaltyEventDTO> getAllEvents(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id") Long orgId){
+        return loyaltyEventService.getAllEvents(orgId);
+    }
+    @PostMapping("event")
+    public  LoyaltyEventUpdateResponse createUpdateEvent(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody LoyaltyEventDTO request){
+        return loyaltyEventService.createUpdateEvent(request);
+    }
+
+    @DeleteMapping("event/{id}")
+    public void deleteEvent(@RequestHeader(name = "User-Token", required = false) String token, @PathVariable Long id){
+        loyaltyEventService.deleteById(id);
     }
 
 }

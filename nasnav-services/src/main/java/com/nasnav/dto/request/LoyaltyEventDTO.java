@@ -1,20 +1,21 @@
-package com.nasnav.dto;
+package com.nasnav.dto.request;
+
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class GiftDTO {
+public class LoyaltyEventDTO {
     private Long id;
-    private Long userFromId;
-    private Long userToId;
+    private String name;
+    private Long organizationId;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private Boolean isActive;
-    private BigDecimal points;
-    private String phoneNumber;
-    private String email;
-    private Boolean isRedeem;
+    private Long loyaltyTypeId;
+
 }

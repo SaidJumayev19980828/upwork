@@ -50,7 +50,7 @@ public interface OrderService {
 
 	 void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
-	 OrderConfirmResponseDTO confrimOrder(Long orderId);
+	 OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount);
 
 	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 

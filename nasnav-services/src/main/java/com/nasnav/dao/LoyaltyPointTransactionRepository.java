@@ -45,4 +45,6 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("Select count(transaction) from LoyaltyPointTransactionEntity transaction " +
             " where transaction.user.id = :userId and DATE(transaction.createdAt) BETWEEN :dateFrom and :dateTo")
     Integer getCoinsDropTransactionsByUser_IdAndCreatedAt(Long userId, LocalDate dateFrom, LocalDate dateTo);
+
+    List<LoyaltyPointTransactionEntity> findByOrder_Id(Long id);
 }
