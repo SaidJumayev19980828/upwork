@@ -1917,10 +1917,10 @@ public class OrderServiceImpl implements OrderService {
 		Order orderDto = setMetaOrderBasicData(order);
 		List<SubOrder> subOrders = new ArrayList<>();
 		if (yeshteryMetaorder) {
-			subOrders = createSubOrderDtoList(order);
+			subOrders = createSubOrderDtoListForYeshteryMetaorder(order);
 		}
 		else {
-			subOrders = createSubOrderDtoListForYeshteryMetaorder(order);
+			subOrders = createSubOrderDtoList(order);
 		}
 		Boolean isCancelable = isCancelable(order);
 
