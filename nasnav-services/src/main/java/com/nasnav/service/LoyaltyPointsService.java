@@ -22,7 +22,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointDeleteResponse deleteLoyaltyPoint(Long id);
     LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id);
     LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id);
-    LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount);
+    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount);
     void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest);
     LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
@@ -31,9 +31,9 @@ public interface LoyaltyPointsService {
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
-    void updateLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
-    LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
-    LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
+    void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
+    LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
+    LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
     LoyaltyUserPointsResponse getUserPoints(Long orgId);
     LoyaltyTierDTO getUserOrgTier(Long orgId);

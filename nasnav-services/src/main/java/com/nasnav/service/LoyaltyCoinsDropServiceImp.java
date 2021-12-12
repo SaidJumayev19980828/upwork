@@ -163,7 +163,7 @@ public class LoyaltyCoinsDropServiceImp implements LoyaltyCoinsDropService {
         ShopsEntity shopEntity = shopsRepository.findById(shopId).get();
 
         // Create Transactions
-        loyaltyPointsService.updateLoyaltyPointCoinsDropTransaction(entity, userEntity, amount, shopEntity, true);
+        loyaltyPointsService.createLoyaltyPointCoinsDropTransaction(entity, userEntity, amount, shopEntity, true);
         
     }
     private List<UserEntity> loadUsersAllowReward() {

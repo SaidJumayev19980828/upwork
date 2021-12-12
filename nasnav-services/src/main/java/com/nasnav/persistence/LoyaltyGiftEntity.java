@@ -52,8 +52,7 @@ public class LoyaltyGiftEntity {
     public GiftDTO getRepresentation() {
         GiftDTO dto = new GiftDTO();
         BeanUtils.copyProperties(this, dto);
-        dto.setUserToId(userTo.getId());
-        dto.setUserFromId(userFrom.getId());
+        dto.setUserToEmail(userTo.getEmail());
         return dto;
     }
 }
