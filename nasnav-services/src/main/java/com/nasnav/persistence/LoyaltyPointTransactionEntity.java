@@ -1,8 +1,10 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.request.LoyaltyPointTransactionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.beans.BeanUtils;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
@@ -98,4 +100,17 @@ public class LoyaltyPointTransactionEntity {
 
     @Column(name = "is_coins_drop")
     private Boolean isCoinsDrop;
+
+    public LoyaltyPointTransactionDTO getRepresentation() {
+        LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
+        BeanUtils.copyProperties(this, dto);
+        if(this.order != null) {
+            dto.setOrderId(order.getId());
+        }
+        if(this.organization != null) {
+            dto.setOrgId(organization.getId());
+        }
+
+        return dto;
+    }
 }

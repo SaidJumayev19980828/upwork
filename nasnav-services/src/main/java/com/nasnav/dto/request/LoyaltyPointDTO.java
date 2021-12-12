@@ -19,4 +19,5 @@ public class LoyaltyPointDTO {
     private String type;
     private BigDecimal amount;
     private BigDecimal points;
+    private Boolean isValid;
 }

@@ -26,7 +26,7 @@ public interface LoyaltyPointsService {
     void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest);
     LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
-    List<LoyaltyPointDTO> listOrganizationLoyaltyPoints();
+    List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);

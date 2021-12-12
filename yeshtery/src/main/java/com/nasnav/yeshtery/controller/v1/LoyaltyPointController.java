@@ -212,8 +212,8 @@ public class LoyaltyPointController {
     }
 
     @GetMapping(value = "points/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyPointsService.listOrganizationLoyaltyPoints();
+    public List<LoyaltyPointTransactionEntity> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id")  Long orgId ) {
+        return loyaltyPointsService.listOrganizationLoyaltyPoints(orgId);
     }
 /*
     @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)

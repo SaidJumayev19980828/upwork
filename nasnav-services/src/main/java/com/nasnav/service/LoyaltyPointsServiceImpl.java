@@ -420,12 +420,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public List<LoyaltyPointDTO> listOrganizationLoyaltyPoints() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return loyaltyPointRepo.findByOrganization_IdOrderByEndDateDesc(orgId)
-                .stream()
-                .map(LoyaltyPointEntity::getRepresentation)
-                .collect(toList());
+    public List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId ) {
+         return loyaltyPointTransRepo.findByOrganization_Id(orgId);
     }
 
     @Override
