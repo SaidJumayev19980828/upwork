@@ -90,8 +90,8 @@ public class LoyaltyCharityServiceImp implements LoyaltyCharityService {
                 .reduce(ZERO , BigDecimal::add);
         charityTotalPoint = charityTotalPoint.add(BigDecimal.valueOf(donationValue.longValue()));
 
-        loyaltyPointsService.updateLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint, shopEntity, true);
-        loyaltyPointsService.updateLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint.negate(), shopEntity, false);
+        loyaltyPointsService.createLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint, shopEntity, true);
+        loyaltyPointsService.createLoyaltyPointCharityTransaction(loyaltyCharityEntity, userEntity, charityTotalPoint.negate(), shopEntity, false);
 
     }
 

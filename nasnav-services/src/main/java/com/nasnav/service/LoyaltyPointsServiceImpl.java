@@ -194,7 +194,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public void updateLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate) {
+    public void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -206,7 +206,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift) {
+    public LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -218,7 +218,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop) {
+    public LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setIsValid(true);
@@ -311,7 +311,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount) {
+    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setShop(shop);
@@ -336,7 +336,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = getLoyaltyTierDTO(org.getId(), user);
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        updateLoyaltyPointTransaction(shop, user, order, points, pointsAmount);
+        createLoyaltyPointTransaction(shop, user, order, points, pointsAmount);
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -382,7 +382,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             }
             LoyaltyTierDTO tier = this.getLoyaltyTierDTO(org.getId(), user);
             BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-            updateLoyaltyPointTransaction(shop, user, order, points.negate(), amount.negate());
+            createLoyaltyPointTransaction(shop, user, order, points.negate(), amount.negate());
         }
     }
 
@@ -420,12 +420,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public List<LoyaltyPointDTO> listOrganizationLoyaltyPoints() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return loyaltyPointRepo.findByOrganization_IdOrderByEndDateDesc(orgId)
-                .stream()
-                .map(LoyaltyPointEntity::getRepresentation)
-                .collect(toList());
+    public List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId ) {
+         return loyaltyPointTransRepo.findByOrganization_Id(orgId);
     }
 
     @Override

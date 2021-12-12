@@ -26,7 +26,12 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.isValid = true and t.organization.id = :orgId and t.user.id = :userId")
     Integer findOrgRedeemablePoints(@Param("userId") Long userId,
-                                     @Param("orgId") Long orgId);
+                                    @Param("orgId") Long orgId);
+
+    @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
+            " where t.organization.id = :orgId and t.user.id = :userId")
+    Integer findUserOrgPoints(@Param("userId") Long userId,
+                                    @Param("orgId") Long orgId);
 
     @Transactional
     @Modifying
@@ -47,4 +52,6 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     Integer getCoinsDropTransactionsByUser_IdAndCreatedAt(Long userId, LocalDate dateFrom, LocalDate dateTo);
 
     List<LoyaltyPointTransactionEntity> findByOrder_Id(Long id);
+
+    List<LoyaltyPointTransactionEntity> findByOrganization_Id(Long orgId);
 }
