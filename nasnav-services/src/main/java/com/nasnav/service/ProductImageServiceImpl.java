@@ -277,7 +277,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			imagesEntities.add(entity);
 		}
 		productImagesRepository.saveAll(imagesEntities);
-		return imagesEntities.get(0).getId();
+		return !imagesEntities.isEmpty() ? imagesEntities.get(0).getId() : 0L;
 	}
 
 	private List<ProductImagesEntity> saveImageToAllVariantsWithHighLevelFeatures(ProductImageUpdateDTO imgMetaData,

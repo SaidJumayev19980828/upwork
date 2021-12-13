@@ -191,6 +191,25 @@ public class YeshteryController {
         dispatcher.forward(request, resp);
     }
 
+    @GetMapping( path="files/{url}")
+    public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @PathVariable String url,
+                             @RequestParam(required = false) Integer height,
+                             @RequestParam(required = false) Integer width,
+                             @RequestParam(required = false) String type) throws ServletException, IOException {
+        String resourceInternalUrl;
+        String modUrl = "/"+url;
+        if (height != null || width != null) {
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(modUrl, width, height, type);
+        } else {
+            resourceInternalUrl = fileService.getResourceInternalUrl(modUrl);
+        }
+        resp.setStatus(HttpStatus.OK.value());
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
+        dispatcher.forward(request, resp);
+    }
+
     @Operation(description =  "search the data", summary = "search")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
