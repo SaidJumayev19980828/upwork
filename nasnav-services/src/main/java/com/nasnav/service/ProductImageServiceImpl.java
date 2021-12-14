@@ -598,7 +598,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		List<String> existingImages = productImagesRepository
+				.findByProductAndBundle_OrganizationId(orgId)
+				.stream()
+				.map(ProductImagesEntity::getUri)
+				.collect(toList());
+
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
+
+		existingImages
+				.stream()
+				.forEach(fileService::deleteFileByUrl);
 	}
 	
 
