@@ -827,6 +827,9 @@ public class ProductService {
 		if(params.maxPrice != null)
 			predicate.and( stock.price.loe(params.maxPrice));
 
+		if(params.category_name != null)
+			predicate.and( product.id.in(productsCustomRepo.getProductTagsByCategoryNameQuery(params)));
+
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
 					.or(product.id.like("%" + params.name + "%"))
