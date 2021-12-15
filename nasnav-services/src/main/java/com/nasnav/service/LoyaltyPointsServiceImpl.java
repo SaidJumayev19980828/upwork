@@ -5,7 +5,9 @@ import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
@@ -20,6 +22,8 @@ import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -238,7 +242,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
         }
         UserEntity currentUser = (UserEntity)baseUser;
-        Optional<UserEntity> user = getUserEntity(orgId, currentUser);
+        Optional<UserEntity> user = getUserEntity(orgId, currentUser.getYeshteryUserId());
 
         if(user.isEmpty()){
             return new LoyaltyUserPointsResponse(false, currentUser.getId(), 0);
@@ -248,8 +252,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         return new LoyaltyUserPointsResponse(true, currentUser.getId(), points);
     }
 
-    private Optional<UserEntity> getUserEntity(Long orgId, UserEntity currentUser) {
-        Long yeshteryId = currentUser.getYeshteryUserId();
+    private Optional<UserEntity> getUserEntity(Long orgId, Long yeshteryId) {
         Optional<UserEntity> user = userRepo.findByYeshteryUserIdAndOrganizationId(yeshteryId, orgId);
         return user;
     }
@@ -262,7 +265,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
         }
         UserEntity currentUser = (UserEntity)baseUser;
-        Optional<UserEntity> user = getUserEntity(orgId, currentUser);
+        Optional<UserEntity> user = getUserEntity(orgId, currentUser.getYeshteryUserId());
 
         if(user.isEmpty()){
             throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, orgId);
@@ -295,6 +298,28 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         pinsEntity.setPin(formattedPin);
         loyaltyPinsRepository.save(pinsEntity);
         return formattedPin;
+    }
+
+    @Override
+    public List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items) {
+        List<LoyaltyPointsCartResponseDto> result = new ArrayList<>();
+
+        Set<Long> orgIds = items.stream().collect(Collectors.groupingBy(CartItem::getOrgId)).keySet();
+        for (Long orgId : orgIds) {
+            Optional<UserEntity> user = getUserEntity(orgId, yeshteryUserId);
+            if(user.isEmpty()) {
+                continue;
+            }
+            Integer points = loyaltyPointTransRepo.findOrgRedeemablePointsByOrgAndYeshteryUserId( yeshteryUserId, orgId);
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE);
+            if (config == null) {
+                continue;
+            }
+            LoyaltyTierDTO tier = getLoyaltyTierDTO(orgId, user.get());
+            BigDecimal amounts = calculateAmounts(config, points, tier.getCoefficient());
+            result.add(new LoyaltyPointsCartResponseDto(orgId, points, amounts));
+        }
+        return result;
     }
 
     private LoyaltyTierDTO getLoyaltyTierDTO(Long orgId, UserEntity userEntity) {
@@ -346,9 +371,20 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if(anyIsNull(from, to , coefficient, amount)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0006, config.getOrganization().getId());
         }
-        BigDecimal points = amount.multiply(coefficient).multiply(from).divide(to);
-        points = points.setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal points = amount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
         return points;
+    }
+
+
+    private BigDecimal calculateAmounts(LoyaltyPointConfigEntity config, Integer points, BigDecimal coefficient) {
+        BigDecimal from = config.getRatioFrom();
+        BigDecimal to = config.getRatioTo();
+
+        if(anyIsNull(from, to , coefficient, points)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0006, config.getOrganization().getId());
+        }
+        BigDecimal amounts = new BigDecimal(points).multiply(coefficient).multiply(to).divide(from, 2, RoundingMode.HALF_EVEN);
+        return amounts;
     }
 
     @Override

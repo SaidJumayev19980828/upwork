@@ -65,7 +65,9 @@ public class LoyaltyTierEntity {
     public LoyaltyTierDTO getRepresentation() {
         LoyaltyTierDTO dto = new LoyaltyTierDTO();
         BeanUtils.copyProperties(this, dto);
-        dto.setOrgId(organization.getId());
+        if(organization != null ) {
+            dto.setOrgId(organization.getId());
+        }
         if (booster != null) {
             dto.setBoosterId(booster.getId());
         }

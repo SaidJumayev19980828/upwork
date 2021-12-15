@@ -4,7 +4,9 @@ import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
@@ -39,4 +41,6 @@ public interface LoyaltyPointsService {
     LoyaltyTierDTO getUserOrgTier(Long orgId);
 
     String generateUserShopPinCode(Long shopId);
+
+    List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
 }

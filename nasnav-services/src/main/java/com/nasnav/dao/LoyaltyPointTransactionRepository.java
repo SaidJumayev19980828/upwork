@@ -28,6 +28,11 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     Integer findOrgRedeemablePoints(@Param("userId") Long userId,
                                     @Param("orgId") Long orgId);
 
+    @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t INNER JOIN UserEntity u " +
+            " on u = t.user where t.isValid = true and t.organization.id = :orgId and u.yeshteryUserId = :yeshteryUserId")
+    Integer findOrgRedeemablePointsByOrgAndYeshteryUserId(@Param("yeshteryUserId") Long yeshteryUserId,
+                                    @Param("orgId") Long orgId);
+
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.organization.id = :orgId and t.user.id = :userId")
     Integer findUserOrgPoints(@Param("userId") Long userId,
