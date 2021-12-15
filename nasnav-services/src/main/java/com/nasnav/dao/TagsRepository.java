@@ -20,6 +20,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     List<TagsEntity> findByIdIn(List<Long> ids);
     List<TagsEntity> findByOrganizationEntity_Id(Long orgId);
     List<TagsEntity> findByOrganizationEntity_IdOrderByName(Long orgId);
+    List<TagsEntity> findByOrganizationEntity_IdInOrderByName(Set<Long> orgIds);
     Optional<TagsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdIn(List<Long> tagsIds);
     List<TagsEntity> findByCategoriesEntity_IdInAndOrganizationEntity_Id(List<Long> tagsIds, Long orgId);
@@ -27,6 +28,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     List<TagsEntity> findByIdInAndOrganizationEntity_Id(List<Long> ids, Long orgId);
 
     List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(String categoryName, Long orgId);
+    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByName(String categoryName, Set<Long> orgIds);
 
     @Query("SELECT tag FROM TagsEntity tag " +
             " LEFT JOIN tag.organizationEntity org " +

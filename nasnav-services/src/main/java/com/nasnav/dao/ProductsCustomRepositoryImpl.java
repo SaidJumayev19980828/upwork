@@ -144,6 +144,19 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.where(tag.name.likeIgnoreCase(params.getName()));
 	}
 
+	@Override
+	public SQLQuery<Long> getProductTagsByCategoryNameQuery(ProductSearchParam params) {
+		QTags tag = QTags.tags;
+		QCategories category = QCategories.categories;
+		QProductTags productTags = QProductTags.productTags;
+		return select(productTags.productId)
+				.from(productTags)
+				.join(tag).on(tag.id.eq(productTags.tagId))
+				.where(tag.categoryId.in(select(category.id)
+										.from(category)
+										.where(category.name.likeIgnoreCase(params.getCategory_name()))));
+	}
+
 	
 	private void  insertProductTag(QProductTags productTags, SQLInsertClause insert,
 			ProductTagPair productTag) {

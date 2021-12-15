@@ -204,19 +204,32 @@ public class CategoryService {
 
 //    @CacheResult(cacheName = "organizations_tags")
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
-        List<TagsEntity> tagsEntities;
-        if(isBlankOrNull(categoryName)) {
-        	tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
-        }else {
-        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
-        }
-        return tagsEntities
-        			.stream()
-                    	.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-                    	.collect(toList());
-    }
+		List<TagsEntity> tagsEntities;
+		if (isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
+		}
+		return toTagsDTO(tagsEntities);
+	}
 
-    
+	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName) {
+    	Set<Long> orgIdList = orgRepo.findIdByYeshteryState(1);
+		List<TagsEntity> tagsEntities;
+		if(isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByName(orgIdList);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByName(categoryName, orgIdList);
+		}
+		return toTagsDTO(tagsEntities);
+	}
+
+	private List<TagsRepresentationObject> toTagsDTO(List<TagsEntity> tagsEntities) {
+		return tagsEntities
+				.stream()
+				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+				.collect(toList());
+    }
     
     
     
