@@ -268,6 +268,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		if (imgMetaData.getVariantId() != null) {
 			imagesEntities.addAll(saveImageToAllVariantsWithHighLevelFeatures(imgMetaData, productEntity, uri));
+			if (imagesEntities.isEmpty()) {
+				ProductVariantsEntity variant = productVariantsRepository.findById( imgMetaData.getVariantId() ).get();
+				ProductImagesEntity entity = new ProductImagesEntity();
+				entity.setPriority(imgMetaData.getPriority());
+				entity.setProductEntity(productEntity);
+				entity.setType(imgMetaData.getType());
+				entity.setUri(uri);
+				entity.setProductVariantsEntity(variant);
+				imagesEntities.add(entity);
+			}
 		} else {
 			ProductImagesEntity entity = new ProductImagesEntity();
 			entity.setPriority(imgMetaData.getPriority());
@@ -277,7 +287,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			imagesEntities.add(entity);
 		}
 		productImagesRepository.saveAll(imagesEntities);
-		return !imagesEntities.isEmpty() ? imagesEntities.get(0).getId() : 0L;
+		return imagesEntities.get(0).getId();
 	}
 
 	private List<ProductImagesEntity> saveImageToAllVariantsWithHighLevelFeatures(ProductImageUpdateDTO imgMetaData,
@@ -840,7 +850,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(!Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
 			imgMetaData.setVariantId(variantId);
 		}
-		
+
 		return imgMetaData;		
 	}
 	
