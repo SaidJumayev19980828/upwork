@@ -17,24 +17,25 @@ import lombok.Data;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
@@ -728,6 +729,45 @@ public class ShopThreeSixtyService {
     private ShopThreeSixtyEntity getShopThreeSixtyEntity(Long shopId) {
         return shop360Repo.getFirstByShopsEntity_Id(shopId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$360$0001));
+    }
+
+    public String exportThreeSixtyImages(HttpServletResponse response) throws IOException {
+        OrganizationEntity org = securitySvc.getCurrentUserOrganization();
+        List<String> images = scenesRepo.findByOrganizationEntity_Id(org.getId())
+                .stream()
+                .map(ShopScenesEntity::getImage)
+                .collect(toList());
+
+        FileSystemResource fos = new FileSystemResource("360_images.zip");
+        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+
+        prepareZipFile(fos, zipOut, images);
+
+        StreamUtils.copy(fos.getInputStream(), zipOut);
+        zipOut.close();
+        zipOut.finish();
+        return org.getName();
+    }
+
+    private void prepareZipFile(FileSystemResource fos, ZipOutputStream zipOut,  List<String> images) {
+        for (String srcFile : images) {
+            try {
+                this.basePath = Paths.get(appConfig.getBasePathStr());
+                Path location = basePath.resolve(srcFile);
+                File fileToZip = location.toFile();
+                FileInputStream fis = new FileInputStream(fileToZip);
+                ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
+                zipOut.putNextEntry(zipEntry);
+
+                byte[] bytes = new byte[1024];
+                int length;
+                while((length = fis.read(bytes)) >= 0) {
+                    zipOut.write(bytes, 0, length);
+                }
+                fis.close();
+            } catch (IOException ex) {
+            }
+        }
     }
 
 

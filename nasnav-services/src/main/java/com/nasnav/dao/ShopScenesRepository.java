@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ShopScenesRepository extends CrudRepository<ShopScenesEntity, Long> {
@@ -16,4 +17,10 @@ public interface ShopScenesRepository extends CrudRepository<ShopScenesEntity, L
     Optional<ShopScenesEntity> findByIdAndOrganizationEntity_Id(@Param("id") Long id,
                                                                 @Param("orgId") Long orgId);
     Optional<ShopScenesEntity> findByIdAndShopSectionsEntity_Id(Long id, Long sectionId);
+
+    @Query(value = "select scene from ShopScenesEntity scene" +
+            " left join scene.shopSectionsEntity section" +
+            " left join section.shopFloorsEntity floor" +
+            " where scene.organizationEntity.id = :orgId and floor.organizationEntity.id = :orgId")
+    List<ShopScenesEntity> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
 }

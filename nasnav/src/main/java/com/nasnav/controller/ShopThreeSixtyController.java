@@ -15,6 +15,7 @@ import com.nasnav.service.ShopThreeSixtyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -138,5 +140,14 @@ public class ShopThreeSixtyController {
                                    @RequestParam("scene_id") Long sceneId,
                                    @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) {
         shop360Svc.deleteShop360Scene(sceneId, confirm);
+    }
+
+    @PostMapping("/export_images")
+    public void   exportThreeSixtyImages(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                         HttpServletResponse response) throws IOException {
+        String orgName = shop360Svc.exportThreeSixtyImages(response);
+
+        response.setContentType("application/zip");
+        response.setHeader(CONTENT_DISPOSITION, "attachment; filename="+orgName+"_360_images.zip");
     }
 }
