@@ -15,6 +15,7 @@ import com.nasnav.response.ShopResponse;
 import lombok.Builder;
 import lombok.Data;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -731,43 +732,30 @@ public class ShopThreeSixtyService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$360$0001));
     }
 
-    public String exportThreeSixtyImages(HttpServletResponse response) throws IOException {
-        OrganizationEntity org = securitySvc.getCurrentUserOrganization();
-        List<String> images = scenesRepo.findByOrganizationEntity_Id(org.getId())
-                .stream()
-                .map(ShopScenesEntity::getImage)
-                .collect(toList());
-
-        FileSystemResource fos = new FileSystemResource("360_images.zip");
+    public void exportThreeSixtyImages(HttpServletResponse response) throws IOException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+        this.basePath = Paths.get(appConfig.getBasePathStr());
         ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
 
-        prepareZipFile(fos, zipOut, images);
-
-        StreamUtils.copy(fos.getInputStream(), zipOut);
+        scenesRepo.findByOrganizationEntity_Id(orgId)
+                .stream()
+                .map(ShopScenesEntity::getImage)
+                .map(img -> basePath.resolve(img))
+                .map(Path::toFile)
+                .forEach(file -> createZipEntry(zipOut, file));
         zipOut.close();
-        zipOut.finish();
-        return org.getName();
     }
 
-    private void prepareZipFile(FileSystemResource fos, ZipOutputStream zipOut,  List<String> images) {
-        for (String srcFile : images) {
-            try {
-                this.basePath = Paths.get(appConfig.getBasePathStr());
-                Path location = basePath.resolve(srcFile);
-                File fileToZip = location.toFile();
-                FileInputStream fis = new FileInputStream(fileToZip);
-                ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
-                zipOut.putNextEntry(zipEntry);
+    private void createZipEntry(ZipOutputStream zipOutputStream,  File file) {
+        try {
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
 
-                byte[] bytes = new byte[1024];
-                int length;
-                while((length = fis.read(bytes)) >= 0) {
-                    zipOut.write(bytes, 0, length);
-                }
-                fis.close();
-            } catch (IOException ex) {
-            }
-        }
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        } catch (Exception e){}
     }
 
 
