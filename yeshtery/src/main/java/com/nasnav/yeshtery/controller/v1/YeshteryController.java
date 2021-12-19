@@ -235,6 +235,11 @@ public class YeshteryController {
         return shopService.getShopById(shopId);
     }
 
+    @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
+    public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
+        return shopService.getOrganizationShops(orgId, false);
+    }
+
     @Operation(description =  "return seo keywords", summary = "getSeo")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
