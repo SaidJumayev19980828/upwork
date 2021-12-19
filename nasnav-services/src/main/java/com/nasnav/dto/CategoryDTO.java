@@ -11,4 +11,7 @@ public class CategoryDTO {
     @JsonProperty("parent_id")
     private Long parentId;
     private String logo;
+    private String cover;
+    @JsonProperty("cover_small")
+    private String coverSmall;
 }

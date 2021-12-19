@@ -118,20 +118,31 @@ public class CategoryService {
     
 
     public CategoriesEntity createCategory(CategoryDTO categoryJson) {
-		validateCategoryCreation(categoryJson);
         CategoriesEntity categoriesEntity = new CategoriesEntity();
+
+		validateCategoryName(categoryJson);
         categoriesEntity.setName(categoryJson.getName());
-        categoriesEntity.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-        	categoriesEntity.setParentId(categoryJson.getParentId());
-        }
-        categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+		categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+
+		setCategoryEntityAdditionalInfo(categoriesEntity, categoryJson);
+
 		return categoryRepository.save(categoriesEntity);
     }
 
-    private void validateCategoryCreation(CategoryDTO categoryJson) {
-		validateCategoryName(categoryJson);
-		validateCategoryParent(categoryJson);
+    private void setCategoryEntityAdditionalInfo(CategoriesEntity entity, CategoryDTO dto) {
+		if (dto.getParentId() != null) {
+			validateCategoryParent(dto);
+			entity.setParentId(dto.getParentId());
+		}
+    	if(dto.getLogo() != null) {
+    		entity.setLogo(dto.getLogo());
+		}
+		if(dto.getCover() != null) {
+			entity.setCover(dto.getCover());
+		}
+		if(dto.getCoverSmall() != null) {
+			entity.setCoverSmall(dto.getCoverSmall());
+		}
 	}
 
 	private void validateCategoryParent(CategoryDTO categoryJson) {
@@ -163,12 +174,7 @@ public class CategoryService {
 			category.setName(categoryJson.getName());
 			category.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         }
-        if (categoryJson.getLogo() != null)
-			category.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-        	validateCategoryParent(categoryJson);
-			category.setParentId(categoryJson.getParentId());
-        }
+        setCategoryEntityAdditionalInfo(category, categoryJson);
 		return categoryRepository.save(category);
     }
 
@@ -841,19 +847,12 @@ public class CategoryService {
 
 
 	private CategoryDto toCategoryDto(CategoriesEntity entity) {
-    	var metadata =
-				ofNullable(entity.getLogo())
-						.map(Object.class::cast)
-						.map(
-							logo -> Map.of(
-									"cover", logo,
-									"icon", logo)
-						).orElse(emptyMap());
-
     	var dto = new CategoryDto();
     	dto.setName(entity.getName());
     	dto.setPname(entity.getPname());
-    	dto.setMetadata(metadata);
+    	dto.setLogo(entity.getLogo());
+    	dto.setCover(entity.getCover());
+    	dto.setCoverSmall(entity.getCoverSmall());
     	dto.setId(entity.getId());
     	dto.setParent(entity.getParentId());
     	return dto;

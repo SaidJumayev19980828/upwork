@@ -19,7 +19,10 @@ public class CategoryDto {
     private String name;
     @JsonProperty("p_name")
     private String pname;
-    private Map<String,Object> metadata;
+    private String logo;
+    private String cover;
+    @JsonProperty("cover_small")
+    private String coverSmall;
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
