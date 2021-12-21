@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,8 +21,8 @@ public class LoyaltyPointEntity {
     private Long id;
 
     private String description;
-    private Integer amount;
-    private Integer points;
+    private BigDecimal amount;
+    private BigDecimal points;
 
     @Column(name = "start_date")
     private LocalDateTime startDate;
@@ -47,8 +48,10 @@ public class LoyaltyPointEntity {
         LoyaltyPointDTO dto = new LoyaltyPointDTO();
         BeanUtils.copyProperties(this, dto);
         dto.setOrgId(this.getOrganization().getId());
-        dto.setTypeId(this.getType().getId());
-        dto.setType(this.getType().getName());
+        if(this.getType() != null) {
+            dto.setTypeId(this.getType().getId());
+            dto.setType(this.getType().getName());
+        }
         return dto;
     }
 }

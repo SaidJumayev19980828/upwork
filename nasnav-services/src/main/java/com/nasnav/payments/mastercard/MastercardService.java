@@ -1,10 +1,7 @@
 package com.nasnav.payments.mastercard;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
-import com.nasnav.dao.PaymentRefundsRepository;
-import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.dao.*;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Commons;
@@ -92,24 +89,15 @@ public class MastercardService {
         }
     }
 
+    // is this deprecated already?
     public void execute(String paymentIdStr) throws BusinessException {
-        PaymentEntity payment = null;
-        try {
-            long paymentId = Long.parseLong(paymentIdStr);
-            Optional<PaymentEntity> op = paymentsRepository.findById(paymentId);
-            if (op.isPresent()) {
-                payment = op.get();
-            }
-        } catch ( Exception ex ) {
-            throw new BusinessException("Invalid or empty payment ID", "INVALID_PAYMENT_ID", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (payment == null) {
-            throw new BusinessException("Invalid or empty payment ID", "INVALID_PAYMENT_ID", HttpStatus.NOT_ACCEPTABLE);
-        }
+        PaymentEntity payment = getPayment(paymentIdStr);
+
         String transactionId = "PAY-" + payment.getUid();
-
         MastercardAccount merchantAccount = getMerchantAccount(payment.getOrgPaymentId());
-
+        OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getOne(payment.getOrgPaymentId());
+        String apiOperation = gateway.getPaymentConfirmations() ? "AUTHORIZEX" : "PAYX";
+//        classLogger.debug("Executing [{}] operation for meta order: {}", apiOperation, payment.getMetaOrderId());
         try {
             // Prepare the request
             HttpClient client= HttpClientBuilder.create().build();
@@ -125,7 +113,7 @@ public class MastercardService {
             sessionObj.put("id", payment.getSessionId());
 
             JSONObject data = new JSONObject();
-            data.put("apiOperation", "PAY");
+            data.put("apiOperation", apiOperation);
             data.put("order", orderObj);
             data.put("session", sessionObj);
 
@@ -158,11 +146,14 @@ public class MastercardService {
                 String result = jsonResult.getString("result");
                 if (result.equalsIgnoreCase("SUCCESS")) {
                     // payment successful
-                    payment.setStatus(PaymentStatus.PAID);
+                    payment.setStatus(gateway.getPaymentConfirmations() ? PaymentStatus.AUTHORIZED : PaymentStatus.PAID);
                     paymentsRepository.saveAndFlush(payment);
                     for (OrdersEntity order: orderService.getOrdersForMetaOrder(payment.getMetaOrderId())) {
                         classLogger.info("Payment successful for order: {}, payment ID: {}", order.getId(), payment.getId());
-                        ordersRepository.setPaymentStatusForOrder(order.getId(), PaymentStatus.PAID.getValue(), new Date());
+                        ordersRepository.setPaymentStatusForOrder(
+                                order.getId(),
+                                gateway.getPaymentConfirmations() ? PaymentStatus.AUTHORIZED.getValue() : PaymentStatus.PAID.getValue(),
+                                new Date());
                     }
                 } else {
                     // payment unsuccessful
@@ -204,15 +195,21 @@ public class MastercardService {
             throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
+            OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getOne(payment.getOrgPaymentId());
             payment.setExecuted(new Date());
-            payment.setStatus(PaymentStatus.PAID);
             payment.setObject(json.toString());
-            paymentCommons.finalizePayment(payment);
+            if (gateway.getPaymentConfirmations()) {
+                payment.setStatus(PaymentStatus.AUTHORIZED);
+                paymentsRepository.saveAndFlush(payment);
+            } else {
+                payment.setStatus(PaymentStatus.PAID);
+                paymentCommons.finalizePayment(payment);
+            }
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
     }
-    
+
 
     public PaymentEntity initialize(MastercardAccount merchantAccount, Long metaOrderId) throws BusinessException {
 
@@ -221,7 +218,7 @@ public class MastercardService {
 
     	if(Objects.isNull(orders)) {
     		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
-    	}    	
+    	}
 
         String orderUid = Tools.getOrderUid(metaOrderId, classLogger);
         OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
@@ -233,12 +230,16 @@ public class MastercardService {
         String responseContent = null;
         StringEntity requestEntity;
 
+        String operation =
+                paymentCommons.getPaymentAccount(metaOrderId, Gateway.MASTERCARD).getPaymentConfirmations()
+                        ? "AUTHORIZE" : "PURCHASE";
+
         if (flavor == FLAVOR_NBE) {
             String alahlyRequest = "apiOperation=CREATE_CHECKOUT_SESSION"
                     + "&apiPassword=" + merchantAccount.getApiPassword()
                     + "&apiUsername=" + merchantAccount.getApiUsername()
                     + "&merchant=" + merchantAccount.getMerchantId()
-                    + "&interaction.operation=PURCHASE"
+                    + "&interaction.operation=" + operation
                     + "&order.id=" + orderUid
                     + "&order.amount=" + orderValue.amount
                     + "&order.currency=" + orderValue.currency;
@@ -250,7 +251,7 @@ public class MastercardService {
             order.put("amount", orderValue.amount);
 
             JSONObject interaction = new JSONObject();
-            interaction.put("operation", "PURCHASE");
+            interaction.put("operation", operation);
 
             JSONObject data = new JSONObject();
             data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
@@ -388,8 +389,8 @@ public class MastercardService {
             data.put("apiOperation", "REFUND");
             data.put("transaction", transactionObj);
 
-System.out.println("URI: " + request.getURI().toString());
-System.out.println("PAYLOAD: " + data.toString());
+//System.out.println("URI: " + request.getURI().toString());
+//System.out.println("PAYLOAD: " + data.toString());
 
             // Execute call and fetch the result
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
@@ -416,6 +417,53 @@ System.out.println("PAYLOAD: " + data.toString());
         }
     }
 
+    public void capture(PaymentEntity payment) throws BusinessException {
+
+        if (payment.getStatus() != PaymentStatus.AUTHORIZED) {
+            classLogger.error("Payment {} is in an incorrect state {}", payment.getId(), payment.getStatus().name());
+            throw new BusinessException("Payment " + payment.getId() + " is in incorrect state (" + payment.getStatus().name() + ")", "", NOT_ACCEPTABLE);
+        }
+        MastercardAccount merchantAccount = getAccountForOrder(payment.getMetaOrderId());
+        String transactionUid = "" + payment.getId() + "-" + new Date().getTime();
+
+        try {
+            HttpClient client= HttpClientBuilder.create().build();
+            HttpPut request = new HttpPut(merchantAccount.getApiUrl()
+                    + "/merchant/" + merchantAccount.getMerchantId()
+                    + "/order/" + payment.getUid()
+                    + "/transaction/" + transactionUid);
+
+            JSONObject transactionObj = new JSONObject();
+            transactionObj.put("currency", payment.getCurrency().name());
+            transactionObj.put("amount", payment.getAmount());
+
+            JSONObject data = new JSONObject();
+            data.put("apiOperation", "CAPTURE");
+            data.put("transaction", transactionObj);
+
+            // Execute call and fetch the result
+            StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
+            request.setEntity(requestEntity);
+            request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
+            HttpResponse response = client.execute(request);
+
+            // Process the result
+            int status = response.getStatusLine().getStatusCode();
+            if (status > 299) {
+                payment.setStatus(PaymentStatus.FAILED);
+                paymentsRepository.saveAndFlush(payment);
+                String errorResponse = readInputStream(response.getEntity().getContent());
+                classLogger.error("Attempt to capture authorized payment {} failed. Error provided: {}", payment.getId(), errorResponse);
+                throw new BusinessException("Capture of authorized funds failed", "CAPTURE_FAILED", NOT_ACCEPTABLE);
+            }
+            payment.setStatus(PaymentStatus.PAID);
+            paymentsRepository.saveAndFlush(payment);
+        } catch (IOException ex) {
+            classLogger.error("Unable to communicate with mastercard gateway", ex);
+            throw new BusinessException("Unable to contact payment gateway", "", HttpStatus.BAD_GATEWAY);
+        }
+    }
+
     private String getAuthString(MastercardAccount merchantAccount) {
         String authString = "merchant."+merchantAccount.getMerchantId()
                 + ":" + merchantAccount.getApiPassword();
@@ -431,6 +479,23 @@ System.out.println("PAYLOAD: " + data.toString());
         }
         classLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, merchantAccount.getMerchantId());
         return merchantAccount;
+    }
+
+    private PaymentEntity getPayment(String paymentIdStr) throws BusinessException {
+        PaymentEntity payment = null;
+        try {
+            long paymentId = Long.parseLong(paymentIdStr);
+            Optional<PaymentEntity> op = paymentsRepository.findById(paymentId);
+            if (op.isPresent()) {
+                payment = op.get();
+            }
+        } catch ( Exception ex ) {
+            throw new BusinessException("Invalid or empty payment ID", "INVALID_PAYMENT_ID", HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (payment == null) {
+            throw new BusinessException("Invalid or empty payment ID", "INVALID_PAYMENT_ID", HttpStatus.NOT_ACCEPTABLE);
+        }
+        return payment;
     }
 
 }

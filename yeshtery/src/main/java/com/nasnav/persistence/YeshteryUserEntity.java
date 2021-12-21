@@ -1,8 +1,6 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.listeners.YeshteryUserEntityListener;
@@ -60,25 +58,13 @@ public class YeshteryUserEntity extends BaseYeshteryUserEntity {
     @EqualsAndHashCode.Exclude
     private Set<YeshteryUserAddressEntity> userAddresses;
 
-    public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
+    private String referral;
 
-    public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
 
     public YeshteryUserEntity() {
     	this.setUserStatus(NOT_ACTIVATED.getValue());
     	addresses = new HashSet<>();
-    }
-
-    public static YeshteryUserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
-        YeshteryUserEntity user = new YeshteryUserEntity();
-        user.setName(userJson.name);
-        user.setEmail(userJson.email);
-        user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
-        user.setOrganizationId(userJson.getOrgId());
-        user.setUserStatus(NOT_ACTIVATED.getValue());
-        user.setPhoneNumber(userJson.getPhoneNumber());
-        return user;
     }
 
     @Override

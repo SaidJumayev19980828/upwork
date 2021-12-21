@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.ProductRating;
+import com.nasnav.persistence.dto.query.result.ProductRatingData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,4 +41,14 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             " where v.id = :variantId and r.approved = true and org.yeshteryState = 1" +
             " order by r.submissionDate desc")
     List<ProductRating> findApprovedYeshteryVariantRatings(@Param("variantId") Long variantId);
+
+    @Query("SELECT new com.nasnav.persistence.dto.query.result.ProductRatingData("
+            + "product.id, AVG(rating.rate))"
+            + " FROM ProductRating rating "
+            + "	LEFT JOIN rating.variant variant "
+            + " LEFT JOIN variant.productEntity product "
+            + " LEFT JOIN product.tags tag "
+            + " WHERE product.id in :productIds and rating.approved = true"
+            + " group by product.id")
+    List<ProductRatingData> findProductsAverageRating(@Param("productIds") List<Long> productIds);
 }

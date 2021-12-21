@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -34,7 +35,7 @@ public class LoyaltyCoinsDropEntity {
     private LocalDateTime createdAt;
 
     @Column(name="amount")
-    private Integer amount;
+    private BigDecimal amount;
 
     @Column(name = "official_vacation_date")
     private LocalDate officialVacationDate;

@@ -268,6 +268,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		if (imgMetaData.getVariantId() != null) {
 			imagesEntities.addAll(saveImageToAllVariantsWithHighLevelFeatures(imgMetaData, productEntity, uri));
+			if (imagesEntities.isEmpty()) {
+				ProductVariantsEntity variant = productVariantsRepository.findById( imgMetaData.getVariantId() ).get();
+				ProductImagesEntity entity = new ProductImagesEntity();
+				entity.setPriority(imgMetaData.getPriority());
+				entity.setProductEntity(productEntity);
+				entity.setType(imgMetaData.getType());
+				entity.setUri(uri);
+				entity.setProductVariantsEntity(variant);
+				imagesEntities.add(entity);
+			}
 		} else {
 			ProductImagesEntity entity = new ProductImagesEntity();
 			entity.setPriority(imgMetaData.getPriority());
@@ -598,7 +608,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		List<String> existingImages = productImagesRepository
+				.findByProductAndBundle_OrganizationId(orgId)
+				.stream()
+				.map(ProductImagesEntity::getUri)
+				.collect(toList());
+
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
+
+		existingImages
+				.stream()
+				.forEach(fileService::deleteFileByUrl);
 	}
 	
 
@@ -829,7 +850,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(!Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
 			imgMetaData.setVariantId(variantId);
 		}
-		
+
 		return imgMetaData;		
 	}
 	

@@ -8,12 +8,12 @@ import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.UserAddressEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -76,7 +76,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private UserAddressRepository userAddressRepo;
-	
+
+	@Autowired
+	private LoyaltyPointsService loyaltyPointsService;
 	
 	
 	@Override
@@ -99,7 +101,13 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
 		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
+		returnedCart.setPointsPerOrg(getUserPointsPerOrg(returnedCart.getItems()));
 		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
+	}
+
+	private List<LoyaltyPointsCartResponseDto> getUserPointsPerOrg(List<CartItem> items) {
+		UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
+		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getYeshteryUserId(), items);
 	}
 
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {

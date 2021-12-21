@@ -1,11 +1,14 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.request.LoyaltyPointTransactionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.beans.BeanUtils;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static javax.persistence.FetchType.LAZY;
@@ -24,7 +27,9 @@ public class LoyaltyPointTransactionEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    private Integer points;
+    private BigDecimal points;
+
+    private BigDecimal amount;
 
     @Column(name = "is_valid")
     private Boolean isValid;
@@ -95,4 +100,17 @@ public class LoyaltyPointTransactionEntity {
 
     @Column(name = "is_coins_drop")
     private Boolean isCoinsDrop;
+
+    public LoyaltyPointTransactionDTO getRepresentation() {
+        LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
+        BeanUtils.copyProperties(this, dto);
+        if(this.order != null) {
+            dto.setOrderId(order.getId());
+        }
+        if(this.organization != null) {
+            dto.setOrgId(organization.getId());
+        }
+
+        return dto;
+    }
 }

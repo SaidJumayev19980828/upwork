@@ -40,6 +40,7 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private String sku;
     private Long organizationId;
     private List<ProductImageDTO> images;
+    private Double rating;
 
     public ProductRepresentationObject() {
         images = new ArrayList<>();

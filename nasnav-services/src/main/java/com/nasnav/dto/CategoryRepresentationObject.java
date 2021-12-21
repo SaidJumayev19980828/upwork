@@ -10,21 +10,16 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=true)
 public class CategoryRepresentationObject extends BaseRepresentationObject{
-    @JsonProperty("id")
     private Long id;
-
-    @JsonProperty("name")
     private String name;
-
     @JsonProperty("p_name")
     private String pname;
-
     @JsonProperty("logo_url")
     private String logo;
-
+    private String cover;
+    @JsonProperty("cover_small")
+    private String coverSmall;
     @JsonProperty("parent_id")
     private Long parentId;
-
-    @JsonProperty("operation")
     private String operation;
 }

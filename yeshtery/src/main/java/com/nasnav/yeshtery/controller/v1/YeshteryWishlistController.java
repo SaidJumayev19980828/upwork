@@ -27,23 +27,23 @@ public class YeshteryWishlistController {
 
     @GetMapping(produces= APPLICATION_JSON_VALUE)
     public Wishlist getWishlist(@RequestHeader(name = "User-Token", required = false) String token) {
-        return wishlistService.getYeshteryWishlist();
+        return wishlistService.getWishlist();
     }
 
     @PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Wishlist addWishlistItem(@RequestHeader(name = "User-Token", required = false) String token,
                                     @RequestBody WishlistItem item) {
-        return wishlistService.addYeshteryWishlistItem(item);
+        return wishlistService.addWishlistItem(item);
     }
 
     @DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
     public Wishlist deleteWishlistItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
-        return wishlistService.deleteYeshteryWishlistItem(itemId);
+        return wishlistService.deleteWishlistItem(itemId);
     }
 
     @PostMapping(value = "/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Cart moveWishlistItemIntoCart(@RequestHeader(name = "User-Token", required = false) String token,
                                          @RequestBody WishlistItemQuantity items) {
-        return wishlistService.moveYeshteryWishlistItemsToCart(items);
+        return wishlistService.moveWishlistItemsToCart(items);
     }
 }

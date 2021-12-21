@@ -176,6 +176,9 @@ public enum ErrorCodes {
 	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
 	,ORG$LOY$0013("Use either amounts or ratio!")
 	,ORG$LOY$0014("User is not linked to org with id[%d] !")
+	,ORG$LOY$0015("Invalid loyalty config for org with id[%d] !")
+	,ORG$LOY$0016("no Loyalty event with id[%d] !")
+	,ORG$LOY$0017("Invalid Pin code [%s] !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -214,6 +217,8 @@ public enum ErrorCodes {
 	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
 	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
 	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
+	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
+	,O$CRT$0017("Requested price exceeded maximum allowed price")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")

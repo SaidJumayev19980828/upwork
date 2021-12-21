@@ -27,8 +27,10 @@ public class CategoriesEntity {
     @Column(name = "parent_id")
     private Long parentId;
 
+    private String cover;
 
-
+    @Column(name = "cover_small")
+    private String coverSmall;
 
     //@Override
     public BaseRepresentationObject getRepresentation() {
@@ -37,6 +39,8 @@ public class CategoriesEntity {
         categoryRepresentationObject.setName(getName());
         categoryRepresentationObject.setPname(getPname());
         categoryRepresentationObject.setLogo(getLogo());
+        categoryRepresentationObject.setCover(getCover());
+        categoryRepresentationObject.setCoverSmall(getCoverSmall());
         if (getParentId() != null) {
             categoryRepresentationObject.setParentId(getParentId());
         }

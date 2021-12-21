@@ -121,8 +121,12 @@ public class Commons {
 		return orderService.getMetaOrderTotalValue(metaOrderId);
 	}
 
+	public PaymentEntity getPaymentForMetaOrderId(long metaOrderId) {
+		return paymentsRepository.findByMetaOrderId(metaOrderId).orElse(null);
+	}
 
-    public String readInputStream(InputStream stream) {
+
+	public String readInputStream(InputStream stream) {
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
         return br.lines().collect(Collectors.joining(System.lineSeparator()));
     }

@@ -22,13 +22,14 @@ import static java.util.Optional.ofNullable;
 public class CartServiceHelper {
     public static final String ADDITIONAL_DATA_PRODUCT_ID = "product_id";
     public static final String ADDITIONAL_DATA_PRODUCT_TYPE = "product_type";
+    public static final String ADDITIONAL_DATA_IS_OUT_OF_STOCK = "out_of_stock";
     private static final Logger logger = LogManager.getLogger();
 
     @Autowired
     private ObjectMapper objectMapper;
 
 
-    public String getAdditionalDataJsonString(CartItem item) {
+    public String getAdditionalDataJsonString(CartItem item, Integer stockQuantity) {
         try {
             Map<String,Object> additionalDataMap =
                     ofNullable(item.getAdditionalData())
@@ -38,6 +39,9 @@ public class CartServiceHelper {
                     .ifPresent(id -> additionalDataMap.put(ADDITIONAL_DATA_PRODUCT_ID, id));
             ofNullable(item.getProductType())
                     .ifPresent(id -> additionalDataMap.put(ADDITIONAL_DATA_PRODUCT_TYPE, id));
+            if (stockQuantity == null || stockQuantity == 0) {
+                additionalDataMap.put(ADDITIONAL_DATA_IS_OUT_OF_STOCK, true);
+            }
             return objectMapper.writeValueAsString(additionalDataMap);
         } catch (JsonProcessingException e) {
             logger.error(e,e);

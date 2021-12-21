@@ -49,7 +49,7 @@ public class OrdersController {
 	@GetMapping(value = "/meta_order/info", produces = APPLICATION_JSON_VALUE)
 	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestParam(name = "id") Long orderId)  {
-		return this.orderService.getMetaOrder(orderId);
+		return this.orderService.getMetaOrder(orderId, false);
 	}
 
 	@GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
@@ -72,7 +72,7 @@ public class OrdersController {
     @PostMapping(value = "confirm", produces = APPLICATION_JSON_VALUE)
     public OrderConfirmResponseDTO confirmOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
             									@RequestParam("order_id") Long orderId) {
-    	return orderService.confrimOrder(orderId);
+    	return orderService.confirmOrder(orderId, null, null);
     }
 
     @PostMapping(value = "reject", produces = APPLICATION_JSON_VALUE)

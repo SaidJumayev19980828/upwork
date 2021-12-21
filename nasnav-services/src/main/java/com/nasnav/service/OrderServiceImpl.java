@@ -166,7 +166,12 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private UserService userService;
 
-	
+	@Autowired
+	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
+
+	@Autowired
+	private LoyaltyPinsRepository loyaltyPinsRepository;
+
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
@@ -484,7 +489,7 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 
-		Order orderResponse = this.getOrderResponse(order);
+		Order orderResponse = this.getOrderResponse(order, false);
 		normalizeOrderForEmailTemplate(orderResponse);
 
 		AddressRepObj deliveryAddress = getBillDeliveryAddress(order);
@@ -812,13 +817,25 @@ public class OrderServiceImpl implements OrderService {
 		if (detailsLevel == 3) {
 			representation.setItems(basketItems);
 		}
-		
+
+		representation.setPoints(getOrderPoints(order));
+		if(!isNullOrEmpty(representation.getPoints())) {
+			BigDecimal totalPointAmount = representation.getPoints().stream().map(point -> ofNullable(point.getAmount()).orElse(ZERO))
+					.reduce(ZERO, BigDecimal::add);
+			representation.setTotalPointAmount(totalPointAmount);
+		}
 		return representation;
 	}
-	
-	
-	
-	
+
+	private List<LoyaltyOrderDetailDTO> getOrderPoints(OrdersEntity order) {
+		List<LoyaltyPointTransactionEntity>  points = loyaltyPointTransactionRepository.findByOrder_Id(order.getId());
+
+		return points
+				.stream()
+				.map(point -> new LoyaltyOrderDetailDTO(point.getAmount(), point.getPoints()))
+				.collect(Collectors.toList());
+	}
+
 
 	private void setOrderSummary(OrdersEntity entity, DetailedOrderRepObject obj) {
 		Long metaOrderId = 
@@ -1367,11 +1384,17 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrderConfirmResponseDTO confrimOrder(Long orderId) {
+	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
+		if(!isNull(pinCode)) {
+			Optional<LoyaltyPinsEntity> pinEntity = loyaltyPinsRepository.findByUser_IdAndShop_IdAndPin(subOrder.getUserId(), subOrder.getShopsEntity().getId(), pinCode);
+			if(pinEntity.isEmpty()) {
+				throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0017, pinEntity);
+			}
+		}
 
-		confirmSubOrderAndMetaOrder(subOrder);
+		confirmSubOrderAndMetaOrder(subOrder, pointsAmount);
 		
 		return  shippingMgrService
 				.requestShipment(subOrder)
@@ -1441,10 +1464,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
+	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
 		updateOrderStatus(order, STORE_CONFIRMED);
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order);
+		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
 
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
@@ -1717,7 +1740,7 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createMetaOrder(dto, org, user);
 
-		return getOrderResponse(order);
+		return getOrderResponse(order, false);
 	}
 
 	@Override
@@ -1821,7 +1844,7 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
 
-		return getOrderResponse(order);
+		return getOrderResponse(order, true);
 	}
 
 	@Override
@@ -1890,10 +1913,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Order getOrderResponse(MetaOrderEntity order) {
+	private Order getOrderResponse(MetaOrderEntity order, boolean yeshteryMetaorder) {
 		Order orderDto = setMetaOrderBasicData(order);
-
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order);
+		List<SubOrder> subOrders = new ArrayList<>();
+		if (yeshteryMetaorder) {
+			subOrders = createSubOrderDtoListForYeshteryMetaorder(order);
+		}
+		else {
+			subOrders = createSubOrderDtoList(order);
+		}
 		Boolean isCancelable = isCancelable(order);
 
 		orderDto.setSubOrders(subOrders);
@@ -1912,6 +1940,16 @@ public class OrderServiceImpl implements OrderService {
 		.stream()
 		.map(subOrder -> getSubOrder(subOrder))
 		.collect(toList());
+	}
+
+	private List<SubOrder> createSubOrderDtoListForYeshteryMetaorder(MetaOrderEntity order) {
+		return order
+				.getSubMetaOrders()
+				.stream()
+				.map(MetaOrderEntity::getSubOrders)
+				.flatMap(Set::stream)
+				.map(subOrder -> getSubOrder(subOrder))
+				.collect(toList());
 	}
 
 
@@ -1945,7 +1983,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public Order getMetaOrder(Long orderId){
+	public Order getMetaOrder(Long orderId, boolean yeshteryMetaorder){
 		BaseUserEntity user = securityService.getCurrentUser();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
@@ -1961,7 +1999,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		if (order.isPresent()) {
-			return getOrderResponse(order.get());
+			return getOrderResponse(order.get(), yeshteryMetaorder);
 		}
 		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
 	}
@@ -2047,6 +2085,13 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setTotal(order.getTotal());
 		subOrder.setSubtotal(order.getAmount());
 		subOrder.setDiscount(order.getDiscounts());
+
+		subOrder.setPoints(getOrderPoints(order));
+		if(!isNullOrEmpty(subOrder.getPoints())) {
+			BigDecimal totalPointAmount = subOrder.getPoints().stream().map(point -> ofNullable(point.getAmount()).orElse(ZERO))
+					.reduce(ZERO, BigDecimal::add);
+			subOrder.setTotalPointAmount(totalPointAmount);
+		}
 		return subOrder;
 	}
 
@@ -2331,11 +2376,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private BigDecimal calculateSubTotal(OrdersEntity subOrder) {
-		return subOrder
+		BigDecimal value =  subOrder
 				.getBasketsEntity()
 				.stream()
 				.map(this::calcBasketItemValue)
 				.reduce(ZERO, BigDecimal::add);
+		if (value.precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0017);
+		}
+		return value;
 	}
 
 	
@@ -2388,9 +2437,15 @@ public class OrderServiceImpl implements OrderService {
 		if(stock.getQuantity() < data.getQuantity()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
 		}
+		if (new BigDecimal(data.getQuantity()).precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0016);
+		}
 		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = data.getPrice().subtract(discount);
 
+		if (totalPrice.precision() > 10) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0017);
+		}
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
 		basket.setPrice(totalPrice);
