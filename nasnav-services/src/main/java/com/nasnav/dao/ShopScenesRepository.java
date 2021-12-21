@@ -18,9 +18,15 @@ public interface ShopScenesRepository extends CrudRepository<ShopScenesEntity, L
                                                                 @Param("orgId") Long orgId);
     Optional<ShopScenesEntity> findByIdAndShopSectionsEntity_Id(Long id, Long sectionId);
 
-    @Query(value = "select scene from ShopScenesEntity scene" +
+    @Query(value = "select scene.image from ShopScenesEntity scene" +
             " left join scene.shopSectionsEntity section" +
             " left join section.shopFloorsEntity floor" +
             " where scene.organizationEntity.id = :orgId and floor.organizationEntity.id = :orgId")
-    List<ShopScenesEntity> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
+    List<String> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
+
+    @Query(value = "select scene.image from ShopScenesEntity scene" +
+            " left join scene.shopSectionsEntity section" +
+            " left join section.shopFloorsEntity floor" +
+            " where scene.organizationEntity.id = :orgId and floor.organizationEntity.id = :orgId and floor.shopThreeSixtyEntity.shopsEntity.id = :shopId")
+    List<String> findByOrganizationEntity_IdAndShopId(@Param("orgId") Long orgId, @Param("shopId") Long shopId);
 }

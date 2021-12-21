@@ -732,17 +732,21 @@ public class ShopThreeSixtyService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$360$0001));
     }
 
-    public void exportThreeSixtyImages(HttpServletResponse response) throws IOException {
+    public void exportThreeSixtyImages(Long shopId, HttpServletResponse response) throws IOException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
         this.basePath = Paths.get(appConfig.getBasePathStr());
         ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
-
-        scenesRepo.findByOrganizationEntity_Id(orgId)
-                .stream()
-                .map(ShopScenesEntity::getImage)
-                .map(img -> basePath.resolve(img))
-                .map(Path::toFile)
-                .forEach(file -> createZipEntry(zipOut, file));
+        List<String> images = new ArrayList<>();
+        if (shopId != null) {
+            images = scenesRepo.findByOrganizationEntity_IdAndShopId(orgId, shopId);
+        } else {
+            images = scenesRepo.findByOrganizationEntity_Id(orgId);
+        }
+        images
+            .stream()
+            .map(img -> basePath.resolve(img))
+            .map(Path::toFile)
+            .forEach(file -> createZipEntry(zipOut, file));
         zipOut.close();
     }
 

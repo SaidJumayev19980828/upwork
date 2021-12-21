@@ -149,11 +149,12 @@ public class ShopThreeSixtyController {
 
     @PostMapping(value = "/export_images", produces = "application/zip")
     public void exportThreeSixtyImages(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                       @RequestParam(name = "shop_id", required = false) Long shopId,
                                        HttpServletResponse response) throws IOException {
         response.setContentType("application/zip");
         response.setHeader(CONTENT_DISPOSITION, "attachment; filename=360_images.zip");
 
-        shop360Svc.exportThreeSixtyImages(response);
+        shop360Svc.exportThreeSixtyImages(shopId, response);
 
     }
 }
