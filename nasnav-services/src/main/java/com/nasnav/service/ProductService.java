@@ -18,6 +18,7 @@ import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.dto.query.result.ProductRatingData;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
@@ -1019,6 +1020,9 @@ public class ProductService {
 
 			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productImages);
 
+			Map<Long, Double> productRatings = productRatingRepo.findProductsAverageRating(productIdList)
+					.stream()
+					.collect(toMap(ProductRatingData::getProductId, ProductRatingData::getAverage));
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
@@ -1034,6 +1038,7 @@ public class ProductService {
 					.map(s -> setProductPrices(s, productsPricesMap))
 					.map(s -> setCollectionPrices(s, collectionsPricesMap))
 					.map(s -> setProductShops(s, product360Shops))
+					.map(s -> setProductRating(s, productRatings))
 					.collect(toList());
 		}
 
@@ -1041,6 +1046,11 @@ public class ProductService {
 
 	}
 
+	private ProductRepresentationObject setProductRating(ProductRepresentationObject product, Map<Long, Double> ratings) {
+		if (ratings.containsKey(product.getId()))
+			product.setRating(ratings.get(product.getId()));
+		return product;
+	}
 
 	private ProductRepresentationObject setProductShops(ProductRepresentationObject product, Map<Long, List<Long>> shops) {
 		List<Long> shopsList = shops.get(product.getId()) != null ? shops.get(product.getId()) : new ArrayList<Long>();
