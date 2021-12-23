@@ -1980,7 +1980,27 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
+	@Override
+	public Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder){
+		BaseUserEntity user = securityService.getCurrentUser();
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
 
+		Optional<MetaOrderEntity> order = empty();
+
+		if (user instanceof UserEntity) {
+			order = metaOrderRepo.findYeshteryMetaorderByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);
+		} else if (isNasnavAdmin) {
+			order = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(orderId);
+		} else {
+			order = metaOrderRepo.findYeshteryMetaorderByIdAndOrganization_Id(orderId, orgId);
+		}
+
+		if (order.isPresent()) {
+			return getOrderResponse(order.get(), yeshteryMetaorder);
+		}
+		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
+	}
 
 	@Override
 	public Order getMetaOrder(Long orderId, boolean yeshteryMetaorder){
