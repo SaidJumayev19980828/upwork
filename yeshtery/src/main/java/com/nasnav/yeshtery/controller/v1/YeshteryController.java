@@ -2,6 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
@@ -315,5 +316,11 @@ public class YeshteryController {
     public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
                                                                                      @RequestParam(value = "delivery", required = false) String deliveryService) {
         return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
+    }
+
+    @PostMapping(value = "review", consumes = APPLICATION_JSON_VALUE)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestBody ProductRateDTO dto) {
+        reviewService.rateProduct(dto);
     }
 }
