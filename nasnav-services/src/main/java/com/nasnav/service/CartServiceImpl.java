@@ -4,7 +4,9 @@ import com.nasnav.dao.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
+import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.navbox.Cart;
@@ -317,6 +319,7 @@ public class CartServiceImpl implements CartService{
         return cartItemRepo
                 .getAllCartStocks(userId, shops)
                 .stream()
+                .distinct()
                 .collect(groupingBy(CartItemStock::getShopId))
                 .entrySet()
                 .stream()
@@ -341,7 +344,30 @@ public class CartServiceImpl implements CartService{
                 .collect(toList());
     }
 
+    @Override
+    public List<ShopRepresentationObject> getShopsThatCanProvideEachItem() {
+        Long userId = securityService.getCurrentUser().getId();
+        List<ProductVariantsEntity> variants = cartItemRepo.findCurrentCartVariantsByUser_Id(userId);
+        Map<Long, Set<Long>> variantsIdsPerShop = cartItemRepo.findCartVariantAndShopPairByUser_Id(userId)
+                .stream()
+                .collect(groupingBy(Pair::getFirst, mapping(Pair::getSecond, toSet())));
+        return variants
+                .stream()
+                .map(ProductVariantsEntity::getStocks)
+                .flatMap(Set::stream)
+                .map(StocksEntity::getShopsEntity)
+                .distinct()
+                .map(shop -> (ShopRepresentationObject) shop.getRepresentation())
+                .map(shop -> setShopVariants(shop, variantsIdsPerShop))
+                .filter(shop -> shop.getVariantIds() != null)
+                .collect(toList());
+    }
 
+    private ShopRepresentationObject setShopVariants(ShopRepresentationObject shop, Map<Long, Set<Long>> variantsIdsPerShop) {
+        if (variantsIdsPerShop.containsKey(shop.getId()))
+            shop.setVariantIds(variantsIdsPerShop.get(shop.getId()));
+        return shop;
+    }
 
     private boolean hasAllCartVariants(ShopFulfillingCart shop, Set<Long> cartItemVariants) {
         List<Long> shopCartVariants =

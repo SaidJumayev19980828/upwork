@@ -1,9 +1,6 @@
 package com.nasnav.service.model.common;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,7 +9,7 @@ import java.util.Set;
 public class Parameter {
 	private String name;
 	private ParameterType type;
-	private List<String> options;
+	private List<Object> options;
 	private Map<Long, Set<Long>> multipleOptions;
 	private boolean required;
 

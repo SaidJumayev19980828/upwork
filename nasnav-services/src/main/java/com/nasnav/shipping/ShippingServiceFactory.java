@@ -50,7 +50,8 @@ public class ShippingServiceFactory {
 					,FixedFeeSelectedAreasShippingService.class
 					,FixedFeeSelectedAreasMinOrderShippingService.class
 					,VarFeeSelectedSubAreaMinOrderShippingService.class
-					,PickupFromMultipleShops.class);
+					,PickupFromMultipleShops.class
+					,PartialPickup.class);
 	
 	
 	@Autowired

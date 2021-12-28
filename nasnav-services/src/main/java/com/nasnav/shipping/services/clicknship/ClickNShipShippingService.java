@@ -380,7 +380,7 @@ public class ClickNShipShippingService implements ShippingService {
                 .stream()
                 .filter(param -> Objects.equals(param.getName(), DELIVERY_TYPE))
                 .findFirst()
-                .ifPresent(param -> param.setOptions(DeliveryType.getDeliveryTypes()));
+                .ifPresent(param -> param.setOptions(asList(DeliveryType.getDeliveryTypes().toArray())));
         return serviceInfo;
     }
 

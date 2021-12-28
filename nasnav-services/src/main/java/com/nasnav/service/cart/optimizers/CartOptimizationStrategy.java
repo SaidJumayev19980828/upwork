@@ -16,7 +16,8 @@ public enum CartOptimizationStrategy {
 	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE)
 	, TRANSPARENT(OptimizationStratigiesNames.TRANSPARENT)
 	, SHOP_PER_SUBAREA(OptimizationStratigiesNames.SHOP_PER_SUBAREA)
-	, MULTIPLE_SHOPS(OptimizationStratigiesNames.MULTIPLE_SHOPS);
+	, MULTIPLE_SHOPS(OptimizationStratigiesNames.MULTIPLE_SHOPS)
+	, SHOP_PICKUP(OptimizationStratigiesNames.SHOP_PICKUP);
 	
 	@Getter
 	@JsonValue

@@ -17,10 +17,10 @@ import java.util.Set;
 public class ShippingAdditionalDataDTO {
 	private String name;
 	private String type;
-	private List<String> options;
+	private List<Object> options;
 	private Map<Long, Set<Long>> multipleOptions;
 
-	public ShippingAdditionalDataDTO(String name, String type, List<String> options) {
+	public ShippingAdditionalDataDTO(String name, String type, List<Object> options) {
 		this.name = name;
 		this.type = type;
 		this.options = options;
