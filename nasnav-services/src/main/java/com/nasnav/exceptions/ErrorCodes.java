@@ -219,6 +219,7 @@ public enum ErrorCodes {
 	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
 	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
 	,O$CRT$0017("Requested price exceeded maximum allowed price")
+	,O$CRT$0018("Cart optimization resulted in empty cart!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
