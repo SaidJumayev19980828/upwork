@@ -318,6 +318,7 @@ public class ShopThreeSixtyService {
     private void clearOldShop360Date(Long orgId, Long viewId) {
         product360ShopsRepo.deleteByShopId(viewId);
         shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
+        shop360Repo.deleteById(viewId);
     }
 
 
@@ -689,6 +690,9 @@ public class ShopThreeSixtyService {
             }
         }
         shopFloorsRepo.delete(floor);
+        if (shopFloorsRepo.countByShopThreeSixtyEntity_Id(shopThreeSixtyEntity.getId()) == 0) {
+            shop360Repo.delete(shopThreeSixtyEntity);
+        }
     }
 
 
