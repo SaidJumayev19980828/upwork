@@ -156,6 +156,7 @@ public class Tools {
 		} else {
 			logger.debug("Properties ID: {}", props.getProperty("account.identifier"));
 		}
+		logger.debug("Properties REF {}", props);
 		return props;
 	}
 
