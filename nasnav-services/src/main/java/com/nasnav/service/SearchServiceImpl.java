@@ -156,6 +156,8 @@ public class SearchServiceImpl implements SearchService{
                 .should( regexpQuery("name", ".*"+params.keyword+".*"))
                 .should( fuzzyQuery("name", params.keyword))
                 .minimumShouldMatch(1);      //at least one condition should be met
+        mainQuery.filter(matchQuery("removed", 0));
+        mainQuery.filter(matchQuery("hide", false));
         if(nonNull(params.org_id)){
             mainQuery.filter( matchQuery("organization_id", params.org_id));
         }
