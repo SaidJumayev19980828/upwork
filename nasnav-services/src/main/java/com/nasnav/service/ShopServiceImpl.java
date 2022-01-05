@@ -208,6 +208,7 @@ public class ShopServiceImpl implements ShopService {
 
         predicate.and(shop.removed.eq(0));
         predicate.and(product.removed.eq(0));
+        predicate.and(product.hide.eq(false));
         predicate.and(variant.removed.eq(0));
         if(param.getName() != null) {
             if (param.isSearchInTags()) {

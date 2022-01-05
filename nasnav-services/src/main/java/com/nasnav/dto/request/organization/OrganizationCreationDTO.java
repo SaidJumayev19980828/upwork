@@ -17,4 +17,5 @@ public class OrganizationCreationDTO {
     private String googleToken;
     private Integer currencyIso;
     private YeshteryState yeshteryState;
+    private Integer priority;
 }

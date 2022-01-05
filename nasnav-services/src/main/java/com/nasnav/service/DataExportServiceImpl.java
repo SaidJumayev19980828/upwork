@@ -81,11 +81,15 @@ public class DataExportServiceImpl implements DataExportService{
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> productService.parseVariantFeatures(variant, 0)));
 
+		Map<String, String> emptyFeatureValuesMap = feautreRepo.findByOrganizationId(orgId)
+				.stream()
+				.collect(toMap(ProductFeaturesEntity::getName, f -> "" ));
+
 		var extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
 		var productTags = createProductTagsMap(result);
 		return result
 				.stream()
-				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes))
+				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes, emptyFeatureValuesMap))
 				.collect(toList());
 	}
 
@@ -144,11 +148,12 @@ public class DataExportServiceImpl implements DataExportService{
 	private CsvRow toCsvRow(ProductExportedData productData
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Long, Map<String, String>> features
-			, Map<Long, List<VariantExtraAttribute>> extraAttributes) {
+			, Map<Long, List<VariantExtraAttribute>> extraAttributes
+			, Map<String, String> emptyFeatureValuesMap) {
 		var row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
-		setFeatures(row, productData, features);
+		setFeatures(row, productData, features, emptyFeatureValuesMap);
 		setExtraAttributes(row, productData, extraAttributes);
 		return row;
 	}
@@ -168,12 +173,17 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private void setFeatures(CsvRow row, ProductExportedData productData,
-							 Map<Long, Map<String, String>> featuresMap) {
+							 Map<Long, Map<String, String>> featuresMap,
+							 Map<String, String> emptyFeatureValuesMap) {
 		var features =
 				ofNullable(productData)
 				.map(ProductExportedData::getVariantId)
 				.map(id -> featuresMap.get(id))
 				.orElse(emptyMap());
+		for(Map.Entry e : emptyFeatureValuesMap.entrySet()) {
+			if (!features.containsKey(e.getKey()))
+				features.put(e.getKey().toString(), e.getValue().toString());
+		}
 		
 		row.setFeatures(features);
 	}

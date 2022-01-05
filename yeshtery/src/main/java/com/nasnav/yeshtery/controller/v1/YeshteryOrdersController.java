@@ -74,7 +74,7 @@ public class YeshteryOrdersController {
 	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestParam(name = "id") Long orderId)  {
 
-		return orderService.getMetaOrder(orderId, true);
+		return orderService.getYeshteryMetaOrder(orderId, true);
 	}
 
 	@Operation(description =  "Get list of orders", summary = "orderList")

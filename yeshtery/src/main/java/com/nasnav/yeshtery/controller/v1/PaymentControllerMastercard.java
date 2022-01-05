@@ -170,6 +170,8 @@ public class PaymentControllerMastercard {
 
         MastercardAccount merchantAccount = new MastercardAccount();
         Properties props = Tools.getPropertyForAccount(config.paymentMastercardProps, mastercardLogger, config.paymentPropertiesDir);
+        mastercardLogger.debug("Properties REF {}", props);
+//        mastercardLogger.debug("Got properties for Mastercard at payment controller, ", props.keySet());
         merchantAccount.init(props, 0);
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);

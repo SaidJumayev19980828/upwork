@@ -10,8 +10,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+import com.nasnav.dto.Pair;
 
 import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT distinct item "
@@ -202,6 +204,25 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " AND shop.removed = 0 AND shop.id in :shopIds")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId, @Param("shopIds") List<Long> shopIds);
 
+	@Query("SELECT variant "
+			+ " FROM CartItemEntity item "
+			+ "	LEFT JOIN item.user user"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.productEntity product "
+			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
+	List<ProductVariantsEntity> findCurrentCartVariantsByUser_Id(@Param("user_id") Long userId);
+
+	@Query("SELECT new com.nasnav.dto.Pair(shop.id, variant.id) "
+			+ " FROM CartItemEntity item "
+			+ "	LEFT JOIN item.user user"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.stocks allStocks "
+			+ " LEFT JOIN allStocks.shopsEntity shop "
+			+ " LEFT JOIN variant.productEntity product "
+			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0 and shop.removed = 0 and allStocks.quantity >= item.quantity")
+	List<Pair> findCartVariantAndShopPairByUser_Id(@Param("user_id") Long userId);
 	
 	@Transactional
 	@Modifying

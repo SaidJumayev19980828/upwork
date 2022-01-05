@@ -55,6 +55,7 @@ public interface OrderService {
 	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id, boolean yeshteryMetaorder);
+	Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder);
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	 OrderValue getMetaOrderTotalValue(long metaOrderId);

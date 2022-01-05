@@ -151,7 +151,12 @@ public class Tools {
 		} catch (IOException e) {
 			logger.error("Unable to load account property: {}, {}", file, e.getMessage());
 		}
-
+		if (props == null) {
+			logger.error("Properties ({}) not loaded", accountName);
+		} else {
+			logger.debug("Properties ID: {}", props.getProperty("account.identifier"));
+		}
+		logger.debug("Properties REF {}", props);
 		return props;
 	}
 

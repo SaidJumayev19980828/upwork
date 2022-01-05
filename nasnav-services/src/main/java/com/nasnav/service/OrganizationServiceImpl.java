@@ -145,7 +145,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public List<OrganizationRepresentationObject> listOrganizations() {
-        return organizationRepository.findAll()
+        return organizationRepository.findAllOrganizations()
                             .stream()
                             .map(org -> (OrganizationRepresentationObject) org.getRepresentation())
                             .collect(toList());
@@ -368,7 +368,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
-    private OrganizationEntity updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
+    private void updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
         if (json.getId() == null) {
             organization.setThemeId(0);
         }
@@ -385,7 +385,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         if(nonNull(json.getYeshteryState())){
             organization.setYeshteryState(json.getYeshteryState().getValue());
         }
-        return organization;
+        if (json.getPriority() != null && json.getPriority() >= 0) {
+            organization.setPriority(json.getPriority());
+        }
+        if (organization.getPriority() == null) {
+            organization.setPriority(0);
+        }
     }
 
     private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {
@@ -633,6 +638,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         dto.setDescription(org.getDescription());
         dto.setImages(getOrganizationImages(org.getId()));
         dto.setShops(getOrganizationShopsDto(org));
+        dto.setPriority(org.getPriority());
         return dto;
     }
 
