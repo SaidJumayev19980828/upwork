@@ -15,6 +15,7 @@ import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLQuery;
@@ -34,6 +35,7 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -167,13 +169,30 @@ public class ShopServiceImpl implements ShopService {
     
     @Override
     public List<ShopRepresentationObject> getLocationShops(LocationShopsParam param) {
-
+        SQLQuery productsQuery = null;
+        SQLQuery collectionsQuery = null;
+        SQLQuery query = null;
         BooleanBuilder predicate = getQueryPredicate(param);
-        SubQueryExpression productsQuery = getProductsQuery(predicate);
-        SubQueryExpression collectionsQuery = getCollectionsQuery(predicate);
-        SQLQuery query = queryFactory.select((Expressions.template(ShopRepresentationObject.class,"*")))
-                .from(new SQLQuery<>().union( productsQuery,collectionsQuery).as("total"))
-                .limit(10);
+        if (   asList(param.getProductType()).contains(0)) {
+            productsQuery = getProductsQuery(predicate, param.isSearchInTags());
+        }
+        if (asList(param.getProductType()).contains(2)) {
+            collectionsQuery = getCollectionsQuery(predicate, param.isSearchInTags());
+        }
+        if (productsQuery != null && collectionsQuery != null) {
+            Expression e = new SQLQuery<>().union(productsQuery, collectionsQuery).as("total");
+            query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
+                    .from(e)
+                    .limit(10);
+        } else if (productsQuery != null) {
+            query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
+                    .from(productsQuery.as("total"))
+                    .limit(10);
+        } else if (collectionsQuery != null) {
+            query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
+                    .from(collectionsQuery.as("total"))
+                    .limit(10);
+        }
 
         List<ShopRepresentationObject> shops = template.query(query.getSQL().getSQL(),
                 new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
@@ -227,6 +246,8 @@ public class ShopServiceImpl implements ShopService {
         }
         if (param.getProductType() != null) {
             predicate.and(product.productType.in(param.getProductType()));
+        } else {
+            param.setProductType(new Integer[]{0});
         }
         if (!anyIsNull(param.getMinLongitude(), param.getMinLatitude(), param.getMaxLongitude(), param.getMaxLatitude())) {
             predicate.and(address.latitude.between(param.getMinLatitude(), param.getMaxLatitude()))
@@ -255,7 +276,7 @@ public class ShopServiceImpl implements ShopService {
         return latitude + radius * Math.sin(angel * Math.PI / 180);
     }
 
-    private SubQueryExpression getProductsQuery(BooleanBuilder predicate) {
+    private SQLQuery getProductsQuery(BooleanBuilder predicate, boolean searchInTags) {
         QShops shop = QShops.shops;
         QStocks stock = QStocks.stocks;
         QProductVariants variant = QProductVariants.productVariants;
@@ -265,25 +286,40 @@ public class ShopServiceImpl implements ShopService {
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
         QOrganizations organizations = QOrganizations.organizations;
-
-        SQLQuery productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
-                .distinct()
-                .from(stock)
-                .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                .innerJoin(product).on(variant.productId.eq(product.id))
-                .leftJoin(productTag).on(product.id.eq(productTag.productId))
-                .leftJoin(tag).on(tag.id.eq(productTag.tagId))
-                .leftJoin(address).on(shop.addressId.eq(address.id))
-                .leftJoin(area).on(address.areaId.eq(area.id))
-                .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                .where(predicate)
-                .orderBy(shop.priority.desc());
+        SQLQuery productsQuery;
+        if (searchInTags) {
+            productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                    .distinct()
+                    .from(stock)
+                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                    .innerJoin(product).on(variant.productId.eq(product.id))
+                    .leftJoin(productTag).on(product.id.eq(productTag.productId))
+                    .leftJoin(tag).on(tag.id.eq(productTag.tagId))
+                    .leftJoin(address).on(shop.addressId.eq(address.id))
+                    .leftJoin(area).on(address.areaId.eq(area.id))
+                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .where(predicate)
+                    .orderBy(shop.priority.desc());
+        } else {
+            productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                    .distinct()
+                    .from(stock)
+                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                    .innerJoin(product).on(variant.productId.eq(product.id))
+                    .leftJoin(address).on(shop.addressId.eq(address.id))
+                    .leftJoin(area).on(address.areaId.eq(area.id))
+                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .where(predicate)
+                    .orderBy(shop.priority.desc());
+        }
         return productsQuery;
     }
 
-    private SubQueryExpression getCollectionsQuery(BooleanBuilder predicate) {
+    private SQLQuery getCollectionsQuery(BooleanBuilder predicate, boolean searchInTags) {
         QShops shop = QShops.shops;
         QStocks stock = QStocks.stocks;
         QProductVariants variant = QProductVariants.productVariants;
@@ -294,21 +330,39 @@ public class ShopServiceImpl implements ShopService {
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
         QOrganizations organizations = QOrganizations.organizations;
-        SQLQuery collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                        shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
-                .distinct()
-                .from(stock)
-                .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                .innerJoin(collection).on(collection.variantId.eq(variant.id))
-                .innerJoin(product).on(collection.productId.eq(product.id))
-                .leftJoin(productTag).on(product.id.eq(productTag.productId))
-                .leftJoin(tag).on(tag.id.eq(productTag.tagId))
-                .leftJoin(address).on(shop.addressId.eq(address.id))
-                .leftJoin(area).on(address.areaId.eq(area.id))
-                .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                .where(predicate)
-                .orderBy(shop.priority.desc());
+        SQLQuery collectionsQuery;
+
+        if (searchInTags) {
+            collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                    .distinct()
+                    .from(stock)
+                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                    .innerJoin(collection).on(collection.variantId.eq(variant.id))
+                    .innerJoin(product).on(collection.productId.eq(product.id))
+                    .leftJoin(productTag).on(product.id.eq(productTag.productId))
+                    .leftJoin(tag).on(tag.id.eq(productTag.tagId))
+                    .leftJoin(address).on(shop.addressId.eq(address.id))
+                    .leftJoin(area).on(address.areaId.eq(area.id))
+                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .where(predicate)
+                    .orderBy(shop.priority.desc());
+        } else {
+            collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                    .distinct()
+                    .from(stock)
+                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
+                    .innerJoin(collection).on(collection.variantId.eq(variant.id))
+                    .innerJoin(product).on(collection.productId.eq(product.id))
+                    .leftJoin(address).on(shop.addressId.eq(address.id))
+                    .leftJoin(area).on(address.areaId.eq(area.id))
+                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .where(predicate)
+                    .orderBy(shop.priority.desc());
+        }
         return collectionsQuery;
     }
 
