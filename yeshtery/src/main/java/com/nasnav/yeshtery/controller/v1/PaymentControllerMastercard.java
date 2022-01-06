@@ -169,18 +169,11 @@ public class PaymentControllerMastercard {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        mastercardLogger.debug("Props file: {}", config.paymentMastercardProps);
-
         MastercardAccount merchantAccount = new MastercardAccount();
         Properties props = Tools.getPropertyForAccount(config.paymentMastercardProps, mastercardLogger, config.paymentPropertiesDir);
-        mastercardLogger.debug("Properties");
-//        mastercardLogger.debug("Got properties for Mastercard at payment controller, ", props.keySet());
         merchantAccount.init(props, 0);
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);
-
-        if (true) return new ResponseEntity<>("{}", HttpStatus.NOT_ACCEPTABLE);
-
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
         if (payment != null) {
             try {

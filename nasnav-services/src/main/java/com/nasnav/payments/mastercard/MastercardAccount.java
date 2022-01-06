@@ -2,8 +2,6 @@ package com.nasnav.payments.mastercard;
 
 import com.nasnav.payments.Account;
 import lombok.Getter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
@@ -21,16 +19,9 @@ public class MastercardAccount extends Account {
     protected String icon;
     protected int flavor = MastercardService.FLAVOR_BASIC;
 
-    private static final Logger tempLogger = LogManager.getLogger("Payment:MCARD");
-
     public synchronized void init(Properties props, int dbId) {
 
-        tempLogger.debug("Properties REF2 {}", props);
-        if (props == null) {
-            return;
-        }
-        tempLogger.debug("Acc ID {}", props.getProperty("account.identifier"));
-//        super.setup(props);
+        super.setup(props);
         this.merchantId = props.getProperty("mcard.merchant_id");
         this.apiUsername = props.getProperty("mcard.api_username");
         this.apiPassword = props.getProperty("mcard.api_password");
