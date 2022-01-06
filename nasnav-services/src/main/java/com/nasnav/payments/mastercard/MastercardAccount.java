@@ -26,7 +26,8 @@ public class MastercardAccount extends Account {
     public void init(Properties props, int dbId) {
 
         tempLogger.debug("Properties REF2 {}", props);
-        super.setup(props);
+        tempLogger.debug("Acc ID {}", props.getProperty("account.identifier"));
+//        super.setup(props);
         this.merchantId = props.getProperty("mcard.merchant_id");
         this.apiUsername = props.getProperty("mcard.api_username");
         this.apiPassword = props.getProperty("mcard.api_password");

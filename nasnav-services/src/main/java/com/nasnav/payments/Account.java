@@ -19,7 +19,7 @@ public class Account  {
     public void setup(Properties properties) {
 
        tempLogger.debug("Properties REF2 {}", properties);
-       tempLogger.debug("Acc ID", properties.getProperty("account.identifier"));
+       tempLogger.debug("Acc ID {}", properties.getProperty("account.identifier"));
        this.accountId = properties.getProperty("account.identifier");
     }
 
