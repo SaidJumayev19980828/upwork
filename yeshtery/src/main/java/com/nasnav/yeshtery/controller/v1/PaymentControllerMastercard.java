@@ -179,6 +179,8 @@ public class PaymentControllerMastercard {
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);
 
+        if (true) return new ResponseEntity<>("{}", HttpStatus.NOT_ACCEPTABLE);
+
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
         if (payment != null) {
             try {
