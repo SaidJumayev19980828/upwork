@@ -23,7 +23,7 @@ public class MastercardAccount extends Account {
 
     private static final Logger tempLogger = LogManager.getLogger("Payment:MCARD");
 
-    public void init(Properties props, int dbId) {
+    public synchronized void init(Properties props, int dbId) {
 
         tempLogger.debug("Properties REF2 {}", props);
         if (props == null) {

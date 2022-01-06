@@ -121,7 +121,7 @@ public class Tools {
 	}
 
 
-	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
+	public static synchronized Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
 
 		Properties props = null;
 		String file = null;
