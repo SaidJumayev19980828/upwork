@@ -81,7 +81,7 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double longitude,
                                                            @RequestParam(required = false) Double latitude,
                                                            @RequestParam(required = false) Double radius,
-                                                           @RequestParam(value = "search_in_tags", required = false, defaultValue = "true") Boolean searchInTags,
+                                                           @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
                 longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
