@@ -165,12 +165,15 @@ public class PaymentControllerMastercard {
 
     @RequestMapping(value = "initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+        mastercardLogger.debug("Initializing payment");
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
+        mastercardLogger.debug("Props file: {}", config.paymentMastercardProps);
+
         MastercardAccount merchantAccount = new MastercardAccount();
         Properties props = Tools.getPropertyForAccount(config.paymentMastercardProps, mastercardLogger, config.paymentPropertiesDir);
-        mastercardLogger.debug("Properties REF {}", props);
+        mastercardLogger.debug("Properties");
 //        mastercardLogger.debug("Got properties for Mastercard at payment controller, ", props.keySet());
         merchantAccount.init(props, 0);
 
