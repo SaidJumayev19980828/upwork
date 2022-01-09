@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -262,6 +263,8 @@ public class MastercardService {
             requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
         }
 
+        classLogger.debug("Initiating payment for metaOrder ({}), value: ({}[{}])", metaOrderId, orderValue.amount, orderValue.currency.name());
+
         try {
             HttpClient client= HttpClientBuilder.create().build();
             String sessionUrl = merchantAccount.getApiUrl() + "/merchant/" + merchantAccount.getMerchantId() +"/session";
@@ -290,8 +293,8 @@ public class MastercardService {
                 String[] pairs = responseContent.split("&");
                 for (String pair : pairs) {
                     int idx = pair.indexOf("=");
-                    String param = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
-                    String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+                    String param = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                    String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
                     if ("result".equals(param)) {
                         result = value;
                     } else if ("session.updateStatus".equals(param)) {

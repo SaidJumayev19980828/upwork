@@ -170,8 +170,8 @@ public class PaymentControllerMastercard {
         response.setSuccess(false);
 
         MastercardAccount merchantAccount = new MastercardAccount();
-        Properties props = Tools.getPropertyForAccount(config.paymentMastercardProps, mastercardLogger, config.paymentPropertiesDir);
-        merchantAccount.init(props, 0);
+        Properties props = Tools.getPropertyForAccount(config.yeshteryMastercardProperties, mastercardLogger, config.paymentPropertiesDir);
+        merchantAccount.init(props, config.yeshteryOrgId);
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
