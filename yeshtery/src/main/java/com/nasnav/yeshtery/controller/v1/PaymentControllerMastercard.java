@@ -8,8 +8,8 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.mastercard.MastercardService;
 import com.nasnav.payments.misc.Commons;
+import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.HTMLConfigurer;
-import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 import com.nasnav.yeshtery.YeshteryConstants;
@@ -169,9 +169,7 @@ public class PaymentControllerMastercard {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        MastercardAccount merchantAccount = new MastercardAccount();
-        Properties props = Tools.getPropertyForAccount(config.yeshteryMastercardProperties, mastercardLogger, config.paymentPropertiesDir);
-        merchantAccount.init(props, config.yeshteryOrgId);
+        MastercardAccount merchantAccount = (MastercardAccount)paymentCommons.getMerchantAccount(metaOrderId, Gateway.MASTERCARD);
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
