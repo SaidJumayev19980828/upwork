@@ -36,6 +36,12 @@ public class ShopsController {
         return stockService.updateStock(stockUpdateReq);
     }
 
+    @DeleteMapping(value = "/stock")
+    public void deleteStocks(@RequestHeader(name = "User-Token", required = false) String userToken,
+                             @RequestParam(value = "shop_id", required = false) Long shopId) {
+        stockService.deleteStocks(shopId);
+    }
+
     @DeleteMapping(value = "/delete")
     public void deleteShop(@RequestHeader(name = "User-Token", required = false) String userToken,
                            @RequestParam("shop_id") Long id) {

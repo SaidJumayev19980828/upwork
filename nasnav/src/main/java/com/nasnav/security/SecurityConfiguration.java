@@ -36,6 +36,7 @@ import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.PUT;
 
 @Configuration
@@ -91,6 +92,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/statistics/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/stock/**"	 											, getNonCustomersRoles() ),
 						patternOf( "/shop/**"												, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
+						patternOf( "/shop/stock"	 					, DELETE			, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/user/list"),
 						patternOf( "/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles()),
 						patternOf( "/user/address"						,PUT                , setOf(CUSTOMER)),

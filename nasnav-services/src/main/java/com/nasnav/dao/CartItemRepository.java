@@ -129,6 +129,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	void deleteByStock_IdIn(@Param("ids")List<Long> ids);
 
 	Long countByUser_Id(Long userId);
+
+	Long countByStock_ShopsEntity_Id(Long shopId);
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemShippingData( "
 			+ " stock.id, shop.id, addr.id, stock.price, stock.discount, item.quantity, variant.weight)"

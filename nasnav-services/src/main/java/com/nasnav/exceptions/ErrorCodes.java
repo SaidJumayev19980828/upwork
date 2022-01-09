@@ -78,6 +78,7 @@ public enum ErrorCodes {
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
+	,P$STO$0003("Stock is linked to %s!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")

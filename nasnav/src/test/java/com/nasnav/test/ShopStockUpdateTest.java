@@ -24,6 +24,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 
@@ -503,7 +504,19 @@ public class ShopStockUpdateTest {
 		assertTrue(stockBefore.getPrice().compareTo( saved.getPrice() ) == 0 );
 	}
 
-	
+	@Test
+	public void deleteStocks() {
+		HttpEntity<?> request = getHttpEntity("131415");
+		Long countBefore = stockRepo.countByShopsEntity_Id(100001);
+		assertEquals(1, countBefore.intValue());
+		ResponseEntity<String> response =
+				template.exchange("/shop/stock?shop_id=100001"
+						, DELETE
+						, request
+						, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(0, stockRepo.countByShopsEntity_Id(100001).intValue());
+	}
 	
 
 

@@ -29,6 +29,8 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 
+	Long countByStock_ShopsEntity_Id(Long shopId);
+
 	@Query("select stock.id from WishlistItemEntity item" +
 			" LEFT JOIN item.stock stock " +
 			" LEFT JOIN item.user user"+
