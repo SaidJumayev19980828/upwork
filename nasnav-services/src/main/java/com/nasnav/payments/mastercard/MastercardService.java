@@ -7,10 +7,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.PaymentRefundEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.OrderService;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -56,7 +53,8 @@ public class MastercardService {
 
     private final OrderService orderService;
 
-    private final PaymentsRepository paymentsRepository;
+    @Autowired
+    private PaymentsRepository paymentsRepository;
 
     @Autowired
     private PaymentRefundsRepository paymentRefundsRepository;
@@ -65,12 +63,14 @@ public class MastercardService {
     private OrdersRepository ordersRepository;
 
     @Autowired
+    private MetaOrderRepository metaOrderRepository;
+
+    @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
 
 
-    public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository) {
+    public MastercardService(OrderService orderService) {
         this.orderService = orderService;
-        this.paymentsRepository = paymentsRepository;
     }
 
     private String readInputStream(InputStream stream) {
@@ -207,18 +207,20 @@ public class MastercardService {
             }
             return;
         }
-        throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
+        throw new BusinessException("Provided payment code does not match successIndicator", "INVALID_CODE", CONFLICT);
     }
 
 
     public PaymentEntity initialize(MastercardAccount merchantAccount, Long metaOrderId) throws BusinessException {
 
         int flavor = merchantAccount.getFlavor();
-        ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
+//        ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 
-    	if(Objects.isNull(orders)) {
-    		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
-    	}
+        MetaOrderEntity moe = metaOrderRepository.findByMetaOrderId(metaOrderId)
+                .orElseThrow(() -> new BusinessException("Meta order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE));
+//    	if(Objects.isNull(orders)) {
+//    		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
+//    	}
 
         String orderUid = Tools.getOrderUid(metaOrderId, classLogger);
         OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
@@ -226,7 +228,7 @@ public class MastercardService {
             throw new BusinessException("Order ID value is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        long userId = orders.get(0).getUserId();
+        long userId = moe.getUser().getId();
         String responseContent = null;
         StringEntity requestEntity;
 
