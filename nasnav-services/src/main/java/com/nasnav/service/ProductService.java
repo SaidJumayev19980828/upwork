@@ -836,6 +836,10 @@ public class ProductService {
 		if(params.category_name != null)
 			predicate.and( product.id.in(productsCustomRepo.getProductTagsByCategoryNameQuery(params)));
 
+		if(params.category_ids != null && !params.category_ids.isEmpty()) {
+			predicate.and( product.id.in(productsCustomRepo.getProductTagsByCategories(params)));
+		}
+
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
 					.or(product.id.like("%" + params.name + "%"))

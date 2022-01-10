@@ -20,6 +20,8 @@ public class TagsRepresentationObject extends BaseRepresentationObject {
     private String pname;
     @JsonProperty(value = "category_id")
     private Long categoryId;
+    @JsonProperty(value = "org_id")
+    private Long orgId;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<TagsRepresentationObject> children;
 
