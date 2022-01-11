@@ -274,6 +274,11 @@ public class YeshteryController {
         return categoryService.getYeshteryOrganizationsTags(categoryName);
     }
 
+    @GetMapping(value = "/tag", produces = APPLICATION_JSON_VALUE)
+    public TagsRepresentationObject getTags(@RequestParam(name = "tag_id") Long tagId) throws BusinessException {
+        return categoryService.getTagById(tagId);
+    }
+
     @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)
     public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
                                                                                      @RequestParam(value = "delivery", required = false) String deliveryService) {
