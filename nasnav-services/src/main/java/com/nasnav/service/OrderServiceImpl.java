@@ -1799,10 +1799,11 @@ public class OrderServiceImpl implements OrderService {
 		CartItemsGroupedByOrgId checkOutData = getAndValidateCheckoutDataByOrgId(dto);
 
 		// 2- create metaorder per org ... just call createOrder method
-		List<MetaOrderEntity> subMetaOrders = createMetaOrders(checkOutData, dto);
+		Set<MetaOrderEntity> subMetaOrders = createMetaOrders(checkOutData, dto);
 
 		// 3- link met orders with the main meta order
 		subMetaOrders.forEach(order::addSubMetaOrder);
+		order.setSubMetaOrders(subMetaOrders);
 		// 4- calculate totals and discounts
 		subTotal = subMetaOrders.stream().map(subMetaOrder->calculateSubTotal(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
 		shippingFeeTotal = subMetaOrders.stream().map(subMetaOrder->calculateShippingTotal(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
@@ -1819,14 +1820,14 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-	private List<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, CartCheckoutDTO dto) {
+	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, CartCheckoutDTO dto) {
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 		AddressesEntity address = getAddressById(dto.getAddressId(), user.getId());
-		List<MetaOrderEntity> yeshteryOrders = checkOutData
+		Set<MetaOrderEntity> yeshteryOrders = checkOutData
 				.entrySet()
 				.stream()
 				.map(c -> createYeshteryOrder(c.getValue(), address, dto, c.getKey()))
-				.collect(toList());
+				.collect(toSet());
 		return yeshteryOrders;
 	}
 
