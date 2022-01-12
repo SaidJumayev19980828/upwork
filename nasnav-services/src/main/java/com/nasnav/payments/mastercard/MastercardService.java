@@ -275,7 +275,8 @@ public class MastercardService {
             HttpPost request = new HttpPost(sessionUrl);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
-            classLogger.debug("Attempting to call: " + request.getURI().toString()) ;
+            classLogger.debug("Attempting to call: {}, auth header: {}", sessionUrl ,getAuthString(merchantAccount)) ;
+            classLogger.debug("payload: " + requestEntity);
             HttpResponse response = client.execute(request);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
