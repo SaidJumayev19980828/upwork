@@ -44,7 +44,7 @@ public class MastercardService {
     public static final int FLAVOR_BASIC = 1;
     public static final int FLAVOR_NBE = 2;
 
-    private Logger classLogger = LogManager.getLogger("Payment:MCARD");
+    private static final Logger classLogger = LogManager.getLogger("Payment:MCARD");
 
     @Autowired
     private AppConfig config;
@@ -262,7 +262,6 @@ public class MastercardService {
             data.put("interaction", interaction);
             requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
         }
-
         classLogger.debug("Initiating payment for metaOrder ({}), value: ({}[{}])", metaOrderId, orderValue.amount, orderValue.currency.name());
 
         try {
