@@ -1915,7 +1915,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order, boolean yeshteryMetaorder) {
-		Order orderDto = setMetaOrderBasicData(order);
+		Order orderDto = setMetaOrderBasicData(order, yeshteryMetaorder);
 		List<SubOrder> subOrders = new ArrayList<>();
 		if (yeshteryMetaorder) {
 			subOrders = createSubOrderDtoListForYeshteryMetaorder(order);
@@ -1955,7 +1955,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Order setMetaOrderBasicData(MetaOrderEntity metaOrder) {
+	private Order setMetaOrderBasicData(MetaOrderEntity metaOrder, boolean yeshteryMetaorder) {
 		Order order = new Order();
 		order.setUserId(metaOrder.getUser().getId());
 		order.setUserName(metaOrder.getUser().getName());
@@ -1968,8 +1968,12 @@ public class OrderServiceImpl implements OrderService {
 						.orElse(NEW)
 						.name();
 		order.setStatus(status);
-
-		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
+		Optional<PaymentEntity> payment = Optional.empty();
+		if (yeshteryMetaorder) {
+			payment = paymentsRepo.findFirstByMetaOrderId(metaOrder.getId());
+		} else {
+			payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
+		}
 		if (payment.isPresent()) {
 			PaymentStatus paymentStatus =
 					payment

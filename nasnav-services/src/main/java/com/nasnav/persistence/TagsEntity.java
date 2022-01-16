@@ -64,6 +64,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @JsonIgnore
     private CategoriesEntity categoriesEntity;
 
+    private Integer priority;
+
     @OneToOne
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
@@ -89,6 +91,7 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setMetadata(getMetadata());
         obj.setCategoryId(categoryId);
         obj.setOrgId(orgId);
+        obj.setPriority(getPriority());
         obj.setAllowReward(getAllowReward());
         obj.setBuyWithCoins(getBuyWithCoins());
         obj.setOnlyBuyWithCoins(getOnlyBuyWithCoins());
