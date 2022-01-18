@@ -219,8 +219,13 @@ public class CategoryService {
 		return toTagsDTO(tagsEntities);
 	}
 
-	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName) {
-    	Set<Long> orgIdList = orgRepo.findIdByYeshteryState(1);
+	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId) {
+    	Set<Long> orgIdList = new HashSet<>();
+    	if (orgId == null) {
+			orgIdList = orgRepo.findIdByYeshteryState(1);
+		} else {
+			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
+		}
 		List<TagsEntity> tagsEntities;
 		if(isBlankOrNull(categoryName)) {
 			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList);

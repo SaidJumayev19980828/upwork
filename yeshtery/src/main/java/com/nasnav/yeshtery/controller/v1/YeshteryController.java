@@ -270,8 +270,9 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
-    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName) {
-        return categoryService.getYeshteryOrganizationsTags(categoryName);
+    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName,
+                                                  @RequestParam(value = "org_id", required = false) Long orgId) {
+        return categoryService.getYeshteryOrganizationsTags(categoryName, orgId);
     }
 
     @GetMapping(value = "/tag", produces = APPLICATION_JSON_VALUE)
