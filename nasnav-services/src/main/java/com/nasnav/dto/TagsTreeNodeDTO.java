@@ -14,6 +14,8 @@ public class TagsTreeNodeDTO {
 	private Long tagId;
 	@JsonProperty("node_id")
 	private Long nodeId;
+    @JsonProperty("org_id")
+    private Long orgId;
     private String name;
     private String alias;
     private String metadata;

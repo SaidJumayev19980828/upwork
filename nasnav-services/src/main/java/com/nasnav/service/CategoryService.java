@@ -751,7 +751,8 @@ public class CategoryService {
     	dto.setNodeId(nodeEntity.getId());
     	dto.setTagId(tagEntity.getId());
     	dto.setId(tagEntity.getId());
-    	dto.setAlias(tagEntity.getAlias());
+		dto.setOrgId(tagEntity.getOrganizationEntity().getId());
+		dto.setAlias(tagEntity.getAlias());
     	dto.setCategoryId(tagEntity.getCategoriesEntity().getId());
     	dto.setGraphId(tagEntity.getGraphId());    	
     	dto.setMetadata(tagEntity.getMetadata());
