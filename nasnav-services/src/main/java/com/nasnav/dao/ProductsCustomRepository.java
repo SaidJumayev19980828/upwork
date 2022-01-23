@@ -18,4 +18,6 @@ public interface ProductsCustomRepository {
 	SQLQuery<Long> getProductTagsByNameQuery(ProductSearchParam params);
 
 	SQLQuery<Long> getProductTagsByCategoryNameQuery(ProductSearchParam params);
+
+	SQLQuery<Long> getProductTagsByCategories(ProductSearchParam params);
 }

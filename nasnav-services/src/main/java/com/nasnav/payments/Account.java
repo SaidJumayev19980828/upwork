@@ -13,6 +13,7 @@ public class Account  {
     protected int dbId = -1;
 
     public void setup(Properties properties) {
+
        this.accountId = properties.getProperty("account.identifier");
     }
 

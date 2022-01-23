@@ -698,20 +698,25 @@ public class ProductService {
 	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause) {
 		QBrands brand = QBrands.brands;
 		QProducts product = QProducts.products;
+		QOrganizations organization = QOrganizations.organizations;
 
 		SubQueryExpression products = queryFactory
-				.select(brand.id, brand.name, brand.priority)
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
 				.from(brand)
+				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromProductsClause.select(product.brandId)));
 		SubQueryExpression collections = queryFactory
-				.select(brand.id, brand.name, brand.priority)
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
 				.from(brand)
+				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromCollectionsClause.select(product.brandId)));
 
 		SQLQuery<?> sqlQuery = new SQLQuery<>();
 		SQLQuery<?> query = queryFactory
-				.select(Expressions.numberPath(Long.class, "id"),Expressions.stringPath("name"),
-						Expressions.numberPath(Integer.class, "priority"))
+				.select(Expressions.numberPath(Long.class, "id"),
+						Expressions.stringPath("name"),
+						Expressions.numberPath(Integer.class, "priority"),
+						Expressions.stringPath("orgName"))
 				.from(sqlQuery.union(products, collections).as("total"))
 				.orderBy(Expressions.numberPath(Integer.class, "priority").desc());
 
@@ -830,6 +835,10 @@ public class ProductService {
 
 		if(params.category_name != null)
 			predicate.and( product.id.in(productsCustomRepo.getProductTagsByCategoryNameQuery(params)));
+
+		if(params.category_ids != null && !params.category_ids.isEmpty()) {
+			predicate.and( product.id.in(productsCustomRepo.getProductTagsByCategories(params)));
+		}
 
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")

@@ -64,6 +64,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @JsonIgnore
     private CategoriesEntity categoriesEntity;
 
+    private Integer priority;
+
     @OneToOne
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
@@ -80,6 +82,7 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @Override
     public BaseRepresentationObject getRepresentation() {
     	Long categoryId = ofNullable(categoriesEntity).map(CategoriesEntity::getId).orElse(null);
+        Long orgId = ofNullable(organizationEntity).map(OrganizationEntity::getId).orElse(null);
         TagsRepresentationObject obj = new TagsRepresentationObject();
         obj.setId(getId());
         obj.setName(getName());
@@ -87,6 +90,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
         obj.setCategoryId(categoryId);
+        obj.setOrgId(orgId);
+        obj.setPriority(getPriority());
         obj.setAllowReward(getAllowReward());
         obj.setBuyWithCoins(getBuyWithCoins());
         obj.setOnlyBuyWithCoins(getOnlyBuyWithCoins());

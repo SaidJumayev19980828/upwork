@@ -81,7 +81,7 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double longitude,
                                                            @RequestParam(required = false) Double latitude,
                                                            @RequestParam(required = false) Double radius,
-                                                           @RequestParam(value = "search_in_tags", required = false, defaultValue = "true") Boolean searchInTags,
+                                                           @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
                 longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
@@ -270,8 +270,14 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
-    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName) {
-        return categoryService.getYeshteryOrganizationsTags(categoryName);
+    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName,
+                                                  @RequestParam(value = "org_id", required = false) Long orgId) {
+        return categoryService.getYeshteryOrganizationsTags(categoryName, orgId);
+    }
+
+    @GetMapping(value = "/tag", produces = APPLICATION_JSON_VALUE)
+    public TagsRepresentationObject getTags(@RequestParam(name = "tag_id") Long tagId) throws BusinessException {
+        return categoryService.getTagById(tagId);
     }
 
     @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)

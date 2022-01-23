@@ -121,7 +121,7 @@ public class Tools {
 	}
 
 
-	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
+	public static synchronized Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
 
 		Properties props = null;
 		String file = null;
@@ -156,7 +156,6 @@ public class Tools {
 		} else {
 			logger.debug("Properties ID: {}", props.getProperty("account.identifier"));
 		}
-		logger.debug("Properties REF {}", props);
 		return props;
 	}
 

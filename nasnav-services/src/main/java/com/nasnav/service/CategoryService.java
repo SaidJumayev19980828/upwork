@@ -212,20 +212,25 @@ public class CategoryService {
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
 		List<TagsEntity> tagsEntities;
 		if (isBlankOrNull(categoryName)) {
-			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByPriorityDesc(orgId);
 		} else {
-			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(categoryName, orgId);
 		}
 		return toTagsDTO(tagsEntities);
 	}
 
-	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName) {
-    	Set<Long> orgIdList = orgRepo.findIdByYeshteryState(1);
+	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId) {
+    	Set<Long> orgIdList = new HashSet<>();
+    	if (orgId == null) {
+			orgIdList = orgRepo.findIdByYeshteryState(1);
+		} else {
+			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
+		}
 		List<TagsEntity> tagsEntities;
 		if(isBlankOrNull(categoryName)) {
-			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByName(orgIdList);
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList);
 		} else {
-			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByName(categoryName, orgIdList);
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList);
 		}
 		return toTagsDTO(tagsEntities);
 	}
@@ -474,6 +479,11 @@ public class CategoryService {
         if(tagDTO.getGraphId() != null) {
         	entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
         }
+		if(tagDTO.getPriority() != null) {
+			entity.setPriority(tagDTO.getPriority());
+		} else {
+			entity.setPriority(0);
+		}
         
         entity = orgTagsRepo.save(entity);
         String pname = format("%d-%s", entity.getId(), encodeUrl(tagDTO.getName()));
@@ -741,7 +751,8 @@ public class CategoryService {
     	dto.setNodeId(nodeEntity.getId());
     	dto.setTagId(tagEntity.getId());
     	dto.setId(tagEntity.getId());
-    	dto.setAlias(tagEntity.getAlias());
+		dto.setOrgId(tagEntity.getOrganizationEntity().getId());
+		dto.setAlias(tagEntity.getAlias());
     	dto.setCategoryId(tagEntity.getCategoriesEntity().getId());
     	dto.setGraphId(tagEntity.getGraphId());    	
     	dto.setMetadata(tagEntity.getMetadata());

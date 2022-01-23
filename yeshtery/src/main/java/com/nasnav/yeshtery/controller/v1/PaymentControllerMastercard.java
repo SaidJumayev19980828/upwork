@@ -8,8 +8,8 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.mastercard.MastercardService;
 import com.nasnav.payments.misc.Commons;
+import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.HTMLConfigurer;
-import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 import com.nasnav.yeshtery.YeshteryConstants;
@@ -165,17 +165,13 @@ public class PaymentControllerMastercard {
 
     @RequestMapping(value = "initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+        mastercardLogger.debug("Initializing payment");
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        MastercardAccount merchantAccount = new MastercardAccount();
-        Properties props = Tools.getPropertyForAccount(config.paymentMastercardProps, mastercardLogger, config.paymentPropertiesDir);
-        mastercardLogger.debug("Properties REF {}", props);
-//        mastercardLogger.debug("Got properties for Mastercard at payment controller, ", props.keySet());
-        merchantAccount.init(props, 0);
+        MastercardAccount merchantAccount = (MastercardAccount)paymentCommons.getMerchantAccount(metaOrderId, Gateway.MASTERCARD);
 
         mastercardLogger.info("Setting up payment for order: {}", metaOrderId);
-
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
         if (payment != null) {
             try {
