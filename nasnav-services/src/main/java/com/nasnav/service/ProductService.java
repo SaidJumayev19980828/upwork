@@ -701,12 +701,12 @@ public class ProductService {
 		QOrganizations organization = QOrganizations.organizations;
 
 		SubQueryExpression products = queryFactory
-				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"), brand.logo.as("logoUrl"))
 				.from(brand)
 				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromProductsClause.select(product.brandId)));
 		SubQueryExpression collections = queryFactory
-				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"), brand.logo.as("logoUrl"))
 				.from(brand)
 				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromCollectionsClause.select(product.brandId)));
@@ -716,7 +716,8 @@ public class ProductService {
 				.select(Expressions.numberPath(Long.class, "id"),
 						Expressions.stringPath("name"),
 						Expressions.numberPath(Integer.class, "priority"),
-						Expressions.stringPath("orgName"))
+						Expressions.stringPath("orgName"),
+						Expressions.stringPath("logoUrl"))
 				.from(sqlQuery.union(products, collections).as("total"))
 				.orderBy(Expressions.numberPath(Integer.class, "priority").desc());
 
