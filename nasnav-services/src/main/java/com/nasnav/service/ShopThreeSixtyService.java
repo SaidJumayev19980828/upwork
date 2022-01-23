@@ -377,8 +377,9 @@ public class ShopThreeSixtyService {
             section.setPriority(index);
         }
 
-        if (dto.getImageUrl() != null)
-            section.setImage(dto.getImageUrl());
+        if (dto.getImageUrl() != null) {
+            section.setImage(resizedImagesMap.get(dto.getImageUrl()).get(0));
+        }
         ShopSectionsEntity savedSection = sectionsRepo.save(section);
         List<ShopScenesRequestDTO> scenesDTO = getScenes(dto);
         for(int i=0;i<scenesDTO.size();i++) {
