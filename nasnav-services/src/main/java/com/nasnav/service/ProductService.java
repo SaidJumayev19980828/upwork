@@ -669,7 +669,12 @@ public class ProductService {
 
 		List<Organization_BrandRepresentationObject> brands = getProductBrands(fromProductsClause, fromCollectionsClause);
 
-		List<TagsRepresentationObject> tags = getProductTags(fromProductsClause, fromCollectionsClause);
+		List<TagsRepresentationObject> tags;
+		if (param.getTags_org_id() == null) {
+			tags = getProductTags(fromProductsClause, fromCollectionsClause);
+		} else {
+			tags = getProductTagsOfSpecificOrg(fromProductsClause, fromCollectionsClause, param.getTags_org_id());
+		}
 
 		Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause, fromCollectionsClause );
 
@@ -741,6 +746,37 @@ public class ProductService {
 						.select(productTag.tagId)
 						.from(productTag)
 						.where(productTag.productId.in(union))));
+
+		return template.query(tags.getSQL().getSQL(),
+				new BeanPropertyRowMapper<>(TagsRepresentationObject.class));
+
+	}
+
+	private List<TagsRepresentationObject> getProductTagsOfSpecificOrg(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause, Long orgId) {
+		QTags tag = QTags.tags;
+		QProducts product = QProducts.products;
+		QProductTags productTag = QProductTags.productTags;
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SubQueryExpression union = sqlQuery.union(fromProductsClause.select(product.id), fromCollectionsClause.select(product.id));
+		SQLQuery<?> categoriesQuery = queryFactory
+				.select(tag.categoryId)
+				.from(tag)
+				.where(tag.id.in(queryFactory
+						.select(productTag.tagId)
+						.from(productTag)
+						.where(productTag.productId.in(union))));
+
+		Set<Long> categories = template
+				.queryForList(categoriesQuery.getSQL().getSQL(), Long.class)
+				.stream()
+				.filter(Objects::nonNull)
+				.collect(toSet());
+
+		SQLQuery<?> tags = queryFactory
+				.select(tag.id, tag.name, tag.alias, tag.metadata, tag.pName.as("pname"), tag.categoryId)
+				.from(tag)
+				.where(tag.categoryId.in(categories).and(tag.organizationId.eq(orgId)));
 
 		return template.query(tags.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(TagsRepresentationObject.class));
