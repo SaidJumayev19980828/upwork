@@ -33,7 +33,7 @@ import org.json.simple.parser.JSONParser;
 public class VideoChatController {
 
     @Autowired
-    VideoChatService videoChatService;
+    private VideoChatService videoChatService;
 
     @RequestMapping(value = "/getAllSessions", method = RequestMethod.GET)
     public List<String> getAllSessions(@RequestHeader(name = "User-Token", required = false) String userToken) {
@@ -41,7 +41,7 @@ public class VideoChatController {
     }
 
     @GetMapping(value = "/getSession")
-    public VideoChatResponse getToken(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam(required = false) String sessionName) throws RuntimeBusinessException, OpenViduJavaClientException, OpenViduHttpException {
+    public VideoChatResponse getSession(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam(required = false) String sessionName) throws RuntimeBusinessException, OpenViduJavaClientException, OpenViduHttpException {
         return  videoChatService.getSession(userToken, sessionName);
     }
 

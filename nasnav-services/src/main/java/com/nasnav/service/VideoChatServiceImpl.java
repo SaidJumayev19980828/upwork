@@ -92,16 +92,13 @@ public class VideoChatServiceImpl implements VideoChatService{
                 this.mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
 
                 return new VideoChatResponse(true, null, token, null, sessionName);
-            }
-            catch(OpenViduHttpException ex){
+            } catch(OpenViduHttpException ex) {
                 if(ex.getStatus()==404) {
                     this.mapSessions.remove(sessionName);
                     this.mapSessionNamesTokens.remove(sessionName);
                 }
                 throw ex;
-
-            }
-            catch (Exception e1) {
+            } catch (Exception e1) {
                 throw e1;
             }
         }
@@ -136,10 +133,7 @@ public class VideoChatServiceImpl implements VideoChatService{
     @Override
     public List<String> getAllSessions() {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-
-        List<String> sessions = new ArrayList<>();
-        sessions = this.mapSessions.keySet().stream().collect(Collectors.toList());
-
+        List<String> sessions = this.mapSessions.keySet().stream().collect(Collectors.toList());
         return sessions;
     }
 }
