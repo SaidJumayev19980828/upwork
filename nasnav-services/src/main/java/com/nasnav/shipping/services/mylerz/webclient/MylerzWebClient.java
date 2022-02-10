@@ -1,7 +1,8 @@
 package com.nasnav.shipping.services.mylerz.webclient;
 
-import com.nasnav.shipping.services.clicknship.webclient.dto.ShipmentRequest;
+import com.nasnav.shipping.services.mylerz.webclient.dto.ShipmentRequest;
 import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeRequest;
+import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -53,6 +54,26 @@ public class MylerzWebClient {
                 .uri("/api/Orders/AddOrders")
                 .header("Authorization","Bearer "+token)
                 .bodyValue(dto)
+                .exchange();
+    }
+
+    public Mono<ClientResponse> getAWB(String token, String barcode) {
+        JSONObject body = new JSONObject().put("Barcode", barcode);
+        return client.post()
+                .uri("/api/Packages/GetAWB")
+                .header("Authorization","Bearer "+token)
+                .bodyValue(body)
+                .exchange();
+    }
+
+    public Mono<ClientResponse> cancelShipment(String token, String barcode, String merchantId) {
+        JSONObject body = new JSONObject()
+                .put("Barcode", barcode)
+                .put("MerchantId", merchantId);
+        return client.post()
+                .uri("/api/Packages/CancelPackage")
+                .header("Authorization","Bearer "+token)
+                .bodyValue(body)
                 .exchange();
     }
 }

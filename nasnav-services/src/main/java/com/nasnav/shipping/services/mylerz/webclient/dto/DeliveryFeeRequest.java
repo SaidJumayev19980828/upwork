@@ -24,5 +24,5 @@ public class DeliveryFeeRequest {
     @JsonProperty("PaymentTypeCode")
     private String paymentTypeCode;
     @JsonProperty("ServiceCategoryCode")
-    private String ServiceCategoryCode;
+    private String serviceCategoryCode;
 }
