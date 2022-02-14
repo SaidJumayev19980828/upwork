@@ -2,6 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.response.PickupItem;
 import com.nasnav.service.PickupItemService;
+import com.nasnav.yeshtery.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,8 +11,10 @@ import java.util.Set;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping("/pickup")
+@RequestMapping(PickupItemController.API_PATH)
 public class PickupItemController {
+
+    static final String API_PATH = YeshteryConstants.API_PATH +"/pickup/";
 
     @Autowired
     private PickupItemService pickupItemService;

@@ -232,12 +232,16 @@ public class ShopServiceImpl implements ShopService {
         if(param.getName() != null) {
             if (param.isSearchInTags()) {
                 predicate.and(product.name.likeIgnoreCase( "%" + param.getName() + "%")
-                        .or(product.description.likeIgnoreCase( "%" + param.getName() + "%"))
+                        .or(product.description.likeIgnoreCase( "% " + param.getName() + " %"))
+                        .or(product.description.likeIgnoreCase( param.getName() + " %"))
+                        .or(product.description.likeIgnoreCase( "% " + param.getName()))
                         .or(tag.name.likeIgnoreCase("%" + param.getName() + "%")));
             }
             else {
                 predicate.and(product.name.likeIgnoreCase("%" + param.getName() + "%")
-                        .or(product.description.likeIgnoreCase( "%" + param.getName() + "%")));
+                        .or(product.description.likeIgnoreCase( param.getName() + " %"))
+                        .or(product.description.likeIgnoreCase( "% " + param.getName()))
+                        .or(product.description.likeIgnoreCase( "% " + param.getName() + " %")));
             }
         }
         if (param.isYeshteryState()) {
