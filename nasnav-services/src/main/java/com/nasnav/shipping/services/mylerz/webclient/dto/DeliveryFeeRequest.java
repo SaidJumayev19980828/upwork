@@ -15,8 +15,6 @@ public class DeliveryFeeRequest {
     private String deliveryAreaId;
     @JsonProperty("PackageWeight")
     private Double weight;
-    @JsonProperty("CustomerZoneCode")
-    private String areaId;
     @JsonProperty("PackageServiceTypeCode")
     private String serviceTypeCode;
     @JsonProperty("PackageServiceCode")
