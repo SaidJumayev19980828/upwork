@@ -29,7 +29,7 @@ public class VideoChatServiceImpl implements VideoChatService{
     private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
 
-    private String OPENVIDU_URL = "http://34.125.116.133:5443/"; // TODO move to properties file
+    private String OPENVIDU_URL = "http://34.125.228.13:5443/"; // TODO move to properties file
     private String SECRET = "MY_SECRET"; // TODO move to properties file
 
     @Autowired
