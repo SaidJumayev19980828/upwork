@@ -950,6 +950,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setPname(product.getPname());
 		item.setProductType(product.getProductType());
 		item.setBrandId(brand.getId());
+		item.setBrandLogo(brand.getLogo());
 
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
@@ -2097,9 +2098,11 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(0, Integer::sum)
 				.longValue();
 
+		ShopsEntity shop = order.getShopsEntity();
 		SubOrder subOrder = new SubOrder();
-		subOrder.setShopId(order.getShopsEntity().getId());
-		subOrder.setShopName(order.getShopsEntity().getName());
+		subOrder.setShopId(shop.getId());
+		subOrder.setShopName(shop.getName());
+		subOrder.setShopLogo(shop.getLogo());
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
 		subOrder.setStatus(status);
