@@ -18,6 +18,7 @@ import com.nasnav.request.OrderSearchParam;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 public interface OrderService {
@@ -48,7 +49,9 @@ public interface OrderService {
 
 	void finalizeOrder(Long orderId) throws BusinessException;
 
-	 void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
+	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);
+
+	void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
 	 OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount);
 
