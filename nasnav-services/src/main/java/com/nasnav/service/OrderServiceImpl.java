@@ -322,14 +322,36 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		try {
-			sendBillEmail(order);
+			sendBillEmail(order, false);
 		}catch(Throwable t) {
 			logger.error(t,t);
 		}
 	}
 
 
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders) {
 
+		subOrders.forEach(this::finalizeSubOrder);
+
+		updateOrderStatus(metaOrder, FINALIZED);
+		metaOrder.getSubMetaOrders().forEach(subMetaOrder -> updateOrderStatus(subMetaOrder, FINALIZED));
+
+		setPromoCodeAsUsed(metaOrder);
+
+		try {
+			subOrders.forEach(this::sendNotificationEmailToStoreManager);
+		} catch(Throwable t) {
+			logger.error(t,t);
+		}
+
+		try {
+			sendBillEmail(metaOrder, true);
+		}catch(Throwable t) {
+			logger.error(t,t);
+		}
+	}
 
 
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
@@ -432,7 +454,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void sendBillEmail(MetaOrderEntity order) {
+	private void sendBillEmail(MetaOrderEntity order, Boolean yeshteryMetaorder) {
 		String orgName = order.getOrganization().getName();
 
 		Optional<String> email =
@@ -445,7 +467,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		String subject = format(BILL_EMAIL_SUBJECT, orgName);
-		Map<String,Object> parametersMap = createBillEmailParams(order);
+		Map<String,Object> parametersMap = createBillEmailParams(order, yeshteryMetaorder);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
 			mailService.sendThymeleafTemplateMail(orgName, email.get(), subject,  template, parametersMap);
@@ -475,21 +497,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<String, Object> createBillEmailParams(MetaOrderEntity order) {
-		LocalDateTime orderTime =
-				order
-				.getSubOrders()
-				.stream()
-				.map(OrdersEntity::getCreationDate)
-				.filter(Objects::nonNull)
-				.findFirst()
-				.orElse(now());
+	private Map<String, Object> createBillEmailParams(MetaOrderEntity order, Boolean yeshteryMetaorder) {
+		Order orderResponse = this.getOrderResponse(order, yeshteryMetaorder);
+
+		LocalDateTime orderTime = orderResponse.getCreationDate();
 		String orderTimeStr =
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 
-		Order orderResponse = this.getOrderResponse(order, false);
 		normalizeOrderForEmailTemplate(orderResponse);
 
 		AddressRepObj deliveryAddress = getBillDeliveryAddress(order);
@@ -950,6 +966,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setPname(product.getPname());
 		item.setProductType(product.getProductType());
 		item.setBrandId(brand.getId());
+		item.setBrandName(brand.getName());
 		item.setBrandLogo(brand.getLogo());
 
 		item.setVariantId(variant.getId());

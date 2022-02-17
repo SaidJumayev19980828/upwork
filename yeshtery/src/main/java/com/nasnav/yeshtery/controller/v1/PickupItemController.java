@@ -14,7 +14,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(PickupItemController.API_PATH)
 public class PickupItemController {
 
-    static final String API_PATH = YeshteryConstants.API_PATH +"/pickup/";
+    static final String API_PATH = YeshteryConstants.API_PATH +"/pickup";
 
     @Autowired
     private PickupItemService pickupItemService;
