@@ -950,6 +950,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setPname(product.getPname());
 		item.setProductType(product.getProductType());
 		item.setBrandId(brand.getId());
+		item.setBrandName(brand.getName());
 		item.setBrandLogo(brand.getLogo());
 
 		item.setVariantId(variant.getId());
