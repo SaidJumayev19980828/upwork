@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
@@ -106,7 +107,15 @@ public class Commons {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
 		Set<OrdersEntity> orders = metaOrder.getSubOrders();
 		if (metaOrder.getOrganization().getYeshteryState().equals(1)) {
-			orders.addAll(metaOrderRepo.findYeshteryMetaorderByMetaOrderId(payment.getMetaOrderId()).get().getSubOrders());
+			orders.addAll(metaOrderRepo
+					.findYeshteryMetaorderByMetaOrderId(payment.getMetaOrderId())
+					.get()
+					.getSubMetaOrders()
+					.stream()
+					.map(MetaOrderEntity::getSubOrders)
+					.flatMap(Set::stream)
+					.collect(toSet())
+			);
 		}
 
 		paymentsRepository.saveAndFlush(payment);
