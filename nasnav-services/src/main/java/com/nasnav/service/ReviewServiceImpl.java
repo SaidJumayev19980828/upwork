@@ -40,7 +40,7 @@ public class ReviewServiceImpl implements ReviewService{
         }
         UserEntity user = (UserEntity) baseUser;
         validateProductRateDTO(dto, user.getId());
-        ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(dto.getVariantId(), user.getOrganizationId())
+        ProductVariantsEntity variant = productVariantsRepository.findById(dto.getVariantId())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
         createProductRate(dto, variant, user);
         updateUserBoosterByFamilyMember(user.getId());
