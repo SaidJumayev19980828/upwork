@@ -2585,10 +2585,9 @@ public class OrderServiceImpl implements OrderService {
 		if (metaOrder.isEmpty()) {
 			return null;
 		}
+		metaOrders.add(metaOrder.get());
 		Set<MetaOrderEntity> subMetas = metaOrder.get().getSubMetaOrders();
-		if (subMetas == null || subMetas.size() == 0) {
-			metaOrders.add(metaOrder.get());
-		} else {
+		if (subMetas != null && !subMetas.isEmpty()) {
 			metaOrders.addAll(subMetas);
 		}
 		OrderService.OrderValue oValue = new OrderService.OrderValue();
