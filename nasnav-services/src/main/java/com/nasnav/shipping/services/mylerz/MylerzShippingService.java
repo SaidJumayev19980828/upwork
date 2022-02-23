@@ -1,31 +1,43 @@
 package com.nasnav.shipping.services.mylerz;
 
+import com.nasnav.dao.ShippingAreaRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.*;
 import com.nasnav.shipping.services.mylerz.webclient.MylerzWebClient;
 import com.nasnav.shipping.services.mylerz.webclient.dto.AuthenticationResponse;
+import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeRequest;
+import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeResponse;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.*;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
+import static com.nasnav.shipping.services.mylerz.DeliveryType.NEXT_DAY_DELIVERY;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
@@ -33,6 +45,9 @@ public class MylerzShippingService implements ShippingService {
 
     public static final String AWB_MIME = "application/pdf";
     private Logger logger = LogManager.getLogger(getClass());
+
+    @Autowired
+    private ShippingAreaRepository shippingAreaRepo;
 
     private List<ServiceParameter> serviceParams;
     private Map<String,String> paramMap;
@@ -52,8 +67,7 @@ public class MylerzShippingService implements ShippingService {
             asList(new Parameter(USER_NAME, STRING)
                     , new Parameter(PASSWORD, STRING)
                     , new Parameter(GRANT_TYPE, STRING)
-                    , new Parameter(SERVER_URL, STRING)
-                    , new Parameter(COD_VALUE, NUMBER));
+                    , new Parameter(SERVER_URL, STRING));
 
     public MylerzShippingService() {
         paramMap = new HashMap<>();
@@ -141,8 +155,107 @@ public class MylerzShippingService implements ShippingService {
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
         Map<Long, List<ShippingDetails>> shopsAndItemsMap = items.stream().collect(groupingBy(ShippingDetails::getShopId));
+        return Flux
+                .fromIterable(shopsAndItemsMap.values())
+                .flatMap(this::createShipmentOffer)
+                .collectList()
+                .flatMap(shipments -> doCreateShippingOffer(shipments, items.size()));
+    }
 
-        return null;
+    private Mono<Shipment> createShipmentOffer(List<ShippingDetails> detailsList) {
+        Mono<ShippingEta> etaMono = getShippingEta();
+        List<Long> stocks = getStocks(detailsList);
+        String serverUrl = getServiceParam(SERVER_URL);
+        MylerzWebClient client = new MylerzWebClient(serverUrl);
+        Optional<DeliveryFeeRequest> request = createDeliveryFeeRequest(detailsList);
+        if (!request.isPresent()) {
+            return Mono.empty();
+        }
+        return client
+                .calculateDeliveryFee(AUTH_TOKEN, request.get())
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(DeliveryFeeResponse.class))
+                .map(this::getTotalShippingPrice)
+                .zipWith(etaMono)
+                .map(feeAndEta -> new Shipment(feeAndEta.getT1(), feeAndEta.getT2(), stocks, null))
+                .onErrorResume(err -> {logger.error(err,err); return Mono.empty();});
+    }
+
+    private BigDecimal getTotalShippingPrice(DeliveryFeeResponse res) {
+        return new BigDecimal(String.valueOf(res.getCharges())).add(res.getShippingFees()).add(res.getVat());
+    }
+
+    private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(List<ShippingDetails> detailsList) {
+        String shopId = getSourceShopId(detailsList);
+        String deliveryAreaId = getDeliveryAreaId(getDestinationAreaId(detailsList));
+        BigDecimal codValue = detailsList.stream().findFirst().map(ShippingDetails::getCodValue).orElse(ZERO);
+        BigDecimal weight = getShipmentItemsWeight(detailsList);
+
+        DeliveryFeeRequest request = new DeliveryFeeRequest();
+        request.setShopName(shopId);
+        request.setDeliveryAreaId(deliveryAreaId);
+        request.setCodValue(codValue);
+        request.setServiceCode(NEXT_DAY_DELIVERY.getValue());
+        request.setServiceCategoryCode("DELIVERY");
+        request.setServiceTypeCode("CTD");
+        request.setPaymentTypeCode();
+        request.setWeight(weight.doubleValue());
+        return of(request);
+    }
+
+    private BigDecimal getShipmentItemsWeight(List<ShippingDetails> detailsList) {
+        return detailsList
+                .stream()
+                .map(ShippingDetails::getItems)
+                .flatMap(List::stream)
+                .map(ShipmentItems::getWeight)
+                .map(weight -> ofNullable(weight).orElse(ZERO))
+                .reduce(ZERO, BigDecimal::add);
+    }
+
+    private String getDeliveryAreaId(Long areaId) {
+        return shippingAreaRepo.getProviderId(SERVICE_ID, areaId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$SHP$0006, areaId));
+    }
+
+    private String getSourceShopId(List<ShippingDetails> detailsList) {
+        Long shopId = detailsList
+                .stream()
+                .findFirst()
+                .map(ShippingDetails::getShopId)
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0013, SERVICE_ID));
+        return shopId + "";
+    }
+
+    private Long getDestinationAreaId(List<ShippingDetails> detailsList) {
+        return detailsList
+                .stream()
+                .findFirst()
+                .map(ShippingDetails::getDestination)
+                .map(ShippingAddress::getArea)
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0013, SERVICE_ID));
+    }
+
+    private List<Long> getStocks(List<ShippingDetails> details) {
+        return details
+                .stream()
+                .map(ShippingDetails::getItems)
+                .flatMap(List::stream)
+                .map(ShipmentItems::getStockId)
+                .collect(toList());
+    }
+
+    private Mono<ShippingEta> getShippingEta() {
+        return Mono.just(new ShippingEta(now().plusDays(1), now().plusDays(2)));
+    }
+
+    private Mono<ShippingOffer> doCreateShippingOffer(List<Shipment> shipments, Integer ordersNum){
+        ShippingServiceInfo serviceInfo = createServiceInfoWithDeliveryOptions();
+        if(isAnyOrderHadNoShipment(shipments, ordersNum)){
+            return Mono.just(new ShippingOffer(serviceInfo, ERR_OUT_OF_SERVICE));
+        }else{
+            return Mono.just(new ShippingOffer(serviceInfo, shipments));
+        }
     }
 
     @Override
@@ -178,5 +291,22 @@ public class MylerzShippingService implements ShippingService {
     @Override
     public String getTrackingUrl(String trackingNumber) {
         return null;
+    }
+}
+
+enum DeliveryType {
+    NEXT_DAY_DELIVERY("ND"), SAME_DAY_DELIVERY("SD");
+
+    @Getter
+    private String value;
+
+    DeliveryType(String value) {
+        this.value = value;
+    }
+
+    public static List<String> getDeliveryTypes() {
+        return stream(values())
+                .map(DeliveryType::getValue)
+                .collect(toList());
     }
 }

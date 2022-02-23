@@ -117,8 +117,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
-	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, Long orgId) {
-		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId);
+	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, Long orgId, String paymentType, BigDecimal codValue) {
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId, paymentType, codValue);
 		return getOffersFromOrganizationShippingServices(shippingDetails, orgId);
 	}
 
@@ -337,17 +337,18 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCurrentCart(Long customerAddrId) {
+	private List<ShippingDetails> createShippingDetailsFromCurrentCart(Long customerAddrId, String paymentType, BigDecimal codValue) {
 		Long userId = securityService.getCurrentUser().getId();
 		List<CartItemShippingData> cartData = cartRepo.findCartItemsShippingDataByUser_Id(userId);
-		return createShippingDetailsFromCartItemShippingData(cartData, customerAddrId);
+		return createShippingDetailsFromCartItemShippingData(cartData, customerAddrId, paymentType, codValue);
 	}
 
 
 
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCartItemShippingData(List<CartItemShippingData> cartData, Long customerAddrId) {
+	private List<ShippingDetails> createShippingDetailsFromCartItemShippingData(List<CartItemShippingData> cartData, Long customerAddrId,
+																				String paymentType, BigDecimal codValue) {
 		Map<Long, AddressesEntity> addresses = getAddresses(customerAddrId, cartData);
 		
 		validateCartItemShops(cartData);
@@ -357,7 +358,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.collect(groupingBy(this::getShopAndItsAddress))
 				.entrySet()
 				.stream()
-				.map(itemsPerAddr -> createShippingDetails(itemsPerAddr, addresses, customerAddrId))
+				.map(itemsPerAddr -> createShippingDetails(itemsPerAddr, addresses, customerAddrId, paymentType, codValue))
 				.collect(toList());
 	}
 
@@ -384,7 +385,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private ShippingDetails createShippingDetails(Map.Entry<ShopAndItsAddress, List<CartItemShippingData>> entry
-			, Map<Long, AddressesEntity> addresses, Long customerAddrId) {
+			, Map<Long, AddressesEntity> addresses, Long customerAddrId, String paymentType, BigDecimal codValue) {
 		Long shopAddressId = entry.getKey().getAddressId();
 		List<ShipmentItems> items = 
 				entry
@@ -409,6 +410,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingDetails.setSource(pickupAddr);
 		shippingDetails.setItems(items);
 		shippingDetails.setShopId(entry.getKey().getShopId());
+		shippingDetails.setCodValue(codValue);
 		return shippingDetails;
 	}
 	
@@ -1026,10 +1028,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 	@Override
-	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId) {
+	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId, String paymentType, BigDecimal codValue) {
 		if (securityService.getYeshteryState() == 1) {
 			Long orgId = securityService.getCurrentUserOrganizationId();
-			return getShippingOffers(customerAddrId, orgId);
+			return getShippingOffers(customerAddrId, orgId, paymentType, codValue);
 		}
 		return null;
 	}

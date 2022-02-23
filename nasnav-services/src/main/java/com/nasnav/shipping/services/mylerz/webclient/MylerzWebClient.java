@@ -41,6 +41,13 @@ public class MylerzWebClient {
                 .exchange();
     }
 
+    public Mono<ClientResponse> getWareHouses(String token) {
+        return client.get()
+                .uri("/api/Orders/GetWarehouses")
+                .header("Authorization","Bearer "+token)
+                .exchange();
+    }
+
     public Mono<ClientResponse> calculateDeliveryFee(String token, DeliveryFeeRequest dto) {
         return client.post()
                 .uri("/api/Packages/GetExpectedCharges")
