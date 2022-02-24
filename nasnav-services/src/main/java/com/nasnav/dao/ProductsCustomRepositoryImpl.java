@@ -17,7 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.querydsl.core.types.ExpressionUtils.count;
 import static com.querydsl.sql.SQLExpressions.select;
+import static com.querydsl.sql.SQLExpressions.selectDistinct;
 
 @Repository
 @Transactional
@@ -161,17 +163,18 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 	public SQLQuery<Long> getProductTagsByCategories(ProductSearchParam params) {
 		QTags tag = QTags.tags;
 		QProductTags productTags = QProductTags.productTags;
-
 		return queryFactory.select(Expressions.numberPath(Long.class, "id"))
-				.from(
-						select(
-								productTags.productId.as("id"), productTags.tagId.count().as("count"))
+						.from(
+							select(Expressions.numberPath(Long.class, "id"), Expressions.numberPath(Long.class, "category_id").count().as("count"))
+							.from(
+								selectDistinct(productTags.productId.as("id"), tag.categoryId.as("category_id"))
 								.from(productTags)
 								.join(tag).on(tag.id.eq(productTags.tagId))
 								.where(tag.categoryId.in(params.getCategory_ids()))
-								.groupBy(productTags.productId)
-								.having(productTags.tagId.count().eq((long) params.getCategory_ids().size()))
-								.as("productTags"));
+								.as("productTags"))
+							.groupBy(Expressions.numberPath(Long.class, "id"))
+							.having(Expressions.numberPath(Long.class, "category_id").count().eq((long) params.getCategory_ids().size()))
+						.as("productTags"));
 	}
 	
 	private void  insertProductTag(QProductTags productTags, SQLInsertClause insert,
