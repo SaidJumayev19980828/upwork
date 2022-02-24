@@ -90,6 +90,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/wishlist/**"										    , setOf(CUSTOMER))
             , patternOf( "/v1/shipping/**"										    , setOf(CUSTOMER))
             , patternOf("/v1/yeshtery/review"					, HttpMethod.POST   , setOf(CUSTOMER))
+            , patternOf("/v1/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER))
     );
 
    

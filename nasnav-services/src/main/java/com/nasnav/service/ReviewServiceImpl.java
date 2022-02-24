@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -104,6 +105,12 @@ public class ReviewServiceImpl implements ReviewService{
                 .stream()
                 .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
                 .collect(toList());
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getUserProductsRatings(Set<Long> variantIds) {
+        Long userId  = securityService.getCurrentUser().getId();
+        return toReviewDtoList(productRatingRepo.findUserVariantRatings(userId, variantIds));
     }
 
     private void updateUserBoosterByFamilyMember(Long userId) {
