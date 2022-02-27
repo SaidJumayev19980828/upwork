@@ -7,6 +7,7 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.enumerations.ReturnRequestStatus;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import java.util.Set;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+@EqualsAndHashCode(callSuper = false)
 public class ReturnRequestDTO extends BaseRepresentationObject {
     private Long id;
     private LocalDateTime createdOn;
