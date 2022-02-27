@@ -482,7 +482,7 @@ public class CartTest {
 		assertEquals(630006L, promoId.longValue());
 	}
 
-	@Test
+	//@Test test ignored as auto optimization changes are not acceptable now
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithAutoOptimizationSuccess() {
@@ -1063,7 +1063,7 @@ public class CartTest {
 		return body;
 	}
 
-	@Test
+	//@Test test ignored as auto optimization changes are not acceptable now
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutWithWareHouseOptimizationStrategy() {

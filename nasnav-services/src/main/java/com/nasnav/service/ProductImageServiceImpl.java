@@ -1663,7 +1663,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		SwatchDataCache cache = createSwatchDataCache(importedImgs, metaData);
 		importedImgs
 				.stream()
-				.map(this::saveSwatchFile)
+				.map(e -> saveSwatchFile(e, metaData.isCrop()))
 				.map(saved -> createExtraAttrValueEntity(saved, cache))
 				.collect(collectingAndThen(toList(), attrValuesRepo::saveAll));
 	}
@@ -1727,9 +1727,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch) {
+	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch, boolean crop) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		String url = fileService.saveFile(swatch.getImage(), orgId);
+		String url = fileService.saveFile(swatch.getImage(), orgId, crop);
 		return new SavedImportedSwatchImage(swatch, url);
 	}
 

@@ -22,6 +22,9 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -44,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.nasnav.cache.Caches.FILES;
 import static com.nasnav.cache.Caches.IMGS_RESIZED;
@@ -60,6 +62,8 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static net.coobird.thumbnailator.geometry.Positions.CENTER;
+import static net.coobird.thumbnailator.resizers.Resizers.BICUBIC;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -102,7 +106,28 @@ public class FileService {
 	}
 
 
-
+	public String saveFile(MultipartFile file, Long orgId, boolean crop) {
+		if (crop) {
+			try {
+				var imgOutStream = new ByteArrayOutputStream();
+				BufferedImage image = ImageIO.read(file.getInputStream());
+				int targetWidth = 100;
+				int targetHeight = 100;
+				Thumbnails
+						.of(image)
+						.sourceRegion(CENTER, targetWidth, targetHeight)
+						.scale(1.0)
+						.resizer(BICUBIC)
+						.outputFormat(getFileExtension(file.getBytes()).substring(1))
+						.toOutputStream(imgOutStream);
+				return saveFile(getCommonsMultipartFile(file.getOriginalFilename(), file.getOriginalFilename(), file.getContentType(), imgOutStream), orgId);
+			} catch (Exception e) {
+				logger.error(e, e);
+				return saveFile(file, orgId);
+			}
+		}
+		return saveFile(file, orgId);
+	}
 
 	public String saveFile(MultipartFile file, Long orgId) {
 
@@ -162,7 +187,17 @@ public class FileService {
 		return mimeType;
 	}
 
-
+	private String getFileExtension(byte[] bytes) {
+		try {
+			String contentType = new Tika().detect(bytes);
+			TikaConfig config = TikaConfig.getDefaultConfig();
+			MimeType mimeType = config.getMimeRepository().forName(contentType);
+			String extension = mimeType.getExtension();
+			return extension;
+		} catch (MimeTypeException e) {
+			return "png";
+		}
+	}
 
 
 	private Path getSaveDir(Long orgId) {
@@ -224,7 +259,7 @@ public class FileService {
 
 
 	private String getUniqueRandomName(String origName) {
-		String ext = getFileExtension(origName);
+		String ext = com.google.common.io.Files.getFileExtension(origName);
 		String origNameNoExtension = getNameWithoutExtension(origName);
 		String uuid = UUID.randomUUID().toString().replace("-", "");
 		return String.format("%s-%s.%s", origNameNoExtension, uuid , ext);
@@ -487,7 +522,7 @@ public class FileService {
 
 
 	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName,
-									  Metadata metadata) throws IOException, MetadataException {
+									  Metadata metadata) throws IOException {
 		int rotation = getImageRotation(metadata);
 		var imgOutStream = new ByteArrayOutputStream();
 		Thumbnails.of(image)
