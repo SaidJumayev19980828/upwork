@@ -302,7 +302,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		for (ProductVariantsEntity v : productEntity.getProductVariants()) {
 			boolean include = false;
 			for (VariantFeatureValueEntity value : v.getFeatureValues()) {
-				if (mainFeatures.get(value.getFeature()) == null || !mainFeatures.get(value.getFeature()).equals(value.getValue())) {
+				if (mainFeatures.get(value.getFeature()) != null && mainFeatures.get(value.getFeature()).equals(value.getValue())) {
 					include = true;
 					break;
 				}
