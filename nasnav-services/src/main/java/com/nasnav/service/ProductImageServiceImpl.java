@@ -300,10 +300,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.filter(v -> v.getFeature().getLevel() > 0)
 				.collect(toMap(VariantFeatureValueEntity::getFeature, VariantFeatureValueEntity::getValue));
 		for (ProductVariantsEntity v : productEntity.getProductVariants()) {
-			boolean include = true;
+			boolean include = false;
 			for (VariantFeatureValueEntity value : v.getFeatureValues()) {
 				if (mainFeatures.get(value.getFeature()) == null || !mainFeatures.get(value.getFeature()).equals(value.getValue())) {
-					include = false;
+					include = true;
 					break;
 				}
 			}
