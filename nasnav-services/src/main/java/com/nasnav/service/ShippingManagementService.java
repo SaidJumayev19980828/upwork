@@ -12,14 +12,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public interface ShippingManagementService {
 
-	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId, String paymentType, BigDecimal codValue);
+	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId, String paymentMethodId, String shippingServiceId);
 	void registerToShippingService(ShippingServiceRegistration registration);
 	void unregisterFromShippingService(String serviceId);
 	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId);
@@ -39,6 +38,6 @@ public interface ShippingManagementService {
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
 	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
 	String getTrackingUrl(Long orderId);
-	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress, String paymentType, BigDecimal codValue);
+	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress, String paymentMethodId, String shippingServiceId);
 
 }

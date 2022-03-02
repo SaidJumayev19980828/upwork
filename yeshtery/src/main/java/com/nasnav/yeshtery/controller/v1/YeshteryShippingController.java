@@ -28,8 +28,8 @@ public class YeshteryShippingController {
     @GetMapping(path = "/offers", produces= APPLICATION_JSON_VALUE)
     public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
                                                     @RequestParam("customer_address") Long customerAddress,
-                                                    @RequestParam("payment_type") String paymentType,
-                                                    @RequestParam("COD_Value") BigDecimal codValue) {
-        return shippingService.getYeshteryShippingOffers(customerAddress, paymentType, codValue);
+                                                    @RequestParam("payment_method_id") String paymentMethodId,
+                                                    @RequestParam("shipping_service_id") String shippingServiceId) {
+        return shippingService.getYeshteryShippingOffers(customerAddress, paymentMethodId, shippingServiceId);
     }
 }

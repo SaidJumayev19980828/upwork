@@ -20,11 +20,10 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.service.model.common.ParameterType.STRING;
+import static com.nasnav.shipping.model.DeliveryType.NORMAL_DELIVERY;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static com.nasnav.shipping.services.mylerz.DeliveryType.NEXT_DAY_DELIVERY;
 import static java.lang.String.format;
@@ -33,6 +32,7 @@ import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -48,6 +48,8 @@ public class MylerzShippingService implements ShippingService {
 
     @Autowired
     private ShippingAreaRepository shippingAreaRepo;
+
+    private static final String ERR_OUT_OF_SERVICE = "Sorry! We are currently unable to ship to your area!";
 
     private List<ServiceParameter> serviceParams;
     private Map<String,String> paramMap;
@@ -186,9 +188,10 @@ public class MylerzShippingService implements ShippingService {
     }
 
     private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(List<ShippingDetails> detailsList) {
-        String shopId = getSourceShopId(detailsList);
-        String deliveryAreaId = getDeliveryAreaId(getDestinationAreaId(detailsList));
-        BigDecimal codValue = detailsList.stream().findFirst().map(ShippingDetails::getCodValue).orElse(ZERO);
+        ShippingDetails details = detailsList.stream().findFirst().orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0010));
+        String shopId = details.getShopId() + "";
+        String deliveryAreaId = getDeliveryAreaId(details.getDestination().getArea());
+        BigDecimal codValue = getTotalCartPrice(detailsList);
         BigDecimal weight = getShipmentItemsWeight(detailsList);
 
         DeliveryFeeRequest request = new DeliveryFeeRequest();
@@ -198,8 +201,14 @@ public class MylerzShippingService implements ShippingService {
         request.setServiceCode(NEXT_DAY_DELIVERY.getValue());
         request.setServiceCategoryCode("DELIVERY");
         request.setServiceTypeCode("CTD");
-        request.setPaymentTypeCode();
         request.setWeight(weight.doubleValue());
+        if (Objects.equals(details.getPaymentMethodId(), "cod")) {
+            request.setPaymentTypeCode("COD");
+            request.setCodValue(codValue);
+        } else {
+            request.setPaymentTypeCode("PP");
+            request.setCodValue(ZERO);
+        }
         return of(request);
     }
 
@@ -218,22 +227,13 @@ public class MylerzShippingService implements ShippingService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$SHP$0006, areaId));
     }
 
-    private String getSourceShopId(List<ShippingDetails> detailsList) {
-        Long shopId = detailsList
-                .stream()
-                .findFirst()
-                .map(ShippingDetails::getShopId)
-                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0013, SERVICE_ID));
-        return shopId + "";
-    }
-
-    private Long getDestinationAreaId(List<ShippingDetails> detailsList) {
+    private BigDecimal getTotalCartPrice(List<ShippingDetails> detailsList) {
         return detailsList
                 .stream()
-                .findFirst()
-                .map(ShippingDetails::getDestination)
-                .map(ShippingAddress::getArea)
-                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0013, SERVICE_ID));
+                .map(ShippingDetails::getItems)
+                .flatMap(List::stream)
+                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+                .reduce(ZERO, BigDecimal::add);
     }
 
     private List<Long> getStocks(List<ShippingDetails> details) {
@@ -250,7 +250,7 @@ public class MylerzShippingService implements ShippingService {
     }
 
     private Mono<ShippingOffer> doCreateShippingOffer(List<Shipment> shipments, Integer ordersNum){
-        ShippingServiceInfo serviceInfo = createServiceInfoWithDeliveryOptions();
+        ShippingServiceInfo serviceInfo = getServiceInfo();
         if(isAnyOrderHadNoShipment(shipments, ordersNum)){
             return Mono.just(new ShippingOffer(serviceInfo, ERR_OUT_OF_SERVICE));
         }else{
@@ -258,9 +258,16 @@ public class MylerzShippingService implements ShippingService {
         }
     }
 
+    private boolean isAnyOrderHadNoShipment(List<Shipment> shipments, Integer ordersNum) {
+        return isNull(shipments) || !Objects.equals(shipments.size(), ordersNum);
+    }
+
     @Override
-    public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
-        return null;
+    public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> shipments) {
+
+        return Flux
+                .fromIterable(shipments)
+                .flatMap(this::requestSingleShipment);
     }
 
     @Override
@@ -271,6 +278,43 @@ public class MylerzShippingService implements ShippingService {
     @Override
     public void validateShipment(List<ShippingDetails> items) {
 
+    }
+
+    private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+        String serverUrl = getServiceParam(SERVER_URL);
+        MylerzWebClient client = new MylerzWebClient(serverUrl);
+        ShipmentRequest request = createShipmentRequest(shipment);
+        return null;/*
+                client
+                        .submitShipmentRequest(AUTH_TOKEN, request)
+                        .flatMap(this::throwExceptionIfNotOk)
+                        .flatMap(res -> res.bodyToMono(ShipmentResponse.class))
+                        .flatMap(this::throwErrorForFailureResponse)
+                        .flatMap(response -> getAirwayBill(client, response))
+                        .map(res -> createShipmentTracker(shipment, res));*/
+    }
+
+    private ShipmentRequest createShipmentRequest(ShippingDetails shipment) {
+        ShipmentRequest request = new ShipmentRequest();
+        if (Objects.equals(shipment.getCodValue(), null)) {
+            request.setPaymentType("prepaid");
+        } else {
+            request.setPaymentType("pay on delivery");
+        }
+        request.setDeliveryType(NORMAL_DELIVERY.getValue());
+        request.setOrderNo(shipment.getMetaOrderId()+"-"+shipment.getSubOrderId());
+/*
+        request = setSenderInfo(shipment, request);
+        request = setRecipientInfo(shipment, request);
+
+        List<ShipmentItem> shipmentItems =
+                shipment.getItems()
+                        .stream()
+                        .map(this::createShipmentItems)
+                        .collect(toList());
+        request.setShipmentItems(shipmentItems);
+*/
+        return request;
     }
 
     @Override

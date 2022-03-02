@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -22,9 +21,9 @@ public class ShippingController {
 	@GetMapping(path = "/offers", produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String userToken,
 													@RequestParam("customer_address") Long customerAddress,
-													@RequestParam("payment_type") String paymentType,
-													@RequestParam("COD_Value") BigDecimal codValue) {
+													@RequestParam("payment_method_id") String paymentMethodId,
+													@RequestParam("shipping_service_id") String shippingServiceId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shippingService.getShippingOffers(customerAddress, orgId, paymentType, codValue);
+		return shippingService.getShippingOffers(customerAddress, orgId, paymentMethodId, shippingServiceId);
 	}
 }
