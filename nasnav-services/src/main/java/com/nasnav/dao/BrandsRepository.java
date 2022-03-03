@@ -78,4 +78,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" where org.id = :orgId and org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
 	PageImpl<Organization_BrandRepresentationObject> findByYeshteryOrganization(@Param("orgId") Long orgId,
 																				Pageable page);
+
+	List<BrandsEntity> findByIdInAndRemoved(Set<Long> brands, int removed);
 }
