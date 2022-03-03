@@ -109,7 +109,7 @@ public class YeshteryUserController {
     }
 
     @GetMapping(value = "subscribe/activate")
-    public RedirectView activateSubscribedEmail(@RequestHeader(name = "User-Token", required = false) String token,
+    public RedirectView activateSubscribedEmail(@RequestParam String token,
                                                 @RequestParam("org_id") Long orgId) {
         return userService.activateYeshterySubscribedEmail(token, orgId);
     }
