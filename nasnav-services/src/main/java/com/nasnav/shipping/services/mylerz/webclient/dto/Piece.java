@@ -14,4 +14,8 @@ public class Piece {
     private String specialNotes;
     @JsonProperty("Dimensions")
     private String dimensions;
+
+    public Piece(Long pieceNo) {
+        this.pieceNo = pieceNo;
+    }
 }

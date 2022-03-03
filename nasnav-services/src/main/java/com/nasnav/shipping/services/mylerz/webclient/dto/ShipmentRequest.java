@@ -14,7 +14,7 @@ public class ShipmentRequest {
     @JsonProperty("PickupDueDate")
     private LocalDateTime pickupDate;
     @JsonProperty("Package_Serial")
-    private String serial;
+    private Long serial;
     @JsonProperty("Description")
     private String description;
     @JsonProperty("Total_Weight")

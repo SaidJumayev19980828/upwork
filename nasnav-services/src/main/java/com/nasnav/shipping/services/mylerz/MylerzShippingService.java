@@ -1,14 +1,15 @@
 package com.nasnav.shipping.services.mylerz;
 
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.CityRepository;
+import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.ShippingAreaRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.*;
 import com.nasnav.shipping.services.mylerz.webclient.MylerzWebClient;
-import com.nasnav.shipping.services.mylerz.webclient.dto.AuthenticationResponse;
-import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeRequest;
-import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeResponse;
+import com.nasnav.shipping.services.mylerz.webclient.dto.*;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +19,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.STRING;
-import static com.nasnav.shipping.model.DeliveryType.NORMAL_DELIVERY;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static com.nasnav.shipping.services.mylerz.DeliveryType.NEXT_DAY_DELIVERY;
 import static java.lang.String.format;
@@ -48,6 +49,8 @@ public class MylerzShippingService implements ShippingService {
 
     @Autowired
     private ShippingAreaRepository shippingAreaRepo;
+    @Autowired
+    private CountryRepository countryRepo;
 
     private static final String ERR_OUT_OF_SERVICE = "Sorry! We are currently unable to ship to your area!";
 
@@ -284,37 +287,76 @@ public class MylerzShippingService implements ShippingService {
         String serverUrl = getServiceParam(SERVER_URL);
         MylerzWebClient client = new MylerzWebClient(serverUrl);
         ShipmentRequest request = createShipmentRequest(shipment);
-        return null;/*
-                client
-                        .submitShipmentRequest(AUTH_TOKEN, request)
-                        .flatMap(this::throwExceptionIfNotOk)
-                        .flatMap(res -> res.bodyToMono(ShipmentResponse.class))
-                        .flatMap(this::throwErrorForFailureResponse)
-                        .flatMap(response -> getAirwayBill(client, response))
-                        .map(res -> createShipmentTracker(shipment, res));*/
+        return client
+                .submitShipmentRequest(AUTH_TOKEN, asList(request))
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(ShipmentResponse.class))
+                .flatMap(this::throwErrorForFailureResponse)
+                .flatMap(response -> getAirwayBill(client, response))
+                .map(res -> createShipmentTracker(shipment, res));
     }
 
-    private ShipmentRequest createShipmentRequest(ShippingDetails shipment) {
-        ShipmentRequest request = new ShipmentRequest();
-        if (Objects.equals(shipment.getCodValue(), null)) {
-            request.setPaymentType("prepaid");
-        } else {
-            request.setPaymentType("pay on delivery");
+    private Mono<ShipmentResponse> throwErrorForFailureResponse(ShipmentResponse shipmentResponse) {
+        if(Objects.equals(shipmentResponse.transStatus, "Failed")){
+            RuntimeException ex = new RuntimeBusinessException( INTERNAL_SERVER_ERROR, SHP$SRV$0004, SERVICE_ID, shipmentResponse.toString());
+            logger.error(ex,ex);
+            return Mono.error(ex);
         }
-        request.setDeliveryType(NORMAL_DELIVERY.getValue());
-        request.setOrderNo(shipment.getMetaOrderId()+"-"+shipment.getSubOrderId());
-/*
-        request = setSenderInfo(shipment, request);
-        request = setRecipientInfo(shipment, request);
+        return Mono.just(shipmentResponse);
+    }
 
-        List<ShipmentItem> shipmentItems =
-                shipment.getItems()
-                        .stream()
-                        .map(this::createShipmentItems)
-                        .collect(toList());
-        request.setShipmentItems(shipmentItems);
-*/
+
+    private ShipmentRequest createShipmentRequest(ShippingDetails shipment) {
+
+        List<Piece> items = shipment.getItems().stream().map(item -> new Piece(item.getStockId())).collect(toList());
+
+        ShipmentRequest request = new ShipmentRequest();
+        setSenderInfo(shipment, request);
+        setRecipientInfo(shipment, request);
+        request.setPieces(items);
+
         return request;
+    }
+
+    private void setSenderInfo(ShippingDetails shipment, ShipmentRequest request) {
+        BigDecimal totalWeight = shipment
+                .getItems()
+                .stream()
+                .map(ShipmentItems::getWeight)
+                .map(weight -> ofNullable(weight).orElse(ZERO))
+                .reduce(ZERO, BigDecimal::add);
+        LocalDateTime now = LocalDateTime.now();
+        request.setShopName(shipment.getShopId()+"");
+        request.setPickupDate(now);
+        request.setSerial(shipment.getSubOrderId());
+        request.setDescription("A package with " + shipment.getItems().size()+" items");
+        request.setTotalWeight(totalWeight.doubleValue());
+        request.setServiceType("CTD");
+        request.setService("ND");
+        request.setServiceDate(now.plusDays(1));
+        request.setServiceCategory("DELIVERY");
+        if (Objects.equals(shipment.getCodValue(), null)) {
+            request.setPaymentType("PP");
+            request.setCodValue(ZERO);
+        } else {
+            request.setPaymentType("COD");
+            request.setCodValue(shipment.getCodValue());
+        }
+    }
+
+    private void setRecipientInfo(ShippingDetails shipment, ShipmentRequest request) {
+        ShipmentReceiver receiver = shipment.getReceiver();
+        request.setCustomerName(receiver.getFirstName()+" "+receiver.getLastName());
+        request.setMobileNo(receiver.getPhone());
+
+        ShippingAddress destination = shipment.getDestination();
+        try {
+            request.setBuildingNo(Integer.parseInt(destination.getBuildingNumber()));
+        } catch (NumberFormatException e) {}
+        request.setStreet(destination.getAddressLine1());
+        request.setApartmentNo(destination.getFlatNumber());
+        request.setCountry(countryRepo.findById(destination.getCountry()).get().getName());
+        request.setNeighborhood(getDeliveryAreaId(destination.getArea()));
     }
 
     @Override
