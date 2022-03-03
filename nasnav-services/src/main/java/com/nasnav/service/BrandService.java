@@ -98,7 +98,7 @@ public class BrandService {
                 .collect(toList());
     }
 
-    //@CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
+
     public void changeBrandsPriority(List<BrandIdAndPriority> dto) {
 
         //Long orgId = securityService.getCurrentUserOrganizationId();
