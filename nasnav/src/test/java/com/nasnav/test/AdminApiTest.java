@@ -2,14 +2,18 @@ package com.nasnav.test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
 import com.nasnav.NavBox;
+import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dto.AreasRepObj;
 import com.nasnav.dto.CitiesRepObj;
 import com.nasnav.dto.CountriesRepObj;
 import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
+import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationDomainsEntity;
 import com.nasnav.service.AddressService;
 import com.nasnav.service.AdminService;
@@ -26,18 +30,17 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -63,6 +66,8 @@ public class AdminApiTest {
     private ObjectMapper jsonMapper;
     @Autowired
     private AdminService adminService;
+    @Autowired
+    private BrandsRepository brandsRepository;
 
 
     @Before
@@ -70,6 +75,36 @@ public class AdminApiTest {
         adminService.invalidateCaches();
     }
 
+    @Test
+    public void changeBrandsPriorityTest(){
+
+        List<BrandIdAndPriority> brands = new ArrayList<>();
+
+        brands.add(new BrandIdAndPriority(101L, 2));
+        brands.add(new BrandIdAndPriority(102L, 3));
+        brands.add(new BrandIdAndPriority(103L, 4));
+        brands.add(new BrandIdAndPriority(104L, 1));
+
+        String requestBody =
+                    json()
+                        .put("", brands)
+                        .toString();
+
+
+        String trimmedString = requestBody.substring(4, requestBody.length() - 1);
+
+        HttpEntity<?> json = getHttpEntity(trimmedString, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/admin/priority/brands", json, Void.class);
+
+        Iterable<BrandsEntity> allBrands = brandsRepository.findAll();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        for (BrandsEntity brand : allBrands){
+            Integer priority = brands.stream().filter(b -> b.getId().equals(brand.getId())).findFirst().get().getPriority();
+
+            assertEquals(priority, brand.getPriority());
+        }
+    }
 
     @Test
     public void createDomainTest() {
