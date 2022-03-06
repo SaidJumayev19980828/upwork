@@ -1,7 +1,5 @@
 package com.nasnav.shipping.services.mylerz;
 
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.CityRepository;
 import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.ShippingAreaRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -10,6 +8,8 @@ import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.*;
 import com.nasnav.shipping.services.mylerz.webclient.MylerzWebClient;
 import com.nasnav.shipping.services.mylerz.webclient.dto.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +27,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.ShippingServiceType.DELIVERY;
 import static com.nasnav.shipping.services.mylerz.DeliveryType.NEXT_DAY_DELIVERY;
+import static com.nasnav.shipping.utils.ShippingUtils.createAwbFileName;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -297,7 +298,7 @@ public class MylerzShippingService implements ShippingService {
     }
 
     private Mono<ShipmentResponse> throwErrorForFailureResponse(ShipmentResponse shipmentResponse) {
-        if(Objects.equals(shipmentResponse.transStatus, "Failed")){
+        if(shipmentResponse.getIsErrorState()){
             RuntimeException ex = new RuntimeBusinessException( INTERNAL_SERVER_ERROR, SHP$SRV$0004, SERVICE_ID, shipmentResponse.toString());
             logger.error(ex,ex);
             return Mono.error(ex);
@@ -371,13 +372,49 @@ public class MylerzShippingService implements ShippingService {
 
     @Override
     public Mono<String> getAirwayBill(String airwayBillNumber) {
-        return null;
+        String serverUrl = getServiceParam(SERVER_URL);
+        MylerzWebClient client = new MylerzWebClient(serverUrl);
+        Base64.Encoder encoder = Base64.getEncoder();
+        return client
+                .getAWB(AUTH_TOKEN, airwayBillNumber)
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(AWBResponse.class))
+                .map(AWBResponse::getValue)
+                .map(String::getBytes)
+                .map(encoder::encodeToString);
+    }
+
+    private Mono<ShipmentResponseWithAwb> getAirwayBill(MylerzWebClient client, ShipmentResponse response) {
+        Base64.Encoder encoder = Base64.getEncoder();
+        return client
+                .getAWB(AUTH_TOKEN, response.getDetails().getPackages().stream().findFirst().get().getBarCode())
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(AWBResponse.class))
+                .map(AWBResponse::getValue)
+                .map(String::getBytes)
+                .map(encoder::encodeToString)
+                .map(airwayBill -> new ShipmentResponseWithAwb(response, airwayBill));
+    }
+
+    private ShipmentTracker createShipmentTracker(ShippingDetails shipment, ShipmentResponseWithAwb res) {
+        var trackNumber = res.getResponse().getDetails().getPackages().get(0).getBarCode();
+        var tracker = new ShipmentTracker(res.getResponse().getDetails().getPackages().get(0).getBarCode(), trackNumber, res.getAirwayBill(), shipment);
+        tracker.setAirwayBillFileMime(AWB_MIME);
+        tracker.setAirwayBillFileName(createAwbFileName(shipment, trackNumber));
+        return tracker;
     }
 
     @Override
     public String getTrackingUrl(String trackingNumber) {
         return null;
     }
+}
+
+@Data
+@AllArgsConstructor
+class ShipmentResponseWithAwb {
+    private ShipmentResponse response;
+    private String airwayBill;
 }
 
 enum DeliveryType {
