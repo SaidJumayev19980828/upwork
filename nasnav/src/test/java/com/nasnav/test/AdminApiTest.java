@@ -100,7 +100,7 @@ public class AdminApiTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         for (BrandsEntity brand : allBrands){
-            Integer priority = brands.stream().filter(b -> b.getId() == brand.getId()).collect(Collectors.toList()).get(0).getPriority();
+            Integer priority = brands.stream().filter(b -> b.getId().equals(brand.getId())).findFirst().get().getPriority();
 
             assertEquals(priority, brand.getPriority());
         }

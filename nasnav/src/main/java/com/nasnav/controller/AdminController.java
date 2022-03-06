@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -37,6 +38,8 @@ public class AdminController {
 	private AdminService adminService;
 	@Autowired
 	private SearchService searchService;
+	@Autowired
+	private BrandService brandService;
 
     @PostMapping(value = "organization", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public OrganizationResponse createOrganization(@RequestHeader (name = "User-Token", required = false) String userToken,
@@ -160,5 +163,11 @@ public class AdminController {
 	@DeleteMapping(value = "search/indices")
 	public Mono<Void> deleteSearchIndices(@RequestHeader (name = "User-Token", required = false) String userToken) {
 		return searchService.deleteAllIndices();
+	}
+
+	@PostMapping(value = "priority/brands", consumes = APPLICATION_JSON_VALUE)
+	public void bulkUpdateBrandsPriority(@RequestHeader(name = "User-Token", required = false) String userToken,
+										 @RequestBody List<BrandIdAndPriority> brandIdAndPriorityList) {
+		brandService.changeBrandsPriority(brandIdAndPriorityList);
 	}
 }
