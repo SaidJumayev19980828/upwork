@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -26,7 +27,9 @@ public class YeshteryShippingController {
 
     @GetMapping(path = "/offers", produces= APPLICATION_JSON_VALUE)
     public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("customer_address") Long customerAddress) {
-        return shippingService.getYeshteryShippingOffers(customerAddress);
+                                                    @RequestParam("customer_address") Long customerAddress,
+                                                    @RequestParam("payment_method_id") String paymentMethodId,
+                                                    @RequestParam("shipping_service_id") String shippingServiceId) {
+        return shippingService.getYeshteryShippingOffers(customerAddress, paymentMethodId, shippingServiceId);
     }
 }
