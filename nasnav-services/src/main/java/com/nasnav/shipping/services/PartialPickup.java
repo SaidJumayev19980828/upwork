@@ -121,7 +121,8 @@ public class PartialPickup implements ShippingService {
                         .stream()
                         .map(ShipmentItems::getStockId)
                         .collect(toList());
-        return new Shipment(fee, eta, stocks ,null);
+        Long orderId = shippingDetails.getSubOrderId();
+        return new Shipment(fee, eta, stocks ,orderId);
     }
 
 

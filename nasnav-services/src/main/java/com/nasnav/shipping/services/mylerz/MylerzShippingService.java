@@ -2,6 +2,7 @@ package com.nasnav.shipping.services.mylerz;
 
 import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.ShippingAreaRepository;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -35,8 +37,7 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
+import static java.util.Optional.*;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -66,8 +67,6 @@ public class MylerzShippingService implements ShippingService {
     public static final String USER_NAME = "USER_NAME";
     public static final String PASSWORD = "PASSWORD";
     public static final String GRANT_TYPE = "GRANT_TYPE";
-    public static final String COD_VALUE = "COD_VALUE";
-    public static final String DELIVERY_TYPE = "DELIVERY_TYPE";
 
     private static List<Parameter> SERVICE_PARAM_DEFINITION =
             asList(new Parameter(USER_NAME, STRING)
@@ -160,20 +159,19 @@ public class MylerzShippingService implements ShippingService {
 
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-        Map<Long, List<ShippingDetails>> shopsAndItemsMap = items.stream().collect(groupingBy(ShippingDetails::getShopId));
         return Flux
-                .fromIterable(shopsAndItemsMap.values())
+                .fromIterable(items)
                 .flatMap(this::createShipmentOffer)
                 .collectList()
                 .flatMap(shipments -> doCreateShippingOffer(shipments, items.size()));
     }
 
-    private Mono<Shipment> createShipmentOffer(List<ShippingDetails> detailsList) {
+    private Mono<Shipment> createShipmentOffer(ShippingDetails details) {
         Mono<ShippingEta> etaMono = getShippingEta();
-        List<Long> stocks = getStocks(detailsList);
+        List<Long> stocks = getStocks(details);
         String serverUrl = getServiceParam(SERVER_URL);
         MylerzWebClient client = new MylerzWebClient(serverUrl);
-        Optional<DeliveryFeeRequest> request = createDeliveryFeeRequest(detailsList);
+        Optional<DeliveryFeeRequest> request = createDeliveryFeeRequest(details);
         if (!request.isPresent()) {
             return Mono.empty();
         }
@@ -181,22 +179,34 @@ public class MylerzShippingService implements ShippingService {
                 .calculateDeliveryFee(AUTH_TOKEN, request.get())
                 .flatMap(this::throwExceptionIfNotOk)
                 .flatMap(res -> res.bodyToMono(DeliveryFeeResponse.class))
+                .flatMap(this::throwErrorForFailureResponse)
                 .map(this::getTotalShippingPrice)
                 .zipWith(etaMono)
-                .map(feeAndEta -> new Shipment(feeAndEta.getT1(), feeAndEta.getT2(), stocks, null))
+                .map(feeAndEta -> new Shipment(feeAndEta.getT1(), feeAndEta.getT2(), stocks, details.getSubOrderId()))
                 .onErrorResume(err -> {logger.error(err,err); return Mono.empty();});
     }
 
-    private BigDecimal getTotalShippingPrice(DeliveryFeeResponse res) {
-        return new BigDecimal(String.valueOf(res.getCharges())).add(res.getShippingFees()).add(res.getVat());
+    private Mono<DeliveryFeeResponse> throwErrorForFailureResponse(DeliveryFeeResponse response) {
+        if(response.getIsErrorState()){
+            RuntimeException ex = new RuntimeBusinessException( INTERNAL_SERVER_ERROR, SHP$SRV$0004, SERVICE_ID, response.toString());
+            logger.error(ex,ex);
+            return Mono.error(ex);
+        }
+        return Mono.just(response);
     }
 
-    private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(List<ShippingDetails> detailsList) {
-        ShippingDetails details = detailsList.stream().findFirst().orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0010));
+    private BigDecimal getTotalShippingPrice(DeliveryFeeResponse res) {
+        DeliveryFeeDetails details = res.getDetails();
+        return new BigDecimal(String.valueOf(details.getCharges()))
+                .add(details.getShippingFees())
+                .add(details.getVat());
+    }
+
+    private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(ShippingDetails details) {
         String shopId = details.getShopId() + "";
         String deliveryAreaId = getDeliveryAreaId(details.getDestination().getArea());
-        BigDecimal codValue = getTotalCartPrice(detailsList);
-        BigDecimal weight = getShipmentItemsWeight(detailsList);
+        BigDecimal codValue = getTotalCartPrice(details);
+        BigDecimal weight = getShipmentItemsWeight(details);
 
         DeliveryFeeRequest request = new DeliveryFeeRequest();
         request.setShopName(shopId);
@@ -216,11 +226,10 @@ public class MylerzShippingService implements ShippingService {
         return of(request);
     }
 
-    private BigDecimal getShipmentItemsWeight(List<ShippingDetails> detailsList) {
-        return detailsList
+    private BigDecimal getShipmentItemsWeight(ShippingDetails details) {
+        return details
+                .getItems()
                 .stream()
-                .map(ShippingDetails::getItems)
-                .flatMap(List::stream)
                 .map(ShipmentItems::getWeight)
                 .map(weight -> ofNullable(weight).orElse(ZERO))
                 .reduce(ZERO, BigDecimal::add);
@@ -231,20 +240,18 @@ public class MylerzShippingService implements ShippingService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$SHP$0006, areaId));
     }
 
-    private BigDecimal getTotalCartPrice(List<ShippingDetails> detailsList) {
-        return detailsList
+    private BigDecimal getTotalCartPrice(ShippingDetails details) {
+        return details
+                .getItems()
                 .stream()
-                .map(ShippingDetails::getItems)
-                .flatMap(List::stream)
                 .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
                 .reduce(ZERO, BigDecimal::add);
     }
 
-    private List<Long> getStocks(List<ShippingDetails> details) {
+    private List<Long> getStocks(ShippingDetails details) {
         return details
+                .getItems()
                 .stream()
-                .map(ShippingDetails::getItems)
-                .flatMap(List::stream)
                 .map(ShipmentItems::getStockId)
                 .collect(toList());
     }
@@ -281,7 +288,10 @@ public class MylerzShippingService implements ShippingService {
 
     @Override
     public void validateShipment(List<ShippingDetails> items) {
-
+        createShippingOffer(items)
+                .map(offer -> new ShipmentValidation(true))
+                .blockOptional(Duration.ofSeconds(30))
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010));
     }
 
     private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
@@ -362,12 +372,16 @@ public class MylerzShippingService implements ShippingService {
 
     @Override
     public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) {
-        return null;
+        ShipmentStatusData status = new ShipmentStatusData();
+        status.setOrgId(orgId);
+        status.setServiceId(serviceId);
+        status.setState(ShippingStatus.valueOf(params).getValue());
+        return status;
     }
 
     @Override
     public Optional<Long> getPickupShop(String additionalParametersJson) {
-        return Optional.empty();
+        return empty();
     }
 
     @Override
