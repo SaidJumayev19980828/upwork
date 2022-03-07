@@ -56,6 +56,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -1561,9 +1562,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
-		String uri = ofNullable(mapEntry.getValue())
-				.map(List::stream)
-				.flatMap(s -> s.findFirst())
+		String uri = mapEntry.getValue()
+				.stream()
+				.max(comparing(ProductImageDTO::getPriority))
 				.map(ProductImageDTO::getImagePath)
 				.orElse(null);
 
