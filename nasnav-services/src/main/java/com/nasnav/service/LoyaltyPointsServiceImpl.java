@@ -95,7 +95,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByIdAndOrganization_IdAndIsActive(dto.getId(), orgId, TRUE)
                 .orElseGet(LoyaltyPointConfigEntity::new);
         // don't delete a config just make it inactive and create new one
-        if(entity.getId() > 0 ) {
+        if(entity.getId() != null && entity.getId() > 0 ) {
             entity.setIsActive(false);
             loyaltyPointConfigRepo.save(entity);
             if(dto.getIsActive() == null) {
@@ -140,7 +140,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             }
         } else {
             if (!loyaltyPointConfigRepo.existsByIdAndOrganization_IdAndIsActive(dto.getId(), orgId, TRUE)) {
-                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, dto.getId());
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0018, dto.getId(), orgId);
             }
         }
     }
