@@ -251,8 +251,19 @@ public class OrderServiceImpl implements OrderService {
 			metaOrder.setStatus(orderStatus.getValue());
 			metaOrderRepo.save(metaOrder);
 		}
+		updateYeshteryMetaOrderIfExists(metaOrder, orderStatus);
 	}
 
+	private void updateYeshteryMetaOrderIfExists(MetaOrderEntity metaOrder, OrderStatus orderStatus) {
+		Optional<MetaOrderEntity> yeshteryMetaOrderOptional = metaOrderRepo.findBySubMetaOrder_Id(metaOrder.getId());
+		if(yeshteryMetaOrderOptional.isPresent()) {
+			MetaOrderEntity yeshteryMetaOrder = yeshteryMetaOrderOptional.get();
+			if (isAllOtherSubMetaOrdersHaveStatus(metaOrder.getId(), yeshteryMetaOrder.getSubMetaOrders(), orderStatus)) {
+				yeshteryMetaOrder.setStatus(orderStatus.getValue());
+				metaOrderRepo.save(yeshteryMetaOrder);
+			}
+		}
+	}
 
 
 	private OrdersEntity getAndValidateOrdersEntityForStatusUpdate(OrderJsonDto orderJson, EmployeeUserEntity empUser, List<String> employeeUserRoles) {
@@ -1553,6 +1564,13 @@ public class OrderServiceImpl implements OrderService {
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 
+	private boolean isAllOtherSubMetaOrdersHaveStatus(Long metaOrderId, Set<MetaOrderEntity> subMetaOrders, OrderStatus status) {
+		return subMetaOrders
+				.stream()
+				.filter(ord -> !Objects.equals(ord.getId(), metaOrderId))
+				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
+	}
+
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {
 		if (metaOrderId == null) {
@@ -1769,11 +1787,6 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public String trackOrder(Long orderId) {
 		return shippingMgrService.getTrackingUrl(orderId);
-	}
-
-	@Override
-	public void updateExistingYeshteryOrder(OrderJsonDto orderJson) {
-		updateExistingOrder(orderJson);
 	}
 
 
