@@ -66,6 +66,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     @Autowired
     private LoyaltyPinsRepository loyaltyPinsRepository;
 
+    @Autowired
+    private LoyaltyTierRepository loyaltyTierRepository;
+
     @Override
     public LoyaltyPointsUpdateResponse updateLoyaltyPointType(LoyaltyPointTypeDTO dto) {
         if (isBlankOrNull(dto.getName())) {
@@ -119,6 +122,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             entity.setIsActive(dto.getIsActive());
         } else {
             entity.setIsActive(true);
+        }
+        if(dto.getDefaultTier() != null && dto.getDefaultTier().getId() != null) {
+            Optional<LoyaltyTierEntity> tier = loyaltyTierRepository.findById(dto.getDefaultTier().getId());
+            if(tier.isEmpty()) {
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0019, dto.getDefaultTier().getId());
+            }
+             entity.setDefaultTier(tier.get());
         }
         entity.setOrganization(org);
         return entity;
