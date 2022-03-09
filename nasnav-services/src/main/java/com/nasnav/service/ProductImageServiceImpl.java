@@ -1564,7 +1564,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
 		String uri = mapEntry.getValue()
 				.stream()
-				.max(comparing(ProductImageDTO::getPriority))
+				.min(comparing(ProductImageDTO::getPriority))
 				.map(ProductImageDTO::getImagePath)
 				.orElse(null);
 
