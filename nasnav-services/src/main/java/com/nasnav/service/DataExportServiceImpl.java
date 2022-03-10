@@ -181,7 +181,7 @@ public class DataExportServiceImpl implements DataExportService{
 				.map(id -> featuresMap.get(id))
 				.orElse(emptyMap());
 		for(Map.Entry e : emptyFeatureValuesMap.entrySet()) {
-			if (!features.containsKey(e.getKey()))
+			if (!features.containsKey(e.getKey()) && e.getValue() != null)
 				features.put(e.getKey().toString(), e.getValue().toString());
 		}
 		
