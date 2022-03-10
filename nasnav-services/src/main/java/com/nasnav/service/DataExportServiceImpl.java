@@ -175,14 +175,14 @@ public class DataExportServiceImpl implements DataExportService{
 	private void setFeatures(CsvRow row, ProductExportedData productData,
 							 Map<Long, Map<String, String>> featuresMap,
 							 Map<String, String> emptyFeatureValuesMap) {
-		var features =
+		Map<String, String> features =
 				ofNullable(productData)
 				.map(ProductExportedData::getVariantId)
-				.map(id -> featuresMap.get(id))
+				.map(featuresMap::get)
 				.orElse(emptyMap());
-		for(Map.Entry e : emptyFeatureValuesMap.entrySet()) {
-			if (!features.containsKey(e.getKey()) && e.getValue() != null)
-				features.put(e.getKey().toString(), e.getValue().toString());
+		for(Map.Entry<String, String> e : emptyFeatureValuesMap.entrySet()) {
+			if (!features.containsKey(e.getKey()) && !e.getValue().isEmpty())
+				features.put(e.getKey(), e.getValue());
 		}
 		
 		row.setFeatures(features);
@@ -194,7 +194,7 @@ public class DataExportServiceImpl implements DataExportService{
 		Map<String,String> features = new  HashMap<>();
 		for(var key : json.keySet()) {
 			Optional.of(key)
-			.map(k -> Integer.valueOf(k))
+			.map(Integer::valueOf)
 			.map(featuresMap::get)
 			.map(ProductFeaturesEntity::getName)
 			.ifPresent( name -> features.put(name, json.getString(key)));
