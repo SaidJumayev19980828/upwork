@@ -77,7 +77,6 @@ public interface OrderService {
 
 	Integer countOrdersByUserId(Long userId);
 	String trackOrder(Long orderId);
-	void updateExistingYeshteryOrder(OrderJsonDto orderJson);
 
 	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 

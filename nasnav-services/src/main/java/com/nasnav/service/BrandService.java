@@ -91,17 +91,15 @@ public class BrandService {
 
     }
 
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
-        return brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0)
+    public List<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority){
+        return brandsRepository.findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(orgIds, 0, minPriority)
                 .stream()
                 .map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                 .collect(toList());
     }
 
-    //@CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
-    public void changeBrandsPriority(List<BrandIdAndPriority> dto) {
 
-        //Long orgId = securityService.getCurrentUserOrganizationId();
+    public void changeBrandsPriority(List<BrandIdAndPriority> dto) {
         Map<Long, Integer> brandsPrioritiesMap = dto.stream().collect(toMap(BrandIdAndPriority::getId, BrandIdAndPriority::getPriority));
         List<BrandsEntity> entities = brandsRepository.findByIdInAndRemoved( brandsPrioritiesMap.keySet(), 0);
 

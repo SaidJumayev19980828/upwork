@@ -41,19 +41,6 @@ public class YeshteryOrdersController {
 
     @Autowired
 	private OrderReturnService returnService;
-	
-    @Operation(description =  "Update an order status", summary = "orderStatusUpdate")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "Order updated"),
-            @ApiResponse(responseCode = " 401" ,description = "Unauthorized (invalid User-Token)"),
-            @ApiResponse(responseCode = " 406" ,description = "Invalid data"),
-    })
-    @PostMapping(value = "status/update")
-    public void updateOrder(
-            @RequestHeader(name = "User-Token", required = false) String userToken,
-            @RequestBody OrderJsonDto orderJson) {
-    	orderService.updateExistingOrder(orderJson);
-    }
 
 	@Operation(description =  "Get information about order", summary = "orderInfo")
 	@ApiResponses(value = {@ApiResponse(responseCode = " 200" ,description = "OK"),

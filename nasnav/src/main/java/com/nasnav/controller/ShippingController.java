@@ -20,8 +20,10 @@ public class ShippingController {
 
 	@GetMapping(path = "/offers", produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String userToken,
-													@RequestParam("customer_address") Long customerAddress) {
+													@RequestParam("customer_address") Long customerAddress,
+													@RequestParam(value = "payment_method_id", required = false, defaultValue = "") String paymentMethodId,
+													@RequestParam(value = "shipping_service_id", required = false, defaultValue = "") String shippingServiceId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shippingService.getShippingOffers(customerAddress, orgId);
+		return shippingService.getShippingOffers(customerAddress, orgId, paymentMethodId, shippingServiceId);
 	}
 }

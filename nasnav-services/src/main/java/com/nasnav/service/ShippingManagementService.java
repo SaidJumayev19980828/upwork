@@ -18,7 +18,7 @@ import java.util.Optional;
 
 public interface ShippingManagementService {
 
-	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId);
+	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId, String paymentMethodId, String shippingServiceId);
 	void registerToShippingService(ShippingServiceRegistration registration);
 	void unregisterFromShippingService(String serviceId);
 	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId);
@@ -38,6 +38,6 @@ public interface ShippingManagementService {
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
 	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
 	String getTrackingUrl(Long orderId);
-	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress);
+	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress, String paymentMethodId, String shippingServiceId);
 
 }

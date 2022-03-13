@@ -20,4 +20,6 @@ public class ShippingDetails {
 	private String callBackUrl;
 	private Long shopId;
 	private BigDecimal codValue;
+	private String paymentMethodId;
+	private String shippingServiceId;
 }
