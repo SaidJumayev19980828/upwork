@@ -54,6 +54,12 @@ public class MylerzShippingService implements ShippingService {
     @Autowired
     private CountryRepository countryRepo;
 
+    public static final String RETURN_EMAIL_MSG =
+            "Thanks for patience! " +
+                    "Our delivery agents will contact you soon to receive the items from you." +
+                    "Please make sure to print the attached airway bills and provide them to the " +
+                    "delivery agent.";
+
     private static final String ERR_OUT_OF_SERVICE = "Sorry! We are currently unable to ship to your area!";
 
     private List<ServiceParameter> serviceParams;
@@ -275,15 +281,17 @@ public class MylerzShippingService implements ShippingService {
 
     @Override
     public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> shipments) {
-
         return Flux
                 .fromIterable(shipments)
-                .flatMap(this::requestSingleShipment);
+                .flatMap(item -> requestSingleShipment(item, "CTD", "DELIVERY"));
     }
 
     @Override
     public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
-        return null;
+        return Flux
+                .fromIterable(items)
+                .flatMap(item -> requestSingleShipment(item, "DTC", "RETURN"))
+                .map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG));
     }
 
     @Override
@@ -294,10 +302,10 @@ public class MylerzShippingService implements ShippingService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010));
     }
 
-    private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+    private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment, String serviceType, String serviceCategory) {
         String serverUrl = getServiceParam(SERVER_URL);
         MylerzWebClient client = new MylerzWebClient(serverUrl);
-        ShipmentRequest request = createShipmentRequest(shipment);
+        ShipmentRequest request = createShipmentRequest(shipment, serviceType, serviceCategory);
         return client
                 .submitShipmentRequest(AUTH_TOKEN, asList(request))
                 .flatMap(this::throwExceptionIfNotOk)
@@ -317,19 +325,19 @@ public class MylerzShippingService implements ShippingService {
     }
 
 
-    private ShipmentRequest createShipmentRequest(ShippingDetails shipment) {
+    private ShipmentRequest createShipmentRequest(ShippingDetails shipment, String serviceType, String serviceCategory) {
 
         List<Piece> items = shipment.getItems().stream().map(item -> new Piece(item.getStockId())).collect(toList());
 
         ShipmentRequest request = new ShipmentRequest();
-        setSenderInfo(shipment, request);
+        setSenderInfo(shipment, request,  serviceType, serviceCategory);
         setRecipientInfo(shipment, request);
         request.setPieces(items);
 
         return request;
     }
 
-    private void setSenderInfo(ShippingDetails shipment, ShipmentRequest request) {
+    private void setSenderInfo(ShippingDetails shipment, ShipmentRequest request, String serviceType, String serviceCategory) {
         BigDecimal totalWeight = shipment
                 .getItems()
                 .stream()
@@ -342,10 +350,10 @@ public class MylerzShippingService implements ShippingService {
         request.setSerial(shipment.getSubOrderId());
         request.setDescription("A package with " + shipment.getItems().size()+" items");
         request.setTotalWeight(totalWeight.doubleValue());
-        request.setServiceType("CTD");
+        request.setServiceType(serviceType);
         request.setService("ND");
         request.setServiceDate(now.plusDays(1));
-        request.setServiceCategory("DELIVERY");
+        request.setServiceCategory(serviceCategory);
         if (Objects.equals(shipment.getCodValue(), null)) {
             request.setPaymentType("PP");
             request.setCodValue(ZERO);
