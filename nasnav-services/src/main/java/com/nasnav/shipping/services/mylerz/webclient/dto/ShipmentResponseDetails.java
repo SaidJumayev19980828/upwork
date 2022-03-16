@@ -10,8 +10,6 @@ import java.util.List;
 public class ShipmentResponseDetails {
     @JsonProperty("PickupOrderCode")
     private String pickupOrderCode;
-    @JsonProperty("PickupDateTime")
-    private LocalDateTime pickupDateTime;
     @JsonProperty("ErrorCode")
     private String errorCode;
     @JsonProperty("ErrorMessage")

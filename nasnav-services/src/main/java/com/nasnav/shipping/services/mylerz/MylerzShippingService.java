@@ -299,7 +299,7 @@ public class MylerzShippingService implements ShippingService {
         MylerzWebClient client = new MylerzWebClient(serverUrl);
         ShipmentRequest request = createShipmentRequest(shipment);
         return client
-                .submitShipmentRequest(AUTH_TOKEN, asList(request))
+                .submitShipmentRequest(AUTH_TOKEN, request)
                 .flatMap(this::throwExceptionIfNotOk)
                 .flatMap(res -> res.bodyToMono(ShipmentResponse.class))
                 .flatMap(this::throwErrorForFailureResponse)

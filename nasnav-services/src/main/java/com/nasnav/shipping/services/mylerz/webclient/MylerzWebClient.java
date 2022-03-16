@@ -1,7 +1,9 @@
 package com.nasnav.shipping.services.mylerz.webclient;
 
+import com.nasnav.shipping.services.mylerz.webclient.dto.Piece;
 import com.nasnav.shipping.services.mylerz.webclient.dto.ShipmentRequest;
 import com.nasnav.shipping.services.mylerz.webclient.dto.DeliveryFeeRequest;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -56,11 +58,37 @@ public class MylerzWebClient {
                 .exchange();
     }
 
-    public Mono<ClientResponse> submitShipmentRequest(String token, List<ShipmentRequest> dto) {
+    public Mono<ClientResponse> submitShipmentRequest(String token, ShipmentRequest dto) {
+        // had to build the request body from scratch due to error from shipping service provider
+        JSONArray piecesArr = new JSONArray();
+        for(Piece p : dto.getPieces()) {
+            piecesArr.put(new JSONObject().put("PieceNo", p.getPieceNo()));
+        }
+        JSONObject json = new JSONObject();
+        json.put("WarehouseName", dto.getShopName());
+        json.put("PickupDueDate", dto.getPickupDate());
+        json.put("Package_Serial", dto.getSerial());
+        json.put("Description", dto.getDescription());
+        json.put("Total_Weight", dto.getTotalWeight());
+        json.put("Service_Type", dto.getServiceType());
+        json.put("Service", dto.getService());
+        json.put("ServiceDate", dto.getServiceDate());
+        json.put("Service_Category", dto.getServiceCategory());
+        json.put("Payment_Type", dto.getPaymentType());
+        json.put("COD_Value", dto.getCodValue());
+        json.put("Customer_Name", dto.getCustomerName());
+        json.put("Mobile_No", dto.getMobileNo());
+        json.put("country", dto.getCountry());
+        json.put("Apartment_No", dto.getApartmentNo());
+        json.put("Street", dto.getStreet());
+        json.put("Neighborhood", dto.getNeighborhood());
+        json.put("Pieces", piecesArr);
+
         return client.post()
                 .uri("/api/Orders/AddOrders")
                 .header("Authorization","Bearer "+token)
-                .bodyValue(dto)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new JSONArray().put(json).toString())
                 .exchange();
     }
 
@@ -69,7 +97,8 @@ public class MylerzWebClient {
         return client.post()
                 .uri("/api/Packages/GetAWB")
                 .header("Authorization","Bearer "+token)
-                .bodyValue(body)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body.toString())
                 .exchange();
     }
 
