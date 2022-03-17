@@ -43,7 +43,7 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
 	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 

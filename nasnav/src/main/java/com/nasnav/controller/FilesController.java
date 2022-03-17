@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
@@ -24,12 +25,11 @@ public class FilesController {
 
     @PostMapping(consumes = MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-    public String updateShop(@RequestHeader (name = "User-Token", required = false) String userToken,
+    public String updateShop(@RequestHeader(TOKEN_HEADER) String userToken,
     		                 @RequestParam("org_id") @Nullable Long orgId,
     		                 @RequestParam("file") MultipartFile file) {
         return fileService.saveFile(file, orgId);
     }
-
 
     @GetMapping( path="**")
     public void downloadFile(HttpServletRequest request,
@@ -51,8 +51,7 @@ public class FilesController {
     }
 
     @DeleteMapping
-    public void deleteFile(@RequestHeader (name = "User-Token", required = false) String userToken,
-                           @RequestParam("file_name") String fileName) {
+    public void deleteFile(@RequestHeader (TOKEN_HEADER) String userToken, @RequestParam("file_name") String fileName) {
         fileService.deleteOrganizationFile(fileName);
     }
 }
