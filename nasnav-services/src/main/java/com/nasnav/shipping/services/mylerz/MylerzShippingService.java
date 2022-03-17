@@ -388,25 +388,19 @@ public class MylerzShippingService implements ShippingService {
     public Mono<String> getAirwayBill(String airwayBillNumber) {
         String serverUrl = getServiceParam(SERVER_URL);
         MylerzWebClient client = new MylerzWebClient(serverUrl);
-        Base64.Encoder encoder = Base64.getEncoder();
         return client
                 .getAWB(AUTH_TOKEN, airwayBillNumber)
                 .flatMap(this::throwExceptionIfNotOk)
                 .flatMap(res -> res.bodyToMono(AWBResponse.class))
-                .map(AWBResponse::getValue)
-                .map(String::getBytes)
-                .map(encoder::encodeToString);
+                .map(AWBResponse::getValue);
     }
 
     private Mono<ShipmentResponseWithAwb> getAirwayBill(MylerzWebClient client, ShipmentResponse response) {
-        Base64.Encoder encoder = Base64.getEncoder();
         return client
                 .getAWB(AUTH_TOKEN, response.getDetails().getPackages().stream().findFirst().get().getBarCode())
                 .flatMap(this::throwExceptionIfNotOk)
                 .flatMap(res -> res.bodyToMono(AWBResponse.class))
                 .map(AWBResponse::getValue)
-                .map(String::getBytes)
-                .map(encoder::encodeToString)
                 .map(airwayBill -> new ShipmentResponseWithAwb(response, airwayBill));
     }
 
