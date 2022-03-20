@@ -184,7 +184,7 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
-	private ShopsRepository shopsRepo;
+	private ProductExtraAttributesEntityRepository productExtraAttributesRepo;
 
 	@Autowired
 	private Product360ShopsRepository product360ShopsRepo;
@@ -3353,6 +3353,20 @@ public class ProductService {
 		} else {
 			Set<VariantFeatureValueEntity> entities = variantFeatureValuesRepo.findByFeatureIdAndOrganizationId(orgId, featureId);
 			variantFeatureValuesRepo.deleteAll(entities);
+		}
+	}
+
+	public void deleteVariantExtraAttribute(Long variantId, Integer extraAttributeId, Long extraAttributeValueId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(variantId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, variantId));
+		ExtraAttributesEntity extraAttribute = extraAttrRepo.findByIdAndOrganizationId(extraAttributeId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$EXTRATTR$0001, extraAttributeId));
+
+		if (extraAttributeValueId != null) {
+			productExtraAttributesRepo.deleteByIdVariantAndExtraAttribute(extraAttributeValueId, variant, extraAttribute);
+		} else {
+			productExtraAttributesRepo.deleteByIdVariantAndExtraAttribute(variant, extraAttribute);
 		}
 	}
 

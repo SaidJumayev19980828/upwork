@@ -363,7 +363,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
 						.and(stock.shopId.eq(shopId))
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 
 
@@ -382,7 +383,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 	
 
