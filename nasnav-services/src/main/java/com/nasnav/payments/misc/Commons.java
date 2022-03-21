@@ -9,6 +9,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.Account;
 import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.paymob.PayMobAccount;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.MetaOrderEntity;
@@ -96,6 +97,8 @@ public class Commons {
 					return acc2;
 				case RAVE:
 					return new RaveAccount(props, gatewayEntity.getId());
+				case PAY_MOB:
+					return new PayMobAccount(props, gatewayEntity.getId());
 			}
 		}
 		return null;

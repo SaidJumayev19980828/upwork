@@ -17,6 +17,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.paymob.PayMobAccount;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -1320,6 +1321,10 @@ public class OrganizationServiceImpl implements OrganizationService {
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
                 body.put("script", account.getUpgScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
+            } else if(PAY_MOB.getValue().equalsIgnoreCase(gateway.getGateway())) {
+                PayMobAccount payMobAccount = new PayMobAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                body.put("script", payMobAccount.getApiUrl());
+                body.put("icon", domainService.getBackendUrl()+payMobAccount.getIcon());
             }
             response.put(gateway.getGateway(), body);
         }
