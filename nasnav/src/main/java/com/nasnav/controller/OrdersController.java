@@ -79,7 +79,7 @@ public class OrdersController {
 
     @PostMapping(value = "cancel", produces = APPLICATION_JSON_VALUE)
     public void cancelOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("meta_order_id") Long metaOrderId) {
-    	orderService.cancelOrder(metaOrderId);
+    	orderService.cancelOrder(metaOrderId, false);
     }
 
 	@GetMapping(value = "return/requests", produces = APPLICATION_JSON_VALUE )

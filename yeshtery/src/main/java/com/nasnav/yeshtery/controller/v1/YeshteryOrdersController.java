@@ -125,7 +125,7 @@ public class YeshteryOrdersController {
     public void cancelOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken
             ,@RequestParam("meta_order_id") Long metaOrderId) {
-    	orderService.cancelYeshteryOrder(metaOrderId);
+    	orderService.cancelOrder(metaOrderId, true);
     }
 
 
