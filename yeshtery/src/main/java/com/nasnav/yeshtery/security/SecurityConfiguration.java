@@ -189,11 +189,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
         .oauth2Login()
         	.authorizationEndpoint()
-            .baseUri("/oauth2/authorize")
+            .baseUri("/v1/oauth2/authorize")
             .authorizationRequestRepository(oAuth2RequestRepository)
             .and()
         .redirectionEndpoint()
-            .baseUri("/oauth2/callback/*")
+            .baseUri("/v1/oauth2/callback/*")
             .and()
         .userInfoEndpoint()
         	.oidcUserService(customOidcUserService)
