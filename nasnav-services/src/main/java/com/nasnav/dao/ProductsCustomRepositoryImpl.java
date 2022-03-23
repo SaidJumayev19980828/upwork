@@ -47,7 +47,6 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QShops shop = QShops.shops;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
-		QProductTags productTags = QProductTags.productTags;
 		QOrganizations organization = QOrganizations.organizations;
 
 		SQLQuery<?> baseQuery = queryFactory.from(stock)
@@ -57,14 +56,7 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
-		if (isNotBlankOrNull(params.features)) {
-			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
-			baseQuery.where(variant.id.in(variantFeaturesQuery));
-		}
-
-		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
-		if (productTagsQuery != null)
-			baseQuery.where(product.id.in(productTagsQuery));
+		addVariantsFeaturesAndTagsQuery(params, baseQuery);
 
 		return baseQuery;
 	}
@@ -76,7 +68,6 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QShops shop = QShops.shops;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
-		QProductTags productTags = QProductTags.productTags;;
 		QProductCollections collection = QProductCollections.productCollections;
 		QOrganizations organization = QOrganizations.organizations;
 
@@ -88,6 +79,16 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.innerJoin(organization).on(product.organizationId.eq(organization.id))
 				.where(predicate);
 
+		addVariantsFeaturesAndTagsQuery(params, baseQuery);
+
+		return baseQuery;
+	}
+
+	private void addVariantsFeaturesAndTagsQuery(ProductSearchParam params, SQLQuery<?> baseQuery) {
+		QProductVariants variant = QProductVariants.productVariants;
+		QProductTags productTags = QProductTags.productTags;
+		QProducts product = QProducts.products;
+
 		if (isNotBlankOrNull(params.features)) {
 			SQLQuery<Long> variantFeaturesQuery = getVariantFeaturesQuery(queryFactory, params);
 			baseQuery.where(variant.id.in(variantFeaturesQuery));
@@ -96,8 +97,6 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		SQLQuery<Long> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 		if (productTagsQuery != null)
 			baseQuery.where(product.id.in(productTagsQuery));
-
-		return baseQuery;
 	}
 
 	private SQLQuery<Long> getVariantFeaturesQuery(SQLQueryFactory query, ProductSearchParam params) {
@@ -105,8 +104,8 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		QVariantFeatureValues featureValue = QVariantFeatureValues.variantFeatureValues;
 		BooleanBuilder featuresPredicate = new BooleanBuilder();
 
-		for (Map.Entry e : params.features.entrySet()) {
-			featuresPredicate.or(feature.name.eq(e.getKey().toString()).and(featureValue.value.in((List)e.getValue())));
+		for (Map.Entry<String, List<String>> e : params.features.entrySet()) {
+			featuresPredicate.or(feature.name.eq(e.getKey()).and(featureValue.value.in(e.getValue())));
 		}
 
 		return query.select(featureValue.variantId)
@@ -177,8 +176,7 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 						.as("productTags"));
 	}
 	
-	private void  insertProductTag(QProductTags productTags, SQLInsertClause insert,
-			ProductTagPair productTag) {
+	private void insertProductTag(QProductTags productTags, SQLInsertClause insert, ProductTagPair productTag) {
 		Long productId = productTag.getProductId();
 		Long tagId = productTag.getTagId();
 		
