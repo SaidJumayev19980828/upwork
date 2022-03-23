@@ -6,7 +6,10 @@ import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +38,7 @@ public class DataImportController {
 	@Qualifier("excel")
 	private CsvExcelDataImportService excelDataImportService;
 
-	@PostMapping(value = "productlist", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "productlist", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportProductContext> importProductList(
     		@RequestHeader(name = "User-Token", required = false) String token,
             @RequestPart("csv") @Valid MultipartFile file,
@@ -54,7 +57,7 @@ public class DataImportController {
 		}			
     }
 
-	@PostMapping(value = "productlist/xlsx", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "productlist/xlsx", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ImportProductContext> importProductListXLSX(
 			@RequestHeader(name = "User-Token", required = false) String token,
 			@RequestPart("xlsx") @Valid MultipartFile file,
@@ -72,11 +75,10 @@ public class DataImportController {
 		}
 	}
 
-	@PostMapping(value = "productlist/csv", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ImportProductContext> importProductListCSV(
-			@RequestHeader(name = "User-Token", required = false) String token,
-			@RequestPart("csv") @Valid MultipartFile file,
-			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
+	@PostMapping(value = "productlist/csv", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ImportProductContext> importProductListCSV(@RequestHeader(TOKEN_HEADER) String token,
+																	 @RequestPart("csv") @Valid MultipartFile file,
+																	 @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
 			throws BusinessException, ImportProductException {
 		ImportProductContext importResult = null;
 		if(FilesUtils.isCsv(file)){
@@ -91,7 +93,7 @@ public class DataImportController {
 
 	@GetMapping(value = {"/productlist/csv/template", "/productlist/template"})
 	@ResponseBody
-	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
+	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
 		ByteArrayOutputStream s = csvImportService.generateProductsTemplate();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
@@ -101,7 +103,7 @@ public class DataImportController {
 
 	@GetMapping(value = "/productlist/xls/template")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateXlsTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
+	public ResponseEntity<byte[]> generateXlsTemplate(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
 		ByteArrayOutputStream s = excelDataImportService.generateProductsTemplate();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

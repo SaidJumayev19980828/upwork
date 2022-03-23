@@ -43,7 +43,7 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
 	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
@@ -65,7 +65,7 @@ public interface OrderService {
 
 	 void rejectOrder(OrderRejectDTO dto);
 
-	 void cancelOrder(Long metaOrderId);
+	 void cancelOrder(Long metaOrderId, boolean yeshteryMetaOrder);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
@@ -82,7 +82,6 @@ public interface OrderService {
 
 	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
 	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
-	void cancelYeshteryOrder(Long metaOrderId);
 	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
 	Order createYeshteryOrder(CartCheckoutDTO dto);
 }

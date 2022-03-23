@@ -89,17 +89,12 @@ public class OrderServiceImpl implements OrderService {
 			+ "depending on the payment method.";
 
 	private static final int ORDER_DEFAULT_COUNT = 1000;
-
 	private static final int ORDER_FULL_DETAILS_LEVEL = 3;
 
 	private final OrdersRepository ordersRepository;
-
 	private final BasketRepository basketRepository;
-
 	private final StockRepository stockRepository;
-
 	private final StockService stockService;
-
 	private final UserServicesHelper userServicesHelper;
 
 	private final Logger logger = LogManager.getLogger();
@@ -156,19 +151,14 @@ public class OrderServiceImpl implements OrderService {
 	private OrderServiceHelper orderServiceHelper;
 	@Autowired
 	private OrderEmailServiceHelper orderEmailHelper;
-
 	@Autowired
 	private ObjectMapper objectMapper;
-
 	@Autowired
 	private OrganizationRepository organizationRepository;
-
 	@Autowired
 	private UserService userService;
-
 	@Autowired
 	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
-
 	@Autowired
 	private LoyaltyPinsRepository loyaltyPinsRepository;
 
@@ -179,9 +169,8 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository , StockService stockService, UserRepository userRepository,
-							UserServicesHelper userServicesHelper, EmployeeUserRepository employeeUserRepository,
-							ProductRepository productRepository) {
+							StockRepository stockRepository , StockService stockService,
+							UserServicesHelper userServicesHelper) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
@@ -191,28 +180,16 @@ public class OrderServiceImpl implements OrderService {
 		buildOrderStatusTransitionMap();
 	}
 
-
-
-
-
 	private void setOrderStatusPermissions() {
 		orderStatusForCustomers = setOf(NEW, CLIENT_CONFIRMED, CLIENT_CANCELLED);
 		orderStatusForManagers = getManagerPermittedOrderStatuses();
 	}
-
-
-
-
 
 	private Set<OrderStatus> getManagerPermittedOrderStatuses() {
 		Set<OrderStatus> orderStatusForMgr = setOf(OrderStatus.values());
 		orderStatusForMgr.removeAll(orderStatusForCustomers);
 		return orderStatusForMgr;
 	}
-
-
-
-
 
 	private void buildOrderStatusTransitionMap() {
 		orderStateMachine = new HashMap<>();
@@ -226,13 +203,6 @@ public class OrderServiceImpl implements OrderService {
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
 	}
 
-
-
-
-
-
-
-
 	@Override
 	public void updateExistingOrder(OrderJsonDto orderJson) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)securityService.getCurrentUser();
@@ -241,8 +211,6 @@ public class OrderServiceImpl implements OrderService {
 
 		updateOrderStatusAndMetaOrderIfNeeded(order, orderJson.getStatus());
 	}
-
-
 
 	private void updateOrderStatusAndMetaOrderIfNeeded(OrdersEntity order, OrderStatus orderStatus) {
 		updateOrderStatus(order, orderStatus);
@@ -265,7 +233,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
 	private OrdersEntity getAndValidateOrdersEntityForStatusUpdate(OrderJsonDto orderJson, EmployeeUserEntity empUser, List<String> employeeUserRoles) {
 		Optional<OrdersEntity> order = empty();
 		Long orderId = orderJson.getId();
@@ -286,26 +253,19 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$0001,  orderId));
 	}
 
-
-
 	private void throwRuntimeInvalidOrderException(String msg, Object... msgParams){
 		throw getInvalidRuntimeOrderException(msg, msgParams);
 	}
-
-
-
 
 	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
 		return new BusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
 
-
 	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
 		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
-
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
@@ -339,7 +299,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders) {
@@ -364,7 +323,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
 		String orgName = order.getOrganizationEntity().getName();
@@ -383,10 +341,6 @@ public class OrderServiceImpl implements OrderService {
 			logger.error(e, e);
 		}
 	}
-
-
-
-
 
 	private Map<String, Object> createNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
@@ -418,9 +372,6 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-
-
-
 	private Map<String, Object> createRejectionEmailParams(OrdersEntity order, String rejectionReason) {
 		String message =
 				ofNullable(rejectionReason)
@@ -437,9 +388,6 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-
-
-
 	private List<String> getStoreManagersEmails(OrdersEntity order) {
 		Long shopId =
 				ofNullable(order)
@@ -449,9 +397,6 @@ public class OrderServiceImpl implements OrderService {
 		return empRoleRepo.findEmailOfEmployeeWithRoleAndShop(STORE_MANAGER.getValue(), shopId);
 	}
 
-
-
-
 	private List<String> getOrganizationManagersEmails(OrdersEntity order) {
 		Long orgId =
 				ofNullable(order)
@@ -460,10 +405,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$ORG$0001 , order.getId()));
 		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
 	}
-
-
-
-
 
 	private void sendBillEmail(MetaOrderEntity order, Boolean yeshteryMetaorder) {
 		String orgName = order.getOrganization().getName();
@@ -487,8 +428,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private Map<String, Object> createOrgPropertiesParams(OrganizationEntity org) {
 		String domain = domainService.getBackendUrl();
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
@@ -505,8 +444,6 @@ public class OrderServiceImpl implements OrderService {
 
 		return params;
 	}
-
-
 
 	private Map<String, Object> createBillEmailParams(MetaOrderEntity order, Boolean yeshteryMetaorder) {
 		Order orderResponse = this.getOrderResponse(order, yeshteryMetaorder);
@@ -531,8 +468,6 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-
-
 	private Optional<String> getShippingServiceName(Order orderResponse) {
 		return ofNullable(orderResponse)
 				.map(Order::getSubOrders)
@@ -541,8 +476,6 @@ public class OrderServiceImpl implements OrderService {
 				.flatMap(this::getShippingServiceName);
 	}
 
-
-
 	private Optional<String> getShippingServiceName(SubOrder subOrder) {
 		return ofNullable(subOrder)
 				.map(SubOrder::getShipment)
@@ -550,9 +483,6 @@ public class OrderServiceImpl implements OrderService {
 				.flatMap(shippingMgrService::getShippingServiceInfo)
 				.map(ShippingServiceInfo::getName);
 	}
-
-
-
 
 	private AddressRepObj getBillDeliveryAddress(MetaOrderEntity metaOrder) {
 		OrdersEntity subOrder =
@@ -564,15 +494,11 @@ public class OrderServiceImpl implements OrderService {
 		return getBillDeliveryAddress(subOrder);
 	}
 
-
-
 	private AddressRepObj getBillDeliveryAddress(OrdersEntity order){
 		AddressRepObj userAddress = (AddressRepObj)order.getAddressEntity().getRepresentation();
 		return getPickupShopAddress(order)
 				.orElse(userAddress);
 	}
-
-
 
 	private Optional<AddressRepObj> getPickupShopAddress(OrdersEntity order) {
 		return ofNullable(order)
@@ -580,8 +506,6 @@ public class OrderServiceImpl implements OrderService {
 				.flatMap(this::getPickupShop)
 				.map(this::getPickupShopAdress);
 	}
-
-
 
 	private boolean isPickupOrder(OrdersEntity order){
 		return ofNullable(order)
@@ -591,16 +515,11 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(false);
 	}
 
-
-
 	private Optional<ShopsEntity> getPickupShop(OrdersEntity order){
 		return ofNullable(order)
 				.map(OrdersEntity::getShipment)
 				.flatMap(shippingMgrService::getPickupShop);
 	}
-
-
-
 
 	private void normalizeOrderForEmailTemplate(Order orderResponse) {
 		String operator = changeOperatorName(orderResponse.getOperator());
@@ -619,7 +538,6 @@ public class OrderServiceImpl implements OrderService {
 		return operator;
 	}
 
-
 	private void changeShippingServiceName(SubOrder subOrder) {
 		ShopsEntity shop = shopsRepo.findById(subOrder.getShopId()).get();
 
@@ -637,8 +555,6 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setShipment(shipment);
 	}
 
-
-
 	private String createShopAreaNameString(ShopsEntity shop) {
 		return ofNullable(shop)
 				.map(ShopsEntity::getAddressesEntity)
@@ -648,8 +564,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElse("");
 	}
 
-
-
 	private AddressRepObj getPickupShopAdress(ShopsEntity shop){
 		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
 		if(isNull(shopAddress.getFirstName())){
@@ -658,29 +572,12 @@ public class OrderServiceImpl implements OrderService {
 		return shopAddress;
 	}
 
-
-	private BigDecimal getMetaOrderTotal(MetaOrderEntity order) {
-		return order
-				.getSubOrders()
-				.stream()
-				.map(OrdersEntity::getAmount)
-				.reduce(ZERO, BigDecimal::add)
-				.setScale(2, BigDecimal.ROUND_HALF_EVEN);
-	}
-
-
-
-
-
 	private void finalizeSubOrder(OrdersEntity order) {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
 		updateOrderStatus(order, FINALIZED);
 		userService.updateUserByTierIdAndOrgId(0L, order.getUserId(), order.getOrganizationEntity().getId());
 	}
-
-
-
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
 		Long userId = order.getUserId();
@@ -695,15 +592,9 @@ public class OrderServiceImpl implements OrderService {
 		cartItemRepo.deleteByVariantIdInAndUser_Id(variantIds, userId);
 	}
 
-
-
-
-
 	private void reduceStocks(OrdersEntity orderEntity) {
 	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);
 	}
-
-
 
 	private void reduceItemStock(BasketsEntity item) {
 		int quantity =
@@ -713,8 +604,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(0);
 		stockService.reduceStockBy(item.getStocksEntity(), quantity);
 	}
-
-
 
 	@Override
 	public OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
@@ -727,9 +616,6 @@ public class OrderServiceImpl implements OrderService {
 		return ordersRepository.save(orderEntity);
 	}
 
-
-
-
 	private MetaOrderEntity updateOrderStatus(MetaOrderEntity metaOrderEntity, OrderStatus newStatus) {
 		OrderStatus currentStatus = findEnum(metaOrderEntity.getStatus());
 
@@ -740,18 +626,12 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.save(metaOrderEntity);
 	}
 
-
-
-
 	private void returnOrderToStocks(OrdersEntity order) {
 		order
 		.getBasketsEntity()
 		.stream()
 		.forEach(this::incrementItemStock);
 	}
-
-
-
 
 	private void incrementItemStock(BasketsEntity item) {
 		int quantity =
@@ -762,21 +642,12 @@ public class OrderServiceImpl implements OrderService {
 		stockService.incrementStockBy(item.getStocksEntity(), quantity);
 	}
 
-
-
-
-
-
 	private boolean canOrderStatusChangeTo(OrderStatus currentStatus, OrderStatus newStatus) {
 		return ofNullable(currentStatus)
 				.map(orderStateMachine::get)
 				.orElse(emptySet())
 				.contains(newStatus);
 	}
-
-
-
-
 
 	@Override
 	@Transactional
@@ -807,8 +678,6 @@ public class OrderServiceImpl implements OrderService {
 		return (detailsLevel == null || detailsLevel < 0 || detailsLevel > 3) ? ORDER_FULL_DETAILS_LEVEL : detailsLevel;
 	}
 
-
-
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel) {
 	    Map<Long, List<BasketItem>> basketItemsMap = getBasketItemsDetailsMap( setOf(order) );
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order) );
@@ -816,9 +685,6 @@ public class OrderServiceImpl implements OrderService {
 		String phoneNumber = userRepo.findById(order.getUserId()).get().getPhoneNumber();
 	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsMap, phoneNumber ,paymentOperator);
 	}
-
-
-
 
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
 														Map<Long, BigDecimal> orderItemsQuantity,
@@ -863,7 +729,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(Collectors.toList());
 	}
 
-
 	private void setOrderSummary(OrdersEntity entity, DetailedOrderRepObject obj) {
 		Long metaOrderId =
 				ofNullable(entity)
@@ -886,8 +751,6 @@ public class OrderServiceImpl implements OrderService {
 			obj.setCurrency(country.getCurrency());
 		}
 	}
-
-
 
 	private void setOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator,
 												   DetailedOrderRepObject obj) {
@@ -919,8 +782,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private BasketItem readBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages){
 		String itemDataStr = ofNullable(entity.getItemData()).orElse("{}");
 		if(itemDataStr.equals("{}")){
@@ -942,12 +803,9 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private BasketItem parseItemData(String itemData) throws IOException {
 		return objectMapper.readValue(itemData, BasketItem.class);
 	}
-
 
 	private BasketItem createBasketItemWithThumbnail(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
 		BasketItem item = createBasketItemEntity(entity);
@@ -955,14 +813,10 @@ public class OrderServiceImpl implements OrderService {
 		return item;
 	}
 
-
-
 	private BasketItem createBasketItemEntity(BasketsEntity entity) {
 		BasketItem item = createBasketItemWithBasicData(entity);
 		return addProductDataToBasketItem(entity, item);
 	}
-
-
 
 	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
 		BasketItem item = new BasketItem();
@@ -989,23 +843,17 @@ public class OrderServiceImpl implements OrderService {
 		return item;
 	}
 
-
-
 	private void addThumbnailToBasketItem(Map<Long, Optional<String>> variantsCoverImages, BasketItem item, BasketsEntity entity) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
 		item.setThumb(thumb);
 	}
 
-
-
 	private BasketItem createBasketItemWithBasicData(BasketsEntity entity) {
 		BasketItem item = new BasketItem();
 		setBasketItemStockData(entity, item);
 		return item;
 	}
-
-
 
 	private void setBasketItemStockData(BasketsEntity entity, BasketItem item) {
 		BigDecimal price = entity.getPrice();
@@ -1039,8 +887,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private String getUnit(BasketsEntity entity) {
 		return ofNullable(entity)
 				.map(BasketsEntity::getStocksEntity)
@@ -1048,8 +894,6 @@ public class OrderServiceImpl implements OrderService {
 				.map(StockUnitEntity::getName)
 				.orElse("");
 	}
-
-
 
 	@Override
 	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException {
@@ -1079,8 +923,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 	}
 
-
-
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
 		if(detailsLevel < 2 || orders.isEmpty()){
 			return emptyMap();
@@ -1089,11 +931,11 @@ public class OrderServiceImpl implements OrderService {
 		return ordersRepository
 				.findPaymentOperatorByOrderIdIn(ordersIds)
 				.stream()
+
+
 				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
 				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator, (p1, p2) -> p1));
 	}
-
-
 
 	private Map<Long, String> getCustomerPhones(Set<OrdersEntity> orders) {
 		Set<Long> ordersIds = orders.stream().map(OrdersEntity::getId).collect(toSet());
@@ -1105,9 +947,6 @@ public class OrderServiceImpl implements OrderService {
 				: new LinkedHashMap<>();
 	}
 
-
-
-
 	private Map<Long, List<BasketItem>> getBasketItemsDetailsMap(Set<OrdersEntity> orders) {
 		Map<Long, Optional<String>> getVariantsImagesList = orderServiceHelper.getVariantsImagesList(orders);
 		return orders
@@ -1117,9 +956,6 @@ public class OrderServiceImpl implements OrderService {
 				.map(basket -> readBasketItem(basket, getVariantsImagesList))
 				.collect( groupingBy(BasketItem::getOrderId));
 	}
-
-
-
 
 	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<OrdersEntity> orders) {
 		List<BasketsEntity> basketsEntities =
@@ -1139,8 +975,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 		return ordersQuantities;
 	}
-
-
 
 	private OrderSearchParam getFinalOrderSearchParams(OrderSearchParam params) throws BusinessException {
 		Integer detailsLevel = ofNullable(params.getDetails_level()).orElse(0);
@@ -1165,10 +999,6 @@ public class OrderServiceImpl implements OrderService {
 		return newParams;
 	}
 
-
-
-
-
 	private void limitSearchParamByUserRole(OrderSearchParam params, OrderSearchParam newParams, BaseUserEntity user) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
@@ -1182,8 +1012,6 @@ public class OrderServiceImpl implements OrderService {
 			newParams.setShop_id(params.getShop_id());
 		}
 	}
-
-
 
 	private void setOrderSearchStartAndCount(OrderSearchParam params, OrderSearchParam newParams) {
 		if (params.getStart() == null || params.getStart() <= 0){
@@ -1199,8 +1027,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private Integer getOrderStatusId(String status) throws BusinessException {
 		if (status != null) {
 			OrderStatus statusEnum = findEnum(status);
@@ -1212,10 +1038,6 @@ public class OrderServiceImpl implements OrderService {
 
 		return null;
 	}
-
-
-
-
 
 	private CriteriaQuery<OrdersEntity> getOrderCriteriaQuery(OrderSearchParam params) {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
@@ -1242,63 +1064,29 @@ public class OrderServiceImpl implements OrderService {
 		return query;
 	}
 
-
-
-
-
-
-
-
-
-
-
-
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
-
 		predicates.add( builder.notEqual(root.get("status"), DISCARDED.getValue()) );
-
 		if(params.getUser_id() != null)
 			predicates.add( builder.equal(root.get("userId"), params.getUser_id()) );
-
 		if(params.getOrg_id() != null)
 			predicates.add( builder.equal(root.get("organizationEntity").get("id"), params.getOrg_id()) );
-
 		if(params.getShop_id() != null)
 			predicates.add( builder.equal(root.get("shopsEntity").get("id"), params.getShop_id()) );
-
 		if(params.getStatus_id() != null)
 			predicates.add( builder.equal(root.get("status"), params.getStatus_id()) );
-
 		if(params.getUpdated_after() != null) {
 			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
 		}
-
 		if(params.getUpdated_before() != null) {
 			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
 		}
-
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
-
-
-
-
 
 	private LocalDateTime readDate(String dateStr) {
 		return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss"));
 	}
-
-
-
-
-	private BusinessException getNoCurrentOrderFoundException() {
-		return new BusinessException("User have no new orders!", "NOT FOUND", HttpStatus.NOT_FOUND);
-	}
-
-
-
-
 
 	//TODO the external stock check must be included in the checkout logic
 	private void validateOrderForCheckout(OrdersEntity order) {
@@ -1311,16 +1099,9 @@ public class OrderServiceImpl implements OrderService {
 		order.getBasketsEntity().forEach(this::validateBasketItem);
 	}
 
-
-
-
-
 	private void updateOrderItemStocksFromExternalSys(OrdersEntity order) {
 		order.getBasketsEntity().forEach(this::updateItemStockFromExternalSys);
 	}
-
-
-
 
 	private void updateItemStockFromExternalSys(BasketsEntity item) {
 		try {
@@ -1330,10 +1111,6 @@ public class OrderServiceImpl implements OrderService {
 			logger.error(e, e);
 		}
 	}
-
-
-
-
 
 	private StockBasicData getItemStockData(BasketsEntity item) throws BusinessException {
 		StockBasicData stockData = basketRepository.getItemStockBasicDataById(item.getId());
@@ -1348,10 +1125,6 @@ public class OrderServiceImpl implements OrderService {
 		return stockData;
 	}
 
-
-
-
-
 	private void fetchAndUpdateStockIfExists(BasketsEntity item, StockBasicData stockData)
 			throws InvalidIntegrationEventException, BusinessException {
 		Optional<Integer> extStock = integrationService.getExternalStock(stockData.getVariantId(), stockData.getShopId());
@@ -1361,12 +1134,6 @@ public class OrderServiceImpl implements OrderService {
 			stockRepository.save(stock);
 		}
 	}
-
-
-
-
-
-
 
 	private void validateOrderStatusForCheckOut(OrdersEntity order) {
 		Integer status =
@@ -1379,9 +1146,7 @@ public class OrderServiceImpl implements OrderService {
 					, "Invalid Operation"
 					, NOT_ACCEPTABLE);
 		}
-	};
-
-
+	}
 
 	private void validateBasketItem(BasketsEntity item) {
 		Integer quantity =
@@ -1394,8 +1159,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	@Override
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order) {
 		order.setPaymentStatus(PaymentStatus.PAID);
@@ -1403,13 +1166,9 @@ public class OrderServiceImpl implements OrderService {
 		ordersRepository.save(order);
 	}
 
-
-
 	private Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName) {
 		return productService.parseVariantFeatures(variant, returnedName);
 	}
-
-
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
@@ -1433,19 +1192,11 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, subOrder.getId()));
 	}
 
-
-
-
-
 	private void setPromoCodeAsUsed(MetaOrderEntity metaOrder) {
 		metaOrder
 		.getPromotions()
 		.forEach(promo -> promoService.setPromotionAsUsed(promo, metaOrder.getUser()));
 	}
-
-
-
-
 
 	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, EmployeeUserEntity user) {
 		OrdersEntity order;
@@ -1466,10 +1217,6 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-
-
-
-
 	private OrdersEntity getAndValidateOrderForRejection(Long orderId, EmployeeUserEntity user) {
 		OrdersEntity order;
 		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
@@ -1489,10 +1236,6 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-
-
-
-
 	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
 		updateOrderStatus(order, STORE_CONFIRMED);
 
@@ -1502,10 +1245,8 @@ public class OrderServiceImpl implements OrderService {
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
+		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
 	}
-
-
-
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
 		updateOrderStatus(order, STORE_CANCELLED);
@@ -1515,10 +1256,8 @@ public class OrderServiceImpl implements OrderService {
 		if(isAllOtherOrdersRejected(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CANCELLED);
 		}
+		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CANCELLED);
 	}
-
-
-
 
 	private void saveShipmentTracker(ShipmentTracker tracker, OrdersEntity order) {
 		ShipmentEntity shipment =
@@ -1533,8 +1272,6 @@ public class OrderServiceImpl implements OrderService {
 		order.setShipment(saved);
 	}
 
-
-
 	private EmployeeUserEntity getAndValidateUser() {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(!(user instanceof EmployeeUserEntity)) {
@@ -1543,18 +1280,13 @@ public class OrderServiceImpl implements OrderService {
 		return (EmployeeUserEntity)user;
 	}
 
-
-
-
 	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
 		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CONFIRMED);
 	}
 
-
 	private boolean isAllOtherOrdersRejected(Long orderId, MetaOrderEntity metaOrder) {
 		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CANCELLED);
 	}
-
 
 	private boolean isAllOtherOrdersHaveStatus(Long orderId, MetaOrderEntity metaOrder, OrderStatus status) {
 		return metaOrder
@@ -1579,8 +1311,6 @@ public class OrderServiceImpl implements OrderService {
 		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
 	}
 
-
-
 	private void cancelAbandonedOrders() {
 		BaseUserEntity user = securityService.getCurrentUser();
 		List<MetaOrderEntity> abandonedOrders =
@@ -1600,15 +1330,12 @@ public class OrderServiceImpl implements OrderService {
 		abandonedOrders.forEach(this::discardAbandonedOrder);
 	}
 
-
 	private void discardAbandonedOrder(MetaOrderEntity metaOrder) {
 		updateOrderStatus(metaOrder, DISCARDED);
 		metaOrder
 		.getSubOrders()
 		.forEach(subOrder -> updateOrderStatus(subOrder, DISCARDED));
 	}
-
-
 
 	@Override
 	public MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user) {
@@ -1620,13 +1347,11 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-
 	private AddressesEntity getAddressById(Long addressId, Long userId) {
 		return addressRepo
 						.findByIdAndUserId(addressId, userId)
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressId));
 	}
-
 
 	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
 		//TODO: this should be moved to checkOut main method, and then passes
@@ -1649,7 +1374,6 @@ public class OrderServiceImpl implements OrderService {
 		return createCheckoutData(optimizedCart);
 	}
 
-
 	private CartItemsGroupedByOrgId getAndValidateCheckoutDataByOrgId(CartCheckoutDTO checkoutDto) {
 		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto);
 
@@ -1669,7 +1393,6 @@ public class OrderServiceImpl implements OrderService {
 		return value.stream().collect(collectingAndThen(groupingBy(CartCheckoutData::getShopId), CartItemsGroupedById::new));
 	}
 
-
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
 		CartOptimizeResponseDTO optimizationResult =
 				cartOptimizationService.optimizeCart(checkoutDto);
@@ -1682,11 +1405,6 @@ public class OrderServiceImpl implements OrderService {
 
 		return optimizationResult.getCart();
 	}
-
-
-
-
-
 
 	@Override
 	public List<CartCheckoutData> createCheckoutData(Cart optimizedCart) {
@@ -1716,9 +1434,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 	}
 
-
-
-
 	private Map.Entry<Long, StockAdditionalData> createStockAdditionalDataEntry(Map.Entry<Long, List<StockAdditionalData>> entry,
 																				Map<Long, Map<String, String>> features){
 		StockAdditionalData data =
@@ -1730,10 +1445,6 @@ public class OrderServiceImpl implements OrderService {
 		data.setFeatures(features.get(data.getVariantId()));
 		return new SimpleEntry<Long, StockAdditionalData>(entry.getKey(), data);
 	}
-
-
-
-
 
 	private CartCheckoutData createCartCheckoutData(CartItem item, Map<Long, StockAdditionalData> stockDataMap) {
 		StockAdditionalData stockData =
@@ -1757,8 +1468,6 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setWeight(item.getWeight());
 		return checkoutData;
 	}
-
-
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
@@ -1788,7 +1497,6 @@ public class OrderServiceImpl implements OrderService {
 	public String trackOrder(Long orderId) {
 		return shippingMgrService.getTrackingUrl(orderId);
 	}
-
 
 	@Override
 	public DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
@@ -1871,9 +1579,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		cancelAbandonedOrders();
-
 		validateCartCheckoutDTO(dto);
-
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
 
 		return getOrderResponse(order, true);
@@ -1890,6 +1596,7 @@ public class OrderServiceImpl implements OrderService {
 				.map(this::setPaymentStatus)
 				.collect(toList());
 	}
+
 	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, Long orgId) {
 		OrganizationEntity org = organizationRepository.findOneById(orgId);
 		return createYeshteryOrder(shopCartsMap, address, dto, org);
@@ -1927,13 +1634,6 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.save(order);
 	}
 
-
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public void cancelYeshteryOrder(Long metaOrderId) {
-		cancelOrder(metaOrderId);
-	}
-
 	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
 		if (dto.getAddressId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
@@ -1942,8 +1642,6 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
 	}
-
-
 
 	private Order getOrderResponse(MetaOrderEntity order, boolean yeshteryMetaorder) {
 		Order orderDto = setMetaOrderBasicData(order, yeshteryMetaorder);
@@ -1965,7 +1663,6 @@ public class OrderServiceImpl implements OrderService {
 		return orderDto;
 	}
 
-
 	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order) {
 		return order
 		.getSubOrders()
@@ -1983,8 +1680,6 @@ public class OrderServiceImpl implements OrderService {
 				.map(subOrder -> getSubOrder(subOrder))
 				.collect(toList());
 	}
-
-
 
 	private Order setMetaOrderBasicData(MetaOrderEntity metaOrder, boolean yeshteryMetaorder) {
 		Order order = new Order();
@@ -2060,7 +1755,6 @@ public class OrderServiceImpl implements OrderService {
 		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
 	}
 
-
 	@Override
 	public List<MetaOrderBasicInfo> getMetaOrderList() {
 		BaseUserEntity user = securityService.getCurrentUser();
@@ -2071,14 +1765,11 @@ public class OrderServiceImpl implements OrderService {
 							.collect(toList());
 	}
 
-
 	private MetaOrderBasicInfo setOrderStatus(MetaOrderBasicInfo order) {
 		order.setStatus(OrderStatus.findEnum(order.getStatusInt()).name());
 		order.setStatusInt(null);
 		return order;
 	}
-
-
 
 	private MetaOrderBasicInfo setPaymentStatus(MetaOrderBasicInfo order) {
 		String payStatus =
@@ -2090,7 +1781,6 @@ public class OrderServiceImpl implements OrderService {
 		order.setPaymentStatusInt(null);
 		return order;
 	}
-
 
 	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {
 		return order
@@ -2153,9 +1843,6 @@ public class OrderServiceImpl implements OrderService {
 		return subOrder;
 	}
 
-
-
-
 	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, OrganizationEntity org, UserEntity user) {
 		return createOrder(shopCartsMap, address, dto, org.getId(), user);
 	}
@@ -2193,7 +1880,6 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.save(order);
 	}
 
-
 	private BigDecimal calculateDiscounts(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
@@ -2202,7 +1888,6 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(ZERO, BigDecimal::add);
 	}
 
-
 	private BigDecimal calculateShippingTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
@@ -2210,7 +1895,6 @@ public class OrderServiceImpl implements OrderService {
 				.map(ShipmentEntity::getShippingFee)
 				.reduce(ZERO, BigDecimal::add);
 	}
-
 
 	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
@@ -2237,7 +1921,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 	}
 
-
 	private CartItemsForShop getCartItemsForShop(Map.Entry<Long, List<CartCheckoutData>> entry, Map<Long,ShopsEntity> shopCache,
 												 OrganizationEntity org) {
 		Long orgId = org.getId();
@@ -2248,14 +1931,12 @@ public class OrderServiceImpl implements OrderService {
 		return new CartItemsForShop(shop, entry.getValue());
 	}
 
-
 	private Map<Long, ShopsEntity> createOrganizationShopsCache(Long orgId) {
 		return shopsRepo
 		.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0)
 		.stream()
 		.collect(toMap(ShopsEntity::getId, shop -> shop));
 	}
-
 
 	private Set<OrdersEntity> createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
 			CartCheckoutDTO dto, OrganizationEntity org) {
@@ -2308,7 +1989,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(collectingAndThen(toList(), list -> shippingMgrService.getOffersFromOrganizationShippingServices(list, orgId)));
 	}
 
-
 	private void addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		OrdersEntity suborder = subOrders.stream().findFirst().get();
 		Long userId = suborder.getUserId();
@@ -2336,8 +2016,6 @@ public class OrderServiceImpl implements OrderService {
 		.ifPresent(subOrder -> addToSubOrderDiscounts(subOrder, calculationError));
 	}
 
-
-
 	private List<PromoItemDto> getPromoItems(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
@@ -2346,8 +2024,6 @@ public class OrderServiceImpl implements OrderService {
 				.map(this::toPromoItemDto)
 				.collect(toUnmodifiableList());
 	}
-
-
 
 	private PromoItemDto toPromoItemDto(BasketsEntity orderItem) {
 		var promoItem = new PromoItemDto();
@@ -2370,7 +2046,6 @@ public class OrderServiceImpl implements OrderService {
 
 		return promoItem;
 	}
-
 
 	private BigDecimal  addPromoDiscountAndGetItsCalculatedTotal(BigDecimal promoDiscount, Set<OrdersEntity> subOrders) {
 		BigDecimal subTotal =
@@ -2422,7 +2097,6 @@ public class OrderServiceImpl implements OrderService {
 		return ordersRepository.save(subOrder);
 	}
 
-
 	private void saveOrderItemsIntoSubOrder(CartItemsForShop cartItems, Map<Long, StocksEntity> stocksCache,
 			OrdersEntity subOrder) {
 		cartItems
@@ -2431,7 +2105,6 @@ public class OrderServiceImpl implements OrderService {
 		.map(data -> createBasketItemEntity(data, subOrder, stocksCache))
 		.forEach(subOrder::addBasketItem);
 	}
-
 
 	private BigDecimal calculateSubTotal(OrdersEntity subOrder) {
 		BigDecimal value =  subOrder
@@ -2445,11 +2118,9 @@ public class OrderServiceImpl implements OrderService {
 		return value;
 	}
 
-
 	private BigDecimal calcBasketItemValue(BasketsEntity item) {
 		return item.getPrice().multiply(item.getQuantity());
 	}
-
 
 	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems, Long orgId) {
 		Set<Long> itemStocks =
@@ -2471,7 +2142,6 @@ public class OrderServiceImpl implements OrderService {
 		return stocksCache;
 	}
 
-
 	private Map.Entry<Long, StocksEntity> createStockEntityWithIdEntry(Map.Entry<Long, List<StocksEntity>> entry){
 		Long stockId = entry.getKey();
 		StocksEntity stock =
@@ -2482,8 +2152,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$STO$0001, stockId));
 		return new SimpleEntry<Long, StocksEntity>(stockId, stock);
 	}
-
-
 
 	private BasketsEntity createBasketItemEntity(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
 		StocksEntity stock =
@@ -2514,8 +2182,6 @@ public class OrderServiceImpl implements OrderService {
 		basket.setItemData(serializeItemData(basket));
 		return basket;
 	}
-
-
 
 	private String serializeItemData(BasketsEntity basket) {
 		try {
@@ -2571,7 +2237,6 @@ public class OrderServiceImpl implements OrderService {
 
 		return shipmentRepo.save(shipment);
 	}
-
 
 	private void validateCartCheckoutItems(List<CartCheckoutData> userCartItems, OrganizationEntity org) {
  		if (userCartItems.isEmpty()) {
@@ -2647,8 +2312,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-
-
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {
 		if(anyIsNull(dto, dto.getSubOrderId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0001);
@@ -2657,21 +2320,41 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public void cancelOrder(Long metaOrderId) {
-		MetaOrderEntity order =
-				metaOrderRepo
-				.findFullDataById(metaOrderId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
-		validateOrderForCancellation(order);
+	public void cancelOrder(Long metaOrderId, boolean isYeshteryMetaOrder) {
+		Set<MetaOrderEntity> metaOrders = new HashSet<>();
+		Set<OrdersEntity> subOrders = new HashSet<>();
+		if (isYeshteryMetaOrder) {
+			MetaOrderEntity yeshteryMetaOrder = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(metaOrderId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
+			metaOrders.add(yeshteryMetaOrder);
+			metaOrders.addAll(yeshteryMetaOrder.getSubMetaOrders());
+			subOrders.addAll(yeshteryMetaOrder.getSubOrders());
+			subOrders.addAll(yeshteryMetaOrder.getSubMetaOrders()
+					.stream()
+					.map(MetaOrderEntity::getSubOrders)
+					.flatMap(Set::stream)
+					.collect(toSet()));
+		} else {
+			MetaOrderEntity order =
+					metaOrderRepo
+							.findFullDataById(metaOrderId)
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
+			metaOrders.add(order);
+			subOrders.addAll(order.getSubOrders());
+		}
+		cancelOrders(metaOrders, subOrders);
+	}
 
-		cancelMetaOrderAndSubOrders(order);
+	private void cancelOrders(Set<MetaOrderEntity> metaOrders, Set<OrdersEntity> subOrders) {
+		validateOrderForCancellation(metaOrders);
+
+		cancelMetaOrderAndSubOrders(metaOrders);
 		try {
-			order.getSubOrders().forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
+			subOrders.forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
 		}catch(Throwable t) {
 			logger.error(t,t);
 		}
 	}
-
 
 	private void sendOrderCancellationNotificationEmailToStoreManager(OrdersEntity order) {
 		Long orderId = order.getId();
@@ -2692,8 +2375,6 @@ public class OrderServiceImpl implements OrderService {
 			logger.error(e, e);
 		}
 	}
-
-
 
 	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = new HashMap<>();
@@ -2723,28 +2404,28 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void cancelMetaOrderAndSubOrders(MetaOrderEntity order) {
-		if( Objects.equals(order.getStatus(), FINALIZED.getValue())){
-			order.getSubOrders().forEach(this::returnOrderToStocks);
+	private void cancelMetaOrderAndSubOrders(Set<MetaOrderEntity> metaOrders) {
+		for(MetaOrderEntity metaOrder : metaOrders) {
+			if (Objects.equals(metaOrder.getStatus(), FINALIZED.getValue())) {
+				metaOrder.getSubOrders().forEach(this::returnOrderToStocks);
+			}
+			updateOrderStatus(metaOrder, CLIENT_CANCELLED);
+			metaOrder.getSubOrders().forEach(sub -> updateOrderStatus(sub, CLIENT_CANCELLED));
 		}
-		updateOrderStatus(order, CLIENT_CANCELLED);
-		order.getSubOrders().forEach(sub -> updateOrderStatus(sub, CLIENT_CANCELLED));
 	}
 
-
-
-
-	private void validateOrderForCancellation(MetaOrderEntity order) {
+	private void validateOrderForCancellation(Set<MetaOrderEntity> metaOrders) {
 		Long currentUser = securityService.getCurrentUser().getId();
-		if(!Objects.equals(order.getUser().getId(), currentUser)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
-		}
-		OrderStatus status = getCancelOrderStatus(order);
-		if(!isCancelable(order)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
+		for (MetaOrderEntity metaOrder : metaOrders) {
+			if (!Objects.equals(metaOrder.getUser().getId(), currentUser)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, metaOrder.getId());
+			}
+			OrderStatus status = getCancelOrderStatus(metaOrder);
+			if (!isCancelable(metaOrder)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, metaOrder.getId(), status.toString());
+			}
 		}
 	}
-
 
 	private Boolean isCancelable(MetaOrderEntity order) {
 		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
@@ -2758,9 +2439,6 @@ public class OrderServiceImpl implements OrderService {
 						.allMatch(acceptedStatuses::contains);
 		return acceptedStatuses.contains(status) && areAllSubOrdersFinalized;
 	}
-
-
-
 
 	private OrderStatus getCancelOrderStatus(MetaOrderEntity order) {
 		return ofNullable(order.getStatus())
@@ -2777,8 +2455,6 @@ class CartItemsForShop{
 	private List<CartCheckoutData> checkOutData;
 }
 
-
-
 class CartItemsGroupedById extends HashMap<Long, List<CartCheckoutData>>{
 
 	private static final long serialVersionUID = 166855415L;
@@ -2787,7 +2463,6 @@ class CartItemsGroupedById extends HashMap<Long, List<CartCheckoutData>>{
 		super(map);
 	}
 }
-
 
 class CartItemsGroupedByOrgId extends HashMap<Long, CartItemsGroupedById>{
 
@@ -2798,16 +2473,12 @@ class CartItemsGroupedByOrgId extends HashMap<Long, CartItemsGroupedById>{
 	}
 }
 
-
-
 @Data
 @AllArgsConstructor
 class SubOrderAndSubTotalPair{
 	private Long id;
 	private BigDecimal resultPlusReminder;
 }
-
-
 
 @Data
 @AllArgsConstructor
@@ -2817,13 +2488,11 @@ class ReturnRequestBasketItem{
 	private Integer receivedQuantity;
 }
 
-
 @Data
 class ReturnShipment{
 	private String trackNumber;
 	private List<ReturnShipmentItem> items;
 }
-
 
 @Data
 class ReturnShipmentItem{
