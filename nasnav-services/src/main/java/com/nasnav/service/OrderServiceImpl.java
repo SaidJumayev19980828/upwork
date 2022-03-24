@@ -931,8 +931,6 @@ public class OrderServiceImpl implements OrderService {
 		return ordersRepository
 				.findPaymentOperatorByOrderIdIn(ordersIds)
 				.stream()
-
-
 				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
 				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator, (p1, p2) -> p1));
 	}

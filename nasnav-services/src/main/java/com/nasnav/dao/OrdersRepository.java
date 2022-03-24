@@ -172,9 +172,10 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.OrderPaymentOperator(ord.id, payment.operator) " +
 			" FROM OrdersEntity ord " +
 			" LEFT JOIN ord.metaOrder meta " +
+			" LEFT JOIN MetaOrderEntity subMeta on meta.subMetaOrder = subMeta" +
 			" LEFT JOIN PaymentEntity payment " +
-			" on payment.metaOrderId = meta.id " +
-			" WHERE ord.id in :orderIds")
+			" on payment.metaOrderId = meta.id or payment.metaOrderId = subMeta.id" +
+			" WHERE ord.id in :orderIds and payment.operator is not null")
     Set<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
 
 
