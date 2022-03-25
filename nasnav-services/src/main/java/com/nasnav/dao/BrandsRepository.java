@@ -18,6 +18,7 @@ import java.util.Set;
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
+	List<BrandsEntity> findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(List<Long> orgIds, Integer removed, Integer minPriority);
     Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
 	@Query("select b from BrandsEntity b " +
@@ -78,4 +79,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 			" where org.id = :orgId and org.yeshteryState = 1 and b.removed = 0 order by b.priority desc")
 	PageImpl<Organization_BrandRepresentationObject> findByYeshteryOrganization(@Param("orgId") Long orgId,
 																				Pageable page);
+
+	List<BrandsEntity> findByIdInAndRemoved(Set<Long> brands, int removed);
 }

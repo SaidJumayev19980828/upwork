@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BrandsEntity;
@@ -22,6 +23,7 @@ import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -89,11 +91,23 @@ public class BrandService {
 
     }
 
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
-        return brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0)
+    public List<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority){
+        return brandsRepository.findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(orgIds, 0, minPriority)
                 .stream()
                 .map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                 .collect(toList());
+    }
+
+
+    public void changeBrandsPriority(List<BrandIdAndPriority> dto) {
+        Map<Long, Integer> brandsPrioritiesMap = dto.stream().collect(toMap(BrandIdAndPriority::getId, BrandIdAndPriority::getPriority));
+        List<BrandsEntity> entities = brandsRepository.findByIdInAndRemoved( brandsPrioritiesMap.keySet(), 0);
+
+        entities.stream()
+                .filter(brand -> brandsPrioritiesMap.get(brand.getId()) != null)
+                .forEach(brand -> brand.setPriority(brandsPrioritiesMap.get(brand.getId())));
+
+        brandsRepository.saveAll(entities);
     }
 
 }

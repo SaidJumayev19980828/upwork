@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class ReturnRequestItemDTO extends BaseRepresentationObject {
     private Long id;
     private Integer returnedQuantity;

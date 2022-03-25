@@ -271,7 +271,22 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 	List<MetaOrderBasicInfo> getYeshteryMetaOrderList(@Param("userId") Long userId,
 													  @Param("orgId") Long orgId);
 
-
+	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
+			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.user usr "
+			+ " LEFT JOIN FETCH subMeta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
+			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
+			+ " LEFT JOIN FETCH subOrder.shipment shipment "
+			+ " LEFT JOIN FETCH item.stocksEntity stock "
+			+ " LEFT JOIN FETCH subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH meta.promotions"
+			+ " WHERE subMeta.id =:id ")
+	Optional<MetaOrderEntity> findBySubMetaOrder_Id(@Param("id") Long id);
 
 }
 

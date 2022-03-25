@@ -427,7 +427,7 @@ public class CategoryService {
         }else if(Objects.equals(operation, "create")) {
         	if (categoryId == null && hasCategory) {
             	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
-            }else if (isEmpty(tagDTO.getName())) {
+            }else if (isNull(tagDTO.getName())) {
             	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
             }
             

@@ -28,7 +28,7 @@ public class BostaWebClient {
     public Mono<ClientResponse> createDelivery(String token, Delivery dto) {
         return client.post()
                      .uri("/deliveries")
-                     .syncBody(dto)
+                     .bodyValue(dto)
                      .header("Authorization", token)
                      .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                      .exchange();
@@ -38,7 +38,7 @@ public class BostaWebClient {
     public Mono<ClientResponse> updateDelivery(String token, Delivery dto, String deliveryId) {
         return client.patch()
                 .uri("/deliveries/" + deliveryId)
-                .syncBody(dto)
+                .bodyValue(dto)
                 .header("Authorization", token)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .exchange();
@@ -132,7 +132,7 @@ public class BostaWebClient {
     public Mono<ClientResponse> createSubAccount(String token, SubAccount subAccount) {
         return client.post()
                 .uri("/business-subaccounts")
-                .syncBody(subAccount)
+                .bodyValue(subAccount)
                 .header("Authorization", token)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .exchange();
@@ -142,7 +142,7 @@ public class BostaWebClient {
     public Mono<ClientResponse> updateSubAccount(String token, SubAccount subAccount) {
         return client.patch()
                 .uri("/business-subaccounts")
-                .syncBody(subAccount)
+                .bodyValue(subAccount)
                 .header("Authorization", token)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .exchange();
@@ -184,7 +184,7 @@ public class BostaWebClient {
         body.put("amount", amount);
         return client.post()
                 .uri("/trackers")
-                .syncBody(body)
+                .bodyValue(body)
                 .header("Authorization", token)
                 .exchange();
     }

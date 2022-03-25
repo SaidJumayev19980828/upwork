@@ -100,6 +100,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         entity.setSellingPrice(tier.getSellingPrice());
         entity.setTierName(tier.getTierName());
         entity.setCashBackPercentage(tier.getCashBackPercentage());
+        entity.setCoefficient(tier.getCoefficient());
 
         if (tier.getIsSpecial()) {
             entity.setBooster(null);

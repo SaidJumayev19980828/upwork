@@ -21,6 +21,8 @@ public class SubOrder {
     private Long shopId;
     @JsonProperty("shop_name")
     private String shopName;
+    @JsonProperty("shop_logo")
+    private String shopLogo;
     @JsonProperty("suborder_id")
     private Long subOrderId;
     private BigDecimal subtotal;

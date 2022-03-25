@@ -11,7 +11,7 @@ import static java.util.Optional.ofNullable;
 import static javax.servlet.RequestDispatcher.ERROR_STATUS_CODE;
 
 @Controller
-public class ErrorFallbackContorller implements ErrorController{
+public class ErrorFallbackController implements ErrorController{
 	
 	@RequestMapping("/error")
     public void transparentErrorHandler(HttpServletRequest request, HttpServletResponse response) {
@@ -23,9 +23,9 @@ public class ErrorFallbackContorller implements ErrorController{
 		
 	    response.setStatus(statusCode);
     }
-	
-	
-	
+
+
+
 
 	@Override
 	public String getErrorPath() {

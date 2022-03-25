@@ -4,7 +4,8 @@ public enum Gateway {
 	MASTERCARD("mcard"),
 	UPG("upg"),
 	RAVE("rave"),
-	COD("cod");
+	COD("cod"),
+	PAY_MOB("paymob");
 
 	private final String value;
 

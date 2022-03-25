@@ -184,7 +184,7 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
-	private ShopsRepository shopsRepo;
+	private ProductExtraAttributesEntityRepository productExtraAttributesRepo;
 
 	@Autowired
 	private Product360ShopsRepository product360ShopsRepo;
@@ -669,7 +669,12 @@ public class ProductService {
 
 		List<Organization_BrandRepresentationObject> brands = getProductBrands(fromProductsClause, fromCollectionsClause);
 
-		List<TagsRepresentationObject> tags = getProductTags(fromProductsClause, fromCollectionsClause);
+		List<TagsRepresentationObject> tags;
+		if (param.getTags_org_id() == null) {
+			tags = getProductTags(fromProductsClause, fromCollectionsClause);
+		} else {
+			tags = getProductTagsOfSpecificOrg(fromProductsClause, fromCollectionsClause, param.getTags_org_id());
+		}
 
 		Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause, fromCollectionsClause );
 
@@ -701,12 +706,12 @@ public class ProductService {
 		QOrganizations organization = QOrganizations.organizations;
 
 		SubQueryExpression products = queryFactory
-				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"), brand.logo.as("logoUrl"))
 				.from(brand)
 				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromProductsClause.select(product.brandId)));
 		SubQueryExpression collections = queryFactory
-				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"))
+				.select(brand.id, brand.name, brand.priority, organization.name.as("orgName"), brand.logo.as("logoUrl"))
 				.from(brand)
 				.leftJoin(organization).on(brand.organizationId.eq(organization.id))
 				.where(brand.id.in(fromCollectionsClause.select(product.brandId)));
@@ -716,7 +721,8 @@ public class ProductService {
 				.select(Expressions.numberPath(Long.class, "id"),
 						Expressions.stringPath("name"),
 						Expressions.numberPath(Integer.class, "priority"),
-						Expressions.stringPath("orgName"))
+						Expressions.stringPath("orgName"),
+						Expressions.stringPath("logoUrl"))
 				.from(sqlQuery.union(products, collections).as("total"))
 				.orderBy(Expressions.numberPath(Integer.class, "priority").desc());
 
@@ -740,6 +746,37 @@ public class ProductService {
 						.select(productTag.tagId)
 						.from(productTag)
 						.where(productTag.productId.in(union))));
+
+		return template.query(tags.getSQL().getSQL(),
+				new BeanPropertyRowMapper<>(TagsRepresentationObject.class));
+
+	}
+
+	private List<TagsRepresentationObject> getProductTagsOfSpecificOrg(SQLQuery<?> fromProductsClause, SQLQuery<?> fromCollectionsClause, Long orgId) {
+		QTags tag = QTags.tags;
+		QProducts product = QProducts.products;
+		QProductTags productTag = QProductTags.productTags;
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SubQueryExpression union = sqlQuery.union(fromProductsClause.select(product.id), fromCollectionsClause.select(product.id));
+		SQLQuery<?> categoriesQuery = queryFactory
+				.select(tag.categoryId)
+				.from(tag)
+				.where(tag.id.in(queryFactory
+						.select(productTag.tagId)
+						.from(productTag)
+						.where(productTag.productId.in(union))));
+
+		Set<Long> categories = template
+				.queryForList(categoriesQuery.getSQL().getSQL(), Long.class)
+				.stream()
+				.filter(Objects::nonNull)
+				.collect(toSet());
+
+		SQLQuery<?> tags = queryFactory
+				.select(tag.id, tag.name, tag.alias, tag.metadata, tag.pName.as("pname"), tag.categoryId)
+				.from(tag)
+				.where(tag.categoryId.in(categories).and(tag.organizationId.eq(orgId)));
 
 		return template.query(tags.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(TagsRepresentationObject.class));
@@ -843,7 +880,9 @@ public class ProductService {
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
 					.or(product.id.like("%" + params.name + "%"))
-					.or(product.description.likeIgnoreCase("%" + params.name + "%") )
+					.or(product.description.likeIgnoreCase( "% " + params.getName() + " %"))
+					.or(product.description.likeIgnoreCase( params.getName() + " %"))
+					.or(product.description.likeIgnoreCase( "% " + params.getName()))
 					.or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 					.or(variant.sku.likeIgnoreCase("%" + params.name + "%") )
 					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
@@ -3314,6 +3353,20 @@ public class ProductService {
 		} else {
 			Set<VariantFeatureValueEntity> entities = variantFeatureValuesRepo.findByFeatureIdAndOrganizationId(orgId, featureId);
 			variantFeatureValuesRepo.deleteAll(entities);
+		}
+	}
+
+	public void deleteVariantExtraAttribute(Long variantId, Integer extraAttributeId, Long extraAttributeValueId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(variantId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, variantId));
+		ExtraAttributesEntity extraAttribute = extraAttrRepo.findByIdAndOrganizationId(extraAttributeId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$EXTRATTR$0001, extraAttributeId));
+
+		if (extraAttributeValueId != null) {
+			productExtraAttributesRepo.deleteByIdVariantAndExtraAttribute(extraAttributeValueId, variant, extraAttribute);
+		} else {
+			productExtraAttributesRepo.deleteByIdVariantAndExtraAttribute(variant, extraAttribute);
 		}
 	}
 

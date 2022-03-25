@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.GET;
 
 @RunWith(SpringRunner.class)

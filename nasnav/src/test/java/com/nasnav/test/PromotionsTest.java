@@ -2,7 +2,6 @@ package com.nasnav.test;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
-import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
 import static com.nasnav.enumerations.PromotionStatus.TERMINATED;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -69,7 +68,34 @@ public class PromotionsTest {
 	
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN);
 	
-	
+	@Test
+	public void getPromotionsAllAttrTest(){
+		JSONObject bodyJson = createPromotionRequest();
+		String body = bodyJson.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+
+		ResponseEntity<Long> postRes =
+				template.exchange("/organization/promotion", POST, req, Long.class);
+
+		PromotionsEntity promotion = promoRepo.findById(postRes.getBody()).get();
+
+		assertNotNull(promotion.getId());
+		assertNotNull(promotion.getDateStart());
+		assertNotNull(promotion.getDateEnd());
+		assertNotNull(promotion.getConstrainsJson());
+		assertNotNull(promotion.getDiscountJson());
+		assertEquals(promotion.getIdentifier(), "awsome-promo");
+		assertEquals(promotion.getName(), "promo_name");
+		assertEquals(promotion.getDescription(), "promo_desc");
+		assertEquals(promotion.getBanner(), "promo_banner");
+		assertEquals(promotion.getCover(), "promo_cover");
+		assertEquals(promotion.getStatus(), Integer.valueOf(1));
+		assertEquals(promotion.getCode(), "GIVE-YOUR-MONEY-OR-ELSE-...");
+		assertEquals(promotion.getTypeId(), Integer.valueOf(0));
+
+
+	}
+
 	@Test
 	public void getPromotionsAuthZTest() {
 		HttpEntity<?> req = getHttpEntity("123456");
@@ -513,6 +539,10 @@ public class PromotionsTest {
 		String end = formatter.format(now().plusDays(3));
 		return json()
 				.put("identifier", "awsome-promo")
+				.put("name", "promo_name")
+				.put("description", "promo_desc")
+				.put("banner", "promo_banner")
+				.put("cover", "promo_cover")
 				.put("start_date", start)
 				.put("end_date", end)
 				.put("status", "ACTIVE")

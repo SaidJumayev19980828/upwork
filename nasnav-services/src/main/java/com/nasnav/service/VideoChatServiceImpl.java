@@ -4,7 +4,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.VideoChatResponse;
 import net.bytebuddy.utility.RandomString;
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import com.nasnav.persistence.BaseUserEntity;
 import io.openvidu.java.client.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +28,7 @@ public class VideoChatServiceImpl implements VideoChatService{
     private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
 
-    private String OPENVIDU_URL = "http://34.125.116.133:5443/"; // TODO move to properties file
+    private String OPENVIDU_URL = "http://34.125.228.13:5443/"; // TODO move to properties file
     private String SECRET = "MY_SECRET"; // TODO move to properties file
 
     @Autowired
@@ -92,16 +91,13 @@ public class VideoChatServiceImpl implements VideoChatService{
                 this.mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
 
                 return new VideoChatResponse(true, null, token, null, sessionName);
-            }
-            catch(OpenViduHttpException ex){
+            } catch(OpenViduHttpException ex) {
                 if(ex.getStatus()==404) {
                     this.mapSessions.remove(sessionName);
                     this.mapSessionNamesTokens.remove(sessionName);
                 }
                 throw ex;
-
-            }
-            catch (Exception e1) {
+            } catch (Exception e1) {
                 throw e1;
             }
         }
@@ -136,10 +132,7 @@ public class VideoChatServiceImpl implements VideoChatService{
     @Override
     public List<String> getAllSessions() {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-
-        List<String> sessions = new ArrayList<>();
-        sessions = this.mapSessions.keySet().stream().collect(Collectors.toList());
-
+        List<String> sessions = this.mapSessions.keySet().stream().collect(Collectors.toList());
         return sessions;
     }
 }

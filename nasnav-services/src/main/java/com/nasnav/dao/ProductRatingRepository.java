@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ProductRatingRepository extends JpaRepository <ProductRating, Long> {
 
@@ -51,4 +52,11 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             + " WHERE product.id in :productIds and rating.approved = true"
             + " group by product.id")
     List<ProductRatingData> findProductsAverageRating(@Param("productIds") List<Long> productIds);
+
+    @Query("select r from ProductRating r" +
+            " join fetch r.variant v" +
+            " join fetch r.user u" +
+            " where v.id in :variantIds and r.user.id = :userId")
+    List<ProductRating> findUserVariantRatings(@Param("userId") Long userId,
+                                               @Param("variantIds") Set<Long> variantIds);
 }

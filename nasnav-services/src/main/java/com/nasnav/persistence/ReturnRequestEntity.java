@@ -93,7 +93,7 @@ public class ReturnRequestEntity implements BaseEntity{
             dto.setCreatedByUser(getCreatedByUser().getId());
             dto.setUserName(getCreatedByUser().getName());
         }
-        dto.setItemsCount(new Long(returnedItems.size()));
+        dto.setItemsCount((long) returnedItems.size());
         return dto;
     }
 

@@ -56,6 +56,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -300,10 +301,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.filter(v -> v.getFeature().getLevel() > 0)
 				.collect(toMap(VariantFeatureValueEntity::getFeature, VariantFeatureValueEntity::getValue));
 		for (ProductVariantsEntity v : productEntity.getProductVariants()) {
-			boolean include = true;
+			boolean include = false;
 			for (VariantFeatureValueEntity value : v.getFeatureValues()) {
-				if (mainFeatures.get(value.getFeature()) == null || !mainFeatures.get(value.getFeature()).equals(value.getValue())) {
-					include = false;
+				if (mainFeatures.get(value.getFeature()) != null && mainFeatures.get(value.getFeature()).equals(value.getValue())) {
+					include = true;
 					break;
 				}
 			}
@@ -1561,9 +1562,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
-		String uri = ofNullable(mapEntry.getValue())
-				.map(List::stream)
-				.flatMap(s -> s.findFirst())
+		String uri = mapEntry.getValue()
+				.stream()
+				.min(comparing(ProductImageDTO::getPriority))
 				.map(ProductImageDTO::getImagePath)
 				.orElse(null);
 
@@ -1663,7 +1664,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		SwatchDataCache cache = createSwatchDataCache(importedImgs, metaData);
 		importedImgs
 				.stream()
-				.map(this::saveSwatchFile)
+				.map(e -> saveSwatchFile(e, metaData.isCrop()))
 				.map(saved -> createExtraAttrValueEntity(saved, cache))
 				.collect(collectingAndThen(toList(), attrValuesRepo::saveAll));
 	}
@@ -1727,9 +1728,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch) {
+	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch, boolean crop) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		String url = fileService.saveFile(swatch.getImage(), orgId);
+		String url = fileService.saveFile(swatch.getImage(), orgId, crop);
 		return new SavedImportedSwatchImage(swatch, url);
 	}
 

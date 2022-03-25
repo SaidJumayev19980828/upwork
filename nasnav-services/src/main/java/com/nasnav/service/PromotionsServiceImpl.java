@@ -208,6 +208,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setEndDate(entity.getDateEnd().atZone(zoneId));
 		dto.setId(entity.getId());
 		dto.setIdentifier(entity.getIdentifier());
+		dto.setName(entity.getName());
+		dto.setDescription(entity.getDescription());
 		dto.setOrganizationId(entity.getOrganization().getId());
 		dto.setStartDate(entity.getDateStart().atZone(zoneId));
 		dto.setStatus(getPromotionStatusName(entity.getStatus()));
@@ -510,7 +512,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 				ofNullable(promotion.getCode())
 				.map(String::toUpperCase)
 				.orElse(null);
-		
+
+
 		entity.setCode(codeUpperCase);
 		entity.setConstrainsJson(serializeDTO(promotion.getConstrains()));
 		entity.setCreatedBy(user);
@@ -518,6 +521,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setDateStart(promotion.getStartDate().toLocalDateTime());
 		entity.setDiscountJson(serializeMap(promotion.getDiscount()));
 		entity.setIdentifier(promotion.getIdentifier());
+		entity.setName(promotion.getName());
+		entity.setDescription(promotion.getDescription());
+		entity.setBanner(promotion.getBanner());
+		entity.setCover(promotion.getCover());
 		entity.setOrganization(organization);
 		entity.setStatus(status);
 		entity.setUserRestricted(0);

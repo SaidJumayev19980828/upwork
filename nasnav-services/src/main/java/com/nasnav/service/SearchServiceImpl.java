@@ -349,7 +349,7 @@ public class SearchServiceImpl implements SearchService{
 
     private Mono<Void> resendOrganizationData(OrganizationEntity org){
         return Mono
-                .zip(sendProductsAndCollectionsData(org), sendTagsData(org))
+                .zip(sendTagsData(org), sendProductsAndCollectionsData(org))
                 .then();
     }
 
@@ -591,6 +591,7 @@ public class SearchServiceImpl implements SearchService{
                 .filter(entry -> Objects.equals(entry.getKey(), "name"))
                 .map(Map.Entry::getValue)
                 .map(Object::toString)
+                .distinct()
                 .collect(toList());
     }
 

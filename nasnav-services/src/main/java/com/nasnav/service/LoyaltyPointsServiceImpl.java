@@ -66,6 +66,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     @Autowired
     private LoyaltyPinsRepository loyaltyPinsRepository;
 
+    @Autowired
+    private LoyaltyTierRepository loyaltyTierRepository;
+
     @Override
     public LoyaltyPointsUpdateResponse updateLoyaltyPointType(LoyaltyPointTypeDTO dto) {
         if (isBlankOrNull(dto.getName())) {
@@ -95,7 +98,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByIdAndOrganization_IdAndIsActive(dto.getId(), orgId, TRUE)
                 .orElseGet(LoyaltyPointConfigEntity::new);
         // don't delete a config just make it inactive and create new one
-        if(entity.getId() > 0 ) {
+        if(entity.getId() != null && entity.getId() > 0 ) {
             entity.setIsActive(false);
             loyaltyPointConfigRepo.save(entity);
             if(dto.getIsActive() == null) {
@@ -120,6 +123,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         } else {
             entity.setIsActive(true);
         }
+        if(dto.getDefaultTier() != null && dto.getDefaultTier().getId() != null) {
+            Optional<LoyaltyTierEntity> tier = loyaltyTierRepository.findById(dto.getDefaultTier().getId());
+            if(tier.isEmpty()) {
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0019, dto.getDefaultTier().getId());
+            }
+             entity.setDefaultTier(tier.get());
+        }
         entity.setOrganization(org);
         return entity;
     }
@@ -140,7 +150,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             }
         } else {
             if (!loyaltyPointConfigRepo.existsByIdAndOrganization_IdAndIsActive(dto.getId(), orgId, TRUE)) {
-                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, dto.getId());
+                throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0018, dto.getId(), orgId);
             }
         }
     }

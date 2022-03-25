@@ -12,6 +12,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.yeshtery.YeshteryConstants;
 import com.nasnav.yeshtery.dao.CommonYeshteryUserRepository;
 import com.nasnav.yeshtery.dao.YeshteryUserRepository;
 import com.nasnav.yeshtery.dao.YeshteryUserTokenRepository;
@@ -546,7 +547,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     private void sendSubscriptionInvitationMail(String email, String activationToken, Long orgId) {
         try {
-            String domain = domainService.getBackendUrl();
+            String domain = domainService.getBackendUrl() + YeshteryConstants.API_PATH;
             String orgDomain = domainService.getOrganizationDomainAndSubDir(orgId);
             String orgLogo = domain + "/files/"+ orgService.getOrgLogo(orgId);
             String orgName = orgRepo.findById(orgId).get().getName();

@@ -1,8 +1,10 @@
 package com.nasnav.shipping.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class ReturnShipmentTracker extends ShipmentTracker{
     private String emailMessage;
 

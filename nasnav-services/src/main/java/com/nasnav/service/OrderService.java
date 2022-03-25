@@ -18,6 +18,7 @@ import com.nasnav.request.OrderSearchParam;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 public interface OrderService {
@@ -42,13 +43,15 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
 	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
 	void finalizeOrder(Long orderId) throws BusinessException;
 
-	 void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
+	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);
+
+	void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
 	 OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount);
 
@@ -62,7 +65,7 @@ public interface OrderService {
 
 	 void rejectOrder(OrderRejectDTO dto);
 
-	 void cancelOrder(Long metaOrderId);
+	 void cancelOrder(Long metaOrderId, boolean yeshteryMetaOrder);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
@@ -74,13 +77,11 @@ public interface OrderService {
 
 	Integer countOrdersByUserId(Long userId);
 	String trackOrder(Long orderId);
-	void updateExistingYeshteryOrder(OrderJsonDto orderJson);
 
 	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
 	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
 	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
-	void cancelYeshteryOrder(Long metaOrderId);
 	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
 	Order createYeshteryOrder(CartCheckoutDTO dto);
 }

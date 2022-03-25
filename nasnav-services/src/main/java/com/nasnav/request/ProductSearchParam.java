@@ -19,6 +19,7 @@ public class ProductSearchParam {
     public Long org_id;
     public Long shop_id;
     public Long brand_id;
+    public Long tags_org_id;
     public Long category_id;
     public Set<Long> category_ids;
     public String category_name;

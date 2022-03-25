@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAttribute;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,8 +32,20 @@ public interface ProductExtraAttributesEntityRepository extends JpaRepository<Pr
 	List<VariantExtraAttribute> findByVariantOrgId(@Param("orgId")Long orgId);
 
 
+	ProductExtraAttributesEntity findByIdAndExtraAttribute_IdAndVariant_Id(Long id, Integer extraAttrId, Long variantId);
 
+	@Transactional
+	@Modifying
+	@Query("delete from ProductExtraAttributesEntity pea where pea.id = :variantExtraAttributeId and pea.variant = :variant and pea.extraAttribute = :extraAttribute")
+	void deleteByIdVariantAndExtraAttribute(@Param("variantExtraAttributeId") Long variantExtraAttributeId,
+											@Param("variant") ProductVariantsEntity variant,
+											@Param("extraAttribute") ExtraAttributesEntity extraAttribute);
 
+	@Transactional
+	@Modifying
+	@Query("delete from ProductExtraAttributesEntity pea where pea.variant = :variant and pea.extraAttribute = :extraAttribute")
+	void deleteByIdVariantAndExtraAttribute(@Param("variant") ProductVariantsEntity variant,
+											@Param("extraAttribute") ExtraAttributesEntity extraAttribute);
 
 	@Transactional
 	@Modifying

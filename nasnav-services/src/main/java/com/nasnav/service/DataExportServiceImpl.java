@@ -175,14 +175,14 @@ public class DataExportServiceImpl implements DataExportService{
 	private void setFeatures(CsvRow row, ProductExportedData productData,
 							 Map<Long, Map<String, String>> featuresMap,
 							 Map<String, String> emptyFeatureValuesMap) {
-		var features =
+		Map<String, String> features =
 				ofNullable(productData)
 				.map(ProductExportedData::getVariantId)
-				.map(id -> featuresMap.get(id))
+				.map(featuresMap::get)
 				.orElse(emptyMap());
-		for(Map.Entry e : emptyFeatureValuesMap.entrySet()) {
-			if (!features.containsKey(e.getKey()))
-				features.put(e.getKey().toString(), e.getValue().toString());
+		for(Map.Entry<String, String> e : emptyFeatureValuesMap.entrySet()) {
+			if (!features.containsKey(e.getKey()) && !e.getValue().isEmpty())
+				features.put(e.getKey(), e.getValue());
 		}
 		
 		row.setFeatures(features);
@@ -194,7 +194,7 @@ public class DataExportServiceImpl implements DataExportService{
 		Map<String,String> features = new  HashMap<>();
 		for(var key : json.keySet()) {
 			Optional.of(key)
-			.map(k -> Integer.valueOf(k))
+			.map(Integer::valueOf)
 			.map(featuresMap::get)
 			.map(ProductFeaturesEntity::getName)
 			.ifPresent( name -> features.put(name, json.getString(key)));
@@ -363,7 +363,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
 						.and(stock.shopId.eq(shopId))
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 
 
@@ -382,7 +383,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 	
 

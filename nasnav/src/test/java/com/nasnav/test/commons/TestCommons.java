@@ -62,6 +62,7 @@ public class TestCommons {
         HttpCookie cookie = new HttpCookie("User-Token", authToken);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", authToken);
         return headers;
     }
 
