@@ -182,6 +182,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0017("Invalid Pin code [%s] !")
 	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
 	,ORG$LOY$0019("No tier found with id [%d]!")
+	,ORG$LOY$0020("No charity found with id [%d]!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

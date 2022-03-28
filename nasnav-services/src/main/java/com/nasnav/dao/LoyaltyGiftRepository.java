@@ -14,7 +14,6 @@ public interface LoyaltyGiftRepository extends JpaRepository<LoyaltyGiftEntity, 
     List<LoyaltyGiftEntity> getByUserFrom_IdAndIsRedeemFalse(Long userId);
     List<LoyaltyGiftEntity> getByUserTo_IdAndIsRedeemTrue(Long userId);
 
-    Optional<LoyaltyGiftEntity> findByEmail(String email);
 
     @Transactional
     @Modifying

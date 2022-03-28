@@ -807,11 +807,11 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
-		if (tierId < 0) {
+		if (tierId <= 0) {
 			tierId = getTierIdByUserOrders(orgId, userId);
 		}
 		if (userId > 0 && tierId > 0) {
-			userRepository.updateUserWithTierId(tierId, userId);
+			userRepository.updateUserTier(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
 				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
@@ -822,17 +822,6 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public List<UserEntity> getUsersByFamilyId(Long familyId) {
 		return userRepository.findByFamily_Id(familyId);
-	}
-
-	@Override
-	public void updateUserByTierId(Long tierId, Long userId) {
-		if (userId > 0 && tierId > 0) {
-			userRepository.updateUserWithTierId(tierId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getTier().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-			}
-		}
 	}
 
 	private Long getTierIdByUserOrders(Long orgId, Long userId) {

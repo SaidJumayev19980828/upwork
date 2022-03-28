@@ -120,12 +120,12 @@ public class LoyaltyCharityServiceImp implements LoyaltyCharityService {
                 .orElseGet(UserCharityEntity::new);
         if (dto.getUserId() != null) {
             UserEntity user = userRepository.findById(dto.getUserId())
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, dto.getUserId()));
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, dto.getUserId()));
             entity.setUser(user);
         }
         if (dto.getCharityId() != null) {
             LoyaltyCharityEntity charity = loyaltyCharityRepository.findById(dto.getCharityId())
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, dto.getCharityId()));
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0020, dto.getCharityId()));
             entity.setCharity(charity);
         }
         if (dto.getDonationPercentage() != null) {

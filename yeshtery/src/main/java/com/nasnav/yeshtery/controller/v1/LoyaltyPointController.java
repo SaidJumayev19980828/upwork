@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.GiftDTO;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.persistence.*;
 import com.nasnav.response.*;
@@ -71,8 +72,9 @@ public class LoyaltyPointController {
     }
 
     @GetMapping(value = "config/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyPointsService.listLoyaltyPointConfigs();
+    public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token
+    , @RequestParam(name = "org_id") Long orgId) {
+        return loyaltyPointsService.listLoyaltyPointConfigs(orgId);
     }
 
 
@@ -157,7 +159,7 @@ public class LoyaltyPointController {
 
     @GetMapping(value = "tier/list")
     public List<LoyaltyTierDTO> getTier(@RequestHeader(name = "User-Token", required = false) String token,
-                                        @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId,
+                                        @RequestParam(value = "org_id" ) Long orgId,
                                         @RequestParam(value = "is_special", required = false, defaultValue = "false") Boolean isSpecial) {
         return loyaltyTierService.getTiers(orgId, isSpecial);
     }
@@ -168,14 +170,21 @@ public class LoyaltyPointController {
         loyaltyTierService.deleteTier(tierId);
     }
 
-    @GetMapping(value = "tier/change_user_tier")
-    public void addTierToUser(@RequestHeader(name = "User-Token", required = false) String token,
-                              @RequestParam(value = "tier_id") Long tierId,
-                              @RequestParam(value = "user_id") Long userId) {
-        if (tierId > 0 && userId > 0) {
-            loyaltyTierService.addNewTierToUser(userId, tierId);
-        }
+    @PostMapping(value = "tier/change_user_tier")
+    public UserRepresentationObject changeUserTier(@RequestHeader(name = "User-Token", required = false) String token,
+                                                   @RequestParam(value = "tier_id") Long tierId,
+                                                   @RequestParam(value = "user_id") Long userId) {
+        return loyaltyTierService.changeUserTier(userId, tierId);
     }
+
+
+    @PostMapping("tier/change_org_default_tier")
+    public LoyaltyPointConfigDTO updateOrgDefaultTier(@RequestHeader(name = "User-Token", required = false) String token
+            , @RequestParam(name = "org_id") Long orgId
+            , @RequestParam(name = "tier_id") Long tierId) {
+        return loyaltyPointsService.updateOrgDefaultTier(orgId, tierId);
+    }
+
 
     /**
      * Coins Drop APIs
