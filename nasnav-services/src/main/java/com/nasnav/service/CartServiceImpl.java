@@ -22,6 +22,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -663,4 +665,34 @@ public class CartServiceImpl implements CartService{
         return orderService.createYeshteryOrder(dto);
     }
 
+    @Scheduled(fixedRate = 864000000)
+    @Transactional
+    public void moveOutOfStockCartItemsToWishlist() {
+        List<CartItemEntity> cartItems = cartItemRepo.findOutOfStockCartItems();
+        List<CartItemEntity> movedItems = new ArrayList<>();
+        Set<Long> cartItemsIds = new HashSet<>();
+
+
+        for (CartItemEntity item : cartItems) {
+            var stock = item
+                .getStock()
+                .getProductVariantsEntity()
+                .getStocks()
+                .stream()
+                .filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
+                .findFirst();
+            if (stock.isPresent()) {
+                item.setStock(stock.get());
+            } else {
+                movedItems.add(item);
+                cartItemsIds.add(item.getId());
+            }
+        }
+        movedItems.forEach(cartServiceHelper::addOutOfStockFlag);
+        cartItemRepo.saveAll(cartItems);
+        cartItemRepo.saveAll(movedItems);
+
+        cartItemRepo.moveCartItemsToWishlistItems(cartItemsIds);
+        logger.info(format("moved %d items to wishlist", cartItemsIds.size()));
+    }
 }

@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import com.nasnav.persistence.dto.query.result.*;
 import org.springframework.data.domain.Pageable;
@@ -66,6 +67,22 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 	CartItemEntity findByStock_IdAndUser_Id(Long stockId, Long userId);
+
+	@Query("select c from CartItemEntity c" +
+			" left join fetch c.stock s" +
+			" left join fetch s.productVariantsEntity v" +
+			" left join fetch v.productEntity p" +
+			" where s.quantity = 0 and c.quantity > 0")
+	List<CartItemEntity> findOutOfStockCartItems();
+
+	@Query("select c from CartItemEntity c" +
+			" left join fetch c.stock s" +
+			" left join fetch c.user u" +
+			" left join fetch s.productVariantsEntity v" +
+			" left join fetch v.productEntity p" +
+			" where s.quantity = 0 and c.quantity > 0 and u.id = :userId" +
+			" order by s.price, s.discount")
+	List<CartItemEntity> findUserOutOfStockCartItems(@Param("userId") Long userId);
 
 	@Transactional
 	@Modifying
@@ -240,4 +257,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ ")")
 	void deleteByVariantIdInAndUser_Id(@Param("variant_ids")List<Long> variantIds, @Param("user_id")Long userId);
 
+	@Transactional
+	@Modifying
+	@Query(value = "update cart_items set is_wishlist = 1, quantity = 0 where id in :ids", nativeQuery = true)
+	void moveCartItemsToWishlistItems(@Param("ids") Set<Long> ids);
 }

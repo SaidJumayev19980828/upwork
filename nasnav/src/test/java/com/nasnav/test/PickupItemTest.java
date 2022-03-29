@@ -1,3 +1,5 @@
+package com.nasnav.test;
+
 import com.nasnav.NavBox;
 import com.nasnav.dao.PickupItemRepository;
 import com.nasnav.persistence.PickupItemEntity;
