@@ -96,6 +96,11 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99001);
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
 
+INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50011,22001);
+INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50012,22002);
+
+
+insert into tag_graph_edges(id, parent_id, child_id) values(60012, 50011, 50012);
 
 insert into public.product_tags(product_id, tag_id) values(1001, 22001);
 insert into public.product_tags(product_id, tag_id) values(1004, 22002);

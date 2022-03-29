@@ -436,28 +436,6 @@ public class YeshteryCartControllerTest {
     }
 
     @Test
-    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_7.sql"})
-    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void checkoutCartWithAutoOptimizationSuccess() {
-        JSONObject requestBody = createCartCheckoutBody();
-        Order order = checkOutCart(requestBody, new BigDecimal("8151"), new BigDecimal("8100"), new BigDecimal("51"));
-
-        List<BasketItem> items =
-                order
-                        .getSubOrders()
-                        .stream()
-                        .map(SubOrder::getItems)
-                        .flatMap(List::stream)
-                        .collect(toList());
-        List<Long> orderStocks = items.stream().map(BasketItem::getStockId).collect(toList());
-        Assert.assertEquals(3, items.size());
-        assertTrue("The optimization should pick 2 stocks from a shop in cairo that has the largest average stock quantity, "
-                        + "and the third remaining stock from another shop in cairo with less stock quantity."
-                        + " as the prices didn't change, the optimization will be done silently."
-                , asList(607L, 608L, 612L).stream().allMatch(orderStocks::contains));
-    }
-
-    @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_8.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartWithFailedOptimization() {
@@ -583,7 +561,7 @@ public class YeshteryCartControllerTest {
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartNoAuthN() {
-        HttpEntity<?> request = getHttpEntity("101112");
+        HttpEntity<?> request = getHttpEntity("{}","101112");
         ResponseEntity<String> response = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
 
         Assert.assertEquals(FORBIDDEN, response.getStatusCode());
@@ -643,18 +621,6 @@ public class YeshteryCartControllerTest {
         Assert.assertEquals(406, res.getStatusCodeValue());
     }
 
-    @Test
-    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_3.sql"})
-    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void checkoutCartDifferentOrg() {
-        JSONObject body = createCartCheckoutBody();
-        cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
-
-        HttpEntity<?> request = getHttpEntity(body.toString(), "123");
-        ResponseEntity<String> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
-        assertTrue(res.getBody().contains("O$CRT$0005"));
-    }
 
     private JSONObject createCartCheckoutBody() {
         JSONObject body = new JSONObject();
@@ -779,42 +745,6 @@ public class YeshteryCartControllerTest {
         return body;
     }
 
-    @Test
-    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_10.sql"})
-    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void checkoutWithWareHouseOptimizationStrategy() {
-        JSONObject requestBody = createCartCheckoutBody();
-        Order order = checkOutCart(requestBody, new BigDecimal("8125.5"), new BigDecimal("8100"), new BigDecimal("25.5"));
-
-        List<BasketItem> items =
-                order
-                        .getSubOrders()
-                        .stream()
-                        .map(SubOrder::getItems)
-                        .flatMap(List::stream)
-                        .collect(toList());
-        List<Long> orderStocks =
-                items
-                        .stream()
-                        .map(BasketItem::getStockId)
-                        .collect(toList());
-        Assert.assertEquals(3, items.size());
-        assertTrue("The optimization should pick stocks from warehouse only"
-                , asList(613L, 614L, 615L).stream().allMatch(orderStocks::contains));
-    }
-
-    @Test
-    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_10.sql"})
-    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void checkoutWithWareHouseOptimizationStrategyWithMissingParameter() {
-//        clearWarehouseOptimizationParameters();
-
-        JSONObject requestBody = createCartCheckoutBody();
-
-        HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
-        ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);
-        Assert.assertEquals(500, res.getStatusCodeValue());
-    }
 
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_11.sql"})

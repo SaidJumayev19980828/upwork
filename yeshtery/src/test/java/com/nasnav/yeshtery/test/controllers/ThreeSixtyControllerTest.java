@@ -51,7 +51,7 @@ public class ThreeSixtyControllerTest {
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void get360Setions() throws JsonProcessingException {
-        var response = template.getForEntity("/v1/yeshtery/360view/sections?shop_id=501", String.class);
+        var response = template.getForEntity("/v1/360view/sections?shop_id=501", String.class);
         assertEquals(200, response.getStatusCodeValue());
         Map body = mapper.readValue(response.getBody(), new TypeReference<Map>() {
         });
@@ -62,7 +62,7 @@ public class ThreeSixtyControllerTest {
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void get360Shop() {
-        var response = template.getForEntity("/v1/360view/shops?shop_id=501", ShopThreeSixtyDTO.class);
+        var response = template.getForEntity("/v1/360view/shops?shop_id=10010", ShopThreeSixtyDTO.class);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(10010, response.getBody().getId().intValue());
     }

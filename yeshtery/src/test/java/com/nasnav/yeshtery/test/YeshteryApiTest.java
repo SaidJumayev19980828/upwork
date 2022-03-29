@@ -227,7 +227,7 @@ public class YeshteryApiTest {
         ResponseEntity<List> tags = template.getForEntity("/v1/yeshtery/tags?org_id=99001", List.class);
 
         assertTrue(!tags.getBody().isEmpty());
-        Assert.assertEquals(7, tags.getBody().size());
+        Assert.assertEquals(2, tags.getBody().size());
         System.out.println(tags.getBody().toString());
     }
 
@@ -237,7 +237,7 @@ public class YeshteryApiTest {
         ResponseEntity<List> response = template.getForEntity("/v1/yeshtery/tagstree?org_id=99001", List.class);
         List treeRoot = response.getBody();
         assertTrue(!treeRoot.isEmpty());
-        Assert.assertEquals(3, treeRoot.size());
+        Assert.assertEquals(1, treeRoot.size());
     }
 
     @Test
