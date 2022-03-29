@@ -63,6 +63,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("select distinct variant from ProductVariantsEntity variant " +
 			" left join fetch variant.featureValues featureValues " +
 			" left join fetch featureValues.feature feature " +
+			" left join fetch variant.stocks stock " +
 			" where variant.id in :idList")
 	List<ProductVariantsEntity> findByIdIn(@Param("idList") List<Long> idList);
 	
