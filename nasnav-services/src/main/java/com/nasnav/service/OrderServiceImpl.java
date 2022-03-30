@@ -2263,29 +2263,20 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId) {
-		ArrayList<MetaOrderEntity> metaOrders = new ArrayList<>();
-		Optional<MetaOrderEntity> metaOrder = metaOrderRepo.findById(metaOrderId);
-		if (metaOrder.isEmpty()) {
-			return null;
-		}
-		metaOrders.add(metaOrder.get());
-		Set<MetaOrderEntity> subMetas = metaOrder.get().getSubMetaOrders();
-		if (subMetas != null && !subMetas.isEmpty()) {
-			metaOrders.addAll(subMetas);
-		}
+		MetaOrderEntity metaOrder = metaOrderRepo.findById(metaOrderId)
+				.orElseThrow(() -> new RuntimeBusinessException("Order ID value is invalid", "PAYMENT_FAILED", NOT_ACCEPTABLE));
+
 		OrderService.OrderValue oValue = new OrderService.OrderValue();
 		oValue.amount = new BigDecimal(0);
 		oValue.currency = null;
 
-		for(MetaOrderEntity moe: metaOrders) {
-			oValue.amount = oValue.amount.add(moe.getGrandTotal());
-			if (oValue.currency == null) {
-				oValue.currency = getOrderCurrency(moe);
-			} else {
-				if (oValue.currency != getOrderCurrency(moe)) {
-					logger.error("Mismatched order currencies for meta order: ({})", metaOrderId);
-					return null;
-				}
+		oValue.amount = oValue.amount.add(metaOrder.getGrandTotal());
+		if (oValue.currency == null) {
+			oValue.currency = getOrderCurrency(metaOrder);
+		} else {
+			if (oValue.currency != getOrderCurrency(metaOrder)) {
+				logger.error("Mismatched order currencies for meta order: ({})", metaOrderId);
+				return null;
 			}
 		}
 		return oValue;
