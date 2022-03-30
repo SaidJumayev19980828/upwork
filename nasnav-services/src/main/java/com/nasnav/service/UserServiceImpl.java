@@ -829,11 +829,9 @@ public class UserServiceImpl implements UserService {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
-		Long tierId = loyaltyTierService.getTierByAmount(orderCount).getId();
-		if (tierId > 0) {
-			return tierId;
-		}
-		return -1L;
+		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
+				.map(LoyaltyTierEntity::getId)
+				.orElse(-1L);
 	}
 
 	private void updateUserBoosterByFamilyMember(Long userId) {
