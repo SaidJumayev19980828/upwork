@@ -716,6 +716,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var normalizedPromoCode = ofNullable(promoCode).map(String::toLowerCase).orElse("");
 		var promos = promoRepo
 				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
+		if (promos.isEmpty()) {
+			promos = promoRepo
+				.findByOrganization_IdAndTypeIdNotIn(securityService.getCurrentUserOrganizationId(),
+						asList(SHIPPING.getValue()),
+						normalizedPromoCode);
+		}
 		if (promoCode != null && !promoCode.equals("")&& promos.size() == 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
 		}
