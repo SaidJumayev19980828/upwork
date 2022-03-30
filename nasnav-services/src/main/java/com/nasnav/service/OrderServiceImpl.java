@@ -1607,6 +1607,13 @@ public class OrderServiceImpl implements OrderService {
 						.flatMap(promoCode ->
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
+		if (promotion.isEmpty()) {
+			promotion=
+					ofNullable(dto.getPromoCode())
+							.flatMap(promoCode ->
+									promoRepo
+											.findByCodeAndOrganization_IdAndActiveNow(promoCode, securityService.getCurrentUserOrganizationId()));
+		}
 
 		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
 		Set<OrdersEntity> subOrders = createYeshterySubOrders(cartDividedByShop, address, dto, org);
