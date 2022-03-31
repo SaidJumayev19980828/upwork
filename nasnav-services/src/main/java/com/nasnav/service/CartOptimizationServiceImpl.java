@@ -27,9 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
@@ -43,8 +41,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -93,6 +90,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
 
 		validateAndAssignUserAddress(dto);
+
+		checkIfCartHasEmptyStock();
 
 		var optimizedCart = createOptimizedCart(dto);
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
@@ -180,25 +179,35 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		var parameters = optimizer.createCartOptimizationParameters(dto);
 		var cart = cartService.getCart(dto.getPromoCode());
 
-		checkIfCartHasEmptyStock();
-
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}
 
 	private void checkIfCartHasEmptyStock() {
 		Long userId = securityService.getCurrentUser().getId();
 		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
+		List<CartItemEntity> movedItems = new ArrayList<>();
 		if (!outOfStockCartItems.isEmpty()) {
 			for (CartItemEntity item : outOfStockCartItems) {
-				item
+				boolean isEmpty = item
 					.getStock()
 					.getProductVariantsEntity()
 					.getStocks()
 					.stream()
 					.filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
 					.findFirst()
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019, item.getId()));
+					.isEmpty();
+				if (isEmpty) {
+					movedItems.add(item);
+				}
 			}
+			cartService.moveCartItemsToWishlist(movedItems);
+			List<Long> removedVariants = movedItems
+					.stream()
+					.map(CartItemEntity::getStock)
+					.map(StocksEntity::getProductVariantsEntity)
+					.map(ProductVariantsEntity::getId)
+					.collect(toList());
+			//throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019, removedVariants.toString());
 		}
 	}
 
