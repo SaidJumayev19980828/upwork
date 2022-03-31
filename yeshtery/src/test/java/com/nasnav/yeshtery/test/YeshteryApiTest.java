@@ -38,7 +38,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -100,7 +99,7 @@ public class YeshteryApiTest {
     private final String YESHTERY_ORDER_RETURN_CONFIRM_API_PATH = YeshteryConstants.API_PATH + "/order/return/confirm";
     private final String YESHTERY_ORDER_STATUS_UPDATE_API_PATH = YeshteryConstants.API_PATH + "/order/status/update";
     private final String YESHTERY_SHIPPING_OFFERS_API_PATH = YeshteryConstants.API_PATH + "/shipping/offers";
-    private final String YESHTERY_GET_BRANDS_API_PATH = YeshteryConstants.API_PATH + "/brands";
+    private final String YESHTERY_GET_BRANDS_API_PATH = YeshteryConstants.API_PATH + "/yeshtery/brands";
 
     public static final String USELESS_NOTE = "come after dinner";
     private static final String EXPECTED_COVER_IMG_URL = "99001/img1.jpg";
@@ -748,7 +747,7 @@ public class YeshteryApiTest {
     public void getReturnRequestsInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("101112");
         ResponseEntity<String> response = template.exchange(YESHTERY_ORDER_RETURN_REQUESTS_API_PATH, GET, request, String.class);
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
     }
 
     @Test
@@ -790,7 +789,7 @@ public class YeshteryApiTest {
     public void getReturnRequestInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("192021");
         ResponseEntity<ReturnRequestDTO> response = template.exchange(YESHTERY_ORDER_RETURN_REQUEST_API_PATH + "?id=330031", GET, request, ReturnRequestDTO.class);
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
     }
 
     @Test
@@ -802,13 +801,14 @@ public class YeshteryApiTest {
         Assert.assertEquals(401, response.getStatusCodeValue());
     }
 
+    // TODO: Fix template "order_return_notification_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void customerCreateReturnRequestNoAuthZTest() {
         JSONObject body = createReturnRequestBody();
 
-        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "101112");
         ResponseEntity<String> response = template.postForEntity(YESHTERY_ORDER_RETURN_API_PATH, request, String.class);
 
         Assert.assertEquals(FORBIDDEN, response.getStatusCode());
@@ -888,7 +888,7 @@ public class YeshteryApiTest {
 
         HttpEntity<?> request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> response = template.postForEntity(YESHTERY_ORDER_RETURN_API_PATH, request, String.class);
-
+        //mapper.readValue(response.getBody(), ErrorResponseDTO.class);
         Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
 
@@ -1205,7 +1205,7 @@ public class YeshteryApiTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
+        Assert.assertEquals(NOT_ACCEPTABLE, res.getStatusCodeValue());
     }
 
     private JSONObject createOrderStatusUpdateRequest(OrderStatus status) {
@@ -1449,7 +1449,11 @@ public class YeshteryApiTest {
             organization = organizationRepository.findOneById(99001L);
         }
 
-        persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
+        persistentUser = Optional.ofNullable(organization)
+                .map(o -> userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", o.getId()))
+                .orElse(null);
+
+        //persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
         if (persistentUser == null) {
             persistentUser = createUser();
 
@@ -1496,12 +1500,17 @@ public class YeshteryApiTest {
     }    */
 
     @Test
-    @Sql({"/sql/Products_Test_Data_Insert.sql", "/sql/database_cleanup.sql"})
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getYeshteryBrands() throws JsonProcessingException {
-        template.getForEntity(YESHTERY_GET_BRANDS_API_PATH, PageImpl.class);
+        var response = template.getForEntity(YESHTERY_GET_BRANDS_API_PATH, Object.class);
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        Integer numOfBrands = (Integer) body.get("totalPages");
 
-        assertEquals(200, 200);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(1, numOfBrands.intValue());
     }
+
 
     private void assertFirstLevelCategoriesReturned(List<CategoryDto> rootLevel) {
         var firstLevel = getCategoriesOfFirstLevel(rootLevel);
