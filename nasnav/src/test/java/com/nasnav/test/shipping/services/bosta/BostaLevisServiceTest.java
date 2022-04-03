@@ -170,6 +170,7 @@ public class BostaLevisServiceTest {
 
 	private List<ShippingDetails> createShippingsDetails() {
 		var customerAddr = new ShippingAddress();
+		customerAddr.setId(123L);
 		customerAddr.setAddressLine1("Mama st.");
 		customerAddr.setArea(181818L);
 		customerAddr.setBuildingNumber("555");

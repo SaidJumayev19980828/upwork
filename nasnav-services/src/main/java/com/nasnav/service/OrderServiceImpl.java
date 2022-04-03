@@ -1348,7 +1348,7 @@ public class OrderServiceImpl implements OrderService {
 	private AddressesEntity getAddressById(Long addressId, Long userId) {
 		return addressRepo
 						.findByIdAndUserId(addressId, userId)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressId));
+						.orElse(null);
 	}
 
 	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
@@ -1640,9 +1640,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
-		if (dto.getAddressId() == null) {
+		/*if (dto.getAddressId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
-		}
+		}*/
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}

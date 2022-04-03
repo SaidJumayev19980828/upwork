@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -236,6 +235,8 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+		validateShippingAddress(shipment);
+
 		var serverUrl =
 				ofNullable(paramMap.get(SERVER_URL))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
@@ -417,6 +418,9 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	private Optional<Shipment> createShipmentOffer(IndexedData<ShippingDetails> details) {
+		if (details.getData().getDestination().getId() == -1L)
+			return Optional.empty();
+
 		var eta = calculateEta(details);
 		var stocks = getStocks(details);
 		return calculateFee(details)
@@ -425,7 +429,12 @@ public class BostaLevisShippingService implements ShippingService{
 	}
 
 	
-	
+	private void validateShippingAddress(ShippingDetails details) {
+		ShippingAddress address = details.getDestination();
+		if (address.getId() == -1L){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+		}
+	}
 
 
 	private List<Long> getStocks(IndexedData<ShippingDetails> details) {

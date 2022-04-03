@@ -27,7 +27,7 @@ public class YeshteryShippingController {
 
     @GetMapping(path = "/offers", produces= APPLICATION_JSON_VALUE)
     public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("customer_address") Long customerAddress,
+                                                    @RequestParam(value = "customer_address", required = false, defaultValue = "-1") Long customerAddress,
                                                     @RequestParam(value = "payment_method_id", required = false, defaultValue = "") String paymentMethodId,
                                                     @RequestParam(value = "shipping_service_id", required = false, defaultValue = "") String shippingServiceId) {
         return shippingService.getYeshteryShippingOffers(customerAddress, paymentMethodId, shippingServiceId);

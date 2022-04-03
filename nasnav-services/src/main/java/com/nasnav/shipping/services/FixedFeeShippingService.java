@@ -126,6 +126,8 @@ public class FixedFeeShippingService implements ShippingService {
 
 
     protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
+        if (shippingInfo.get(0).getDestination().getId() == -1L)
+            return Mono.empty();
         if(!areCitiesSupported(shippingInfo)) {
             return Mono.just(new ShippingOffer(serviceInfo, ERR_CITY_NOT_SUPPORTED));
         }

@@ -247,6 +247,12 @@ public class ClickNShipShippingService implements ShippingService {
                 .onErrorResume(err -> {logger.error(err,err); return Mono.empty();});
     }
 
+    private void validateShippingAddress(ShippingDetails details) {
+        ShippingAddress address = details.getDestination();
+        if (address.getId() == -1L){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+        }
+    }
 
 
     private Mono<ShippingEta> getShippingEta() {
@@ -257,6 +263,8 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(ShippingDetails details) {
+        if (details.getDestination().getId() == -1L)
+            return Optional.empty();
         ShippingAddress originAddr = getSourceAddress(details);
         ShippingAddress destAddr = getDestinationAddress(details);
         Optional<String> originCity = getCityNameOptional(originAddr);
@@ -338,6 +346,8 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+        validateShippingAddress(shipment);
+
         String serverUrl = getServiceParam(SERVER_URL);
         ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
         ShipmentRequest request = createShipmentRequest(shipment);

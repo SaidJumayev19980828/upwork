@@ -305,6 +305,7 @@ public class ClicknshipServiceTest {
         source2.setCity(1001L);
 
         var dest = new ShippingAddress();
+        dest.setId(311L);
         dest.setName("BENSON ADEWALE");
         dest.setAddressLine1("23 Ikorodu Road, Maryland, Lagos");
         dest.setArea(22L);
