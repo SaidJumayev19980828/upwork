@@ -833,7 +833,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         Long orgId = org.map(OrganizationEntity::getId).orElse(-1L);
         String shippingService = getShippingService(request);
         AddressRepObj pickupAddr = getPickupAddress(request);
-        String returnOrderPageUrl = domainService.buildDashboardReturnRequestPageUrl(request.getId(), orgId);
+        String returnOrderPageUrl = domainService.getOrganizationDomainOnly(user.get().getOrganizationId()).get(0);
+        returnOrderPageUrl += domainService.buildDashboardReturnRequestPageUrl(request.getId(), orgId);
         String phone =
                 ofNullable(pickupAddr)
                         .map(AddressRepObj::getPhoneNumber)
