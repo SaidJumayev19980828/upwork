@@ -8,6 +8,7 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
+import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
@@ -101,9 +102,10 @@ public class PaymobService {
                 String resBody = readInputStream(response.getEntity().getContent());
                 orderResponse = gson.fromJson(resBody, OrderResponse.class);
             } else {
-                throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
+                throw new BusinessException(response.getEntity().getContent().toString(), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
             }
         } catch (Exception ex) {
+            classLogger.error(ex);
             throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }
         return orderResponse;
@@ -127,12 +129,13 @@ public class PaymobService {
         payMobAccount = getAccountForOrder(metaOrder.getId());
 
         Long userId = orders.get(0).getUserId();
+        Long transactionId = Long.valueOf(Tools.getOrderUid(metaOrderId, classLogger).replace("-", ""));
 
         TokenResponse authToken = getAuthToken();
         TokenResponse paymentToken = null;
         if (authToken != null) {
             HttpClient client = getHttpClient();
-            OrderResponse orderResponse = registerOrder(fromOrderValue(orderValue, authToken.getToken(), metaOrderId));
+            OrderResponse orderResponse = registerOrder(fromOrderValue(orderValue, authToken.getToken(), transactionId));
             if (orderResponse != null) {
                 paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrderId, orderValue, client, orderResponse, userId);
             }
@@ -226,11 +229,11 @@ public class PaymobService {
         return payment;
     }
 
-    private OrderRequest fromOrderValue(OrderService.OrderValue metaOrder, String token, Long metaOrderId) {
+    private OrderRequest fromOrderValue(OrderService.OrderValue metaOrder, String token, Long transactionId) {
         return OrderRequest.builder()
                 .authToken(token)
                 .amountCents(metaOrder.amount.multiply(new BigDecimal(100)))
-                .merchantOrderId(metaOrderId)
+                .merchantOrderId(transactionId)
                 .items(Collections.emptyList())
                 .build();
     }

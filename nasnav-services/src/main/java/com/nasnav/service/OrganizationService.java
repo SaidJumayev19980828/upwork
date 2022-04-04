@@ -69,7 +69,7 @@ public interface OrganizationService {
 
     void removeSubscribedUser(String email);
 
-    LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(Long orgId, String deliveryService);
+    LinkedHashMap<String, Map<String, Object>> getOrganizationPaymentGateways(Long orgId, String deliveryService);
 
     List<ProductFeatureType> getProductFeatureTypes();
 

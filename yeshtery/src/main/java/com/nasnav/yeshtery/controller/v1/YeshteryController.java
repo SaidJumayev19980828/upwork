@@ -281,7 +281,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)
-    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+    public LinkedHashMap<String, Map<String, Object>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
                                                                                      @RequestParam(value = "delivery", required = false) String deliveryService) {
         return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
     }
