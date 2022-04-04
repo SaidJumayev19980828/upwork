@@ -47,6 +47,7 @@ DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.units;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
+DELETE FROM public.variant_feature_values WHERE feature_id BETWEEN 234 AND 240;
 DELETE FROM public.product_features where organization_id between 99000 and 99999;
 DELETE FROM public.product_images WHERE
         product_id IN (SELECT id from public.products where organization_id between 99000 and 99999)
