@@ -1831,7 +1831,9 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
 		subOrder.setStatus(status);
-		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
+		if (order.getAddressEntity() != null) {
+			subOrder.setDeliveryAddress((AddressRepObj) order.getAddressEntity().getRepresentation());
+		}
 		subOrder.setItems(items);
 		subOrder.setShipment(shipmentDto);
 		subOrder.setTotalQuantity(totalQuantity);

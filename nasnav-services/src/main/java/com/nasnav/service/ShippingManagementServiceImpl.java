@@ -861,7 +861,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
 		return 	firstExistingValueOf(
-					ofNullable(addr.getPhoneNumber()).orElse(null)
+					ofNullable(addr).map(AddressesEntity::getPhoneNumber).orElse(null)
 					, customer.getMobile()
 					, customer.getPhoneNumber())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId()));
