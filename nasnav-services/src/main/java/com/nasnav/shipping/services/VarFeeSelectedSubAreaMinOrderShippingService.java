@@ -127,6 +127,10 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
         var serviceInfo = getServiceInfo();
+
+        if (items.get(0).getDestination().getId() == -1L)
+            return Mono.empty();
+
         if(!areSubAreasSupported(items)) {
             return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }else if(isOrderValueTooLow(items)){

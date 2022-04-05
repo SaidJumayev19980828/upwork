@@ -108,7 +108,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
 					.map(UserAddressEntity::getAddress)
 					.map(AddressesEntity::getId)
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,O$RET$0019));
+					.orElse(-1L);
 			dto.setAddressId(addressId);
 		}
 	}

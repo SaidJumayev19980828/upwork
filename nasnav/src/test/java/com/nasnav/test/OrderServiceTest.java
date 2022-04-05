@@ -1255,7 +1255,7 @@ public class OrderServiceTest {
 		.sendThymeleafTemplateMail(
 			Mockito.eq("organization_1")
 			,Mockito.eq(asList("user1@nasnav.com"))
-			, Mockito.eq(ORDER_REJECT_SUBJECT)
+			, Mockito.eq(format(ORDER_REJECT_SUBJECT, "organization_1"))
 			, Mockito.anyList()
 			, Mockito.eq(asList("testuser3@nasnav.com"))
 			, Mockito.eq(ORDER_REJECT_TEMPLATE)

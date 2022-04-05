@@ -130,6 +130,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
     protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
+        if (shippingInfo.get(0).getDestination().getId() == -1L)
+            return Mono.empty();
         if(!areAreasSupported(shippingInfo)) {
             return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }
