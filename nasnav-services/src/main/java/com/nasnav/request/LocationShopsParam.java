@@ -9,6 +9,7 @@ public class LocationShopsParam {
     private String name;
     private Long orgId;
     private Long areaId;
+    private Long cityId;
     private Double minLongitude;
     private Double minLatitude;
     private Double maxLongitude;
@@ -19,4 +20,5 @@ public class LocationShopsParam {
     private boolean yeshteryState;
     private boolean searchInTags;
     private Integer[] productType;
+    private Long count;
 }

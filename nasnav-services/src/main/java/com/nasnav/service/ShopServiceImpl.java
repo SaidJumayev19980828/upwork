@@ -183,15 +183,15 @@ public class ShopServiceImpl implements ShopService {
             Expression e = new SQLQuery<>().union(productsQuery, collectionsQuery).as("total");
             query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
                     .from(e)
-                    .limit(10);
+                    .limit(param.getCount());
         } else if (productsQuery != null) {
             query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
                     .from(productsQuery.as("total"))
-                    .limit(10);
+                    .limit(param.getCount());
         } else if (collectionsQuery != null) {
             query = queryFactory.select(Expressions.template(ShopRepresentationObject.class, "*"))
                     .from(collectionsQuery.as("total"))
-                    .limit(10);
+                    .limit(param.getCount());
         }
 
         List<ShopRepresentationObject> shops = template.query(query.getSQL().getSQL(),
@@ -223,6 +223,7 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QCities city = QCities.cities;
         QOrganizations organization = QOrganizations.organizations;
 
         predicate.and(shop.removed.eq(0));
@@ -260,6 +261,8 @@ public class ShopServiceImpl implements ShopService {
                     .and(address.longitude.between(param.getMinLongitude(), param.getMaxLongitude()));
         } else if (param.getAreaId() != null) {
             predicate.and(area.id.eq(param.getAreaId()));
+        } else if (param.getCityId() != null) {
+                predicate.and(city.id.eq(param.getCityId()));
         } else if (!anyIsNull(param.getLongitude(), param.getLatitude())) {
             Double minLat, maxLat, minLong, maxLong, radius;
             radius = ofNullable(param.getRadius()).map(r -> r/100).orElse(0.1);
@@ -291,6 +294,7 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QCities city = QCities.cities;
         QOrganizations organizations = QOrganizations.organizations;
         SQLQuery productsQuery;
         if (searchInTags) {
@@ -305,7 +309,8 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
-                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         } else {
@@ -318,7 +323,8 @@ public class ShopServiceImpl implements ShopService {
                     .innerJoin(product).on(variant.productId.eq(product.id))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
-                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         }
@@ -335,6 +341,7 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QCities city = QCities.cities;
         QOrganizations organizations = QOrganizations.organizations;
         SQLQuery collectionsQuery;
 
@@ -351,7 +358,8 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
-                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         } else {
@@ -365,7 +373,8 @@ public class ShopServiceImpl implements ShopService {
                     .innerJoin(product).on(collection.productId.eq(product.id))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
-                    .leftJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         }
