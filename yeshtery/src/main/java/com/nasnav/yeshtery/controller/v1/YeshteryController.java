@@ -121,7 +121,10 @@ public class YeshteryController {
     }
 
     @GetMapping(value="/review", produces = APPLICATION_JSON_VALUE)
-    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
+                                                                   @RequestParam(value = "product_id", required = false)Long productId) {
+        if (productId != null)
+            return reviewService.getYeshteryProductRatings(productId);
         return reviewService.getYeshteryVariantRatings(variantId);
     }
 
@@ -161,8 +164,10 @@ public class YeshteryController {
     }
 
     @GetMapping(value="countries", produces=MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, CountriesRepObj> getCountries(@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities) {
-        return addressService.getCountries(hideEmptyCities, null);
+    public Map<String, CountriesRepObj> getCountries(
+            @RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities,
+            @RequestParam(value = "org_id", required = false) Long orgId) {
+        return addressService.getCountries(hideEmptyCities, orgId);
     }
 
     @GetMapping( path="files/{orgId}/{url}")
