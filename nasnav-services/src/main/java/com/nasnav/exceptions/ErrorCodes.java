@@ -224,7 +224,7 @@ public enum ErrorCodes {
 	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
 	,O$CRT$0017("Requested price exceeded maximum allowed price")
 	,O$CRT$0018("Cart optimization resulted in empty cart!")
-	,O$CRT$0019("Can't change stock of item [%d] as no stock available!")
+	,O$CRT$0019("Variants %s has no stocks available!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")

@@ -672,7 +672,6 @@ public class CartServiceImpl implements CartService{
         List<CartItemEntity> movedItems = new ArrayList<>();
         Set<Long> cartItemsIds = new HashSet<>();
 
-
         for (CartItemEntity item : cartItems) {
             var stock = item
                 .getStock()
@@ -688,11 +687,17 @@ public class CartServiceImpl implements CartService{
                 cartItemsIds.add(item.getId());
             }
         }
-        movedItems.forEach(cartServiceHelper::addOutOfStockFlag);
         cartItemRepo.saveAll(cartItems);
-        cartItemRepo.saveAll(movedItems);
-
-        cartItemRepo.moveCartItemsToWishlistItems(cartItemsIds);
+        moveCartItemsToWishlist(movedItems);
         logger.info(format("moved %d items to wishlist", cartItemsIds.size()));
     }
+
+    @Override
+    public void moveCartItemsToWishlist(List<CartItemEntity> movedItems) {
+        Set<Long> movedItemsIds = movedItems.stream().map(CartItemEntity::getId).collect(toSet());
+        movedItems.forEach(cartServiceHelper::addOutOfStockFlag);
+        cartItemRepo.saveAll(movedItems);
+        cartItemRepo.moveCartItemsToWishlistItems(movedItemsIds);
+    }
+
 }
