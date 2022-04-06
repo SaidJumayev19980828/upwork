@@ -52,18 +52,9 @@ public class PaymentPayMobTest {
     public void testPayMob() throws Exception {
         PaymobSource source = new PaymobSource("01010101010", "WALLET");
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(1L);
-        PaymobPaymentResponse result = service.init(metaOrder.get(), source);
+        String result = service.init(metaOrder.get(), source);
 
         assertNotNull(result);
-        assertNotNull(result.getToken());
-
-
-        service.verifyAndStore(result.getToken());
-        PaymentEntity payment = paymentCommons.getPaymentForOrderUid(result.getToken());
-
-        assertNotNull(payment);
-        assertEquals(payment.getStatus(), PAID);
-
     }
 
 

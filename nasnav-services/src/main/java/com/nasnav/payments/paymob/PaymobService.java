@@ -159,8 +159,8 @@ public class PaymobService {
         Gson gson = getGson();
 
         JSONObject sourceJson = new JSONObject();
-        sourceJson.put("identifier", "AGGREGATOR");
-        sourceJson.put("subtype", "AGGREGATOR");
+        sourceJson.put("identifier", sourceEntity.getIdentifier());
+        sourceJson.put("subtype", sourceEntity.getType());
 
 
         JSONObject data = new JSONObject();
