@@ -231,17 +231,17 @@ public class ShopServiceImpl implements ShopService {
         predicate.and(variant.removed.eq(0));
         if(param.getName() != null) {
             if (param.isSearchInTags()) {
-                predicate.and(product.name.likeIgnoreCase( "%" + param.getName() + "%")
-                        .or(product.description.likeIgnoreCase( "% " + param.getName() + " %"))
-                        .or(product.description.likeIgnoreCase( param.getName() + " %"))
-                        .or(product.description.likeIgnoreCase( "% " + param.getName()))
-                        .or(tag.name.likeIgnoreCase("%" + param.getName() + "%")));
+                predicate.and(product.name.lower().like( "%" + param.getName() + "%")
+                        .or(product.description.lower().like( "% " + param.getName() + " %"))
+                        .or(product.description.lower().like( param.getName() + " %"))
+                        .or(product.description.lower().like( "% " + param.getName()))
+                        .or(tag.name.lower().like("%" + param.getName() + "%")));
             }
             else {
-                predicate.and(product.name.likeIgnoreCase("%" + param.getName() + "%")
-                        .or(product.description.likeIgnoreCase( param.getName() + " %"))
-                        .or(product.description.likeIgnoreCase( "% " + param.getName()))
-                        .or(product.description.likeIgnoreCase( "% " + param.getName() + " %")));
+                predicate.and(product.name.lower().like("%" + param.getName() + "%")
+                        .or(product.description.lower().like( param.getName() + " %"))
+                        .or(product.description.lower().like( "% " + param.getName()))
+                        .or(product.description.lower().like( "% " + param.getName() + " %")));
             }
         }
         if (param.isYeshteryState()) {
