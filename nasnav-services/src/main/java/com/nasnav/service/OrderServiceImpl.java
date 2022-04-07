@@ -547,8 +547,6 @@ public class OrderServiceImpl implements OrderService {
 		String serviceId = shipment.getServiceId();
 		if (shippingMgrService.isPickupService(serviceId)) {
 			shipment.setServiceName("Pickup at " + subOrder.getShopName() + shopAreaNameString);
-			AddressRepObj address = subOrder.getDeliveryAddress();
-			BeanUtils.copyProperties(address, shopAddress);
 			subOrder.setDeliveryAddress(shopAddress);
 			subOrder.setPickup(true);
 		}

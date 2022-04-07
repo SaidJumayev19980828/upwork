@@ -57,6 +57,9 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     @JsonIgnore
     private Long addressId;
 
+    @JsonIgnore
+    private Long cityId;
+
     @JsonProperty("has_360")
     public Boolean has360;
 

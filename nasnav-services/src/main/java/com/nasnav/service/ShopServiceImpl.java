@@ -172,7 +172,7 @@ public class ShopServiceImpl implements ShopService {
         SQLQuery productsQuery = null;
         SQLQuery collectionsQuery = null;
         SQLQuery query = null;
-        BooleanBuilder predicate = getQueryPredicate(param);
+        BooleanBuilder predicate = getQueryPredicate(param, true);
         if (   asList(param.getProductType()).contains(0)) {
             productsQuery = getProductsQuery(predicate, param.isSearchInTags());
         }
@@ -215,14 +215,12 @@ public class ShopServiceImpl implements ShopService {
 
 
 
-    private BooleanBuilder getQueryPredicate(LocationShopsParam param) {
+    private BooleanBuilder getQueryPredicate(LocationShopsParam param, boolean addLocationConditions) {
         BooleanBuilder predicate = new BooleanBuilder();
         QShops shop = QShops.shops;
         QProductVariants variant = QProductVariants.productVariants;
         QProducts product = QProducts.products;
         QTags tag = QTags.tags;
-        QAddresses address = QAddresses.addresses;
-        QAreas area = QAreas.areas;
         QOrganizations organization = QOrganizations.organizations;
 
         predicate.and(shop.removed.eq(0));
@@ -255,16 +253,25 @@ public class ShopServiceImpl implements ShopService {
         } else {
             param.setProductType(new Integer[]{0});
         }
+        if (addLocationConditions)
+            addLocationPredicateConditions(param, predicate);
+
+        return predicate;
+    }
+
+    private void addLocationPredicateConditions(LocationShopsParam param, BooleanBuilder predicate) {
+        QAddresses address = QAddresses.addresses;
+        QAreas area = QAreas.areas;
         if (!anyIsNull(param.getMinLongitude(), param.getMinLatitude(), param.getMaxLongitude(), param.getMaxLatitude())) {
             predicate.and(address.latitude.between(param.getMinLatitude(), param.getMaxLatitude()))
                     .and(address.longitude.between(param.getMinLongitude(), param.getMaxLongitude()));
         } else if (param.getAreaId() != null) {
             predicate.and(area.id.eq(param.getAreaId()));
         } else if (param.getCityId() != null) {
-                predicate.and(area.cityId.eq(param.getCityId()));
+            predicate.and(area.id.in(queryFactory.select(area.id).from(area).where(area.cityId.eq(param.getCityId()))));
         } else if (!anyIsNull(param.getLongitude(), param.getLatitude())) {
             Double minLat, maxLat, minLong, maxLong, radius;
-            radius = ofNullable(param.getRadius()).map(r -> r/100).orElse(0.1);
+            radius = ofNullable(param.getRadius()).orElse(0.1);
             minLong = getMinOrMaxLongitude(param.getLongitude(), radius ,225 );
             minLat = getMinOrMaxLatitude(param.getLatitude(), radius ,225 );
             maxLong = getMinOrMaxLongitude(param.getLongitude(), radius ,45 );
@@ -272,8 +279,6 @@ public class ShopServiceImpl implements ShopService {
             predicate.and(address.latitude.between(minLat, maxLat))
                     .and(address.longitude.between(minLong, maxLong));
         }
-
-        return predicate;
     }
 
     private double getMinOrMaxLongitude(double longitude, double radius, int angel) {
@@ -297,7 +302,7 @@ public class ShopServiceImpl implements ShopService {
         SQLQuery productsQuery;
         if (searchInTags) {
             productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, area.cityId)
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -342,7 +347,7 @@ public class ShopServiceImpl implements ShopService {
 
         if (searchInTags) {
             collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, area.cityId)
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
