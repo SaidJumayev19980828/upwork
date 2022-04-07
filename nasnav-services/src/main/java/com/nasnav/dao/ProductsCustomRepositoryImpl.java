@@ -142,7 +142,7 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		return select(productTags.productId)
 				.from(productTags)
 				.join(tag).on(tag.id.eq(productTags.tagId))
-				.where(tag.name.likeIgnoreCase(params.getName()));
+				.where(tag.name.lower().like(params.getName()));
 	}
 
 	@Override
@@ -155,7 +155,7 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 				.join(tag).on(tag.id.eq(productTags.tagId))
 				.where(tag.categoryId.in(select(category.id)
 										.from(category)
-										.where(category.name.likeIgnoreCase(params.getCategory_name()))));
+										.where(category.name.lower().like(params.getCategory_name()))));
 	}
 
 	@Override
