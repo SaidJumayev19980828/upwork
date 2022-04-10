@@ -148,7 +148,11 @@ public class PaymobService {
             }
         }
         if (paymentToken != null) {
-            return pay(paymentToken, authToken, metaOrder, sourceEntity);
+            if(!sourceEntity.getType().equalsIgnoreCase("CARD")) {
+                return pay(paymentToken, authToken, metaOrder, sourceEntity);
+            } else {
+                return  "{\"token\":\""+paymentToken.getToken()+"\"}";
+            }
 
         }
 
