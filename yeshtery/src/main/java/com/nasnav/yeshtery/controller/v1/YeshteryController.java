@@ -90,7 +90,25 @@ public class YeshteryController {
         return shopService.getLocationShops(param);
     }
 
-
+    @GetMapping(value = "/location_shops_cities", produces = APPLICATION_JSON_VALUE)
+    public Set<CityIdAndName> getLocationShopsCities(@RequestParam(value = "name", required = false) String name,
+                                               @RequestParam(name = "org_id", required = false) Long orgId,
+                                               @RequestParam(value = "area_id", required = false) Long areaId,
+                                               @RequestParam(value = "city_id", required = false) Long cityId,
+                                               @RequestParam(required = false) Double minLongitude,
+                                               @RequestParam(required = false) Double maxLongitude,
+                                               @RequestParam(required = false) Double minLatitude,
+                                               @RequestParam(required = false) Double maxLatitude,
+                                               @RequestParam(required = false) Double longitude,
+                                               @RequestParam(required = false) Double latitude,
+                                               @RequestParam(required = false) Double radius,
+                                               @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+                                               @RequestParam(value = "product_type", required = false) Integer[] productType,
+                                               @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
+        return shopService.getLocationShopsCities(param);
+    }
 
     @GetMapping(value = "/related_products", produces = APPLICATION_JSON_VALUE)
     public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {

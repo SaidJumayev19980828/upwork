@@ -2,10 +2,7 @@ package com.nasnav.service;
 
 
 import com.nasnav.dao.*;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.OrganizationImagesRepresentationObject;
-import com.nasnav.dto.ShopJsonDTO;
-import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ShopIdAndPriority;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -16,7 +13,6 @@ import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Expression;
-import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
@@ -30,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.cache.annotation.CacheResult;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
@@ -169,11 +166,39 @@ public class ShopServiceImpl implements ShopService {
     
     @Override
     public List<ShopRepresentationObject> getLocationShops(LocationShopsParam param) {
+        BooleanBuilder predicate = getQueryPredicate(param, true);
+
+        SQLQuery query = getShopsQuery(param, predicate);
+
+        List<ShopRepresentationObject> shops = template.query(query.getSQL().getSQL(),
+                new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
+
+        List<Long> addressesIds = shops.stream().map(ShopRepresentationObject::getAddressId).collect(toList());
+        Map<Long, AddressRepObj> addresses = addressRepo.findByIdIn(addressesIds)
+                .stream()
+                .collect(toMap(AddressesEntity::getId, a -> (AddressRepObj) a.getRepresentation()));
+        shops.stream().map(s -> this.setShopAddress(s, addresses)).collect(toList());
+        return shops;
+    }
+
+    @Override
+    public Set<CityIdAndName> getLocationShopsCities(LocationShopsParam param) {
+        BooleanBuilder predicate = getQueryPredicate(param, false);
+
+        SQLQuery query = getShopsQuery(param, predicate);
+
+        return template.query(query.getSQL().getSQL(),
+                        new BeanPropertyRowMapper<>(ShopRepresentationObject.class))
+                .stream()
+                .map(s -> new CityIdAndName(s.getCityId(), s.getCityName()))
+                .collect(toSet());
+    }
+
+    private SQLQuery getShopsQuery(LocationShopsParam param, BooleanBuilder predicate) {
         SQLQuery productsQuery = null;
         SQLQuery collectionsQuery = null;
         SQLQuery query = null;
-        BooleanBuilder predicate = getQueryPredicate(param, true);
-        if (   asList(param.getProductType()).contains(0)) {
+        if (asList(param.getProductType()).contains(0)) {
             productsQuery = getProductsQuery(predicate, param.isSearchInTags());
         }
         if (asList(param.getProductType()).contains(2)) {
@@ -193,16 +218,7 @@ public class ShopServiceImpl implements ShopService {
                     .from(collectionsQuery.as("total"))
                     .limit(param.getCount());
         }
-
-        List<ShopRepresentationObject> shops = template.query(query.getSQL().getSQL(),
-                new BeanPropertyRowMapper<>(ShopRepresentationObject.class));
-
-        List<Long> addressesIds = shops.stream().map(ShopRepresentationObject::getAddressId).collect(toList());
-        Map<Long, AddressRepObj> addresses = addressRepo.findByIdIn(addressesIds)
-                .stream()
-                .collect(toMap(AddressesEntity::getId, a -> (AddressRepObj) a.getRepresentation()));
-        shops.stream().map(s -> this.setShopAddress(s, addresses)).collect(toList());
-        return shops;
+        return query;
     }
 
     private ShopRepresentationObject setShopAddress(ShopRepresentationObject shop, Map<Long, AddressRepObj> addresses) {
@@ -298,11 +314,12 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QCities city = QCities.cities;
         QOrganizations organizations = QOrganizations.organizations;
         SQLQuery productsQuery;
         if (searchInTags) {
             productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, area.cityId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -312,12 +329,13 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
                     .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         } else {
             productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -325,6 +343,7 @@ public class ShopServiceImpl implements ShopService {
                     .innerJoin(product).on(variant.productId.eq(product.id))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
                     .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
@@ -342,12 +361,13 @@ public class ShopServiceImpl implements ShopService {
         QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
+        QCities city = QCities.cities;
         QOrganizations organizations = QOrganizations.organizations;
         SQLQuery collectionsQuery;
 
         if (searchInTags) {
             collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, area.cityId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -358,12 +378,13 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
                     .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());
         } else {
             collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId)
+                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
                     .distinct()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
@@ -372,6 +393,7 @@ public class ShopServiceImpl implements ShopService {
                     .innerJoin(product).on(collection.productId.eq(product.id))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
+                    .innerJoin(city).on(area.cityId.eq(city.id))
                     .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
                     .where(predicate)
                     .orderBy(shop.priority.desc());

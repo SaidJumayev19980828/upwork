@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.CityIdAndName;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.ShopIdAndPriority;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.cache.annotation.CacheResult;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
@@ -25,6 +27,8 @@ public interface ShopService {
     ShopResponse shopModification(ShopJsonDTO shopJson);
 
     List<ShopRepresentationObject> getLocationShops(LocationShopsParam param);
+
+    Set<CityIdAndName> getLocationShopsCities(LocationShopsParam param);
 
     @Transactional
     @CacheEvict(cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
