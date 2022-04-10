@@ -186,7 +186,7 @@ public class PaymobService {
                 throw new BusinessException(errorResponse, "PAYMENT_UNRECOGNIZED_RESPONSE", org.springframework.http.HttpStatus.BAD_GATEWAY);
             }
             String resBody = readInputStream(response.getEntity().getContent());
-             return resBody;
+            return "{\"token\":\""+paymentToken.getToken()+"\", \"data\":"+resBody+"}";
         } catch (Exception ex) {
             throw new BusinessException(ex.getMessage(), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }
