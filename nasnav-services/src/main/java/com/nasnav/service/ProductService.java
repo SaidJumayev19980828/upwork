@@ -878,11 +878,11 @@ public class ProductService {
 		}
 
 		if(params.name != null)
-			predicate.and( product.name.lower().like("%" + params.name + "%")
-					.or(product.id.like("%" + params.name + "%"))
-					.or(product.description.lower().like( "% " + params.getName() + " %"))
-					.or(product.description.lower().like( params.getName() + " %"))
-					.or(product.description.lower().like( "% " + params.getName()))
+			predicate.and( product.name.lower().like("%" + params.name.toLowerCase() + "%")
+					.or(product.id.like("%" + params.name.toLowerCase() + "%"))
+					.or(product.description.lower().like( "% " + params.getName().toLowerCase() + " %"))
+					.or(product.description.lower().like( params.getName().toLowerCase() + " %"))
+					.or(product.description.lower().like( "% " + params.getName().toLowerCase()))
 					.or(variant.productCode.like("%" + params.name + "%") )
 					.or(variant.sku.like("%" + params.name + "%") )
 					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
