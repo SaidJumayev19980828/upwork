@@ -495,7 +495,10 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private AddressRepObj getBillDeliveryAddress(OrdersEntity order){
-		AddressRepObj userAddress = (AddressRepObj)order.getAddressEntity().getRepresentation();
+		AddressRepObj userAddress = ofNullable(order)
+				.map(OrdersEntity::getAddressEntity)
+				.map(addr -> (AddressRepObj) addr.getRepresentation())
+				.orElse(null);
 		return getPickupShopAddress(order)
 				.orElse(userAddress);
 	}
