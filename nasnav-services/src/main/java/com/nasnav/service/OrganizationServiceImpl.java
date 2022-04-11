@@ -1327,12 +1327,13 @@ public class OrganizationServiceImpl implements OrganizationService {
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
             } else if(PAY_MOB.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 PayMobAccount payMobAccount = new PayMobAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                String icon = domainService.getBackendUrl()+payMobAccount.getIcon();
                 body.put("script", payMobAccount.getApiUrl());
-                body.put("icon", domainService.getBackendUrl()+payMobAccount.getIcon());
+                body.put("icon", icon);
                 List<PaymobSourceEntity> paymobSources = paymobSourceRepository.findByOrganization_Id(orgId);
                 List<Map<String, String>> sources = new ArrayList<>();
                 if (paymobSources != null && paymobSources.size() > 0) {
-                    List<Map<String, String>> list = paymobSources.stream().map(this::addPayMobSource).collect(toList());
+                    List<Map<String, String>> list = paymobSources.stream().map(source -> addPayMobSource(source, icon)).collect(toList());
                     body.put("sources", list);
                 }
             }
@@ -1342,11 +1343,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
-    private Map<String, String> addPayMobSource(PaymobSourceEntity source) {
+    private Map<String, String> addPayMobSource(PaymobSourceEntity source, String icon) {
         Map<String, String> sourceMap = new HashMap<>();
         sourceMap.put("value", source.getValue());
         sourceMap.put("name", source.getName());
-        sourceMap.put("icon", domainService.getBackendUrl()+source.getIcon());
+        sourceMap.put("icon", icon);
         sourceMap.put("script", source.getScript());
         return sourceMap;
     }
