@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -29,46 +30,44 @@ public class CartController {
 
 
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
-	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public Cart getCart(@RequestHeader(TOKEN_HEADER) String userToken,
 						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
 		return cartService.getCart(promoCode);
 	}
 
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public Cart addCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
 							@RequestBody CartItem item,
 							@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
 		return cartService.addCartItem(item, promoCode);
 	}
 
 	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
-	public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public Cart addCartItems(@RequestHeader(TOKEN_HEADER) String userToken,
 							 @RequestBody List<CartItem> items,
 							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
 		return cartService.addNasnavCartItems(items, promoCode);
 	}
 
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
-	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public Cart deleteCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
 							   @RequestParam("item_id") Long itemId,
 							   @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
 		return cartService.deleteCartItem(itemId, promoCode);
 	}
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
-	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestBody CartCheckoutDTO dto) {
+	public Order checkoutCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
 		return cartService.checkoutCart(dto);
 	}
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-												@RequestBody CartCheckoutDTO dto) {
+	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
 		return cartOptimizeService.optimizeCart(dto);
 	}
 
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)
-	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(TOKEN_HEADER) String userToken,
 													   @RequestParam(value = "promo", required = false) String promoCode) {
 		return promoService.calcPromoDiscountForCart(promoCode);
 	}

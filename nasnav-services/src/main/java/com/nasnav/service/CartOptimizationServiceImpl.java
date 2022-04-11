@@ -8,12 +8,12 @@ import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.UserAddressEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -76,7 +76,9 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private UserAddressRepository userAddressRepo;
-	
+
+	@Autowired
+	private LoyaltyPointsService loyaltyPointsService;
 	
 	
 	@Override
@@ -94,25 +96,45 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
-		var returnedCart = getCartObject(optimizedCart);
-		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
-		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
-		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
-		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
+		var returnedCart = getCartObject(optimizedCart, dto.getPromoCode());
 		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
+	}
+
+	private void checkIfCartIsEmpty(Cart cart) {
+		Integer totalQuantity = cart.getItems()
+				.stream()
+				.map(CartItem::getQuantity)
+				.reduce(0, Integer::sum);
+		if(totalQuantity == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0018);
+		}
+	}
+
+	private List<LoyaltyPointsCartResponseDto> getUserPointsPerOrg(List<CartItem> items) {
+		UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
+		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getYeshteryUserId(), items);
 	}
 
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
 		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode).getItems().size();
 	}
 
-	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
-		return optimizedCart
+	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, String promoCode) {
+		var returnedCart =  optimizedCart
 				.map(OptimizedCart::getCartItems)
 				.orElse(emptyList())
 				.stream()
 				.map(OptimizedCartItem::getCartItem)
 				.collect(collectingAndThen(toList(), Cart::new));
+
+		checkIfCartIsEmpty(returnedCart);
+
+		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
+		returnedCart.setPromos(promoService.calcPromoDiscountForCart(promoCode, returnedCart));
+		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
+		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
+		returnedCart.setPointsPerOrg(getUserPointsPerOrg(returnedCart.getItems()));
+		return returnedCart;
 	}
 
 

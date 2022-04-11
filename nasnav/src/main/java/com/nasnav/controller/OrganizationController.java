@@ -77,8 +77,9 @@ public class OrganizationController {
     }
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return brandService.getOrganizationBrands(orgId);
+    public List<Organization_BrandRepresentationObject> getOrganizationBrands(@RequestParam(value = "org_id") List<Long> orgIds,
+                                                                              @RequestParam(value = "min_priority", defaultValue = "0", required = false) Integer minPriority) {
+        return brandService.getOrganizationBrands(orgIds, minPriority);
     }
 
     @PostMapping(value = "brand", produces = APPLICATION_JSON_VALUE, consumes = {"multipart/form-data"})

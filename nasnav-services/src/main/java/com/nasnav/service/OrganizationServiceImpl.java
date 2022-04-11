@@ -17,6 +17,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.paymob.PayMobAccount;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -145,7 +146,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public List<OrganizationRepresentationObject> listOrganizations() {
-        return organizationRepository.findAll()
+        return organizationRepository.findAllOrganizations()
                             .stream()
                             .map(org -> (OrganizationRepresentationObject) org.getRepresentation())
                             .collect(toList());
@@ -368,7 +369,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
-    private OrganizationEntity updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
+    private void updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
         if (json.getId() == null) {
             organization.setThemeId(0);
         }
@@ -385,7 +386,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         if(nonNull(json.getYeshteryState())){
             organization.setYeshteryState(json.getYeshteryState().getValue());
         }
-        return organization;
+        if (json.getPriority() != null && json.getPriority() >= 0) {
+            organization.setPriority(json.getPriority());
+        }
+        if (organization.getPriority() == null) {
+            organization.setPriority(0);
+        }
     }
 
     private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {
@@ -633,6 +639,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         dto.setDescription(org.getDescription());
         dto.setImages(getOrganizationImages(org.getId()));
         dto.setShops(getOrganizationShopsDto(org));
+        dto.setPriority(org.getPriority());
         return dto;
     }
 
@@ -1314,6 +1321,10 @@ public class OrganizationServiceImpl implements OrganizationService {
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
                 body.put("script", account.getUpgScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
+            } else if(PAY_MOB.getValue().equalsIgnoreCase(gateway.getGateway())) {
+                PayMobAccount payMobAccount = new PayMobAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                body.put("script", payMobAccount.getApiUrl());
+                body.put("icon", domainService.getBackendUrl()+payMobAccount.getIcon());
             }
             response.put(gateway.getGateway(), body);
         }

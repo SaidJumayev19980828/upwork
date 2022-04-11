@@ -15,6 +15,11 @@ import java.util.Map;
 public class PromotionDTO {
 	private Long id;
 	private String identifier;
+	private String name;
+	private String description;
+	private String banner;
+	private String cover;
+
 	private Long organizationId;
 	private Integer typeId;
 	private Integer classId;

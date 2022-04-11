@@ -67,6 +67,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "yeshtery_state")
     private Integer yeshteryState;
 
+    @Column(name = "priority")
+    private Integer priority;
+
     @OneToMany(mappedBy = "organizationEntity")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -119,6 +122,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setEcommerce((getEcommerce()));
         obj.setGoogleToken(getGoogleToken());
         obj.setMatomoSiteId(getMatomoId());
+        obj.setPriority(getPriority());
         YeshteryState
                 .getYeshteryState(yeshteryState)
                 .ifPresent(obj::setYeshteryState);

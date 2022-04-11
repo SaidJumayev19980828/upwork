@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -58,4 +59,7 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("has_360")
     public Boolean has360;
+
+    @JsonProperty("variant_ids")
+    Set<Long> variantIds;
 }

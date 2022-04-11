@@ -19,7 +19,7 @@ public class MastercardAccount extends Account {
     protected String icon;
     protected int flavor = MastercardService.FLAVOR_BASIC;
 
-    public void init(Properties props, int dbId) {
+    public synchronized void init(Properties props, int dbId) {
 
         super.setup(props);
         this.merchantId = props.getProperty("mcard.merchant_id");

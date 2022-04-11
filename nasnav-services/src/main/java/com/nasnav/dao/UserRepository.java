@@ -64,5 +64,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByEmailAndOrganizationId(String email, Long orgId);
 
-	Optional<UserEntity> findByYeshteryUserIdAndOrganizationId(Long yeshteryUserId, Long orgId);
+    @Query("select distinct u from UserEntity u where u.yeshteryUserId = :yeshteryUserId and u.organizationId = :orgId")
+	Optional<UserEntity> findByYeshteryUserIdAndOrganizationId(@Param("yeshteryUserId") Long yeshteryUserId,
+															   @Param("orgId") Long orgId);
 }

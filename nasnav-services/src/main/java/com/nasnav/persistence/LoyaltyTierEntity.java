@@ -58,10 +58,16 @@ public class LoyaltyTierEntity {
     @Column( name = "cash_back_percentage")
     private BigDecimal cashBackPercentage;
 
+    @Column(name = "coefficient")
+    private BigDecimal coefficient;
+
+
     public LoyaltyTierDTO getRepresentation() {
         LoyaltyTierDTO dto = new LoyaltyTierDTO();
         BeanUtils.copyProperties(this, dto);
-        dto.setOrgId(organization.getId());
+        if(organization != null ) {
+            dto.setOrgId(organization.getId());
+        }
         if (booster != null) {
             dto.setBoosterId(booster.getId());
         }

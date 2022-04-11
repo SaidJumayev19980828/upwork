@@ -10,8 +10,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 --inserting categories
-INSERT INTO public.categories(id, name, logo) VALUES (201, 'category_1', 'cool_cat.jpg');
-INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
+INSERT INTO public.categories(id, name, logo, cover) VALUES (201, 'category_1', 'cool_cat.jpg', 'cool_cat_cover.jpg');
+INSERT INTO public.categories(id, name, logo, cover) VALUES (202, 'category_2', 'cool_cat2.jpg', 'cool_cat_cover2.jpg');
 
 INSERT INTO public.categories(id, name, parent_id) VALUES (203, 'category_1_1', 201);
 INSERT INTO public.categories(id, name, parent_id) VALUES (204, 'category_1_2', 201);

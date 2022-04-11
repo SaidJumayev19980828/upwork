@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
@@ -34,92 +35,80 @@ public class OrdersController {
 	private OrderReturnService returnService;
 
     @PostMapping(value = "status/update", consumes = APPLICATION_JSON_VALUE)
-    public void updateOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-            				@RequestBody OrderJsonDto orderJson) {
+    public void updateOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody OrderJsonDto orderJson) {
     	orderService.updateExistingOrder(orderJson);
     }
 
     @GetMapping(value = "/info", produces = APPLICATION_JSON_VALUE)
-    public DetailedOrderRepObject getOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
+    public DetailedOrderRepObject getOrderInfo(@RequestHeader(TOKEN_HEADER) String userToken,
 											   @RequestParam(name = "order_id") Long orderId,
-											   @RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
-    	return this.orderService.getOrderInfo(orderId, detailsLevel);
+											   @RequestParam(name = "details_level", required = false) Integer detailsLevel) {
+    	return orderService.getOrderInfo(orderId, detailsLevel);
     }
 
 	@GetMapping(value = "/meta_order/info", produces = APPLICATION_JSON_VALUE)
-	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
-								  @RequestParam(name = "id") Long orderId)  {
-		return this.orderService.getMetaOrder(orderId);
+	public Order getMetaOrderInfo(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam(name = "id") Long orderId)  {
+		return orderService.getMetaOrder(orderId, false);
 	}
 
 	@GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
-	public List<DetailedOrderRepObject> getOrdersList(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public List<DetailedOrderRepObject> getOrdersList(@RequestHeader(TOKEN_HEADER) String userToken,
 													  OrderSearchParam params) throws BusinessException {
-		return  this.orderService.getOrdersList(params);
+		return orderService.getOrdersList(params);
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)
-	public String trackOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-									  @RequestParam("order_id") Long orderId) {
+	public String trackOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("order_id") Long orderId) {
 		return orderService.trackOrder(orderId);
 	}
 
 	@GetMapping(value = "/meta_order/list/user", produces = APPLICATION_JSON_VALUE )
-	public List<MetaOrderBasicInfo> getMetaOrderList(@RequestHeader(name = "User-Token", required = false) String userToken) {
+	public List<MetaOrderBasicInfo> getMetaOrderList(@RequestHeader(TOKEN_HEADER) String userToken) {
 		return orderService.getMetaOrderList();
 	}
 
     @PostMapping(value = "confirm", produces = APPLICATION_JSON_VALUE)
-    public OrderConfirmResponseDTO confirmOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-            									@RequestParam("order_id") Long orderId) {
-    	return orderService.confrimOrder(orderId);
+    public OrderConfirmResponseDTO confirmOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("order_id") Long orderId) {
+    	return orderService.confirmOrder(orderId, null, null);
     }
 
     @PostMapping(value = "reject", produces = APPLICATION_JSON_VALUE)
-    public void rejectOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-							@RequestBody OrderRejectDTO dto) {
+    public void rejectOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody OrderRejectDTO dto) {
     	orderService.rejectOrder(dto);
     }
 
     @PostMapping(value = "cancel", produces = APPLICATION_JSON_VALUE)
-    public void cancelOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-							@RequestParam("meta_order_id") Long metaOrderId) {
-    	orderService.cancelOrder(metaOrderId);
+    public void cancelOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("meta_order_id") Long metaOrderId) {
+    	orderService.cancelOrder(metaOrderId, false);
     }
 
 	@GetMapping(value = "return/requests", produces = APPLICATION_JSON_VALUE )
-	public ReturnRequestsResponse getOrderReturnRequests(@RequestHeader(name = "User-Token", required = false) String userToken,
-														 ReturnRequestSearchParams params) {
+	public ReturnRequestsResponse getOrderReturnRequests(@RequestHeader(TOKEN_HEADER) String userToken, ReturnRequestSearchParams params) {
 		return returnService.getOrderReturnRequests(params);
 	}
 
 	@GetMapping(value = "return/request", produces = APPLICATION_JSON_VALUE )
-	public ReturnRequestDTO getOrderReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
-												  @RequestParam Long id) {
+	public ReturnRequestDTO getOrderReturnRequest(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam Long id) {
 		return returnService.getOrderReturnRequest(id);
 	}
 
 	@PostMapping(value = "return/reject")
-	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
-								  @RequestBody ReturnRequestRejectDTO dto) {
+	public void rejectReturnItems(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody ReturnRequestRejectDTO dto) {
 		returnService.rejectReturnRequest(dto);
 	}
 
 	@PostMapping(value = "return/received_item")
-	public void receiveItems(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 @RequestBody ReceivedItemsDTO itemsList) {
+	public void receiveItems(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody ReceivedItemsDTO itemsList) {
 		returnService.receiveItems(itemsList);
 	}
 
 	@PostMapping(value = "return")
-	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 		@RequestBody ReturnRequestItemsDTO itemsList) {
+	public Long createReturnRequest(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody ReturnRequestItemsDTO itemsList) {
 		return returnService.createReturnRequest(itemsList);
 	}
 
 	@PostMapping(value = "return/confirm")
-	public void confirmReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
-								  	 @RequestParam Long id) {
+	public void confirmReturnRequest(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam Long id) {
 		returnService.confirmReturnRequest(id);
 	}
 }

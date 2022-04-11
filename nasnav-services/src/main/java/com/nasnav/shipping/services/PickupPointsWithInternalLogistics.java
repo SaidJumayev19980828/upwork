@@ -251,7 +251,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		.stream()
 		.filter(param -> Objects.equals(param.getName(), SHOP_ID))
 		.findFirst()
-		.ifPresent(param -> param.setOptions(possiblePickupShops));
+		.ifPresent(param -> param.setOptions(Arrays.asList(possiblePickupShops.toArray())));
 		
 		return serviceInfo;
 	}

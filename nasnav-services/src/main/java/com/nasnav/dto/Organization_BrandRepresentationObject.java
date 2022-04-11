@@ -40,5 +40,7 @@ public class Organization_BrandRepresentationObject extends BaseRepresentationOb
     @JsonProperty("cover_url")
     private String coverUrl;
     private Integer priority;
+    @JsonProperty("org_name")
+    private String orgName;
 
 }

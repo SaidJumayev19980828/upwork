@@ -6,8 +6,10 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.Account;
 import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.paymob.PayMobAccount;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.MetaOrderEntity;
@@ -23,10 +25,12 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class Commons {
@@ -94,14 +98,29 @@ public class Commons {
 					return acc2;
 				case RAVE:
 					return new RaveAccount(props, gatewayEntity.getId());
+				case PAY_MOB:
+					return new PayMobAccount(props, gatewayEntity.getId());
 			}
 		}
 		return null;
 	}
 
-	public void finalizePayment (PaymentEntity payment)	throws BusinessException {
+	public void finalizePayment(PaymentEntity payment) throws BusinessException {
 
-		ArrayList<OrdersEntity> orders = new ArrayList<>(ordersRepository.findByMetaOrderId(payment.getMetaOrderId()));
+		MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		Set<OrdersEntity> orders = metaOrder.getSubOrders();
+		if (metaOrder.getOrganization().getYeshteryState().equals(1)) {
+			orders.addAll(metaOrderRepo
+					.findYeshteryMetaorderByMetaOrderId(payment.getMetaOrderId())
+					.get()
+					.getSubMetaOrders()
+					.stream()
+					.map(MetaOrderEntity::getSubOrders)
+					.flatMap(Set::stream)
+					.collect(toSet())
+			);
+		}
 
 		paymentsRepository.saveAndFlush(payment);
 
@@ -111,7 +130,7 @@ public class Commons {
 			ordersRepository.saveAndFlush(order);
 		}
 		ordersRepository.flush();
-		orderService.finalizeOrder(payment.getMetaOrderId());
+		orderService.finalizeYeshteryMetaOrder(metaOrder, orders);
 	}
 
 	public PaymentEntity getPaymentForOrderUid(String uid) {
@@ -122,8 +141,12 @@ public class Commons {
 		return orderService.getMetaOrderTotalValue(metaOrderId);
 	}
 
+	public PaymentEntity getPaymentForMetaOrderId(long metaOrderId) {
+		return paymentsRepository.findByMetaOrderId(metaOrderId).orElse(null);
+	}
 
-    public String readInputStream(InputStream stream) {
+
+	public String readInputStream(InputStream stream) {
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
         return br.lines().collect(Collectors.joining(System.lineSeparator()));
     }

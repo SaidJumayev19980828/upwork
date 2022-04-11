@@ -112,7 +112,7 @@ public class ShopPerSubAreaOptimizerTest {
         ResponseEntity<CartOptimizeResponseDTO> optimizeResponse =
                 template.exchange("/cart/optimize", POST, optimizeRequest, CartOptimizeResponseDTO.class);
 
-        assertEquals(NOT_ACCEPTABLE, optimizeResponse.getStatusCode());
+        assertEquals(OK, optimizeResponse.getStatusCode());
     }
 
 

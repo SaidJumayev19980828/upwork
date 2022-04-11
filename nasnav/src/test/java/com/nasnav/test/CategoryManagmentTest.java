@@ -10,6 +10,7 @@ import com.nasnav.controller.AdminController;
 import com.nasnav.dao.*;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.TagsTreeNodeDTO;
+import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
@@ -140,9 +141,22 @@ public class CategoryManagmentTest {
 
     @Test
     public void createCategorySuccessTest() {
-        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
+        String body = json()
+                .put("operation", "create")
+                .put("parent_id", 202)
+                .put("name", "Perfumes")
+                .put("logo", "categories/logos/564961451_56541.jpg")
+                .put("cover", "cover")
+                .put("cover_small", "cover_small")
+                .toString();
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        CategoriesEntity entity = categoryRepository.findById(response.getBody().getCategoryId()).get();
+        assertEquals("Perfumes", entity.getName());
+        assertEquals("categories/logos/564961451_56541.jpg", entity.getLogo());
+        assertEquals("cover", entity.getCover());
+        assertEquals("cover_small", entity.getCoverSmall());
+
         categoryRepository.deleteById(response.getBody().getCategoryId());
         assertTrue(200 == response.getStatusCode().value());
     }
@@ -185,9 +199,22 @@ public class CategoryManagmentTest {
     
     @Test
     public void updateCategorySuccessTest() {
-        String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        String body = json()
+                .put("operation", "update")
+                .put("id", 201)
+                .put("name", "Makeups")
+                .put("logo", "categories/logos/1111111111.jpg")
+                .put("cover", "cover")
+                .put("cover_small", "cover_small")
+                .toString();
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
-        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        CategoriesEntity entity = categoryRepository.findById(response.getBody().getCategoryId()).get();
+        assertEquals("Makeups", entity.getName());
+        assertEquals("categories/logos/1111111111.jpg", entity.getLogo());
+        assertEquals("cover", entity.getCover());
+        assertEquals("cover_small", entity.getCoverSmall());
+
         assertTrue(200 == response.getStatusCode().value());
     }
 

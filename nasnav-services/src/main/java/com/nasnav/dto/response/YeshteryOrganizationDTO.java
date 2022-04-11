@@ -14,4 +14,5 @@ public class YeshteryOrganizationDTO {
     private String description;
     List<OrganizationImagesRepresentationObject> images = new ArrayList<>();
     List<ShopRepresentationObject> shops;
+    private Integer priority;
 }

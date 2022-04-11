@@ -78,6 +78,7 @@ public enum ErrorCodes {
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
+	,P$STO$0003("Stock is linked to %s!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
@@ -176,6 +177,11 @@ public enum ErrorCodes {
 	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
 	,ORG$LOY$0013("Use either amounts or ratio!")
 	,ORG$LOY$0014("User is not linked to org with id[%d] !")
+	,ORG$LOY$0015("Invalid loyalty config for org with id[%d] !")
+	,ORG$LOY$0016("no Loyalty event with id[%d] !")
+	,ORG$LOY$0017("Invalid Pin code [%s] !")
+	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
+	,ORG$LOY$0019("No tier found with id [%d]!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -214,6 +220,9 @@ public enum ErrorCodes {
 	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
 	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
 	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
+	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
+	,O$CRT$0017("Requested price exceeded maximum allowed price")
+	,O$CRT$0018("Cart optimization resulted in empty cart!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")

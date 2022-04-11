@@ -38,4 +38,11 @@ public class CartItem {
 		this.quantity = quantity;
 		this.additionalData = additionalData;
 	}
+
+	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData, Long orgId) {
+		this.stockId = stockId;
+		this.quantity = quantity;
+		this.additionalData = additionalData;
+		this.orgId = orgId;
+	}
 }

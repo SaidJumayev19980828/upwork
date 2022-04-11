@@ -59,7 +59,10 @@ public class StockServiceImpl implements StockService {
     
     @Autowired
     private ShopsRepository shopRepo;
-
+	@Autowired
+	private CartItemRepository cartRepo;
+	@Autowired
+	private WishlistItemRepository wishlistRepo;
     @Autowired
 	private StockUnitRepository stockUnitRepo;
 
@@ -187,11 +190,29 @@ public class StockServiceImpl implements StockService {
 								, NOT_ACCEPTABLE));
 		return new StockUpdateResponse(id);
 	}
-	
-	
-	
-	
-	
+
+	@Override
+	public void deleteStocks(Long shopId) {
+    	ShopsEntity shop = security
+				.getCurrentUserOrganization()
+				.getShops()
+				.stream()
+				.filter(s -> s.getId().equals(shopId))
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005, shopId, security.getCurrentUserOrganizationId()));
+		validateIfStockIsInCart(shopId);
+		stockRepo.deleteByShopsEntity_Id(shopId);
+	}
+
+	private void validateIfStockIsInCart(Long shopId){
+		if (cartRepo.countByStock_ShopsEntity_Id(shopId) > 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0003, "cart");
+		}
+		if (wishlistRepo.countByStock_ShopsEntity_Id(shopId) > 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$STO$0003, "wishlist");
+		}
+	}
+
 	private StocksEntity prepareStockEntity(IndexedData<StockUpdateDTO> indexedStkDto, VariantCache variantCache,
 											Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache, Map<String, StockUnitEntity> unitsCache) {
 		StockUpdateDTO stockUpdateReq = indexedStkDto.getData();

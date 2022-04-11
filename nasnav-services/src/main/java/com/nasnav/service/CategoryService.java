@@ -118,20 +118,31 @@ public class CategoryService {
     
 
     public CategoriesEntity createCategory(CategoryDTO categoryJson) {
-		validateCategoryCreation(categoryJson);
         CategoriesEntity categoriesEntity = new CategoriesEntity();
+
+		validateCategoryName(categoryJson);
         categoriesEntity.setName(categoryJson.getName());
-        categoriesEntity.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-        	categoriesEntity.setParentId(categoryJson.getParentId());
-        }
-        categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+		categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+
+		setCategoryEntityAdditionalInfo(categoriesEntity, categoryJson);
+
 		return categoryRepository.save(categoriesEntity);
     }
 
-    private void validateCategoryCreation(CategoryDTO categoryJson) {
-		validateCategoryName(categoryJson);
-		validateCategoryParent(categoryJson);
+    private void setCategoryEntityAdditionalInfo(CategoriesEntity entity, CategoryDTO dto) {
+		if (dto.getParentId() != null) {
+			validateCategoryParent(dto);
+			entity.setParentId(dto.getParentId());
+		}
+    	if(dto.getLogo() != null) {
+    		entity.setLogo(dto.getLogo());
+		}
+		if(dto.getCover() != null) {
+			entity.setCover(dto.getCover());
+		}
+		if(dto.getCoverSmall() != null) {
+			entity.setCoverSmall(dto.getCoverSmall());
+		}
 	}
 
 	private void validateCategoryParent(CategoryDTO categoryJson) {
@@ -163,12 +174,7 @@ public class CategoryService {
 			category.setName(categoryJson.getName());
 			category.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         }
-        if (categoryJson.getLogo() != null)
-			category.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-        	validateCategoryParent(categoryJson);
-			category.setParentId(categoryJson.getParentId());
-        }
+        setCategoryEntityAdditionalInfo(category, categoryJson);
 		return categoryRepository.save(category);
     }
 
@@ -204,19 +210,37 @@ public class CategoryService {
 
 //    @CacheResult(cacheName = "organizations_tags")
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
-        List<TagsEntity> tagsEntities;
-        if(isBlankOrNull(categoryName)) {
-        	tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
-        }else {
-        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
-        }
-        return tagsEntities
-        			.stream()
-                    	.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-                    	.collect(toList());
-    }
+		List<TagsEntity> tagsEntities;
+		if (isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByPriorityDesc(orgId);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(categoryName, orgId);
+		}
+		return toTagsDTO(tagsEntities);
+	}
 
-    
+	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId) {
+    	Set<Long> orgIdList = new HashSet<>();
+    	if (orgId == null) {
+			orgIdList = orgRepo.findIdByYeshteryState(1);
+		} else {
+			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
+		}
+		List<TagsEntity> tagsEntities;
+		if(isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList);
+		}
+		return toTagsDTO(tagsEntities);
+	}
+
+	private List<TagsRepresentationObject> toTagsDTO(List<TagsEntity> tagsEntities) {
+		return tagsEntities
+				.stream()
+				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+				.collect(toList());
+    }
     
     
     
@@ -403,7 +427,7 @@ public class CategoryService {
         }else if(Objects.equals(operation, "create")) {
         	if (categoryId == null && hasCategory) {
             	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
-            }else if (isEmpty(tagDTO.getName())) {
+            }else if (isNull(tagDTO.getName())) {
             	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
             }
             
@@ -455,6 +479,11 @@ public class CategoryService {
         if(tagDTO.getGraphId() != null) {
         	entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
         }
+		if(tagDTO.getPriority() != null) {
+			entity.setPriority(tagDTO.getPriority());
+		} else {
+			entity.setPriority(0);
+		}
         
         entity = orgTagsRepo.save(entity);
         String pname = format("%d-%s", entity.getId(), encodeUrl(tagDTO.getName()));
@@ -722,7 +751,8 @@ public class CategoryService {
     	dto.setNodeId(nodeEntity.getId());
     	dto.setTagId(tagEntity.getId());
     	dto.setId(tagEntity.getId());
-    	dto.setAlias(tagEntity.getAlias());
+		dto.setOrgId(tagEntity.getOrganizationEntity().getId());
+		dto.setAlias(tagEntity.getAlias());
     	dto.setCategoryId(tagEntity.getCategoriesEntity().getId());
     	dto.setGraphId(tagEntity.getGraphId());    	
     	dto.setMetadata(tagEntity.getMetadata());
@@ -828,19 +858,12 @@ public class CategoryService {
 
 
 	private CategoryDto toCategoryDto(CategoriesEntity entity) {
-    	var metadata =
-				ofNullable(entity.getLogo())
-						.map(Object.class::cast)
-						.map(
-							logo -> Map.of(
-									"cover", logo,
-									"icon", logo)
-						).orElse(emptyMap());
-
     	var dto = new CategoryDto();
     	dto.setName(entity.getName());
     	dto.setPname(entity.getPname());
-    	dto.setMetadata(metadata);
+    	dto.setLogo(entity.getLogo());
+    	dto.setCover(entity.getCover());
+    	dto.setCoverSmall(entity.getCoverSmall());
     	dto.setId(entity.getId());
     	dto.setParent(entity.getParentId());
     	return dto;

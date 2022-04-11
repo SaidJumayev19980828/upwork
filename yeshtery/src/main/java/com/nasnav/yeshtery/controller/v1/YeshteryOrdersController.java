@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static com.nasnav.yeshtery.controller.v1.YeshteryOrdersController.API_PATH;
@@ -40,19 +41,6 @@ public class YeshteryOrdersController {
 
     @Autowired
 	private OrderReturnService returnService;
-	
-    @Operation(description =  "Update an order status", summary = "orderStatusUpdate")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "Order updated"),
-            @ApiResponse(responseCode = " 401" ,description = "Unauthorized (invalid User-Token)"),
-            @ApiResponse(responseCode = " 406" ,description = "Invalid data"),
-    })
-    @PostMapping(value = "status/update")
-    public void updateOrder(
-            @RequestHeader(name = "User-Token", required = false) String userToken,
-            @RequestBody OrderJsonDto orderJson) {
-    	orderService.updateExistingOrder(orderJson);
-    }
 
 	@Operation(description =  "Get information about order", summary = "orderInfo")
 	@ApiResponses(value = {@ApiResponse(responseCode = " 200" ,description = "OK"),
@@ -73,7 +61,7 @@ public class YeshteryOrdersController {
 	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestParam(name = "id") Long orderId)  {
 
-		return orderService.getMetaOrder(orderId);
+		return orderService.getYeshteryMetaOrder(orderId, true);
 	}
 
 	@Operation(description =  "Get list of orders", summary = "orderList")
@@ -106,9 +94,11 @@ public class YeshteryOrdersController {
 	@PostMapping(value = "confirm")
 	public OrderConfirmResponseDTO confirmOrder(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
-			@RequestParam("order_id") Long orderId) {
+			@RequestParam("order_id") Long orderId,
+			@RequestParam(value = "pin_code", required = false) String pinCode,
+			@RequestParam(value = "points_amount", required = false) BigDecimal pointsAmount) {
 
-		return orderService.confrimOrder(orderId);
+		return orderService.confirmOrder(orderId, pinCode, pointsAmount);
 	}
 
 
@@ -135,7 +125,7 @@ public class YeshteryOrdersController {
     public void cancelOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken
             ,@RequestParam("meta_order_id") Long metaOrderId) {
-    	orderService.cancelYeshteryOrder(metaOrderId);
+    	orderService.cancelOrder(metaOrderId, true);
     }
 
 

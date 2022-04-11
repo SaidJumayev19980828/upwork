@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.HijrahDate;
@@ -157,12 +158,12 @@ public class LoyaltyCoinsDropServiceImp implements LoyaltyCoinsDropService {
         LoyaltyCoinsDropEntity entity = loyaltyCoinsDropRepository.getByOrganization_IdAndTypeId(orgId, typeId);
         //Create Coins Drop Log
         loyaltyCoinsDropLogsService.updateCoinsDropLog(entity);
-        Integer amount = entity.getAmount();
+        BigDecimal amount = entity.getAmount();
 
         ShopsEntity shopEntity = shopsRepository.findById(shopId).get();
 
         // Create Transactions
-        loyaltyPointsService.updateLoyaltyPointCoinsDropTransaction(entity, userEntity, amount, shopEntity, true);
+        loyaltyPointsService.createLoyaltyPointCoinsDropTransaction(entity, userEntity, amount, shopEntity, true);
         
     }
     private List<UserEntity> loadUsersAllowReward() {

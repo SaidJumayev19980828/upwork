@@ -2,6 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
@@ -9,14 +10,10 @@ import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
-import com.nasnav.persistence.YeshteryRecommendationRatingData;
-import com.nasnav.persistence.YeshteryRecommendationSellingData;
 import com.nasnav.yeshtery.YeshteryConstants;
-import com.nasnav.yeshtery.services.interfaces.YeshteryRecommendationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -68,12 +65,10 @@ public class YeshteryController {
     private CategoryService categoryService;
     @Autowired
     private ReviewService reviewService;
-
+    @Autowired
+    private OrganizationService orgService;
     @Autowired
     private SeoService seoService;
-
-    @Autowired
-    private YeshteryRecommendationService recommendationService;
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,
@@ -86,7 +81,7 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double longitude,
                                                            @RequestParam(required = false) Double latitude,
                                                            @RequestParam(required = false) Double radius,
-                                                           @RequestParam(value = "search_in_tags", required = false, defaultValue = "true") Boolean searchInTags,
+                                                           @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
                 longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
@@ -190,6 +185,25 @@ public class YeshteryController {
         dispatcher.forward(request, resp);
     }
 
+    @GetMapping( path="files/{url}")
+    public void downloadFile(HttpServletRequest request, HttpServletResponse resp,
+                             @PathVariable String url,
+                             @RequestParam(required = false) Integer height,
+                             @RequestParam(required = false) Integer width,
+                             @RequestParam(required = false) String type) throws ServletException, IOException {
+        String resourceInternalUrl;
+        String modUrl = "/"+url;
+        if (height != null || width != null) {
+            resourceInternalUrl = fileService.getResizedImageInternalUrl(modUrl, width, height, type);
+        } else {
+            resourceInternalUrl = fileService.getResourceInternalUrl(modUrl);
+        }
+        resp.setStatus(HttpStatus.OK.value());
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
+        dispatcher.forward(request, resp);
+    }
+
     @Operation(description =  "search the data", summary = "search")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
@@ -215,6 +229,11 @@ public class YeshteryController {
         return shopService.getShopById(shopId);
     }
 
+    @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
+    public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
+        return shopService.getOrganizationShops(orgId, false);
+    }
+
     @Operation(description =  "return seo keywords", summary = "getSeo")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "OK")
@@ -224,37 +243,6 @@ public class YeshteryController {
             @RequestParam(value = "type", required = true) SeoEntityType type,
             @RequestParam(value = "id", required = true)Long entityId) {
         return seoService.getSeoKeywords(entityId, type);
-    }
-
-    @Operation(description =  "return recommend product rating by tag & org", summary = "getRecommendProductRating")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/rating", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationRatingData> getRecommendProductRating(@RequestParam(value = "orgid", required = false, defaultValue = "-1")Long orgId,
-                                                                            @RequestParam(value = "tagid", required = false, defaultValue = "-1")Long tagId) {
-        return recommendationService.getListOfTopRatingProduct(orgId, tagId);
-    }
-
-    @Operation(description =  "return recommend product selling by shop & tag & org", summary = "getRecommendProductSelling")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/selling", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<YeshteryRecommendationSellingData> getRecommendProductSellingByShopTagAPI(@RequestParam(value = "tagid" , required = false, defaultValue = "-1")Long tagId,
-                                                                                          @RequestParam(value = "shopid", required = false, defaultValue = "-1")Long shopId,
-                                                                                          @RequestParam(value = "orgid" , required = false, defaultValue = "-1")Long orgId) {
-        return recommendationService.getListOfTopSellerProduct(shopId, tagId, orgId);
-    }
-
-    @Operation(description =  "return recommend similarity products", summary = "getListOfSimilarityAPI")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "OK")
-    })
-    @GetMapping(value="/recommend/similarity", produces=MediaType.APPLICATION_JSON_VALUE)
-    public List<ProductEntity> getListOfSimilarityAPI(@RequestParam(required = true, value = "itemcounts") Integer recommendedItemsCount,
-                                                      @RequestParam(required = true, value = "userid") Integer userId) {
-        return recommendationService.getListOfSimilarity(recommendedItemsCount, userId);
     }
 
     @GetMapping(value = "/organization")
@@ -282,8 +270,25 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
-    public List<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
-                                                  @RequestParam(value = "category_name", required = false) String categoryName) {
-        return categoryService.getOrganizationTags(organizationId, categoryName);
+    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName,
+                                                  @RequestParam(value = "org_id", required = false) Long orgId) {
+        return categoryService.getYeshteryOrganizationsTags(categoryName, orgId);
+    }
+
+    @GetMapping(value = "/tag", produces = APPLICATION_JSON_VALUE)
+    public TagsRepresentationObject getTags(@RequestParam(name = "tag_id") Long tagId) throws BusinessException {
+        return categoryService.getTagById(tagId);
+    }
+
+    @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)
+    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+                                                                                     @RequestParam(value = "delivery", required = false) String deliveryService) {
+        return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
+    }
+
+    @PostMapping(value = "review", consumes = APPLICATION_JSON_VALUE)
+    public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                            @RequestBody ProductRateDTO dto) {
+        reviewService.rateProduct(dto);
     }
 }

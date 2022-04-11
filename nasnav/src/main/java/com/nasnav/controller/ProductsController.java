@@ -139,6 +139,14 @@ public class ProductsController {
         productService.deleteVariantFeatureValue(variantId, featureId);
     }
 
+    @DeleteMapping("variant_extra_attribute")
+    public void deleteAllProducts(@RequestHeader(name = "User-Token", required = false) String token,
+                                  @RequestParam(name = "variant_id") Long variantId,
+                                  @RequestParam(name = "extra_attribute_id") Integer extraAttributeId,
+                                  @RequestParam(name = "extra_attribute_value_id", required = false) Long extraAttributeValueId)  {
+        productService.deleteVariantExtraAttribute(variantId, extraAttributeId, extraAttributeValueId);
+    }
+
 	@PostMapping(value = "image/bulk", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulk(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                                     @RequestPart("imgs_zip") @Valid MultipartFile zip,

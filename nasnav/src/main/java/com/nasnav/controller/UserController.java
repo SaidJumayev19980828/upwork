@@ -4,10 +4,12 @@ import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
+import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
@@ -24,6 +27,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.enumerations.YeshteryState.DISABLED;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -41,6 +45,8 @@ public class UserController {
     private EmployeeUserService employeeUserService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private ReviewService reviewService;
     
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
@@ -207,5 +213,11 @@ public class UserController {
     public RedirectView activateSubscribedEmail(@RequestParam String token,
                                                 @RequestParam("org_id") Long orgId) {
         return userService.activateSubscribedEmail(token, orgId);
+    }
+
+    @GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader (name = "User-Token", required = false) String token,
+                                                                   @RequestParam(value = "variant_ids") Set<Long> variantIds) {
+        return reviewService.getUserProductsRatings(variantIds);
     }
 }

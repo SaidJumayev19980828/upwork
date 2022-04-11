@@ -28,6 +28,9 @@ public class OrganizationPaymentGatewaysEntity implements BaseEntity{
     @Column(name="account")
     private String account;
 
+    @Column(name="payment_confirmations", nullable = false)
+    private Boolean paymentConfirmations;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         return null;

@@ -300,8 +300,8 @@ public class YeshteryApiTest {
 
 
     private void hasCoverImage(CategoryDto category) {
-        assertTrue(category.getMetadata().containsKey("cover"));
-        assertTrue(category.getMetadata().containsKey("icon"));
+        assertTrue(category.getCover() != null);
+        assertTrue(category.getLogo() != null);
     }
 
 

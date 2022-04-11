@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.navbox.Cart;
@@ -28,4 +29,5 @@ public interface CartService {
     List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
     List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
     void sendAbandonedCartEmails(AbandonedCartsMail dto);
+    List<ShopRepresentationObject> getShopsThatCanProvideEachItem();
 }

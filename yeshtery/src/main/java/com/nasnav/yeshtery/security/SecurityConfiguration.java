@@ -86,8 +86,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/suspend"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
             , patternOf( "/v1/order/**"										    , getAllRoles())
             , patternOf( "/v1/cart/**"										        , setOf(CUSTOMER))
+            , patternOf( "/v1/pickup/**"										        , setOf(CUSTOMER))
             , patternOf( "/v1/wishlist/**"										    , setOf(CUSTOMER))
             , patternOf( "/v1/shipping/**"										    , setOf(CUSTOMER))
+            , patternOf("/v1/yeshtery/review"					, HttpMethod.POST   , setOf(CUSTOMER))
+            , patternOf("/v1/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER))
     );
 
    
@@ -107,7 +110,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/error/**"							, HttpMethod.GET)
                         , patternOf("/v1/yeshtery/**"						, HttpMethod.GET)
                         , patternOf("/v1/360view/**"						, HttpMethod.GET)
-
+                        , patternOf("/v1/payment/**")
                         , patternOf("/v1/user/recover")
                         , patternOf("/v1/user/login/**")
                         , patternOf("/v1/user/register")
@@ -186,11 +189,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
         .oauth2Login()
         	.authorizationEndpoint()
-            .baseUri("/oauth2/authorize")
+            .baseUri("/v1/oauth2/authorize")
             .authorizationRequestRepository(oAuth2RequestRepository)
             .and()
         .redirectionEndpoint()
-            .baseUri("/oauth2/callback/*")
+            .baseUri("/v1/oauth2/callback/*")
             .and()
         .userInfoEndpoint()
         	.oidcUserService(customOidcUserService)

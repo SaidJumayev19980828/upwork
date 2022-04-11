@@ -15,26 +15,28 @@ import com.nasnav.response.ShopResponse;
 import lombok.Builder;
 import lombok.Data;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
@@ -316,6 +318,7 @@ public class ShopThreeSixtyService {
     private void clearOldShop360Date(Long orgId, Long viewId) {
         product360ShopsRepo.deleteByShopId(viewId);
         shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
+        shop360Repo.deleteById(viewId);
     }
 
 
@@ -374,8 +377,9 @@ public class ShopThreeSixtyService {
             section.setPriority(index);
         }
 
-        if (dto.getImageUrl() != null)
-            section.setImage(dto.getImageUrl());
+        if (dto.getImageUrl() != null) {
+            section.setImage(resizedImagesMap.get(dto.getImageUrl()).get(0));
+        }
         ShopSectionsEntity savedSection = sectionsRepo.save(section);
         List<ShopScenesRequestDTO> scenesDTO = getScenes(dto);
         for(int i=0;i<scenesDTO.size();i++) {
@@ -687,6 +691,9 @@ public class ShopThreeSixtyService {
             }
         }
         shopFloorsRepo.delete(floor);
+        if (shopFloorsRepo.countByShopThreeSixtyEntity_Id(shopThreeSixtyEntity.getId()) == 0) {
+            shop360Repo.delete(shopThreeSixtyEntity);
+        }
     }
 
 
@@ -728,6 +735,36 @@ public class ShopThreeSixtyService {
     private ShopThreeSixtyEntity getShopThreeSixtyEntity(Long shopId) {
         return shop360Repo.getFirstByShopsEntity_Id(shopId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$360$0001));
+    }
+
+    public void exportThreeSixtyImages(Long shopId, HttpServletResponse response) throws IOException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+        this.basePath = Paths.get(appConfig.getBasePathStr());
+        ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream());
+        List<String> images = new ArrayList<>();
+        if (shopId != null) {
+            images = scenesRepo.findByOrganizationEntity_IdAndShopId(orgId, shopId);
+        } else {
+            images = scenesRepo.findByOrganizationEntity_Id(orgId);
+        }
+        images
+            .stream()
+            .map(img -> basePath.resolve(img))
+            .map(Path::toFile)
+            .forEach(file -> createZipEntry(zipOut, file));
+        zipOut.close();
+    }
+
+    private void createZipEntry(ZipOutputStream zipOutputStream,  File file) {
+        try {
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            IOUtils.copy(fileInputStream, zipOutputStream);
+
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        } catch (Exception e){}
     }
 
 

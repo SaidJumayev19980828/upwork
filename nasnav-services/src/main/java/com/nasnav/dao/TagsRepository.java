@@ -19,14 +19,22 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
     List<TagsEntity> findByIdIn(List<Long> ids);
     List<TagsEntity> findByOrganizationEntity_Id(Long orgId);
-    List<TagsEntity> findByOrganizationEntity_IdOrderByName(Long orgId);
+    List<TagsEntity> findByOrganizationEntity_IdOrderByPriorityDesc(Long orgId);
+    List<TagsEntity> findByOrganizationEntity_IdInOrderByPriorityDesc(Set<Long> orgIds);
     Optional<TagsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdIn(List<Long> tagsIds);
     List<TagsEntity> findByCategoriesEntity_IdInAndOrganizationEntity_Id(List<Long> tagsIds, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdAndOrganizationEntity_Id(Long tagId, Long orgId);
     List<TagsEntity> findByIdInAndOrganizationEntity_Id(List<Long> ids, Long orgId);
 
-    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(String categoryName, Long orgId);
+    @Query("select t from TagsEntity t " +
+            " left join fetch t.categoriesEntity c" +
+            " left join fetch t.organizationEntity o" +
+            " where c.name = :categoryName and o.id = :orgId" +
+            " order by t.priority desc")
+    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(@Param("categoryName") String categoryName,
+                                                                                          @Param("orgId") Long orgId);
+    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(String categoryName, Set<Long> orgIds);
 
     @Query("SELECT tag FROM TagsEntity tag " +
             " LEFT JOIN tag.organizationEntity org " +

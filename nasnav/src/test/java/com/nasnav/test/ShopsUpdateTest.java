@@ -181,7 +181,7 @@ public class ShopsUpdateTest {
         assertEquals(oldShop.getLogo(), newShop.getLogo());
         
         //check if changes applied
-        assertEquals(new Long(102), newShop.getBrandId());
+        assertEquals(102L, newShop.getBrandId().longValue());
         assertEquals("Different Shop", newShop.getName());
         assertEquals("dark logo value", newShop.getDarkLogo());
 

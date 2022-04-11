@@ -15,10 +15,5 @@ public interface WishlistService {
 
     Cart moveWishlistItemsToCart(WishlistItemQuantity items);
 
-    Wishlist addYeshteryWishlistItem(WishlistItem item);
-    Wishlist deleteYeshteryWishlistItem(Long itemId);
-    Wishlist getYeshteryWishlist();
-
-    Cart moveYeshteryWishlistItemsToCart(WishlistItemQuantity items);
-
+    void sendRestockedWishlistEmails();
 }

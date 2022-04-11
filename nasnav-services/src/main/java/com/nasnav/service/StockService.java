@@ -33,6 +33,8 @@ public interface StockService {
 	
 	StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException;
 
+	void deleteStocks(Long shopId);
+
 	List<Long> updateStockBatch(List<StockUpdateDTO> stocks);
 
 	List<Long> updateStockBatch(List<StockUpdateDTO> stocks, VariantCache variantCache);

@@ -12,16 +12,23 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.ShopThreeSixtyService;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -138,5 +145,16 @@ public class ShopThreeSixtyController {
                                    @RequestParam("scene_id") Long sceneId,
                                    @RequestParam(value = "products_positions_confirm", defaultValue = "false") boolean confirm) {
         shop360Svc.deleteShop360Scene(sceneId, confirm);
+    }
+
+    @PostMapping(value = "/export_images", produces = "application/zip")
+    public void exportThreeSixtyImages(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                       @RequestParam(name = "shop_id", required = false) Long shopId,
+                                       HttpServletResponse response) throws IOException {
+        response.setContentType("application/zip");
+        response.setHeader(CONTENT_DISPOSITION, "attachment; filename=360_images.zip");
+
+        shop360Svc.exportThreeSixtyImages(shopId, response);
+
     }
 }

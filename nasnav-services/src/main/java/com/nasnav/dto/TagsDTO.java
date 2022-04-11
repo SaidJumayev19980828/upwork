@@ -20,6 +20,7 @@ public class TagsDTO extends BaseJsonDTO{
     private Integer graphId;
     @JsonProperty(value = "has_category")
     private boolean hasCategory;
+    private Integer priority;
     
     
     public TagsDTO() {
