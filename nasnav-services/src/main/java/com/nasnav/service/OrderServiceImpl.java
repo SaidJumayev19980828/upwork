@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
@@ -65,8 +66,7 @@ import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static com.nasnav.enumerations.TransactionCurrency.getTransactionCurrency;
+import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -257,11 +257,6 @@ public class OrderServiceImpl implements OrderService {
 		throw getInvalidRuntimeOrderException(msg, msgParams);
 	}
 
-	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
-		String error = INVALID_ORDER.toString();
-		return new BusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
-	}
-
 	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
 		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
@@ -269,7 +264,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public void finalizeOrder(Long orderId) throws BusinessException {
+	public void finalizeOrder(Long orderId) {
 		//TODO: this should be done if the payment API became authenticated
 //		Long userId =
 //				ofNullable(securityService.getCurrentUser())
@@ -280,7 +275,7 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity order =
 				metaOrderRepo
 				.findFullDataById(orderId)
-				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));
+				.orElseThrow(() -> new RuntimeBusinessException( format(ERR_ORDER_NOT_EXISTS, orderId), INVALID_ORDER.toString(), NOT_ACCEPTABLE));
 
 		order.getSubOrders().forEach(this::finalizeSubOrder);
 		updateOrderStatus(order, FINALIZED);
@@ -344,10 +339,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, Object> createNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
-		String orderTime =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(order.getCreationDate());
+		String orderTime = getZonedDateTimeStr(order.getCreationDate(), getOrderCurrency(order));
 
 		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
@@ -448,11 +440,7 @@ public class OrderServiceImpl implements OrderService {
 	private Map<String, Object> createBillEmailParams(MetaOrderEntity order, Boolean yeshteryMetaorder) {
 		Order orderResponse = this.getOrderResponse(order, yeshteryMetaorder);
 
-		LocalDateTime orderTime = orderResponse.getCreationDate();
-		String orderTimeStr =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(orderTime);
+		String orderTimeStr = getZonedDateTimeStr(orderResponse.getCreationDate(), orderResponse.getCurrency().name());
 
 		normalizeOrderForEmailTemplate(orderResponse);
 
@@ -1802,6 +1790,14 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(EGP);
 	}
 
+	private String getOrderCurrency(OrdersEntity order) {
+		return Optional.of(order)
+				.map(OrdersEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getCountry)
+				.map(CountriesEntity::getCurrency)
+				.orElse("EGP");
+	}
+
 
 	private SubOrder getSubOrder(OrdersEntity order) {
 		String status = ofNullable(findEnum(order.getStatus()))
@@ -2377,10 +2373,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = new HashMap<>();
-		String updateTime =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(order.getUpdateDate());
+		String updateTime = getZonedDateTimeStr(order.getUpdateDate(), getOrderCurrency(order));
 
 		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
@@ -2400,7 +2393,17 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-
+	private String getZonedDateTimeStr(LocalDateTime dateTime, String zoneCurrency) {
+		ZoneId zoneId = ZoneId.of("UTC");
+		if (zoneCurrency.equals(EGP.name())) {
+			zoneId = ZoneId.of("Africa/Cairo");
+		} else if (zoneCurrency.equals(NGN.name())) {
+			zoneId = ZoneId.of("WAT");
+		}
+		return DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(dateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(zoneId).toLocalDateTime());
+	}
 
 
 	private void cancelMetaOrderAndSubOrders(Set<MetaOrderEntity> metaOrders) {

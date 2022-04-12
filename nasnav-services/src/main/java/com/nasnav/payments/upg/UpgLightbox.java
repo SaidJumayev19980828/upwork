@@ -40,7 +40,8 @@ public class UpgLightbox {
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
-	public ResponseEntity<?> callback(String content, UpgAccount account, OrderService orderService, Commons paymentCommons, MetaOrderRepository metaRepo, Logger upgLogger) throws BusinessException {
+	public ResponseEntity<?> callback(String content, UpgAccount account, OrderService orderService, Commons paymentCommons,
+									  MetaOrderRepository metaRepo, Logger upgLogger, boolean yeshteryMetaOrder) throws BusinessException {
 		JSONObject jsonObject = null;
 		try {
 			jsonObject = new JSONObject(content);
@@ -64,7 +65,7 @@ public class UpgLightbox {
 		if (payment == null) {
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", BAD_REQUEST);
 		}
-		paymentCommons.finalizePayment(payment);
+		paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
 
 		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK);
 	}

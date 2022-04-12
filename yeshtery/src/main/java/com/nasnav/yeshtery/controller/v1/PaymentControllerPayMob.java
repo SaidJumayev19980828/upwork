@@ -52,7 +52,7 @@ public class PaymentControllerPayMob {
     @PostMapping("confirm")
     public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
 
-        paymobService.verifyAndStore(uid);
+        paymobService.verifyAndStore(uid, true);
         return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
 
     }
