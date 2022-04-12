@@ -117,7 +117,7 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 	}
 
 	private SQLQuery<Long> getProductTagsQuery(SQLQueryFactory query, QProductTags productTags, ProductSearchParam params) {
-		if (params.getTags() == null)
+		if (params.getTag_ids() == null)
 			return null;
 
 		return query.select(Expressions.numberPath(Long.class, "id"))
@@ -126,9 +126,9 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 								productTags.productId.as("id")
 								, productTags.tagId.count().as("count"))
 								.from(productTags)
-								.where(productTags.tagId.in(params.getTags()))
+								.where(productTags.tagId.in(params.getTag_ids()))
 								.groupBy(productTags.productId)
-								.having(productTags.tagId.count().eq((long) params.getTags().size()))
+								.having(productTags.tagId.count().eq((long) params.getTag_ids().size()))
 								.as("productTags"));
 	}
 

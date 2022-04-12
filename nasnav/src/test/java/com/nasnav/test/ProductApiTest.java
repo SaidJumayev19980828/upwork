@@ -889,13 +889,13 @@ public class ProductApiTest {
 
 		// filter by tag
 		param.brand_id = null;
-		param.tags = setOf(5001L);
+		param.tag_ids = setOf(5001L);
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		res = response.getBody();
 		assertEquals(2, res.getTotal().intValue());
 
 		// filter by start
-		param.tags = null;
+		param.tag_ids = null;
 		param.start = 2;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		res = response.getBody();
@@ -1039,7 +1039,7 @@ public class ProductApiTest {
 		Set<Long> tagsList = new HashSet<>();
 		tagsList.add(5001L);
 		param.org_id = 99001L;
-		param.tags = tagsList;
+		param.tag_ids = tagsList;
 
 		ResponseEntity<ProductsFiltersResponse> response =
 				template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
@@ -1050,7 +1050,7 @@ public class ProductApiTest {
 
 		//trying to filter products by nonlinked tags
 		tagsList.add(0L); tagsList.add(5002L);
-		param.tags = tagsList;
+		param.tag_ids = tagsList;
 		response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(0, response.getBody().getBrands().size());
