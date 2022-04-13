@@ -320,14 +320,14 @@ public class PaymobService {
                 if (status != null) {
                     RetrieveTransactionResponse.PaymentDetails data = status.getObj();
                     if (!data.getSuccess()) {
-                        return;
+                        throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
                     }
-                    if (data.getIsAuth()) {
-                        payment.setStatus(PaymentStatus.PAID);
-                    } else if (data.getIsRefund()) {
+                    if (data.getIsRefund()) {
                         payment.setStatus(PaymentStatus.REFUNDED);
                     } else if (data.getIsVoided()) {
                         payment.setStatus(PaymentStatus.UNPAID);
+                    } else {
+                        payment.setStatus(PaymentStatus.PAID);
                     }
                     paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
                 }
