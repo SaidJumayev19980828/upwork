@@ -325,7 +325,7 @@ public class NavBoxTest {
         assertEquals(3, responseBody.size());
 
         // filter by long and lat
-        response = template.getForEntity("/navbox/location_shops?org_id=99001&latitude=30.056995&longitude=31.474868&radius=1", String.class);
+        response = template.getForEntity("/navbox/location_shops?org_id=99001&latitude=30.056995&longitude=31.474868&radius=0.01", String.class);
         assertEquals(200, response.getStatusCodeValue());
         responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
         assertEquals(2, responseBody.size());

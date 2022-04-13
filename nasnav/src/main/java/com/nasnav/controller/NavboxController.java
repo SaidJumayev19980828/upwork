@@ -246,7 +246,7 @@ public class NavboxController {
 	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
 																   @RequestParam(value = "product_id", required = false)Long productId) {
 		if (productId != null)
-			return reviewService.getVariantRatings(productId);
-		return reviewService.getProductRatings(variantId);
+			return reviewService.getProductRatings(productId);
+		return reviewService.getVariantRatings(variantId);
 	}
 }

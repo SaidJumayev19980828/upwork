@@ -712,7 +712,7 @@ public class CartTest {
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
 	@Test
-	//@Ignore			//this test make calls to bosta test server, so it is ignored by default
+	@Ignore			//this test make calls to bosta test server, so it is ignored by default
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {

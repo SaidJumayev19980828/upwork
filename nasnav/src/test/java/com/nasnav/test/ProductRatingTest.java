@@ -183,7 +183,7 @@ public class ProductRatingTest {
         assertEquals(200 , response.getStatusCodeValue());
         List<ProductRateRepresentationObject> body =
                 mapper.readValue(response.getBody(), new TypeReference<List<ProductRateRepresentationObject> >(){});
-        assertTrue(body.size() == 1);
+        assertEquals(1, body.size());
     }
 
     @Test
