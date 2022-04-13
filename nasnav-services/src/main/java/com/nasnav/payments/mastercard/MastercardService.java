@@ -174,7 +174,7 @@ public class MastercardService {
         }
     }
 
-    public void verifyAndStore(String orderUid, String paymentIndicator) throws BusinessException {
+    public void verifyAndStore(String orderUid, String paymentIndicator, boolean yeshteryMetaOrder) throws BusinessException {
 
         Optional<PaymentEntity> paymentOpt = paymentsRepository.findByUid(orderUid);
         if (!paymentOpt.isPresent()) {
@@ -204,7 +204,7 @@ public class MastercardService {
                 paymentsRepository.saveAndFlush(payment);
             } else {
                 payment.setStatus(PaymentStatus.PAID);
-                paymentCommons.finalizePayment(payment);
+                paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
             }
             return;
         }

@@ -288,7 +288,7 @@ public class PaymobService {
         return merchantAccount;
     }
 
-    public void verifyAndStore(String orderUid) throws BusinessException {
+    public void verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
         PaymentEntity payment = paymentCommons.getPaymentForOrderUid(orderUid);
         if (payment == null) {
             classLogger.warn("No payment associated with order {}", orderUid);
@@ -329,7 +329,7 @@ public class PaymobService {
                     } else if (data.getIsVoided()) {
                         payment.setStatus(PaymentStatus.UNPAID);
                     }
-                    paymentCommons.finalizePayment(payment);
+                    paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
                 }
             }
         } catch (IOException e) {
