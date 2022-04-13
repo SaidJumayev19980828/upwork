@@ -15,11 +15,14 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.PaymobSourceEntity;
 import com.nasnav.service.OrderService;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -140,20 +143,19 @@ public class PaymobService {
 
         PaymobSourceEntity sourceEntity = paymobSourceRepository.findByValue(source.getIdentifier()).orElseThrow(() -> new BusinessException("Payment source not found", "PAYMENT_FAILED", NOT_ACCEPTABLE));
 
-        if (authToken != null) {
+        if (!Objects.isNull(authToken)) {
             HttpClient client = getHttpClient();
             OrderResponse orderResponse = registerOrder(fromOrderValue(orderValue, authToken.getToken(), transactionId));
             if (orderResponse != null) {
                 paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrderId, orderValue, client, orderResponse, userId, sourceEntity);
             }
         }
-        if (paymentToken != null) {
+        if (!Objects.isNull(paymentToken)) {
             if(!sourceEntity.getType().equalsIgnoreCase("CARD")) {
                 return pay(paymentToken, authToken, metaOrder, sourceEntity);
             } else {
                 return  "{\"token\":\""+paymentToken.getToken()+"\"}";
             }
-
         }
 
         throw new BusinessException("Couldn't generate payment", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
@@ -233,7 +235,6 @@ public class PaymobService {
 
             Gson gson = getGson();
 
-            String body = gson.toJson(paymentRequest);
             post.setEntity(new StringEntity(paymentJsonObject.toString(), ContentType.APPLICATION_JSON));
             post.setHeader("Content-Type", APPLICATION_JSON_VALUE);
             HttpResponse response = client.execute(post);
@@ -241,7 +242,7 @@ public class PaymobService {
                 String resBody = readInputStream(response.getEntity().getContent());
                 paymentToken = gson.fromJson(resBody, TokenResponse.class);
 
-                createPaymentEntity(metaOrderId, orderValue, paymentToken, userId);
+                createPaymentEntity(metaOrderId, orderValue, paymentToken, userId, orderResponse.getId().toString());
             } else {
                 throw new BusinessException(readInputStream(response.getEntity().getContent()), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
             }
@@ -252,7 +253,7 @@ public class PaymobService {
     }
 
 
-    private PaymentEntity createPaymentEntity(long metaOrderId, OrderService.OrderValue orderValue, TokenResponse paymentToken, Long userId) {
+    private PaymentEntity createPaymentEntity(long metaOrderId, OrderService.OrderValue orderValue, TokenResponse paymentToken, Long userId, String indicator) {
         PaymentEntity payment = new PaymentEntity();
         payment.setStatus(PaymentStatus.STARTED);
         payment.setAmount(orderValue.amount);
@@ -262,6 +263,7 @@ public class PaymobService {
         payment.setExecuted(new Date());
         payment.setUserId(userId);
         payment.setMetaOrderId(metaOrderId);
+        payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
         paymentsRepository.saveAndFlush(payment);
         return payment;
     }
@@ -304,27 +306,46 @@ public class PaymobService {
             throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }
         TokenResponse authToken = getAuthToken();
+        JSONObject json = new JSONObject(payment.getObject());
+        if (!json.has("successIndicator")) {
+            classLogger.error("Payment {} for order {} does not contain successIndicator!", payment.getId(), orderUid);
+            throw new BusinessException("Payment for order does not contain successIndicator", "INTERNAL_ERROR", org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
-        String paymentDetailUrl = payMobAccount.getApiUrl() + "/acceptance/transactions/" + payment.getUid();
-        HttpGet get = new HttpGet(paymentDetailUrl);
-        get.addHeader("Content-Type", APPLICATION_JSON_VALUE);
-        get.addHeader("authorization-header", "Bearer " + authToken.getToken());
+
+        String successIndicator = json.getString("successIndicator");
+
+        String paymentDetailUrl = payMobAccount.getApiUrl() + "/acceptance/transactions";
+
+        String body = "{ \n" +
+                "  \"auth_token\": \""+authToken.getToken()+"\",\n" +
+                "  \"order_id\":  \""+successIndicator+"\"\n" +
+                "}";
 
         try {
-            HttpResponse response = httpClient.execute(get);
+            HttpUriRequest request = RequestBuilder.get(paymentDetailUrl)
+                    .setEntity(new StringEntity(body))
+                    .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .build();
 
-            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
+            HttpResponse response = httpClient.execute(request);
+
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 Gson gson = getGson();
                 String resBody = readInputStream(response.getEntity().getContent());
                 RetrieveTransactionResponse status = gson.fromJson(resBody, RetrieveTransactionResponse.class);
                 if (status != null) {
-                    RetrieveTransactionResponse.PaymentDetails data = status.getObj();
-                    if (!data.getSuccess()) {
+                    RetrieveTransactionResponse.Result data = status.getResults().get(0);
+                    if(Objects.isNull(data)) {
+                        throw new BusinessException("Couldn't retrieve payment info", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
+                    }
+
+                    if (!data.isSuccess()) {
                         throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
                     }
-                    if (data.getIsRefund()) {
+                    if (data.is_refund()) {
                         payment.setStatus(PaymentStatus.REFUNDED);
-                    } else if (data.getIsVoided()) {
+                    } else if (data.is_voided()) {
                         payment.setStatus(PaymentStatus.UNPAID);
                     } else {
                         payment.setStatus(PaymentStatus.PAID);
