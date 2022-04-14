@@ -490,6 +490,7 @@ public class FileService {
 		resizedFile.setWidth(width);
 		resizedFile.setHeight(height);
 		resizedFile.setImageUrl(getUrl(multipartFile.getOriginalFilename(), orgId));
+
 		return filesResizedRepo.save(resizedFile);
 	}
 
