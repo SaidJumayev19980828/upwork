@@ -27,7 +27,10 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.yeshtery.controller.v1.YeshteryOrdersController.API_PATH;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
 @RequestMapping(API_PATH)
@@ -41,6 +44,11 @@ public class YeshteryOrdersController {
 
     @Autowired
 	private OrderReturnService returnService;
+
+	@PostMapping(value = "status/update", consumes = APPLICATION_JSON_VALUE)
+	public void updateOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody OrderJsonDto orderJson) {
+		orderService.updateExistingOrder(orderJson);
+	}
 
 	@Operation(description =  "Get information about order", summary = "orderInfo")
 	@ApiResponses(value = {@ApiResponse(responseCode = " 200" ,description = "OK"),
@@ -75,6 +83,11 @@ public class YeshteryOrdersController {
 											@RequestHeader(name = "User-Token", required = false) String userToken,
 											OrderSearchParam params) throws BusinessException {
 		return  orderService.getYeshteryOrdersList(params);
+	}
+
+	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)
+	public String trackOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("order_id") Long orderId) {
+		return orderService.trackOrder(orderId);
 	}
 
 	@Operation(description =  "Get list of user's orders", summary = "metaOrderList")

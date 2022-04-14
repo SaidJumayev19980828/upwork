@@ -414,7 +414,6 @@ public class FileService {
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
 			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName, metadata);
-			logger.debug("Image resized");
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
 		}catch (Exception e) {
@@ -491,7 +490,6 @@ public class FileService {
 		resizedFile.setWidth(width);
 		resizedFile.setHeight(height);
 		resizedFile.setImageUrl(getUrl(multipartFile.getOriginalFilename(), orgId));
-		logger.debug("Creating entity: " + getUrl(multipartFile.getOriginalFilename(), orgId));
 
 		return filesResizedRepo.save(resizedFile);
 	}
