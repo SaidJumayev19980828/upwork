@@ -71,7 +71,6 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
-import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Objects.isNull;
@@ -223,13 +222,12 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void updateYeshteryMetaOrderIfExists(MetaOrderEntity metaOrder, OrderStatus orderStatus) {
-		Optional<MetaOrderEntity> yeshteryMetaOrderOptional = metaOrderRepo.findBySubMetaOrder_Id(metaOrder.getId());
-		if(yeshteryMetaOrderOptional.isPresent()) {
-			MetaOrderEntity yeshteryMetaOrder = yeshteryMetaOrderOptional.get();
-			if (isAllOtherSubMetaOrdersHaveStatus(metaOrder.getId(), yeshteryMetaOrder.getSubMetaOrders(), orderStatus)) {
-				yeshteryMetaOrder.setStatus(orderStatus.getValue());
-				metaOrderRepo.save(yeshteryMetaOrder);
-			}
+		MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
+		Set<MetaOrderEntity> subMetaOrders = metaOrderRepo.findSubMetaOrdersByYeshteryMetaOrder_Id(yeshteryMetaOrder.getId());
+
+		if (isAllOtherSubMetaOrdersHaveStatus(subMetaOrders, orderStatus)) {
+			yeshteryMetaOrder.setStatus(orderStatus.getValue());
+			metaOrderRepo.save(yeshteryMetaOrder);
 		}
 	}
 
@@ -2399,8 +2397,6 @@ public class OrderServiceImpl implements OrderService {
 		params.put("sub", subOrder);
 		return params;
 	}
-
-
 
 
 	private void cancelMetaOrderAndSubOrders(Set<MetaOrderEntity> metaOrders) {

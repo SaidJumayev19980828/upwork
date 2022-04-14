@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.test;
+package com.nasnav.yeshtery.test.controllers;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,16 +8,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
 import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.enumerations.ReturnRequestStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.AdminService;
+import com.nasnav.service.OrderService;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
@@ -33,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -57,9 +66,11 @@ import java.util.*;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
+import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.shipping.services.FixedFeeShippingService.*;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -67,11 +78,11 @@ import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -83,12 +94,17 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class YeshteryApiTest {
+public class YeshteryOrdersControllerTest {
     private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
     private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
     private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";
     private final String PRODUCT_FEATURE_2_P_NAME = "lipstick_flavour";
 
+    private final String YESHTERY_CART_CHECKOUT_API_PATH = YeshteryConstants.API_PATH + "/cart/checkout";
+    private final String YESHTERY_CART_ITEM_API_PATH = YeshteryConstants.API_PATH + "/cart/item";
+
+    private final String YESHTERY_ORDER_CONFIRM_API_PATH = YeshteryConstants.API_PATH + "/order/confirm";
+    private final String YESHTERY_ORDER_REJECT_API_PATH = YeshteryConstants.API_PATH + "/order/reject";
     private final String YESHTERY_ORDER_CANCEL_API_PATH = YeshteryConstants.API_PATH + "/order/cancel";
     private final String YESHTERY_ORDER_LIST_API_PATH = YeshteryConstants.API_PATH + "/order/list";
     private final String YESHTERY_ORDER_INFO_API_PATH = YeshteryConstants.API_PATH + "/order/info";
@@ -139,6 +155,8 @@ public class YeshteryApiTest {
     @Autowired
     private AdminService adminService;
 
+    @Autowired
+    private OrderService orderService;
 
     // Helpers & Services
     @Autowired
@@ -1132,7 +1150,7 @@ public class YeshteryApiTest {
                 returnRequestRepo.findByIdAndOrganizationIdAndStatus(
                         returnRequestWIthNewStatusId,
                         99001L,
-                        NEW.getValue());
+                        ReturnRequestStatus.NEW.getValue());
         assertTrue(entity.isPresent());
 
 
@@ -1485,19 +1503,6 @@ public class YeshteryApiTest {
         assertCategoryHadImgInMetadata(rootLevel);
         assertFirstLevelCategoriesReturned(rootLevel);
     }
-/*
-    @Test
-    public void getYeshteryBrands() throws JsonProcessingException {
-        var response = template.exchange(
-                "/v1/yeshtery/brands",
-                GET,
-                null,
-                new ParameterizedTypeReference<RestResponsePage<Organization_BrandRepresentationObject>>() {});
-        assertEquals(200, response.getStatusCodeValue());
-        var body = response.getBody();
-        assertEquals(1, body.getTotalPages());
-        assertEquals(102, body.get().findFirst().get().getId().intValue());
-    }    */
 
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
@@ -1511,6 +1516,265 @@ public class YeshteryApiTest {
         assertEquals(1, numOfBrands.intValue());
     }
 
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_11.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void confirmOrderTest() throws BusinessException {
+
+        Long subOrderId_1 = 5001L; // has sub_meta_order_id = 310002 && yeshtery_meta_order_id = 310001
+        Long subOrderId_2 = 5002L; // has sub_meta_order_id = 310002 && yeshtery_meta_order_id = 310001
+        Long subOrderId_3 = 5003L; // has sub_meta_order_id = 310003 && yeshtery_meta_order_id = 310001
+
+        HttpEntity<?> request = getHttpEntity("sdrf8s");
+        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + subOrderId_1, request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_1, STORE_CONFIRMED);
+        assertMetaOrderHasStatus(subOrderId_1, FINALIZED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_1, FINALIZED); // yeshtery_meta_order
+
+        request = getHttpEntity("sdfe47");
+        res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + subOrderId_2, request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_2, STORE_CONFIRMED);
+        assertMetaOrderHasStatus(subOrderId_2, STORE_CONFIRMED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_2, FINALIZED); // yeshtery_meta_order
+
+        request = getHttpEntity("161718");
+        res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + subOrderId_3, request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_3, STORE_CONFIRMED);
+        assertMetaOrderHasStatus(subOrderId_3, STORE_CONFIRMED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_3, STORE_CONFIRMED);  // yeshtery_meta_order
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_11.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void rejectOrderTest() throws BusinessException {
+
+        Long subOrderId_1 = 5001L; // has sub_meta_order_id = 310002 && yeshtery_meta_order_id = 310001
+        Long subOrderId_2 = 5002L; // has sub_meta_order_id = 310002 && yeshtery_meta_order_id = 310001
+        Long subOrderId_3 = 5003L; // has sub_meta_order_id = 310003 && yeshtery_meta_order_id = 310001
+
+        String requestBodyJson = getOrderRejectJson(subOrderId_1).toString();
+        HttpEntity<?> request = getHttpEntity(requestBodyJson, "sdrf8s");
+        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_1, STORE_CANCELLED);
+        assertMetaOrderHasStatus(subOrderId_1, FINALIZED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_1, FINALIZED); // yeshtery_meta_order
+
+        requestBodyJson = getOrderRejectJson(subOrderId_2).toString();
+        request = getHttpEntity(requestBodyJson, "sdfe47");
+        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_2, STORE_CANCELLED);
+        assertMetaOrderHasStatus(subOrderId_2, STORE_CANCELLED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_2, FINALIZED); // yeshtery_meta_order
+
+
+        requestBodyJson = getOrderRejectJson(subOrderId_3).toString();
+        request = getHttpEntity(requestBodyJson, "161718");
+        res = template.postForEntity(YESHTERY_ORDER_REJECT_API_PATH , request, String.class);
+        assertEquals(OK, res.getStatusCode());
+        assertOrderHasStatus(subOrderId_3, STORE_CANCELLED);
+        assertMetaOrderHasStatus(subOrderId_3, STORE_CANCELLED);
+        assertYeshteryMetaOrderHasStatus(subOrderId_3, STORE_CANCELLED);  // yeshtery_meta_order
+    }
+
+    private void assertYeshteryMetaOrderHasStatus(Long subOrderId, OrderStatus expectedOrderStatus) {
+        OrdersEntity order = orderRepository.findFullDataById(subOrderId).get();
+        MetaOrderEntity yeshteryMetaOrder = order.getMetaOrder().getSubMetaOrder();
+
+        assertEquals(expectedOrderStatus.ordinal(), yeshteryMetaOrder.getStatus().intValue());
+    }
+
+    private void assertMetaOrderHasStatus(Long subOrderId, OrderStatus expectedOrderStatus) {
+        OrdersEntity order = orderRepository.findFullDataById(subOrderId).get();
+        MetaOrderEntity metaOrder = order.getMetaOrder();
+
+        assertEquals(expectedOrderStatus.ordinal(), metaOrder.getStatus().intValue());
+    }
+
+    private void assertOrderHasStatus(Long orderId, OrderStatus expectedOrderStatus){
+        OrdersEntity order = orderRepository.findById(orderId).get();
+        assertEquals(expectedOrderStatus.ordinal(), order.getStatus().intValue());
+    }
+
+    private JSONObject getOrderRejectJson(Long subOrderId){
+        JSONObject requestBody =
+                json()
+                        .put("sub_order_id", subOrderId)
+                        .put("rejection_reason", "Due to some reasons");
+
+        return requestBody;
+    }
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_4.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void orderCancelCompleteCycle() throws BusinessException {
+
+        addCartItems(88L, 602L, 2);
+        addCartItems(88L, 604L, 1);
+
+        //checkout
+        JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+        Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
+        Long metaOrderId = order.getOrderId();
+
+        orderService.finalizeOrder(metaOrderId);
+
+        HttpEntity<?> request = getHttpEntity("123");
+        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_CANCEL_API_PATH + "?meta_order_id=" + metaOrderId, request, String.class);
+        Assert.assertEquals(OK, res.getStatusCode());
+        assertOrderCanceled(metaOrderId);
+
+    }
+
+    private void addCartItems(Long userId, Long stockId, Integer quantity) {
+        var itemsCountBefore = cartItemRepo.countByUser_Id(userId);
+
+        JSONObject item = createCartItem(stockId, quantity);
+
+        HttpEntity<?> request = getHttpEntity(item.toString(), "123");
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_ITEM_API_PATH, POST, request, Cart.class);
+
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assert.assertEquals(itemsCountBefore + 1, response.getBody().getItems().size());
+    }
+
+    private JSONObject createCartCheckoutBodyForCompleteCycleTest() {
+        JSONObject body = new JSONObject();
+        Map<String, String> additionalData = new HashMap<>();
+        body.put("customer_address", 12300001);
+        body.put("shipping_service_id", SERVICE_ID);
+        body.put("additional_data", additionalData);
+        body.put("notes", "come after dinner");
+        return body;
+    }
+
+    private JSONObject createCartItem(Long stockId, Integer quantity) {
+        JSONObject item = new JSONObject();
+        item.put("stock_id", stockId);
+        item.put("cover_img", "img");
+        item.put("quantity", quantity);
+
+        return item;
+    }
+
+    private JSONObject createCartItem() {
+        return createCartItem(606L, 1);
+    }
+
+    private void assertOrderCanceled(Long metaOrderId) {
+        MetaOrderEntity yeshteryMetaOrder = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(metaOrderId).get();
+        Set<MetaOrderEntity> subMetaOrders = yeshteryMetaOrder.getSubMetaOrders();
+        List<OrdersEntity> subOrders =
+                subMetaOrders
+                        .stream()
+                        .map(MetaOrderEntity::getSubOrders)
+                        .flatMap(Set::stream)
+                        .collect(toList());
+
+        Assert.assertEquals(CLIENT_CANCELLED.getValue(), yeshteryMetaOrder.getStatus());
+        subMetaOrders.forEach(subMetaOrder -> Assert.assertEquals(CLIENT_CANCELLED.getValue(), subMetaOrder.getStatus()));
+        subOrders.forEach(subOrder -> Assert.assertEquals(CLIENT_CANCELLED.getValue(), subOrder.getStatus()));
+    }
+
+    private Order checkOutCart(JSONObject requestBody, BigDecimal total, BigDecimal subTotal, BigDecimal shippingFee) {
+        HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+        ResponseEntity<Order> res = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, Order.class);
+        Assert.assertEquals(200, res.getStatusCodeValue());
+
+        Order order = res.getBody();
+        BigDecimal subOrderSubtTotalSum = getSubOrderSubTotalSum(order);
+        BigDecimal subOrderTotalSum = getSubOrderTotalSum(order);
+        BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
+
+        assertTrue(order.getOrderId() != null);
+        Assert.assertEquals(0, shippingFee.compareTo(order.getShipping()));
+        Assert.assertEquals(0, subTotal.compareTo(order.getSubtotal()));
+        Assert.assertEquals(0, total.compareTo(order.getTotal()));
+        Assert.assertEquals(0, order.getShipping().compareTo(subOrderShippingSum));
+        Assert.assertEquals(0, order.getSubtotal().compareTo(subOrderSubtTotalSum));
+        Assert.assertEquals(0, order.getTotal().compareTo(subOrderTotalSum));
+        Assert.assertEquals(USELESS_NOTE, order.getNotes());
+        assertItemDataJsonCreated(order);
+        return order;
+    }
+
+    private BigDecimal getSubOrderTotalSum(Order order) {
+        return order
+                .getSubOrders()
+                .stream()
+                .map(SubOrder::getTotal)
+                .reduce(ZERO, BigDecimal::add);
+    }
+    private BigDecimal getSubOrderShippingSum(Order order) {
+        return order
+                .getSubOrders()
+                .stream()
+                .map(SubOrder::getShipment)
+                .map(Shipment::getShippingFee)
+                .reduce(ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getSubOrderSubTotalSum(Order order) {
+        return order
+                .getSubOrders()
+                .stream()
+                .map(SubOrder::getSubtotal)
+                .reduce(ZERO, BigDecimal::add);
+    }
+
+    private void assertItemDataJsonCreated(Order order) {
+        Set<BasketItem> returnedItems = getBasketItemFromResponse(order);
+        Set<BasketItem> savedItemsData = parseItemsDataJson(order);
+        Assert.assertEquals(savedItemsData, returnedItems);
+    }
+    private Set<BasketItem> parseItemsDataJson(Order order) {
+        return order
+                .getSubOrders()
+                .stream()
+                .map(SubOrder::getItems)
+                .flatMap(List::stream)
+                .map(BasketItem::getId)
+                .collect(
+                        collectingAndThen(toList(), ids -> basketRepository.findByIdIn(ids, 99001L)))
+                .stream()
+                .map(BasketsEntity::getItemData)
+                .map(this::parseAsBasketItem)
+                .collect(toSet());
+    }
+
+    private Set<BasketItem> getBasketItemFromResponse(Order order) {
+        return order
+                .getSubOrders()
+                .stream()
+                .map(SubOrder::getItems)
+                .flatMap(List::stream)
+                .map(this::cloneBasketItem)
+                .peek(clone -> clone.setThumb(null)) //save item data json don't include the thumbnail
+                .peek(clone -> clone.setId(null)) //save item data json don't include the basket Item Id
+                .collect(toSet());
+    }
+
+    private BasketItem cloneBasketItem(BasketItem source) {
+        BasketItem target = new BasketItem();
+        BeanUtils.copyProperties(source, target);
+        return target;
+    }
+
+    private BasketItem parseAsBasketItem(String itemData) {
+        try {
+            return objectMapper.readValue(itemData, BasketItem.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new BasketItem();
+        }
+    }
 
     private void assertFirstLevelCategoriesReturned(List<CategoryDto> rootLevel) {
         var firstLevel = getCategoriesOfFirstLevel(rootLevel);
