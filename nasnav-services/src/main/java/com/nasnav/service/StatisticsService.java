@@ -51,7 +51,7 @@ public class StatisticsService {
             return null;
         LocalDateTime startDate = getStartDate(months);
         Long orgId = securityService.getCurrentUserOrganizationId();
-        List<Integer> statusesIntegers = statuses.stream().map(status -> status.getValue()).collect(toList());
+        List<Integer> statusesIntegers = statuses.stream().map(OrderStatus::getValue).collect(toList());
         List<Map<String,Object>> info;
         if (type.equals(COUNT)) {
             info =  toOrderCountStatisticsInfo(metaOrderRepo.getOrderIncomeStatisticsPerMonth(orgId, statusesIntegers, startDate));
@@ -67,9 +67,9 @@ public class StatisticsService {
 
     private List<Map<String,Object>>  toOrderCountStatisticsInfo(List<OrderStatisticsInfo> infoList) {
         List<Map<String,Object>> finalList =  new ArrayList<>();
-        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate));
-        for (Map.Entry e : map.entrySet()) {
-            Map<String,Object> statusToCountMap = ((List<OrderStatisticsInfo>) e.getValue())
+        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate, LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<Date, List<OrderStatisticsInfo>> e : map.entrySet()) {
+            Map<String,Object> statusToCountMap = e.getValue()
                     .stream()
                     .collect(toMap(OrderStatisticsInfo::getStatus, OrderStatisticsInfo::getCount));
             statusToCountMap.put("month", new SimpleDateFormat("MMMM").format(e.getKey()));
@@ -81,9 +81,9 @@ public class StatisticsService {
 
     private List<Map<String,Object>>  toOrderIncomeStatisticsInfo(List<OrderStatisticsInfo> infoList) {
         List<Map<String,Object>> finalList =  new ArrayList<>();
-        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate));
-        for (Map.Entry e : map.entrySet()) {
-            Map<String, Object> statusToIncomeMap = ((List<OrderStatisticsInfo>) e.getValue())
+        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate, LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<Date, List<OrderStatisticsInfo>> e : map.entrySet()) {
+            Map<String, Object> statusToIncomeMap = e.getValue()
                     .stream()
                     .collect(toMap(OrderStatisticsInfo::getStatus, OrderStatisticsInfo::getIncome));
             statusToIncomeMap.put("month", new SimpleDateFormat("MMMM").format(e.getKey()));
