@@ -1293,10 +1293,9 @@ public class OrderServiceImpl implements OrderService {
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 
-	private boolean isAllOtherSubMetaOrdersHaveStatus(Long metaOrderId, Set<MetaOrderEntity> subMetaOrders, OrderStatus status) {
+	private boolean isAllOtherSubMetaOrdersHaveStatus(Set<MetaOrderEntity> subMetaOrders, OrderStatus status) {
 		return subMetaOrders
 				.stream()
-				.filter(ord -> !Objects.equals(ord.getId(), metaOrderId))
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 
