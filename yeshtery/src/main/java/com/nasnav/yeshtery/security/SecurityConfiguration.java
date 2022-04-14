@@ -37,7 +37,7 @@ import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.*;
 
 @Configuration
 @EnableWebSecurity
@@ -73,24 +73,99 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //- to created a pattern use one of the overloads of "patternOf" method, each adds
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
-						patternOf( "/**")
+						patternOf( "/**"),
+            patternOf( "/v1/360view/**"						, POST  , setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/order"							, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/order/confirm"					, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/order/reject"						, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/order/cancel"						, POST	, setOf(CUSTOMER)),
+            patternOf( "/v1/order/meta_order/list/user"		, GET	, setOf(CUSTOMER)),
+            patternOf( "/v1/order/track_info"					, GET	, setOf(CUSTOMER)),
+            patternOf( "/v1/order/return/reject"				, POST	, setOf(ORGANIZATION_MANAGER)),
+            patternOf( "/v1/order/return/confirm"				, POST	, setOf(ORGANIZATION_MANAGER)),
+            patternOf( "/v1/order/return/received_item"		, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/order/return"						, POST	, setOf(CUSTOMER)),
+            patternOf( "/v1/order/return/requests"			, GET	, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
+            patternOf( "/v1/order/return/request"				, GET	, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
+            patternOf( "/v1/order/status/update"				, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/order/**"),
+            patternOf( "/v1/statistics/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf( "/v1/stock/**"	 								, getNonCustomersRoles() ),
+            patternOf( "/v1/shop/**"									, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
+            patternOf( "/v1/shop/stock"	 					, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf( "/v1/product/review"					, POST	, setOf(CUSTOMER)),
+            patternOf( "/v1/product/**"						, POST	, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/product/**"						, GET	, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/product/**"						, DELETE, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/product/images"					, GET	, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/product/image/bulk/template"				, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/product/empty_collections"		, GET	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, NASNAV_ADMIN)),
+            patternOf( "/v1/admin/organization/domain"	   	, GET	, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
+            patternOf( "/v1/admin/organization/domains"	   	, GET	, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
+            patternOf( "/v1/admin/**"	   	 							, setOf(NASNAV_ADMIN) ),
+            patternOf( "/v1/files"							, DELETE , setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/files/**"),
+            patternOf( "/v1/organization/info"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/brand"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/image"				, POST	, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/image"				, DELETE, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/products_feature"	, POST	, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/products_feature"	, DELETE, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/tag/**"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/tags"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/shipping/**"					, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/promotions/**"				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/promotion/**"				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/themes/class"				, setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/organization/themes"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/extra_attribute"				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/shops"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/settings/**"					, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/subscribed_users"			, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/images_info"					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/search/**"					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/organization/seo"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/organization/sub_areas"					, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/mail/cart/abandoned"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/mail/wishlist/stock"						, setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/upload/**"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/export/**"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/integration/import/shops"					, setOf(ORGANIZATION_MANAGER)),
+            patternOf( "/v1/integration/import/products"				, setOf(ORGANIZATION_MANAGER)),
+            patternOf( "/v1/integration/import/product_images"		, setOf(ORGANIZATION_MANAGER)),
+            patternOf( "/v1/integration/module/disable"				, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/integration/module/enable"				, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/integration/module/**"					, setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/integration/param/**"						, setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/integration/dictionary"					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/integration/errors"						, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+            patternOf( "/v1/integration/**"							, setOf(NASNAV_ADMIN))
             , patternOf( "/v1/user/list")
-            , patternOf( "/v1/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles())
-            , patternOf( "/v1/user/address"					,PUT                , setOf(CUSTOMER))
-            , patternOf( "/v1/user/address"					,HttpMethod.DELETE  , setOf(CUSTOMER))
+            , patternOf( "/v1/user/list/customer"				, GET	, getNonCustomersRoles())
+            , patternOf( "/v1/user/address"					, PUT   , setOf(CUSTOMER))
+            , patternOf( "/v1/user/address"					, DELETE, setOf(CUSTOMER))
             , patternOf( "/v1/user/info")
-            , patternOf( "/v1/user/create"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) )
-            , patternOf( "/v1/user/update"											, setOf(CUSTOMER) )
-            , patternOf( "/v1/user/logout"											, getAllRoles() )
-            , patternOf( "/v1/user/logout_all"										, getAllRoles() )
-            , patternOf( "/v1/user/suspend"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
-            , patternOf( "/v1/order/**"										    , getAllRoles())
-            , patternOf( "/v1/cart/**"										        , setOf(CUSTOMER))
-            , patternOf( "/v1/pickup/**"										        , setOf(CUSTOMER))
-            , patternOf( "/v1/wishlist/**"										    , setOf(CUSTOMER))
-            , patternOf( "/v1/shipping/**"										    , setOf(CUSTOMER))
-            , patternOf("/v1/yeshtery/review"					, HttpMethod.POST   , setOf(CUSTOMER))
-            , patternOf("/v1/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER))
+            , patternOf( "/v1/user/create"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) )
+            , patternOf( "/v1/user/update"							, setOf(CUSTOMER) )
+            , patternOf( "/v1/user/logout"							, getAllRoles() )
+            , patternOf( "/v1/user/logout_all"						, getAllRoles() )
+            , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
+            , patternOf( "/v1/cart/**"								, setOf(CUSTOMER))
+            , patternOf( "/v1/pickup/**"							    , setOf(CUSTOMER))
+            , patternOf( "/v1/wishlist/**"							, setOf(CUSTOMER))
+            , patternOf( "/v1/shipping/**"							, setOf(CUSTOMER))
+            , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
+            , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/points/list"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/family/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/tier/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/booster/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/config/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/points/check"						, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/points/redeem"						, setOf(STORE_MANAGER))
     );
 
    
@@ -106,10 +181,18 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/icons/**")
                         , patternOf("/js/**")
                         , patternOf("/css/**")
-                        , patternOf("/files/**"							, HttpMethod.GET)
-                        , patternOf("/error/**"							, HttpMethod.GET)
-                        , patternOf("/v1/yeshtery/**"						, HttpMethod.GET)
-                        , patternOf("/v1/360view/**"						, HttpMethod.GET)
+                        , patternOf("/v1/callbacks/**")
+                        , patternOf("/v1/product/bundles"				    , GET)
+                        , patternOf("/v1/product/info"					, GET)
+                        , patternOf("/v1/product/image"					, GET)
+                        , patternOf("/v1/product/variant"				    , GET)
+                        , patternOf("/v1/organization/payments"			, GET)
+                        , patternOf("/v1/organization/brands"			    , GET)
+                        , patternOf("/v1/organization/products_features"	, GET)
+                        , patternOf("/v1/files/**"					    , GET)
+                        , patternOf("/error/**"							, GET)
+                        , patternOf("/v1/yeshtery/**"						, GET)
+                        , patternOf("/v1/360view/**"						, GET)
                         , patternOf("/v1/payment/**")
                         , patternOf("/v1/user/recover")
                         , patternOf("/v1/user/login/**")
@@ -213,7 +296,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	private void configureStaticResourcesUrl(HttpSecurity http) throws Exception {
 		http
         .authorizeRequests()
-        .antMatchers(HttpMethod.GET, STATIC_FILES_URL+"/**")
+        .antMatchers(GET, STATIC_FILES_URL+"/**")
         .hasIpAddress("127.0.0.1"); //only used internally by the server, the server only forwards requests to this API
 	}
     
