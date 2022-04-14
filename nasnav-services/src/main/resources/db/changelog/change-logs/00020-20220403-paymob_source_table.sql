@@ -16,10 +16,3 @@ create Table paymob_source (
            organization_id bigint not null References Organizations(id)
 
 );
-
--- test data
-INSERT INTO public.paymob_source
-(created_at, value, "name", "type", status, currency, script, icon, organization_id)
-VALUES( '2022-04-04 09:38:50.327', '1739267', 'Online Card', 'Online Card', 'Test', 'EGP', 'https://accept.paymob.com/api/acceptance/iframes/319928?payment_token={payment_key_obtained_previously}', NULL, 78);
-
-
