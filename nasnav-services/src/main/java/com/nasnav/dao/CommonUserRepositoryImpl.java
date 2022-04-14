@@ -99,10 +99,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 
 
 
-	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee, YeshteryState state) {
-		if (state.equals(ACTIVE)) {
-			return userRepo.getYeshteryUserByEmail(email, orgId);
-		}
+	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee) {
 		if(isEmployee != null && isEmployee) {
 			return empRepo.getByEmailIgnoreCase(email);
 		}else {
