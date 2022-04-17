@@ -39,7 +39,7 @@ public class FilesController {
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
-        String url = request.getRequestURI().replaceFirst("/files", "");
+        String url = request.getRequestURI().replaceFirst(API_PATH, "");
         String resourceInternalUrl;
 
 		if (height != null || width != null) {

@@ -1,18 +1,17 @@
 package com.nasnav.yeshtery.dao;
 
+import com.nasnav.dao.RoleRepository;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 @Repository
@@ -21,8 +20,8 @@ public class CommonYeshteryUserRepositoryImpl implements CommonYeshteryUserRepos
 
     @Autowired
     private YeshteryUserRepository userRepo;
-
-
+    @Autowired
+    private RoleRepository roleRepo;
 
     @Override
     public List<String> getUserRoles(BaseYeshteryUserEntity user) {
@@ -35,7 +34,15 @@ public class CommonYeshteryUserRepositoryImpl implements CommonYeshteryUserRepos
     public List<String> getUserRoles(BaseUserEntity user) {
         if(user == null)
             return new ArrayList<>();
-        return getCustomerUserRoles();
+
+        if(user instanceof UserEntity)
+            return getCustomerUserRoles();
+
+        List<Role> rolesOfEmployeeUser = roleRepo.getRolesOfEmployeeUser(user.getId());
+        return rolesOfEmployeeUser.stream()
+                .filter(Objects::nonNull)
+                .map(Role::getName)
+                .collect(toList());
     }
 
     private List<String> getCustomerUserRoles() {

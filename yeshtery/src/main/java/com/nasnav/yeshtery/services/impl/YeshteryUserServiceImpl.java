@@ -705,6 +705,20 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         return new YeshteryUserApiResponse(userEntity.getId(), cookie.getValue(), userRoles, orgId, shopId,
                 userEntity.getName(), userEntity.getEmail(), cookie);
     }
+
+    @Override
+    public List<UserRepresentationObject> getUserList(){
+        List<YeshteryUserEntity> customers;
+        if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+            customers = userRepository.findAll();
+        } else {
+            customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+        }
+        return customers
+                .stream()
+                .map(YeshteryUserEntity::getRepresentation)
+                .collect(toList());
+    }
 }
 
 @Data

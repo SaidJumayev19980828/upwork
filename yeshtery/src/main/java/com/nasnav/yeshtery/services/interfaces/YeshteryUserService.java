@@ -9,6 +9,8 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.util.List;
+
 public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface {
     YeshteryUserApiResponse registerYeshteryUserV2(String referral, UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
     RedirectView activateYeshteryUserAccount(String token, String redirect) throws BusinessException;
@@ -20,4 +22,5 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     AddressDTO updateUserAddress(AddressDTO addressDTO);
     void removeUserAddress(Long id);
     UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);
+    List<UserRepresentationObject> getUserList();
 }
