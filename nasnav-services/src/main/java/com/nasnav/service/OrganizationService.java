@@ -82,4 +82,8 @@ public interface OrganizationService {
     List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds);
 
     List<OrganizationEntity> getYeshteryOrgs();
+
+    Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO);
+
+    Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO);
 }

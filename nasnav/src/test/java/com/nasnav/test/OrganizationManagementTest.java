@@ -1,18 +1,18 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.NavBox;
 import com.nasnav.dao.*;
+import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.ExtraAttributeDefinitionDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.SubAreasRepObj;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.SocialEntity;
-import com.nasnav.persistence.SubAreasEntity;
+import com.nasnav.enumerations.ExtraAttributeType;
+import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.shipping.services.DummyShippingService;
 import org.json.JSONObject;
@@ -25,9 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
@@ -37,15 +35,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
+import static com.nasnav.enumerations.ExtraAttributeType.STRING;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 @RunWith(SpringRunner.class)
@@ -55,12 +57,17 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 public class OrganizationManagementTest {
+    private final String NASNAV_EXTRA_ATTRIBUTES_API_PATH = "/organization/extra_attribute";
+
+
     @Value("classpath:sql/database_cleanup.sql")
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
     private Resource file;
     @Autowired
     private TestRestTemplate template;
+    @Autowired
+    private UserRepository userRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -219,6 +226,30 @@ public class OrganizationManagementTest {
         assertEquals(403, response.getStatusCode().value());
     }
 
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Organization_Test_Data_Insert_5.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Organization_Test_Data_5_Cleanup.sql"})
+    public void generateAccountsForNewOrganizationTest(){
+
+        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
+        HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
+        ResponseEntity<OrganizationResponse> res = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
+
+        Long orgId = res.getBody().getOrganizationId();
+
+        assertEquals(OK, res.getStatusCode());
+        assertAllUsersHaveOrg(orgId);
+    }
+
+    private void assertAllUsersHaveOrg(Long orgId){
+        Set<String> allEmails = userRepository.findDistinctEmails();
+        allEmails.forEach(email -> assertEmailHasOrg(email, orgId));
+    }
+
+    private void assertEmailHasOrg(String email, Long orgId){
+        UserEntity userEntity = userRepository.getByEmailAndOrganizationId(email, orgId);
+        assertNotNull(userEntity);
+    }
 
     @Test
     public void getOrgByURLTestSuccess() throws URISyntaxException {
@@ -312,7 +343,7 @@ public class OrganizationManagementTest {
     public void deleteVariantExtraAttribute() {
         //deleting extra attribute which not attached to any variant
         HttpEntity<?> req = getHttpEntity("123456");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
+        ResponseEntity<String> res = template.exchange( NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11002",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
         assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11001, 99002L));
@@ -322,7 +353,7 @@ public class OrganizationManagementTest {
     @Test
     public void deleteVariantExtraAttributeNonExistInSameOrg() {
         HttpEntity<?> req = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11001",
                 DELETE, req, String.class);
         assertEquals(406, res.getStatusCodeValue());
     }
@@ -331,7 +362,7 @@ public class OrganizationManagementTest {
     @Test
     public void deleteVariantExtraAttributeNoAuthZ() {
         HttpEntity<?> req = getHttpEntity("abcdefg");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11001",
                 DELETE, req, String.class);
         assertEquals(403, res.getStatusCodeValue());
     }
@@ -340,7 +371,7 @@ public class OrganizationManagementTest {
     @Test
     public void deleteVariantExtraAttributeNoAuthN() {
         HttpEntity<?> req = getHttpEntity("noneexist");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11002",
                 DELETE, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
     }
@@ -353,7 +384,7 @@ public class OrganizationManagementTest {
         
         //deleting extra attribute attached to variant #310002
         HttpEntity<?> req = getHttpEntity("123456");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11003",
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11003",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
         assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11003, 99002L));
@@ -369,7 +400,7 @@ public class OrganizationManagementTest {
         
         //deleting extra attribute attached to variant #310002
         HttpEntity<?> req = getHttpEntity("123456");
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11004",
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?attr_id=11004",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
         assertFalse(extraAttrRepo.existsByIdAndOrganizationId(11004, 99002L));
@@ -737,7 +768,7 @@ public class OrganizationManagementTest {
     public void getExtraAttributesInvalidAuthN(){
         HttpEntity<?> req = getHttpEntity("abcdefg");
 
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH, GET, req, String.class);
         assertEquals(403, res.getStatusCodeValue());
     }
 
@@ -747,7 +778,7 @@ public class OrganizationManagementTest {
     public void getExtraAttributesInvalidAuthZ(){
         HttpEntity<?> req = getHttpEntity("invalid");
 
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH, GET, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
     }
 
@@ -757,7 +788,7 @@ public class OrganizationManagementTest {
     public void getExtraAttributes() throws IOException {
         HttpEntity<?> req = getHttpEntity("hijkllm");
 
-        ResponseEntity<String> res = template.exchange("/organization/extra_attribute", GET, req, String.class);
+        ResponseEntity<String> res = template.exchange(NASNAV_EXTRA_ATTRIBUTES_API_PATH, GET, req, String.class);
 
         assertEquals(200, res.getStatusCodeValue());
 
@@ -770,7 +801,77 @@ public class OrganizationManagementTest {
         assertEquals(INVISIBLE , invisibleAttr.getType());
     }
 
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    @Test
+    public void createExtraAttributesTest() throws Exception {
+        ExtraAttributeDTO extraAttributeDTO = getExtraAttributesDTO();
+        String json = objectMapper.writeValueAsString(extraAttributeDTO);
+        String authToken = "123456";
 
+        HttpEntity req = getHttpEntity(json, authToken);
+
+        ResponseEntity<Integer> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Integer.class);
+
+        Optional<ExtraAttributesEntity> extraAttributesOptional = extraAttrRepo.findById(res.getBody());
+
+        assertEquals(OK, res.getStatusCode());
+        assertNotNull(extraAttributesOptional.get());
+        assertExtraAttributesDTOMatchesEntity(extraAttributeDTO, extraAttributesOptional.get());
+    }
+
+    private void assertExtraAttributesDTOMatchesEntity(ExtraAttributeDTO extraAttributeDTO, ExtraAttributesEntity extraAttributesEntity){
+        assertEquals(extraAttributeDTO.getName(), extraAttributesEntity.getName());
+        assertEquals(extraAttributeDTO.getIcon(), extraAttributesEntity.getIconUrl());
+        assertEquals(extraAttributeDTO.getType().getValue(), extraAttributesEntity.getType());
+    }
+
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    @Test
+    public void updateExtraAttributesTest() throws Exception {
+        ExtraAttributeDTO extraAttributeDTO = new ExtraAttributeDTO();
+        Integer existingExtraAttrId = 11002;
+        extraAttributeDTO.setId(existingExtraAttrId);
+        extraAttributeDTO.setType(INVISIBLE);
+
+        String json = objectMapper.writeValueAsString(extraAttributeDTO);
+        HttpEntity req = getHttpEntity(json, "123456");
+
+        ResponseEntity<Integer> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=update", req, Integer.class);
+
+        ExtraAttributesEntity extraAttributes = extraAttrRepo.findById(existingExtraAttrId).get();
+
+        assertEquals(OK, res.getStatusCode());
+        assertEquals(INVISIBLE.getValue(), extraAttributes.getType());
+    }
+
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    @Test
+    public void updateExtraAttributesWrongIdTest() throws Exception {
+        ExtraAttributeDTO extraAttributeDTO = new ExtraAttributeDTO();
+        Integer existingExtraAttrId = 11003;
+        extraAttributeDTO.setId(existingExtraAttrId);
+        extraAttributeDTO.setType(INVISIBLE);
+
+        String json = objectMapper.writeValueAsString(extraAttributeDTO);
+        HttpEntity req = getHttpEntity(json, "123456");
+
+        ResponseEntity<Object> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=update", req, Object.class);
+
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+    }
+
+    private ExtraAttributeDTO getExtraAttributesDTO(){
+        ExtraAttributeDTO extraAttributeDTO = new ExtraAttributeDTO();
+
+        extraAttributeDTO.setName("extra_attr_name");
+        extraAttributeDTO.setType(STRING);
+        extraAttributeDTO.setIcon("extra_attr_icon");
+
+        return extraAttributeDTO;
+    }
 
     private List<SubAreasRepObj> parseGetSubareasResponse(String res) throws IOException {
         return objectMapper.readValue(res, new TypeReference<List<SubAreasRepObj>>(){});
@@ -779,9 +880,6 @@ public class OrganizationManagementTest {
     private JSONObject createSubAreaUpdateRequest(String name, Long areaId) {
         return createSubAreaUpdateRequest(null, name, areaId);
     }
-
-
-
 
     private JSONObject createSubAreaUpdateRequest(Long id, String name, Long areaId) {
         return json()

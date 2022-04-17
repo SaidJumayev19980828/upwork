@@ -34,11 +34,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0007;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import static org.springframework.http.MediaType.*;
 
 @RestController
 @RequestMapping("/organization")
@@ -223,6 +223,19 @@ public class OrganizationController {
     @GetMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken) {
         return orgService.getExtraAttributes();
+    }
+
+    @PostMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
+    public Integer createOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                           @RequestParam("operation") String operation,
+                                           @RequestBody ExtraAttributeDTO extraAttrDTO) {
+
+        if(operation.equalsIgnoreCase("create"))
+            return orgService.createExtraAttribute(extraAttrDTO);
+        else if (operation.equalsIgnoreCase("update"))
+            return orgService.updateExtraAttributes(extraAttrDTO);
+        else
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
     }
 
     @GetMapping(value = "promotions", produces = APPLICATION_JSON_VALUE)

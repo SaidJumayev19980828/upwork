@@ -18,7 +18,6 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.paymob.PayMobAccount;
-import com.nasnav.payments.paymob.PaymobSource;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -32,7 +31,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
-import org.json.simple.JSONArray;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -124,8 +122,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private TagsRepository tagsRepo;
     @Autowired
     private TagGraphNodeRepository tagGraphNodeRepo;
-    @Autowired
-    private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
     @Autowired
@@ -636,6 +632,56 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationRepository.findByYeshteryState(1);
     }
 
+    @Override
+    public Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
+        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
+
+        extraAttrEntity = setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        extraAttributesRepository.save(extraAttrEntity);
+
+        return extraAttrEntity.getId();
+    }
+
+    @Override
+    public Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        Integer attrId = extraAttrDTO.getId();
+
+        ExtraAttributesEntity extraAttrEntity =
+                extraAttributesRepository
+                .findByIdAndOrganizationId(attrId, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId));
+
+        extraAttrEntity = setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        extraAttributesRepository.save(extraAttrEntity);
+
+        return extraAttrEntity.getId();
+    }
+
+    private ExtraAttributesEntity setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        String attrName = extraAttrDTO.getName();
+        String attrIconUrl = extraAttrDTO.getIcon();
+        ExtraAttributeType attrType = extraAttrDTO.getType();
+
+        attrName = ofNullable(attrName)
+                        .orElse(extraAttrEntity.getName());
+        attrIconUrl = ofNullable(attrIconUrl)
+                        .orElse(extraAttrEntity.getIconUrl());
+        String attrTypeValue = ofNullable(attrType)
+                                    .map(ExtraAttributeType::getValue)
+                                    .orElse(extraAttrEntity.getType());
+
+        extraAttrEntity.setName(attrName);
+        extraAttrEntity.setIconUrl(attrIconUrl);
+        extraAttrEntity.setType(attrTypeValue);
+        extraAttrEntity.setOrganizationId(orgId);
+
+        return extraAttrEntity;
+    }
+
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());
@@ -1068,7 +1114,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
     public List<ExtraAttributeDefinitionDTO> getExtraAttributes() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttrRepo
+		return extraAttributesRepository
 				.findByOrganizationId(orgId)
 				.stream()
 				.map(this::createExtraAttributeDTO)
@@ -1085,7 +1131,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orElse(ExtraAttributeType.STRING);
         Boolean invisible = Objects.equals(type, INVISIBLE);
 		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
-		dto.setIconUrl(entity.getIconUrl());
+		dto.setIcon(entity.getIconUrl());
 		dto.setId(entity.getId());
 		dto.setName(entity.getName());
 		dto.setType(type);

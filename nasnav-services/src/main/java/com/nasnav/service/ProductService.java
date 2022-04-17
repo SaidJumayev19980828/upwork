@@ -430,7 +430,7 @@ public class ProductService {
 		Boolean invisible = Objects.equals(INVISIBLE, type);
 		ExtraAttributeDTO dto = new ExtraAttributeDTO();
 		dto.setId(extraAttrEntity.getId());
-		dto.setIconUrl(extraAttrEntity.getIconUrl());
+		dto.setIcon(extraAttrEntity.getIconUrl());
 		dto.setName(extraAttrEntity.getName());
 		dto.setType(type);
 		dto.setValue(entity.getValue());
