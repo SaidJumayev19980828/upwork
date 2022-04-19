@@ -4,6 +4,7 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, p_name, currency_iso) VALUES (99003, 'yeshtery', 'yeshtery', 818);
 
 --insert organization domain
 INSERT INTO public.organization_domains
@@ -132,7 +133,7 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 --INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters)
-values('BOSTA_LEVIS', 99001, 
+values('BOSTA_LEVIS', 99001,
 '{
     "AUTH_TOKEN": "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357",
     "BUSINESS_ID": "yM1ngytZ0",
@@ -141,7 +142,34 @@ values('BOSTA_LEVIS', 99001,
 	"CAIRO_PRICE": 25,
 	"ALEXANDRIA_PRICE":30,
 	"DELTA_CANAL_PRICE":30,
-	"UPPER_EGYPT":45
+	"UPPER_EGYPT":45,
+	"TRACKING_URL": "https://stg-app.bosta.co/api/tracking/26522"
+ }');
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters)
+values('BOSTA_LEVIS', 99002,
+'{
+    "AUTH_TOKEN": "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357",
+    "BUSINESS_ID": "yM1ngytZ0",
+    "SERVER_URL": "https://stg-app.bosta.co/api/v0",
+	"WEBHOOK_URL": "https://backend.nasnav.org/callbacks/shipping/service/BOSTA_LEVIS/99002",
+	"CAIRO_PRICE": 25,
+	"ALEXANDRIA_PRICE":30,
+	"DELTA_CANAL_PRICE":30,
+	"UPPER_EGYPT":45,
+	"TRACKING_URL": "https://stg-app.bosta.co/api/tracking/26522"
+ }');
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters)
+values('BOSTA_LEVIS', 99003,
+'{
+    "AUTH_TOKEN": "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357",
+    "BUSINESS_ID": "yM1ngytZ0",
+    "SERVER_URL": "https://stg-app.bosta.co/api/v0",
+	"WEBHOOK_URL": "https://backend.nasnav.org/callbacks/shipping/service/BOSTA_LEVIS/99003",
+	"CAIRO_PRICE": 25,
+	"ALEXANDRIA_PRICE":30,
+	"DELTA_CANAL_PRICE":30,
+	"UPPER_EGYPT":45,
+	"TRACKING_URL": "https://stg-app.bosta.co/api/tracking/26522"
  }');
 
 --assign organization to cod payment

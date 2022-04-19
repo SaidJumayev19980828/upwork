@@ -6,7 +6,6 @@ import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.navbox.*;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.service.OrderService;
@@ -37,9 +36,9 @@ import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
-import static com.nasnav.yeshtery.test.YeshteryApiTest.USELESS_NOTE;
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.yeshtery.test.commons.TestCommons.json;
+import static com.nasnav.yeshtery.test.controllers.YeshteryOrdersControllerTest.USELESS_NOTE;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
@@ -63,7 +62,6 @@ public class YeshteryCartControllerTest {
     private final String YESHTERY_CART_API_PATH = YeshteryConstants.API_PATH + "/cart";
     private final String YESHTERY_CART_ITEM_API_PATH = YeshteryConstants.API_PATH + "/cart/item";
     private final String YESHTERY_CART_CHECKOUT_API_PATH = YeshteryConstants.API_PATH + "/cart/checkout";
-    private final String YESHTERY_ORDER_CANCEL_API_PATH = YeshteryConstants.API_PATH + "/order/cancel";
 
     @Autowired
     private TestRestTemplate template;
@@ -475,6 +473,7 @@ public class YeshteryCartControllerTest {
         assertItemDataJsonCreated(order);
         return order;
     }
+
     private void assertItemDataJsonCreated(Order order) {
         Set<BasketItem> returnedItems = getBasketItemFromResponse(order);
         Set<BasketItem> savedItemsData = parseItemsDataJson(order);
@@ -522,6 +521,7 @@ public class YeshteryCartControllerTest {
             return new BasketItem();
         }
     }
+
     private BigDecimal getSubOrderShippingSum(Order order) {
         return order
                 .getSubOrders()
@@ -530,6 +530,7 @@ public class YeshteryCartControllerTest {
                 .map(Shipment::getShippingFee)
                 .reduce(ZERO, BigDecimal::add);
     }
+
     private BigDecimal getSubOrderTotalSum(Order order) {
         return order
                 .getSubOrders()
@@ -561,7 +562,7 @@ public class YeshteryCartControllerTest {
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void checkoutCartNoAuthN() {
-        HttpEntity<?> request = getHttpEntity("{}","101112");
+        HttpEntity<?> request = getHttpEntity("{}", "101112");
         ResponseEntity<String> response = template.postForEntity(YESHTERY_CART_CHECKOUT_API_PATH, request, String.class);
 
         Assert.assertEquals(FORBIDDEN, response.getStatusCode());
@@ -649,30 +650,6 @@ public class YeshteryCartControllerTest {
         Assert.assertEquals(itemsCountBefore + 1, response.getBody().getItems().size());
     }
 
-    // TODO: make this test work with a swtich flag, that either make it work on bosta
-    //staging server + mail.nasnav.org mail server
-    //or make it work on mock bosta server + mock mail service
-    //@Test
-    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_4.sql"})
-    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void orderCancelCompleteCycle() throws BusinessException {
-
-        addCartItems(88L, 602L, 2);
-        addCartItems(88L, 604L, 1);
-
-        //checkout
-        JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
-
-        Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
-        Long orderId = order.getOrderId();
-
-        orderService.finalizeOrder(orderId);
-
-        HttpEntity<?> request = getHttpEntity("123");
-        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_CANCEL_API_PATH + "?meta_order_id=" + orderId, request, String.class);
-        Assert.assertEquals(OK, res.getStatusCode());
-    }
-
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_5.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -689,6 +666,7 @@ public class YeshteryCartControllerTest {
 
         assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
     }
+
     private void assertOrdersStatusAfterCheckout(Long unpaidOrderId, Long cancelPaymentOrderId, Long paidOrderId, Long errorPaymentOrderId) {
         MetaOrderEntity unpaidOrderAfter = metaOrderRepo.findFullDataById(unpaidOrderId).get();
         MetaOrderEntity cancelPaymentOrderAfter = metaOrderRepo.findFullDataById(cancelPaymentOrderId).get();
