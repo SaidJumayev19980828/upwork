@@ -2,8 +2,10 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
@@ -13,6 +15,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "loyalty_point_config")
 @EqualsAndHashCode(callSuper=false)
 public class LoyaltyPointConfigEntity {
@@ -51,6 +55,15 @@ public class LoyaltyPointConfigEntity {
     @lombok.ToString.Exclude
     private LoyaltyTierEntity defaultTier;
 
+    public LoyaltyPointConfigEntity(LoyaltyPointConfigEntity from) {
+        setOrganization(from.getOrganization());
+        setDescription(from.getDescription());
+        setCoefficient(from.getCoefficient());
+        setDefaultTier(from.getDefaultTier());
+        setRatioFrom(from.getRatioFrom());
+        setRatioTo(from.getRatioTo());
+        setIsActive(true);
+    }
 
     public LoyaltyPointConfigDTO getRepresentation() {
         LoyaltyPointConfigDTO dto = new LoyaltyPointConfigDTO();

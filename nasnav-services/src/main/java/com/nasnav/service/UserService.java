@@ -41,8 +41,6 @@ public interface UserService extends CommonUserServiceInterface{
 
     void updateUserByFamilyId(Long familyId, Long userId);
 
-    void updateUserByTierId(Long tierId, Long userId);
-
     void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId);
 
     List<UserEntity> getUsersByFamilyId(Long familyId);

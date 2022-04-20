@@ -147,7 +147,7 @@ public class PaymentControllerMastercard {
             @RequestParam(name = "resultIndicator") String resultIndicator
     ) {
         try {
-            mastercardService.verifyAndStore(orderId, resultIndicator);
+            mastercardService.verifyAndStore(orderId, resultIndicator, true);
             return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""

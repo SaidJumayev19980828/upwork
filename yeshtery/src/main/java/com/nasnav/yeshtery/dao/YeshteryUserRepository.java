@@ -4,6 +4,7 @@ import com.nasnav.persistence.BaseYeshteryUserEntity;
 import com.nasnav.persistence.YeshteryUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface YeshteryUserRepository extends JpaRepository<YeshteryUserEntity, Long> {
@@ -19,6 +20,8 @@ public interface YeshteryUserRepository extends JpaRepository<YeshteryUserEntity
     boolean existsByResetPasswordToken(String resetPasswordToken);
 
     YeshteryUserEntity findByResetPasswordToken(String token);
+
+    List<YeshteryUserEntity> findByOrganizationId(Long orgId);
 
     boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 

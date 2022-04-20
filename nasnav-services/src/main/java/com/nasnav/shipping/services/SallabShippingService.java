@@ -179,6 +179,10 @@ public class SallabShippingService implements ShippingService{
 		if(!fee.isPresent() ||  !areCitiesSupported(shippingInfo)) {
 			return Mono.empty();
 		}
+
+		if (shippingInfo.get(0).getDestination().getId() == -1L)
+			return Mono.empty();
+
 		Integer shipmentsNum = shippingInfo.size();
 		List<Shipment> shipments =
 				shippingInfo

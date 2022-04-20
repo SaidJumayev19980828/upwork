@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long> {
 	
@@ -272,10 +273,11 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 													  @Param("orgId") Long orgId);
 
 	@Query("SELECT meta FROM MetaOrderEntity meta "
-			+ " LEFT JOIN FETCH meta.subMetaOrders subMeta "
+			+ " LEFT JOIN FETCH meta.subMetaOrder yeshteryMetaOrder "
+			+ " LEFT JOIN FETCH meta.subMetaOrders subMetaOrders "
 			+ " LEFT JOIN FETCH meta.organization org "
 			+ " LEFT JOIN FETCH meta.user usr "
-			+ " LEFT JOIN FETCH subMeta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subMetaOrders.subOrders subOrder "
 			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
 			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
 			+ " LEFT JOIN FETCH subOrder.shipment shipment "
@@ -285,8 +287,9 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " LEFT JOIN FETCH meta.promotions"
-			+ " WHERE subMeta.id =:id ")
-	Optional<MetaOrderEntity> findBySubMetaOrder_Id(@Param("id") Long id);
+			+ " WHERE yeshteryMetaOrder.id =:id ")
+	Set<MetaOrderEntity> findSubMetaOrdersByYeshteryMetaOrder_Id(@Param("id") Long yeshteryMetaOrderId);
+
 
 }
 

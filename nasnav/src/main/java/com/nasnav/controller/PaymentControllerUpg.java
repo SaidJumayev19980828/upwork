@@ -90,7 +90,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {
         upgLogger.info("Received payment confirmation: {}", content);
         UpgLightbox lightbox = new UpgLightbox();
-        return lightbox.callback(content, session.getUpgAccount(), orderService, paymentCommons, ordersRepository, upgLogger);
+        return lightbox.callback(content, session.getUpgAccount(), orderService, paymentCommons, ordersRepository, upgLogger, false);
     }
 
  }

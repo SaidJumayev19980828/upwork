@@ -4,6 +4,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.payments.paymob.PaymobPaymentResponse;
 import com.nasnav.payments.paymob.PaymobService;
 import com.nasnav.payments.paymob.PaymobSource;
 import com.nasnav.payments.paymob.TokenResponse;
@@ -36,32 +37,24 @@ public class PaymentControllerPayMob {
     private PaymobService paymobService;
 
     @PostMapping("init")
-    public ResponseEntity<String> init(@RequestParam(name = "order_id") Long metaOrderId, @RequestBody PaymobSource source) throws BusinessException {
+    public String init(@RequestParam(name = "order_id") Long metaOrderId, @RequestBody PaymobSource source) throws BusinessException {
 
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(metaOrderId);
         if (metaOrder.isEmpty()) {
             throw new RuntimeBusinessException(NOT_FOUND, O$0001, metaOrderId);
         }
-        try {
-            TokenResponse token = paymobService.init(metaOrder.get(), source);
-            return new ResponseEntity<>("{\"status\": \"SUCCESS\", \"token\": \""+token.getToken()+"\"", HttpStatus.OK);
+        return paymobService.init(metaOrder.get(), source);
 
-        } catch (BusinessException ex) {
-            return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
-                    + ex.getErrorCode() + "\", \"message\": \"" + ex.getErrorMessage() + "\"}", ex.getHttpStatus());
-        }
     }
 
 
+
     @PostMapping("confirm")
-    public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) {
-        try {
-            paymobService.verifyAndStore(uid);
-            return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
-        } catch (BusinessException ex) {
-            return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
-                    + ex.getErrorCode() + "\", \"message\": \"" + ex.getErrorMessage() + "\"}", ex.getHttpStatus());
-        }
+    public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
+
+        paymobService.verifyAndStore(uid, true);
+        return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+
     }
 
 }

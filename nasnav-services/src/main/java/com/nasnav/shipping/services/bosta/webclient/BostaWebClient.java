@@ -123,7 +123,7 @@ public class BostaWebClient {
 
     public Mono<ClientResponse> createAirwayBill(String token, String deliveryId) {
         return client.get()
-                .uri("/deliveries/awb?id=" + deliveryId)
+                .uri("/deliveries/awb/" + deliveryId)
                 .header("Authorization", token)
                 .exchange();
     }

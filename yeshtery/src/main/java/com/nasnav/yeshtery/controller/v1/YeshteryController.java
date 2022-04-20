@@ -74,6 +74,7 @@ public class YeshteryController {
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,
                                                            @RequestParam(name = "org_id", required = false) Long orgId,
                                                            @RequestParam(value = "area_id", required = false) Long areaId,
+                                                           @RequestParam(value = "city_id", required = false) Long cityId,
                                                            @RequestParam(required = false) Double minLongitude,
                                                            @RequestParam(required = false) Double maxLongitude,
                                                            @RequestParam(required = false) Double minLatitude,
@@ -82,13 +83,32 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double latitude,
                                                            @RequestParam(required = false) Double radius,
                                                            @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
-                                                           @RequestParam(value = "product_type", required = false) Integer[] productType) {
-        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
-                longitude, latitude, radius, true, searchInTags.booleanValue(), productType);
+                                                           @RequestParam(value = "product_type", required = false) Integer[] productType,
+                                                           @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
         return shopService.getLocationShops(param);
     }
 
-
+    @GetMapping(value = "/location_shops_cities", produces = APPLICATION_JSON_VALUE)
+    public Set<CityIdAndName> getLocationShopsCities(@RequestParam(value = "name", required = false) String name,
+                                               @RequestParam(name = "org_id", required = false) Long orgId,
+                                               @RequestParam(value = "area_id", required = false) Long areaId,
+                                               @RequestParam(value = "city_id", required = false) Long cityId,
+                                               @RequestParam(required = false) Double minLongitude,
+                                               @RequestParam(required = false) Double maxLongitude,
+                                               @RequestParam(required = false) Double minLatitude,
+                                               @RequestParam(required = false) Double maxLatitude,
+                                               @RequestParam(required = false) Double longitude,
+                                               @RequestParam(required = false) Double latitude,
+                                               @RequestParam(required = false) Double radius,
+                                               @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+                                               @RequestParam(value = "product_type", required = false) Integer[] productType,
+                                               @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
+        return shopService.getLocationShopsCities(param);
+    }
 
     @GetMapping(value = "/related_products", produces = APPLICATION_JSON_VALUE)
     public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
@@ -121,7 +141,10 @@ public class YeshteryController {
     }
 
     @GetMapping(value="/review", produces = APPLICATION_JSON_VALUE)
-    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
+    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
+                                                                   @RequestParam(value = "product_id", required = false)Long productId) {
+        if (productId != null)
+            return reviewService.getYeshteryProductRatings(productId);
         return reviewService.getYeshteryVariantRatings(variantId);
     }
 
@@ -151,6 +174,9 @@ public class YeshteryController {
     @GetMapping("products")
     public ProductsResponse getProducts(ProductSearchParam productSearchParam) throws BusinessException {
         productSearchParam.setYeshtery_products(true);
+        if (productSearchParam.tag_ids == null) {
+            productSearchParam.setTag_ids(productSearchParam.getTags());
+        }
         return productService.getProducts(productSearchParam);
     }
 
@@ -161,8 +187,10 @@ public class YeshteryController {
     }
 
     @GetMapping(value="countries", produces=MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, CountriesRepObj> getCountries(@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities) {
-        return addressService.getCountries(hideEmptyCities, null);
+    public Map<String, CountriesRepObj> getCountries(
+            @RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities,
+            @RequestParam(value = "org_id", required = false) Long orgId) {
+        return addressService.getCountries(hideEmptyCities, orgId);
     }
 
     @GetMapping( path="files/{orgId}/{url}")
@@ -281,7 +309,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "payments", produces = APPLICATION_JSON_VALUE)
-    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+    public LinkedHashMap<String, Map<String, Object>> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
                                                                                      @RequestParam(value = "delivery", required = false) String deliveryService) {
         return orgService.getOrganizationPaymentGateways(orgId, deliveryService);
     }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.persistence.CartItemEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,15 @@ public class CartServiceHelper {
         }
     }
 
-
+    public void addOutOfStockFlag(CartItemEntity entity) {
+        Map<String,Object> additionalData = getAdditionalDataAsMap(entity.getAdditionalData());
+        additionalData.put(ADDITIONAL_DATA_IS_OUT_OF_STOCK, true);
+        try {
+            entity.setAdditionalData(objectMapper.writeValueAsString(additionalData));
+        } catch (JsonProcessingException e) {
+            logger.error(e,e);
+        }
+    }
 
     public Map<String,Object> getAdditionalDataAsMap(String json) {
         String jsonString = ofNullable(json).orElse("{}");

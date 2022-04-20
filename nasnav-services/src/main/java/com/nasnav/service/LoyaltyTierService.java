@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
@@ -14,6 +15,7 @@ public interface LoyaltyTierService {
     List<LoyaltyTierEntity> getTiersBetweenAmountFromTo(Integer amountFrom, Integer amountTo);
     LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tiers);
     LoyaltyTierEntity getTierByAmount(Integer amount);
-    void addNewTierToUser(Long userId, Long tierId);
+    UserRepresentationObject changeUserTier(Long userId, Long tierId);
     List<LoyaltyTierDTO> getTiers(Long orgId, Boolean isSpecial);
+
 }

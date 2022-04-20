@@ -18,6 +18,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.paymob.PayMobAccount;
+import com.nasnav.payments.paymob.PaymobSource;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -31,6 +32,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.json.simple.JSONArray;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -141,6 +143,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     private AppConfig config;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private PaymobSourceRepository paymobSourceRepository;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -1287,15 +1291,15 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public LinkedHashMap<String, Map<String, String>> getOrganizationPaymentGateways(Long orgId, String deliveryService) {
+    public LinkedHashMap<String, Map<String, Object>> getOrganizationPaymentGateways(Long orgId, String deliveryService) {
         List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
         if (gateways == null || gateways.size() == 0) {
             // no specific gateways defined for this org, use the default ones
             gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
         }
-        LinkedHashMap<String, Map<String, String>> response = new LinkedHashMap();
+        LinkedHashMap<String, Map<String, Object>> response = new LinkedHashMap();
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
-            Map<String, String> body = new HashMap();
+            Map<String, Object> body = new HashMap();
             if (deliveryService != null) {
                 // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
                 if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) ) {
@@ -1323,8 +1327,15 @@ public class OrganizationServiceImpl implements OrganizationService {
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
             } else if(PAY_MOB.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 PayMobAccount payMobAccount = new PayMobAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
+                String icon = domainService.getBackendUrl()+payMobAccount.getIcon();
                 body.put("script", payMobAccount.getApiUrl());
-                body.put("icon", domainService.getBackendUrl()+payMobAccount.getIcon());
+                body.put("icon", icon);
+                List<PaymobSourceEntity> paymobSources = paymobSourceRepository.findByOrganization_Id(orgId);
+                List<Map<String, String>> sources = new ArrayList<>();
+                if (paymobSources != null && paymobSources.size() > 0) {
+                    List<Map<String, String>> list = paymobSources.stream().map(source -> addPayMobSource(source, icon)).collect(toList());
+                    body.put("sources", list);
+                }
             }
             response.put(gateway.getGateway(), body);
         }
@@ -1332,6 +1343,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
 
+    private Map<String, String> addPayMobSource(PaymobSourceEntity source, String icon) {
+        Map<String, String> sourceMap = new HashMap<>();
+        sourceMap.put("value", source.getValue());
+        sourceMap.put("name", source.getName());
+        sourceMap.put("icon", icon);
+        sourceMap.put("script", source.getScript());
+        return sourceMap;
+    }
 
     @Override
     public List<ProductFeatureType> getProductFeatureTypes() {

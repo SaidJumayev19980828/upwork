@@ -1,0 +1,13 @@
+package com.nasnav.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CityIdAndName {
+    private Long id;
+    private String name;
+}

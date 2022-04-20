@@ -47,7 +47,7 @@ public interface OrderService {
 
 	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
-	void finalizeOrder(Long orderId) throws BusinessException;
+	void finalizeOrder(Long orderId);
 
 	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);
 

@@ -16,7 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(StatisticsController.API_PATH)
 public class StatisticsController {
-    static final String API_PATH = YeshteryConstants.API_PATH +"/loyalty";
+    static final String API_PATH = YeshteryConstants.API_PATH +"/statistics";
 
     @Autowired
     private StatisticsService statisticsService;
