@@ -125,7 +125,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             }
              entity.setDefaultTier(tier.get());
         }
-        loyaltyPointConfigRepo.save(oldEntity);
+        if(oldEntity.getId() != null && oldEntity.getId() > 0) {
+            loyaltyPointConfigRepo.save(oldEntity);
+        }
         entity.setOrganization(org);
         return entity;
     }
@@ -259,8 +261,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     private Optional<UserEntity> getUserEntity(Long orgId, Long yeshteryId) {
-        Optional<UserEntity> user = userRepo.findByYeshteryUserIdAndOrganizationId(yeshteryId, orgId);
-        return user;
+        return userRepo.findByYeshteryUserIdAndOrganizationId(yeshteryId, orgId);
     }
 
     @Override
@@ -386,8 +387,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if(anyIsNull(from, to , coefficient, amount)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0002);
         }
-        BigDecimal points = amount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
-        return points;
+        return amount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
     }
 
 
@@ -398,8 +398,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if(anyIsNull(from, to , coefficient, points)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0006, config.getOrganization().getId());
         }
-        BigDecimal amounts = new BigDecimal(points).multiply(coefficient).multiply(to).divide(from, 2, RoundingMode.HALF_EVEN);
-        return amounts;
+        return new BigDecimal(points).multiply(coefficient).multiply(to).divide(from, 2, RoundingMode.HALF_EVEN);
     }
 
     @Override
