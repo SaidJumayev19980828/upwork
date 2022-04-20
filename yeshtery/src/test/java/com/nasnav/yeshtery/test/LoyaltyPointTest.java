@@ -282,7 +282,7 @@ public class LoyaltyPointTest {
 
         Long id = response.getBody().getTierId();
         var changeRequest = TestCommons.getHttpEntity("abcdefg");
-        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
+        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
 
         assertEquals(200, changeResponse.getStatusCodeValue());
         UserEntity user = userRepository.getOne(88L);
