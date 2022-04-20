@@ -97,7 +97,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         LoyaltyPointConfigEntity oldEntity = entity;
         // don't delete a config just make it inactive and create new one
         if(entity != null && entity.getId() != null && entity.getId() > 0 ) {
-            entity.setIsActive(false);
+            oldEntity.setIsActive(false);
             entity = new LoyaltyPointConfigEntity(entity);
         }
         if (dto.getDescription() != null) {
