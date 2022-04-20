@@ -93,7 +93,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         Long orgId = dto.getOrgId();
         OrganizationEntity org = getOrganizationEntity(orgId);
 
-        LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE);
+        LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE).orElse(new LoyaltyPointConfigEntity());
         LoyaltyPointConfigEntity oldEntity = entity;
         // don't delete a config just make it inactive and create new one
         if(entity != null && entity.getId() != null && entity.getId() > 0 ) {
@@ -317,7 +317,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 continue;
             }
             Integer points = loyaltyPointTransRepo.findOrgRedeemablePointsByOrgAndYeshteryUserId( yeshteryUserId, orgId);
-            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE);
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE).orElse(null);
             if (config == null) {
                 continue;
             }
@@ -344,10 +344,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if(userEntity.getTier() != null){
             return userEntity.getTier().getRepresentation();
         }
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE);
-        if(config == null || config.getDefaultTier() == null){
-            throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, orgId);
-        }
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE).orElseThrow( ()-> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0006, orgId));
         userEntity.setTier(config.getDefaultTier());
         userRepo.save(userEntity);
         return userEntity.getTier().getRepresentation();
@@ -373,7 +370,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         ShopsEntity shop = order.getShopsEntity();
         UserEntity user = order.getMetaOrder().getUser();
 
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE);
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
         if (config == null) {
             return;
         }
@@ -430,7 +427,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                     .reduce(ZERO, BigDecimal::add)
                     .subtract(order.getAmount());
             LoyaltyPointConfigEntity config = loyaltyPointConfigRepo
-                    .findByOrganization_IdAndIsActive(org.getId(), TRUE);
+                    .findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
             if (config == null) {
                 return;
             }

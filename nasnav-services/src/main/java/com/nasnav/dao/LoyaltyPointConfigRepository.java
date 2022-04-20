@@ -16,5 +16,5 @@ public interface LoyaltyPointConfigRepository extends JpaRepository<LoyaltyPoint
 
     List<LoyaltyPointConfigEntity> findByOrganization_IdOrderByCreatedAtDesc(Long orgId);
 
-    LoyaltyPointConfigEntity findByOrganization_IdAndIsActive(@Param("orgId") Long orgId, Boolean isActive);
+    Optional<LoyaltyPointConfigEntity> findByOrganization_IdAndIsActive(@Param("orgId") Long orgId, Boolean isActive);
 }
