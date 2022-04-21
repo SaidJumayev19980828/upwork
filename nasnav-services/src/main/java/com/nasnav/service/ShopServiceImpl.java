@@ -12,6 +12,7 @@ import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.ShopServiceHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLQuery;
@@ -199,10 +200,10 @@ public class ShopServiceImpl implements ShopService {
         SQLQuery collectionsQuery = null;
         SQLQuery query = null;
         if (asList(param.getProductType()).contains(0)) {
-            productsQuery = getProductsQuery(predicate, param.isSearchInTags());
+            productsQuery = getProductsOrCollectionsQuery(predicate, param.isSearchInTags(), false);
         }
         if (asList(param.getProductType()).contains(2)) {
-            collectionsQuery = getCollectionsQuery(predicate, param.isSearchInTags());
+            collectionsQuery = getProductsOrCollectionsQuery(predicate, param.isSearchInTags(), true);
         }
         if (productsQuery != null && collectionsQuery != null) {
             Expression e = new SQLQuery<>().union(productsQuery, collectionsQuery).as("total");
@@ -305,100 +306,73 @@ public class ShopServiceImpl implements ShopService {
         return latitude + radius * Math.sin(angel * Math.PI / 180);
     }
 
-    private SQLQuery getProductsQuery(BooleanBuilder predicate, boolean searchInTags) {
+    private SQLQuery getProductsOrCollectionsQuery(BooleanBuilder predicate, boolean searchInTags, boolean collections) {
         QShops shop = QShops.shops;
         QStocks stock = QStocks.stocks;
         QProductVariants variant = QProductVariants.productVariants;
-        QProducts product = QProducts.products;
-        QProductTags productTag = QProductTags.productTags;
-        QTags tag = QTags.tags;
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
         QCities city = QCities.cities;
         QOrganizations organizations = QOrganizations.organizations;
-        SQLQuery productsQuery;
-        if (searchInTags) {
-            productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
-                    .distinct()
+        QShop360s shop360 = QShop360s.shop360s;
+        SQLQuery query = getShopsQuerySelectPart()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
+                    .innerJoin(shop360).on(shop360.shopId.eq(shop.id))
                     .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                    .innerJoin(product).on(variant.productId.eq(product.id))
-                    .leftJoin(productTag).on(product.id.eq(productTag.productId))
-                    .leftJoin(tag).on(tag.id.eq(productTag.tagId))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
                     .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .where(predicate)
-                    .orderBy(shop.priority.desc());
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id));
+        if (collections) {
+            query = addShopsQueryCollectionsPart(query);
         } else {
-            productsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
-                    .distinct()
-                    .from(stock)
-                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                    .innerJoin(product).on(variant.productId.eq(product.id))
-                    .leftJoin(address).on(shop.addressId.eq(address.id))
-                    .leftJoin(area).on(address.areaId.eq(area.id))
-                    .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .where(predicate)
-                    .orderBy(shop.priority.desc());
+            query = addShopsQueryProductsPart(query);
         }
-        return productsQuery;
+        if (searchInTags) {
+            query = addShopsQueryTagsPart(query);
+        }
+        query
+            .where(predicate)
+            .groupBy(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                    shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId,
+                    city.id, city.name)
+            .orderBy(shop.priority.desc(), shop.id.asc());
+        return query;
     }
 
-    private SQLQuery getCollectionsQuery(BooleanBuilder predicate, boolean searchInTags) {
+    private SQLQuery<Tuple> getShopsQuerySelectPart() {
         QShops shop = QShops.shops;
-        QStocks stock = QStocks.stocks;
+        QCities city = QCities.cities;
+        QShop360s shop360 = QShop360s.shop360s;
+
+        return queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
+                        shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId,
+                        city.id.as("cityId"), city.name.as("cityName"), shop360.count().gt(0).as("has360"))
+                .distinct();
+    }
+
+    private SQLQuery<Tuple> addShopsQueryProductsPart(SQLQuery<Tuple> query) {
+        QProductVariants variant = QProductVariants.productVariants;
+        QProducts product = QProducts.products;
+        return query.innerJoin(product).on(variant.productId.eq(product.id));
+    }
+    private SQLQuery<Tuple> addShopsQueryCollectionsPart(SQLQuery<Tuple> query) {
         QProductVariants variant = QProductVariants.productVariants;
         QProductCollections collection = QProductCollections.productCollections;
         QProducts product = QProducts.products;
+        return query
+                .innerJoin(collection).on(collection.variantId.eq(variant.id))
+                .innerJoin(product).on(collection.productId.eq(product.id));
+    }
+
+    private SQLQuery<Tuple> addShopsQueryTagsPart(SQLQuery<Tuple> query) {
+        QProducts product = QProducts.products;
         QProductTags productTag = QProductTags.productTags;
         QTags tag = QTags.tags;
-        QAddresses address = QAddresses.addresses;
-        QAreas area = QAreas.areas;
-        QCities city = QCities.cities;
-        QOrganizations organizations = QOrganizations.organizations;
-        SQLQuery collectionsQuery;
-
-        if (searchInTags) {
-            collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
-                    .distinct()
-                    .from(stock)
-                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                    .innerJoin(collection).on(collection.variantId.eq(variant.id))
-                    .innerJoin(product).on(collection.productId.eq(product.id))
-                    .leftJoin(productTag).on(product.id.eq(productTag.productId))
-                    .leftJoin(tag).on(tag.id.eq(productTag.tagId))
-                    .leftJoin(address).on(shop.addressId.eq(address.id))
-                    .leftJoin(area).on(address.areaId.eq(area.id))
-                    .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .where(predicate)
-                    .orderBy(shop.priority.desc());
-        } else {
-            collectionsQuery = queryFactory.select(shop.id, shop.name, shop.pName, shop.logo, shop.darkLogo, shop.banner,
-                            shop.googlePlaceId, shop.isWarehouse, shop.priority, shop.addressId, city.id.as("cityId"), city.name.as("cityName"))
-                    .distinct()
-                    .from(stock)
-                    .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                    .innerJoin(variant).on(stock.variantId.eq(variant.id))
-                    .innerJoin(collection).on(collection.variantId.eq(variant.id))
-                    .innerJoin(product).on(collection.productId.eq(product.id))
-                    .leftJoin(address).on(shop.addressId.eq(address.id))
-                    .leftJoin(area).on(address.areaId.eq(area.id))
-                    .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .where(predicate)
-                    .orderBy(shop.priority.desc());
-        }
-        return collectionsQuery;
+        return query.
+                leftJoin(productTag).on(product.id.eq(productTag.productId))
+                .leftJoin(tag).on(tag.id.eq(productTag.tagId));
     }
 
     @Override

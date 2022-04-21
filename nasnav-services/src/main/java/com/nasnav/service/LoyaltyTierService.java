@@ -15,7 +15,7 @@ public interface LoyaltyTierService {
     List<LoyaltyTierEntity> getTiersBetweenAmountFromTo(Integer amountFrom, Integer amountTo);
     LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tiers);
     LoyaltyTierEntity getTierByAmount(Integer amount);
-    UserRepresentationObject changeUserTier(Long userId, Long tierId);
+    UserRepresentationObject changeUserTier(Long userId, Long tierId, Long orgId);
     List<LoyaltyTierDTO> getTiers(Long orgId, Boolean isSpecial);
 
 }

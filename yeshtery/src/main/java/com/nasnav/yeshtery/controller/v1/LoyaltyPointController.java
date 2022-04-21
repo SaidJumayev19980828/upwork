@@ -173,8 +173,9 @@ public class LoyaltyPointController {
     @PostMapping(value = "tier/change_user_tier")
     public UserRepresentationObject changeUserTier(@RequestHeader(name = "User-Token", required = false) String token,
                                                    @RequestParam(value = "tier_id") Long tierId,
-                                                   @RequestParam(value = "user_id") Long userId) {
-        return loyaltyTierService.changeUserTier(userId, tierId);
+                                                   @RequestParam(value = "user_id") Long userId,
+                                                   @RequestParam(value = "org_id") Long orgId) {
+        return loyaltyTierService.changeUserTier(userId, tierId, orgId);
     }
 
 
