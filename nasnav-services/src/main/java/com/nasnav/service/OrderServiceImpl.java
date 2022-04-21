@@ -223,11 +223,13 @@ public class OrderServiceImpl implements OrderService {
 
 	private void updateYeshteryMetaOrderIfExists(MetaOrderEntity metaOrder, OrderStatus orderStatus) {
 		MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
-		Set<MetaOrderEntity> subMetaOrders = metaOrderRepo.findSubMetaOrdersByYeshteryMetaOrder_Id(yeshteryMetaOrder.getId());
+		if (yeshteryMetaOrder != null) {
+			Set<MetaOrderEntity> subMetaOrders = metaOrderRepo.findSubMetaOrdersByYeshteryMetaOrder_Id(yeshteryMetaOrder.getId());
 
-		if (isAllOtherSubMetaOrdersHaveStatus(subMetaOrders, orderStatus)) {
-			yeshteryMetaOrder.setStatus(orderStatus.getValue());
-			metaOrderRepo.save(yeshteryMetaOrder);
+			if (isAllOtherSubMetaOrdersHaveStatus(subMetaOrders, orderStatus)) {
+				yeshteryMetaOrder.setStatus(orderStatus.getValue());
+				metaOrderRepo.save(yeshteryMetaOrder);
+			}
 		}
 	}
 
