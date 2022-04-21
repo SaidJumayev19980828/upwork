@@ -30,7 +30,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
     List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
-    List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
+    List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs(Long orgId);
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
     void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
@@ -43,4 +43,6 @@ public interface LoyaltyPointsService {
     String generateUserShopPinCode(Long shopId);
 
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
+
+    LoyaltyPointConfigDTO updateOrgDefaultTier(Long orgId, Long tierId);
 }

@@ -105,12 +105,11 @@ public class Commons {
 		return null;
 	}
 
-	public void finalizePayment(PaymentEntity payment) throws BusinessException {
-
+	public void finalizePayment(PaymentEntity payment, boolean yeshteryMetaOrder) {
 		MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
 		Set<OrdersEntity> orders = metaOrder.getSubOrders();
-		if (metaOrder.getOrganization().getYeshteryState().equals(1)) {
+		if (yeshteryMetaOrder) {
 			orders.addAll(metaOrderRepo
 					.findYeshteryMetaorderByMetaOrderId(payment.getMetaOrderId())
 					.get()
@@ -130,7 +129,11 @@ public class Commons {
 			ordersRepository.saveAndFlush(order);
 		}
 		ordersRepository.flush();
-		orderService.finalizeYeshteryMetaOrder(metaOrder, orders);
+		if (yeshteryMetaOrder) {
+			orderService.finalizeYeshteryMetaOrder(metaOrder, orders);
+		} else {
+			orderService.finalizeOrder(metaOrder.getId());
+		}
 	}
 
 	public PaymentEntity getPaymentForOrderUid(String uid) {

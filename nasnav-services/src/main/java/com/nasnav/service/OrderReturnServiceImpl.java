@@ -213,7 +213,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         ReturnRequestEntity request = createReturnRequest(returnedItems);
         request = returnRequestRepo.save(request);
 
-        sendOrderReturnNotificationEmail(request.getId());
+        sendOrderReturnNotificationEmail(request);
         return request.getId();
     }
 
@@ -795,13 +795,10 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
 
-    private void sendOrderReturnNotificationEmail(Long returnRequestId) {
+    private void sendOrderReturnNotificationEmail(ReturnRequestEntity request) {
+        Long returnRequestId = request.getId();
         Long orgId = securityService.getCurrentUserOrganizationId();
         String orgName = securityService.getCurrentUserOrganization().getName();
-        ReturnRequestEntity request =
-                returnRequestRepo
-                        .findByReturnRequestId(returnRequestId, orgId)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
         List<String> emails = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
         if(emails.isEmpty()) {
             return;
@@ -830,7 +827,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .map(ReturnRequestEntity::getMetaOrder)
                         .map(MetaOrderEntity::getOrganization);
 
-        Long orgId = org.map(OrganizationEntity::getId).orElse(-1L);
+        Long orgId = user.map(UserEntity::getOrganizationId).orElse(-1L);
         String shippingService = getShippingService(request);
         AddressRepObj pickupAddr = getPickupAddress(request);
         String returnOrderPageUrl = domainService.buildDashboardReturnRequestPageUrl(request.getId(), orgId);

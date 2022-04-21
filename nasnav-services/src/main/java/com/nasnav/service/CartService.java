@@ -30,4 +30,6 @@ public interface CartService {
     List<CartItem> toCartItemsDto(List<CartItemEntity> cartItems);
     void sendAbandonedCartEmails(AbandonedCartsMail dto);
     List<ShopRepresentationObject> getShopsThatCanProvideEachItem();
+    void moveOutOfStockCartItemsToWishlist();
+    void moveCartItemsToWishlist(List<CartItemEntity> movedItems);
 }

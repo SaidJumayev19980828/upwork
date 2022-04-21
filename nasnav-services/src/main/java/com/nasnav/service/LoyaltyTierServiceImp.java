@@ -2,10 +2,14 @@ package com.nasnav.service;
 
 import com.nasnav.dao.LoyaltyBoosterRepository;
 import com.nasnav.dao.LoyaltyTierRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.LoyaltyTierEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,14 +30,13 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public class LoyaltyTierServiceImp implements LoyaltyTierService {
 
     @Autowired
-    LoyaltyTierRepository tierRepository;
+    private LoyaltyTierRepository tierRepository;
     @Autowired
-    SecurityService securityService;
+    private LoyaltyBoosterRepository loyaltyBoosterRepository;
     @Autowired
-    LoyaltyBoosterRepository loyaltyBoosterRepository;
+    private OrganizationRepository organizationRepository;
     @Autowired
-    UserService userService;
-
+    private UserRepository userRepository;
     @Override
     public LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tier) {
         validateTier(tier);
@@ -62,11 +65,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     public List<LoyaltyTierDTO> getTiers(Long orgId, Boolean isSpecial) {
         List<LoyaltyTierEntity> tierList;
         if (orgId > 0) {
-            if (isSpecial) {
-                tierList = tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial);
-            } else {
-                tierList = tierRepository.getByOrganization_Id(orgId);
-            }
+            tierList = isSpecial? tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial): tierRepository.getByOrganization_Id(orgId);
         } else {
             tierList = tierRepository.findAll();
         }
@@ -81,8 +80,15 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     @Override
-    public void addNewTierToUser(Long userId, Long tierId) {
-        userService.updateUserByTierId(tierId, userId);
+    public UserRepresentationObject changeUserTier(Long userId, Long tierId) {
+        LoyaltyTierEntity tier = getExistingTier(tierId);
+        UserEntity user = userRepository.findById(userId).orElseThrow(() ->new RuntimeBusinessException(NOT_ACCEPTABLE
+                , U$0001, userId));
+
+        user.setTier(tier);
+        userRepository.save(user);
+        return user.getRepresentation();
+
     }
 
     private LoyaltyTierEntity createTierEntity(LoyaltyTierDTO tier) {
@@ -91,7 +97,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE
                     , TIERS$PARAM$0002, tier.getId());
         }
-        OrganizationEntity organization = securityService.getCurrentUserOrganization();
+        OrganizationEntity organization = organizationRepository.findOneById(tier.getOrgId());
         entity.setOrganization(organization);
         entity.setIsActive(tier.getIsActive());
         entity.setIsSpecial(tier.getIsSpecial());
@@ -135,7 +141,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     private void validateTier(LoyaltyTierDTO tiers) {
-        if (anyIsNull(tiers, tiers.getTierName())) {
+        if (anyIsNull(tiers, tiers.getTierName(), tiers.getOrgId(), tiers.getCoefficient())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE
                     , TIERS$PARAM$0003, tiers.toString());
         }

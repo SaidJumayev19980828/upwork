@@ -107,7 +107,7 @@ public class RaveService {
 
 	}
 
-	public void verifyAndStore(String flwRef, String orderUid) throws BusinessException {
+	public void verifyAndStore(String flwRef, String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
 
 
 		PaymentEntity payment = paymentCommons.getPaymentForOrderUid(orderUid);
@@ -190,7 +190,7 @@ public class RaveService {
 
 		// Everything seems OK
 		payment.setStatus(PaymentStatus.PAID);
-		paymentCommons.finalizePayment(payment);
+		paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
 	}
 
 

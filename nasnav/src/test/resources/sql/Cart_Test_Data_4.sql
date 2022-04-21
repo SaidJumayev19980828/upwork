@@ -141,8 +141,9 @@ values('BOSTA_LEVIS', 99001,
 	"CAIRO_PRICE": 25,
 	"ALEXANDRIA_PRICE":30,
 	"DELTA_CANAL_PRICE":30,
-	"UPPER_EGYPT":45
- }');
+	"UPPER_EGYPT":45,
+    "TRACKING_URL": "https://backend.nasnav.org/callbacks/shipping/service/BOSTA_LEVIS/99001"
+}');
 
 --assign organization to cod payment
 INSERT into public.organization_payments(id,organization_id ,gateway, account )

@@ -192,6 +192,13 @@ public class MylerzShippingService implements ShippingService {
                 .onErrorResume(err -> {logger.error(err,err); return Mono.empty();});
     }
 
+    private void validateShippingAddress(ShippingDetails details) {
+        ShippingAddress address = details.getDestination();
+        if (address.getId() == -1L){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+        }
+    }
+
     private Mono<DeliveryFeeResponse> throwErrorForFailureResponse(DeliveryFeeResponse response) {
         if(response.getIsErrorState()){
             RuntimeException ex = new RuntimeBusinessException( INTERNAL_SERVER_ERROR, SHP$SRV$0004, SERVICE_ID, response.toString());
@@ -209,6 +216,8 @@ public class MylerzShippingService implements ShippingService {
     }
 
     private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(ShippingDetails details) {
+        if (details.getDestination().getId() == -1L)
+            return Optional.empty();
         String shopId = details.getShopId() + "";
         String deliveryAreaId = getDeliveryAreaId(details.getDestination().getArea());
         BigDecimal codValue = getTotalCartPrice(details);
@@ -303,6 +312,8 @@ public class MylerzShippingService implements ShippingService {
     }
 
     private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment, String serviceType, String serviceCategory) {
+        validateShippingAddress(shipment);
+
         String serverUrl = getServiceParam(SERVER_URL);
         MylerzWebClient client = new MylerzWebClient(serverUrl);
         ShipmentRequest request = createShipmentRequest(shipment, serviceType, serviceCategory);

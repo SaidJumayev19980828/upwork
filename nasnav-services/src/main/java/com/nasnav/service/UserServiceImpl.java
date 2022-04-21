@@ -807,11 +807,11 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
-		if (tierId < 0) {
+		if (tierId <= 0) {
 			tierId = getTierIdByUserOrders(orgId, userId);
 		}
 		if (userId > 0 && tierId > 0) {
-			userRepository.updateUserWithTierId(tierId, userId);
+			userRepository.updateUserTier(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 			if (userEntity.getTier().getId() > 0) {
 				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
@@ -824,27 +824,14 @@ public class UserServiceImpl implements UserService {
 		return userRepository.findByFamily_Id(familyId);
 	}
 
-	@Override
-	public void updateUserByTierId(Long tierId, Long userId) {
-		if (userId > 0 && tierId > 0) {
-			userRepository.updateUserWithTierId(tierId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getTier().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-			}
-		}
-	}
-
 	private Long getTierIdByUserOrders(Long orgId, Long userId) {
 		if (orgId < 0) {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
-		Long tierId = loyaltyTierService.getTierByAmount(orderCount).getId();
-		if (tierId > 0) {
-			return tierId;
-		}
-		return -1L;
+		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
+				.map(LoyaltyTierEntity::getId)
+				.orElse(-1L);
 	}
 
 	private void updateUserBoosterByFamilyMember(Long userId) {

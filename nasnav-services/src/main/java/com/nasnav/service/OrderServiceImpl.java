@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
@@ -65,13 +66,11 @@ import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static com.nasnav.enumerations.TransactionCurrency.getTransactionCurrency;
+import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
-import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Objects.isNull;
@@ -223,13 +222,12 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void updateYeshteryMetaOrderIfExists(MetaOrderEntity metaOrder, OrderStatus orderStatus) {
-		Optional<MetaOrderEntity> yeshteryMetaOrderOptional = metaOrderRepo.findBySubMetaOrder_Id(metaOrder.getId());
-		if(yeshteryMetaOrderOptional.isPresent()) {
-			MetaOrderEntity yeshteryMetaOrder = yeshteryMetaOrderOptional.get();
-			if (isAllOtherSubMetaOrdersHaveStatus(metaOrder.getId(), yeshteryMetaOrder.getSubMetaOrders(), orderStatus)) {
-				yeshteryMetaOrder.setStatus(orderStatus.getValue());
-				metaOrderRepo.save(yeshteryMetaOrder);
-			}
+		MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
+		Set<MetaOrderEntity> subMetaOrders = metaOrderRepo.findSubMetaOrdersByYeshteryMetaOrder_Id(yeshteryMetaOrder.getId());
+
+		if (isAllOtherSubMetaOrdersHaveStatus(subMetaOrders, orderStatus)) {
+			yeshteryMetaOrder.setStatus(orderStatus.getValue());
+			metaOrderRepo.save(yeshteryMetaOrder);
 		}
 	}
 
@@ -257,11 +255,6 @@ public class OrderServiceImpl implements OrderService {
 		throw getInvalidRuntimeOrderException(msg, msgParams);
 	}
 
-	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
-		String error = INVALID_ORDER.toString();
-		return new BusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
-	}
-
 	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
 		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
@@ -269,7 +262,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public void finalizeOrder(Long orderId) throws BusinessException {
+	public void finalizeOrder(Long orderId) {
 		//TODO: this should be done if the payment API became authenticated
 //		Long userId =
 //				ofNullable(securityService.getCurrentUser())
@@ -280,7 +273,7 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity order =
 				metaOrderRepo
 				.findFullDataById(orderId)
-				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));
+				.orElseThrow(() -> new RuntimeBusinessException( format(ERR_ORDER_NOT_EXISTS, orderId), INVALID_ORDER.toString(), NOT_ACCEPTABLE));
 
 		order.getSubOrders().forEach(this::finalizeSubOrder);
 		updateOrderStatus(order, FINALIZED);
@@ -344,10 +337,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, Object> createNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
-		String orderTime =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(order.getCreationDate());
+		String orderTime = getZonedDateTimeStr(order.getCreationDate(), getOrderCurrency(order));
 
 		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
@@ -448,11 +438,7 @@ public class OrderServiceImpl implements OrderService {
 	private Map<String, Object> createBillEmailParams(MetaOrderEntity order, Boolean yeshteryMetaorder) {
 		Order orderResponse = this.getOrderResponse(order, yeshteryMetaorder);
 
-		LocalDateTime orderTime = orderResponse.getCreationDate();
-		String orderTimeStr =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(orderTime);
+		String orderTimeStr = getZonedDateTimeStr(orderResponse.getCreationDate(), orderResponse.getCurrency().name());
 
 		normalizeOrderForEmailTemplate(orderResponse);
 
@@ -495,7 +481,10 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private AddressRepObj getBillDeliveryAddress(OrdersEntity order){
-		AddressRepObj userAddress = (AddressRepObj)order.getAddressEntity().getRepresentation();
+		AddressRepObj userAddress = ofNullable(order)
+				.map(OrdersEntity::getAddressEntity)
+				.map(addr -> (AddressRepObj) addr.getRepresentation())
+				.orElse(null);
 		return getPickupShopAddress(order)
 				.orElse(userAddress);
 	}
@@ -547,8 +536,6 @@ public class OrderServiceImpl implements OrderService {
 		String serviceId = shipment.getServiceId();
 		if (shippingMgrService.isPickupService(serviceId)) {
 			shipment.setServiceName("Pickup at " + subOrder.getShopName() + shopAreaNameString);
-			AddressRepObj address = subOrder.getDeliveryAddress();
-			BeanUtils.copyProperties(address, shopAddress);
 			subOrder.setDeliveryAddress(shopAddress);
 			subOrder.setPickup(true);
 		}
@@ -1294,10 +1281,9 @@ public class OrderServiceImpl implements OrderService {
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 
-	private boolean isAllOtherSubMetaOrdersHaveStatus(Long metaOrderId, Set<MetaOrderEntity> subMetaOrders, OrderStatus status) {
+	private boolean isAllOtherSubMetaOrdersHaveStatus(Set<MetaOrderEntity> subMetaOrders, OrderStatus status) {
 		return subMetaOrders
 				.stream()
-				.filter(ord -> !Objects.equals(ord.getId(), metaOrderId))
 				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 
@@ -1348,7 +1334,7 @@ public class OrderServiceImpl implements OrderService {
 	private AddressesEntity getAddressById(Long addressId, Long userId) {
 		return addressRepo
 						.findByIdAndUserId(addressId, userId)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressId));
+						.orElse(null);
 	}
 
 	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
@@ -1607,6 +1593,13 @@ public class OrderServiceImpl implements OrderService {
 						.flatMap(promoCode ->
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
+		if (promotion.isEmpty()) {
+			promotion=
+					ofNullable(dto.getPromoCode())
+							.flatMap(promoCode ->
+									promoRepo
+											.findByCodeAndOrganization_IdAndActiveNow(promoCode, securityService.getCurrentUserOrganizationId()));
+		}
 
 		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
 		Set<OrdersEntity> subOrders = createYeshterySubOrders(cartDividedByShop, address, dto, org);
@@ -1633,9 +1626,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
-		if (dto.getAddressId() == null) {
+		/*if (dto.getAddressId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
-		}
+		}*/
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
@@ -1794,6 +1787,14 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(EGP);
 	}
 
+	private String getOrderCurrency(OrdersEntity order) {
+		return Optional.of(order)
+				.map(OrdersEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getCountry)
+				.map(CountriesEntity::getCurrency)
+				.orElse("EGP");
+	}
+
 
 	private SubOrder getSubOrder(OrdersEntity order) {
 		String status = ofNullable(findEnum(order.getStatus()))
@@ -1824,7 +1825,9 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
 		subOrder.setStatus(status);
-		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
+		if (order.getAddressEntity() != null) {
+			subOrder.setDeliveryAddress((AddressRepObj) order.getAddressEntity().getRepresentation());
+		}
 		subOrder.setItems(items);
 		subOrder.setShipment(shipmentDto);
 		subOrder.setTotalQuantity(totalQuantity);
@@ -2256,29 +2259,20 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId) {
-		ArrayList<MetaOrderEntity> metaOrders = new ArrayList<>();
-		Optional<MetaOrderEntity> metaOrder = metaOrderRepo.findById(metaOrderId);
-		if (metaOrder.isEmpty()) {
-			return null;
-		}
-		metaOrders.add(metaOrder.get());
-		Set<MetaOrderEntity> subMetas = metaOrder.get().getSubMetaOrders();
-		if (subMetas != null && !subMetas.isEmpty()) {
-			metaOrders.addAll(subMetas);
-		}
+		MetaOrderEntity metaOrder = metaOrderRepo.findById(metaOrderId)
+				.orElseThrow(() -> new RuntimeBusinessException("Order ID value is invalid", "PAYMENT_FAILED", NOT_ACCEPTABLE));
+
 		OrderService.OrderValue oValue = new OrderService.OrderValue();
 		oValue.amount = new BigDecimal(0);
 		oValue.currency = null;
 
-		for(MetaOrderEntity moe: metaOrders) {
-			oValue.amount = oValue.amount.add(moe.getGrandTotal());
-			if (oValue.currency == null) {
-				oValue.currency = getOrderCurrency(moe);
-			} else {
-				if (oValue.currency != getOrderCurrency(moe)) {
-					logger.error("Mismatched order currencies for meta order: ({})", metaOrderId);
-					return null;
-				}
+		oValue.amount = oValue.amount.add(metaOrder.getGrandTotal());
+		if (oValue.currency == null) {
+			oValue.currency = getOrderCurrency(metaOrder);
+		} else {
+			if (oValue.currency != getOrderCurrency(metaOrder)) {
+				logger.error("Mismatched order currencies for meta order: ({})", metaOrderId);
+				return null;
 			}
 		}
 		return oValue;
@@ -2376,10 +2370,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = new HashMap<>();
-		String updateTime =
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(order.getUpdateDate());
+		String updateTime = getZonedDateTimeStr(order.getUpdateDate(), getOrderCurrency(order));
 
 		SubOrder subOrder = getSubOrder(order);
 		changeShippingServiceName(subOrder);
@@ -2399,7 +2390,17 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-
+	private String getZonedDateTimeStr(LocalDateTime dateTime, String zoneCurrency) {
+		ZoneId zoneId = ZoneId.of("UTC");
+		if (zoneCurrency.equals(EGP.name())) {
+			zoneId = ZoneId.of("Africa/Cairo");
+		} else if (zoneCurrency.equals(NGN.name())) {
+			zoneId = ZoneId.of("WAT");
+		}
+		return DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(dateTime.atZone(ZoneId.of("UTC")).withZoneSameInstant(zoneId).toLocalDateTime());
+	}
 
 
 	private void cancelMetaOrderAndSubOrders(Set<MetaOrderEntity> metaOrders) {

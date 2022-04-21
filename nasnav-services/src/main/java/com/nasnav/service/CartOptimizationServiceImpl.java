@@ -3,7 +3,9 @@ package com.nasnav.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
@@ -25,9 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -40,8 +41,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -76,6 +76,10 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private UserAddressRepository userAddressRepo;
+	@Autowired
+	private ProductVariantsRepository variantsRepo;
+	@Autowired
+	private CartItemRepository cartItemRepo;
 
 	@Autowired
 	private LoyaltyPointsService loyaltyPointsService;
@@ -84,20 +88,28 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
-		if (dto.getAddressId() == null) {
-			Long addressId = userAddressRepo
-					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
-					.map(UserAddressEntity::getAddress)
-					.map(AddressesEntity::getId)
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,O$RET$0019)); 
-			dto.setAddressId(addressId);
-		}
+
+		validateAndAssignUserAddress(dto);
+
+		checkIfCartHasEmptyStock();
+
 		var optimizedCart = createOptimizedCart(dto);
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var returnedCart = getCartObject(optimizedCart, dto.getPromoCode());
 		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
+	}
+
+	private void validateAndAssignUserAddress(CartCheckoutDTO dto) {
+		if (dto.getAddressId() == null) {
+			Long addressId = userAddressRepo
+					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
+					.map(UserAddressEntity::getAddress)
+					.map(AddressesEntity::getId)
+					.orElse(-1L);
+			dto.setAddressId(addressId);
+		}
 	}
 
 	private void checkIfCartIsEmpty(Cart cart) {
@@ -166,8 +178,37 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
 		var cart = cartService.getCart(dto.getPromoCode());
-		
+
 		return optimizer.createOptimizedCart(parameters, config, cart);
+	}
+
+	private void checkIfCartHasEmptyStock() {
+		Long userId = securityService.getCurrentUser().getId();
+		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
+		List<CartItemEntity> movedItems = new ArrayList<>();
+		if (!outOfStockCartItems.isEmpty()) {
+			for (CartItemEntity item : outOfStockCartItems) {
+				boolean isEmpty = item
+					.getStock()
+					.getProductVariantsEntity()
+					.getStocks()
+					.stream()
+					.filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
+					.findFirst()
+					.isEmpty();
+				if (isEmpty) {
+					movedItems.add(item);
+				}
+			}
+			cartService.moveCartItemsToWishlist(movedItems);
+			List<Long> removedVariants = movedItems
+					.stream()
+					.map(CartItemEntity::getStock)
+					.map(StocksEntity::getProductVariantsEntity)
+					.map(ProductVariantsEntity::getId)
+					.collect(toList());
+			//throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019, removedVariants.toString());
+		}
 	}
 
 

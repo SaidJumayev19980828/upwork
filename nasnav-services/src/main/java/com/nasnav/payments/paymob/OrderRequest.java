@@ -27,15 +27,5 @@ public class OrderRequest {
     private String deliveryNeeded = FALSE.toString();
     @JsonProperty("amount_cents")
     private BigDecimal amountCents;
-    @JsonProperty("terminal_id")
-    private Long terminalId;
-    @JsonProperty("merchant_order_id")
-    private Long merchantOrderId;
-    @JsonProperty("items")
-    private List<Items> items = new ArrayList<>();
-    @JsonProperty("shipping_data")
-    private ShippingData shippingData;
-    @JsonProperty("shipping_details")
-    private ShippingDetails shippingDetails;
     private String currency;
 }

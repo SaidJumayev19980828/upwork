@@ -84,13 +84,23 @@ public class ReviewServiceImpl implements ReviewService{
 
 
     @Override
-    public List<ProductRateRepresentationObject> getProductRatings(Long variantId) {
-        return  toReviewDtoList(productRatingRepo.findApprovedVariantRatings(variantId));
+    public List<ProductRateRepresentationObject> getVariantRatings(Long variantId) {
+        return toReviewDtoList(productRatingRepo.findApprovedVariantRatings(variantId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getProductRatings(Long productId) {
+        return toReviewDtoList(productRatingRepo.findApprovedProductRatings(productId));
     }
 
     @Override
     public List<ProductRateRepresentationObject> getYeshteryVariantRatings(Long variantId) {
         return toReviewDtoList(productRatingRepo.findApprovedYeshteryVariantRatings(variantId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getYeshteryProductRatings(Long productId) {
+        return toReviewDtoList(productRatingRepo.findApprovedYeshteryProductRatings(productId));
     }
 
 

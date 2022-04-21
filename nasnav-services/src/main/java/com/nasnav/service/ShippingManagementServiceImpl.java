@@ -400,7 +400,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		
 		AddressesEntity customerAddress =
 				ofNullable(addresses.get(customerAddrId))
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, customerAddrId));
+				.orElse(null);
 		
 		ShippingAddress pickupAddr = createShippingAddress(shopAddress);
 		ShippingAddress customerAddr = createShippingAddress( customerAddress); 
@@ -433,19 +433,19 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		ShippingAddress addr = new ShippingAddress();
-		addr.setAddressLine1(entity.getAddressLine1());
-		addr.setAddressLine2(entity.getAddressLine2());
+		addr.setAddressLine1(ofNullable(entity).map(AddressesEntity::getAddressLine1).orElse(""));
+		addr.setAddressLine2(ofNullable(entity).map(AddressesEntity::getAddressLine2).orElse(""));
 		addr.setArea(areaId);
 		addr.setSubArea(subAreaId);
-		addr.setBuildingNumber(entity.getBuildingNumber());
+		addr.setBuildingNumber(ofNullable(entity).map(AddressesEntity::getBuildingNumber).orElse(""));
 		addr.setCity(cityId);
 		addr.setCountry(countryId);
-		addr.setFlatNumber(entity.getFlatNumber());
-		addr.setId(entity.getId());
-		addr.setLatitude(entity.getLatitude());
-		addr.setLongitude(entity.getLongitude());
+		addr.setFlatNumber(ofNullable(entity).map(AddressesEntity::getFlatNumber).orElse(""));
+		addr.setId(ofNullable(entity).map(AddressesEntity::getId).orElse(-1L));
+		addr.setLatitude(ofNullable(entity).map(AddressesEntity::getLatitude).orElse(ZERO));
+		addr.setLongitude(ofNullable(entity).map(AddressesEntity::getLatitude).orElse(ZERO));
 		addr.setName(user.getName());
-		addr.setPostalCode(entity.getPostalCode());
+		addr.setPostalCode(ofNullable(entity).map(AddressesEntity::getPostalCode).orElse(""));
 		return addr;
 	}
 
@@ -470,7 +470,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.map(CartItemShippingData::getShopAddressId)
 				.filter(Objects::nonNull)
 				.collect(toList());
-		
+
 		addrIds.add(customerAddrId);
 		 return	addressRepo
 					.findByIdIn(addrIds)
@@ -861,7 +861,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
 		return 	firstExistingValueOf(
-					ofNullable(addr.getPhoneNumber()).orElse(null)
+					ofNullable(addr).map(AddressesEntity::getPhoneNumber).orElse(null)
 					, customer.getMobile()
 					, customer.getPhoneNumber())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId()));

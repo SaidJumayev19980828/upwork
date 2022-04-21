@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static org.springframework.http.HttpStatus.*;
@@ -90,6 +91,9 @@ public class NavboxController {
 
 	@GetMapping(value = "/products", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException {
+		if (productSearchParam.tag_ids == null) {
+			productSearchParam.setTag_ids(productSearchParam.getTags());
+		}
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 		if (productsResponse == null)
 			return new ResponseEntity<>(NO_CONTENT);
@@ -167,6 +171,7 @@ public class NavboxController {
 	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name,
 														   @RequestParam(name = "org_id") Long orgId,
 														   @RequestParam(value = "area_id", required = false) Long areaId,
+														   @RequestParam(value = "city_id", required = false) Long cityId,
 														   @RequestParam(required = false) Double minLongitude,
 														   @RequestParam(required = false) Double maxLongitude,
 														   @RequestParam(required = false) Double minLatitude,
@@ -175,10 +180,31 @@ public class NavboxController {
 														   @RequestParam(required = false) Double latitude,
 														   @RequestParam(required = false) Double radius,
 														   @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
-														   @RequestParam(value = "product_type", required = false) Integer[] productType) {
-		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, minLongitude, minLatitude, maxLongitude, maxLatitude,
-				longitude, latitude, radius, false, searchInTags, productType);
+														   @RequestParam(value = "product_type", required = false) Integer[] productType,
+														   @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+				longitude, latitude, radius, false, searchInTags, productType, count);
 		return shopService.getLocationShops(param);
+	}
+
+	@GetMapping(value = "/location_shops_cities", produces = APPLICATION_JSON_VALUE)
+	public Set<CityIdAndName> getLocationShopsCities(@RequestParam(value = "name", required = false) String name,
+													 @RequestParam(name = "org_id", required = false) Long orgId,
+													 @RequestParam(value = "area_id", required = false) Long areaId,
+													 @RequestParam(value = "city_id", required = false) Long cityId,
+													 @RequestParam(required = false) Double minLongitude,
+													 @RequestParam(required = false) Double maxLongitude,
+													 @RequestParam(required = false) Double minLatitude,
+													 @RequestParam(required = false) Double maxLatitude,
+													 @RequestParam(required = false) Double longitude,
+													 @RequestParam(required = false) Double latitude,
+													 @RequestParam(required = false) Double radius,
+													 @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+													 @RequestParam(value = "product_type", required = false) Integer[] productType,
+													 @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+				longitude, latitude, radius, false, searchInTags.booleanValue(), productType, count);
+		return shopService.getLocationShopsCities(param);
 	}
 
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
@@ -220,7 +246,10 @@ public class NavboxController {
 	}
 
 	@GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id")Long variantId) {
-		return reviewService.getProductRatings(variantId);
+	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
+																   @RequestParam(value = "product_id", required = false)Long productId) {
+		if (productId != null)
+			return reviewService.getProductRatings(productId);
+		return reviewService.getVariantRatings(variantId);
 	}
 }

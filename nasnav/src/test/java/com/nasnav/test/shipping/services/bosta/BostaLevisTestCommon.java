@@ -71,8 +71,7 @@ public class BostaLevisTestCommon {
 			.when(
 				request().withMethod("GET")
 						.withHeader("Authorization", ".+")
-						.withPath("/deliveries/awb")
-						.withQueryStringParameter(new Parameter("id", ".+")))
+						.withPath("/deliveries/awb/8xY8LmHtJ"))
 			.respond(
 					response().withBody("{\"data\":\"NOT EMPTY AWB\"}", JSON_UTF_8) 
 							  .withStatusCode(201))

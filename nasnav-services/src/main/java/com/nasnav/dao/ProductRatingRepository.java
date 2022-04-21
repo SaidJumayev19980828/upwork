@@ -30,6 +30,14 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             " order by r.submissionDate desc")
     List<ProductRating> findApprovedVariantRatings(@Param("variantId") Long variantId);
 
+    @Query("select r from ProductRating r" +
+            " join fetch r.variant v" +
+            " join fetch v.productEntity p" +
+            " join fetch r.user u" +
+            " where p.id = :productId and r.approved = true" +
+            " order by r.submissionDate desc")
+    List<ProductRating> findApprovedProductRatings(@Param("productId") Long productId);
+
     @Query("select count (r) from ProductRating r " +
             " where r.approved = true and r.user.id = :userId")
     Integer countTotalRatingByUserId(@Param("userId") Long userId);
@@ -42,6 +50,15 @@ public interface ProductRatingRepository extends JpaRepository <ProductRating, L
             " where v.id = :variantId and r.approved = true and org.yeshteryState = 1" +
             " order by r.submissionDate desc")
     List<ProductRating> findApprovedYeshteryVariantRatings(@Param("variantId") Long variantId);
+
+    @Query("select r from ProductRating r" +
+            " join fetch r.variant v" +
+            " join fetch v.productEntity p" +
+            " join fetch OrganizationEntity org on p.organizationId = org.id" +
+            " join fetch r.user u" +
+            " where p.id = :productId and r.approved = true and org.yeshteryState = 1" +
+            " order by r.submissionDate desc")
+    List<ProductRating> findApprovedYeshteryProductRatings(@Param("productId") Long productId);
 
     @Query("SELECT new com.nasnav.persistence.dto.query.result.ProductRatingData("
             + "product.id, AVG(rating.rate))"

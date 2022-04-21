@@ -16,9 +16,6 @@ import com.nasnav.yeshtery.YeshteryConstants;
 import com.nasnav.yeshtery.dao.CommonYeshteryUserRepository;
 import com.nasnav.yeshtery.dao.YeshteryUserRepository;
 import com.nasnav.yeshtery.dao.YeshteryUserTokenRepository;
-import com.nasnav.persistence.BaseYeshteryUserEntity;
-import com.nasnav.persistence.YeshteryUserEntity;
-import com.nasnav.persistence.YeshteryUserTokensEntity;
 import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
 import com.nasnav.yeshtery.services.interfaces.YeshteryUserService;
 import lombok.AllArgsConstructor;
@@ -44,7 +41,6 @@ import java.util.*;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
 import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
@@ -96,6 +92,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private AppConfig config;
     @Autowired
     private UserRepository nasNavUserRepository;
+    @Autowired
+    private EmployeeUserRepository nasNavEmployeeRepository;
     @Autowired
     private UserService nasNavUserService;
     @Autowired
@@ -158,17 +156,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     @Transactional
-    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
-            userServicesHelper.validateNewPassword(data.password);
-            userServicesHelper.validateToken(data.token);
-            UserEntity userEntity = nasNavUserRepository.getByResetPasswordToken(data.token)
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
-
+    public YeshteryUserApiResponse recoverUser(UserDTOs.PasswordResetObject resetPasswordData) {
+            validateResetPasswordData(resetPasswordData);
+            BaseUserEntity userEntity = getUserEntityByResetToken(resetPasswordData);
             userServicesHelper.checkResetPasswordTokenExpiry(userEntity.getResetPasswordSentAt());
-            userEntity.setResetPasswordToken(null);
-            userEntity.setResetPasswordSentAt(null);
-            userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
-            userEntity = nasNavUserRepository.saveAndFlush(userEntity);
+            editUserSettings(userEntity, resetPasswordData);
+            commonNasnavUserRepo.saveAndFlush(userEntity);
 
             String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
             String token = resetRecoveredUserTokens(userEntity);
@@ -176,14 +169,39 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         return new YeshteryUserApiResponse(userEntity.getId(), orgDomain, token);
     }
 
+    private void validateResetPasswordData(UserDTOs.PasswordResetObject resetPasswordData){
+        userServicesHelper.validateNewPassword(resetPasswordData.password);
+        userServicesHelper.validateToken(resetPasswordData.token);
+    }
 
+    private void editUserSettings(BaseUserEntity userEntity,
+                                  UserDTOs.PasswordResetObject data){
+        userEntity.setResetPasswordToken(null);
+        userEntity.setResetPasswordSentAt(null);
+        userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+        userEntity.setUserStatus(ACTIVATED.getValue());
+    }
 
-    private String resetRecoveredUserTokens(UserEntity user) {
+    private BaseUserEntity getUserEntityByResetToken(UserDTOs.PasswordResetObject data){
+        if(data.employee)
+            return nasNavEmployeeRepository.getByResetPasswordToken(data.token)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));
+        else
+            return nasNavUserRepository.getByResetPasswordToken(data.token)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));
+    }
+
+    private String resetRecoveredUserTokens(BaseUserEntity user) {
         securityService.logoutAll(user);
         UserTokensEntity tokenEntity = new UserTokensEntity();
-        tokenEntity.setUserEntity(user);
         tokenEntity.setToken(generateUUIDToken());
         tokenEntity = nasnavUserTokenRepo.save(tokenEntity);
+
+        if(user.getClass() == UserEntity.class)
+            tokenEntity.setUserEntity((UserEntity) user);
+        else if (user.getClass() == EmployeeUserEntity.class)
+            tokenEntity.setEmployeeUserEntity((EmployeeUserEntity) user);
+
         return tokenEntity.getToken();
     }
 
@@ -686,6 +704,20 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
         return new YeshteryUserApiResponse(userEntity.getId(), cookie.getValue(), userRoles, orgId, shopId,
                 userEntity.getName(), userEntity.getEmail(), cookie);
+    }
+
+    @Override
+    public List<UserRepresentationObject> getUserList(){
+        List<YeshteryUserEntity> customers;
+        if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+            customers = userRepository.findAll();
+        } else {
+            customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+        }
+        return customers
+                .stream()
+                .map(YeshteryUserEntity::getRepresentation)
+                .collect(toList());
     }
 }
 

@@ -91,7 +91,7 @@ public class PaymentControllerCoD {
 		payment.setUserId(metaOrderOpt.get().getUser().getId());
 		payment.setMetaOrderId(metaOrderId);
 
-		paymentCommons.finalizePayment(payment);
+		paymentCommons.finalizePayment(payment, false);
 
 		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
 

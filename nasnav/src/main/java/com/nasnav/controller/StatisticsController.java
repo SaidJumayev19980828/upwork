@@ -23,7 +23,7 @@ public class StatisticsController {
     public List<Map<String,Object>> getOrderStatistics(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                         @RequestParam List<OrderStatus> statuses,
                                                         @RequestParam RequestType type,
-                                                        @RequestParam (name = "months_count", required = false, defaultValue = "12") Integer months) {
+                                                        @RequestParam (name = "month_count", required = false, defaultValue = "12") Integer months) {
         return statisticsService.getOrderStatistics(statuses, type, months);
     }
 
@@ -34,7 +34,7 @@ public class StatisticsController {
 
     @GetMapping("sold_products")
     public Map<String, List<ProductStatisticsInfo>> getProductsStatistics(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                        @RequestParam (name = "months_count", required = false, defaultValue = "12") Integer months) {
+                                        @RequestParam (name = "month_count", required = false, defaultValue = "12") Integer months) {
         return statisticsService.getProductsStatistics(months);
     }
 

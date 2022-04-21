@@ -41,7 +41,7 @@ public class PaymentControllerRave {
             @RequestParam(name = "ref") String flwRef,
             @RequestParam(name = "uid") String uid) {
         try {
-            raveService.verifyAndStore(flwRef, uid);
+            raveService.verifyAndStore(flwRef, uid, false);
             return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""

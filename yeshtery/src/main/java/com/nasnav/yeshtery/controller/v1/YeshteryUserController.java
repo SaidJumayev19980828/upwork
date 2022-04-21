@@ -7,6 +7,7 @@ import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.yeshtery.YeshteryConstants;
@@ -47,6 +48,8 @@ public class YeshteryUserController {
     private ReviewService reviewService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    EmployeeUserService employeeUserService;
 
 
     @GetMapping(value = "info")
@@ -54,6 +57,19 @@ public class YeshteryUserController {
                                                 @RequestParam(value = "id", required = false) Long id,
                                                 @RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException {
         return userService.getYeshteryUserData(id, isEmployee);
+    }
+
+    @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
+    public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                                      @RequestParam (value = "org_id", required = false) Long orgId,
+                                                      @RequestParam (value = "shop_id", required = false) Long storeId,
+                                                      @RequestParam (value = "role", required = false) String role) {
+        return employeeUserService.getUserList(userToken, orgId, storeId, role);
+    }
+
+    @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
+    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken) {
+        return userService.getUserList();
     }
 
     @PostMapping(value = "login")
