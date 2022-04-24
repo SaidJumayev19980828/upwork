@@ -34,7 +34,6 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @RestController
 @RequestMapping(API_PATH)
-@Tag(name = "Yeshtery Basket and order management.")
 public class YeshteryOrdersController {
 
 	static final String API_PATH = YeshteryConstants.API_PATH +"/order/";
