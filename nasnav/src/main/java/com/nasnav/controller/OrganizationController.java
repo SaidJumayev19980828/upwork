@@ -229,13 +229,7 @@ public class OrganizationController {
     public Integer createOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken,
                                            @RequestParam("operation") String operation,
                                            @RequestBody ExtraAttributeDTO extraAttrDTO) {
-
-        if(operation.equalsIgnoreCase("create"))
-            return orgService.createExtraAttribute(extraAttrDTO);
-        else if (operation.equalsIgnoreCase("update"))
-            return orgService.updateExtraAttributes(extraAttrDTO);
-        else
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
+        return orgService.createUpdateExtraAttributes(extraAttrDTO, operation);
     }
 
     @GetMapping(value = "promotions", produces = APPLICATION_JSON_VALUE)

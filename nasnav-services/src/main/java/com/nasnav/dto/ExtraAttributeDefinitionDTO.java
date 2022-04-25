@@ -14,6 +14,6 @@ public class ExtraAttributeDefinitionDTO {
 	private Integer id;
 	private String name;
 	private ExtraAttributeType type;
-	private String icon;
+	private String iconUrl;
 	private Boolean invisible;
 }

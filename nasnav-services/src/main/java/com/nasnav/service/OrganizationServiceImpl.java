@@ -633,8 +633,20 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
+    public Integer createUpdateExtraAttributes(ExtraAttributeDTO extraAttrDTO, String operation){
+
+        if(operation.equalsIgnoreCase("create"))
+            return createExtraAttribute(extraAttrDTO);
+        else if (operation.equalsIgnoreCase("update"))
+            return updateExtraAttributes(extraAttrDTO);
+        else
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
+    }
+
+    private Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
         ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
+
+        validateDTORequiredFields(extraAttrDTO);
 
         extraAttrEntity = setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
 
@@ -643,8 +655,18 @@ public class OrganizationServiceImpl implements OrganizationService {
         return extraAttrEntity.getId();
     }
 
-    @Override
-    public Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
+    private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
+        ofNullable(extraAttrDTO.getName())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008));
+
+        ofNullable(extraAttrDTO.getType())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$012));
+
+        ofNullable(extraAttrDTO.getIconUrl())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$013));
+    }
+
+    private Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
         Long orgId = securityService.getCurrentUserOrganizationId();
         Integer attrId = extraAttrDTO.getId();
 
@@ -663,7 +685,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private ExtraAttributesEntity setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
         Long orgId = securityService.getCurrentUserOrganizationId();
         String attrName = extraAttrDTO.getName();
-        String attrIconUrl = extraAttrDTO.getIcon();
+        String attrIconUrl = extraAttrDTO.getIconUrl();
         ExtraAttributeType attrType = extraAttrDTO.getType();
 
         attrName = ofNullable(attrName)
@@ -1131,7 +1153,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orElse(ExtraAttributeType.STRING);
         Boolean invisible = Objects.equals(type, INVISIBLE);
 		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
-		dto.setIcon(entity.getIconUrl());
+		dto.setIconUrl(entity.getIconUrl());
 		dto.setId(entity.getId());
 		dto.setName(entity.getName());
 		dto.setType(type);

@@ -54,6 +54,9 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22
 
 INSERT INTO public.products(id, name, brand_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',104, 99001, now(), now());
 
+INSERT INTO public.extra_attributes(id, key_name, attribute_type, organization_id, icon) VALUES(11002, 'name_1', 'String', 99002, 'icon');
+INSERT INTO public.extra_attributes(id, key_name, attribute_type, organization_id, icon) VALUES(11003, 'name_2', 'String', 99001, 'icon');
+
 
 INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);
 

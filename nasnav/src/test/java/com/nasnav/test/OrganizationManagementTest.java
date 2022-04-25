@@ -1,6 +1,5 @@
 package com.nasnav.test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -11,7 +10,6 @@ import com.nasnav.dto.ExtraAttributeDefinitionDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.SubAreasRepObj;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.shipping.services.DummyShippingService;
@@ -226,30 +224,6 @@ public class OrganizationManagementTest {
         assertEquals(403, response.getStatusCode().value());
     }
 
-    @Test
-    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Organization_Test_Data_Insert_5.sql"})
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Organization_Test_Data_5_Cleanup.sql"})
-    public void generateAccountsForNewOrganizationTest(){
-
-        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
-        HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
-        ResponseEntity<OrganizationResponse> res = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
-
-        Long orgId = res.getBody().getOrganizationId();
-
-        assertEquals(OK, res.getStatusCode());
-        assertAllUsersHaveOrg(orgId);
-    }
-
-    private void assertAllUsersHaveOrg(Long orgId){
-        Set<String> allEmails = userRepository.findDistinctEmails();
-        allEmails.forEach(email -> assertEmailHasOrg(email, orgId));
-    }
-
-    private void assertEmailHasOrg(String email, Long orgId){
-        UserEntity userEntity = userRepository.getByEmailAndOrganizationId(email, orgId);
-        assertNotNull(userEntity);
-    }
 
     @Test
     public void getOrgByURLTestSuccess() throws URISyntaxException {
@@ -801,8 +775,6 @@ public class OrganizationManagementTest {
         assertEquals(INVISIBLE , invisibleAttr.getType());
     }
 
-    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
-    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     @Test
     public void createExtraAttributesTest() throws Exception {
         ExtraAttributeDTO extraAttributeDTO = getExtraAttributesDTO();
@@ -820,13 +792,46 @@ public class OrganizationManagementTest {
         assertExtraAttributesDTOMatchesEntity(extraAttributeDTO, extraAttributesOptional.get());
     }
 
+    @Test
+    public void createExtraAttributesTestWithNulls() throws Exception {
+        String authToken = "123456";
+        String jsonNullIcon = json()
+                .put("name", "extra_attr_name")
+                .put("type", "STRING")
+                .toString();
+
+        HttpEntity req = getHttpEntity(jsonNullIcon, authToken);
+
+        ResponseEntity<Object> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
+
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+
+        String jsonNullName = json()
+                .put("icon", "icon")
+                .put("type", "STRING")
+                .toString();
+
+        req = getHttpEntity(jsonNullName, authToken);
+        res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+
+        String jsonNullType = json()
+                .put("name", "extra_attr_name")
+                .put("icon", "icon")
+                .toString();
+
+        req = getHttpEntity(jsonNullType, authToken);
+        res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+    }
+
     private void assertExtraAttributesDTOMatchesEntity(ExtraAttributeDTO extraAttributeDTO, ExtraAttributesEntity extraAttributesEntity){
         assertEquals(extraAttributeDTO.getName(), extraAttributesEntity.getName());
-        assertEquals(extraAttributeDTO.getIcon(), extraAttributesEntity.getIconUrl());
+        assertEquals(extraAttributeDTO.getIconUrl(), extraAttributesEntity.getIconUrl());
         assertEquals(extraAttributeDTO.getType().getValue(), extraAttributesEntity.getType());
     }
 
-    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert_2.sql"})
     @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     @Test
     public void updateExtraAttributesTest() throws Exception {
@@ -846,7 +851,7 @@ public class OrganizationManagementTest {
         assertEquals(INVISIBLE.getValue(), extraAttributes.getType());
     }
 
-    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert_2.sql"})
     @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     @Test
     public void updateExtraAttributesWrongIdTest() throws Exception {
@@ -868,7 +873,7 @@ public class OrganizationManagementTest {
 
         extraAttributeDTO.setName("extra_attr_name");
         extraAttributeDTO.setType(STRING);
-        extraAttributeDTO.setIcon("extra_attr_icon");
+        extraAttributeDTO.setIconUrl("extra_attr_icon");
 
         return extraAttributeDTO;
     }
