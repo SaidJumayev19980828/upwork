@@ -15,7 +15,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryWishlistController.API_PATH)
-@Tag(name = "Yeshtery Wishlist Controller")
 @CrossOrigin("*")
 @EnableJpaRepositories
 public class YeshteryWishlistController {

@@ -34,7 +34,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryUserController.API_PATH)
-@Tag(name = "Yeshtery User management.")
 public class YeshteryUserController {
 
     static final String API_PATH = YeshteryConstants.API_PATH +"/user/";

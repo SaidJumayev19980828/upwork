@@ -18,7 +18,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(LoyaltyPointController.API_PATH)
-@Tag(name = "Loyalty Point Controller")
 @CrossOrigin("*")
 public class LoyaltyPointController {
     static final String API_PATH = YeshteryConstants.API_PATH +"/loyalty";

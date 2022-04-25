@@ -978,7 +978,7 @@ public class OrderServiceImpl implements OrderService {
 			limitSearchParamByUserRole(params, newParams, user);
 		} else {
 			newParams.setUser_id(user.getId());
-			newParams.setOrg_id(user.getOrganizationId());
+			newParams.setOrg_id(asList(user.getOrganizationId()));
 		}
 
 		setOrderSearchStartAndCount(params, newParams);
@@ -991,9 +991,9 @@ public class OrderServiceImpl implements OrderService {
 		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
 
 		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name() ,ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name()) )  {
-			newParams.setOrg_id(empUser.getOrganizationId());
+			newParams.setOrg_id(asList(empUser.getOrganizationId()));
 		} else if ( collectionContainsAnyOf(employeeUserRoles, STORE_MANAGER.name(), STORE_EMPLOYEE.name())) {
-			newParams.setShop_id(empUser.getShopId());
+			newParams.setShop_id(asList(empUser.getShopId()));
 		} else {
 			newParams.setOrg_id(params.getOrg_id());
 			newParams.setShop_id(params.getShop_id());
@@ -1056,10 +1056,12 @@ public class OrderServiceImpl implements OrderService {
 		predicates.add( builder.notEqual(root.get("status"), DISCARDED.getValue()) );
 		if(params.getUser_id() != null)
 			predicates.add( builder.equal(root.get("userId"), params.getUser_id()) );
-		if(params.getOrg_id() != null)
-			predicates.add( builder.equal(root.get("organizationEntity").get("id"), params.getOrg_id()) );
-		if(params.getShop_id() != null)
-			predicates.add( builder.equal(root.get("shopsEntity").get("id"), params.getShop_id()) );
+		if(params.getOrg_id() != null) {
+			predicates.add(root.get("organizationEntity").get("id").in(params.getOrg_id()));
+		}
+		if(params.getShop_id() != null) {
+			predicates.add(root.get("shopsEntity").get("id").in(params.getShop_id()));
+		}
 		if(params.getStatus_id() != null)
 			predicates.add( builder.equal(root.get("status"), params.getStatus_id()) );
 		if(params.getUpdated_after() != null) {
