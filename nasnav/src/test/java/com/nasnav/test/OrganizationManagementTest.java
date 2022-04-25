@@ -785,44 +785,37 @@ public class OrganizationManagementTest {
 
         ResponseEntity<Integer> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Integer.class);
 
-        Optional<ExtraAttributesEntity> extraAttributesOptional = extraAttrRepo.findById(res.getBody());
+        ExtraAttributesEntity extraAttributes = extraAttrRepo.findById(res.getBody()).get();
 
         assertEquals(OK, res.getStatusCode());
-        assertNotNull(extraAttributesOptional.get());
-        assertExtraAttributesDTOMatchesEntity(extraAttributeDTO, extraAttributesOptional.get());
+        assertNotNull(extraAttributes);
+        assertExtraAttributesDTOMatchesEntity(extraAttributeDTO, extraAttributes);
     }
 
     @Test
     public void createExtraAttributesTestWithNulls() throws Exception {
         String authToken = "123456";
-        String jsonNullIcon = json()
-                .put("name", "extra_attr_name")
-                .put("type", "STRING")
-                .toString();
-
-        HttpEntity req = getHttpEntity(jsonNullIcon, authToken);
-
-        ResponseEntity<Object> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
-
-        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-
-        String jsonNullName = json()
+        String nameNullJson = json()
                 .put("icon", "icon")
                 .put("type", "STRING")
                 .toString();
 
-        req = getHttpEntity(jsonNullName, authToken);
-        res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
-        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+        HttpEntity req = getHttpEntity(nameNullJson, authToken);
+        ResponseEntity<Object> res_1 = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
+        assertEquals(NOT_ACCEPTABLE, res_1.getStatusCode());
 
         String jsonNullType = json()
                 .put("name", "extra_attr_name")
                 .put("icon", "icon")
                 .toString();
 
+
         req = getHttpEntity(jsonNullType, authToken);
-        res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Object.class);
-        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+        ResponseEntity<Integer> res_2 = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=create", req, Integer.class);
+        ExtraAttributesEntity extraAttributes = extraAttrRepo.findById(res_2.getBody()).get();
+
+        assertEquals(OK, res_2.getStatusCode());
+        assertEquals("String", extraAttributes.getType());
     }
 
     private void assertExtraAttributesDTOMatchesEntity(ExtraAttributeDTO extraAttributeDTO, ExtraAttributesEntity extraAttributesEntity){
@@ -837,8 +830,11 @@ public class OrganizationManagementTest {
     public void updateExtraAttributesTest() throws Exception {
         ExtraAttributeDTO extraAttributeDTO = new ExtraAttributeDTO();
         Integer existingExtraAttrId = 11002;
+
         extraAttributeDTO.setId(existingExtraAttrId);
         extraAttributeDTO.setType(INVISIBLE);
+        extraAttributeDTO.setIconUrl("updated_url");
+        extraAttributeDTO.setName("updated_name");
 
         String json = objectMapper.writeValueAsString(extraAttributeDTO);
         HttpEntity req = getHttpEntity(json, "123456");
@@ -849,6 +845,8 @@ public class OrganizationManagementTest {
 
         assertEquals(OK, res.getStatusCode());
         assertEquals(INVISIBLE.getValue(), extraAttributes.getType());
+        assertEquals("updated_url", extraAttributes.getIconUrl());
+        assertEquals("updated_name", extraAttributes.getName());
     }
 
     @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert_2.sql"})

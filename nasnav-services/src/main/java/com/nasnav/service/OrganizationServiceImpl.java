@@ -648,7 +648,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         validateDTORequiredFields(extraAttrDTO);
 
-        extraAttrEntity = setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
 
         extraAttributesRepository.save(extraAttrEntity);
 
@@ -656,14 +656,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
+        ExtraAttributeType defaultType = ExtraAttributeType.STRING;
+
+        if(extraAttrDTO.getType() == null)
+            extraAttrDTO.setType(defaultType);
+
         ofNullable(extraAttrDTO.getName())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008));
 
-        ofNullable(extraAttrDTO.getType())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$012));
-
-        ofNullable(extraAttrDTO.getIconUrl())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$013));
     }
 
     private Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
@@ -675,33 +675,30 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .findByIdAndOrganizationId(attrId, orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId));
 
-        extraAttrEntity = setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
 
         extraAttributesRepository.save(extraAttrEntity);
 
         return extraAttrEntity.getId();
     }
 
-    private ExtraAttributesEntity setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
+    private void setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
         Long orgId = securityService.getCurrentUserOrganizationId();
         String attrName = extraAttrDTO.getName();
         String attrIconUrl = extraAttrDTO.getIconUrl();
         ExtraAttributeType attrType = extraAttrDTO.getType();
 
-        attrName = ofNullable(attrName)
-                        .orElse(extraAttrEntity.getName());
-        attrIconUrl = ofNullable(attrIconUrl)
-                        .orElse(extraAttrEntity.getIconUrl());
-        String attrTypeValue = ofNullable(attrType)
-                                    .map(ExtraAttributeType::getValue)
-                                    .orElse(extraAttrEntity.getType());
+        ofNullable(attrName)
+                .ifPresent(extraAttrEntity::setName);
 
-        extraAttrEntity.setName(attrName);
-        extraAttrEntity.setIconUrl(attrIconUrl);
-        extraAttrEntity.setType(attrTypeValue);
+        ofNullable(attrIconUrl)
+                .ifPresent(extraAttrEntity::setIconUrl);
+
+        ofNullable(attrType)
+                .map(ExtraAttributeType::getValue)
+                .ifPresent(extraAttrEntity::setType);
+
         extraAttrEntity.setOrganizationId(orgId);
-
-        return extraAttrEntity;
     }
 
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
