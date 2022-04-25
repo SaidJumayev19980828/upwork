@@ -13,7 +13,6 @@ import java.util.List;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping("/integration")
 @CrossOrigin("*") // allow all origins
 public class IntegrationController {
 

@@ -15,7 +15,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryShippingController.API_PATH)
-@Tag(name = "Yeshtery Shipping Controller")
 @CrossOrigin("*")
 @EnableJpaRepositories
 public class YeshteryShippingController {

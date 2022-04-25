@@ -40,7 +40,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryController.API_PATH)
-@Tag(name = "Yeshtery Controller")
 @CrossOrigin("*")
 @EnableJpaRepositories
 public class YeshteryController {

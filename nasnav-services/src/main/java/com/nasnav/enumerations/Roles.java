@@ -17,6 +17,7 @@ public enum Roles {
     ORGANIZATION_MANAGER("ORGANIZATION_MANAGER", 2, false),
     STORE_MANAGER("STORE_MANAGER", 4, true),
     NASNAV_ADMIN("NASNAV_ADMIN", -100000, true),
+    NASNAV_EMPLOYEE("NASNAV_EMPLOYEE", -99999, false),
     ORGANIZATION_ADMIN("ORGANIZATION_ADMIN", 1, true),
 	ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
 	STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
@@ -32,7 +33,7 @@ public enum Roles {
 
     @Getter
     private static final Set<String> nasnavAdminPrivilege =
-            setOf(NASNAV_ADMIN.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+            setOf(NASNAV_ADMIN.name(), NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
                     ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
     private static final Set<String> organizationAdminPrivilege =
