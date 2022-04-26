@@ -644,15 +644,15 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     private Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
-        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
-
         validateDTORequiredFields(extraAttrDTO);
 
+        Long orgId = securityService.getCurrentUserOrganizationId();
+
+        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
+        extraAttrEntity.setOrganizationId(orgId);
         setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
 
-        extraAttributesRepository.save(extraAttrEntity);
-
-        return extraAttrEntity.getId();
+        return extraAttributesRepository.save(extraAttrEntity).getId();
     }
 
     private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
@@ -677,13 +677,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
 
-        extraAttributesRepository.save(extraAttrEntity);
-
-        return extraAttrEntity.getId();
+        return extraAttributesRepository.save(extraAttrEntity).getId();
     }
 
     private void setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
-        Long orgId = securityService.getCurrentUserOrganizationId();
         String attrName = extraAttrDTO.getName();
         String attrIconUrl = extraAttrDTO.getIconUrl();
         ExtraAttributeType attrType = extraAttrDTO.getType();
@@ -697,8 +694,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         ofNullable(attrType)
                 .map(ExtraAttributeType::getValue)
                 .ifPresent(extraAttrEntity::setType);
-
-        extraAttrEntity.setOrganizationId(orgId);
     }
 
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
