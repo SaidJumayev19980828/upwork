@@ -18,7 +18,6 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.paymob.PayMobAccount;
-import com.nasnav.payments.paymob.PaymobSource;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -32,7 +31,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
-import org.json.simple.JSONArray;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -124,8 +122,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private TagsRepository tagsRepo;
     @Autowired
     private TagGraphNodeRepository tagGraphNodeRepo;
-    @Autowired
-    private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
     @Autowired
@@ -636,6 +632,70 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationRepository.findByYeshteryState(1);
     }
 
+    @Override
+    public Integer createUpdateExtraAttributes(ExtraAttributeDTO extraAttrDTO, String operation){
+
+        if(operation.equalsIgnoreCase("create"))
+            return createExtraAttribute(extraAttrDTO);
+        else if (operation.equalsIgnoreCase("update"))
+            return updateExtraAttributes(extraAttrDTO);
+        else
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
+    }
+
+    private Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
+        validateDTORequiredFields(extraAttrDTO);
+
+        Long orgId = securityService.getCurrentUserOrganizationId();
+
+        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
+        extraAttrEntity.setOrganizationId(orgId);
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        return extraAttributesRepository.save(extraAttrEntity).getId();
+    }
+
+    private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
+        ExtraAttributeType defaultType = ExtraAttributeType.STRING;
+
+        if(extraAttrDTO.getType() == null)
+            extraAttrDTO.setType(defaultType);
+
+        ofNullable(extraAttrDTO.getName())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008));
+
+    }
+
+    private Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        Integer attrId = extraAttrDTO.getId();
+
+        ExtraAttributesEntity extraAttrEntity =
+                extraAttributesRepository
+                .findByIdAndOrganizationId(attrId, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId));
+
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        return extraAttributesRepository.save(extraAttrEntity).getId();
+    }
+
+    private void setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
+        String attrName = extraAttrDTO.getName();
+        String attrIconUrl = extraAttrDTO.getIconUrl();
+        ExtraAttributeType attrType = extraAttrDTO.getType();
+
+        ofNullable(attrName)
+                .ifPresent(extraAttrEntity::setName);
+
+        ofNullable(attrIconUrl)
+                .ifPresent(extraAttrEntity::setIconUrl);
+
+        ofNullable(attrType)
+                .map(ExtraAttributeType::getValue)
+                .ifPresent(extraAttrEntity::setType);
+    }
+
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());
@@ -1068,7 +1128,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
     public List<ExtraAttributeDefinitionDTO> getExtraAttributes() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttrRepo
+		return extraAttributesRepository
 				.findByOrganizationId(orgId)
 				.stream()
 				.map(this::createExtraAttributeDTO)
