@@ -167,7 +167,9 @@ public class YeshteryUserController {
     @PostMapping(value = "update", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
-
+        if (json.employee) {
+            return employeeUserService.updateEmployeeUser(json);
+        }
         return userService.updateUser(json);
     }
 
