@@ -89,6 +89,13 @@ where id = 310005;
 -- mulitple variant for product #1002
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);
 
+INSERT INTO files (id, organization_id, url, location) VALUES(600, 99001, '1001.png', '1001.png');
+INSERT INTO files (id, organization_id, url, location) VALUES(601, 99001, '1003.png', '1003.png');
+
+INSERT INTO product_images (id, product_id, uri) VALUES (500, 1001, '1001.png');
+INSERT INTO product_images (id, product_id, uri) VALUES (501, 1003, '1003.png');
+
+
 INSERT INTO public.units VALUES(111001, 'm') ;
 
 --inserting stocks
