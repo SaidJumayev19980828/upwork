@@ -1383,7 +1383,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
 		CartOptimizeResponseDTO optimizationResult =
-				cartOptimizationService.optimizeCart(checkoutDto);
+				cartOptimizationService.validateAndOptimizeCart(checkoutDto);
 		if(optimizationResult.getTotalChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, " prices");
 		}
