@@ -13,6 +13,8 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.Boolean.TRUE;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -36,7 +39,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
-
+    private static final Logger logger = LogManager.getLogger("LoyaltyPointsService");
     @Autowired
     private SecurityService securityService;
 
@@ -119,7 +122,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             entity.setIsActive(true);
         }
         if(dto.getDefaultTier() != null && dto.getDefaultTier().getId() != null) {
-            Optional<LoyaltyTierEntity> tier = loyaltyTierRepository.findById(dto.getDefaultTier().getId());
+            Optional<LoyaltyTierEntity> tier = loyaltyTierRepository.findByIdAndOrganization_Id(dto.getDefaultTier().getId(), orgId);
             if(tier.isEmpty()) {
                 throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0019, dto.getDefaultTier().getId());
             }
@@ -297,7 +300,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         SecureRandom random = new SecureRandom();
         int num = random.nextInt(100000);
-        String formattedPin = String.format("%05d", num);
+        String formattedPin = format("%05d", num);
 
         LoyaltyPinsEntity pinsEntity = new LoyaltyPinsEntity();
         pinsEntity.setShop(shop.get());
@@ -323,6 +326,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 continue;
             }
             LoyaltyTierDTO tier = getLoyaltyTierDTO(orgId, user.get());
+
+            if(anyIsNull(points, tier, tier.getCoefficient())) {
+                continue;
+            }
             BigDecimal amounts = calculateAmounts(config, points, tier.getCoefficient());
             result.add(new LoyaltyPointsCartResponseDto(orgId, points, amounts));
         }
@@ -333,6 +340,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     public LoyaltyPointConfigDTO updateOrgDefaultTier(Long orgId, Long tierId) {
         LoyaltyTierDTO tierDTO = new LoyaltyTierDTO();
         tierDTO.setId(tierId);
+        tierDTO.setOrgId(orgId);
+
         LoyaltyPointConfigDTO dto  = new LoyaltyPointConfigDTO();
         dto.setOrgId(orgId);
         dto.setDefaultTier(tierDTO);
@@ -375,7 +384,15 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if (config == null) {
             return;
         }
-        LoyaltyTierDTO tier = getLoyaltyTierDTO(org.getId(), user);
+        Optional<UserEntity> userEntityOp = userRepo.findById(order.getUserId());
+        if(userEntityOp.isEmpty()) {
+            return;
+        }
+        UserEntity userEntity = userEntityOp.get();
+        if(userEntity.getTier() == null) {
+            return;
+        }
+        LoyaltyTierDTO tier = userEntity.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
         createLoyaltyPointTransaction(shop, user, order, points, pointsAmount);
     }
@@ -385,7 +402,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         BigDecimal to = config.getRatioTo();
 
         if(anyIsNull(from, to , coefficient, amount)) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0002);
+            logger.warn(ORG$LOY$0002.getValue());
+            return BigDecimal.ZERO;
         }
         return amount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
     }
@@ -396,7 +414,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         BigDecimal to = config.getRatioTo();
 
         if(anyIsNull(from, to , coefficient, points)) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0006, config.getOrganization().getId());
+            logger.warn( format( ORG$LOY$0006.getValue(), config.getOrganization().getId()));
+            return BigDecimal.ZERO;
         }
         return new BigDecimal(points).multiply(coefficient).multiply(to).divide(from, 2, RoundingMode.HALF_EVEN);
     }

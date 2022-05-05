@@ -355,6 +355,7 @@ public enum ErrorCodes {
 	,TIERS$PARAM$0001("No Tier exists with id[%d]!")
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
+	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")
 	,CHARITY$PARAM$0001("Missing Charity properties!")
 	,CHARITY$PARAM$0002("No Charity exists with id[%d]!")
 	,CHARITY$PARAM$0003("No Charity donation exists for user with id[%d]!")

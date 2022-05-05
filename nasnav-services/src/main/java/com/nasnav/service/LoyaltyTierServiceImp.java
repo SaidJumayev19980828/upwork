@@ -82,6 +82,10 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     @Override
     public UserRepresentationObject changeUserTier(Long userId, Long tierId, Long orgId) {
         LoyaltyTierEntity tier = getExistingTier(tierId);
+
+        if(tier.getOrganization().getId() != orgId) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0004);
+        }
         UserEntity user = userRepository.findByIdAndOrganizationId(userId, orgId).orElseThrow(() ->new RuntimeBusinessException(NOT_ACCEPTABLE
                 , U$0001, userId));
 

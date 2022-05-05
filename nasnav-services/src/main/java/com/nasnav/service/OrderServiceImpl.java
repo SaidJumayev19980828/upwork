@@ -1228,13 +1228,12 @@ public class OrderServiceImpl implements OrderService {
 	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
 		updateOrderStatus(order, STORE_CONFIRMED);
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
-
 		MetaOrderEntity metaOrder = order.getMetaOrder();
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
+		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
