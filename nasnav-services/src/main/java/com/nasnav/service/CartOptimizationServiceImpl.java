@@ -127,7 +127,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	private List<LoyaltyPointsCartResponseDto> getUserPointsPerOrg(List<CartItem> items) {
 		UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
-		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getId(), items);
+		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getYeshteryUserId(), items);
 	}
 
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
