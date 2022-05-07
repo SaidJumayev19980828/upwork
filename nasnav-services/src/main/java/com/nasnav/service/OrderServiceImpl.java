@@ -1161,7 +1161,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount) {
+	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
 		if(!isNull(pinCode)) {
@@ -1171,7 +1171,7 @@ public class OrderServiceImpl implements OrderService {
 			}
 		}
 
-		confirmSubOrderAndMetaOrder(subOrder, pointsAmount);
+		confirmSubOrderAndMetaOrder(subOrder);
 
 		return  shippingMgrService
 				.requestShipment(subOrder)
@@ -1225,7 +1225,7 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
+	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
 		updateOrderStatus(order, STORE_CONFIRMED);
 
 		MetaOrderEntity metaOrder = order.getMetaOrder();
@@ -1233,7 +1233,7 @@ public class OrderServiceImpl implements OrderService {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
-		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
+		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getAmount());
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {

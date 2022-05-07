@@ -99,7 +99,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         LoyaltyPointConfigEntity entity = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, TRUE).orElse(new LoyaltyPointConfigEntity());
         LoyaltyPointConfigEntity oldEntity = entity;
         // don't delete a config just make it inactive and create new one
-        if(entity != null && entity.getId() != null && entity.getId() > 0 ) {
+        if(entity.getId() != null && entity.getId() > 0 ) {
             oldEntity.setIsActive(false);
             entity = new LoyaltyPointConfigEntity(entity);
         }
@@ -466,7 +466,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         Integer availablePoints = getAvailablePoints(shop, user);
         List<RedeemPointsOfferDTO> offers = getRedeemOffers(orgId, availablePoints);
-        if (!offers.stream().anyMatch(p -> p.getPointId() == pointId)) {
+        if (offers.stream().noneMatch(p -> p.getPointId().equals(pointId))) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0012, pointId);
         }
 
