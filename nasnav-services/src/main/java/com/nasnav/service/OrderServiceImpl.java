@@ -1947,7 +1947,7 @@ public class OrderServiceImpl implements OrderService {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 				.stream()
-				.map(cartItems -> createSubOrder(cartItems, address, dto, org))
+				.map(cartItems -> createSubOrder(cartItems, address, dto, org, false))
 				.collect(toSet());
 
 		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, org.getId());
@@ -1966,7 +1966,7 @@ public class OrderServiceImpl implements OrderService {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 						.stream()
-						.map(cartItems -> createSubOrder(cartItems, address, dto, org))
+						.map(cartItems -> createSubOrder(cartItems, address, dto, org, true))
 						.collect(toSet());
 		Long yeshteryOrgId = getYeshteryOrgId();
 		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, yeshteryOrgId);
@@ -2091,11 +2091,11 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private OrdersEntity createSubOrder(CartItemsForShop cartItems, AddressesEntity shippingAddress, CartCheckoutDTO dto,
-										OrganizationEntity org) {
+										OrganizationEntity org, boolean yeshteryOrder) {
 		Long orgId = org.getId();
 		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems, orgId);
 
-		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org);
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org, yeshteryOrder);
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
 		subOrder.setAmount(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
@@ -2197,9 +2197,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
-										CartItemsForShop cartItems, OrganizationEntity org) {
+	private OrdersEntity createSubOrder(AddressesEntity shippingAddress, CartItemsForShop cartItems,
+										OrganizationEntity org, boolean yeshteryOrder) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
+
+		if (yeshteryOrder) {
+			user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), org.getId())
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, org.getId()));
+		}
 
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());

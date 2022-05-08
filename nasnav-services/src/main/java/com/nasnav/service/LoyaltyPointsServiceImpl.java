@@ -345,7 +345,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if (config == null) {
             return;
         }
-        Optional<UserEntity> userEntityOp = userRepo.findByYeshteryUserIdAndOrganizationId(order.getUserId(), org.getId());
+        Optional<UserEntity> userEntityOp = userRepo.findById(order.getUserId());
         if(userEntityOp.isEmpty()) {
             return;
         }
