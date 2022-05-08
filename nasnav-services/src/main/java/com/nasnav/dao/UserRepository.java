@@ -2,8 +2,10 @@ package com.nasnav.dao;
 
 import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,4 +69,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("select distinct u from UserEntity u where u.yeshteryUserId = :yeshteryUserId and u.organizationId = :orgId")
 	Optional<UserEntity> findByYeshteryUserIdAndOrganizationId(@Param("yeshteryUserId") Long yeshteryUserId,
 															   @Param("orgId") Long orgId);
+
+	List<UserEntity> findByTier_Id(Long tierId);
+
+	@Transactional
+	@Modifying
+	@Query("update UserEntity u set u.tier.id = :tierId where u.organizationId = :orgId")
+	void updateUsersTiers(@Param("tierId") Long tierId,
+						  @Param("orgId") Long orgId);
 }

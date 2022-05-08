@@ -11,11 +11,11 @@ import java.util.Optional;
 public interface LoyaltyTierService {
 
     void deleteTier(Long id);
-    Optional<LoyaltyTierEntity> getTierById(Long id);
+    LoyaltyTierDTO getTierById(Long id);
     List<LoyaltyTierEntity> getTiersBetweenAmountFromTo(Integer amountFrom, Integer amountTo);
     LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tiers);
     LoyaltyTierEntity getTierByAmount(Integer amount);
-    UserRepresentationObject changeUserTier(Long userId, Long tierId, Long orgId);
+    UserRepresentationObject changeUserTier(Long userId, Long tierId);
     List<LoyaltyTierDTO> getTiers(Long orgId, Boolean isSpecial);
 
 }

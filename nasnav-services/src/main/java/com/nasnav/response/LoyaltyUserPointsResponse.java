@@ -16,7 +16,5 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class LoyaltyUserPointsResponse {
 
-	private boolean success;
-	private Long userId;
 	private Integer points;
 }

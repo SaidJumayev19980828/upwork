@@ -1,7 +1,7 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.request.LoyaltyPointTransactionDTO;
+import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.BeanUtils;
@@ -104,12 +104,15 @@ public class LoyaltyPointTransactionEntity {
     public LoyaltyPointTransactionDTO getRepresentation() {
         LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
         BeanUtils.copyProperties(this, dto);
-        if(this.order != null) {
+
+        if (shop != null)
+            dto.setShopId(shop.getId());
+
+        if(order != null)
             dto.setOrderId(order.getId());
-        }
-        if(this.organization != null) {
+
+        if(organization != null)
             dto.setOrgId(organization.getId());
-        }
 
         return dto;
     }

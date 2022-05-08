@@ -183,6 +183,9 @@ public enum ErrorCodes {
 	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
 	,ORG$LOY$0019("No tier found with id [%d]!")
 	,ORG$LOY$0020("No charity found with id [%d]!")
+	,ORG$LOY$0021("No tier found for user with id [%d]!")
+	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
+	,ORG$LOY$0023("Tier is linked to [%d] users!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -352,7 +355,6 @@ public enum ErrorCodes {
 	,COINS$PARAM$0002("Cannot update coins drop with id[%d], only inactive coins drop can be update!")
 	,COINS$PARAM$0003("Missing parameters in given coins drop [%s]!")
 	,COINS$PARAM$0004("Invalid coins drop type_id[%d]!")
-	,TIERS$PARAM$0001("No Tier exists with id[%d]!")
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
 	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")

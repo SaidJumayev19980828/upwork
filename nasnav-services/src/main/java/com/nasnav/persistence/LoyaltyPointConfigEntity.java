@@ -68,6 +68,10 @@ public class LoyaltyPointConfigEntity {
     public LoyaltyPointConfigDTO getRepresentation() {
         LoyaltyPointConfigDTO dto = new LoyaltyPointConfigDTO();
         BeanUtils.copyProperties(this, dto);
+
+        if(organization != null)
+            dto.setOrgId(organization.getId());
+
         if(defaultTier != null) {
             dto.setDefaultTier(defaultTier.getRepresentation());
         }

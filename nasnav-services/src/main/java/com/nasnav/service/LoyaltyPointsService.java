@@ -4,6 +4,7 @@ import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
+import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -28,9 +29,9 @@ public interface LoyaltyPointsService {
     void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest);
     LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
-    List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId );
+    List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
-    List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs(Long orgId);
+    List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
     void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
@@ -43,6 +44,4 @@ public interface LoyaltyPointsService {
     String generateUserShopPinCode(Long shopId);
 
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
-
-    LoyaltyPointConfigDTO updateOrgDefaultTier(Long orgId, Long tierId);
 }

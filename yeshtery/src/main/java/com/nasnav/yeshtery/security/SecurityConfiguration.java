@@ -157,13 +157,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
             , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf("/v1/loyalty/points/list"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
+			patternOf("/v1/loyalty/user_tier"							, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/family/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/tier/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/booster/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/config/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			patternOf("/v1/loyalty/user_tier"					, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/check"						, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/redeem"						, setOf(STORE_MANAGER))
     );

@@ -3,11 +3,11 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dto.GiftDTO;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
+import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import com.nasnav.yeshtery.YeshteryConstants;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,12 +41,14 @@ public class LoyaltyPointController {
 
 
     @GetMapping(value ="points")
-    public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long orgId){
+    public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token,
+                                                   @RequestParam("org_id") Long orgId){
         return loyaltyPointsService.getUserPoints(orgId);
     }
 
     @GetMapping(value ="user_tier")
-    public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long orgId){
+    public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token,
+                                      @RequestParam("org_id") Long orgId){
         return loyaltyPointsService.getUserOrgTier(orgId);
     }
 
@@ -71,9 +73,8 @@ public class LoyaltyPointController {
     }
 
     @GetMapping(value = "config/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token
-    , @RequestParam(name = "org_id") Long orgId) {
-        return loyaltyPointsService.listLoyaltyPointConfigs(orgId);
+    public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyPointsService.listLoyaltyPointConfigs();
     }
 
 
@@ -145,7 +146,7 @@ public class LoyaltyPointController {
      **/
 
     @GetMapping(value = "tier")
-    public Optional<LoyaltyTierEntity> getTierById(@RequestHeader(name = "User-Token", required = false) String token,
+    public LoyaltyTierDTO getTierById(@RequestHeader(name = "User-Token", required = false) String token,
                                                    @RequestParam(value = "tier_id") Long tierId) {
         return loyaltyTierService.getTierById(tierId);
     }
@@ -172,19 +173,9 @@ public class LoyaltyPointController {
     @PostMapping(value = "tier/change_user_tier")
     public UserRepresentationObject changeUserTier(@RequestHeader(name = "User-Token", required = false) String token,
                                                    @RequestParam(value = "tier_id") Long tierId,
-                                                   @RequestParam(value = "user_id") Long userId,
-                                                   @RequestParam(value = "org_id") Long orgId) {
-        return loyaltyTierService.changeUserTier(userId, tierId, orgId);
+                                                   @RequestParam(value = "user_id") Long userId) {
+        return loyaltyTierService.changeUserTier(userId, tierId);
     }
-
-
-    @PostMapping("tier/change_org_default_tier")
-    public LoyaltyPointConfigDTO updateOrgDefaultTier(@RequestHeader(name = "User-Token", required = false) String token
-            , @RequestParam(name = "org_id") Long orgId
-            , @RequestParam(name = "tier_id") Long tierId) {
-        return loyaltyPointsService.updateOrgDefaultTier(orgId, tierId);
-    }
-
 
     /**
      * Coins Drop APIs
@@ -221,7 +212,7 @@ public class LoyaltyPointController {
     }
 
     @GetMapping(value = "points/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointTransactionEntity> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id")  Long orgId ) {
+    public List<LoyaltyPointTransactionDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id")  Long orgId ) {
         return loyaltyPointsService.listOrganizationLoyaltyPoints(orgId);
     }
 /*
