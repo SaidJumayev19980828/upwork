@@ -19,6 +19,8 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndGotOnline(Long userId, Boolean gotOnline);
 
+    List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId);
+
     @Query("select sum(t.points) from LoyaltyPointTransactionEntity t " +
             " where t.isValid = true and t.shop.allowOtherPoints = true and t.user.id = :userId")
     Integer findAllRedeemablePoints(@Param("userId") Long userId);

@@ -355,7 +355,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = userEntity.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(shop, user, order, points, pointsAmount);
+        createLoyaltyPointTransaction(shop, userEntity, order, points, pointsAmount);
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -410,9 +410,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             if (config == null) {
                 return;
             }
+            Optional<UserEntity> userEntityOp = userRepo.findById(order.getUserId());
+            if(userEntityOp.isEmpty()) {
+                return;
+            }
+            UserEntity userEntity = userEntityOp.get();
             LoyaltyTierDTO tier = getLoyaltyTierDTO(user);
             BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-            createLoyaltyPointTransaction(shop, user, order, points.negate(), amount.negate());
+            createLoyaltyPointTransaction(shop, userEntity, order, points.negate(), amount.negate());
         }
     }
 
@@ -450,11 +455,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId ) {
-         return loyaltyPointTransRepo.findByOrganization_Id(orgId)
-                 .stream()
-                 .map(LoyaltyPointTransactionEntity::getRepresentation)
-                 .collect(toList());
+    public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId) {
+        UserEntity user = getCurrentUserWithOrg(orgId);
+        return loyaltyPointTransRepo.findByUser_IdAndOrganization_Id(user.getId(), orgId)
+             .stream()
+             .map(LoyaltyPointTransactionEntity::getRepresentation)
+             .collect(toList());
     }
 
     @Override

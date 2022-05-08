@@ -27,4 +27,11 @@ public interface LoyaltyPointConfigRepository extends JpaRepository<LoyaltyPoint
     @Modifying
     @Query("update LoyaltyPointConfigEntity c set c.isActive = false where c.organization.id = :orgId")
     void setAllOrgConfigsAsInactive(@Param("orgId") Long orgId);
+
+    @Transactional
+    @Modifying
+    @Query("delete from LoyaltyPointConfigEntity c where c.defaultTier.id = :tierId and c.organization.id = :orgId")
+    void deleteSoftDeletedConfigs(@Param("orgId") Long orgId,
+                                  @Param("tierId") Long tierId);
+
 }

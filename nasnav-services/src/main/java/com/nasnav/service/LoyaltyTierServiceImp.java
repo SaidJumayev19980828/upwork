@@ -8,6 +8,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +49,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     @Override
     public void deleteTier(Long id) {
         LoyaltyTierEntity tier = getExistingTier(id);
+        Long orgId = securityService.getCurrentUserOrganizationId();
 
         configRepo.findByDefaultTier_IdAndIsActive(tier.getId(), true)
                 .ifPresent(c -> {throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0022, c.getId());});
@@ -57,6 +59,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0023, usersWithTier.size());
         }
 
+        configRepo.deleteSoftDeletedConfigs(orgId, tier.getId());
         tierRepository.delete(tier);
     }
 
@@ -108,16 +111,29 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         if (isUpdateOperation(tier) && !isInactiveTier(entity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0002, tier.getId());
         }
-        entity.setIsActive(tier.getIsActive());
-        entity.setIsSpecial(tier.getIsSpecial());
-        entity.setNoOfPurchaseFrom(tier.getNoOfPurchaseFrom());
-        entity.setNoOfPurchaseTo(tier.getNoOfPurchaseTo());
-        entity.setSellingPrice(tier.getSellingPrice());
-        entity.setTierName(tier.getTierName());
-        entity.setCashBackPercentage(tier.getCashBackPercentage());
-        entity.setCoefficient(tier.getCoefficient());
+        if (tier.getIsActive() != null) {
+            entity.setIsActive(tier.getIsActive());
+        }
+        if (tier.getIsSpecial() != null) {
+            entity.setIsSpecial(tier.getIsSpecial());
+        }
+        if (tier.getNoOfPurchaseFrom() != null) {
+            entity.setNoOfPurchaseFrom(tier.getNoOfPurchaseFrom());
+        }
+        if (tier.getNoOfPurchaseTo() != null) {
+            entity.setNoOfPurchaseTo(tier.getNoOfPurchaseTo());
+        }
+        if (tier.getTierName() != null) {
+            entity.setTierName(tier.getTierName());
+        }
+        if (tier.getCashBackPercentage() != null) {
+            entity.setCashBackPercentage(tier.getCashBackPercentage());
+        }if (tier.getCoefficient() != null) {
+            entity.setCoefficient(tier.getCoefficient());
+        }
 
-        if (tier.getIsSpecial()) {
+        if (tier.getIsSpecial() != null &&
+                tier.getIsSpecial()) {
             entity.setBooster(null);
         } else if(tier.getBoosterId() != null){
             LoyaltyBoosterEntity booster = loyaltyBoosterRepository.findById(tier.getBoosterId())
@@ -154,13 +170,13 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     private boolean isInactiveTier(LoyaltyTierEntity tier) {
-        return Objects.equals(INACTIVE.getValue(), tier.getIsActive());
+        return Objects.equals(false, tier.getIsActive());
     }
 
     private void validateTier(LoyaltyTierDTO tier) {
-        if (anyIsNull(tier, tier.getTierName(), tier.getOrgId(), tier.getCoefficient())) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE
-                    , TIERS$PARAM$0003, tier.toString());
-        }
+        if (tier.getId() == null)
+            if (anyIsNull(tier, tier.getTierName(), tier.getOrgId(), tier.getCoefficient())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0003, tier.toString());
+            }
     }
 }
