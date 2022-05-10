@@ -971,7 +971,8 @@ public class OrderServiceImpl implements OrderService {
 		newParams.setDetails_level( detailsLevel);
 		newParams.setUpdated_after( params.getUpdated_after() );
 		newParams.setUpdated_before( params.getUpdated_before() );
-
+		newParams.setShipping_service_id(params.getShipping_service_id());
+		newParams.setPayment_operator(params.getPayment_operator());
 		BaseUserEntity user = securityService.getCurrentUser();
 		if (user instanceof EmployeeUserEntity) {
 			newParams.setUser_id(params.getUser_id());
@@ -1041,6 +1042,7 @@ public class OrderServiceImpl implements OrderService {
 				.fetch("productVariantsEntity", LEFT)
 				.fetch("productEntity", LEFT);
 		root.fetch("organizationEntity", LEFT);
+		root.fetch("paymentEntity", LEFT);
 
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 
@@ -1069,6 +1071,12 @@ public class OrderServiceImpl implements OrderService {
 		}
 		if(params.getUpdated_before() != null) {
 			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
+		}
+		if(params.getShipping_service_id() != null){
+			predicates.add( builder.equal(root.get("shipment").get("shippingServiceId"), params.getShipping_service_id()) );
+		}
+		if(params.getPayment_operator() != null){
+			predicates.add( builder.equal(root.get("paymentEntity").get("operator"), params.getPayment_operator()) );
 		}
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
