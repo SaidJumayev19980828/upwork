@@ -19,8 +19,8 @@ public class OrderSearchParam {
     private String updated_after;    
     private String updated_before;
 
-    private String payment_method;
-    private String shipping_method;
+    private String payment_operator;
+    private String shipping_service_id;
 
     private Integer start;
     private Integer count;
