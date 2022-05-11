@@ -785,10 +785,11 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         String message =
                 ofNullable(rejectionReason)
                         .orElse(DEFAULT_REJECTION_MESSAGE);
+        AddressRepObj pickupAddress = getPickupAddress(returnRequest);
         String year = LocalDateTime.now().getYear()+"";
         params.put("id", returnRequest.getId().toString());
+        params.put("pickupAddr", pickupAddress);
         params.put("rejectionReason", message);
-        params.put("returnRequest", returnRequest);
         params.put("year", year);
         return params;
     }

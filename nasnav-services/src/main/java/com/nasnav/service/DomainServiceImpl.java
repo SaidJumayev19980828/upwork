@@ -208,7 +208,7 @@ public class DomainServiceImpl implements DomainService{
 				getOrganizationDomainOnly(orgId).stream()
 						.findFirst()
 						.orElse("");
-		String path = "dashboard/return-requests";
+		String path = domain + "/dashboard/return-requests";
 		return format("%s/%s/%d", domain, path, returnRequestId);
 	}
 

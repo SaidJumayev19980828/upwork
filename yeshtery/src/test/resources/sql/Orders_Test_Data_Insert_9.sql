@@ -247,3 +247,7 @@ INSERT INTO public.return_request_item(id, return_request_id, order_item_id, ret
     VALUES(330034, 330033, 330039, 1, null, 360003);
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
     VALUES(330035, 330036, 330040, 1, now(), 360006);
+
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'org-1.org', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'org-2.org', 99002);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(3, 'org-3.org', 99003);

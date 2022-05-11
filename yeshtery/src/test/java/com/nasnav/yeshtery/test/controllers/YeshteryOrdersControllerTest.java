@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
@@ -819,7 +818,6 @@ public class YeshteryOrdersControllerTest {
         Assert.assertEquals(401, response.getStatusCodeValue());
     }
 
-    // TODO: Fix template "order_return_notification_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1060,7 +1058,6 @@ public class YeshteryOrdersControllerTest {
         return json().put("item_list", returnedItems);
     }
 
-    // TODO: Fix template "order_return_reject_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1076,7 +1073,6 @@ public class YeshteryOrdersControllerTest {
         assertTrue(entity.isPresent());
     }
 
-    // TODO: Fix template "order_return_reject_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1214,7 +1210,6 @@ public class YeshteryOrdersControllerTest {
     }
 
 
-    // TODO: Fix template "order_return_confirm_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_10.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1223,7 +1218,7 @@ public class YeshteryOrdersControllerTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(NOT_ACCEPTABLE, res.getStatusCodeValue());
+        Assert.assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
     }
 
     private JSONObject createOrderStatusUpdateRequest(OrderStatus status) {

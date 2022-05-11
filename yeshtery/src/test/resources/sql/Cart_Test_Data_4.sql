@@ -52,11 +52,17 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '161718', now(), 70, null);
 
+--inserting yeshtery users
+INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (808, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (809, 'test2@nasnav.com','user2','456', 99001);
+
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'test2@nasnav.com','user1','123', 99001);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'test4@nasnav.com','user2','456', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
+    VALUES (88, 'test2@nasnav.com','user1','123', 99001, 808);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
+    VALUES (89, 'test4@nasnav.com','user2','456', 99001, 809);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '123', now(), null, 88);
