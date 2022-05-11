@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.LoyaltyPointTransactionEntity;
+import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,6 +25,12 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("select sum(t.points) from LoyaltyPointTransactionEntity t " +
             " where t.isValid = true and t.shop.allowOtherPoints = true and t.user.id = :userId")
     Integer findAllRedeemablePoints(@Param("userId") Long userId);
+
+    @Query("select new com.nasnav.persistence.dto.query.result.OrganizationPoints(t.organization.id, sum(t.points))" +
+            " from LoyaltyPointTransactionEntity t" +
+            " where t.isValid = true and t.user.id = :userId" +
+            " group by t.organization.id")
+    List<OrganizationPoints> findRedeemablePointsPerOrg(@Param("userId") Long userId);
 
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.isValid = true and t.organization.id = :orgId and t.user.id = :userId")

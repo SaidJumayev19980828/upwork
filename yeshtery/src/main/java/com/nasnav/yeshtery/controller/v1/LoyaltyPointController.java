@@ -5,6 +5,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import com.nasnav.yeshtery.YeshteryConstants;
@@ -44,6 +45,11 @@ public class LoyaltyPointController {
     public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token,
                                                    @RequestParam("org_id") Long orgId){
         return loyaltyPointsService.getUserPoints(orgId);
+    }
+
+    @GetMapping(value ="points_per_org")
+    public List<OrganizationPoints> getUserPointsPerOrg(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyPointsService.getUserPointsPerOrg();
     }
 
     @GetMapping(value ="user_tier")

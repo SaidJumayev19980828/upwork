@@ -8,6 +8,7 @@ import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
@@ -239,6 +240,17 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         Integer points = loyaltyPointTransRepo.findOrgRedeemablePoints(user.getId(), orgId);
         return new LoyaltyUserPointsResponse(points);
+    }
+
+    @Override
+    public List<OrganizationPoints> getUserPointsPerOrg() {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if(! (baseUser instanceof  UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity) baseUser;
+        return loyaltyPointTransRepo.findRedeemablePointsPerOrg(currentUser.getId());
     }
 
     private UserEntity getCurrentUserWithOrg(Long orgId) {

@@ -9,6 +9,7 @@ import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
@@ -39,6 +40,8 @@ public interface LoyaltyPointsService {
     LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
     LoyaltyUserPointsResponse getUserPoints(Long orgId);
+
+    List<OrganizationPoints> getUserPointsPerOrg();
     LoyaltyTierDTO getUserOrgTier(Long orgId);
 
     String generateUserShopPinCode(Long shopId);
