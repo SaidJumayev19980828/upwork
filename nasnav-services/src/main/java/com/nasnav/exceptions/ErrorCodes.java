@@ -97,6 +97,7 @@ public enum ErrorCodes {
 	,P$IMG$0007("Failed to prepare images for import due to errors!\nerrors:[%s]")
 	,P$IMG$0008("Feature is not of the type %s!")
 	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
+	,P$IMG$0010("Unsupported file MIME [%s]. Select image or video!")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
