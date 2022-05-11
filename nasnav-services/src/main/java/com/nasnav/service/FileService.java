@@ -2,7 +2,6 @@ package com.nasnav.service;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
-import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.google.common.net.MediaType;
 import com.nasnav.AppConfig;
@@ -131,6 +130,8 @@ public class FileService {
 
 	public String saveFile(MultipartFile file, Long orgId) {
 
+		validateMimeType(file.getContentType());
+
 		if(orgId != null && !orgRepo.existsById(orgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
@@ -138,22 +139,27 @@ public class FileService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
 		}
 
-		String origName = file.getOriginalFilename();
-		String uniqueFileName = getUniqueName(origName, orgId );
-		String url = getUrl(uniqueFileName, orgId);
-		Path location = getRelativeLocation(uniqueFileName, orgId);
+		String originalFileName = file.getOriginalFilename();
+		String uniqueFileName = getUniqueName(originalFileName, orgId );
+		String fileUrl = getUrl(uniqueFileName, orgId);
+		Path fileRelativeLocation = getRelativeLocation(uniqueFileName, orgId);
 
 		saveFile(file, uniqueFileName, orgId );
 
-		if(Files.exists(basePath.resolve(location) )) {
-			saveToDatabase(origName, location , url, orgId);
+		if(Files.exists(basePath.resolve(fileRelativeLocation) )) {
+			saveToDatabase(originalFileName, fileRelativeLocation , fileUrl, orgId);
 		}
 
-		return url;
+		return fileUrl;
 	}
 
+	private void validateMimeType(String mimeType) {
+		String fileType = mimeType.substring(0, mimeType.indexOf('/'));
 
-
+		if(!fileType.equalsIgnoreCase("image") && !fileType.equalsIgnoreCase("video")){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0010, mimeType);
+		}
+	}
 
 	private void saveToDatabase(String origName, Path location, String url, Long orgId) {
 
