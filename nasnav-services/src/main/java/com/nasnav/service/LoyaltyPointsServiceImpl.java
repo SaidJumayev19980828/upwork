@@ -250,7 +250,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
         }
         UserEntity currentUser = (UserEntity) baseUser;
-        return loyaltyPointTransRepo.findRedeemablePointsPerOrg(currentUser.getId());
+        return loyaltyPointTransRepo.findRedeemablePointsPerOrg(currentUser.getYeshteryUserId());
     }
 
     private UserEntity getCurrentUserWithOrg(Long orgId) {

@@ -26,11 +26,14 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " where t.isValid = true and t.shop.allowOtherPoints = true and t.user.id = :userId")
     Integer findAllRedeemablePoints(@Param("userId") Long userId);
 
-    @Query("select new com.nasnav.persistence.dto.query.result.OrganizationPoints(t.organization.id, sum(t.points))" +
+    @Query("select new com.nasnav.persistence.dto.query.result.OrganizationPoints(o.id, o.name, image.uri, sum(t.points))" +
             " from LoyaltyPointTransactionEntity t" +
-            " where t.isValid = true and t.user.id = :userId" +
-            " group by t.organization.id")
-    List<OrganizationPoints> findRedeemablePointsPerOrg(@Param("userId") Long userId);
+            " inner join t.organization o" +
+            " left join o.images image" +
+            " where t.isValid = true and image.type = 1 and image.shopsEntity is null " +
+            " and t.user.id in (select u.id from UserEntity u where u.yeshteryUserId = :yeshteryUserId)" +
+            " group by o.id, image.uri")
+    List<OrganizationPoints> findRedeemablePointsPerOrg(@Param("yeshteryUserId") Long yeshteryUserId);
 
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.isValid = true and t.organization.id = :orgId and t.user.id = :userId")

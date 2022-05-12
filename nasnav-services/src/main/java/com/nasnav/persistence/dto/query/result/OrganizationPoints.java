@@ -14,5 +14,7 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class OrganizationPoints {
     Long orgId;
+    String orgName;
+    String orgLogo;
     BigDecimal points;
 }

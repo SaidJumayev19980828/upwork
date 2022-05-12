@@ -76,6 +76,12 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private Set<ShopsEntity> shops;
 
+    @OneToMany(mappedBy = "organizationEntity")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<OrganizationImagesEntity> images;
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
