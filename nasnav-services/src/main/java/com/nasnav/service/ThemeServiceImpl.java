@@ -29,8 +29,7 @@ import java.util.*;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
-import static com.nasnav.exceptions.ErrorCodes.ORG$THEME$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$THEME$0002;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -57,19 +56,16 @@ public class ThemeServiceImpl implements ThemeService{
 
     public List<ThemeClassDTO> listThemeClasses() {
         return themeClassRepo.findAll().stream()
-                .map(themeClass -> (ThemeClassDTO)themeClass.getRepresentation())
+                .map(ThemeClassEntity::getRepresentation)
                 .collect(toList());
     }
 
 
     public List<ThemeDTO> listThemes(Integer classId) {
-        List<ThemeEntity> themesList;
-        if (classId != null) {
-            themesList = themesRepo.findByThemeClassEntity_Id(classId);
-        } else {
-            themesList = themesRepo.findAll();
-        }
-        return themesList.stream()
+        return ofNullable(classId)
+                .map(themesRepo::findByThemeClassEntity_Id)
+                .orElse(themesRepo.findAll())
+                .stream()
                 .map(theme -> (ThemeDTO)theme.getRepresentation())
                 .collect(toList());
     }
@@ -78,18 +74,11 @@ public class ThemeServiceImpl implements ThemeService{
     
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public ThemeClassResponse updateThemeClass(ThemeClassDTO dto) throws BusinessException {
-        Optional<ThemeClassEntity> optionalThemeClass;
-        
-        ThemeClassEntity themeClass;
-        if (dto.getId() == null)
-            themeClass = new ThemeClassEntity();
-        else {
-            optionalThemeClass = themeClassRepo.findById(dto.getId());
-
-            checkThemeClassExistence(optionalThemeClass, dto.getId());
-
-            themeClass = optionalThemeClass.get();
+    public ThemeClassResponse updateThemeClass(ThemeClassDTO dto) {
+        ThemeClassEntity themeClass = new ThemeClassEntity();
+        if (dto.getId() != null) {
+            themeClass = themeClassRepo.findById(dto.getId())
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0001, dto.getId()));
         }
         
         themeClass.setName(dto.getName());
@@ -102,30 +91,31 @@ public class ThemeServiceImpl implements ThemeService{
 
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
-        Optional<ThemeEntity> optionalThemeEntity;
-        ThemeEntity theme = new ThemeEntity();
-        if (dto.getUid() == null) {
-            throw new BusinessException("Must provide theme_id!",
-                    "MISSING_PARAM: theme_id", NOT_ACCEPTABLE);
-        }
-        if (dto.getThemeClassId() == null) {
-            throw new BusinessException("Must provide theme_class_id!",
-                    "MISSING_PARAM: theme_class_id", NOT_ACCEPTABLE);
-        }
+        validateThemeUpdateDTO(dto);
 
-        optionalThemeEntity = themesRepo.findByUid(dto.getUid());
+        ThemeEntity theme = themesRepo.findByUid(dto.getUid())
+                .orElseGet(ThemeEntity::new);
 
-        if (optionalThemeEntity.isPresent()) {
-            theme = optionalThemeEntity.get();
-        }
+        setThemeProperties(theme, dto);
 
-        theme = setThemeProperties(theme, dto);
-        theme = themesRepo.save(theme);
-        return new ThemeResponse(theme.getUid());
+        return new ThemeResponse(themesRepo.save(theme).getUid());
     }
 
+    private void validateThemeUpdateDTO(ThemeDTO dto) {
+        if (dto.getUid() == null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "theme_id");
+        }
+        try {
+            Integer.parseInt(dto.getUid());
+        } catch (NumberFormatException e){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0002, "theme_id");
+        }
+        if (dto.getThemeClassId() == null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "theme_class_id");
+        }
+    }
 
-    private ThemeEntity setThemeProperties(ThemeEntity theme, ThemeDTO dto) throws BusinessException {
+    private void setThemeProperties(ThemeEntity theme, ThemeDTO dto) {
         if (dto.getName() != null)
             theme.setName(dto.getName());
 
@@ -136,45 +126,45 @@ public class ThemeServiceImpl implements ThemeService{
             theme.setDefaultSettings(dto.getDefaultSettings());
 
         if (dto.getThemeClassId() != null) {
-            Optional<ThemeClassEntity> themeClass = themeClassRepo.findById(dto.getThemeClassId());
-            checkThemeClassExistence(themeClass, dto.getThemeClassId());
-            theme.setThemeClassEntity(themeClass.get());
+            ThemeClassEntity themeClass = themeClassRepo.findById(dto.getThemeClassId())
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0001, dto.getThemeClassId()));
+
+            theme.setThemeClassEntity(themeClass);
         }
 
         theme.setUid(dto.getUid());
-
-        return theme;
     }
 
 
-    public void deleteThemeClass(Integer id) throws BusinessException {
-        Optional<ThemeClassEntity> entity = themeClassRepo.findById(id);
-        checkThemeClassExistence(entity, id);
+    public void deleteThemeClass(Integer id) {
+        ThemeClassEntity themeClass = themeClassRepo.findById(id)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0001, id));
 
         if (themesRepo.countByThemeClassEntity_Id(id) > 0) {
-            throw new BusinessException("There are themes linked to class: " + id,
-                    "INVALID_OPERATION", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0002, "themes", id);
         }
-        if (orgRepo.countByThemeClassesContains(entity.get()) > 0) {
-            throw new BusinessException("There are organizations linked to class: " + id,
-                    "INVALID_OPERATION", NOT_ACCEPTABLE);
+        if (orgRepo.countByThemeClassesContains(themeClass) > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0002, "organizations", id);
         }
 
-        themeClassRepo.delete(entity.get());
+        themeClassRepo.delete(themeClass);
     }
 
 
-    public void deleteTheme(String themeId) throws BusinessException {
-    	String id = ofNullable(themeId).orElse("-1");
-        Optional<ThemeEntity> entity = themesRepo.findByUid(id);
-
-        checkThemeExistence(entity, id);
-
-        Set<Long> orgIds = orgRepo.findByThemeId(Integer.parseInt(id));
-        if (!orgIds.isEmpty()) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0002, orgIds.toString());
+    public void deleteTheme(String themeId) {
+        try {
+            int id = Integer.parseInt(themeId);
+            Set<Long> orgIds = orgRepo.findByThemeId(id);
+            if (!orgIds.isEmpty()) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$THEME$0002, orgIds.toString());
+            }
+            orgThemeSettingsRepo.deleteByTheme_Id(id);
+        } catch (NumberFormatException e) {
         }
-        themesRepo.delete(entity.get());
+
+        ThemeEntity entity = themesRepo.findByUid(themeId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0003, themeId));
+        themesRepo.delete(entity);
     }
 
 
@@ -184,7 +174,7 @@ public class ThemeServiceImpl implements ThemeService{
         OrganizationEntity org = optionalOrg.get();
 
         return org.getThemeClasses().stream()
-                .map(c -> (ThemeClassDTO)c.getRepresentation())
+                .map(ThemeClassEntity::getRepresentation)
                 .collect(toList());
     }
 
@@ -234,15 +224,6 @@ public class ThemeServiceImpl implements ThemeService{
         }
     }
 
-
-    private void checkThemeClassExistence(Optional<ThemeClassEntity> themeClass, Integer id) throws BusinessException {
-        if (!themeClass.isPresent())
-            throw new BusinessException(
-                    format("Provided theme_class_id (%d) doesn't match any existing theme class!", id),
-                    "INVALID_PARAM: class_id", NOT_ACCEPTABLE);
-    }
-
-
     private void checkOrgExistence(Optional<OrganizationEntity> org, Long orgId) throws BusinessException {
         if(!org.isPresent())
             throw new BusinessException(
@@ -250,44 +231,35 @@ public class ThemeServiceImpl implements ThemeService{
                     "INVALID_PARAM: org_id", NOT_FOUND);
     }
 
-
-    private void checkThemeExistence(Optional<ThemeEntity> theme, String id) throws BusinessException {
-        if (!theme.isPresent())
-            throw new BusinessException(
-                    format("Provided theme_id %s doesn't match any existing theme!", id),
-                    "INVALID_PARAM: theme_id", NOT_ACCEPTABLE);
-    }
-
-
     @Transactional
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void changeOrgTheme(OrganizationThemesSettingsDTO dto) throws BusinessException {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
 
-        Optional<ThemeEntity> theme = themesRepo.findByUid(dto.getThemeId());
-        checkThemeExistence(theme, dto.getThemeId());
+        ThemeEntity theme = themesRepo.findByUid(dto.getThemeId())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0003, dto.getThemeId()+""));
 
-        ThemeClassEntity themeClass = theme.get().getThemeClassEntity();
+        ThemeClassEntity themeClass = theme.getThemeClassEntity();
         Set<ThemeClassEntity> availableThemeClasses = org.getThemeClasses();
         if(!availableThemeClasses.contains(themeClass)) {
             throw new BusinessException(
-                    format("Organization %d doesn't have permission to use theme %d!", org.getId(), theme.get().getId()),
+                    format("Organization %d doesn't have permission to use theme %d!", org.getId(), theme.getId()),
                     "INVALID_PARAM: theme_id", NOT_ACCEPTABLE);
         }
 
 
         OrganizationThemesSettingsEntity orgThemeSetting =
         		orgThemeSettingsRepo
-        			.findByOrganizationEntity_IdAndThemeId(org.getId(), theme.get().getId())
+        			.findByOrganizationEntity_IdAndThemeId(org.getId(), theme.getId())
         			.orElse(new OrganizationThemesSettingsEntity());
 
         orgThemeSetting.setOrganizationEntity(org);
-        orgThemeSetting.setTheme(theme.get());
+        orgThemeSetting.setTheme(theme);
 
         if (dto.getSettings() != null) {
             orgThemeSetting.setSettings(dto.getSettings());
         } else {
-            orgThemeSetting.setSettings(theme.get().getDefaultSettings());
+            orgThemeSetting.setSettings(theme.getDefaultSettings());
         }
 
         org.setThemeId(Integer.parseInt(dto.getThemeId()));
@@ -303,14 +275,14 @@ public class ThemeServiceImpl implements ThemeService{
         Map<String, String> orgThemesSettings = orgThemeSettingsRepo
                 .findByOrganizationEntity_Id(org.getId())
                 .stream()
-                .collect(toMap(s -> s.getTheme().getUid(), s -> s.getSettings()));
+                .collect(toMap(s -> s.getTheme().getUid(), OrganizationThemesSettingsEntity::getSettings));
 
         return org
                 .getThemeClasses()
                 .stream()
                 .map(ThemeClassEntity::getThemes)
                 .flatMap(Set::stream)
-                .map(theme -> new OrgThemeRepObj(theme))
+                .map(OrgThemeRepObj::new)
                 .map(t -> setThemeSettings(t, orgThemesSettings) )
                 .collect(toList());
     }
@@ -329,6 +301,4 @@ public class ThemeServiceImpl implements ThemeService{
 
         return theme;
     }
-
-
 }

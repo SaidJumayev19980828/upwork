@@ -2,8 +2,10 @@ package com.nasnav.dao;
 
 import com.nasnav.persistence.OrganizationThemesSettingsEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +26,8 @@ public interface OrganizationThemeSettingsRepository extends JpaRepository<Organ
     Optional<OrganizationThemesSettingsEntity> findByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
 
     boolean existsByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
+
+    @Transactional
+    @Modifying
+    void deleteByTheme_Id(Integer themeId);
 }
