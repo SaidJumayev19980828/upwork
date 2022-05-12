@@ -554,7 +554,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private Map<String, Object> createReturnConfirmEmailParams(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
-        Optional<UserEntity> user =  getCustomerName(request);
+        Optional<UserEntity> user =  getCustomerEntity(request);
         String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
         Optional<OrganizationEntity> org =
                 ofNullable(request)
@@ -583,7 +583,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
 
-    private Optional<UserEntity> getCustomerName(ReturnRequestEntity request) {
+    private Optional<UserEntity> getCustomerEntity(ReturnRequestEntity request) {
         return ofNullable(request)
                 .map(ReturnRequestEntity::getMetaOrder)
                 .map(MetaOrderEntity::getUser);
@@ -782,19 +782,53 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     private Map<String, Object> createRejectionEmailParams(ReturnRequestEntity returnRequest, String rejectionReason) {
         Map<String,Object> params = new HashMap<>();
-        String message =
-                ofNullable(rejectionReason)
-                        .orElse(DEFAULT_REJECTION_MESSAGE);
-        AddressRepObj pickupAddress = getPickupAddress(returnRequest);
-        String year = LocalDateTime.now().getYear()+"";
-        params.put("id", returnRequest.getId().toString());
-        params.put("pickupAddr", pickupAddress);
-        params.put("rejectionReason", message);
-        params.put("year", year);
+
+        setCustomerParams(returnRequest, params);
+        setOrgParams(returnRequest, params);
+        setReturnRequestParams(returnRequest, params);
+        setMessageParams(rejectionReason, params);
+
         return params;
     }
 
+    private void setCustomerParams(ReturnRequestEntity returnRequest, Map<String,Object> params) {
+        params.put("customerName", getCustomerName(returnRequest));
+        params.put("pickupAddr", getPickupAddress(returnRequest));
+    }
 
+    private String getCustomerName(ReturnRequestEntity returnRequest){
+        Optional<UserEntity> customerEntity =  getCustomerEntity(returnRequest);
+        String customerName = customerEntity.map(UserEntity::getFirstName).orElse("Dear Customer");
+
+        return customerName;
+    }
+
+    private void setOrgParams(ReturnRequestEntity returnRequest, Map<String,Object> params){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        String orgNameAndSubDir = domainService.getOrganizationDomainAndSubDir(orgId);
+
+        String orgName = ofNullable(returnRequest)
+                            .map(ReturnRequestEntity::getMetaOrder)
+                            .map(MetaOrderEntity::getOrganization)
+                            .map(OrganizationEntity::getName)
+                            .orElse("");
+        params.put("orgDomain", orgNameAndSubDir);
+        params.put("orgName", orgName);
+    }
+
+    private void setReturnRequestParams(ReturnRequestEntity returnRequest, Map<String,Object> params){
+        String year = LocalDateTime.now().getYear()+"";
+        params.put("requestId", returnRequest.getId().toString());
+
+        params.put("year", year);
+    }
+
+    private void setMessageParams(String rejectionReason, Map<String,Object> params){
+        String message =
+                ofNullable(rejectionReason)
+                        .orElse(DEFAULT_REJECTION_MESSAGE);
+        params.put("rejectionReason", message);
+    }
 
     private void sendOrderReturnNotificationEmail(ReturnRequestEntity request) {
         Long returnRequestId = request.getId();
@@ -818,7 +852,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private Map<String, Object> createOrderReturnNotificationEmailParams(ReturnRequestEntity request) {
-        Optional<UserEntity> user =  getCustomerName(request);
+        Optional<UserEntity> user =  getCustomerEntity(request);
         String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
         String creationDate =
                 DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
@@ -1167,7 +1201,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
     private Map<String, Object> createReturnItemsReceiptionEmailParams(ReturnRequestEntity request) {
-        Optional<UserEntity> user =  getCustomerName(request);
+        Optional<UserEntity> user =  getCustomerEntity(request);
         String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
         String creationDate =
                 DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
