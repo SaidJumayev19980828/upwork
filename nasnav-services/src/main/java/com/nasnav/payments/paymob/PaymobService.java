@@ -162,7 +162,6 @@ public class PaymobService {
      }
 
     private String pay(TokenResponse paymentToken, TokenResponse authToken, MetaOrderEntity metaOrder, PaymobSourceEntity sourceEntity) throws BusinessException {
-        Gson gson = getGson();
 
         JSONObject sourceJson = new JSONObject();
         sourceJson.put("identifier", sourceEntity.getIdentifier());
@@ -340,8 +339,8 @@ public class PaymobService {
                         throw new BusinessException("Couldn't retrieve payment info", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
                     }
 
-                    if (!data.isSuccess()) {
-                        throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
+                    if (!data.isSuccess() || data.getPaid_at() == null) {
+                        throw new BusinessException("This transaction was declined by payment gateway or not paid yet", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
                     }
                     if (data.is_refund()) {
                         payment.setStatus(PaymentStatus.REFUNDED);
@@ -354,7 +353,7 @@ public class PaymobService {
                 }
             }
         } catch (IOException e) {
-            throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("Couldn't connect to payment gateway: " + e.getMessage(), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }
 
     }
