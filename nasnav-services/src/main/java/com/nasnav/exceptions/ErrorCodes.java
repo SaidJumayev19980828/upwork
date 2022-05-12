@@ -338,7 +338,8 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
 	,PROMO$PARAM$0014("Usage limit exceeded max value!")
 	,PROMO$PARAM$0015("Missing parameter[%s] in given promotion [%s]!")
-	
+	,PROMO$PARAM$0016("Promo code [%s] is not applicable to the current user!")
+
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
