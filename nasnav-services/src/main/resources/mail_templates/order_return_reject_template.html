@@ -218,7 +218,7 @@
 			<img th:src="${orgLogo}" alt="logo"/>
 		</div>
 		<p class="Header-orderSuccess">
-			Hi <span id="user_name" th:text="${userName}"/> ! <br />
+			Hi <span id="customer_name" th:text="${customerName}"/> ! <br />
 			Your Return request # <span id="request_id" th:text="${requestId}"/> has been rejected! <br/>
 		</p>
 		<p class="summary" th:text="${rejectionReason}">Thanks for your patience, and sorry, sorry ,sorry!</p>
@@ -228,37 +228,6 @@
 		<p class="title">
 			Return Request summary:
 		</p>
-
-		<div class="orders">
-			<table>
-				<tbody>
-				<tr th:each="shp : ${returnShipments}">
-					<table>
-						<tbody>
-						<tr>
-							<h3 class="shopName" > Shipment Track Number :
-								<span th:text="${shp.trackNumber}" >12348569</span>
-							</h3>
-						</tr>
-						<tr th:each="item : ${shp.items}">
-							<img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
-							<h3 th:text="${item.name}"/>
-							<table class="variant-features">
-								<tr th:each="feature : ${item.variantFeatures}">
-									<span th:text="${feature.key} + ': ' + ${feature.value}"></span> <br/>
-								</tr>
-							</table>
-							<span class="quantity" th:text="'Qty: ' + ${item.quantity}"/>
-							<div th:with="price=${(item.price) * item.quantity}">
-								<p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${item.currency}"/>
-							</div>
-						</tr>
-						</tbody>
-					</table>
-				</tr>
-				</tbody>
-			</table>
-		</div>
 
 		<div class="CustomerInfo">
 			<h3>Customer Information</h3>
@@ -271,13 +240,7 @@
 						<li id="city" th:text="${pickupAddr.city}">Midetterian mermaid</li>
 						<li id="country" th:text="${pickupAddr.country}">The Mother Of All Land</li>
 					</ul>
-				</div>
-				<div style="width: 30%;" class="column">
-					<h3>Shipping Method</h3>
-					<ul>
-						<li>Shipping by <span id="shipping_service" th:text="${shippingService}">Dragons</span></li>
-					</ul>
-				</div>
+
 			</div>
 			<p class="help">
 				Any further questions or concerns, please look at our FAQ page where
