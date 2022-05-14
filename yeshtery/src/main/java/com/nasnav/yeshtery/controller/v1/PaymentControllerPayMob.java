@@ -4,10 +4,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.payments.paymob.PaymobPaymentResponse;
-import com.nasnav.payments.paymob.PaymobService;
-import com.nasnav.payments.paymob.PaymobSource;
-import com.nasnav.payments.paymob.TokenResponse;
+import com.nasnav.payments.paymob.*;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.yeshtery.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,8 +49,11 @@ public class PaymentControllerPayMob {
     @PostMapping("confirm")
     public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
 
-        paymobService.verifyAndStore(uid, true);
-        return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+        RetrieveTransactionResponse.Data data = paymobService.verifyAndStore(uid, true);
+        return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
+                "\"transaction_no\":\""+data.getTransaction_no()+"\"" +
+                "}", HttpStatus.OK);
+
 
     }
 

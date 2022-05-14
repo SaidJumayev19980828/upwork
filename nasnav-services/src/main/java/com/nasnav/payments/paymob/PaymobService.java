@@ -19,7 +19,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -289,7 +288,7 @@ public class PaymobService {
         return merchantAccount;
     }
 
-    public void verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
+    public RetrieveTransactionResponse.Data verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
         PaymentEntity payment = paymentCommons.getPaymentForOrderUid(orderUid);
         if (payment == null) {
             classLogger.warn("No payment associated with order {}", orderUid);
@@ -350,12 +349,14 @@ public class PaymobService {
                         payment.setStatus(PaymentStatus.PAID);
                     }
                     paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
+                    return data.getData();
                 }
             }
         } catch (IOException e) {
             throw new BusinessException("Couldn't connect to payment gateway: " + e.getMessage(), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }
 
+        return null;
     }
 
     private Gson getGson() {

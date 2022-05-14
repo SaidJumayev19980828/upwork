@@ -7,6 +7,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.paymob.PaymobPaymentResponse;
 import com.nasnav.payments.paymob.PaymobService;
 import com.nasnav.payments.paymob.PaymobSource;
+import com.nasnav.payments.paymob.RetrieveTransactionResponse;
 import com.nasnav.persistence.MetaOrderEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -44,8 +45,10 @@ public class PaymentControllerPayMob {
 
     @PostMapping("confirm")
     public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
-            paymobService.verifyAndStore(uid, false);
-            return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+            RetrieveTransactionResponse.Data data = paymobService.verifyAndStore(uid, false);
+            return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
+                    "\"transaction_no\":\""+data.getTransaction_no()+"\"" +
+                    "}", HttpStatus.OK);
 
     }
 }
