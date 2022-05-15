@@ -45,7 +45,6 @@ import static lombok.AccessLevel.NONE;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name="product_type",  discriminatorType = DiscriminatorType.INTEGER)
 @DiscriminatorValue("0")
-@DiscriminatorFormula("COALESCE(product_type,0)")        //TODO: we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
 @Data
 @EqualsAndHashCode(callSuper=false)
 @SQLDelete(sql = "UPDATE PRODUCTS SET removed = 1 WHERE id = ?")
@@ -115,11 +114,6 @@ public class ProductEntity {
     private Boolean search360;
 
     private Integer priority;
-
-    //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
-    public Integer getProductType(){
-        return productType == null ? ProductTypes.DEFAULT : productType;
-    }
 
     @Column(name = "allow_reward")
     private Boolean allowReward;
