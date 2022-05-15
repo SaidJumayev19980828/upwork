@@ -45,6 +45,7 @@ import static lombok.AccessLevel.NONE;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name="product_type",  discriminatorType = DiscriminatorType.INTEGER)
 @DiscriminatorValue("0")
+@DiscriminatorFormula("product_type")
 @Data
 @EqualsAndHashCode(callSuper=false)
 @SQLDelete(sql = "UPDATE PRODUCTS SET removed = 1 WHERE id = ?")
@@ -102,7 +103,6 @@ public class ProductEntity {
 
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
-    
 
     @Column(name="removed")
     private Integer removed;
