@@ -21,6 +21,7 @@ public class PromotionsEntity {
 	public final static String ALLOWED_BRANDS = "applied_to_brands";
 	public final static String ALLOWED_TAGS = "applied_to_tags";
 	public final static String ALLOWED_PRODUCTS = "applied_to_products";
+	public final static String ALLOWED_USERS = "applied_to_users";
 	public final static String PRODUCT_QUANTITY_MIN = "product_quantity_min";
 	public final static String PRODUCTS_TO_GIVE = "products_to_give";
 	public final static String USAGE_LIMIT = "usage_limit";

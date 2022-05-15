@@ -823,11 +823,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private PromoCalcResult calcPromoDiscount(PromoInfoContainer info) {
 		var promoCode = info.promoCode;
 		var subTotal = info.totalItemsValue;
+		PromotionsEntity promo = info.promo;
+
 		if (isBlankOrNull(promoCode)) {
 			return emptyResult();
 		}
-		PromotionsEntity promo = info.promo;
+
 		validatePromoCode(promoCode, promo, subTotal);
+		validatePromoApplicableToCurrentUser(promo);
 
 		var discount = getDiscount(subTotal, promo);
 		var consumedItems = consumeAllItems(info);
@@ -835,6 +838,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private PromoCalcResult calcPromoDiscountFromSpecificBrands(PromoInfoContainer info) {
+		validatePromoApplicableToCurrentUser(info.promo);
 		var constraints = getPromoConstraints(info.promo);
 		var allowedProducts= getAllowedProductsPerBrand(info, constraints)
 				.stream()
@@ -844,6 +848,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private PromoCalcResult calcPromoDiscountFromSpecificTags(PromoInfoContainer info) {
+		validatePromoApplicableToCurrentUser(info.promo);
 		var constraints = getPromoConstraints(info.promo);
 		var allowedTags = ofNullable(constraints.getTags()).orElse(emptySet());
 		var allowedProducts = productRepo.getProductIdsByTagsList(allowedTags);
@@ -851,6 +856,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private PromoCalcResult calcPromoDiscountFromSpecificProducts(PromoInfoContainer info) {
+		validatePromoApplicableToCurrentUser(info.promo);
 		var constraints = getPromoConstraints(info.promo);
 		var allowedProducts = constraints.getProducts();
 		return calcPromoDiscountForSpecificItems(info, allowedProducts);
@@ -873,10 +879,18 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return new PromoCalcResult(discount, consumedItems);
 	}
 
+	private void validatePromoApplicableToCurrentUser(PromotionsEntity promo) {
+		PromosConstraints promosConstraints = getPromoConstraints(promo);
+		Set<Long> applicableUsers = promosConstraints.getUsers();
 
+		if(!containCurrentUser(applicableUsers))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0016, promo.getCode());
+	}
 
-
-
+	private boolean containCurrentUser(Set<Long> users){
+		Long currentUser = securityService.getCurrentUser().getId();
+		return users == null || users.contains(currentUser);
+	}
 
 	@Override
 	public void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user) {
