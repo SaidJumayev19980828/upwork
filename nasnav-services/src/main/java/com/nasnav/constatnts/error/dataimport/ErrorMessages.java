@@ -2,7 +2,7 @@ package com.nasnav.constatnts.error.dataimport;
 
 public class ErrorMessages {
 	public static final String ERR_PRODUCT_IMPORT_MISSING_PARAM = "Missing required parameters! required parameters are {shop_id, currency, encoding, headers, csv}";
-	public static final String ERR_MISSING_STOCK_UPDATE_PARAMS = "Missing required parameters! required parameters are {shop_id, variant_id, [quantity OR price and currency]}, while given data is[%s]!";
+	public static final String ERR_MISSING_STOCK_UPDATE_PARAMS = "Missing parameters [%s]! required parameters are {shop_id, variant_id, [quantity OR price and currency]}!";
 	public static final String ERR_BRAND_NAME_NOT_EXIST = "No brand exists with name [%s]";
 	public static final String ERR_INVALID_ENCODING = "Encoding [%s] is not supported!";
 	public static final String ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP = "User that belongs to organization with id[%d] is not allowed to make changes to a shop from organization with id[%d]";

@@ -23,6 +23,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -220,8 +221,10 @@ public class StockServiceImpl implements StockService {
 			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
 		} catch (BusinessException e) {
 			throw new StockValidationException(e, indexedStkDto.getIndex());
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
 		}
-		
+
 		Long shopId = stockUpdateReq.getShopId();
 		Long variantId = stockUpdateReq.getVariantId();
 		
@@ -456,10 +459,10 @@ public class StockServiceImpl implements StockService {
 
 
 	private void validateStockToUpdate(StockUpdateDTO req
-			, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) throws BusinessException {
+			, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) throws BusinessException, IllegalAccessException {
 		if(!allParamExists(req) ){
 			throw new BusinessException(
-					format(ERR_MISSING_STOCK_UPDATE_PARAMS, req)
+					format(ERR_MISSING_STOCK_UPDATE_PARAMS, getEmptyFieldsAsString(req))
 					, "MISSING_PARAM" 
 					, NOT_ACCEPTABLE);
 		}
@@ -478,8 +481,24 @@ public class StockServiceImpl implements StockService {
 		validateVariantId(req, variantCache);
 	}
 	
-	
+	private String getEmptyFieldsAsString(StockUpdateDTO req) throws IllegalAccessException {
+		Field [] fields = req.getClass().getDeclaredFields();
+		StringBuilder emptyFields = new StringBuilder();
 
+		for(Field field: fields){
+			field.setAccessible(true);
+			if(field.get(req) == null && isRequiredField(field.getName())){
+				emptyFields.append(field.getName() + ", ");
+			}
+		}
+		return emptyFields.substring(0, emptyFields.length() - 2);
+	}
+
+	private boolean isRequiredField(String fieldName){
+		List<String> requiredFields = List.of("price", "quantity", "shopId", "variantId", "currency");
+
+		return requiredFields.contains(fieldName);
+	}
 	
 	
 	private void validateVariantId(StockUpdateDTO req, VariantCache variantCache) throws BusinessException{

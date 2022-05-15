@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ImportProductContext {
@@ -34,26 +33,32 @@ public class ImportProductContext {
 	private Set<Brand> createdBrands;
 	private Set<Product> createdProducts;
 	private Set<Product> updatedProducts;
-	
-	
+
+	public ImportProductContext() {
+		initialize();
+	}
+
 	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata, DataImportCachedData cache) {
+		initialize();
 		this.products = productImportDTOS;
 		this.importMetaData = productImportMetadata;
 		this.productsNum = productImportDTOS.size();
+		this.cache = cache;
+	}
+
+
+	private void initialize() {
 		this.errors = new ArrayList<>();
 		this.createdTags = new HashSet<>();
 		this.createdBrands = new HashSet<>();
 		this.createdProducts = new HashSet<>();
 		this.updatedProducts = new HashSet<>();
-		this.cache = cache;
 	}
-	
-	
 	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
 		this(productImportDTOS, productImportMetadata, DataImportCachedData.emptyCache());
 	}
 	
-	
+
 	
 	public void logNewTag(Long id, String name) {
 		createdTags.add(new Tag(id, name));
