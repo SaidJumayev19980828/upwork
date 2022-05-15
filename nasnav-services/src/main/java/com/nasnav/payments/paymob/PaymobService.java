@@ -146,7 +146,7 @@ public class PaymobService {
             HttpClient client = getHttpClient();
             OrderResponse orderResponse = registerOrder(fromOrderValue(orderValue, authToken.getToken(), transactionId));
             if (orderResponse != null) {
-                paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrderId, orderValue, client, orderResponse, userId, sourceEntity);
+                paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrderId, orderValue, client, orderResponse, userId, sourceEntity, transactionId);
             }
         }
         if (!Objects.isNull(paymentToken)) {
@@ -196,7 +196,7 @@ public class PaymobService {
         }
     }
 
-    private TokenResponse getPaymentTokenResponse(String authToken, long metaOrderId, OrderService.OrderValue orderValue, HttpClient client, OrderResponse orderResponse, Long userId, PaymobSourceEntity source) throws BusinessException {
+    private TokenResponse getPaymentTokenResponse(String authToken, long metaOrderId, OrderService.OrderValue orderValue, HttpClient client, OrderResponse orderResponse, Long userId, PaymobSourceEntity source, Long transactionId) throws BusinessException {
         PaymentRequest paymentRequest = PaymentRequest.fromOrderResponse(orderResponse, source);
         paymentRequest.setAuth_token(authToken);
         TokenResponse paymentToken = null;
@@ -240,7 +240,7 @@ public class PaymobService {
                 String resBody = readInputStream(response.getEntity().getContent());
                 paymentToken = gson.fromJson(resBody, TokenResponse.class);
 
-                createPaymentEntity(metaOrderId, orderValue, paymentToken, userId, orderResponse.getId().toString());
+                createPaymentEntity(metaOrderId, orderValue, paymentToken, userId, orderResponse.getId().toString(), transactionId);
             } else {
                 throw new BusinessException(readInputStream(response.getEntity().getContent()), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
             }
@@ -251,7 +251,7 @@ public class PaymobService {
     }
 
 
-    private PaymentEntity createPaymentEntity(long metaOrderId, OrderService.OrderValue orderValue, TokenResponse paymentToken, Long userId, String indicator) {
+    private PaymentEntity createPaymentEntity(long metaOrderId, OrderService.OrderValue orderValue, TokenResponse paymentToken, Long userId, String indicator, Long transactionId) {
         PaymentEntity payment = new PaymentEntity();
         payment.setStatus(PaymentStatus.STARTED);
         payment.setAmount(orderValue.amount);
@@ -261,7 +261,7 @@ public class PaymobService {
         payment.setExecuted(new Date());
         payment.setUserId(userId);
         payment.setMetaOrderId(metaOrderId);
-        payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
+        payment.setObject("{\"successIndicator\": \"" + indicator + ",\"transactionId\": \"" + transactionId + "\"}");
         paymentsRepository.saveAndFlush(payment);
         return payment;
     }
@@ -269,6 +269,7 @@ public class PaymobService {
     private OrderRequest fromOrderValue(OrderService.OrderValue metaOrder, String token, Long transactionId) {
         return OrderRequest.builder()
                 .authToken(token)
+                .merchant_order_id(transactionId)
                 .amountCents(metaOrder.amount.multiply(new BigDecimal(100)))
                 .build();
     }
