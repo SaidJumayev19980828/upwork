@@ -261,7 +261,7 @@ public class PaymobService {
         payment.setExecuted(new Date());
         payment.setUserId(userId);
         payment.setMetaOrderId(metaOrderId);
-        payment.setObject("{\"successIndicator\": \"" + indicator + ",\"transactionId\": \"" + transactionId + "\"}");
+        payment.setObject("{\"successIndicator\": \"" + indicator + "\",\"transactionId\": \"" + transactionId + "\"}");
         paymentsRepository.saveAndFlush(payment);
         return payment;
     }
