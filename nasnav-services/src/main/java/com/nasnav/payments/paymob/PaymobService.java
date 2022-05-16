@@ -310,19 +310,24 @@ public class PaymobService {
             classLogger.error("Payment {} for order {} does not contain successIndicator!", payment.getId(), orderUid);
             throw new BusinessException("Payment for order does not contain successIndicator", "INTERNAL_ERROR", org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        if (!json.has("transactionId")) {
+            classLogger.error("Payment {} for order {} does not contain transactionId!", payment.getId(), orderUid);
+            throw new BusinessException("Payment for order does not contain transactionId", "INTERNAL_ERROR", org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 
 
-        String successIndicator = json.getString("successIndicator");
+//        String successIndicator = json.getString("successIndicator");
+        String transactionId = json.getString("transactionId");
 
-        String paymentDetailUrl = payMobAccount.getApiUrl() + "/acceptance/transactions";
+        String paymentDetailUrl = payMobAccount.getApiUrl() + "/ecommerce/orders/transaction_inquiry";
 
         String body = "{ \n" +
                 "  \"auth_token\": \""+authToken.getToken()+"\",\n" +
-                "  \"order_id\":  \""+successIndicator+"\"\n" +
+                "  \"merchant_order_id\":  \""+transactionId+"\"\n" +
                 "}";
 
         try {
-            HttpUriRequest request = RequestBuilder.get(paymentDetailUrl)
+            HttpUriRequest request = RequestBuilder.post(paymentDetailUrl)
                     .setEntity(new StringEntity(body))
                     .setHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .build();
