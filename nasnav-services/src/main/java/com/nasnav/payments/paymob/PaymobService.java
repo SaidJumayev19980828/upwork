@@ -317,13 +317,13 @@ public class PaymobService {
 
 
 //        String successIndicator = json.getString("successIndicator");
-        String transactionId = json.getString("transactionId");
+        Long transactionId = json.getLong("transactionId");
 
         String paymentDetailUrl = payMobAccount.getApiUrl() + "/ecommerce/orders/transaction_inquiry";
 
         String body = "{ \n" +
                 "  \"auth_token\": \""+authToken.getToken()+"\",\n" +
-                "  \"merchant_order_id\":  \""+transactionId+"\"\n" +
+                "  \"merchant_order_id\":  "+transactionId+"\n" +
                 "}";
 
         try {
