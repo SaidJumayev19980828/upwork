@@ -45,9 +45,9 @@ public class PaymentControllerPayMob {
 
     @PostMapping("confirm")
     public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
-            RetrieveTransactionResponse.Data data = paymobService.verifyAndStore(uid, false);
+            RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, false);
             return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
-                    "\"transaction_no\":\""+data.getTransaction_no()+"\"" +
+                    "\"transaction_no\":\""+data.getId()+"\"" +
                     "}", HttpStatus.OK);
 
     }

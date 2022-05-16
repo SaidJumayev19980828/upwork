@@ -289,7 +289,7 @@ public class PaymobService {
         return merchantAccount;
     }
 
-    public RetrieveTransactionResponse.Data verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
+    public RetrieveTransactionResponse verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
         PaymentEntity payment = paymentCommons.getPaymentForOrderUid(orderUid);
         if (payment == null) {
             classLogger.warn("No payment associated with order {}", orderUid);
@@ -339,23 +339,20 @@ public class PaymobService {
                 String resBody = readInputStream(response.getEntity().getContent());
                 RetrieveTransactionResponse status = gson.fromJson(resBody, RetrieveTransactionResponse.class);
                 if (status != null) {
-                    RetrieveTransactionResponse.Result data = status.getResults().get(0);
-                    if(Objects.isNull(data)) {
-                        throw new BusinessException("Couldn't retrieve payment info", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
-                    }
 
-                    if (!data.isSuccess() || data.getPaid_at() == null) {
+
+                    if (!status.isSuccess()) {
                         throw new BusinessException("This transaction was declined by payment gateway or not paid yet", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
                     }
-                    if (data.is_refund()) {
+                    if (status.is_refunded()) {
                         payment.setStatus(PaymentStatus.REFUNDED);
-                    } else if (data.is_voided()) {
+                    } else if (status.is_voided()) {
                         payment.setStatus(PaymentStatus.UNPAID);
                     } else {
                         payment.setStatus(PaymentStatus.PAID);
                     }
                     paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
-                    return data.getData();
+                    return status;
                 }
             }
         } catch (IOException e) {
