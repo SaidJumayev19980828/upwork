@@ -150,6 +150,8 @@ public enum ErrorCodes {
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 	,ORG$SHIP$0002("Couldn't get variant org_id!")
 
+	,ORG$SITEMAP("User has no access to this sitemap!")
+
 	,THEME$0001("Provided theme_class_id [%d] doesn't match any existing theme class!")
 	,THEME$0002("There are %s linked to class [%d]")
 	,THEME$0003("Provided theme_id [%s] doesn't match any existing theme!")

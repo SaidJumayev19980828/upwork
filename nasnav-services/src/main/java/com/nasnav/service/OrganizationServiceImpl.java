@@ -1274,17 +1274,16 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
         Long orgId = domain.getFirst();
         if (orgId.intValue() == 0) {
-            return createEmptyResponseEntity();
+            throw new RuntimeBusinessException(NOT_FOUND, GEN$0012, params.getUrl());
         }
         if (!isBlankOrNull(userToken)) {
             Long userOrgId = userTokenRepo.findEmployeeOrgIdByToken(userToken);
             if (userOrgId == null || !userOrgId.equals(orgId)) {
-                return createEmptyResponseEntity();
+                throw new RuntimeBusinessException(FORBIDDEN, ORG$SITEMAP);
             }
         }
         return createSiteMapResponse(orgId, params);
     }
-
 
     private ResponseEntity<?> createSiteMapResponse(Long orgId, SitemapParams params) throws IOException {
         List<String> allUrls = createSiteMap(orgId, params);
@@ -1300,12 +1299,6 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
                 .body(outStream.toString());
     }
-
-
-    private ResponseEntity<?> createEmptyResponseEntity() {
-        return ResponseEntity.notFound().build();
-    }
-
 
     private List<String> createSiteMap(Long orgId, SitemapParams params) {
         List<String> allUrls = new ArrayList<>();
