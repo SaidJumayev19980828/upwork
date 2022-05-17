@@ -16,7 +16,7 @@ public interface OrganizationCartOptimizationRepository extends JpaRepository<Or
 
 	Optional<OrganizationCartOptimizationEntity> findFirstByOptimizationStrategyAndShippingServiceIdAndOrganization_IdOrderByIdDesc(String strategy,
 																																	String shippingServiceId, Long orgId);
-
+	Optional<OrganizationCartOptimizationEntity> findByOptimizationStrategyAndOrganization_Id(String strategy, Long orgId);
 	
 	@Query("SELECT optimize "
 			+ " FROM OrganizationCartOptimizationEntity optimize "
