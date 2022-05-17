@@ -373,6 +373,13 @@ public enum ErrorCodes {
 	,FAMILY$PARAM$0001("Missing parameters in given family [%s]!")
 	,BOOSTER$PARAM$0001("Missing Booster properties!")
 	,BOOSTER$PARAM$0002("No Booster exists with id[%d]!")
+
+
+	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
+	,VIDEO$PARAM$0002("Invalid user type!")
+	,VIDEO$PARAM$0003("Session not found!")
+	,VIDEO$PARAM$0004("Invalid Session!")
+
 	;
 
 	@Getter

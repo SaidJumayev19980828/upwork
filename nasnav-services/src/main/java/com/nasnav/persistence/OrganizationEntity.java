@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import lombok.Data;
@@ -82,10 +83,15 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private Set<OrganizationImagesEntity> images;
 
+    @Column(name = "enable_video_chat")
+    private Integer enableVideoChat;
+
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
         this.yeshteryState = 0;
+        this.enableVideoChat = 0;
     }
 
     public Type getType() {
@@ -132,6 +138,11 @@ public class OrganizationEntity implements BaseEntity {
         YeshteryState
                 .getYeshteryState(yeshteryState)
                 .ifPresent(obj::setYeshteryState);
+
+        VideoChatOrgState
+                .getVideoChatState(enableVideoChat)
+                .ifPresent(obj::setEnableVideoChat);
+
         if(getCountry() != null) {
             obj.setCurrency(getCountry().getCurrency());
             obj.setCurrencyIso(getCountry().getIsoCode());

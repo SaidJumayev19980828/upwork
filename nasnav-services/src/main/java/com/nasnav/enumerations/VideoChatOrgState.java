@@ -7,20 +7,17 @@ import java.util.Optional;
 
 import static java.util.Arrays.stream;
 
-public enum YeshteryState {
-    DISABLED(0), ACTIVE(1);
+public enum VideoChatOrgState {
+    DISABLED(0), ENABLED(1);
 
-    YeshteryState(Integer value){this.value = value;}
+    VideoChatOrgState(Integer value){this.value = value;}
 
     @Getter
     private Integer value;
 
-    public static Optional<YeshteryState> getYeshteryState(Integer value) {
+    public static Optional<VideoChatOrgState> getVideoChatState(Integer value) {
         return stream(values())
                 .filter(n -> Objects.equals(n.getValue(), value))
                 .findFirst();
-    }
-    public Integer getValue() {
-        return value;
     }
 }
