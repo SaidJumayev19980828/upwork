@@ -47,7 +47,7 @@ public class VideoChatLogEntity implements BaseEntity {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private OrganizationEntity organizationEntity;
+    private OrganizationEntity organization;
 
     @Column(name = "is_active")
     private Boolean isActive;
@@ -62,7 +62,7 @@ public class VideoChatLogEntity implements BaseEntity {
         var obj = new VideoChatLogRepresentationObject();
         obj.setId(getId());
         obj.setName(name);
-        obj.setOrganizationName(organizationEntity.getName());
+        obj.setOrganizationName(organization.getName());
         obj.setAssignedToName(assignedTo.getName());
         obj.setUserName(user.getName());
         obj.setIsActive(isActive);
