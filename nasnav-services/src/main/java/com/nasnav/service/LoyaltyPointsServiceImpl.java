@@ -113,6 +113,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             loyaltyPointConfigRepo.setAllOrgConfigsAsInactive(org.getId());
 
             entity.setIsActive(true);
+            entity.setOrganization(org);
             setConfigDefaultTier(dto.getDefaultTier().getId(), org.getId(), entity);
         }
 
@@ -128,8 +129,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         if(dto.getCoefficient() != null){
             entity.setCoefficient(dto.getCoefficient());
         }
+        if(dto.getExpiry() != null) {
+            entity.setExpiry(dto.getExpiry());
+        }
 
-        entity.setOrganization(org);
         return loyaltyPointConfigRepo.save(entity);
     }
 
@@ -141,7 +144,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     private void validateLoyaltyPointConfigDTO(LoyaltyPointConfigDTO dto) {
         if (dto.getId() == null) {
-            if (anyIsNull(dto, dto.getCoefficient(), dto.getRatioFrom(), dto.getRatioTo(), dto.getDescription(), dto.getDefaultTier().getId()))
+            if (anyIsNull(dto, dto.getCoefficient(), dto.getRatioFrom(), dto.getRatioTo(), dto.getDescription(),
+                    dto.getDefaultTier(), dto.getDefaultTier().getId()))
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0008);
         }
     }
@@ -334,15 +338,22 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount) {
+    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user,
+                                                                     MetaOrderEntity yeshteryMetaOrder,
+                                                                     OrdersEntity order, BigDecimal points,
+                                                                     BigDecimal amount, Integer expiry) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
         entity.setShop(shop);
         entity.setIsValid(true);
         entity.setUser(user);
         entity.setOrder(order);
+        entity.setMetaOrder(yeshteryMetaOrder);
         entity.setOrganization(shop.getOrganizationEntity());
         entity.setAmount(amount);
+        if (expiry != null) {
+            entity.setEndDate(LocalDateTime.now().plusDays(expiry));
+        }
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
@@ -367,7 +378,21 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = userEntity.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(shop, userEntity, order, points, pointsAmount);
+        createLoyaltyPointTransaction(shop, userEntity, null, order, points, pointsAmount, config.getExpiry());
+    }
+
+    @Override
+    public void createYeshteryLoyaltyPointTransaction(MetaOrderEntity yeshteryMetaOrder, BigDecimal pointsAmount) {
+        OrganizationEntity org = yeshteryMetaOrder.getOrganization();
+        UserEntity user = yeshteryMetaOrder.getUser();
+
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
+        if (config == null) {
+            return;
+        }
+        LoyaltyTierDTO tier = user.getTier().getRepresentation();
+        BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
+        createLoyaltyPointTransaction(null, user, yeshteryMetaOrder, null, points, pointsAmount, config.getExpiry());
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -429,7 +454,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             UserEntity userEntity = userEntityOp.get();
             LoyaltyTierDTO tier = getLoyaltyTierDTO(user);
             BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-            createLoyaltyPointTransaction(shop, userEntity, order, points.negate(), amount.negate());
+            createLoyaltyPointTransaction(shop, userEntity, null, order,
+                    points.negate(), amount.negate(), config.getExpiry());
         }
     }
 
@@ -488,7 +514,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         Long orgId = securityService.getCurrentUserOrganizationId();
         return loyaltyPointConfigRepo.findByOrganization_IdOrderByCreatedAtDesc(orgId)
                 .stream()
-                .filter(LoyaltyPointConfigEntity::getIsActive)
                 .map(LoyaltyPointConfigEntity::getRepresentation)
                 .collect(toList());
     }

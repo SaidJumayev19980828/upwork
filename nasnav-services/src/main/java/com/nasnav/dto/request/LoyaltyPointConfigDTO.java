@@ -17,4 +17,5 @@ public class LoyaltyPointConfigDTO {
     private BigDecimal coefficient;
     private Boolean isActive;
     private LoyaltyTierDTO defaultTier;
+    private Integer expiry;
 }

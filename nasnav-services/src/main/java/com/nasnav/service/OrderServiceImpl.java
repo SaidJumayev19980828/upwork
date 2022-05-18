@@ -1241,6 +1241,12 @@ public class OrderServiceImpl implements OrderService {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
+
+		if (metaOrder.getSubMetaOrder() != null) {
+			MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
+			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, yeshteryMetaOrder.getGrandTotal());
+		}
+
 		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getAmount());
 	}
 
@@ -1253,6 +1259,7 @@ public class OrderServiceImpl implements OrderService {
 			updateOrderStatus(metaOrder, STORE_CANCELLED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CANCELLED);
+
 	}
 
 	private void saveShipmentTracker(ShipmentTracker tracker, OrdersEntity order) {

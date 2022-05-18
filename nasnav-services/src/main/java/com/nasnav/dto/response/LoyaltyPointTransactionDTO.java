@@ -13,6 +13,7 @@ public class LoyaltyPointTransactionDTO {
 
     private Long id;
     private LocalDateTime createdAt;
+    private LocalDateTime endDate;
     private Long orgId;
     private Long typeId;
     private String type;
@@ -20,6 +21,7 @@ public class LoyaltyPointTransactionDTO {
     private BigDecimal points;
     private Boolean isValid;
     private Long orderId;
+    private Long metaOrderId;
     private Long shopId;
     private Boolean isCoinsDrop;
     private Boolean isGift;

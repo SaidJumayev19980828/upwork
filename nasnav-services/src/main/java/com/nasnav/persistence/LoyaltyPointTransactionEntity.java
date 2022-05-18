@@ -27,6 +27,9 @@ public class LoyaltyPointTransactionEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
+
     private BigDecimal points;
 
     private BigDecimal amount;
@@ -60,6 +63,13 @@ public class LoyaltyPointTransactionEntity {
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private OrdersEntity order;
+
+    @OneToOne(fetch = LAZY)
+    @JoinColumn(name="meta_order_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private MetaOrderEntity metaOrder;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "loyalty_point_id")
@@ -110,6 +120,9 @@ public class LoyaltyPointTransactionEntity {
 
         if(order != null)
             dto.setOrderId(order.getId());
+
+        if (metaOrder != null)
+            dto.setMetaOrderId(metaOrder.getId());
 
         if(organization != null)
             dto.setOrgId(organization.getId());

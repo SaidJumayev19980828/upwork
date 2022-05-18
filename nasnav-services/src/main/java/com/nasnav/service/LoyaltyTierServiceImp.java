@@ -74,13 +74,14 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     @Override
-    public List<LoyaltyTierDTO> getTiers(Long orgId, Boolean isSpecial) {
-        List<LoyaltyTierEntity> tierList;
-        if (orgId != null) {
-            tierList = isSpecial? tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial): tierRepository.getByOrganization_Id(orgId);
-        } else {
-            tierList = tierRepository.findAll();
-        }
+    public List<LoyaltyTierDTO> getTiers(Boolean isSpecial) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        List<LoyaltyTierEntity> tierList =
+                isSpecial != null ?
+                tierRepository.getByOrganization_IdAndIsSpecial(orgId, isSpecial)
+                :
+                tierRepository.getByOrganization_Id(orgId);
+
         return tierList.stream()
                 .map(LoyaltyTierEntity::getRepresentation)
                 .collect(toList());
