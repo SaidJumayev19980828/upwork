@@ -14,6 +14,7 @@ import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -420,43 +421,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Override
     public void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest) {
-        UserEntity user = returnRequest.getMetaOrder().getUser();
-        Set<BasketsEntity> baskets = returnRequest
+        Set<OrdersEntity> orders = returnRequest
                 .getReturnedItems()
                 .stream()
                 .map(ReturnRequestItemEntity::getBasket)
-                .collect(toSet());
-        OrganizationEntity org = returnRequest.getMetaOrder().getOrganization();
-        Set<OrdersEntity> orders = baskets
-                .stream()
                 .map(BasketsEntity::getOrdersEntity)
                 .collect(toSet());
 
-        setTransactionsInvalidForReturnedOrders(orders, user);
-
-        for(OrdersEntity order : orders) {
-            ShopsEntity shop = order.getShopsEntity();
-            BigDecimal amount = baskets
-                    .stream()
-                    .filter(b -> Objects.equals(b.getOrdersEntity(), order))
-                    .map(basket -> (basket.getPrice().subtract(basket.getDiscount())).multiply(basket.getQuantity()))
-                    .reduce(ZERO, BigDecimal::add)
-                    .subtract(order.getAmount());
-            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo
-                    .findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
-            if (config == null) {
-                return;
-            }
-            Optional<UserEntity> userEntityOp = userRepo.findById(order.getUserId());
-            if(userEntityOp.isEmpty()) {
-                return;
-            }
-            UserEntity userEntity = userEntityOp.get();
-            LoyaltyTierDTO tier = getLoyaltyTierDTO(user);
-            BigDecimal points = calculatePoints(config, amount, tier.getCoefficient());
-            createLoyaltyPointTransaction(shop, userEntity, null, order,
-                    points.negate(), amount.negate(), config.getExpiry());
-        }
+        createReturnTransactionsForOrders(orders);
     }
 
     @Override
@@ -484,12 +456,28 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
 
-    private void setTransactionsInvalidForReturnedOrders(Set<OrdersEntity> orders, UserEntity user) {
+    private void createReturnTransactionsForOrders(Set<OrdersEntity> orders) {
         Set<Long> orderIds = orders
                 .stream()
                 .map(OrdersEntity::getId)
                 .collect(toSet());
-        loyaltyPointTransRepo.setTransactionsNotValid(user.getId(), orderIds);
+        Set<Long> metaOrderIds = orders
+                .stream()
+                .map(OrdersEntity::getMetaOrder)
+                .map(MetaOrderEntity::getSubMetaOrder)
+                .map(MetaOrderEntity::getId)
+                .collect(toSet());
+        List<LoyaltyPointTransactionEntity> ordersTransactions = loyaltyPointTransRepo.findByOrderIdInOrYeshteryMetaOrderIdIn(orderIds, metaOrderIds);
+        List<LoyaltyPointTransactionEntity> returnTransactions = new ArrayList<>();
+
+        for (LoyaltyPointTransactionEntity transaction : ordersTransactions) {
+            LoyaltyPointTransactionEntity returnTransaction = new LoyaltyPointTransactionEntity();
+            BeanUtils.copyProperties(transaction, returnTransaction);
+            returnTransaction.setAmount(transaction.getAmount().negate());
+            returnTransaction.setPoints(transaction.getPoints().negate());
+            returnTransactions.add(returnTransaction);
+        }
+        loyaltyPointTransRepo.saveAll(returnTransactions);
     }
 
     @Override

@@ -44,14 +44,10 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " on u = t.user where t.isValid = true and t.organization.id = :orgId and u.yeshteryUserId = :yeshteryUserId" +
             " and (t.endDate is null or t.endDate <= now())")
     Integer findOrgRedeemablePointsByOrgAndYeshteryUserId(@Param("yeshteryUserId") Long yeshteryUserId,
-                                    @Param("orgId") Long orgId);
-
-    @Transactional
-    @Modifying
-    @Query("update LoyaltyPointTransactionEntity transaction set transaction.isValid = false " +
-            "where transaction.user.id = :userId and transaction.order.id in :orderIds")
-    void setTransactionsNotValid(@Param("userId") Long userId,
-                                 @Param("orderIds") Set<Long> orderIds);
+                                                          @Param("orgId") Long orgId);
+    @Query("select t from LoyaltyPointTransactionEntity t where t.order.id in :orderIds or t.metaOrder.id in :metaOrderIds")
+    List<LoyaltyPointTransactionEntity> findByOrderIdInOrYeshteryMetaOrderIdIn(@Param("orderIds") Set<Long> orderIds,
+                                                                               @Param("metaOrderIds") Set<Long> metaOrderIds);
 
     List<LoyaltyPointTransactionEntity> getByCharity_Id(Long charityId);
 
@@ -59,7 +55,6 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " where transaction.user.id = :userId and DATE(transaction.createdAt) BETWEEN :dateFrom and :dateTo")
     Integer getCoinsDropTransactionsByUser_IdAndCreatedAt(Long userId, LocalDate dateFrom, LocalDate dateTo);
 
-    List<LoyaltyPointTransactionEntity> findByOrder_Id(Long id);
-
-    List<LoyaltyPointTransactionEntity> findByOrganization_Id(Long orgId);
+    @Query("select t from LoyaltyPointTransactionEntity t where t.order.id = :orderId and (t.endDate is null or t.endDate <= now())")
+    List<LoyaltyPointTransactionEntity> findByOrder_Id(@Param("orderId") Long orderId);
 }

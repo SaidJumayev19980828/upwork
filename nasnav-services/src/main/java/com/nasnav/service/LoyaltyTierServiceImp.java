@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -167,7 +168,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     private boolean isUpdateOperation(LoyaltyTierDTO tier) {
-        return nonNull(tier.getId()) && tier.getId() > 0;
+        return tier.getOperation().equals("update");
     }
 
     private boolean isInactiveTier(LoyaltyTierEntity tier) {
@@ -175,7 +176,10 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     private void validateTier(LoyaltyTierDTO tier) {
-        if (tier.getId() == null)
+        if (tier.getOperation() == null || !List.of("create", "update").contains(tier.getOperation())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
+        }
+        if (tier.getOperation().equals("create"))
             if (anyIsNull(tier, tier.getTierName(), tier.getOrgId(), tier.getCoefficient())) {
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0003, tier.toString());
             }

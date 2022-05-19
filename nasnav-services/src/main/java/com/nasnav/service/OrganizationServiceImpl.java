@@ -386,6 +386,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         if(nonNull(json.getYeshteryState())){
             organization.setYeshteryState(json.getYeshteryState().getValue());
         }
+        if (json.getEnableVideoChat() != null) {
+            organization.setEnableVideoChat(json.getEnableVideoChat() ? 1 : 0);
+        }
         if (json.getPriority() != null && json.getPriority() >= 0) {
             organization.setPriority(json.getPriority());
         }
