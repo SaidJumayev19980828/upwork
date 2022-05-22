@@ -23,4 +23,6 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     void removeUserAddress(Long id);
     UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);
     List<UserRepresentationObject> getUserList();
+
+    void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
 }

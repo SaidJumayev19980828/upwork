@@ -180,7 +180,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
         }
         if (tier.getOperation().equals("create"))
-            if (anyIsNull(tier, tier.getTierName(), tier.getOrgId(), tier.getCoefficient())) {
+            if (anyIsNull(tier, tier.getTierName(), tier.getCoefficient())) {
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0003, tier.toString());
             }
     }

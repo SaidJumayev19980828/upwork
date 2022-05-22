@@ -570,6 +570,9 @@ public class OrderServiceImpl implements OrderService {
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
 		Long userId = order.getUserId();
+		if (order.getMetaOrder().getSubMetaOrder() != null) {
+			userId = order.getMetaOrder().getSubMetaOrder().getUser().getId();
+		}
 		List<Long> variantIds =
 				order
 				.getBasketsEntity()
