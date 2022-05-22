@@ -174,7 +174,7 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Override
     public List<BaseRepresentationObject> getOrgSessions(Long orgId) {
 
-        return videoChatLogRepository.findByStatusAndOrganization_Id(VideoChatStatus.NEW, orgId)
+        return videoChatLogRepository.findByStatusAndOrganization_Id(VideoChatStatus.NEW.getValue(), orgId)
                 .stream()
                 .map(VideoChatLogEntity::getRepresentation)
                 .collect(Collectors.toList());

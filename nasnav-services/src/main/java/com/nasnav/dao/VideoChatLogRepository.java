@@ -1,6 +1,5 @@
 package com.nasnav.dao;
 
-import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.persistence.VideoChatLogEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,5 +15,5 @@ public interface VideoChatLogRepository extends JpaRepository<VideoChatLogEntity
 
     List<VideoChatLogEntity> findByOrganization_Id(Long orgId);
 
-    List<VideoChatLogEntity> findByStatusAndOrganization_Id(VideoChatStatus status, Long orgId);
+    List<VideoChatLogEntity> findByStatusAndOrganization_Id(Integer status, Long orgId);
 }
