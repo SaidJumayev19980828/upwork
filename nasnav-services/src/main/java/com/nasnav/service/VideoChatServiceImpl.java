@@ -70,7 +70,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         if (loggedInUser instanceof UserEntity) {
             return getOrCreateUserVideoSession((UserEntity) loggedInUser, userToken, sessionName, orgId);
         } else if (loggedInUser instanceof EmployeeUserEntity) {
-            return getEmployeeIntoSession((EmployeeUserEntity) loggedInUser, userToken, sessionName, orgId);
+            return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, userToken, sessionName, orgId);
         } else {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, VIDEO$PARAM$0002, orgId);
         }
@@ -81,13 +81,15 @@ public class VideoChatServiceImpl implements VideoChatService {
         return new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).role(OpenViduRole.PUBLISHER).build();
     }
 
-    private VideoChatResponse getEmployeeIntoSession(EmployeeUserEntity loggedInUser, String userToken, String sessionName, Long orgId) throws RuntimeBusinessException {
+    private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String userToken, String sessionName, Long orgId) throws RuntimeBusinessException {
 
         ConnectionProperties connectionProperties = getConnectionProperties();
 
         VideoChatLogEntity videChatLogObj = getVideoChatLogEntity(sessionName, orgId);
         // Session already exists
         try {
+            videChatLogObj.setAssignedTo(loggedInUser);
+            videoChatLogRepository.save(videChatLogObj);
             final String token = this.mapSessionsToToken.get(videChatLogObj.getToken()).createConnection(connectionProperties).getToken();
             this.mapSessionNamesTokens.get(token).put(userToken, OpenViduRole.PUBLISHER);
             return new VideoChatResponse(true, null, token, loggedInUser.getName(), sessionName);
