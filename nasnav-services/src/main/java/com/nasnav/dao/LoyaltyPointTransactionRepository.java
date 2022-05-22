@@ -27,7 +27,7 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " from LoyaltyPointTransactionEntity t" +
             " inner join t.organization o" +
             " left join o.images image" +
-            " where t.isValid = true and t.organization.id = t.user.id" +
+            " where t.isValid = true and t.organization.id = t.user.organizationId" +
             " and (t.endDate is null or t.endDate <= now())" +
             " and t.user.id in (select u.id from UserEntity u where u.yeshteryUserId = :yeshteryUserId)" +
             " and image.type = 1 and image.shopsEntity is null " +

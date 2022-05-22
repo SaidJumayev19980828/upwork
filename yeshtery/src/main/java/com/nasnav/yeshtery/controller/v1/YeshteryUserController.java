@@ -184,4 +184,9 @@ public class YeshteryUserController {
                                                                     @RequestParam(value = "variant_ids") Set<Long> variantIds) {
         return reviewService.getUserProductsRatings(variantIds);
     }
+
+    @PostMapping("link_nasnav_users_to_yeshtery_users")
+    public void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
+        userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
+    }
 }

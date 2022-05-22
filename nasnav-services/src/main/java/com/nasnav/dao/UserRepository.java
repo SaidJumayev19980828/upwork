@@ -74,7 +74,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	@Transactional
 	@Modifying
-	@Query("update UserEntity u set u.tier.id = :tierId where u.organizationId = :orgId and u.tier is null")
-	void updateUsersTiers(@Param("tierId") Long tierId,
-						  @Param("orgId") Long orgId);
+	@Query(value = "update users set tier_id = :tierId where organization_id = :orgId and tier_id is null", nativeQuery = true)
+	void updateUsersTiers(@Param("tierId") Long tierId, @Param("orgId") Long orgId);
 }

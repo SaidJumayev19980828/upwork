@@ -233,6 +233,39 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             return new YeshteryUserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
     }
 
+    @Override
+    public void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity() {
+        List<OrganizationEntity> orgs = orgRepo.findYeshteryOrganizations();
+        List<YeshteryUserEntity> yeshteryUsers = userRepository.findAll();
+        if (yeshteryUsers.isEmpty())
+            return;
+        for(OrganizationEntity org : orgs) {
+            for (YeshteryUserEntity yeshteryUser : yeshteryUsers) {
+                Optional<UserEntity> optionalUser = nasNavUserRepository.findByEmailAndOrganizationId(yeshteryUser.getEmail(), org.getId());
+                UserEntity user;
+                if (optionalUser.isEmpty()) {
+                    user = new UserEntity();
+                    user.setName(yeshteryUser.getName());
+                    user.setEmail(yeshteryUser.getEmail());
+                    user.setOrganizationId(org.getId());
+                    user.setEncryptedPassword(yeshteryUser.getEncryptedPassword());
+                    user.setPhoneNumber(yeshteryUser.getPhoneNumber());
+                    user.setUserStatus(ACTIVATED.getValue());
+                } else {
+                    user = optionalUser.get();
+                }
+                if (user.getYeshteryUserId() != null) {
+                    continue;
+                }
+                user.setYeshteryUserId(yeshteryUser.getId());
+                try {
+                    nasNavUserRepository.saveAndFlush(user);
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
     private void  createNewYeshtryUserForOrg(UserDTOs.UserRegistrationObjectV2 userJson, OrganizationEntity org, Long referencedUserId) {
         Optional<UserEntity> userEntity = nasNavUserRepository.findByEmailAndOrganizationId(userJson.getEmail(), org.getId());
         UserEntity user = new UserEntity();
@@ -241,7 +274,6 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         } else {
             user.setName(userJson.getName());
             user.setEmail(userJson.getEmail());
-            user.setOrganizationId(userJson.getOrgId());
             user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
             user.setPhoneNumber(userJson.getPhoneNumber());
             user.setOrganizationId(org.getId());
