@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.nasnav.enumerations.PaymobName.Online_Card;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -119,7 +120,7 @@ public class PaymobService {
     }
 
 
-    public String init(MetaOrderEntity metaOrder, PaymobSource source) throws BusinessException {
+    public String payMobCardInit(MetaOrderEntity metaOrder) throws BusinessException {
 
         long metaOrderId = metaOrder.getId();
         OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
@@ -140,7 +141,7 @@ public class PaymobService {
         TokenResponse authToken = getAuthToken();
         TokenResponse paymentToken = null;
 
-        PaymobSourceEntity sourceEntity = paymobSourceRepository.findByValue(source.getIdentifier()).orElseThrow(() -> new BusinessException("Payment source not found", "PAYMENT_FAILED", NOT_ACCEPTABLE));
+        PaymobSourceEntity sourceEntity = paymobSourceRepository.findByValue(Online_Card.getValue()).orElseThrow(() -> new BusinessException("Payment source not found", "PAYMENT_FAILED", NOT_ACCEPTABLE));
 
         if (!Objects.isNull(authToken)) {
             HttpClient client = getHttpClient();
@@ -153,12 +154,22 @@ public class PaymobService {
             if(!sourceEntity.getType().equalsIgnoreCase("CARD")) {
                 return pay(paymentToken, authToken, metaOrder, sourceEntity);
             } else {
-                return  "{\"token\":\""+paymentToken.getToken()+"\"}";
+                return  "{\"iframe_url\":\"" + getIframeUrl(sourceEntity, paymentToken) + ", \"token\":\"" + paymentToken.getToken() + "\"}";
             }
         }
 
         throw new BusinessException("Couldn't generate payment", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
      }
+
+    private String getIframeUrl(PaymobSourceEntity sourceEntity, TokenResponse paymentToken) {
+        StringBuilder iFrameUrl = new StringBuilder();
+        iFrameUrl
+                .append(sourceEntity.getScript())
+                .append("?payment_token=")
+                .append(paymentToken.getToken());
+
+        return iFrameUrl.toString();
+    }
 
     private String pay(TokenResponse paymentToken, TokenResponse authToken, MetaOrderEntity metaOrder, PaymobSourceEntity sourceEntity) throws BusinessException {
 

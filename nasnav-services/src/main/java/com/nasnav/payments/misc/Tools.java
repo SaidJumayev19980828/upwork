@@ -142,7 +142,7 @@ public class Tools {
 			} else {
 				file = propertiesDir + accountName;
 				logger.debug("Attempting to load account properties from file: {}", file);
-				InputStream stream = new FileInputStream( new File(file) );
+				InputStream stream = Tools.class.getResourceAsStream(file);
 				logger.info("Loading account properties from file: {}", file);
 				props = new Properties();
 				props.load(stream);
