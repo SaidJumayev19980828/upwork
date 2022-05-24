@@ -186,7 +186,7 @@ public class YeshteryUserController {
     }
 
     @PostMapping("link_nasnav_users_to_yeshtery_users")
-    public void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
-        userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
+    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
+        return userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
     }
 }

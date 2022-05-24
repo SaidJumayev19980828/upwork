@@ -234,11 +234,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity() {
+    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity() {
         List<OrganizationEntity> orgs = orgRepo.findYeshteryOrganizations();
         List<YeshteryUserEntity> yeshteryUsers = userRepository.findAll();
+        int count = 0;
         if (yeshteryUsers.isEmpty())
-            return;
+            return count;
         for(OrganizationEntity org : orgs) {
             for (YeshteryUserEntity yeshteryUser : yeshteryUsers) {
                 Optional<UserEntity> optionalUser = nasNavUserRepository.findByEmailAndOrganizationId(yeshteryUser.getEmail(), org.getId());
@@ -260,10 +261,13 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 user.setYeshteryUserId(yeshteryUser.getId());
                 try {
                     nasNavUserRepository.saveAndFlush(user);
+                    count++;
                 } catch (Exception e) {
+                    logger.error("couldn't create/link user with email :"+user.getEmail()+" and org :"+user.getOrganizationId()+", error"+e.getMessage());
                 }
             }
         }
+        return count;
     }
 
     private void  createNewYeshtryUserForOrg(UserDTOs.UserRegistrationObjectV2 userJson, OrganizationEntity org, Long referencedUserId) {

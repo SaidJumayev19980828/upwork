@@ -24,5 +24,5 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);
     List<UserRepresentationObject> getUserList();
 
-    void linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
+    int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
 }
