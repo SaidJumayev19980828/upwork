@@ -120,7 +120,7 @@ public class PaymobService {
     }
 
 
-    public String payMobCardInit(MetaOrderEntity metaOrder) throws BusinessException {
+    public LinkedHashMap<String, String> payMobCardInit(MetaOrderEntity metaOrder) throws BusinessException {
 
         long metaOrderId = metaOrder.getId();
         OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
@@ -152,7 +152,7 @@ public class PaymobService {
         }
         if (!Objects.isNull(paymentToken)) {
             if(!sourceEntity.getType().equalsIgnoreCase("CARD")) {
-                return pay(paymentToken, authToken, metaOrder, sourceEntity);
+                return pay(paymentToken, sourceEntity);
             } else {
                 return getInitJson(sourceEntity, paymentToken);
             }
@@ -161,13 +161,13 @@ public class PaymobService {
         throw new BusinessException("Couldn't generate payment", "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
      }
 
-    private String getInitJson(PaymobSourceEntity sourceEntity, TokenResponse paymentToken){
+    private LinkedHashMap<String, String> getInitJson(PaymobSourceEntity sourceEntity, TokenResponse paymentToken){
         LinkedHashMap<String, String> map = new LinkedHashMap();
 
         map.put("iframe_url", getIframeUrl(sourceEntity, paymentToken));
         map.put("token", paymentToken.getToken());
 
-        return writeMapAsJson(map);
+        return map;
     }
 
     private String getIframeUrl(PaymobSourceEntity sourceEntity, TokenResponse paymentToken) {
@@ -180,17 +180,7 @@ public class PaymobService {
         return iFrameUrl.toString();
     }
 
-    private String writeMapAsJson(Map<? extends Object, ? extends Object> map){
-        ObjectMapper mapper = new ObjectMapper();
-
-        try {
-            return mapper.writeValueAsString(map);
-        } catch (JsonProcessingException e) {
-           return null;
-        }
-    }
-
-    private String pay(TokenResponse paymentToken, TokenResponse authToken, MetaOrderEntity metaOrder, PaymobSourceEntity sourceEntity) throws BusinessException {
+    private LinkedHashMap<String, String> pay(TokenResponse paymentToken, PaymobSourceEntity sourceEntity) throws BusinessException {
 
         JSONObject sourceJson = new JSONObject();
         sourceJson.put("identifier", sourceEntity.getIdentifier());
@@ -220,7 +210,10 @@ public class PaymobService {
                 throw new BusinessException(errorResponse, "PAYMENT_UNRECOGNIZED_RESPONSE", org.springframework.http.HttpStatus.BAD_GATEWAY);
             }
             String resBody = readInputStream(response.getEntity().getContent());
-            return "{\"token\":\""+paymentToken.getToken()+"\", \"data\":"+resBody+"}";
+            LinkedHashMap<String, String> responseMap = new LinkedHashMap<>();
+            responseMap.put("token", paymentToken.getToken());
+            responseMap.put("data", resBody);
+            return responseMap;
         } catch (Exception ex) {
             throw new BusinessException(ex.getMessage(), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
         }

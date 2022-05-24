@@ -19,9 +19,6 @@ public class PayMobAccount extends Account {
     protected String icon;
 
     public PayMobAccount(@NonNull Properties props, int dbId) {
-        if (props == null) {
-            return;
-        }
         setup(props);
         super.accountId = "PayMob";
         super.dbId = dbId;
@@ -34,7 +31,6 @@ public class PayMobAccount extends Account {
         this.paymentKeyUrl = this.apiUrl + "/acceptance/payment_keys";
 
         this.icon = "/icons/paymob.svg";
-
     }
 
 
