@@ -465,6 +465,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 .stream()
                 .map(OrdersEntity::getMetaOrder)
                 .map(MetaOrderEntity::getSubMetaOrder)
+                .filter(Objects::nonNull)
                 .map(MetaOrderEntity::getId)
                 .collect(toSet());
         List<LoyaltyPointTransactionEntity> ordersTransactions = loyaltyPointTransRepo.findByOrderIdInOrYeshteryMetaOrderIdIn(orderIds, metaOrderIds);

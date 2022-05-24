@@ -21,4 +21,8 @@ public class ProductImageBulkUpdateDTO{
 	public ProductImageBulkUpdateDTO() {
 		ignoreErrors = false;
 	}
+
+	public ProductImageBulkUpdateDTO(boolean ignoreErrors) {
+		this.ignoreErrors = ignoreErrors;
+	}
 }

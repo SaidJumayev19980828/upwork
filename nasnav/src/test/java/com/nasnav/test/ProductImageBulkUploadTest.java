@@ -889,7 +889,7 @@ public class ProductImageBulkUploadTest extends AbstractTestWithTempBaseDir {
 
 		metaData.put("type", 7);
 		metaData.put("priority", 1);
-		metaData.put("ignore_errors", false);
+		metaData.put("ignore_errors", true);
 		metaData.put("feature_id", 234);
 
 		return metaData;
