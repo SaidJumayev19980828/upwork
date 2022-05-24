@@ -26,7 +26,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -79,9 +78,12 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 			lines = readImpDataLines(sheet);
 
 			wb.close();
+		} catch (ImportProductException ex){
+			logger.error(ex);
+			throw new ImportProductException(ex, ex.getContext());
 		} catch (Exception e) {
 			logger.error(e);
-			throw  new ImportProductException(e, initialContext);
+			throw new ImportProductException(e, initialContext);
 		}
 
 		return lines;
@@ -95,9 +97,10 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		List<String> originalHeaders = getProductImportTemplateHeaders();
 		String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
 		if(!headerNotFound.isEmpty()){
-			throw new BusinessException(" Could not find fields : ["+headerNotFound+"]", "", HttpStatus.NOT_ACCEPTABLE);
+			ImportProductContext context = new ImportProductContext();
+			context.logNewError("The following table header(s) not found : [ " + headerNotFound + " ]", 1);
+			throw new ImportProductException(context);
 		}
-
 	}
 
 	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
