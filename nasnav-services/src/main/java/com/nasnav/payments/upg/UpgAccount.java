@@ -2,6 +2,7 @@ package com.nasnav.payments.upg;
 
 import com.nasnav.payments.Account;
 import lombok.Getter;
+import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
@@ -20,7 +21,7 @@ public class UpgAccount extends Account {
 //    protected String upgCallbackUrl;
     protected String icon;
 
-    public void init(Properties props) {
+    public void init(@NonNull Properties props) {
         super.setup(props);
         this.upgMerchantId = props.getProperty("upg.mid");
         this.upgTerminalId = props.getProperty("upg.tid");

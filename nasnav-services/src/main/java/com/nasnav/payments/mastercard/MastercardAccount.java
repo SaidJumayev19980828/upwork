@@ -2,6 +2,7 @@ package com.nasnav.payments.mastercard;
 
 import com.nasnav.payments.Account;
 import lombok.Getter;
+import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
@@ -19,7 +20,7 @@ public class MastercardAccount extends Account {
     protected String icon;
     protected int flavor = MastercardService.FLAVOR_BASIC;
 
-    public synchronized void init(Properties props, int dbId) {
+    public synchronized void init(@NonNull Properties props, int dbId) {
 
         super.setup(props);
         this.merchantId = props.getProperty("mcard.merchant_id");

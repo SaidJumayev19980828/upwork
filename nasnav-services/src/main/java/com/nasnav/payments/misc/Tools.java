@@ -130,24 +130,18 @@ public class Tools {
 			if (propertiesDir == null || propertiesDir.equals("#")) {
 				// load file from bundled resources
 				file = "/" + accountName;
-				logger.debug("Attempting to load account properties from resource: {}", file);
-					InputStream stream = Tools.class.getClass().getResourceAsStream(file);
-					if (stream == null) {
-						stream = new FileInputStream(new File(file) );
-					}
-					logger.info("Loading account properties from resource: {}", file);
-					props = new Properties();
-					props.load(stream);
-					stream.close();
 			} else {
 				file = propertiesDir + accountName;
-				logger.debug("Attempting to load account properties from file: {}", file);
-				InputStream stream = Tools.class.getResourceAsStream(file);
-				logger.info("Loading account properties from file: {}", file);
-				props = new Properties();
-				props.load(stream);
-				stream.close();
 			}
+			logger.debug("Attempting to load account properties from resource: {}", file);
+			InputStream stream = Tools.class.getResourceAsStream(file);
+			if (stream == null) {
+				stream = new FileInputStream(file);
+			}
+			logger.info("Loading account properties from resource: {}", file);
+			props = new Properties();
+			props.load(stream);
+			stream.close();
 		} catch (IOException e) {
 			logger.error("Unable to load account property: {}, {}", file, e.getMessage());
 		}
