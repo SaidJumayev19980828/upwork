@@ -35,7 +35,7 @@ public class PaymentControllerPayMob {
     @Autowired
     private PaymobService paymobService;
 
-    @PostMapping(value = "card_init", produces = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "card/init", produces = APPLICATION_JSON_VALUE)
     public LinkedHashMap<String, String> cardInitialize(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
 
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(metaOrderId);
@@ -48,7 +48,7 @@ public class PaymentControllerPayMob {
 
 
 
-    @PostMapping("card_confirm")
+    @PostMapping("card/confirm")
     public ResponseEntity<String> cardConfirm(@RequestParam(name = "token") String uid) throws BusinessException {
 
         RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, true);
