@@ -30,8 +30,8 @@ public class PaymentControllerPayMob {
     @Autowired
     private PaymobService paymobService;
 
-    @PostMapping("init")
-    public String init(@RequestParam(name = "order_id") Long metaOrderId, @RequestBody PaymobSource source) throws BusinessException {
+    @PostMapping("card_init")
+    public String init(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
 
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(metaOrderId);
         if (metaOrder.isEmpty()) {
@@ -42,7 +42,7 @@ public class PaymentControllerPayMob {
     }
 
 
-    @PostMapping("confirm")
+    @PostMapping("card_confirm")
     public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
             RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, false);
             return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
