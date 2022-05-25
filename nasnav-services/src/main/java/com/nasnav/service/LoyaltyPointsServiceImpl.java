@@ -27,7 +27,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.Settings.RETURN_DAYS_LIMIT;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.service.OrderReturnServiceImpl.MAX_RETURN_TIME_WINDOW;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -63,7 +65,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Autowired
     private OrganizationRepository organizationRepository;
-
+    @Autowired
+    private SettingRepository settingRepo;
     @Autowired
     private LoyaltyPinsRepository loyaltyPinsRepository;
 
@@ -339,24 +342,40 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user,
+    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org,
+                                                                     UserEntity user,
                                                                      MetaOrderEntity yeshteryMetaOrder,
                                                                      OrdersEntity order, BigDecimal points,
                                                                      BigDecimal amount, Integer expiry) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
+        entity.setAmount(amount);
         entity.setShop(shop);
         entity.setIsValid(true);
         entity.setUser(user);
         entity.setOrder(order);
         entity.setMetaOrder(yeshteryMetaOrder);
-        entity.setOrganization(shop.getOrganizationEntity());
-        entity.setAmount(amount);
-        if (expiry != null) {
-            entity.setEndDate(LocalDateTime.now().plusDays(expiry));
-        }
+        entity.setOrganization(org);
+        entity.setStartDate(calculateTransactionStartDate(org));
+        entity.setEndDate(calculateTransactionEndDate(entity.getStartDate(), expiry));
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    private LocalDateTime calculateTransactionStartDate(OrganizationEntity org) {
+        int returnExpirySetting = settingRepo.findBySettingNameAndOrganization_Id(RETURN_DAYS_LIMIT.name(), org.getId())
+                .map(SettingEntity::getSettingValue)
+                .map(Integer::parseInt)
+                .orElse(MAX_RETURN_TIME_WINDOW);
+        return LocalDateTime.now().plusDays(returnExpirySetting);
+    }
+
+    private LocalDateTime calculateTransactionEndDate(LocalDateTime startDate, Integer expiry) {
+        if (expiry == null) {
+            return null;
+        }
+        LocalDateTime startDateCopy = startDate;
+        return startDateCopy.plusDays(expiry);
     }
 
     @Override
@@ -379,7 +398,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = userEntity.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(shop, userEntity, null, order, points, pointsAmount, config.getExpiry());
+        createLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, config.getExpiry());
     }
 
     @Override
@@ -393,7 +412,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = user.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(null, user, yeshteryMetaOrder, null, points, pointsAmount, config.getExpiry());
+        createLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, config.getExpiry());
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -505,6 +524,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 .stream()
                 .map(LoyaltyPointConfigEntity::getRepresentation)
                 .collect(toList());
+    }
+
+    @Override
+    public LoyaltyPointConfigDTO getLoyaltyPointActiveConfig() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, true)
+                .map(LoyaltyPointConfigEntity::getRepresentation)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0024, orgId));
     }
 
     @Override

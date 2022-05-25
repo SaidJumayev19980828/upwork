@@ -27,6 +27,9 @@ public class LoyaltyPointTransactionEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "start_date")
+    private LocalDateTime startDate;
+
     @Column(name = "end_date")
     private LocalDateTime endDate;
 

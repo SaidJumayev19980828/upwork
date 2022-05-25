@@ -193,6 +193,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0021("No tier found for user with id [%d]!")
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
+	,ORG$LOY$0024("No active config for org with id [%d] !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

@@ -26,7 +26,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointDeleteResponse deleteLoyaltyPoint(Long id);
     LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id);
     LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id);
-    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, MetaOrderEntity yeshteryMetaOrder,
+    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org, UserEntity user, MetaOrderEntity yeshteryMetaOrder,
                                                               OrdersEntity order, BigDecimal points, BigDecimal amount, Integer expiry);
     void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createYeshteryLoyaltyPointTransaction(MetaOrderEntity yeshteryMetaOrder, BigDecimal pointsAmount);
@@ -35,6 +35,7 @@ public interface LoyaltyPointsService {
     List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
+    LoyaltyPointConfigDTO getLoyaltyPointActiveConfig();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
     void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
