@@ -29,7 +29,7 @@ public class OrdersFiltersResponse {
 
         long count = shops
                        .stream()
-                       .filter(s -> shop.getId().equals(shop.getId()))
+                       .filter(s -> s.getId().equals(shop.getId()))
                        .count();
 
         if(count == 0)
