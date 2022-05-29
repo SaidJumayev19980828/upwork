@@ -28,8 +28,8 @@ public class AppConfig {
     @Value("${environment.hostname}")   public String environmentHostName;
     @Value("${email.url.emp_recover}")  public String empMailRecoveryUrl = "";
 
-    @Value("openvidu_url") public String openViduUrl = "";
-    @Value("openvidu_secret") public String openViduSecret = "";
+    @Value("${openvidu.url}") public String openViduUrl = "";
+    @Value("${openvidu.secret}") public String openViduSecret = "";
 
 
     @Value("${files.basepath}")
