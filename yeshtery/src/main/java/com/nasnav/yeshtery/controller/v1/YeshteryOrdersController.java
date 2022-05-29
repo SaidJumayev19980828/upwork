@@ -1,9 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.ReturnRequestSearchParams;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
@@ -82,6 +79,13 @@ public class YeshteryOrdersController {
 											@RequestHeader(name = "User-Token", required = false) String userToken,
 											OrderSearchParam params) throws BusinessException {
 		return  orderService.getYeshteryOrdersList(params);
+	}
+
+	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)
+	public OrdersFiltersResponse getOrdersFilters(
+										@RequestHeader(name = "User-Token", required = false) String userToken,
+										OrderSearchParam orderSearchParam) throws BusinessException {
+		return orderService.getOrdersAvailableFilters(orderSearchParam, 1);
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)

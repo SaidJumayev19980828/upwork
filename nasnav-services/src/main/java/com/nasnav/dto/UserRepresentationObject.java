@@ -3,7 +3,6 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.nasnav.persistence.UserEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -35,6 +34,7 @@ public class UserRepresentationObject {
     public LocalDateTime dateOfBirth;
     public LocalDateTime tierCreatedAt;
     public Long boosterId;
+    public String referral;
 
     public String getReferral() {
         return  "ref" + id;

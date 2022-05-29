@@ -10,6 +10,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
+import com.nasnav.dto.OrdersFiltersResponse;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
@@ -25,6 +26,7 @@ import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -501,13 +503,25 @@ public class OrderServiceTest {
 		return mapper
 				.readValue(response.getBody(), new TypeReference<List<DetailedOrderRepObject>>() {});
 	}
-	
-	
-	
 
-	
-	
-	
+	@Ignore("Because of deserialization problem")
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_15.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOrdersFiltersForOrg_1(){
+		ResponseEntity<OrdersFiltersResponse> response = sendGetFiltersRequest("161718");
+		OrdersFiltersResponse responseBody = response.getBody();
+
+		assertEquals(new BigDecimal(500), responseBody.getPrices().getMinPrice());
+		assertEquals(new BigDecimal(900), responseBody.getPrices().getMaxPrice());
+	}
+
+	private ResponseEntity<OrdersFiltersResponse> sendGetFiltersRequest(String token){
+
+		return template.exchange("/order/filters?details_level=3", GET,
+					getHttpEntity(token), OrdersFiltersResponse.class);
+	}
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})

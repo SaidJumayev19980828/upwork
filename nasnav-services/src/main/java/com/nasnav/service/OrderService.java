@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
@@ -58,7 +56,9 @@ public interface OrderService {
 	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id, boolean yeshteryMetaorder);
+
 	Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder);
+
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	 OrderValue getMetaOrderTotalValue(long metaOrderId);
@@ -76,12 +76,18 @@ public interface OrderService {
 	Order createOrder(CartCheckoutDTO dto);
 
 	Integer countOrdersByUserId(Long userId);
+
 	String trackOrder(Long orderId);
 
 	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
 	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
+
+	OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam, Integer yeshteryState) throws BusinessException;
+
 	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
+
 	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
+
 	Order createYeshteryOrder(CartCheckoutDTO dto);
 }
