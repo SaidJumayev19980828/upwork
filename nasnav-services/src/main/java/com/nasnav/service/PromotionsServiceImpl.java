@@ -401,6 +401,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 			}
 			case PROMO_CODE_FROM_PRODUCT: {
 				validatePromoProductsConstraint(promotion);
+				validatePromoCodeConstraint(promotion);
 				break;
 			}
 			case BUY_X_GET_Y_FROM_BRAND: {
@@ -456,7 +457,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 		if (isBlankOrNull(brands)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_BRANDS, promotion.getIdentifier());
 		}
-		validatePromoCodeConstraint(promotion);
 	}
 
 	private void validatePromoTagsConstraint(PromotionDTO promotion) {
@@ -464,7 +464,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 		if (isBlankOrNull(tags)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_TAGS, promotion.getIdentifier());
 		}
-		validatePromoCodeConstraint(promotion);
 	}
 
 	private void validatePromoProductsConstraint(PromotionDTO promotion) {
@@ -472,7 +471,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 		if (isBlankOrNull(products)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0015, ALLOWED_PRODUCTS, promotion.getIdentifier());
 		}
-		validatePromoCodeConstraint(promotion);
 	}
 
 	private void validatePromoBuyXGetYConstraints(PromotionDTO promotion) {
