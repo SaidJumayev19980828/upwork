@@ -237,7 +237,7 @@ public class ProductsController {
         params.setShopId(shopId);
         params.setCheckVariants(false);
         params.setIncludeOutOfStock(true);
-        params.setOnlyYeshteryProducts(false);
+        params.setOnlyYeshteryProducts(true);
         return productService.getProduct(params);
     }
 

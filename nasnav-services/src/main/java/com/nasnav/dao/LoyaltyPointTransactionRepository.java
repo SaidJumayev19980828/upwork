@@ -18,8 +18,20 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId); // used for listing transactions only
 
+    @Query("select t from LoyaltyPointTransactionEntity t " +
+            " join LoyaltySpentTransactionEntity s on s.transaction = t" +
+            " where t.isValid = true and t.id in :ids and t.user.id = :userId and t.organization.id = :orgId" +
+            " and t.points > s.reverseTransaction.points" +
+            " and t.startDate <= now()" +
+            " and (t.endDate is null or t.endDate <= now())" +
+            " order by t.endDate desc")
+    List<LoyaltyPointTransactionEntity> getTransactionsByIdInAndUserIdAndOrgId(@Param("ids") Set<Long> ids,
+                                                                               @Param("userId") Long userId,
+                                                                               @Param("orgId") Long orgId);
+
     @Query("select sum(t.points) from LoyaltyPointTransactionEntity t " +
             " where t.isValid = true and t.shop.allowOtherPoints = true and t.user.id = :userId" +
+            " and t.startDate <= now()" +
             " and (t.endDate is null or t.endDate <= now())")
     Integer findAllRedeemablePoints(@Param("userId") Long userId);
 
@@ -28,7 +40,8 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
             " inner join t.organization o" +
             " left join o.images image" +
             " where t.isValid = true and t.organization.id = t.user.organizationId" +
-            " and (t.endDate is null or t.endDate <= now())" +
+            " and t.startDate <= now()" +
+            " and (t.endDate is null or t.endDate >= now())" +
             " and t.user.id in (select u.id from UserEntity u where u.yeshteryUserId = :yeshteryUserId)" +
             " and image.type = 1 and image.shopsEntity is null " +
             " group by o.id, image.uri")
@@ -36,13 +49,15 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
 
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t" +
             " where t.isValid = true and t.organization.id = :orgId and t.user.id = :userId" +
-            " and (t.endDate is null or t.endDate <= now())")
+            " and t.startDate <= now()" +
+            " and (t.endDate is null or t.endDate >= now())")
     Integer findOrgRedeemablePoints(@Param("userId") Long userId,
                                     @Param("orgId") Long orgId);
 
     @Query("select COALESCE(sum(t.points), 0) from LoyaltyPointTransactionEntity t INNER JOIN UserEntity u " +
             " on u = t.user where t.isValid = true and t.organization.id = :orgId and u.yeshteryUserId = :yeshteryUserId" +
-            " and (t.endDate is null or t.endDate <= now())")
+            " and t.startDate <= now()" +
+            " and (t.endDate is null or t.endDate >= now())")
     Integer findOrgRedeemablePointsByOrgAndYeshteryUserId(@Param("yeshteryUserId") Long yeshteryUserId,
                                                           @Param("orgId") Long orgId);
     @Query("select t from LoyaltyPointTransactionEntity t where t.order.id in :orderIds or t.metaOrder.id in :metaOrderIds")

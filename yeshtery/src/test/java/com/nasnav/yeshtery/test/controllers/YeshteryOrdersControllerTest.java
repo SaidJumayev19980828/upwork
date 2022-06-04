@@ -837,7 +837,7 @@ public class YeshteryOrdersControllerTest {
     public void getReturnRequestsInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("101112");
         ResponseEntity<String> response = template.exchange(YESHTERY_ORDER_RETURN_REQUESTS_API_PATH, GET, request, String.class);
-        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
+        Assert.assertEquals(403, response.getStatusCodeValue());
     }
 
     @Test
@@ -879,7 +879,7 @@ public class YeshteryOrdersControllerTest {
     public void getReturnRequestInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("192021");
         ResponseEntity<ReturnRequestDTO> response = template.exchange(YESHTERY_ORDER_RETURN_REQUEST_API_PATH + "?id=330031", GET, request, ReturnRequestDTO.class);
-        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
+        Assert.assertEquals(403, response.getStatusCodeValue());
     }
 
     @Test
@@ -1257,7 +1257,7 @@ public class YeshteryOrdersControllerTest {
         HttpEntity<?> request = getHttpEntity("101112");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
+        Assert.assertEquals(403, res.getStatusCodeValue());
     }
 
     @Test
@@ -1682,8 +1682,8 @@ public class YeshteryOrdersControllerTest {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void orderCancelCompleteCycle() throws BusinessException {
 
-        addCartItems(88L, 602L, 2);
-        addCartItems(88L, 604L, 1);
+        addCartItems(88L, 602L, 2, null);
+        addCartItems(88L, 604L, 1, null);
 
         //checkout
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
@@ -1700,10 +1700,41 @@ public class YeshteryOrdersControllerTest {
 
     }
 
-    private void addCartItems(Long userId, Long stockId, Integer quantity) {
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_13.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void userOptainPointsThroughOrder() {
+
+        addCartItems(88L, 601L, 1, 99001L);
+        addCartItems(88L, 602L, 1, 99002L);
+
+        JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+        Order order = checkOutCart(requestBody, new BigDecimal("850.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
+        Long metaOrderId = order.getOrderId();
+        List<Long> orderIds = order.getSubOrders().stream().map(SubOrder::getSubOrderId).collect(toList());
+
+        MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
+        Set<OrdersEntity> subOrders = new HashSet<>(orderRepository.findByIdIn(orderIds));
+        orderService.finalizeYeshteryMetaOrder(metaOrder, subOrders);
+
+        //confirm first suborder
+        HttpEntity<?> request = getHttpEntity("131415");
+        Long orderId = orderIds.get(0);
+        ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + orderId, request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        //confirm second suborder
+        request = getHttpEntity("161718");
+        orderId = orderIds.get(1);
+        res = template.postForEntity(YESHTERY_ORDER_CONFIRM_API_PATH + "?order_id=" + orderId, request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+    }
+
+    private void addCartItems(Long userId, Long stockId, Integer quantity, Long orgId) {
         var itemsCountBefore = cartItemRepo.countByUser_Id(userId);
 
-        JSONObject item = createCartItem(stockId, quantity);
+        JSONObject item = createCartItem(stockId, quantity, orgId);
 
         HttpEntity<?> request = getHttpEntity(item.toString(), "123");
         ResponseEntity<Cart> response =
@@ -1716,24 +1747,23 @@ public class YeshteryOrdersControllerTest {
     private JSONObject createCartCheckoutBodyForCompleteCycleTest() {
         JSONObject body = new JSONObject();
         Map<String, String> additionalData = new HashMap<>();
+        Set<Long> points = Set.of(99901L, 99902L);
         body.put("customer_address", 12300001);
         body.put("shipping_service_id", SERVICE_ID);
         body.put("additional_data", additionalData);
         body.put("notes", "come after dinner");
+        body.put("points", points);
         return body;
     }
 
-    private JSONObject createCartItem(Long stockId, Integer quantity) {
+    private JSONObject createCartItem(Long stockId, Integer quantity, Long orgId) {
         JSONObject item = new JSONObject();
         item.put("stock_id", stockId);
         item.put("cover_img", "img");
         item.put("quantity", quantity);
+        item.put("org_id", orgId);
 
         return item;
-    }
-
-    private JSONObject createCartItem() {
-        return createCartItem(606L, 1);
     }
 
     private void assertOrderCanceled(Long metaOrderId) {
@@ -1762,9 +1792,9 @@ public class YeshteryOrdersControllerTest {
         BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
 
         assertTrue(order.getOrderId() != null);
-        Assert.assertEquals(0, shippingFee.compareTo(order.getShipping()));
-        Assert.assertEquals(0, subTotal.compareTo(order.getSubtotal()));
-        Assert.assertEquals(0, total.compareTo(order.getTotal()));
+        Assert.assertEquals(shippingFee, order.getShipping());
+        Assert.assertEquals(subTotal, order.getSubtotal());
+        Assert.assertEquals(total, order.getTotal());
         Assert.assertEquals(0, order.getShipping().compareTo(subOrderShippingSum));
         Assert.assertEquals(0, order.getSubtotal().compareTo(subOrderSubtTotalSum));
         Assert.assertEquals(0, order.getTotal().compareTo(subOrderTotalSum));

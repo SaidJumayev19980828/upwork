@@ -639,7 +639,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var calculators =  getPromoCalculators(promoCode, orgId);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
-		List<Map<String, Object>> appliedPromosData = new ArrayList<>();
+		List<AppliedPromo> appliedPromosData = new ArrayList<>();
 		for(var calc: calculators){
 			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
 			var result = calc.getCalcFunction().apply(info);
@@ -653,10 +653,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 				discountAccumulator = discountAccumulator.add(calculatorDiscount);
 				String promoName = ofNullable(calc.getPromoEntity().getCode())
 						.orElse(calc.getPromoEntity().getIdentifier());
-				Map<String, Object> appliedPromoData = new HashMap<>();
-				appliedPromoData.put("promo_name", promoName);
-				appliedPromoData.put("applied_items", result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
-				appliedPromoData.put("discount", calculatorDiscount);
+				AppliedPromo appliedPromoData = new AppliedPromo();
+				appliedPromoData.setEntity(calc.getPromoEntity());
+				appliedPromoData.setPromoName(promoName);
+				appliedPromoData.setAppliedItems(result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
+				appliedPromoData.setDiscount(calculatorDiscount);
 				appliedPromosData.add(appliedPromoData);
 			}
 

@@ -19,19 +19,14 @@ public class LoyaltySpentTransactionEntity {
 	private Long id;
 
 	@OneToOne(fetch = LAZY)
-	@JsonIgnore
-	@EqualsAndHashCode.Exclude
-	@lombok.ToString.Exclude
-	private OrdersEntity order;
-
-	@OneToOne(fetch = LAZY)
+	@JoinColumn(name="transaction_id", referencedColumnName = "id")
 	@JsonIgnore
 	@EqualsAndHashCode.Exclude
 	@lombok.ToString.Exclude
 	private LoyaltyPointTransactionEntity transaction;
 
 	@OneToOne(fetch = LAZY)
-	@JoinColumn(name="meta_order_id", referencedColumnName = "id")
+	@JoinColumn(name="reverse_transaction_id", referencedColumnName = "id")
 	@JsonIgnore
 	@EqualsAndHashCode.Exclude
 	@lombok.ToString.Exclude

@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
@@ -16,6 +17,7 @@ import com.nasnav.response.LoyaltyUserPointsResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 public interface LoyaltyPointsService {
 
@@ -50,4 +52,6 @@ public interface LoyaltyPointsService {
     String generateUserShopPinCode(Long shopId);
 
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
+
+    SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, Long userId, OrganizationEntity org);
 }

@@ -8,7 +8,6 @@ create Table loyalty_spent_transactions (
      id bigserial not null Primary Key,
      transaction_id bigint not null References loyalty_point_transactions(id),
      reverse_transaction_id bigint not null References loyalty_point_transactions(id),
-     order_id bigint null References orders(id),
      meta_order_id bigint null References meta_orders(id)
 );
 

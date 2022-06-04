@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
@@ -324,7 +325,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             if (config == null) {
                 continue;
             }
-            LoyaltyTierDTO tier = getLoyaltyTierDTO(user.get());
+            LoyaltyTierEntity tier = user.get().getTier();
 
             if(anyIsNull(points, tier, tier.getCoefficient())) {
                 continue;
@@ -541,6 +542,61 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0007, code));
         Integer availablePoints = getAvailablePoints(shop, user);
         return getRedeemOffers(user.getOrganizationId(), availablePoints);
+    }
+
+    @Override
+    public SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, Long userId, OrganizationEntity org) {
+        UserEntity user = userRepo.findById(userId).get();
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), true)
+                .orElse(null);
+        if (config == null) {
+            return new SpentPointsInfo();
+        }
+        BigDecimal to = config.getRatioTo();
+        BigDecimal from = config.getRatioFrom();
+        BigDecimal total = ZERO;
+        BigDecimal pointsAmount = ZERO;
+        BigDecimal totalWithoutShipping =
+                subOrders
+                        .stream()
+                        .map(o -> o.getAmount().subtract(o.getDiscounts()))
+                        .reduce(ZERO, BigDecimal::add);
+
+        List<LoyaltyPointTransactionEntity> earnedPoints = loyaltyPointTransRepo.getTransactionsByIdInAndUserIdAndOrgId(points, userId, org.getId());
+        List<LoyaltyPointTransactionEntity> spentPoints = new ArrayList<>();
+        List<LoyaltySpentTransactionEntity> spentPointsRef = new ArrayList<>();
+        for (LoyaltyPointTransactionEntity earnedPoint : earnedPoints) {
+            BigDecimal tmp = (earnedPoint.getPoints().multiply(to)).divide(from);
+            if (totalWithoutShipping.subtract(total.add(tmp)).compareTo(ZERO) >= 0) {
+                total = total.add(tmp);
+                pointsAmount = earnedPoint.getPoints();
+            }
+            else if (total.compareTo(totalWithoutShipping) >= 0) {
+                break;
+            }
+            else {
+                tmp = totalWithoutShipping.subtract(total);
+                total = total.add(tmp);
+                pointsAmount = tmp.multiply(from).divide(to);
+            }
+            LoyaltyPointTransactionEntity spendPoint = new LoyaltyPointTransactionEntity();
+            spendPoint.setStartDate(earnedPoint.getStartDate());
+            spendPoint.setEndDate(earnedPoint.getEndDate());
+            spendPoint.setOrganization(org);
+            spendPoint.setUser(user);
+            spendPoint.setIsValid(true);
+            spendPoint.setPoints(pointsAmount);
+
+            LoyaltySpentTransactionEntity spentPointRef = new LoyaltySpentTransactionEntity();
+            spentPointRef.setTransaction(earnedPoint);
+            spentPointRef.setReverseTransaction(spendPoint);
+
+            spentPoints.add(spendPoint);
+            spentPointsRef.add(spentPointRef);
+        }
+        BigDecimal suborderPointsDiscount = total.divide(new BigDecimal(subOrders.size()));
+        subOrders.forEach(s -> s.setDiscounts(s.getDiscounts().add(suborderPointsDiscount)));
+        return new SpentPointsInfo(spentPoints, spentPointsRef);
     }
 
     private Integer getAvailablePoints(ShopsEntity shop, UserEntity user) {
