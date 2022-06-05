@@ -54,6 +54,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Autowired
     private LoyaltyPointTransactionRepository loyaltyPointTransRepo;
+    @Autowired
+    private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
 
     @Autowired
     private LoyaltyPointConfigRepository loyaltyPointConfigRepo;

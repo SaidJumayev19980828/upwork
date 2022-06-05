@@ -715,12 +715,11 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private List<LoyaltyOrderDetailDTO> getOrderPoints(OrdersEntity order) {
-		List<LoyaltyPointTransactionEntity>  points = loyaltyPointTransactionRepository.findByOrder_Id(order.getId());
+		return loyaltyPointTransactionRepository.findByOrder_Id(order.getId())
+				.map(p -> new LoyaltyOrderDetailDTO(p.getAmount(), p.getPoints()))
+				.map(p -> List.of(p))
+				.orElse(emptyList());
 
-		return points
-				.stream()
-				.map(point -> new LoyaltyOrderDetailDTO(point.getAmount(), point.getPoints()))
-				.collect(Collectors.toList());
 	}
 
 	private void setOrderSummary(OrdersEntity entity, DetailedOrderRepObject obj) {
@@ -1247,12 +1246,14 @@ public class OrderServiceImpl implements OrderService {
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
 
+		BigDecimal orderValueWithoutShipping = order.getAmount().subtract(order.getDiscounts());
+
 		if (metaOrder.getSubMetaOrder() != null) {
 			MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
-			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, yeshteryMetaOrder.getGrandTotal());
+			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, orderValueWithoutShipping);
 		}
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getAmount());
+		loyaltyPointsService.createLoyaltyPointTransaction(order, orderValueWithoutShipping);
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
@@ -1265,8 +1266,20 @@ public class OrderServiceImpl implements OrderService {
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CANCELLED);
 
+		removeSpentPointTransactionOnOrder(order);
 	}
 
+	@Transactional
+	private void removeSpentPointTransactionOnOrder(OrdersEntity order) {
+		Optional<LoyaltyPointTransactionEntity> transaction = loyaltyPointTransactionRepository.findByOrder_Id(order.getId());
+		if (transaction.isEmpty())
+			return;
+		Optional<LoyaltySpentTransactionEntity> spentRef = loyaltySpendTransactionRepo.findByTransaction_Id(transaction.get().getId());
+		if (spentRef.isEmpty())
+			return;
+		loyaltyPointTransactionRepository.delete(spentRef.get().getReverseTransaction());
+		loyaltySpendTransactionRepo.delete(spentRef.get());
+	}
 	private void saveShipmentTracker(ShipmentTracker tracker, OrdersEntity order) {
 		ShipmentEntity shipment =
 				ofNullable(order)
@@ -2371,6 +2384,9 @@ public class OrderServiceImpl implements OrderService {
 		validateOrderForCancellation(metaOrders);
 
 		cancelMetaOrderAndSubOrders(metaOrders);
+
+		subOrders.forEach(this::removeSpentPointTransactionOnOrder);
+
 		try {
 			subOrders.forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
 		}catch(Throwable t) {

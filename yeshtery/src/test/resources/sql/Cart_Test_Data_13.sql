@@ -41,15 +41,24 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUE
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99002, 12300001);
 
 --loyalty data
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id)
-    VALUES (1, 'default_tier', true, now(), 99001);
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id)
-    VALUES (2, 'default_tier for org 2', true, now(), 99002);
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
+    VALUES (1, 'default_tier', true, now(), 99001, 0.05);
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
+    VALUES (2, 'default_tier for org 2', true, now(), 99002, 0.05);
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
+    VALUES (3, 'default_tier for org 3', true, now(), 99003, 0.05);
 
 insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
     values (31001, 'desctiption', 99001, null, true, now(), 7, 1, 0.5, 1, null);
 insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
     values (31002, 'desctiption', 99002, null, true, now(), 7, 1, 0.5, 2, null);
+insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
+    values (31003, 'desctiption', 99003, null, true, now(), 7, 1, 0.5, 3, null);
+
+INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
+    VALUES (99001, 'RETURN_DAYS_LIMIT', '0', 99001, 0);
+INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
+    VALUES (99002, 'RETURN_DAYS_LIMIT', '0', 99002, 0);
 
 --insering employees
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -64,20 +73,21 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '161718', now(), 70, null);
 
 --inserting yeshtery users
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-VALUES (808, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id, tier_id)
+VALUES (808, 'test4@nasnav.com','user1','123', 99003, 3);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id, tier_id)
 VALUES (88, 'test2@nasnav.com','user1','123', 99001, 808, 1);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id, tier_id)
 VALUES (89, 'test3@nasnav.com','user2','456', 99002, 808, 2);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
-VALUES (90, 'test4@nasnav.com','user2','789', 99003, 808);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id, tier_id)
+VALUES (90, 'test4@nasnav.com','user2','789', 99003, 808, 3);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, '789', now(), null, 90);
 
 
 --inserting Roles
@@ -155,3 +165,5 @@ INSERT into public.organization_payments(id,organization_id ,gateway, account )
 values(100025, 99001, 'cod', 'dummy');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses values(12300002, 89, 12300001, false);
+INSERT INTO public.User_addresses values(12300003, 90, 12300001, false);

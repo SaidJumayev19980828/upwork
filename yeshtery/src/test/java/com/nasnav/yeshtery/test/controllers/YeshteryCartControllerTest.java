@@ -488,7 +488,7 @@ public class YeshteryCartControllerTest {
                 .flatMap(List::stream)
                 .map(BasketItem::getId)
                 .collect(
-                        collectingAndThen(toList(), ids -> basketRepo.findByIdIn(ids, 99001L)))
+                        collectingAndThen(toList(), ids -> basketRepo.findByIdIn(ids)))
                 .stream()
                 .map(BasketsEntity::getItemData)
                 .map(this::parseAsBasketItem)
