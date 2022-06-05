@@ -57,7 +57,9 @@ public interface CsvExcelDataImportService {
 													.put("barcode", "barcode")
 													.put("productName", "product_name")
 													.put("productId", "product_id")
+													.put("imagePath", "image_path")
 													.build();
+
 	Map<String, String> PRODUCT_DATA_SPECIAL_MAPPING = MapBuilder.<String, String>map()
 									.put("variant_id","variantId")
 									.put("product_name","name")

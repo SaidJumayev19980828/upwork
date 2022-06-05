@@ -227,8 +227,8 @@ public class NavboxController {
 	}
 
 	@GetMapping(value = "organization/sitemap", produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<?> getOrgSiteMap(
-			@RequestHeader(name = "User-Token", required = false) String userToken, SitemapParams params) throws IOException {
+	public ResponseEntity<?> getOrgSiteMap(@RequestHeader(name = "User-Token", required = false) String userToken,
+										   SitemapParams params) throws IOException {
 		return organizationService.getOrgSiteMap(userToken, params);
 	}
 

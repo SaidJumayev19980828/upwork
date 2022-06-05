@@ -570,6 +570,9 @@ public class OrderServiceImpl implements OrderService {
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
 		Long userId = order.getUserId();
+		if (order.getMetaOrder().getSubMetaOrder() != null) {
+			userId = order.getMetaOrder().getSubMetaOrder().getUser().getId();
+		}
 		List<Long> variantIds =
 				order
 				.getBasketsEntity()
@@ -971,7 +974,8 @@ public class OrderServiceImpl implements OrderService {
 		newParams.setDetails_level( detailsLevel);
 		newParams.setUpdated_after( params.getUpdated_after() );
 		newParams.setUpdated_before( params.getUpdated_before() );
-
+		newParams.setShipping_service_id(params.getShipping_service_id());
+		newParams.setPayment_operator(params.getPayment_operator());
 		BaseUserEntity user = securityService.getCurrentUser();
 		if (user instanceof EmployeeUserEntity) {
 			newParams.setUser_id(params.getUser_id());
@@ -1041,6 +1045,7 @@ public class OrderServiceImpl implements OrderService {
 				.fetch("productVariantsEntity", LEFT)
 				.fetch("productEntity", LEFT);
 		root.fetch("organizationEntity", LEFT);
+		root.fetch("paymentEntity", LEFT);
 
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 
@@ -1069,6 +1074,12 @@ public class OrderServiceImpl implements OrderService {
 		}
 		if(params.getUpdated_before() != null) {
 			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
+		}
+		if(params.getShipping_service_id() != null){
+			predicates.add( builder.equal(root.get("shipment").get("shippingServiceId"), params.getShipping_service_id()) );
+		}
+		if(params.getPayment_operator() != null){
+			predicates.add( builder.equal(root.get("paymentEntity").get("operator"), params.getPayment_operator()) );
 		}
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
@@ -1161,7 +1172,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount) {
+	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
 		if(!isNull(pinCode)) {
@@ -1171,7 +1182,7 @@ public class OrderServiceImpl implements OrderService {
 			}
 		}
 
-		confirmSubOrderAndMetaOrder(subOrder, pointsAmount);
+		confirmSubOrderAndMetaOrder(subOrder);
 
 		return  shippingMgrService
 				.requestShipment(subOrder)
@@ -1225,16 +1236,21 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-	private void confirmSubOrderAndMetaOrder(OrdersEntity order, BigDecimal pointsAmount) {
+	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
 		updateOrderStatus(order, STORE_CONFIRMED);
-
-		loyaltyPointsService.createLoyaltyPointTransaction(order, pointsAmount);
 
 		MetaOrderEntity metaOrder = order.getMetaOrder();
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
+
+		if (metaOrder.getSubMetaOrder() != null) {
+			MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
+			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, yeshteryMetaOrder.getGrandTotal());
+		}
+
+		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getAmount());
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
@@ -1246,6 +1262,7 @@ public class OrderServiceImpl implements OrderService {
 			updateOrderStatus(metaOrder, STORE_CANCELLED);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CANCELLED);
+
 	}
 
 	private void saveShipmentTracker(ShipmentTracker tracker, OrdersEntity order) {
@@ -1383,7 +1400,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
 		CartOptimizeResponseDTO optimizationResult =
-				cartOptimizationService.optimizeCart(checkoutDto);
+				cartOptimizationService.validateAndOptimizeCart(checkoutDto);
 		if(optimizationResult.getTotalChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, " prices");
 		}
@@ -1948,7 +1965,7 @@ public class OrderServiceImpl implements OrderService {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 				.stream()
-				.map(cartItems -> createSubOrder(cartItems, address, dto, org))
+				.map(cartItems -> createSubOrder(cartItems, address, dto, org, false))
 				.collect(toSet());
 
 		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, org.getId());
@@ -1967,7 +1984,7 @@ public class OrderServiceImpl implements OrderService {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 						.stream()
-						.map(cartItems -> createSubOrder(cartItems, address, dto, org))
+						.map(cartItems -> createSubOrder(cartItems, address, dto, org, true))
 						.collect(toSet());
 		Long yeshteryOrgId = getYeshteryOrgId();
 		List<ShippingOfferDTO> shippingOffers =	getShippingOffersForCheckout(dto, subOrders, yeshteryOrgId);
@@ -2092,11 +2109,11 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private OrdersEntity createSubOrder(CartItemsForShop cartItems, AddressesEntity shippingAddress, CartCheckoutDTO dto,
-										OrganizationEntity org) {
+										OrganizationEntity org, boolean yeshteryOrder) {
 		Long orgId = org.getId();
 		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems, orgId);
 
-		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org);
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org, yeshteryOrder);
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
 		subOrder.setAmount(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
@@ -2198,9 +2215,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
-										CartItemsForShop cartItems, OrganizationEntity org) {
+	private OrdersEntity createSubOrder(AddressesEntity shippingAddress, CartItemsForShop cartItems,
+										OrganizationEntity org, boolean yeshteryOrder) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
+
+		if (yeshteryOrder) {
+			user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), org.getId())
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, org.getId()));
+		}
 
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());

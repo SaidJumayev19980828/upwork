@@ -4,10 +4,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.payments.paymob.PaymobPaymentResponse;
-import com.nasnav.payments.paymob.PaymobService;
-import com.nasnav.payments.paymob.PaymobSource;
-import com.nasnav.payments.paymob.TokenResponse;
+import com.nasnav.payments.paymob.*;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.yeshtery.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.O$0001;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -36,24 +35,27 @@ public class PaymentControllerPayMob {
     @Autowired
     private PaymobService paymobService;
 
-    @PostMapping("init")
-    public String init(@RequestParam(name = "order_id") Long metaOrderId, @RequestBody PaymobSource source) throws BusinessException {
+    @PostMapping(value = "card/init", produces = APPLICATION_JSON_VALUE)
+    public LinkedHashMap<String, String> cardInitialize(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
 
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(metaOrderId);
         if (metaOrder.isEmpty()) {
             throw new RuntimeBusinessException(NOT_FOUND, O$0001, metaOrderId);
         }
-        return paymobService.init(metaOrder.get(), source);
 
+        return paymobService.payMobCardInit(metaOrder.get());
     }
 
 
 
-    @PostMapping("confirm")
-    public ResponseEntity<String> confirm(@RequestParam(name = "uid") String uid) throws BusinessException {
+    @PostMapping("card/confirm")
+    public ResponseEntity<String> cardConfirm(@RequestParam(name = "token") String uid) throws BusinessException {
 
-        paymobService.verifyAndStore(uid, true);
-        return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+        RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, true);
+        return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
+                "\"transaction_no\":\""+data.getId()+"\"" +
+                "}", HttpStatus.OK);
+
 
     }
 

@@ -13,10 +13,6 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
     Optional<PaymentEntity> findById(long id);
     Optional<PaymentEntity> findByUid(String uid);
 
-    // TODO replace the fixed '4' PaymentStatus
-    @Query("select payments from PaymentEntity payments where payments.status=4 and payments.ordersEntity.id = :orderId order by id desc")
-    List<PaymentEntity> findRecentByOrdersEntity_Id(@Param("orderId") Long orderId);
-
     Optional<PaymentEntity> findFirstByMetaOrderId(Long orderId);
 
     Optional<PaymentEntity> findByMetaOrderId(Long orderId);

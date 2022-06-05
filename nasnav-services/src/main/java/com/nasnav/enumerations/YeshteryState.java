@@ -20,4 +20,7 @@ public enum YeshteryState {
                 .filter(n -> Objects.equals(n.getValue(), value))
                 .findFirst();
     }
+    public Integer getValue() {
+        return value;
+    }
 }

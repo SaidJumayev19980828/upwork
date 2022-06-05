@@ -1,19 +1,17 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.response.VideoChatResponse;
 import io.openvidu.java.client.OpenViduHttpException;
 import io.openvidu.java.client.OpenViduJavaClientException;
-import org.json.JSONObject;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
 public interface VideoChatService {
 
-    ResponseEntity<JSONObject> removeUser(String userToken, String sessionName);
+    VideoChatResponse getSession(String userToken, String sessionName, Long orgId) throws OpenViduHttpException, OpenViduJavaClientException;
 
-    VideoChatResponse getSession(String userToken, String sessionName) throws OpenViduHttpException, OpenViduJavaClientException;
+    List<BaseRepresentationObject> getOrgSessions(Long orgId);
 
-    List<String> getAllSessions();
-
+    void leaveSession(String sessionName, Long orgId);
 }

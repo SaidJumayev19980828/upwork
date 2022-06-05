@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
@@ -669,6 +668,79 @@ public class YeshteryOrdersControllerTest {
     }
 
     @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListWithShipmentServiceFilter() throws IOException {
+        HttpEntity request = getHttpEntity("101112");
+
+        ResponseEntity<String> response = template.exchange(
+                YESHTERY_ORDER_LIST_API_PATH + "?org_id=99001&shipping_service_id=BOSTA_LEVIS",
+                GET,
+                request,
+                String.class);
+        List<DetailedOrderRepObject> ordersList = getOrderListDetailedObject(response);
+
+        assertEquals(OK, response.getStatusCode());
+        checkOrdersHaveExpectedShippingService(ordersList);
+    }
+
+    private void checkOrdersHaveExpectedShippingService(List<DetailedOrderRepObject> resultOrdersList){
+        List<Long> expectedOrdersIds = asList(330033L, 330037L, 330041L);
+
+        resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
+        assertEquals(expectedOrdersIds.size(), resultOrdersList.size());
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListWithPaymentOperatorFilter() throws IOException {
+        HttpEntity request = getHttpEntity("101112");
+
+        ResponseEntity<String> response = template.exchange(
+                YESHTERY_ORDER_LIST_API_PATH + "?org_id=99001&payment_operator=COD",
+                GET,
+                request,
+                String.class);
+        List<DetailedOrderRepObject> ordersList = getOrderListDetailedObject(response);
+
+        assertEquals(OK, response.getStatusCode());
+        checkOrdersHaveExpectedPaymentOperator(ordersList);
+    }
+
+    private void checkOrdersHaveExpectedPaymentOperator(List<DetailedOrderRepObject> resultOrdersList){
+        List<Long> expectedOrdersIds = asList(330033L, 330037L, 330042L, 330045L);
+
+        resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
+        assertEquals(expectedOrdersIds.size(), resultOrdersList.size());
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListWithPaymentAndShippingFilters() throws IOException {
+        HttpEntity request = getHttpEntity("101112");
+
+        ResponseEntity<String> response = template.exchange(
+                YESHTERY_ORDER_LIST_API_PATH + "?org_id=99001&payment_operator=COD&shipping_service_id=BOSTA_LEVIS",
+                GET,
+                request,
+                String.class);
+        List<DetailedOrderRepObject> ordersList = getOrderListDetailedObject(response);
+
+        assertEquals(OK, response.getStatusCode());
+        checkOrdersHaveExpectedPaymentAndShipping(ordersList);
+    }
+
+    private void checkOrdersHaveExpectedPaymentAndShipping(List<DetailedOrderRepObject> resultOrdersList){
+        List<Long> expectedOrdersIds = asList(330033L, 330037L);
+
+        resultOrdersList.forEach(ord -> assertTrue(expectedOrdersIds.contains(ord.getOrderId())));
+        assertEquals(expectedOrdersIds.size(), resultOrdersList.size());
+    }
+
+
+    @Test
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getAnyOrderYeshteryAdminTest() {
@@ -819,7 +891,6 @@ public class YeshteryOrdersControllerTest {
         Assert.assertEquals(401, response.getStatusCodeValue());
     }
 
-    // TODO: Fix template "order_return_notification_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1060,7 +1131,6 @@ public class YeshteryOrdersControllerTest {
         return json().put("item_list", returnedItems);
     }
 
-    // TODO: Fix template "order_return_reject_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1076,7 +1146,6 @@ public class YeshteryOrdersControllerTest {
         assertTrue(entity.isPresent());
     }
 
-    // TODO: Fix template "order_return_reject_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_9.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1214,7 +1283,6 @@ public class YeshteryOrdersControllerTest {
     }
 
 
-    // TODO: Fix template "order_return_confirm_template.html" to make it run successfully
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_10.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -1223,7 +1291,7 @@ public class YeshteryOrdersControllerTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(NOT_ACCEPTABLE, res.getStatusCodeValue());
+        Assert.assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
     }
 
     private JSONObject createOrderStatusUpdateRequest(OrderStatus status) {

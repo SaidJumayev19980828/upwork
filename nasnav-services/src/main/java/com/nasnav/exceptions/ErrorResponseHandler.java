@@ -53,7 +53,6 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<ImportProductContext> handleImportProductException(ImportProductException e, WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , e);
-		e.getContext().logNewError(e, e.getMessage(), -1);
 		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
 	}
 	

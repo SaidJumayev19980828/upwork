@@ -21,5 +21,5 @@ public class LoyaltyTierDTO {
     private Long boosterId;
     private BigDecimal cashBackPercentage;
     private BigDecimal coefficient;
-
+    private String operation;
 }

@@ -66,6 +66,7 @@ DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
   or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;

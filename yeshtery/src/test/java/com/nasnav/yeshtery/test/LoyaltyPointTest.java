@@ -18,6 +18,7 @@ import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.yeshtery.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.nasnav.exceptions.ErrorCodes.ORG$LOY$0014;
+import static com.nasnav.yeshtery.test.commons.TestCommons.*;
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.json.JSONObject.NULL;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -83,49 +87,33 @@ public class LoyaltyPointTest {
     public void createLoyaltyPointConfig() {
 
         var body = createConfigJson()
-                .put("amount_from", NULL)
+                .put("ratio_from", NULL)
                 .toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        Long id1 = response.getBody().getLoyaltyPointId();
-        Optional<LoyaltyPointConfigEntity> config1 = configRepository.findById(id1);
-        assertTrue(config1.isPresent());
-        assertConfigValues(config1.get());
-
+        assertEquals(406, response.getStatusCodeValue());
 
         body = createConfigJson()
-                .put("amount_to", NULL)
+                .put("ratio_to", NULL)
                 .toString();
-        request = TestCommons.getHttpEntity(body, "abcdefg");
+        request = getHttpEntity(body, "abcdefg");
         response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        Long id2= response.getBody().getLoyaltyPointId();
-        Optional<LoyaltyPointConfigEntity> config2 = configRepository.findById(id2);
-        assertTrue(config2.isPresent());
-        assertConfigValues(config2.get());
+        assertEquals(406, response.getStatusCodeValue());
 
 
         body = createConfigJson()
                 .put("coefficient", NULL)
                 .toString();
-        request = TestCommons.getHttpEntity(body, "abcdefg");
+        request = getHttpEntity(body, "abcdefg");
         response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(406, response.getStatusCodeValue());
 
-        Long id3 = response.getBody().getLoyaltyPointId();
-        Optional<LoyaltyPointConfigEntity> config3 = configRepository.findById(id3);
-        assertTrue(config3.isPresent());
-        assertConfigValues(config3.get());
-
-        request = TestCommons.getHttpEntity(body, "abcdefg");
+        request = getHttpEntity(body, "abcdefg");
 
         ResponseEntity<List> responseList = template.exchange("/v1/loyalty/config/list?org_id=99001", GET, request, List.class);
 
         assertEquals(200, responseList.getStatusCodeValue());
-        assertTrue(responseList.getBody().size() == 1);
+        assertEquals(1, responseList.getBody().size());
 
     }
 
@@ -142,9 +130,8 @@ public class LoyaltyPointTest {
     @Test
     public void deleteLoyaltyConfigTest() {
         var body = createConfigJson()
-                .put("amount_from", NULL)
                 .toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
 
@@ -152,7 +139,7 @@ public class LoyaltyPointTest {
         Optional<LoyaltyPointConfigEntity> config1 = configRepository.findById(id1);
         assertTrue(config1.isPresent());
 
-        request = TestCommons.getHttpEntity("abcdefg");
+        request = getHttpEntity("abcdefg");
 
         ResponseEntity<LoyaltyPointDeleteResponse> deleteResponse = template.exchange("/v1/loyalty/config/delete?id="+id1, DELETE, request, LoyaltyPointDeleteResponse.class);
 
@@ -160,7 +147,7 @@ public class LoyaltyPointTest {
         assertEquals(id1 , deleteResponse.getBody().getLoyaltyId());
         assertTrue(deleteResponse.getBody().isSuccess());
 
-        request = TestCommons.getHttpEntity(body, "abcdefg");
+        request = getHttpEntity(body, "abcdefg");
 
         ResponseEntity<List> responseList = template.exchange("/v1/loyalty/config/list?org_id=99001", GET, request, List.class);
 
@@ -178,18 +165,18 @@ public class LoyaltyPointTest {
 
     @Test
     public void createLoyaltyPointConfigInvalidAuthN() {
-        var request = TestCommons.getHttpEntity("invalid");
+        var request = getHttpEntity("invalid");
         var response = template.postForEntity("/v1/loyalty/config/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
     private JSONObject createConfigJson() {
-        return TestCommons.json()
+        return json()
                 .put("description", "this is a configuration")
                 .put("coefficient", 0.5)
                 .put("ratio_from", 7)
                 .put("ratio_to", 1)
-                .put("org_id", 99001)
+                .put("default_tier", json().put("id", 1))
                 ;
     }
 
@@ -202,7 +189,7 @@ public class LoyaltyPointTest {
     @Test
     public void createTier(){
         String body = getTierJsonString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
@@ -213,7 +200,7 @@ public class LoyaltyPointTest {
     public void creatTierInvalidAuthZ() {
         String body = getTierJsonString();
 
-        var request = TestCommons.getHttpEntity(body, "invalid");
+        var request = getHttpEntity(body, "invalid");
         var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
@@ -222,17 +209,17 @@ public class LoyaltyPointTest {
     public void creatAndGetTier() throws JsonProcessingException {
         String body = getTierJsonString();
 
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
 
-        request = TestCommons.getHttpEntity("abcdefg");
+        request = getHttpEntity("abcdefg");
         response = template.exchange("/v1/loyalty/tier/list?org_id=99001", GET, request, String.class);
         List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        assertTrue( resBody.size() == 1);
+        assertEquals(2, resBody.size());
 
-        LoyaltyTierDTO loyaltyTierDTO = resBody.get(0);
+        LoyaltyTierDTO loyaltyTierDTO = resBody.get(1);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
         assertEquals(loyaltyTierDTO.getCoefficient(), new BigDecimal(0.8) );
@@ -242,7 +229,7 @@ public class LoyaltyPointTest {
 
 
     private String getTierJsonString() {
-        return TestCommons.json()
+        return json()
                 .put("tier_name", "tier test")
                 .put("selling_price", 10)
                 .put("org_id", 99001)
@@ -254,34 +241,15 @@ public class LoyaltyPointTest {
 
 
     @Test
-    public void changeOrgTierTest() {
-        String body = getTierJsonString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/tier/update", request, LoyaltyTierUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(tierRepository.findByTierName("tier test").isPresent());
-
-        Long id = response.getBody().getTierId();
-        var changeRequest = TestCommons.getHttpEntity("abcdefg");
-        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_org_default_tier?org_id=99001&tier_id="+id, changeRequest, LoyaltyPointConfigDTO.class);
-
-        assertEquals(200, changeResponse.getStatusCodeValue());
-        assertNotNull(changeResponse.getBody().getDefaultTier());
-        assertEquals(id , changeResponse.getBody().getDefaultTier().getId());
-
-    }
-
-
-    @Test
     public void changeUserTierTest() {
         String body = getTierJsonString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/tier/update", request, LoyaltyTierUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
 
         Long id = response.getBody().getTierId();
-        var changeRequest = TestCommons.getHttpEntity("abcdefg");
+        var changeRequest = getHttpEntity("abcdefg");
         var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
 
         assertEquals(200, changeResponse.getStatusCodeValue());
@@ -298,8 +266,8 @@ public class LoyaltyPointTest {
 
     @Test
     public void createLoyaltyPointType() {
-        String body = TestCommons.json().put("name", "test type").toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        String body = json().put("name", "test type").toString();
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getLoyaltyPointId() > 0L);
@@ -308,8 +276,8 @@ public class LoyaltyPointTest {
 
     @Test
     public void createLoyaltyPointTypeInvalidAuthZ() {
-        String body = TestCommons.json().put("name", "test type").toString();
-        var request = TestCommons.getHttpEntity(body, "invalid");
+        String body = json().put("name", "test type").toString();
+        var request = getHttpEntity(body, "invalid");
         var response = template.postForEntity("/v1/loyalty/type/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
         typeRepository.deleteByName("test type");
@@ -318,11 +286,11 @@ public class LoyaltyPointTest {
 
     @Test
     public void updateLoyaltyPointType() {
-        String body = TestCommons.json()
+        String body = json()
                 .put("id", 31001)
                 .put("name", "test type")
                 .toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getLoyaltyPointId() > 0L);
@@ -330,7 +298,7 @@ public class LoyaltyPointTest {
 
     @Test
     public void getLoyaltyPointType() throws JsonProcessingException {
-        var request = TestCommons.getHttpEntity("abcdefg");
+        var request = getHttpEntity("abcdefg");
         var response = template.exchange("/v1/loyalty/type/list", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<LoyaltyPointTypeDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointTypeDTO>>() {});
@@ -345,14 +313,14 @@ public class LoyaltyPointTest {
         String body = createConfigJson()
                 .put("id", 31002)
                 .toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, String.class);
         assertEquals(404, response.getStatusCodeValue());
     }
 
 
     private JSONObject createLoyaltyPointJson() {
-        return TestCommons.json()
+        return json()
                 .put("description", "this is a loyalty point")
                 .put("type_id", 31001)
                 .put("amount", 10000)
@@ -365,12 +333,12 @@ public class LoyaltyPointTest {
     @Test
     public void testUserObtainPoints() throws JsonProcessingException {
         // confirming order
-        var request = TestCommons.getHttpEntity("abcdefg");
+        var request = getHttpEntity("abcdefg");
         var response = template.postForEntity("/v1/order/confirm?order_id=33001", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
         //fetch available points
-        request = TestCommons.getHttpEntity("123");
+        request = getHttpEntity("123");
         response = template.exchange("/v1/loyalty/points/check?code=code1", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<RedeemPointsOfferDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
@@ -379,10 +347,18 @@ public class LoyaltyPointTest {
         Long userId = 88L;
 
         //obtain user points
-        request = TestCommons.getHttpEntity("192021");
+        request = getHttpEntity("192021");
         response = template.postForEntity("/v1/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 99001L));
+    }
+
+    @Test
+    public void getUserPointsNoUserInOrg() {
+        var request = getHttpEntity("123");
+        var response = template.exchange("/v1/loyalty/points?org_id=99001", GET, request, String.class);
+        assertEquals(404, response.getStatusCodeValue());
+        assertTrue(response.getBody().contains(ORG$LOY$0014.name()));
     }
 
 
@@ -390,13 +366,13 @@ public class LoyaltyPointTest {
 
     @Test
     public void createFamily(){
-        String body = TestCommons.json().put("family_name", "family 1")
+        String body = json().put("family_name", "family 1")
                 .put("parent_id", "0")
                 .put("booster_id", 199001)
                 .put("org_id", 99001)
                 .put("is_active", true)
                 .toString();
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
@@ -406,33 +382,33 @@ public class LoyaltyPointTest {
 
     @Test
     public void creatFamilyInvalidAuthZ() {
-        String body = TestCommons.json().put("family_name", "family 1")
+        String body = json().put("family_name", "family 1")
                 .put("parent_id", "0")
                 .put("booster_id", 199001)
                 .put("org_id", 99001)
                 .put("is_active", true)
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "invalid");
+        var request = getHttpEntity(body, "invalid");
         var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
     @Test
     public void creatAndGetFamily() throws JsonProcessingException {
-        String body = TestCommons.json().put("family_name", "family 1")
+        String body = json().put("family_name", "family 1")
                 .put("parent_id", "0")
                 .put("booster_id", 199001)
                 .put("org_id", 99001)
                 .put("is_active", true)
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
 
-        request = TestCommons.getHttpEntity("abcdefg");
+        request = getHttpEntity("abcdefg");
         response = template.exchange("/v1/loyalty/family/list", GET, request, String.class);
         List<LoyaltyFamilyEntity> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         LoyaltyFamilyEntity loyaltyFamilyEntity = resBody.get(0);
@@ -446,7 +422,7 @@ public class LoyaltyPointTest {
     //Booster
     @Test
     public void creatBooster() {
-        String body = TestCommons.json().put("booster_name", "booster 1")
+        String body = json().put("booster_name", "booster 1")
                 .put("linked_family_member", "0")
                 .put("is_active", true)
                 .put("number_family_children", "0")
@@ -459,7 +435,7 @@ public class LoyaltyPointTest {
                 .put("activation_months", "0")
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
@@ -468,7 +444,7 @@ public class LoyaltyPointTest {
 
     @Test
     public void creatBoosterInvalidAuthZ() {
-        String body = TestCommons.json().put("booster_name", "booster 1")
+        String body = json().put("booster_name", "booster 1")
                 .put("linked_family_member", "0")
                 .put("is_active", true)
                 .put("number_family_children", "0")
@@ -481,14 +457,14 @@ public class LoyaltyPointTest {
                 .put("activation_months", "0")
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "invalid");
+        var request = getHttpEntity(body, "invalid");
         var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
     @Test
     public void creatAndGetBooster() throws JsonProcessingException {
-        String body = TestCommons.json().put("booster_name", "booster 1")
+        String body = json().put("booster_name", "booster 1")
                 .put("linked_family_member", "0")
                 .put("is_active", true)
                 .put("number_family_children", "0")
@@ -501,13 +477,13 @@ public class LoyaltyPointTest {
                 .put("activation_months", "0")
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "abcdefg");
+        var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
 
 
-        request = TestCommons.getHttpEntity("abcdefg");
+        request = getHttpEntity("abcdefg");
         response = template.exchange("/v1/loyalty/booster/list", GET, request, String.class);
         List<LoyaltyBoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         LoyaltyBoosterDTO booster = resBody.get(1);
@@ -520,12 +496,12 @@ public class LoyaltyPointTest {
     //Charity
     @Test
     public void creatCharity() {
-        String body = TestCommons.json().put("donation_percentage", 10)
+        String body = json().put("donation_percentage", 10)
                 .put("is_active", true)
                 .put("user_id", 88)
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "123");
+        var request = getHttpEntity(body, "123");
         var response = template.postForEntity("/v1/loyalty/charity/user/update", request, LoyaltyCharityUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(userCharityRepository.findById(response.getBody().getCharityId()).isPresent());
@@ -537,7 +513,7 @@ public class LoyaltyPointTest {
     @Test
     public void creatGift() {
 
-         String body = TestCommons.json().put("user_from_id", 424)
+         String body = json().put("user_from_id", 424)
                 .put("user_to_id", 333)
                 .put("is_active", true)
                 .put("points", 10)
@@ -547,7 +523,7 @@ public class LoyaltyPointTest {
                 .put("org_id", 99001)
                 .toString();
 
-        var request = TestCommons.getHttpEntity(body, "456");
+        var request = getHttpEntity(body, "456");
         var response = template.postForEntity("/v1/loyalty/gift/send", request, LoyaltyGiftUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getGiftId() > 0L);

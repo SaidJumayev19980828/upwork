@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
 import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
+import static java.util.Optional.ofNullable;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.nasnav.commons.converters.Converters;
+import com.nasnav.commons.converters.DtoToCsvRowMapper;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
@@ -43,6 +46,10 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 	}
 
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, List<?> data) throws IOException {
+		DtoToCsvRowMapper dtoToCsvRowMapper = data.stream()
+														.findAny()
+														.map(Converters::getDtoToCsvRowConverterForBean)
+														.orElse(null);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
@@ -50,7 +57,11 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		writeFileHeaders(headers, sheet);
 
 		Map<Integer, String> indexToHeader = new HashMap<>();
-		BidiMap map = new TreeBidiMap(PRODUCT_DATA_TO_COLUMN_MAPPING);
+		BidiMap map = ofNullable(dtoToCsvRowMapper)
+						.map(DtoToCsvRowMapper::getColumnMapping)
+						.map(TreeBidiMap::new)
+						.orElse(new TreeBidiMap(PRODUCT_DATA_TO_COLUMN_MAPPING));
+
 		for(int i =0; i< headers.size(); i++) {
 			if (map.containsValue(headers.get(i))) {
 				indexToHeader.put(i, map.getKey((headers.get(i))) +"");
@@ -60,7 +71,10 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 			}
 		}
 
-		data.forEach(line ->  createNewRow(sheet, indexToHeader, (CsvRow) line));
+		if(dtoToCsvRowMapper == null)
+			data.forEach(line ->  createNewRow(sheet, indexToHeader, (CsvRow) line));
+		else
+			data.forEach(line ->  createNewRow(sheet, indexToHeader, dtoToCsvRowMapper.map(line)));
 
  		workbook.write(bos);
 		workbook.close();

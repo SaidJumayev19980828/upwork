@@ -20,11 +20,15 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.StringUtils.getFileNameSanitized;
@@ -59,8 +63,9 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Autowired
 	private TestRestTemplate template;
-	
-	
+
+	@Autowired
+	private WebApplicationContext webApplicationContext;
 
 	
 	@Test
@@ -352,6 +357,111 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
 	}
 
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void uploadFileTestWithInvalidMimes() throws Exception {
+		List<MockMultipartFile> invalidFiles = getInvalidFiles();
+
+		MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+		for (MockMultipartFile file : invalidFiles) {
+			mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+							.file(file)
+							.header("User-Token", "123")
+							.param("org_id", "99001")
+							.contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+					.andExpect(status().is(406));
+		}
+
+	}
+
+	private List<MockMultipartFile> getInvalidFiles() {
+		List<MockMultipartFile> files = new ArrayList<>();
+
+		files.add(getDummyPdf());
+		files.add(getDummyText());
+		files.add(getDummyHtml());
+
+		return files;
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void uploadFileTestWithValidMimes() throws Exception {
+		List<MockMultipartFile> validFiles = getValidFiles();
+
+		MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+		for (MockMultipartFile file : validFiles) {
+			mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+							.file(file)
+							.header("User-Token", "123")
+							.param("org_id", "99001")
+							.contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+					.andExpect(status().is(200));
+		}
+
+	}
+
+	private List<MockMultipartFile> getValidFiles() {
+		List<MockMultipartFile> files = new ArrayList<>();
+
+		files.add(getDummyImage_png());
+		files.add(getDummyImage_jpeg());
+		files.add(getDummyVideo());
+
+		return files;
+	}
+
+	private MockMultipartFile getDummyPdf() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.pdf",
+				MediaType.APPLICATION_PDF_VALUE,
+				"content".getBytes());
+	}
+
+	private MockMultipartFile getDummyText() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.txt",
+				MediaType.TEXT_PLAIN_VALUE,
+				"content".getBytes());
+	}
+
+	private MockMultipartFile getDummyHtml() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.html",
+				MediaType.TEXT_HTML_VALUE,
+				"content".getBytes());
+	}
+
+	private MockMultipartFile getDummyImage_png() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.png",
+				MediaType.IMAGE_PNG_VALUE,
+				"content".getBytes());
+	}
+
+	private MockMultipartFile getDummyImage_jpeg() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.png",
+				MediaType.IMAGE_JPEG_VALUE,
+				"content".getBytes());
+	}
+
+	private MockMultipartFile getDummyVideo() {
+		return new MockMultipartFile(
+				"file",
+				"test_file.mp4",
+				"video/mp4",
+				"content".getBytes());
+	}
 }
 
 

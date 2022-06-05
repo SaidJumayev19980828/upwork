@@ -339,7 +339,7 @@ public class DataImportCsvApiTest {
         result.andExpect(status().is(406));
 
         ImportProductContext report = readImportReport(result);
-        assertEquals(4, report.getErrors().size());
+        assertEquals(3, report.getErrors().size());
         assertFalse(report.isSuccess());
     }
 

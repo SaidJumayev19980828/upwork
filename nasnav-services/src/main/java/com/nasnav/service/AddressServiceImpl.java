@@ -214,7 +214,7 @@ public class AddressServiceImpl implements AddressService{
 
 
     @Transactional
-    @CacheEvict(cacheNames = COUNTRIES)
+    @CacheEvict(cacheNames = COUNTRIES, allEntries=true)
     public void addCountries(List<CountryDTO> dto) {
         dto.forEach(this::createOrUpdateCountryData);
     }
@@ -246,7 +246,7 @@ public class AddressServiceImpl implements AddressService{
     
 
     @Transactional
-    @CacheEvict(cacheNames = COUNTRIES)
+    @CacheEvict(cacheNames = COUNTRIES, allEntries=true)
     public void addCountry(CountryInfoDTO dto) {
         if(isBlankOrNull(dto.getType()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, TYP$0001, "country, city, area");
@@ -335,7 +335,7 @@ public class AddressServiceImpl implements AddressService{
 
 
     @Transactional
-    @CacheEvict(cacheNames = COUNTRIES)
+    @CacheEvict(cacheNames = COUNTRIES, allEntries=true)
     public void removeCountry(Long id, String type) {
         if (type.equals("country")) {
             deleteCountry(id);

@@ -34,7 +34,8 @@ public class CsvRow {
 	protected String productCode;
 	protected String unit;
 	protected BigDecimal weight;
-	
+	protected String imagePath;
+
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
 		features = new HashMap<>();
@@ -68,7 +69,7 @@ public class CsvRow {
 		return product;
 	}
 
-	
+
 
 
 	private Set<String> parseTags() {

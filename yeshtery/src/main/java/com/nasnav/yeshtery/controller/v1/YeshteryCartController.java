@@ -63,6 +63,6 @@ public class YeshteryCartController {
     @PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                 @RequestBody CartCheckoutDTO dto) {
-        return cartOptimizationService.optimizeCart(dto);
+        return cartOptimizationService.validateAndOptimizeCart(dto);
     }
 }

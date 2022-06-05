@@ -63,7 +63,7 @@ public class CartController {
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
-		return cartOptimizeService.optimizeCart(dto);
+		return cartOptimizeService.validateAndOptimizeCart(dto);
 	}
 
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)

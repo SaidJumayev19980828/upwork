@@ -48,6 +48,9 @@ public class LoyaltyPointConfigEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "expiry")
+    private Integer expiry;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_tier_id", referencedColumnName = "id")
     @JsonIgnore
@@ -55,19 +58,13 @@ public class LoyaltyPointConfigEntity {
     @lombok.ToString.Exclude
     private LoyaltyTierEntity defaultTier;
 
-    public LoyaltyPointConfigEntity(LoyaltyPointConfigEntity from) {
-        setOrganization(from.getOrganization());
-        setDescription(from.getDescription());
-        setCoefficient(from.getCoefficient());
-        setDefaultTier(from.getDefaultTier());
-        setRatioFrom(from.getRatioFrom());
-        setRatioTo(from.getRatioTo());
-        setIsActive(true);
-    }
-
     public LoyaltyPointConfigDTO getRepresentation() {
         LoyaltyPointConfigDTO dto = new LoyaltyPointConfigDTO();
         BeanUtils.copyProperties(this, dto);
+
+        if(organization != null)
+            dto.setOrgId(organization.getId());
+
         if(defaultTier != null) {
             dto.setDefaultTier(defaultTier.getRepresentation());
         }

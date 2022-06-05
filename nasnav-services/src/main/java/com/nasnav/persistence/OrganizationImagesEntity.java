@@ -5,6 +5,7 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
@@ -19,9 +20,11 @@ public class OrganizationImagesEntity extends AbstractPersistable<Long> implemen
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private OrganizationEntity organizationEntity;
 
     @OneToOne

@@ -69,7 +69,7 @@ public class OrdersController {
 
     @PostMapping(value = "confirm", produces = APPLICATION_JSON_VALUE)
     public OrderConfirmResponseDTO confirmOrder(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam("order_id") Long orderId) {
-    	return orderService.confirmOrder(orderId, null, null);
+    	return orderService.confirmOrder(orderId, null);
     }
 
     @PostMapping(value = "reject", produces = APPLICATION_JSON_VALUE)

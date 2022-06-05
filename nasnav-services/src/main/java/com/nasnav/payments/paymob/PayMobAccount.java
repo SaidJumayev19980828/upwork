@@ -2,6 +2,7 @@ package com.nasnav.payments.paymob;
 
 import com.nasnav.payments.Account;
 import lombok.Getter;
+import lombok.NonNull;
 
 import java.util.Properties;
 
@@ -17,10 +18,7 @@ public class PayMobAccount extends Account {
     private String paymentKeyUrl;
     protected String icon;
 
-    public PayMobAccount(Properties props, int dbId) {
-        if (props == null) {
-            return;
-        }
+    public PayMobAccount(@NonNull Properties props, int dbId) {
         setup(props);
         super.accountId = "PayMob";
         super.dbId = dbId;
@@ -33,7 +31,6 @@ public class PayMobAccount extends Account {
         this.paymentKeyUrl = this.apiUrl + "/acceptance/payment_keys";
 
         this.icon = "/icons/paymob.svg";
-
     }
 
 
