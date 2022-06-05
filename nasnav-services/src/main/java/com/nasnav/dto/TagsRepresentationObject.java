@@ -20,8 +20,16 @@ public class TagsRepresentationObject extends BaseRepresentationObject {
     private String pname;
     @JsonProperty(value = "category_id")
     private Long categoryId;
+    @JsonProperty(value = "org_id")
+    private Long orgId;
+    private Integer priority;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<TagsRepresentationObject> children;
+
+    private Boolean allowReward;
+    private Boolean buyWithCoins;
+    private Boolean onlyBuyWithCoins;
+    private Long minimumTierId;
 
     public TagsRepresentationObject() {
         children = new ArrayList<>();

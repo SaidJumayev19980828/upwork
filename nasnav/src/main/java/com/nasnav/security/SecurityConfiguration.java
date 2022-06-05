@@ -36,6 +36,7 @@ import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.PUT;
 
 @Configuration
@@ -79,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/cancel"						,HttpMethod.POST	, setOf(CUSTOMER)),
 						patternOf( "/order/meta_order/list/user"		,HttpMethod.GET		, setOf(CUSTOMER)),
+						patternOf( "/order/track_info"					,HttpMethod.GET		, setOf(CUSTOMER)),
 						patternOf( "/order/return/reject"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/order/return/confirm"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/order/return/received_item"		,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -90,6 +92,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/statistics/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/stock/**"	 											, getNonCustomersRoles() ),
 						patternOf( "/shop/**"												, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
+						patternOf( "/shop/stock"	 					, DELETE			, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/user/list"),
 						patternOf( "/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles()),
 						patternOf( "/user/address"						,PUT                , setOf(CUSTOMER)),
@@ -100,6 +103,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/user/logout"											, getAllRoles() ),
 						patternOf( "/user/logout_all"										, getAllRoles() ),
 						patternOf( "/user/suspend"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf("/user/review"					    , HttpMethod.GET   , setOf(CUSTOMER)),
 						patternOf( "/product/review"					,HttpMethod.POST	, setOf(CUSTOMER)),
 						patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/**"						,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
@@ -110,6 +114,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/admin/organization/domain"	   	,HttpMethod.GET		, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
 						patternOf( "/admin/organization/domains"	   	,HttpMethod.GET		, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
+						patternOf( "/files"							,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/files/**"),
 						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/brand"									, setOf(ORGANIZATION_ADMIN)),
@@ -132,6 +137,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/search/**"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/organization/seo"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/sub_areas"								, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/mail/cart/abandoned"									, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/mail/wishlist/stock"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/export/**"											, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/integration/import/shops"								, setOf(ORGANIZATION_MANAGER)),
@@ -145,8 +152,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/errors"									, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/**"										, setOf(NASNAV_ADMIN)),
 						patternOf( "/cart/**"												, setOf(CUSTOMER)),
+						patternOf( "/pickup/**"											, setOf(CUSTOMER)),
 						patternOf( "/wishlist/**"											, setOf(CUSTOMER)),
 						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
+						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/list"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/type/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/family/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/tier/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/booster/**"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/config/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points/check"									, setOf(CUSTOMER)),
+						patternOf("/loyalty/points/redeem"									, setOf(STORE_MANAGER)),
 						patternOf( "/**")
 						);
 

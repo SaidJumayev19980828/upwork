@@ -127,6 +127,10 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
     @Override
     public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
         var serviceInfo = getServiceInfo();
+
+        if (items.get(0).getDestination().getId() == -1L)
+            return Mono.empty();
+
         if(!areSubAreasSupported(items)) {
             return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }else if(isOrderValueTooLow(items)){
@@ -274,5 +278,15 @@ public class VarFeeSelectedSubAreaMinOrderShippingService implements ShippingSer
     @Override
     public Optional<Long> getPickupShop(String additionalParametersJson) {
         return Optional.empty();
+    }
+
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        return Mono.empty();
+    }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
     }
 }

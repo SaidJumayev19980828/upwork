@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRatingRepository;
-import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -10,7 +8,9 @@ import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -28,6 +28,10 @@ public class ReviewServiceImpl implements ReviewService{
     private ProductVariantsRepository productVariantsRepository;
     @Autowired
     private OrdersRepository ordersRepository;
+    @Autowired
+    private LoyaltyBoosterRepository loyaltyBoosterRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public void rateProduct(ProductRateDTO dto) {
@@ -37,9 +41,10 @@ public class ReviewServiceImpl implements ReviewService{
         }
         UserEntity user = (UserEntity) baseUser;
         validateProductRateDTO(dto, user.getId());
-        ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(dto.getVariantId(), user.getOrganizationId())
+        ProductVariantsEntity variant = productVariantsRepository.findById(dto.getVariantId())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
         createProductRate(dto, variant, user);
+        updateUserBoosterByFamilyMember(user.getId());
     }
 
 
@@ -79,20 +84,68 @@ public class ReviewServiceImpl implements ReviewService{
 
 
     @Override
-    public List<ProductRateRepresentationObject> getProductRatings(Long variantId) {
-        return  productRatingRepo.findApprovedVariantRatings(variantId)
-                .stream()
-                .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
-                .collect(toList());
+    public List<ProductRateRepresentationObject> getVariantRatings(Long variantId) {
+        return toReviewDtoList(productRatingRepo.findApprovedVariantRatings(variantId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getProductRatings(Long productId) {
+        return toReviewDtoList(productRatingRepo.findApprovedProductRatings(productId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getYeshteryVariantRatings(Long variantId) {
+        return toReviewDtoList(productRatingRepo.findApprovedYeshteryVariantRatings(variantId));
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getYeshteryProductRatings(Long productId) {
+        return toReviewDtoList(productRatingRepo.findApprovedYeshteryProductRatings(productId));
     }
 
 
     @Override
     public List<ProductRateRepresentationObject> getProductsRatings() {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        return productRatingRepo.findUnapprovedVariantsRatings(orgId)
+        return toReviewDtoList(productRatingRepo.findUnapprovedVariantsRatings(orgId));
+    }
+
+    private List<ProductRateRepresentationObject> toReviewDtoList(List<ProductRating> ratings) {
+        return ratings
                 .stream()
                 .map(rating ->(ProductRateRepresentationObject) rating.getRepresentation())
                 .collect(toList());
+    }
+
+    @Override
+    public List<ProductRateRepresentationObject> getUserProductsRatings(Set<Long> variantIds) {
+        Long userId  = securityService.getCurrentUser().getId();
+        return toReviewDtoList(productRatingRepo.findUserVariantRatings(userId, variantIds));
+    }
+
+    private void updateUserBoosterByFamilyMember(Long userId) {
+        if (userId < 0) {
+            userId = securityService.getCurrentUser().getId();
+        }
+        UserEntity userEntity = userRepository.findById(userId).get();
+        Integer reviewCounts = productRatingRepo.countTotalRatingByUserId(userId);
+        LoyaltyBoosterEntity loyaltyBoosterEntity = null;
+        LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
+        List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
+        if (userEntity.getBooster() != null) {
+            userLoyaltyBoosterEntity = userEntity.getBooster();
+        }
+        boosterList = loyaltyBoosterRepository.getAllByReviewProducts(reviewCounts);
+        int boosterSize = boosterList.size();
+        if (boosterSize > 0) {
+            loyaltyBoosterEntity = boosterList.get(boosterSize - 1);
+            if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
+                if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
+                    return;
+                }
+            }
+            userEntity.setBooster(loyaltyBoosterEntity);
+        }
+        userRepository.save(userEntity);
     }
 }

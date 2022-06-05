@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Thank you for your cart</title>
+
+  <!--[if mso]>
+  <xml>
+    <o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+  </xml>
+  <style>
+    table {border-collapse: collapse;}
+    td,th,div,p,a,h1,h2,h3,h4,h5,h6 {font-family: "Segoe UI", Arial, sans-serif; mso-line-height-rule: exactly;}
+  </style>
+  <![endif]-->
+  <style>
+    .hover-text-brand-500:hover {
+      color: #0052e2 !important;
+    }
+    .hover-text-brand-700:hover {
+      color: #003ca5 !important;
+    }
+    .hover-underline:hover {
+      text-decoration: underline !important;
+    }
+    @media screen {
+      img {
+        max-width: 100%;
+      }
+      .all-font-sans {
+        font-family: -apple-system, "Segoe UI", sans-serif !important;
+      }
+    }
+    @media (max-width: 640px) {
+      u~div .wrapper {
+        min-width: 100vw;
+      }
+      .sm-block {
+        display: block !important;
+      }
+      .sm-inline-block {
+        display: inline-block !important;
+      }
+      .sm-h-24 {
+        height: 24px !important;
+      }
+      .sm-h-32 {
+        height: 32px !important;
+      }
+      .sm-h-64 {
+        height: 64px !important;
+      }
+      .sm-mt-16 {
+        margin-top: 16px !important;
+      }
+      .sm-px-0 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .sm-px-16 {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+      .sm-py-24 {
+        padding-top: 24px !important;
+        padding-bottom: 24px !important;
+      }
+      .sm-pb-32 {
+        padding-bottom: 32px !important;
+      }
+      .sm-align-top {
+        vertical-align: top !important;
+      }
+      .sm-w-auto {
+        width: auto !important;
+      }
+      .sm-w-full {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body lang="en" style="margin: 0; padding: 0; width: 100%; word-break: break-word; -webkit-font-smoothing: antialiased; background-color: #ffffff;">
+<table class="wrapper all-font-sans" style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+  <tr>
+    <td align="center" style bgcolor="#ffffff">
+      <table class="sm-w-full" style="width: 640px;" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td align="left" class="sm-px-16 sm-py-24" style="padding-left: 40px; padding-right: 40px; padding-top: 48px; padding-bottom: 48px;" bgcolor="#ffffff">
+            <div style="margin-bottom: 24px;">
+              <img th:src="${orgLogo}" alt="logo"/>
+            </div>
+            <p style="line-height: 28px; margin: 0; color: #4a5566; font-size: 21px;">Hi <span id="user_name" th:text="${userName}"/></p>  <br/>
+            <p style="line-height: 28px; margin: 0; color: #4a5566; font-size: 21px;">you added items to your shopping cart and haven't completed your purchase. You can <a th:href="${cartUrl}" class="hover-text-brand-700 hover-underline" style="color: #0047c3; text-decoration: none;">complete it now</a>. while they're still available.</p>
+            <div class="sm-h-32" style="line-height: 32px;">&nbsp;</div>
+            <p style="line-height: 22px; margin-top: 0; margin-bottom: 16px; color: #8492a6; font-size: 16px;">Cart items</p>
+            <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+              <tbody>
+                <tr th:each="item : ${items}">
+                  <td class="sm-align-top" style="width: 72px;">
+                    <img th:src="${domain} + '/files/' + ${item.coverImg}" alt="#" width="48" style="line-height: 100%; vertical-align: middle; border: 0;">
+                  </td>
+                  <td class="sm-w-auto" style="padding-top: 14px; text-align: left; vertical-align: top; width: 416px;" align="left" valign="top">
+                    <p style="margin-top: 0; margin-bottom: 12px;">
+                      <h3 th:text="${item.name}" style="text-decoration: none; font-weight: 700; color: #4a5566;" />
+                    </p>
+                    <table cellpadding="0" cellspacing="0" role="presentation">
+                      <tr th:each="feature : ${item.variantFeatures}">
+                        <span th:text="${feature.key} + ': ' + ${feature.value}"></span> <br/>
+                      </tr>
+                    </table>
+                  </td>
+                  <td th:text="${item.price} +' '+ ${currency}" style="font-weight: 700; padding-top: 14px; text-align: right; color: #4a5566; vertical-align: top; width: 72px;" align="right" valign="top"></td>
+                </tr>
+              <tbody>
+            </table>
+
+            <div class="sm-h-64" style="line-height: 64px;">&nbsp;</div>
+
+            <p style="line-height: 16px; margin: 0; color: #8492a6; font-size: 12px;">Any further questions or concerns, please look at our FAQ page where we have answered the most common question regarding this topic or write us at <a target="_blank" th:href="${orgDomain}" th:text="${orgName}" class="hover-text-brand-700 hover-underline" style="color: #0047c3; text-decoration: none;"/>.</p>
+            <div style="text-align: left;">
+              <table style="width: 100%;" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="padding-bottom: 16px; padding-top: 64px;">
+                    <div style="background-color: #e1e1ea; height: 1px; line-height: 1px;">&nbsp;</div>
+                  </td>
+                </tr>
+              </table>
+              <p style="line-height: 16px; margin-top: 0; margin-bottom: 16px; color: #8492a6; font-size: 12px;">
+                This email was sent to you as a registered customer of
+                <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>.
+                <span class="sm-block sm-mt-16">Use of the service and website is subject to our
+                  <a target="_blank" th:href="${orgDomain} + '/terms'" class="hover-text-brand-700 hover-underline" style="color: #0047c3; text-decoration: none; display: inline-block;">Terms of Use</a>
+                  and
+                  <a target="_blank" th:href="${orgDomain}+ '/privacy'" class="hover-text-brand-700 hover-underline" style="color: #0047c3; text-decoration: none; display: inline-block;">Privacy Statement</a>.</span>
+              </p>
+              <p style="line-height: 16px; margin: 0; color: #8492a6; font-size: 12px;" th:text="'©' + ${year} + ' NasNav. All rights reserved.'" >© </p>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

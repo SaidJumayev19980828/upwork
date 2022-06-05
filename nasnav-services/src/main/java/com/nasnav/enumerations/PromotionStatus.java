@@ -33,17 +33,7 @@ public enum PromotionStatus {
                  .map(PromotionStatus::name)
                  .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$ENUM$0001));
     }
-    
-    
-    
-    public static Optional<PromotionStatus> getPromotionStatus(Integer value) {
-        return stream(values())
-                 .filter(s -> Objects.equals(s.value, value))
-                 .findFirst();
-    }
-    
-    
-    
+
     public static Optional<PromotionStatus> getPromotionStatus(String name) {
         return stream(values())
                 .filter(s -> Objects.equals(s.name(), name))

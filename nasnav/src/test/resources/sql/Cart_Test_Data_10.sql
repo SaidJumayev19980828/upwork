@@ -46,10 +46,10 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'test2@nasnav.com','user2','456', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, user_status)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001, 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, user_status)
+    VALUES (89, 'test2@nasnav.com','user2','456', 99001, 201);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);

@@ -11,26 +11,25 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 public interface OrderService {
 
 
 
-    public class OrderValue {
-		public BigDecimal amount;
-		public TransactionCurrency currency;
+     class OrderValue {
+		 public  BigDecimal amount;
+		 public  TransactionCurrency currency;
 
-		public String toString() {
+		 public String toString() {
 			if (amount == null) {
 				return "NULL";
 			}
@@ -44,32 +43,45 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
-	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
+	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
-	void finalizeOrder(Long orderId) throws BusinessException;
+	void finalizeOrder(Long orderId);
 
-	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
+	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);
 
-	public OrderConfirmResponseDTO confrimOrder(Long orderId);
+	void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
-	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
+	 OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode, BigDecimal pointsAmount);
 
-	Order getMetaOrder(Long id);
+	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
+
+	Order getMetaOrder(Long id, boolean yeshteryMetaorder);
+	Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder);
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
-	public OrderValue getMetaOrderTotalValue(long metaOrderId);
+	 OrderValue getMetaOrderTotalValue(long metaOrderId);
 
-	public void rejectOrder(OrderRejectDTO dto);
+	 void rejectOrder(OrderRejectDTO dto);
 
-	public void cancelOrder(Long metaOrderId);
+	 void cancelOrder(Long metaOrderId, boolean yeshteryMetaOrder);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
 
-	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto);
+	MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user);
 
 	Order createOrder(CartCheckoutDTO dto);
+
+	Integer countOrdersByUserId(Long userId);
+	String trackOrder(Long orderId);
+
+	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
+
+	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
+	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
+	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
+	Order createYeshteryOrder(CartCheckoutDTO dto);
 }

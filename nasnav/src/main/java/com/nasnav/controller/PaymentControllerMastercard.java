@@ -92,6 +92,36 @@ public class PaymentControllerMastercard {
         return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Refund failed\"}", HttpStatus.NOT_ACCEPTABLE);
     }
 
+    @Operation(hidden = true)
+    @GetMapping(value = "test/capture")
+    public ResponseEntity<?> testCapture() throws BusinessException {
+        if (!config.develEnvironment) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Not available on production environment\"", HttpStatus.NOT_FOUND);
+        }
+
+
+
+        if (this.testRefundOrderId == null) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"No test payment set up\"", HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            PaymentEntity payment = paymentCommons.getPaymentForOrderUid(testRefundOrderId);
+            if (payment == null) {
+                return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Payment UID: " + this.testRefundOrderId + " not recognized\"", HttpStatus.NOT_ACCEPTABLE);
+            }
+            // null - means refund the whole transaction amount
+            OrderService.OrderValue ov = null;
+            if (testRefundPartial) {
+                ov = paymentCommons.getMetaOrderValue(payment.getMetaOrderId());
+                ov.amount = ov.amount.divideToIntegralValue(BigDecimal.valueOf(2));
+            }
+            if (mastercardService.refundTransaction(payment, ov)) {
+                return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Refund failed\"}", HttpStatus.NOT_ACCEPTABLE);
+    }
+
+
     @Operation(description =  "Log messages handled by third-party e.g. JavaScript functionalities", summary = "mastercardLogger")
     @PostMapping(value = "log")
     public ResponseEntity<?> logErrors(@RequestParam(name = "level") String level, @RequestParam(name = "message") String message)  {
@@ -110,6 +140,7 @@ public class PaymentControllerMastercard {
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 
+/*
     @Operation(description =  "Execute the payment after setup and user's data collection", summary = "mastercardExecute")
     @ApiResponses(value = {
             @ApiResponse(responseCode = " 200" ,description = "Payment completed successfully"),
@@ -121,6 +152,26 @@ public class PaymentControllerMastercard {
     public ResponseEntity<?> executePayment(@RequestParam(name = "session_id") String sessionId) {
         try {
             mastercardService.execute(sessionId);
+            return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+        } catch (BusinessException ex) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
+                    + ex.getErrorCode() + "\", \"message\": \"" + ex.getErrorMessage() + "\"}", ex.getHttpStatus());
+        }
+    }
+*/
+
+    @Operation(description =  "Execute the payment after setup and user's data collection", summary = "mastercardExecute")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = " 200" ,description = "Payment completed successfully"),
+            @ApiResponse(responseCode = " 406" ,description = "Some data missing, unable to execute"),
+            @ApiResponse(responseCode = " 402" ,description = "Payment attempted but failed (refused by the gateway)"),
+            @ApiResponse(responseCode = " 502" ,description = "Unable to communicate with the payment gateway"),
+    })
+    @PostMapping(value = "/capture")
+    public ResponseEntity<?> capturePayment(@RequestParam(name = "order_id") Long metaOrderId) {
+        PaymentEntity origPayment = paymentCommons.getPaymentForMetaOrderId(metaOrderId);
+        try {
+            mastercardService.capture(origPayment);
             return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
@@ -142,7 +193,7 @@ public class PaymentControllerMastercard {
             @RequestParam(name = "resultIndicator") String resultIndicator
     ) {
         try {
-            mastercardService.verifyAndStore(orderId, resultIndicator);
+            mastercardService.verifyAndStore(orderId, resultIndicator, false);
             return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""

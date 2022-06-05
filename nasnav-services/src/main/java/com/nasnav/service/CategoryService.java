@@ -9,7 +9,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.CategoryResponse;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.TagResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,37 +50,24 @@ public class CategoryService {
 	Logger logger = LogManager.getLogger(getClass());
 
     @Autowired
-    private final BrandsRepository brandsRepository;
-
+    private BrandsRepository brandsRepository;
     @Autowired
-    private  CategoriesRepository categoryRepository;
-
+    private CategoriesRepository categoryRepository;
     @Autowired
-    private final ProductRepository productRepository;
-
+    private ProductRepository productRepository;
     @Autowired
     private TagsRepository orgTagsRepo;
-
     @Autowired
     private TagGraphEdgesRepository tagEdgesRepo;
-    
     @Autowired
     private TagGraphNodeRepository tagNodesRepo;
+	@Autowired
+	private OrganizationRepository orgRepo;
 
     @Autowired
     private SecurityService securityService;
 
-    @Autowired
-    private OrganizationRepository orgRepo;
 	public static final long DUMMY_ROOT_PARENT = -1L;
-
-
-	@Autowired
-    public CategoryService(BrandsRepository brandsRepository, ProductRepository productRepository) {
-        this.brandsRepository = brandsRepository;
-        this.productRepository = productRepository;
-    }
-
 
     public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
 		return ofNullable(orgTagsRepo.findById(tagId))
@@ -89,7 +75,6 @@ public class CategoryService {
 				.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
 				.orElseThrow(() -> new BusinessException("No tag found with given id!", "INVALID_PARAM: tag_id", HttpStatus.NOT_FOUND));
 	}
-
     
 //    @CacheResult(cacheName = "organizations_categories")
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
@@ -119,65 +104,78 @@ public class CategoryService {
 					.collect(toList());
     }
     
-    
+    public CategoryResponse addOrUpdateCategory(CategoryDTO categoryDTO) {
+		String operation = ofNullable(categoryDTO.getOperation())
+				.filter(o -> o.equals("create") || o.equals("update"))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007));
+		CategoriesEntity category = new CategoriesEntity();
+		if (operation.equals("update"))
+			category = updateCategory(categoryDTO);
+		else if (operation.equals("create"))
+			category = createCategory(categoryDTO);
+		return new CategoryResponse(category.getId());
+	}
     
 
-    public CategoryResponse createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
-        if (categoryJson.getName() == null) {
-            throw new BusinessException("MISSING_PARAM: name", "No category name is provided", HttpStatus.NOT_ACCEPTABLE);
-        } else if (!StringUtils.validateName(categoryJson.getName())) {
-            throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": name",
-                    "Provided name is not valid", HttpStatus.NOT_ACCEPTABLE);
-        }
+    public CategoriesEntity createCategory(CategoryDTO categoryJson) {
         CategoriesEntity categoriesEntity = new CategoriesEntity();
+
+		validateCategoryName(categoryJson);
         categoriesEntity.setName(categoryJson.getName());
-        categoriesEntity.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-            if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
-                categoriesEntity.setParentId(categoryJson.getParentId());
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": parent_id",
-                        "Provided parent category doesn't exit", HttpStatus.NOT_ACCEPTABLE);
-            }
-        }
-        categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
-        categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+		categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+
+		setCategoryEntityAdditionalInfo(categoriesEntity, categoryJson);
+
+		return categoryRepository.save(categoriesEntity);
     }
 
+    private void setCategoryEntityAdditionalInfo(CategoriesEntity entity, CategoryDTO dto) {
+		if (dto.getParentId() != null) {
+			validateCategoryParent(dto);
+			entity.setParentId(dto.getParentId());
+		}
+    	if(dto.getLogo() != null) {
+    		entity.setLogo(dto.getLogo());
+		}
+		if(dto.getCover() != null) {
+			entity.setCover(dto.getCover());
+		}
+		if(dto.getCoverSmall() != null) {
+			entity.setCoverSmall(dto.getCoverSmall());
+		}
+	}
+
+	private void validateCategoryParent(CategoryDTO categoryJson) {
+		if (categoryJson.getParentId() != null) {
+			if (!categoryRepository.existsById(categoryJson.getParentId())) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, CAT$0001, categoryJson.getParentId());
+			}
+		}
+	}
+
+    private void validateCategoryName(CategoryDTO categoryJson) {
+		if (categoryJson.getName() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "name");
+		} else if (!StringUtils.validateName(categoryJson.getName())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, categoryJson.getName());
+		}
+	}
     
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, ORGANIZATIONS_TAG_TREES})
-    public CategoryResponse updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
-        if (categoryJson.getId() == null) {
-            throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!categoryRepository.findById(categoryJson.getId()).isPresent()){
-            throw new BusinessException("EntityNotFound: category", "No category entity found with provided ID",
-                    HttpStatus.NOT_ACCEPTABLE);
-        }
-        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
+    public CategoriesEntity updateCategory(CategoryDTO categoryJson) {
+        CategoriesEntity category = ofNullable(categoryJson.getId())
+				.map(categoryRepository::findById)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, CAT$0002));
         if (categoryJson.getName() != null) {
-            if (StringUtils.validateName(categoryJson.getName())) {
-            categoriesEntity.setName(categoryJson.getName());
-            categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid",
-                        HttpStatus.NOT_ACCEPTABLE);
-            }
+            validateCategoryName(categoryJson);
+			category.setName(categoryJson.getName());
+			category.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         }
-        if (categoryJson.getLogo() != null)
-            categoriesEntity.setLogo(categoryJson.getLogo());
-        if (categoryJson.getParentId() != null) {
-            if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
-                categoriesEntity.setParentId(categoryJson.getParentId());
-            } else {
-                throw new BusinessException(ResponseStatus.INVALID_PARAMETERS+": parent_id",
-                        "Provided parent category doesn't exit", HttpStatus.NOT_ACCEPTABLE);
-            }
-        }
-        categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+        setCategoryEntityAdditionalInfo(category, categoryJson);
+		return categoryRepository.save(category);
     }
 
 
@@ -212,19 +210,37 @@ public class CategoryService {
 
 //    @CacheResult(cacheName = "organizations_tags")
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
-        List<TagsEntity> tagsEntities;
-        if(isBlankOrNull(categoryName)) {
-        	tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
-        }else {
-        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
-        }
-        return tagsEntities
-        			.stream()
-                    	.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-                    	.collect(toList());
-    }
+		List<TagsEntity> tagsEntities;
+		if (isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByPriorityDesc(orgId);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(categoryName, orgId);
+		}
+		return toTagsDTO(tagsEntities);
+	}
 
-    
+	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId) {
+    	Set<Long> orgIdList = new HashSet<>();
+    	if (orgId == null) {
+			orgIdList = orgRepo.findIdByYeshteryState(1);
+		} else {
+			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
+		}
+		List<TagsEntity> tagsEntities;
+		if(isBlankOrNull(categoryName)) {
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList);
+		} else {
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList);
+		}
+		return toTagsDTO(tagsEntities);
+	}
+
+	private List<TagsRepresentationObject> toTagsDTO(List<TagsEntity> tagsEntities) {
+		return tagsEntities
+				.stream()
+				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+				.collect(toList());
+    }
     
     
     
@@ -411,7 +427,7 @@ public class CategoryService {
         }else if(Objects.equals(operation, "create")) {
         	if (categoryId == null && hasCategory) {
             	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
-            }else if (isEmpty(tagDTO.getName())) {
+            }else if (isNull(tagDTO.getName())) {
             	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
             }
             
@@ -463,6 +479,11 @@ public class CategoryService {
         if(tagDTO.getGraphId() != null) {
         	entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
         }
+		if(tagDTO.getPriority() != null) {
+			entity.setPriority(tagDTO.getPriority());
+		} else {
+			entity.setPriority(0);
+		}
         
         entity = orgTagsRepo.save(entity);
         String pname = format("%d-%s", entity.getId(), encodeUrl(tagDTO.getName()));
@@ -547,7 +568,9 @@ public class CategoryService {
 												Map<Long, TagGraphNodeEntity> tagsNodesCache) {
 		List<TagGraphNodeEntity> childrenNodes = createSubTreesForChildrenNodes(node, tagsMap, tagsNodesCache);
 		TagGraphNodeEntity	savedNode = createTagTreeNode(node, tagsMap, tagsNodesCache);
-		
+
+		removeDuplicateTagsInTheSameLevel(childrenNodes);
+
 		childrenNodes
 		 .stream()
 		 .map(child -> new TagGraphEdgesEntity(savedNode, child))
@@ -557,7 +580,20 @@ public class CategoryService {
 	}
 
 
-
+	private void removeDuplicateTagsInTheSameLevel(List<TagGraphNodeEntity> childrenNodes) {
+		Set<TagsEntity> uniqueTags = new HashSet<>();
+		List<TagGraphNodeEntity> nodesToCheck = new ArrayList<>(childrenNodes);
+		if (childrenNodes != null && !childrenNodes.isEmpty()) {
+			for (TagGraphNodeEntity n : nodesToCheck) {
+				if (uniqueTags.contains(n.getTag())) {
+					childrenNodes.remove(n);
+				}
+				else {
+					uniqueTags.add(n.getTag());
+				}
+			}
+		}
+	}
 
 
 	private TagGraphNodeEntity createTagTreeNode(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap,
@@ -715,7 +751,8 @@ public class CategoryService {
     	dto.setNodeId(nodeEntity.getId());
     	dto.setTagId(tagEntity.getId());
     	dto.setId(tagEntity.getId());
-    	dto.setAlias(tagEntity.getAlias());
+		dto.setOrgId(tagEntity.getOrganizationEntity().getId());
+		dto.setAlias(tagEntity.getAlias());
     	dto.setCategoryId(tagEntity.getCategoriesEntity().getId());
     	dto.setGraphId(tagEntity.getGraphId());    	
     	dto.setMetadata(tagEntity.getMetadata());
@@ -821,23 +858,48 @@ public class CategoryService {
 
 
 	private CategoryDto toCategoryDto(CategoriesEntity entity) {
-    	var metadata =
-				ofNullable(entity.getLogo())
-						.map(Object.class::cast)
-						.map(
-							logo -> Map.of(
-									"cover", logo,
-									"icon", logo)
-						).orElse(emptyMap());
-
     	var dto = new CategoryDto();
     	dto.setName(entity.getName());
     	dto.setPname(entity.getPname());
-    	dto.setMetadata(metadata);
+    	dto.setLogo(entity.getLogo());
+    	dto.setCover(entity.getCover());
+    	dto.setCoverSmall(entity.getCoverSmall());
     	dto.setId(entity.getId());
     	dto.setParent(entity.getParentId());
     	return dto;
 	}
+
+	public List<TagsRepresentationObject> getYeshteryTags(String categoryName) {
+		if (securityService.getYeshteryState() == 1) {
+			List<TagsEntity> tagsEntities;
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameOrderByName(categoryName);
+			return tagsEntities
+					.stream()
+					.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
+					.collect(toList());
+		}
+		return null;
+	}
+
+	@CacheResult(cacheName = ORGANIZATIONS_TAG_TREES)
+	public List<TagsTreeNodeDTO> getYeshteryTagsTree() throws BusinessException {
+
+		Graph<TagGraphNodeEntity, DefaultEdge> graph = buildYeshteryTagGraph();
+
+		return convertToTagTree(graph);
+	}
+
+	private Graph<TagGraphNodeEntity, DefaultEdge> buildYeshteryTagGraph() {
+		List<TagGraphNodeEntity> nodes = tagNodesRepo.findByTag();
+		List<TagGraphEdgesEntity> edges = tagEdgesRepo.findAllYeshteryTagGraph(1);
+
+		Graph<TagGraphNodeEntity, DefaultEdge> graph = new DirectedAcyclicGraph<>(DefaultEdge.class);
+		nodes.forEach(graph::addVertex);
+		edges.forEach(edge -> graph.addEdge(edge.getParent(), edge.getChild()));
+
+		return graph;
+	}
+
 }
 
 

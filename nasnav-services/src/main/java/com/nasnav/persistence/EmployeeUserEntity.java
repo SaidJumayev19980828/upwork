@@ -46,6 +46,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
+        obj.setCreationDate(getRememberCreatedAt());
         obj.setImage(this.avatar);
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
         obj.id = this.getId();

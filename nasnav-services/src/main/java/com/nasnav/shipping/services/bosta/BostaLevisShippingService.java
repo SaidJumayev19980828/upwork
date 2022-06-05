@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -70,6 +69,7 @@ public class BostaLevisShippingService implements ShippingService{
 			"Please make sure to print the attached airway bills and provide them to the " +
 			"delivery agent.";
 
+	public static final String TRACKING_URL = "TRACKING_URL";
 	public static final String AUTH_TOKEN_PARAM = "AUTH_TOKEN";
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
@@ -87,7 +87,8 @@ public class BostaLevisShippingService implements ShippingService{
 					, new Parameter(CAIRO_PRICE, NUMBER)
 					, new Parameter(ALEXANDRIA_PRICE, NUMBER)
 					, new Parameter(DELTA_CANAL_PRICE, NUMBER)
-					, new Parameter(UPPER_EGYPT_PRICE, NUMBER));
+					, new Parameter(UPPER_EGYPT_PRICE, NUMBER)
+					, new Parameter(TRACKING_URL, STRING));
 	
 	private static final ShippingPeriodAndPrice CAIRO_SHIPPING = 
 			new ShippingPeriodAndPrice(
@@ -234,6 +235,8 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+		validateShippingAddress(shipment);
+
 		var serverUrl =
 				ofNullable(paramMap.get(SERVER_URL))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
@@ -415,6 +418,9 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	private Optional<Shipment> createShipmentOffer(IndexedData<ShippingDetails> details) {
+		if (details.getData().getDestination().getId() == -1L)
+			return Optional.empty();
+
 		var eta = calculateEta(details);
 		var stocks = getStocks(details);
 		return calculateFee(details)
@@ -423,7 +429,12 @@ public class BostaLevisShippingService implements ShippingService{
 	}
 
 	
-	
+	private void validateShippingAddress(ShippingDetails details) {
+		ShippingAddress address = details.getDestination();
+		if (address.getId() == -1L){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+		}
+	}
 
 
 	private List<Long> getStocks(IndexedData<ShippingDetails> details) {
@@ -568,6 +579,31 @@ public class BostaLevisShippingService implements ShippingService{
 	@Override
 	public Optional<Long> getPickupShop(String additionalParametersJson) {
 		return empty();
+	}
+
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		var serverUrl =
+				ofNullable(paramMap.get(SERVER_URL))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
+		var authToken =
+				ofNullable(paramMap.get(AUTH_TOKEN_PARAM))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, AUTH_TOKEN_PARAM, SERVICE_ID));
+		var client = new BostaWebClient(serverUrl);
+
+		return client
+				.createAirwayBill(authToken, airwayBillNumber)
+				.filter(res -> res.rawStatusCode() < 400)
+				.flatMap(res -> res.bodyToMono(CreateAwbResponse.class))
+				.map(CreateAwbResponse::getData)
+				.defaultIfEmpty("");
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		var baseTrackingUrl = ofNullable(paramMap.get(TRACKING_URL))
+						.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, TRACKING_URL, SERVICE_ID));
+		return baseTrackingUrl+trackingNumber;
 	}
 
 

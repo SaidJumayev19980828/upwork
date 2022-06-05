@@ -54,7 +54,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
 import static com.nasnav.service.OrderService.ORDER_REJECT_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -604,6 +604,7 @@ public class OrderServiceTest {
 		order.setMetaOrderId(310001L);
 		order.setDiscount(ZERO);
 		order.setPaymentOperator("S.C.A.M");
+		order.setNotes("");
 		return order;
 	}
 	
@@ -837,7 +838,7 @@ public class OrderServiceTest {
 		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getMetaOrder().getStatus());
 		assertNotNull(subOrderAfter.getShipment().getExternalId());
 		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
-		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
+		assertEquals(REQUESTED.getValue(), subOrderAfter.getShipment().getStatus());
 	}
 
 
@@ -1254,7 +1255,7 @@ public class OrderServiceTest {
 		.sendThymeleafTemplateMail(
 			Mockito.eq("organization_1")
 			,Mockito.eq(asList("user1@nasnav.com"))
-			, Mockito.eq(ORDER_REJECT_SUBJECT)
+			, Mockito.eq(format(ORDER_REJECT_SUBJECT, "organization_1"))
 			, Mockito.anyList()
 			, Mockito.eq(asList("testuser3@nasnav.com"))
 			, Mockito.eq(ORDER_REJECT_TEMPLATE)

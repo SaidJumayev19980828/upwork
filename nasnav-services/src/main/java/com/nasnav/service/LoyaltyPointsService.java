@@ -1,0 +1,48 @@
+package com.nasnav.service;
+
+import com.nasnav.dto.request.LoyaltyPointConfigDTO;
+import com.nasnav.dto.request.LoyaltyPointDTO;
+import com.nasnav.dto.request.LoyaltyPointTypeDTO;
+import com.nasnav.dto.request.LoyaltyTierDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
+import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.persistence.*;
+import com.nasnav.response.LoyaltyPointDeleteResponse;
+import com.nasnav.response.LoyaltyPointsUpdateResponse;
+import com.nasnav.response.LoyaltyUserPointsResponse;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface LoyaltyPointsService {
+
+    LoyaltyPointsUpdateResponse updateLoyaltyPointType(LoyaltyPointTypeDTO dto);
+    LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(LoyaltyPointConfigDTO dto);
+    LoyaltyPointsUpdateResponse updateLoyaltyPoint(LoyaltyPointDTO dto);
+    LoyaltyPointDeleteResponse deleteLoyaltyPointType(Long id);
+    LoyaltyPointDeleteResponse deleteLoyaltyPoint(Long id);
+    LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id);
+    LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id);
+    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, OrdersEntity order, BigDecimal points, BigDecimal amount);
+    void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
+    void createLoyaltyPointTransactionForReturnRequest(ReturnRequestEntity returnRequest);
+    LoyaltyPointsUpdateResponse redeemPoints(Long pointId, Long userId);
+    List<LoyaltyPointTransactionEntity> listOrganizationLoyaltyPoints( Long orgId );
+    List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
+    List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs(Long orgId);
+    List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
+
+    void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
+    LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
+    LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
+
+    LoyaltyUserPointsResponse getUserPoints(Long orgId);
+    LoyaltyTierDTO getUserOrgTier(Long orgId);
+
+    String generateUserShopPinCode(Long shopId);
+
+    List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
+
+    LoyaltyPointConfigDTO updateOrgDefaultTier(Long orgId, Long tierId);
+}

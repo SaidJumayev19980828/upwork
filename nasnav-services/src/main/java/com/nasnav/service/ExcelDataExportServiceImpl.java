@@ -60,7 +60,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 			}
 		}
 
-		data.forEach(line ->  createNewRow(sheet, indexToHeader, line));
+		data.forEach(line ->  createNewRow(sheet, indexToHeader, (CsvRow) line));
 
  		workbook.write(bos);
 		workbook.close();
@@ -80,15 +80,21 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		headers.add(specialColumns.get(key));
 	}
 
-	private void createNewRow(XSSFSheet sheet, Map<Integer, String> indexToHeader, Object line) {
+	private void createNewRow(XSSFSheet sheet, Map<Integer, String> indexToHeader, CsvRow line) {
 		Row newRow = sheet.createRow(sheet.getLastRowNum()+1);
 		for (Integer key: indexToHeader.keySet()) {
 			String value = null;
 			String columnName = indexToHeader.get(key);
 			try {
-				 value = BeanUtils.getProperty(line, columnName);
+				if (line.getFeatures().get(columnName) != null) {
+					value = line.getFeatures().get(columnName);
+				} else if (line.getExtraAttributes().get(columnName) != null) {
+						value = line.getExtraAttributes().get(columnName);
+				} else {
+					value = BeanUtils.getProperty(line, columnName);
+				}
 			} catch (Exception e) {
-				logger.error(e);
+				logger.error(e.getMessage());
 			}
 			newRow.createCell(key).setCellValue(value);
 		}

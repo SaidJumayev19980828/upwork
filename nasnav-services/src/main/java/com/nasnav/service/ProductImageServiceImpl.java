@@ -56,6 +56,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -163,7 +164,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private ProductImageUpdateResponse saveUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+	private ProductImageUpdateResponse saveUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());		
 		
@@ -171,15 +172,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 		Long imgId = imgMetaData.getImageId();		
 		ProductImagesEntity entity = productImagesRepository.findById(imgId).get();
 		
-		
-		
+
 		String url = null;
 		String oldUrl = null;
 		if(file != null && !file.isEmpty()) {
 			 url = fileService.saveFile(file, user.getOrganizationId());
 			 oldUrl = entity.getUri();
-		}		
-		
+		}
+		if(url != null)
+			entity.setUri(url);
 		
 		//to update a value , it should be already present in the JSON		
 		if(imgMetaData.isUpdated("priority"))
@@ -193,9 +194,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 			Optional<ProductEntity> productEntity = productRepository.findById( productId );
 			entity.setProductEntity(productEntity.get());
 		}
-		
-		if(url != null)
-			entity.setUri(url);
 		
 		if(imgMetaData.isUpdated("variantId")) {
 			Optional.ofNullable( imgMetaData.getVariantId() )
@@ -249,24 +247,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return responses;
 	}
-	
 
-
-	
-	
-
-	private String saveFile(MultipartFile file) throws BusinessException {
+	private String saveFile(MultipartFile file) {
 		Long userOrgId =  securityService.getCurrentUserOrganizationId();		
 		return fileService.saveFile(file, userOrgId);
 	}
-	
-	
-	
-	
-	
-	
-	private ProductImageUpdateResponse saveNewProductImgMetaData(ProductImageUpdateDTO imgMetaData, String url)
-			throws BusinessException {		
+
+	private ProductImageUpdateResponse saveNewProductImgMetaData(ProductImageUpdateDTO imgMetaData, String url) {
 		Long imgId = saveProductImgToDB(imgMetaData, url);		
 		return new ProductImageUpdateResponse(imgId, url);
 	}
@@ -274,26 +261,65 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Long saveProductImgToDB(ProductImageUpdateDTO imgMetaData, String uri) throws BusinessException {
+	private Long saveProductImgToDB(ProductImageUpdateDTO imgMetaData, String uri) {
 		Long productId = imgMetaData.getProductId();
-		Optional<ProductEntity> productEntity = productRepository.findById( productId );
-		
-		
-		ProductImagesEntity entity = new ProductImagesEntity();
-		entity.setPriority(imgMetaData.getPriority());
-		entity.setProductEntity(productEntity.get());		
-		entity.setType(imgMetaData.getType());
-		entity.setUri(uri);
-		Optional.ofNullable( imgMetaData.getVariantId() )
-				.flatMap(productVariantsRepository::findById)
-				.ifPresent(entity::setProductVariantsEntity);
-		
-		entity = productImagesRepository.save(entity);
-		
-		return entity.getId();
+		ProductEntity productEntity = productRepository.findById( productId ).get();
+
+		List<ProductImagesEntity> imagesEntities = new ArrayList<>();
+
+		if (imgMetaData.getVariantId() != null) {
+			imagesEntities.addAll(saveImageToAllVariantsWithHighLevelFeatures(imgMetaData, productEntity, uri));
+			if (imagesEntities.isEmpty()) {
+				ProductVariantsEntity variant = productVariantsRepository.findById( imgMetaData.getVariantId() ).get();
+				ProductImagesEntity entity = new ProductImagesEntity();
+				entity.setPriority(imgMetaData.getPriority());
+				entity.setProductEntity(productEntity);
+				entity.setType(imgMetaData.getType());
+				entity.setUri(uri);
+				entity.setProductVariantsEntity(variant);
+				imagesEntities.add(entity);
+			}
+		} else {
+			ProductImagesEntity entity = new ProductImagesEntity();
+			entity.setPriority(imgMetaData.getPriority());
+			entity.setProductEntity(productEntity);
+			entity.setType(imgMetaData.getType());
+			entity.setUri(uri);
+			imagesEntities.add(entity);
+		}
+		productImagesRepository.saveAll(imagesEntities);
+		return imagesEntities.get(0).getId();
 	}
 
-
+	private List<ProductImagesEntity> saveImageToAllVariantsWithHighLevelFeatures(ProductImageUpdateDTO imgMetaData,
+																				  ProductEntity productEntity,
+																				  String uri) {
+		List<ProductImagesEntity> imagesEntities = new ArrayList<>();
+		ProductVariantsEntity variant = productVariantsRepository.findByVariantId(imgMetaData.getVariantId());
+		Map<ProductFeaturesEntity, String> mainFeatures = variant.getFeatureValues()
+				.stream()
+				.filter(v -> v.getFeature().getLevel() > 0)
+				.collect(toMap(VariantFeatureValueEntity::getFeature, VariantFeatureValueEntity::getValue));
+		for (ProductVariantsEntity v : productEntity.getProductVariants()) {
+			boolean include = false;
+			for (VariantFeatureValueEntity value : v.getFeatureValues()) {
+				if (mainFeatures.get(value.getFeature()) != null && mainFeatures.get(value.getFeature()).equals(value.getValue())) {
+					include = true;
+					break;
+				}
+			}
+			if (include) {
+				ProductImagesEntity entity = new ProductImagesEntity();
+				entity.setPriority(imgMetaData.getPriority());
+				entity.setProductEntity(productEntity);
+				entity.setType(imgMetaData.getType());
+				entity.setUri(uri);
+				entity.setProductVariantsEntity(v);
+				imagesEntities.add(entity);
+			}
+		}
+		return imagesEntities;
+	}
 
 
 	private void validateProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
@@ -469,20 +495,20 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 	@Override
+	@Transactional
 	public ProductImageDeleteResponse deleteImage(Long imgId, Long productId) throws BusinessException {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		if (!isBlankOrNull(productId) && isBlankOrNull(imgId)) {
 			deleteProductImages(productId);
 		}
 		else if(isBlankOrNull(productId) && !isBlankOrNull(imgId)){
 			ProductImagesEntity img =
-					productImagesRepository.findById(imgId)
+					productImagesRepository.findByIdAndProductEntity_OrganizationId(imgId, orgId)
 							.orElseThrow(() -> new BusinessException("No Image exists with id [" + imgId + "] !", "INVALID PARAM:image_id", NOT_ACCEPTABLE));
 
 			productId = Optional.ofNullable(img.getProductEntity())
 					.map(prod -> prod.getId())
 					.orElse(null);
-
-			validateImgToDelete(img);
 
 			Long cnt = productImagesRepository.countByUri(img.getUri());
 			productImagesRepository.deleteById(imgId);
@@ -583,14 +609,28 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		List<String> existingImages = productImagesRepository
+				.findByProductAndBundle_OrganizationId(orgId)
+				.stream()
+				.map(ProductImagesEntity::getUri)
+				.collect(toList());
+
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
+
+		existingImages
+				.stream()
+				.forEach(fileService::deleteFileByUrl);
 	}
 	
-	
-	
+
 	private void deleteProductImages(Long productId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<String> images =  productImagesRepository.findUrlsByProductIdAndOrganizationId(productId, orgId);
 		productImagesRepository.deleteByProductEntity_IdAndProductEntity_organizationId(productId, orgId);
+		for(String img : images) {
+			fileService.deleteFileByUrl(img);
+		}
 	}
 	
 
@@ -599,7 +639,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
+			@Valid ProductImageBulkUpdateDTO metaData) {
 				
 		Map<String,List<VariantIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
@@ -811,7 +851,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(!Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
 			imgMetaData.setVariantId(variantId);
 		}
-		
+
 		return imgMetaData;		
 	}
 	
@@ -1522,9 +1562,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
-		String uri = ofNullable(mapEntry.getValue())
-				.map(List::stream)
-				.flatMap(s -> s.findFirst())
+		String uri = mapEntry.getValue()
+				.stream()
+				.min(comparing(ProductImageDTO::getPriority))
 				.map(ProductImageDTO::getImagePath)
 				.orElse(null);
 
@@ -1624,7 +1664,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		SwatchDataCache cache = createSwatchDataCache(importedImgs, metaData);
 		importedImgs
 				.stream()
-				.map(this::saveSwatchFile)
+				.map(e -> saveSwatchFile(e, metaData.isCrop()))
 				.map(saved -> createExtraAttrValueEntity(saved, cache))
 				.collect(collectingAndThen(toList(), attrValuesRepo::saveAll));
 	}
@@ -1688,9 +1728,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch) {
+	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch, boolean crop) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		String url = fileService.saveFile(swatch.getImage(), orgId);
+		String url = fileService.saveFile(swatch.getImage(), orgId, crop);
 		return new SavedImportedSwatchImage(swatch, url);
 	}
 

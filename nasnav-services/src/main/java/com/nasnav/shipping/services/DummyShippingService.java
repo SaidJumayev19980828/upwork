@@ -124,6 +124,15 @@ public class DummyShippingService implements ShippingService {
 		}
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
 
 
 	private ShippingEta getFlatEta() {

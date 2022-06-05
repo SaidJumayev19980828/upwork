@@ -2,9 +2,11 @@ package com.nasnav.service;
 
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.security.UserAuthenticationData;
@@ -17,7 +19,7 @@ public interface SecurityService {
 	
 	Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token);
 
-    UserApiResponse login(UserDTOs.UserLoginObject body) ;
+    UserApiResponse login(UserDTOs.UserLoginObject body, YeshteryState state) ;
 
     UserApiResponse logout(String token);
 
@@ -25,6 +27,7 @@ public interface SecurityService {
     
     Long getCurrentUserOrganizationId();
     Long getCurrentUserShopId();
+    ShopsEntity getCurrentUserShop();
     OrganizationEntity getCurrentUserOrganization();
 
     Boolean userHasRole(BaseUserEntity user, Roles role);
@@ -47,4 +50,6 @@ public interface SecurityService {
     boolean currentUserHasMaxRoleLevelOf(Roles role);
 
     Set<Roles> getCurrentUserRoles();
+
+    Integer getYeshteryState();
 }

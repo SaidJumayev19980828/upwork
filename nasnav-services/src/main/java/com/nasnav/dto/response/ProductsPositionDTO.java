@@ -3,11 +3,13 @@ package com.nasnav.dto.response;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.request.ProductPositionDTO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Map;
 
 @Data
+@AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductsPositionDTO {
 

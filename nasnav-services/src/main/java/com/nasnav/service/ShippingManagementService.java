@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.shipping.ShippingService;
@@ -17,12 +18,12 @@ import java.util.Optional;
 
 public interface ShippingManagementService {
 
-	List<ShippingOfferDTO> getShippingOffers(Long customerAddress);
+	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId, String paymentMethodId, String shippingServiceId);
 	void registerToShippingService(ShippingServiceRegistration registration);
 	void unregisterFromShippingService(String serviceId);
-	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto);
+	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId);
 	Optional<ShippingService> getShippingService(OrganizationShippingServiceEntity orgShippingService);
-	List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails);
+	List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails, Long orgId);
 	public List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService);
 	Mono<ShipmentTracker> requestShipment(OrdersEntity subOrder);
 	ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder);
@@ -35,4 +36,8 @@ public interface ShippingManagementService {
 	Optional<ShopsEntity> getPickupShop(ShipmentEntity shipment);
 	boolean isPickupService(String shippingServiceId);
 	Optional<ShippingServiceInfo> getShippingServiceInfo(String shippingServiceId);
+	OrderConfirmResponseDTO getShippingAirwayBill(Long orderId);
+	String getTrackingUrl(Long orderId);
+	List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddress, String paymentMethodId, String shippingServiceId);
+
 }

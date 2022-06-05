@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifIFD0Directory;
 import com.google.common.net.MediaType;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
@@ -18,10 +22,14 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -38,9 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.zip.ZipInputStream;
 
-import static com.google.common.io.Files.getFileExtension;
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.nasnav.cache.Caches.FILES;
 import static com.nasnav.cache.Caches.IMGS_RESIZED;
@@ -49,7 +55,6 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
@@ -57,6 +62,8 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static net.coobird.thumbnailator.geometry.Positions.CENTER;
+import static net.coobird.thumbnailator.resizers.Resizers.BICUBIC;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -99,12 +106,33 @@ public class FileService {
 	}
 
 
-
+	public String saveFile(MultipartFile file, Long orgId, boolean crop) {
+		if (crop) {
+			try {
+				var imgOutStream = new ByteArrayOutputStream();
+				BufferedImage image = ImageIO.read(file.getInputStream());
+				int targetWidth = 100;
+				int targetHeight = 100;
+				Thumbnails
+						.of(image)
+						.sourceRegion(CENTER, targetWidth, targetHeight)
+						.scale(1.0)
+						.resizer(BICUBIC)
+						.outputFormat(getFileExtension(file.getBytes()).substring(1))
+						.toOutputStream(imgOutStream);
+				return saveFile(getCommonsMultipartFile(file.getOriginalFilename(), file.getOriginalFilename(), file.getContentType(), imgOutStream), orgId);
+			} catch (Exception e) {
+				logger.error(e, e);
+				return saveFile(file, orgId);
+			}
+		}
+		return saveFile(file, orgId);
+	}
 
 	public String saveFile(MultipartFile file, Long orgId) {
 
 		if(orgId != null && !orgRepo.existsById(orgId)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001, orgId);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId);
 		}
 		if(isBlankOrNull(file.getOriginalFilename()) ) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
@@ -159,7 +187,17 @@ public class FileService {
 		return mimeType;
 	}
 
-
+	private String getFileExtension(byte[] bytes) {
+		try {
+			String contentType = new Tika().detect(bytes);
+			TikaConfig config = TikaConfig.getDefaultConfig();
+			MimeType mimeType = config.getMimeRepository().forName(contentType);
+			String extension = mimeType.getExtension();
+			return extension;
+		} catch (MimeTypeException e) {
+			return "png";
+		}
+	}
 
 
 	private Path getSaveDir(Long orgId) {
@@ -221,7 +259,7 @@ public class FileService {
 
 
 	private String getUniqueRandomName(String origName) {
-		String ext = getFileExtension(origName);
+		String ext = com.google.common.io.Files.getFileExtension(origName);
 		String origNameNoExtension = getNameWithoutExtension(origName);
 		String uuid = UUID.randomUUID().toString().replace("-", "");
 		return String.format("%s-%s.%s", origNameNoExtension, uuid , ext);
@@ -295,31 +333,38 @@ public class FileService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0012, url));
 	}
 
-
-
-	@CacheEvict(cacheNames = {FILES})
-	public void deleteFileByUrl(String url) throws BusinessException{
+	public void deleteFileByUrl(String url) {
 		FileEntity file = filesRepo.findByUrl(url);
+		deleteFile(file);
+	}
 
+	@Transactional
+	@CacheEvict(cacheNames = {FILES, IMGS_RESIZED})
+	public void deleteFile(FileEntity file) {
 		if(file == null) 	//if file doesn't exist in database, then job's done!
 			return;
 
 		Path path = basePath.resolve(file.getLocation());
 
 		try {
+			for(FilesResizedEntity resizedEntity : filesResizedRepo.findByOriginalFile(file)) {
+				Path resizedPath = basePath.resolve(resizedEntity.getImageUrl());
+				filesResizedRepo.deleteById(resizedEntity.getId());
+				Files.deleteIfExists(resizedPath);
+			}
 			filesRepo.delete(file);
-			filesResizedRepo.deleteByOriginalFile(file);
 			Files.deleteIfExists(path);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException(
-					format("Failed to delete file with url[%s] at location [%s]", url, path.toString())
-					, "FAILURE"
-					, INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR,GEN$0023, file.getUrl(), path.toString());
 		}
 	}
 
-
+	public void deleteOrganizationFile(String fileName) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		FileEntity file = filesRepo.findByUrlAndOrganization_Id(fileName, orgId);
+		deleteFile(file);
+	}
 
 
 	@CacheResult(cacheName = FILES)
@@ -342,6 +387,7 @@ public class FileService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0014, url));
 
 		if (!originalFile.getMimetype().contains("image")) {
+			logger.error(String.format("Couldn't resize image : file has mimetype [%s]!", originalFile.getMimetype()));
 			return STATIC_FILES_URL + "/" + originalFile.getLocation();
 		}
 		try {
@@ -363,10 +409,11 @@ public class FileService {
 		try {
 			Path location = basePath.resolve(originalFile.getLocation());
 			File file = location.toFile();
+			Metadata metadata = ImageMetadataReader.readMetadata(file);
 			BufferedImage image = ImageIO.read(file);
 			int targetWidth = getProperWidth(width, height, image);
 			String resizedFileName = getResizedImageName(file.getName(), targetWidth, fileType);
-			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName);
+			MultipartFile multipartFile = resizeImage(image, targetWidth, fileType, resizedFileName, metadata);
 			Long orgId = originalFile.getOrganization().getId();
 			return saveResizedFileEntity(originalFile, multipartFile, width, height, orgId);
 		}catch (Exception e) {
@@ -443,6 +490,7 @@ public class FileService {
 		resizedFile.setWidth(width);
 		resizedFile.setHeight(height);
 		resizedFile.setImageUrl(getUrl(multipartFile.getOriginalFilename(), orgId));
+
 		return filesResizedRepo.save(resizedFile);
 	}
 
@@ -474,16 +522,39 @@ public class FileService {
 
 
 
-	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName) throws IOException {
+	private MultipartFile resizeImage(BufferedImage image, Integer targetWidth, String fileType, String resizedFileName,
+									  Metadata metadata) throws IOException {
+		int rotation = getImageRotation(metadata);
 		var imgOutStream = new ByteArrayOutputStream();
 		Thumbnails.of(image)
 				.width(targetWidth)
+				.rotate(rotation)
 				.outputFormat(fileType)
 				.toOutputStream(imgOutStream);
 		return getCommonsMultipartFile(resizedFileName, resizedFileName, fileType, imgOutStream);
 	}
 
+	private int getImageRotation(Metadata metadata)  {
+		try {
+			ExifIFD0Directory exifIFD0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+			int orientation = exifIFD0.getInt(ExifIFD0Directory.TAG_ORIENTATION);
 
+			switch (orientation) {
+				case 1: // [Exif IFD0] Orientation - Top, left side (Horizontal / normal)
+					return 0;
+				case 6: // [Exif IFD0] Orientation - Right side, top (Rotate 90 CW)
+					return 90;
+				case 3: // [Exif IFD0] Orientation - Bottom, right side (Rotate 180)
+					return 180;
+				case 8: // [Exif IFD0] Orientation - Left side, bottom (Rotate 270 CW)
+					return 270;
+				default:
+					return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+	}
 
 	public MultipartFile getCommonsMultipartFile(String fieldName, String resizedFileName, String fileType, ByteArrayOutputStream imgOutStream) throws IOException {
 		FileItem fileItem = createFileItem(fieldName, resizedFileName, fileType);

@@ -17,6 +17,7 @@ public enum Roles {
     ORGANIZATION_MANAGER("ORGANIZATION_MANAGER", 2, false),
     STORE_MANAGER("STORE_MANAGER", 4, true),
     NASNAV_ADMIN("NASNAV_ADMIN", -100000, true),
+    NASNAV_EMPLOYEE("NASNAV_EMPLOYEE", -99999, false),
     ORGANIZATION_ADMIN("ORGANIZATION_ADMIN", 1, true),
 	ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
 	STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
@@ -31,23 +32,23 @@ public enum Roles {
     private final boolean canCreateUsers;
 
     @Getter
-    private static final Set<String> nasnavAdminPrelivedge =
-            setOf(NASNAV_ADMIN.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+    private static final Set<String> nasnavAdminPrivilege =
+            setOf(NASNAV_ADMIN.name(), NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
                     ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> organizationAdminPrelivedge =
+    private static final Set<String> organizationAdminPrivilege =
             setOf(ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
                     STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> organizationManagerPrelivedge =
+    private static final Set<String> organizationManagerPrivilege =
             setOf(ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
                     STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> organizationEmployeePrelivedge = setOf(ORGANIZATION_EMPLOYEE.name(), STORE_EMPLOYEE.name());
+    private static final Set<String> organizationEmployeePrivilege = setOf(ORGANIZATION_EMPLOYEE.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeManagerPrelivedge = setOf(STORE_MANAGER.name(), STORE_EMPLOYEE.name());
+    private static final Set<String> storeManagerPrivilege = setOf(STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeEmployeePrelivedge = setOf(STORE_EMPLOYEE.name());
+    private static final Set<String> storeEmployeePrivilege = setOf(STORE_EMPLOYEE.name());
 
 
     Roles(String value, int level, boolean canCreateUsers) {
@@ -68,14 +69,14 @@ public enum Roles {
 
 
 
-    public static Map<String, Set<String>> getAllPrevliges(){
+    public static Map<String, Set<String>> getAllPrivileges(){
         Map<String, Set<String>> result = new HashMap<>();
-        result.put(NASNAV_ADMIN.name(), nasnavAdminPrelivedge);
-        result.put(ORGANIZATION_ADMIN.name(), organizationAdminPrelivedge);
-        result.put(ORGANIZATION_MANAGER.name(), organizationManagerPrelivedge);
-        result.put(STORE_EMPLOYEE.name(), organizationEmployeePrelivedge);
-        result.put(STORE_MANAGER.name(), storeManagerPrelivedge);
-        result.put(STORE_EMPLOYEE.name(), storeEmployeePrelivedge);
+        result.put(NASNAV_ADMIN.name(), nasnavAdminPrivilege);
+        result.put(ORGANIZATION_ADMIN.name(), organizationAdminPrivilege);
+        result.put(ORGANIZATION_MANAGER.name(), organizationManagerPrivilege);
+        result.put(STORE_EMPLOYEE.name(), organizationEmployeePrivilege);
+        result.put(STORE_MANAGER.name(), storeManagerPrivilege);
+        result.put(STORE_EMPLOYEE.name(), storeEmployeePrivilege);
         return result;
     }
 }

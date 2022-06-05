@@ -3,6 +3,7 @@ package com.nasnav.dto.response;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.PromosConstraints;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,11 @@ import java.util.Map;
 public class PromotionDTO {
 	private Long id;
 	private String identifier;
+	private String name;
+	private String description;
+	private String banner;
+	private String cover;
+
 	private Long organizationId;
 	private Integer typeId;
 	private Integer classId;
@@ -23,7 +29,7 @@ public class PromotionDTO {
 	
 	private String status;
 	private String code;
-	private Map<String,Object> constrains;
+	private PromosConstraints constrains;
 	private Map<String,Object> discount;
 	private Long userId;
 	private String userName;

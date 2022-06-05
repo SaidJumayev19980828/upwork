@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
@@ -284,18 +285,18 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				if ( collectionContainsAnyOf(userRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE")) {
 					orgId = user.getOrganizationId();
 					if (userRoles.contains("ORGANIZATION_ADMIN")) {
-                        roles = Roles.getOrganizationAdminPrelivedge();
+                        roles = Roles.getOrganizationAdminPrivilege();
 					} else if (userRoles.contains("ORGANIZATION_MANAGER")) {
-                        roles = Roles.getOrganizationManagerPrelivedge();
+                        roles = Roles.getOrganizationManagerPrivilege();
 					} else {
-                        roles = Roles.getOrganizationEmployeePrelivedge();
+                        roles = Roles.getOrganizationEmployeePrivilege();
 					}
 				}
                 else if (collectionContainsAnyOf(userRoles, "STORE_MANAGER", "STORE_EMPLOYEE")) {
                     orgId = user.getOrganizationId();
                     storeId = user.getShopId();
                     if (userRoles.contains("STORE_MANAGER")) {
-                        roles = Roles.getStoreManagerPrelivedge();
+                        roles = Roles.getStoreManagerPrivilege();
                     } else
                         roles.add("STORE_EMPLOYEE");
                 }
@@ -358,6 +359,13 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		employeeUserRepository.save(user);
 	}
 
+	@Override
+	public List<UserRepresentationObject> getAvailableEmployeesByOrgId(Long orgId) {
+		return employeeUserRepository.findByOrganizationId(orgId)
+				.stream()
+				.map(user -> user.getRepresentation())
+				.collect(toList());
+	}
 
 
 	private EmployeeUserEntity getAndValidateEmployeeToSuspend(Long id) {

@@ -182,7 +182,7 @@ public class PickupFromShop implements ShippingService{
 		.stream()
 		.filter(param -> Objects.equals(param.getName(), SHOP_ID))
 		.findFirst()
-		.ifPresent(param -> param.setOptions(possiblePickupShops));
+		.ifPresent(param -> param.setOptions(Arrays.asList(possiblePickupShops.toArray())));
 		
 		return serviceInfo;
 	}
@@ -268,6 +268,16 @@ public class PickupFromShop implements ShippingService{
 			logger.error(e,e);
 			return Optional.empty();
 		}
+	}
+
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
 	}
 
 

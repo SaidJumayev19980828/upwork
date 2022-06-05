@@ -11,5 +11,6 @@ import java.util.Map;
 public class WishlistItemQuantity {
     private Long itemId;
     private Integer quantity;
+    private Long orgId;
     private Map<String,Object> additionalData;
 }

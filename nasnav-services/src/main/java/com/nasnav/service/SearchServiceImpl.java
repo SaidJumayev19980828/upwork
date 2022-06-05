@@ -150,7 +150,7 @@ public class SearchServiceImpl implements SearchService{
 
 
 
-    private SearchSourceBuilder getSuggestionSourceBuilder(SearchParameters params) {
+    private SearchSourceBuilder getSuggestionSourceBuilder(NormalizedSearchParameters params) {
         var mainQuery = QueryBuilders
                 .boolQuery()
                 .should( regexpQuery("name", ".*"+params.keyword+".*"))
@@ -158,6 +158,9 @@ public class SearchServiceImpl implements SearchService{
                 .minimumShouldMatch(1);      //at least one condition should be met
         if(nonNull(params.org_id)){
             mainQuery.filter( matchQuery("organization_id", params.org_id));
+        }
+        if(params.only_yeshtery){
+            mainQuery.filter(matchQuery("yeshtery_state", 1));
         }
         return new SearchSourceBuilder()
                 .query( mainQuery)
@@ -203,6 +206,9 @@ public class SearchServiceImpl implements SearchService{
         normalized.keyword = ofNullable(parameters.keyword).orElse("").toLowerCase();
         normalized.org_id = parameters.org_id;
         normalized.type = parameters.type;
+        if (normalized.keyword.isEmpty() || normalized.keyword.isBlank()) {
+            normalized.type = Arrays.asList(SearchType.TAGS);
+        }
         normalized.start = ofNullable(parameters.start).orElse(0);
         normalized.count = ofNullable(parameters.count).map(this::limitPage).orElse(DEFAULT_PG_SIZE);
         normalized.only_yeshtery = onlyYeshtery;
@@ -349,7 +355,7 @@ public class SearchServiceImpl implements SearchService{
 
     private Mono<Void> resendOrganizationData(OrganizationEntity org){
         return Mono
-                .zip(sendProductsAndCollectionsData(org), sendTagsData(org))
+                .zip(sendTagsData(org), sendProductsAndCollectionsData(org))
                 .then();
     }
 
@@ -591,6 +597,7 @@ public class SearchServiceImpl implements SearchService{
                 .filter(entry -> Objects.equals(entry.getKey(), "name"))
                 .map(Map.Entry::getValue)
                 .map(Object::toString)
+                .distinct()
                 .collect(toList());
     }
 

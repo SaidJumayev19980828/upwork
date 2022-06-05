@@ -57,7 +57,7 @@ public class ClickNshipWebClient {
         return client.post()
                 .uri("/clicknship/Operations/DeliveryFee")
                 .header("Authorization","Bearer "+token)
-                .syncBody(dto)
+                .bodyValue(dto)
                 .exchange();
     }
 
@@ -65,7 +65,7 @@ public class ClickNshipWebClient {
         return client.post()
                 .uri("/clicknship/Operations/PickupRequest")
                 .header("Authorization","Bearer "+token)
-                .syncBody(dto)
+                .bodyValue(dto)
                 .exchange();
     }
 

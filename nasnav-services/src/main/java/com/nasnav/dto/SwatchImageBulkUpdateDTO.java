@@ -16,10 +16,12 @@ public class SwatchImageBulkUpdateDTO {
     private boolean ignoreErrors;
     private boolean deleteOldImages;
     private Long featureId;
+    private boolean crop;
 
     public SwatchImageBulkUpdateDTO(ProductImageBulkUpdateDTO metaData){
         this.setDeleteOldImages(metaData.isDeleteOldImages());
         this.setFeatureId(metaData.getFeatureId());
         this.setIgnoreErrors(metaData.isIgnoreErrors());
+        this.setCrop(metaData.isCrop());
     }
 }

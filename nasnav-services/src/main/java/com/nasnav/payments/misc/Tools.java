@@ -121,7 +121,7 @@ public class Tools {
 	}
 
 
-	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
+	public static synchronized Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
 
 		Properties props = null;
 		String file = null;
@@ -151,7 +151,11 @@ public class Tools {
 		} catch (IOException e) {
 			logger.error("Unable to load account property: {}, {}", file, e.getMessage());
 		}
-
+		if (props == null) {
+			logger.error("Properties ({}) not loaded", accountName);
+		} else {
+			logger.debug("Properties ID: {}", props.getProperty("account.identifier"));
+		}
 		return props;
 	}
 

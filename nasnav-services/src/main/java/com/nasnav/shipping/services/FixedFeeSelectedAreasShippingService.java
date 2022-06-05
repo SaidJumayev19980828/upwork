@@ -130,6 +130,8 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
 
 
     protected Mono<ShippingOffer> doCreateShippingOffer(List<ShippingDetails> shippingInfo, ShippingServiceInfo serviceInfo) {
+        if (shippingInfo.get(0).getDestination().getId() == -1L)
+            return Mono.empty();
         if(!areAreasSupported(shippingInfo)) {
             return Mono.just(new ShippingOffer(serviceInfo, apologyMsg));
         }
@@ -211,6 +213,15 @@ public class FixedFeeSelectedAreasShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        return Mono.empty();
+    }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        return null;
+    }
 
 
     private void setEtaMinutesMin(Map<String, String> serviceParams) {

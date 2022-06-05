@@ -62,6 +62,13 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 			" WHERE prod.organizationId = :orgId OR variantProd.organizationId = :orgId")
 	List<ProductImagesEntity> findByProductEntity_OrganizationId(@Param("orgId")Long orgId);
 
+	@Query("SELECT img FROM ProductImagesEntity img " +
+			" LEFT JOIN FETCH img.productEntity prod " +
+			" LEFT JOIN FETCH img.productVariantsEntity variant " +
+			" LEFT JOIN variant.productEntity variantProd " +
+			" WHERE prod.organizationId = :orgId and coalesce(prod.productType,0) in (0,1)")
+	List<ProductImagesEntity> findByProductAndBundle_OrganizationId(@Param("orgId")Long orgId);
+
 	
 	@Query(value = "DELETE from Product_Images img " +
 			" where img.product_id in(" +
@@ -75,7 +82,13 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	Long countByProductEntity_OrganizationId(long l);
 
-	Set<ProductImagesEntity> findByProductEntity_IdAndTypeOrderByPriority(Long productId, int productImage);
+	@Query("select image.uri from ProductImagesEntity image " +
+			"left join image.productEntity product " +
+			"where product.id = :productId and product.organizationId = :orgId")
+	List<String> findUrlsByProductIdAndOrganizationId(@Param("productId") Long productId,
+														@Param("orgId") Long orgId);
+
+	Optional<ProductImagesEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
 
 
 

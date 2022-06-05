@@ -7,7 +7,7 @@ import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
-import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAtrribute;
+import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAttribute;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
@@ -76,15 +77,19 @@ public class DataExportServiceImpl implements DataExportService{
 		List<Long> variantsIds = result.stream()
 				.map(ProductExportedData::getVariantId)
 				.collect(toList());
-		Map<Long, Map<String, String>> variantsFeaturesMap = variantsRepo.findByIdIn(variantsIds)
+		Map<Long, Map<String, String>> variantsFeaturesMap = mapInBatches(variantsIds, 1000, variantsRepo::findByIdIn)
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> productService.parseVariantFeatures(variant, 0)));
+
+		Map<String, String> emptyFeatureValuesMap = feautreRepo.findByOrganizationId(orgId)
+				.stream()
+				.collect(toMap(ProductFeaturesEntity::getName, f -> "" ));
 
 		var extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
 		var productTags = createProductTagsMap(result);
 		return result
 				.stream()
-				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes))
+				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes, emptyFeatureValuesMap))
 				.collect(toList());
 	}
 
@@ -112,8 +117,8 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 
-	private Map<Long, List<VariantExtraAtrribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
-		List<VariantExtraAtrribute> variantAttributes = emptyList();
+	private Map<Long, List<VariantExtraAttribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
+		List<VariantExtraAttribute> variantAttributes = emptyList();
 		if(shopId != null){
 			variantAttributes =  prodExtraAttributeRepo.findByVariantShopId(shopId);
 		}else{
@@ -121,7 +126,7 @@ public class DataExportServiceImpl implements DataExportService{
 		}
 		return variantAttributes
 				.stream()
-				.collect(groupingBy(VariantExtraAtrribute::getVariantId));
+				.collect(groupingBy(VariantExtraAttribute::getVariantId));
 	}
 
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
@@ -143,11 +148,12 @@ public class DataExportServiceImpl implements DataExportService{
 	private CsvRow toCsvRow(ProductExportedData productData
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Long, Map<String, String>> features
-			, Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
+			, Map<Long, List<VariantExtraAttribute>> extraAttributes
+			, Map<String, String> emptyFeatureValuesMap) {
 		var row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
-		setFeatures(row, productData, features);
+		setFeatures(row, productData, features, emptyFeatureValuesMap);
 		setExtraAttributes(row, productData, extraAttributes);
 		return row;
 	}
@@ -155,24 +161,29 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	
 	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
-			Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
+			Map<Long, List<VariantExtraAttribute>> extraAttributes) {
 		var extraAttrMap  =
 				extraAttributes
 				.getOrDefault(productData.getVariantId(), emptyList())
 				.stream()
-				.collect(toMap(VariantExtraAtrribute::getName, VariantExtraAtrribute::getValue));
+				.collect(toMap(VariantExtraAttribute::getName, VariantExtraAttribute::getValue));
 		row.setExtraAttributes(extraAttrMap);
 	}
 
 
 
 	private void setFeatures(CsvRow row, ProductExportedData productData,
-							 Map<Long, Map<String, String>> featuresMap) {
-		var features =
+							 Map<Long, Map<String, String>> featuresMap,
+							 Map<String, String> emptyFeatureValuesMap) {
+		Map<String, String> features =
 				ofNullable(productData)
 				.map(ProductExportedData::getVariantId)
-				.map(id -> featuresMap.get(id))
+				.map(featuresMap::get)
 				.orElse(emptyMap());
+		for(Map.Entry<String, String> e : emptyFeatureValuesMap.entrySet()) {
+			if (!features.containsKey(e.getKey()) && !e.getValue().isEmpty())
+				features.put(e.getKey(), e.getValue());
+		}
 		
 		row.setFeatures(features);
 	}
@@ -183,7 +194,7 @@ public class DataExportServiceImpl implements DataExportService{
 		Map<String,String> features = new  HashMap<>();
 		for(var key : json.keySet()) {
 			Optional.of(key)
-			.map(k -> Integer.valueOf(k))
+			.map(Integer::valueOf)
 			.map(featuresMap::get)
 			.map(ProductFeaturesEntity::getName)
 			.ifPresent( name -> features.put(name, json.getString(key)));
@@ -352,7 +363,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
 						.and(stock.shopId.eq(shopId))
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 
 
@@ -371,7 +383,8 @@ public class DataExportServiceImpl implements DataExportService{
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
 				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
-						.and(product.removed.eq(0)));
+						.and(product.removed.eq(0))
+						.and(variant.removed.eq(0)));
 	}
 	
 

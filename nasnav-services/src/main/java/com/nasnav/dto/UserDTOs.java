@@ -21,6 +21,8 @@ public class UserDTOs {
 
         @JsonProperty("phone_number")
         private String phoneNumber;
+        @JsonProperty("date_of_birth")
+        private String dateOfBirth;
     }
 
     @Getter
@@ -152,5 +154,11 @@ public class UserDTOs {
 
         @JsonProperty("last_name")
         private String lastName;
+
+        @JsonProperty("tier_id")
+        private Long tierId;
+
+        @JsonProperty("family_id")
+        private Long familyId;
     }
 }

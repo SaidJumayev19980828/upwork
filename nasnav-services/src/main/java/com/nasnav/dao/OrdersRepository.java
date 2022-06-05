@@ -149,7 +149,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("SELECT ord "
 			+ " FROM OrdersEntity ord "
 			+ " LEFT JOIN FETCH ord.metaOrder meta "
-			+ " LEFT JOIN FETCH meta.user user " 
+			+ " LEFT JOIN FETCH meta.subMetaOrder subMeta "
+			+ " LEFT JOIN FETCH meta.user user "
 			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
 			+ " LEFT JOIN FETCH ord.shopsEntity shop "
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
@@ -172,9 +173,10 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.OrderPaymentOperator(ord.id, payment.operator) " +
 			" FROM OrdersEntity ord " +
 			" LEFT JOIN ord.metaOrder meta " +
+			" LEFT JOIN MetaOrderEntity subMeta on meta.subMetaOrder = subMeta" +
 			" LEFT JOIN PaymentEntity payment " +
-			" on payment.metaOrderId = meta.id " +
-			" WHERE ord.id in :orderIds")
+			" on payment.metaOrderId = meta.id or payment.metaOrderId = subMeta.id" +
+			" WHERE ord.id in :orderIds and payment.operator is not null")
     Set<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
 
 
@@ -189,7 +191,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
 			" where product.organizationId = :orgId and subOrder.creationDate >= :startDate" +
-			" and subOrder.status in (5,8)" +
+			" and subOrder.status in (2, 8, 4, 5)" +
 			" GROUP BY product.id, product.name, variant.id, variant.name, DATE_TRUNC('month',subOrder.creationDate)" +
 			" order by DATE_TRUNC('month',subOrder.creationDate) desc, COUNT(product.id) desc")
 	List<ProductStatisticsInfo> getProductsStatisticsPerMonth(@Param("orgId") Long orgId,
@@ -202,7 +204,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
 			" where product.organizationId = :orgId and subOrder.creationDate between :minMonth and :maxMonth" +
-			" and subOrder.status in (5,8)")
+			" and subOrder.status in (2, 8, 4, 5)")
 	Optional<BigDecimal> getTotalIncomePerMonth(@Param("orgId") Long orgId,
 												@Param("minMonth") LocalDateTime minMonth,
 												@Param("maxMonth") LocalDateTime maxMonth);
@@ -214,15 +216,17 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			" left join stock.productVariantsEntity variant " +
 			" left join variant.productEntity product " +
 			" where product.organizationId = :orgId and subOrder.creationDate between :minWeek and :maxWeek" +
-			" and subOrder.status in (5,8)")
+			" and subOrder.status in (2, 8, 4, 5)")
 	Optional<Integer> getSalesPerWeek(@Param("orgId") Long orgId,
 									  @Param("minWeek") LocalDateTime minWeek,
 									  @Param("maxWeek") LocalDateTime maxWeek);
 
-	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status = 5 and subOrder.id = :orderId")
+	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status in (2, 8, 4, 5) and subOrder.id = :orderId")
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
 											   @Param("userId") Long userId);
 
 	@Query("select order.userId from OrdersEntity order where order.id = :orderId")
 	Long getUserIdByOrderId(@Param("orderId")Long orderId);
+
+	Integer countAllByUserId(Long userId);
 }

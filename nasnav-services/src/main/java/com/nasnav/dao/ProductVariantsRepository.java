@@ -15,6 +15,11 @@ import java.util.Set;
 
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
+	@Query("select variant from ProductVariantsEntity variant " +
+			"left join fetch variant.featureValues value " +
+			"left join fetch value.feature feature " +
+			"where variant.id = :variantId")
+	ProductVariantsEntity findByVariantId(@Param("variantId") Long variantId);
 
 	@Query("select distinct v from ProductVariantsEntity v" +
 			" left join fetch v.featureValues featureValue " +
@@ -58,6 +63,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("select distinct variant from ProductVariantsEntity variant " +
 			" left join fetch variant.featureValues featureValues " +
 			" left join fetch featureValues.feature feature " +
+			" left join fetch variant.stocks stock " +
 			" where variant.id in :idList")
 	List<ProductVariantsEntity> findByIdIn(@Param("idList") List<Long> idList);
 	
@@ -133,20 +139,10 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
     List<ProductVariantsEntity> findByIdInAndProductEntity_OrganizationId(List<Long> ids, Long orgId);
 
-
-    @Query(value =
-			"with org_variants as (\n" +
-			"    select \n" +
-			"    (json_each(public.text_to_json(variant.feature_spec))).key::::int8 as feature_Id\n" +
-			"    ,variant.id \n" +
-			"    from public.product_variants variant\n" +
-			"    inner join public.products prod\n" +
-			"    on variant.product_id = prod.id\n" +
-			"    and prod.organization_id = :orgId\n" +
-			"    and prod.removed = 0\n" +
-			"    where variant.removed = 0\n" +
-			")\n" +
-			"select id from org_variants \n" +
-			"where feature_id = :featureId", nativeQuery = true)
-    List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
+	@Query("select feature.id from ProductVariantsEntity variant " +
+			" left join variant.featureValues featureValues " +
+			" left join featureValues.feature feature " +
+			" left join variant.productEntity product " +
+			" where feature.id = :featureId and product.organizationId = :orgId")
+	List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
 }

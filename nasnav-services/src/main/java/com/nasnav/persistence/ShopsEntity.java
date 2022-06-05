@@ -44,6 +44,11 @@ public class ShopsEntity implements BaseEntity{
     @Column(name = "google_place_id")
     private String placeId;
 
+    private String code;
+
+    @Column(name = "allow_other_points")
+    private Boolean allowOtherPoints;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
@@ -69,6 +74,10 @@ public class ShopsEntity implements BaseEntity{
     @Exclude
     @lombok.ToString.Exclude
     private Set<ShopThreeSixtyEntity> shop360s;
+
+
+    @Column(name = "yeshtery_state")
+    private Integer yeshteryState;
 
     public ShopsEntity() {
     	this.isWarehouse = 0;

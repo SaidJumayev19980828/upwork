@@ -300,7 +300,7 @@
                             <span th:text="${feature.key} + ': ' + ${feature.value}"></span> <br/>
                         </tr>
                     </table>
-                    <span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.from} + ' to ' + ${sub.shipment.shippingEta.to}"/>
+                    <span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.fromStr} + ' to ' + ${sub.shipment.shippingEta.toStr}"/>
                     <span class="quantity" th:text="'Qty: ' + ${item.quantity}"/>
                     <div th:with="price=${item.price * item.quantity}">
                         <p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${item.currency}"/>

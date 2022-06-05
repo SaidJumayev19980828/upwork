@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -76,6 +77,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     public static final int MAX_RETURN_TIME_WINDOW = 14;
 
+    @PersistenceContext
     @Autowired
     private EntityManager em;
 
@@ -93,6 +95,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     @Autowired
     private ProductImageService imgService;
+    @Autowired
+    private LoyaltyPointsService loyaltyPointsService;
 
     @Autowired
     private ProductService productService;
@@ -209,7 +213,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
         ReturnRequestEntity request = createReturnRequest(returnedItems);
         request = returnRequestRepo.save(request);
 
-        sendOrderReturnNotificationEmail(request.getId());
+        sendOrderReturnNotificationEmail(request);
         return request.getId();
     }
 
@@ -242,6 +246,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
             returnRequest.setStatus(RECEIVED.getValue());
             returnRequest = returnRequestRepo.save(returnRequest);
             increaseReturnRequestStock(returnRequest);
+
+            loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
 
             sendItemReceivedEmailToCustomer(returnRequest.getId());
             //TODO refund ??
@@ -789,13 +795,10 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
 
 
-    private void sendOrderReturnNotificationEmail(Long returnRequestId) {
+    private void sendOrderReturnNotificationEmail(ReturnRequestEntity request) {
+        Long returnRequestId = request.getId();
         Long orgId = securityService.getCurrentUserOrganizationId();
         String orgName = securityService.getCurrentUserOrganization().getName();
-        ReturnRequestEntity request =
-                returnRequestRepo
-                        .findByReturnRequestId(returnRequestId, orgId)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
         List<String> emails = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
         if(emails.isEmpty()) {
             return;
@@ -824,7 +827,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .map(ReturnRequestEntity::getMetaOrder)
                         .map(MetaOrderEntity::getOrganization);
 
-        Long orgId = org.map(OrganizationEntity::getId).orElse(-1L);
+        Long orgId = user.map(UserEntity::getOrganizationId).orElse(-1L);
         String shippingService = getShippingService(request);
         AddressRepObj pickupAddr = getPickupAddress(request);
         String returnOrderPageUrl = domainService.buildDashboardReturnRequestPageUrl(request.getId(), orgId);
@@ -1371,6 +1374,46 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0010);
             }
         }
+    }
+
+
+    @Override
+    public ReturnRequestsResponse getYeshteryOrderReturnRequests(ReturnRequestSearchParams params) {
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequests(params);
+        }
+        return null;
+    }
+
+    @Override
+    public ReturnRequestDTO getYeshteryOrderReturnRequest(Long id){
+        if (securityService.getYeshteryState() == 1) {
+            return getOrderReturnRequest(id);
+        }
+        return null;
+    }
+    @Override
+    @Transactional(rollbackFor = Throwable.class)
+    public void confirmYeshteryReturnRequest(Long requestId) {
+        if (securityService.getYeshteryState() == 1) {
+            confirmReturnRequest(requestId);
+        }
+        return;
+    }
+    @Override
+    @Transactional
+    public void rejectYeshteryReturnRequest(ReturnRequestRejectDTO dto) {
+        if (securityService.getYeshteryState() == 1) {
+            rejectReturnRequest(dto);
+        }
+        return;
+    }
+    @Override
+    public Long createYeshteryReturnRequest(ReturnRequestItemsDTO itemsList) {
+        if (securityService.getYeshteryState() == 1) {
+            return createReturnRequest(itemsList);
+        }
+        return null;
     }
 
 }

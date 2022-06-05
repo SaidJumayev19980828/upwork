@@ -179,6 +179,10 @@ public class SallabShippingService implements ShippingService{
 		if(!fee.isPresent() ||  !areCitiesSupported(shippingInfo)) {
 			return Mono.empty();
 		}
+
+		if (shippingInfo.get(0).getDestination().getId() == -1L)
+			return Mono.empty();
+
 		Integer shipmentsNum = shippingInfo.size();
 		List<Shipment> shipments =
 				shippingInfo
@@ -464,6 +468,16 @@ public class SallabShippingService implements ShippingService{
 	@Override
 	public Optional<Long> getPickupShop(String additionalParametersJson) {
 		return Optional.empty();
+	}
+
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
 	}
 
 

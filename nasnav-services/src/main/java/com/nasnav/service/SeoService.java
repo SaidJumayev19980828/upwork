@@ -8,4 +8,6 @@ import java.util.List;
 public interface SeoService {
     void addSeoKeywords(SeoKeywordsDTO seoKeywords);
     List<SeoKeywordsDTO> getSeoKeywords(Long orgId, Long entityId, SeoEntityType type);
+
+    List<SeoKeywordsDTO> getSeoKeywords(Long entityId, SeoEntityType type);
 }

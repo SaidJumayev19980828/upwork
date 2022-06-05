@@ -5,6 +5,7 @@ import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.*;
 import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 import com.nasnav.shipping.services.clicknship.ClickNShipShippingService;
+import com.nasnav.shipping.services.mylerz.MylerzShippingService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +50,10 @@ public class ShippingServiceFactory {
 					,FixedFeeStrictSameCityShippingService.class
 					,FixedFeeSelectedAreasShippingService.class
 					,FixedFeeSelectedAreasMinOrderShippingService.class
-					,VarFeeSelectedSubAreaMinOrderShippingService.class);
+					,VarFeeSelectedSubAreaMinOrderShippingService.class
+					,MylerzShippingService.class
+					,PickupFromMultipleShops.class
+					,PartialPickup.class);
 	
 	
 	@Autowired

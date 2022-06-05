@@ -16,6 +16,7 @@ public class ProductImageBulkUpdateDTO{
 	private boolean ignoreErrors;
 	private boolean deleteOldImages;
 	private Long featureId;
+	private boolean crop;
 	
 	public ProductImageBulkUpdateDTO() {
 		//TODO: return this to false after the option is implemented on the dashboard

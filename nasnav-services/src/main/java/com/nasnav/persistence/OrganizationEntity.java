@@ -67,6 +67,15 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "yeshtery_state")
     private Integer yeshteryState;
 
+    @Column(name = "priority")
+    private Integer priority;
+
+    @OneToMany(mappedBy = "organizationEntity")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<ShopsEntity> shops;
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
@@ -113,6 +122,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setEcommerce((getEcommerce()));
         obj.setGoogleToken(getGoogleToken());
         obj.setMatomoSiteId(getMatomoId());
+        obj.setPriority(getPriority());
         YeshteryState
                 .getYeshteryState(yeshteryState)
                 .ifPresent(obj::setYeshteryState);

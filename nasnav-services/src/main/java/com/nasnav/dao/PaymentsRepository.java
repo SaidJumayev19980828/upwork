@@ -17,6 +17,8 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
     @Query("select payments from PaymentEntity payments where payments.status=4 and payments.ordersEntity.id = :orderId order by id desc")
     List<PaymentEntity> findRecentByOrdersEntity_Id(@Param("orderId") Long orderId);
 
+    Optional<PaymentEntity> findFirstByMetaOrderId(Long orderId);
+
     Optional<PaymentEntity> findByMetaOrderId(Long orderId);
 
     List<PaymentEntity> findBySessionId(String sessionId);

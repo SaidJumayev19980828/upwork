@@ -13,43 +13,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findById(Long id);
 
-	/**
-	 * Get UserEntity by passed email and orgId.
-	 *
-	 * @param email email
-	 * @param orgId orgId
-	 * @return UserEntity
-	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
-	@Query("select u.organizationId from UserEntity u where u.id = :userId")
-	Long findUserOrganizationId(@Param("userId") Long userId);
-
-	/**
-	 * Check if the passed resetPasswordToken already exist before or not.
-	 *
-	 * @param resetPasswordToken to be checked
-	 * @return true if esetPasswordToken already exists
-	 */
 	boolean existsByResetPasswordToken(String resetPasswordToken);
 
-	/**
-	 * Get userEntity by resetPasswordToken.
-	 *
-	 * @param resetPasswordToken
-	 * @return UserEntity
-	 */
 	Optional<UserEntity> getByResetPasswordToken(String resetPasswordToken);
 
-	/**
-	 * Check if the passed authenticationToken already exist before or not.
-	 *
-	 * @param authenticationToken to be checked
-	 * @return true if authenticationToken already exists
-	 */
 	boolean existsByAuthenticationToken(String authenticationToken);
-	
-	Optional<UserEntity> findByAuthenticationToken(String authToken);
 
 	UserEntity findByResetPasswordToken(String token);
 
@@ -66,4 +36,35 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Long getNewCustomersCountPerMonth(@Param("orgId") Long orgId,
 									  @Param("minMonth") LocalDateTime minMonth,
 									  @Param("maxMonth") LocalDateTime maxMonth);
+
+	List<UserEntity> findByYeshteryUserIdNotNullAndAllowReward(Boolean allowReward);
+
+	UserEntity getByMobileAndOrganizationId(String mobile, Long orgId);
+
+	boolean existsByMobileIgnoreCaseAndOrganizationId(String mobile, Long orgId);
+	@Query("select u from UserEntity u " +
+			" left join OrganizationEntity o on u.organizationId = o.id"+
+			" where LOWER(u.email) = LOWER(:email) and u.organizationId = :orgId and o.yeshteryState = 1")
+	UserEntity getYeshteryUserByEmail(@Param("email")String email,
+									  @Param("orgId")Long orgId);
+
+	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
+
+	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
+	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
+
+	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
+	void updateUserTier(@Param("tierId") Long tierId, @Param("userId") Long userId);
+
+	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
+
+    void deleteByYeshteryUserId(Long yeshteryUserId);
+
+    List<UserEntity> findByFamily_Id(Long familyId);
+
+    Optional<UserEntity> findByEmailAndOrganizationId(String email, Long orgId);
+
+    @Query("select distinct u from UserEntity u where u.yeshteryUserId = :yeshteryUserId and u.organizationId = :orgId")
+	Optional<UserEntity> findByYeshteryUserIdAndOrganizationId(@Param("yeshteryUserId") Long yeshteryUserId,
+															   @Param("orgId") Long orgId);
 }

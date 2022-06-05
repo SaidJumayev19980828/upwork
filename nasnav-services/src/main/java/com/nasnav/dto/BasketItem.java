@@ -23,6 +23,8 @@ public class BasketItem {
     private Integer productType;
     private Long stockId;
     private Long brandId;
+    private String brandName;
+    private String brandLogo;
     private Map<String, String> variantFeatures;
     private Integer quantity;
     private BigDecimal totalPrice;
@@ -37,4 +39,6 @@ public class BasketItem {
     private String sku;
     private String productCode;
     private String currency;
+    @JsonIgnore
+    private Integer availableStock;
 }

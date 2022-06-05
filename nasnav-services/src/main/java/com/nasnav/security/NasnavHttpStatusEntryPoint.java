@@ -21,9 +21,6 @@ public class NasnavHttpStatusEntryPoint implements AuthenticationEntryPoint {
 	public NasnavHttpStatusEntryPoint(HttpStatus status) {
 		this.status = status;
 	}
-	
-	
-	
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,
@@ -34,15 +31,10 @@ public class NasnavHttpStatusEntryPoint implements AuthenticationEntryPoint {
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);		
 		response.getWriter().write(jsonInString);
 	}
-	
-	
-	
 
 	private String createResponseBody() throws JsonProcessingException {
 		BaseResponse body = new BaseResponse(false);
-		ObjectMapper mapper = new ObjectMapper();		
-		String jsonInString = mapper.writeValueAsString(body);
-		return jsonInString;
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writeValueAsString(body);
 	}
-
 }

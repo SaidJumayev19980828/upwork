@@ -31,11 +31,18 @@ public class CartItem {
 	private Long userId;
 	private BigDecimal weight;
 	private String unit;
-	
+	private Long orgId;
 	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {
 		this.stockId = stockId;
 		this.quantity = quantity;
 		this.additionalData = additionalData;
+	}
+
+	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData, Long orgId) {
+		this.stockId = stockId;
+		this.quantity = quantity;
+		this.additionalData = additionalData;
+		this.orgId = orgId;
 	}
 }

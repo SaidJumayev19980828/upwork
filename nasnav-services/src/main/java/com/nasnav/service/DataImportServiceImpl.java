@@ -952,7 +952,8 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setSku(row.getSku());
         variant.setProductCode(row.getProductCode());
         variant.setWeight(row.getWeight());
-        
+		variant.setFeatures(features);
+
         if(extraAtrributes != null) {
         	variant.setExtraAttr(extraAtrributes);
         }
@@ -962,8 +963,6 @@ public class DataImportServiceImpl implements DataImportService {
         		.getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache());
         if(variantBasicData.isPresent()){
         	setVariantDtoAsUpdated(variant, variantBasicData.get(), features);
-        }else if (isNotBlankOrNull(features)) {
-        	variant.setFeatures(features);
         }
 
         return variant;
@@ -1000,8 +999,7 @@ public class DataImportServiceImpl implements DataImportService {
 	private Map<String, String> getFeatures(ProductImportDTO row, Map<String, String> featureNameToIdMapping) {
 		return ofNullable(row.getFeatures())
 				.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
-				.filter(map -> !map.isEmpty())	//if no features are provided, return empty map
-				.orElse(null);
+				.orElse(new HashMap<>());
 	}
     
     

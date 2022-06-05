@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.ResponsePage;
@@ -197,7 +198,7 @@ public class IntegrationDictApiTest {
 	private ResponsePage<IntegrationDictionaryDTO> readGetIntegrationErrorsResponse(ResponseEntity<String> response)
 			throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JSR310Module());
+		mapper.registerModule(new JavaTimeModule());
 		TypeReference<ResponsePage<IntegrationDictionaryDTO>> typeRef = 
 				new TypeReference<ResponsePage<IntegrationDictionaryDTO>>() {};
 		return mapper.readValue(response.getBody(), typeRef);

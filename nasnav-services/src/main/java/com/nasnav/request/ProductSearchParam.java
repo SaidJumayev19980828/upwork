@@ -19,8 +19,12 @@ public class ProductSearchParam {
     public Long org_id;
     public Long shop_id;
     public Long brand_id;
+    public Long tags_org_id;
     public Long category_id;
+    public Set<Long> category_ids;
+    public String category_name;
     public Set<Long> tags;
+    public Set<Long> tag_ids;
     public String name;
     public Integer start;
     public Integer count;
@@ -79,9 +83,9 @@ public class ProductSearchParam {
             for(Integer type: product_type)
                 result += "&product_type="+type;
 
-        if (this.tags != null)
-            for(Long tagId: tags)
-                result += "&tags="+tagId;
+        if (this.tag_ids != null)
+            for(Long tagId: tag_ids)
+                result += "&tag_ids="+tagId;
 
         return result.substring(1);
 

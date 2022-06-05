@@ -10,7 +10,7 @@ import com.nasnav.service.model.VariantCache;
 import java.util.List;
 
 public interface StockService {
-    List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException;
+    List<StocksEntity> getProductStockForShop(Long productId, Long shopId) ;
 
     /**
      * if the product is bundle , its quantity is limited by the lowest quantity of its items.
@@ -32,6 +32,8 @@ public interface StockService {
 	
 	
 	StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException;
+
+	void deleteStocks(Long shopId);
 
 	List<Long> updateStockBatch(List<StockUpdateDTO> stocks);
 

@@ -134,10 +134,10 @@ public class ProductRatingTest {
         HttpEntity request = getHttpEntity(body.toString(), "123");
         ResponseEntity<String> response = template.postForEntity("/product/review", request, String.class);
 
-        assertEquals(406 , response.getStatusCodeValue());
+        assertEquals(200 , response.getStatusCodeValue());
     }
 
-    @Test
+    //@Test this case succeeds now because of yeshtery case
     public void postReviewDifferentProductOrg() {
         JSONObject body = createReviewRequest();
         body.put("variant_id", 310003);
@@ -183,7 +183,7 @@ public class ProductRatingTest {
         assertEquals(200 , response.getStatusCodeValue());
         List<ProductRateRepresentationObject> body =
                 mapper.readValue(response.getBody(), new TypeReference<List<ProductRateRepresentationObject> >(){});
-        assertTrue(body.size() == 1);
+        assertEquals(1, body.size());
     }
 
     @Test

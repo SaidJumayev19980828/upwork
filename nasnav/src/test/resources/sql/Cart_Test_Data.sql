@@ -97,7 +97,8 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(603, 501, 4, 99002, 200.00, 310003, 1, 18999);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(604, 502, 6, 99001, 700.00, 310004, 1, 18999);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(605, 502, 0, 99001, 700.00, 310009, 0, 18999);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(606, 502, 1, 99001, 700.00, 310010, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(606, 502, 9, 99001, 700.00, 310010, 1, 18999);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency, unit_id) values(607, 502, 4, 99001, 200.00, 310005, 1, 18999);
 
 
 --INSERT dummy images
@@ -118,8 +119,8 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 
 -- insert cart
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
+INSERT INTO public.cart_items (id, stock_id, cover_image, variant_features, quantity, user_id) VALUES(99000, 602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
+INSERT INTO public.cart_items (id, stock_id, cover_image, variant_features, quantity, user_id) VALUES(99001, 604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
 
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 

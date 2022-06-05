@@ -5,6 +5,7 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -35,4 +36,12 @@ public interface UserService extends CommonUserServiceInterface{
     RedirectView activateSubscribedEmail(String token, Long orgId);
 
     List<UserRepresentationObject> getUserList();
+
+    List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward);
+
+    void updateUserByFamilyId(Long familyId, Long userId);
+
+    void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId);
+
+    List<UserEntity> getUsersByFamilyId(Long familyId);
 }

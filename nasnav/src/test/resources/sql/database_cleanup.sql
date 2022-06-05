@@ -15,6 +15,10 @@ DELETE FROM public.shipment where id IN (
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.shipping_service;
+DELETE FROM public.loyalty_point_transactions where shop_id in (SELECT id FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.loyalty_point_config where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_points where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_point_types where id = 31001;
 DELETE FROM meta_orders_promotions;
 DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
@@ -73,7 +77,7 @@ DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 = '630f3256-59bb-4b87-9600-60e64d028d68';
+DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 in ('630f3256-59bb-4b87-9600-60e64d028d68', 'Sesame street');
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges
 WHERE child_id IN (
@@ -93,6 +97,9 @@ DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.sub_areas where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_tier where id <> 1;
+DELETE FROM public.loyalty_family;
+DELETE FROM public.loyalty_booster;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;

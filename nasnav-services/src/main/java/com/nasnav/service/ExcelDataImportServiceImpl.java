@@ -7,6 +7,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,8 +17,9 @@ import javax.validation.Valid;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.FunctionalUtils;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -100,8 +102,17 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
 		List<CsvRow> lines = new ArrayList<>();
+		List<String> featuresNames = featureRepo.findByOrganizationId(security.getCurrentUserOrganizationId())
+				.stream().map(ProductFeaturesEntity::getName)
+				.collect(toList());
+		List<String> extraAttributesNames = extraAttrRepo.findByOrganizationId(security.getCurrentUserOrganizationId())
+				.stream().map(ExtraAttributesEntity::getName)
+				.collect(toList());
+
 		for (Row row: sheet) {
 			CsvRow line = new CsvRow();
+			Map<String, String> features = new HashMap<>();
+			Map<String, String> extraAttributes = new HashMap<>();
 			if(row.getRowNum() ==0){
 				continue; // skip header row
 			}
@@ -109,9 +120,18 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				String headerName = sheet.getRow(0).getCell(cell.getColumnIndex()).getStringCellValue();
 				var propertyName = getColumnHeaderMapping(headerName);
 				Object value = getCellValue(cell);
-				if (value != null)
+				if (value != null) {
 					BeanUtils.setProperty(line, propertyName, value);
+					if (featuresNames.contains(propertyName)) {
+						features.put(propertyName, value.toString());
+					}
+					if (extraAttributesNames.contains(propertyName)) {
+						extraAttributes.put(propertyName, value.toString());
+					}
+				}
 			}
+			line.setFeatures(features);
+			line.setExtraAttributes(extraAttributes);
 			lines.add(line);
 		}
 		return lines;
@@ -135,8 +155,13 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 	private static Object getCellValue(Cell cell ){
 		switch (cell.getCellType())
 		{
-			case NUMERIC:
-				return BigDecimal.valueOf(cell.getNumericCellValue()).toString();
+			case NUMERIC: {
+				double number = cell.getNumericCellValue();
+				if (number == (int) number) {
+					return (int) number;
+				}
+				return BigDecimal.valueOf(cell.getNumericCellValue());
+			}
 			case STRING:
 				return cell.getStringCellValue();
 			case BOOLEAN:

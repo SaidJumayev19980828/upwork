@@ -68,7 +68,7 @@ public class TransparentOptimizer implements CartOptimizer<EmptyParams, EmptyPar
         return cart
                 .getItems()
                 .stream()
-                .map(item -> new OptimizedCartItem(item, false))
+                .map(item -> new OptimizedCartItem(item, false, false))
                 .collect(collectingAndThen(
                         toList()
                         , items -> Optional.of(new OptimizedCart(items))));

@@ -3,17 +3,15 @@ package com.nasnav.service;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.OAuth2UserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
 import lombok.AllArgsConstructor;
@@ -38,7 +36,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -67,6 +64,8 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
+	@Autowired
+	private ShopsRepository shopsRepo;
 	
 	
 	@Autowired
@@ -186,13 +185,14 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse login(UserLoginObject loginData) {
+	public UserApiResponse login(UserLoginObject loginData, YeshteryState state) {
 
 		if(invalidLoginData(loginData)) {
 			throwInvalidCredentialsException();
 		}
 
-		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.getEmail(), loginData.getOrgId(), loginData.isEmployee());
+		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.getEmail(),
+				loginData.getOrgId(), loginData.isEmployee());
 
 		validateLoginUser(userEntity);
 		validateUserPassword(loginData, userEntity);
@@ -389,6 +389,11 @@ public class SecurityServiceImpl implements SecurityService {
 				.collect(toSet());
 	}
 
+	@Override
+	public Integer getYeshteryState() {
+		return getCurrentUserOrganization().getYeshteryState();
+	}
+
 
 	@Override
 	public boolean currentUserHasMaxRoleLevelOf(Roles role) {
@@ -411,6 +416,16 @@ public class SecurityServiceImpl implements SecurityService {
 				.filter(user -> user instanceof EmployeeUserEntity)
 				.map(user -> (EmployeeUserEntity)user)
 				.map(EmployeeUserEntity::getShopId)
+				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
+	}
+
+	@Override
+	public ShopsEntity getCurrentUserShop() {
+		return ofNullable( getCurrentUser() )
+				.filter(user -> user instanceof EmployeeUserEntity)
+				.map(user -> (EmployeeUserEntity)user)
+				.map(EmployeeUserEntity::getShopId)
+				.flatMap(shopsRepo::findById)
 				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
 	}
 
@@ -492,7 +507,7 @@ public class SecurityServiceImpl implements SecurityService {
 		return oAuthUserRepo
 				.findByLoginToken(socialLoginToken)
 				.map(OAuth2UserEntity::getUser)
-				.orElseThrow(() -> new InCompleteOAuthRegisteration());
+				.orElseThrow(() -> new InCompleteOAuthRegistration());
 	}
 
 

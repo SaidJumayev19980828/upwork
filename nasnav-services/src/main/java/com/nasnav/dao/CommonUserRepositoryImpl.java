@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.YeshteryState.ACTIVE;
 import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
 import static com.nasnav.exceptions.ErrorCodes.U$LOG$0002;
 import static java.util.stream.Collectors.toList;
@@ -30,7 +32,11 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 	
 	@Autowired
 	private UserRepository userRepo;
-	
+	/*
+	TODO should fix dependency circulation issue and fetch YeshteryUserEntity using yeshteryUserRepo
+	@Autowired
+	private YeshteryUserRepository yeshteryUserRepo;
+	 */
 	
 	@Autowired
 	private RoleRepository roleRepo; 
@@ -70,7 +76,6 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		else if(userEntity instanceof UserEntity)
 			return userRepo.saveAndFlush((UserEntity)userEntity);
 		else
-			//TODO : need error code for that  
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0004);
 	}
 
@@ -94,7 +99,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 
 
 
-	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee) {		
+	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee) {
 		if(isEmployee != null && isEmployee) {
 			return empRepo.getByEmailIgnoreCase(email);
 		}else {

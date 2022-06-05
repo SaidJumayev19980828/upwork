@@ -62,6 +62,7 @@ public class ClickNShipShippingService implements ShippingService {
                     "Please make sure to print the attached airway bills and provide them to the " +
                     "delivery agent.";
 
+    public static final String TRACKING_URL = "TRACKING_URL";
     public static String AUTH_TOKEN = "AUTH_TOKEN";
     public static final String SERVER_URL = "SERVER_URL";
     public static final String USER_NAME = "USER_NAME";
@@ -73,7 +74,8 @@ public class ClickNShipShippingService implements ShippingService {
             asList( new Parameter(SERVER_URL, STRING)
                     , new Parameter(USER_NAME, STRING)
                     , new Parameter(PASSWORD, STRING)
-                    , new Parameter(GRANT_TYPE, STRING));
+                    , new Parameter(GRANT_TYPE, STRING)
+                    , new Parameter(TRACKING_URL, STRING));
 
     private static final List<Parameter> ADDITIONAL_PARAM_DEFINITION = emptyList();
 
@@ -245,6 +247,12 @@ public class ClickNShipShippingService implements ShippingService {
                 .onErrorResume(err -> {logger.error(err,err); return Mono.empty();});
     }
 
+    private void validateShippingAddress(ShippingDetails details) {
+        ShippingAddress address = details.getDestination();
+        if (address.getId() == -1L){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+        }
+    }
 
 
     private Mono<ShippingEta> getShippingEta() {
@@ -255,6 +263,8 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private Optional<DeliveryFeeRequest> createDeliveryFeeRequest(ShippingDetails details) {
+        if (details.getDestination().getId() == -1L)
+            return Optional.empty();
         ShippingAddress originAddr = getSourceAddress(details);
         ShippingAddress destAddr = getDestinationAddress(details);
         Optional<String> originCity = getCityNameOptional(originAddr);
@@ -336,6 +346,8 @@ public class ClickNShipShippingService implements ShippingService {
 
 
     private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+        validateShippingAddress(shipment);
+
         String serverUrl = getServiceParam(SERVER_URL);
         ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
         ShipmentRequest request = createShipmentRequest(shipment);
@@ -378,7 +390,7 @@ public class ClickNShipShippingService implements ShippingService {
                 .stream()
                 .filter(param -> Objects.equals(param.getName(), DELIVERY_TYPE))
                 .findFirst()
-                .ifPresent(param -> param.setOptions(DeliveryType.getDeliveryTypes()));
+                .ifPresent(param -> param.setOptions(asList(DeliveryType.getDeliveryTypes().toArray())));
         return serviceInfo;
     }
 
@@ -511,6 +523,24 @@ public class ClickNShipShippingService implements ShippingService {
         return Optional.empty();
     }
 
+    @Override
+    public Mono<String> getAirwayBill(String airwayBillNumber) {
+        String serverUrl = getServiceParam(SERVER_URL);
+        ClickNshipWebClient client = new ClickNshipWebClient(serverUrl);
+        Base64.Encoder encoder = Base64.getEncoder();
+        return client
+                .printWaybill(AUTH_TOKEN, airwayBillNumber)
+                .flatMap(this::throwExceptionIfNotOk)
+                .flatMap(res -> res.bodyToMono(byte[].class))
+                .map(fileDataBytes -> encoder.encodeToString(fileDataBytes));
+    }
+
+    @Override
+    public String getTrackingUrl(String trackingNumber) {
+        var baseTrackingUrl = ofNullable(paramMap.get(TRACKING_URL))
+                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, TRACKING_URL, SERVICE_ID));
+        return baseTrackingUrl+trackingNumber;
+    }
 
 
     private void validateParams(ServiceParameter param) {

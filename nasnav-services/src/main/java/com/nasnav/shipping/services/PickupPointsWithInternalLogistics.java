@@ -251,7 +251,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		.stream()
 		.filter(param -> Objects.equals(param.getName(), SHOP_ID))
 		.findFirst()
-		.ifPresent(param -> param.setOptions(possiblePickupShops));
+		.ifPresent(param -> param.setOptions(Arrays.asList(possiblePickupShops.toArray())));
 		
 		return serviceInfo;
 	}
@@ -465,6 +465,15 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		}
 	}
 
+	@Override
+	public Mono<String> getAirwayBill(String airwayBillNumber) {
+		return Mono.empty();
+	}
+
+	@Override
+	public String getTrackingUrl(String trackingNumber) {
+		return null;
+	}
 
 
 	private ReturnShipmentTracker createReturnShipmentTracker(ShippingDetails item){

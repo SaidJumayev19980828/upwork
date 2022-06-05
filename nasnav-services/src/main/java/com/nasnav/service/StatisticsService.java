@@ -1,10 +1,10 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
-import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.StatisticsCartItem;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.*;
@@ -32,6 +32,8 @@ public class StatisticsService {
 
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private ProductService productService;
 
     @Autowired
     private OrdersRepository ordersRepo;
@@ -49,7 +51,7 @@ public class StatisticsService {
             return null;
         LocalDateTime startDate = getStartDate(months);
         Long orgId = securityService.getCurrentUserOrganizationId();
-        List<Integer> statusesIntegers = statuses.stream().map(status -> status.getValue()).collect(toList());
+        List<Integer> statusesIntegers = statuses.stream().map(OrderStatus::getValue).collect(toList());
         List<Map<String,Object>> info;
         if (type.equals(COUNT)) {
             info =  toOrderCountStatisticsInfo(metaOrderRepo.getOrderIncomeStatisticsPerMonth(orgId, statusesIntegers, startDate));
@@ -65,9 +67,9 @@ public class StatisticsService {
 
     private List<Map<String,Object>>  toOrderCountStatisticsInfo(List<OrderStatisticsInfo> infoList) {
         List<Map<String,Object>> finalList =  new ArrayList<>();
-        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate));
-        for (Map.Entry e : map.entrySet()) {
-            Map<String,Object> statusToCountMap = ((List<OrderStatisticsInfo>) e.getValue())
+        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate, LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<Date, List<OrderStatisticsInfo>> e : map.entrySet()) {
+            Map<String,Object> statusToCountMap = e.getValue()
                     .stream()
                     .collect(toMap(OrderStatisticsInfo::getStatus, OrderStatisticsInfo::getCount));
             statusToCountMap.put("month", new SimpleDateFormat("MMMM").format(e.getKey()));
@@ -79,9 +81,9 @@ public class StatisticsService {
 
     private List<Map<String,Object>>  toOrderIncomeStatisticsInfo(List<OrderStatisticsInfo> infoList) {
         List<Map<String,Object>> finalList =  new ArrayList<>();
-        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate));
-        for (Map.Entry e : map.entrySet()) {
-            Map<String, Object> statusToIncomeMap = ((List<OrderStatisticsInfo>) e.getValue())
+        Map<Date, List<OrderStatisticsInfo>> map = infoList.stream().collect(groupingBy(OrderStatisticsInfo::getDate, LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<Date, List<OrderStatisticsInfo>> e : map.entrySet()) {
+            Map<String, Object> statusToIncomeMap = e.getValue()
                     .stream()
                     .collect(toMap(OrderStatisticsInfo::getStatus, OrderStatisticsInfo::getIncome));
             statusToIncomeMap.put("month", new SimpleDateFormat("MMMM").format(e.getKey()));
@@ -148,7 +150,7 @@ public class StatisticsService {
                 .collect(toList());
     }
 
-    private UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map) {
+    public UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map) {
         UserCartInfo info = new UserCartInfo();
         UserEntity user = map.getKey();
         var items = map
@@ -169,6 +171,8 @@ public class StatisticsService {
         StocksEntity stock = entity.getStock();
         ProductVariantsEntity variant = stock.getProductVariantsEntity();
         ProductEntity product = variant.getProductEntity();
+        Map<String,String> variantFeatures = ofNullable(productService.parseVariantFeatures(variant, 0))
+                .orElse(new HashMap<>());
         item.setId(entity.getId());
         item.setCoverImg(entity.getCoverImage());
         item.setStockId(stock.getId());
@@ -177,6 +181,7 @@ public class StatisticsService {
         item.setDiscount(stock.getDiscount());
         item.setVariantId(variant.getId());
         item.setVariantName(variant.getName());
+        item.setVariantFeatures(variantFeatures);
         item.setProductId(product.getId());
         item.setBarcode(product.getBarcode());
         item.setName(product.getName());
@@ -209,6 +214,7 @@ class UserCartInfo {
     Long id;
     String name;
     String email;
+    @JsonProperty("phone_number")
     String phoneNumber;
     List<StatisticsCartItem> items;
 }

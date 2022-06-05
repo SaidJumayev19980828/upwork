@@ -10,8 +10,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 --inserting categories
-INSERT INTO public.categories(id, name, logo) VALUES (201, 'category_1', 'cool_cat.jpg');
-INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
+INSERT INTO public.categories(id, name, logo, cover) VALUES (201, 'category_1', 'cool_cat.jpg', 'cool_cat_cover.jpg');
+INSERT INTO public.categories(id, name, logo, cover) VALUES (202, 'category_2', 'cool_cat2.jpg', 'cool_cat_cover2.jpg');
 
 INSERT INTO public.categories(id, name, parent_id) VALUES (203, 'category_1_1', 201);
 INSERT INTO public.categories(id, name, parent_id) VALUES (204, 'category_1_2', 201);
@@ -51,14 +51,10 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
 
-
 --inserting product features
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Lispstick Color', 'lipstick_color', 'whatever', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Lipstick flavour', 'lipstick_flavour', 'bla bla bla', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe material', 's-material', 'Material of the shoes', 99001);
-
-
-
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now() + INTERVAL '1 DAY');
@@ -80,8 +76,9 @@ insert into public.product_variants(id, "name" , product_id, barcode, feature_sp
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)
 VALUES(80001,1002, '{"234": 20, "235": "white"}', 'orginal variant', 'orginal_variant', 'we need to update this in tests', 'BCF559354');
 
-
-
+--insert into variants_features
+INSERT INTO public.variant_feature_values (id, variant_id, feature_id, value) VALUES (3000, 310001, 234, 'red');
+INSERT INTO public.variant_feature_values (id, variant_id, feature_id, value) VALUES (3001, 310006, 235, 'black');
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 6, 99002, 600.0, 310001);
@@ -96,6 +93,11 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99001);
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
 
+INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50011,22001);
+INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50012,22002);
+
+
+insert into tag_graph_edges(id, parent_id, child_id) values(60012, 50011, 50012);
 
 insert into public.product_tags(product_id, tag_id) values(1001, 22001);
 insert into public.product_tags(product_id, tag_id) values(1004, 22002);

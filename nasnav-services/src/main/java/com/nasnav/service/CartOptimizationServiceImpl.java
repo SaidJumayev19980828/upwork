@@ -3,14 +3,19 @@ package com.nasnav.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.UserAddressRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
+import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.cart.optimizers.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,9 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -37,8 +41,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -59,6 +62,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartService cartService;
+	@Autowired
+	private PromotionsService promoService;
 	
 	@Autowired
 	private SecurityService securityService;
@@ -68,27 +73,80 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private CartOptimizationHelper helper;
-	
+
+	@Autowired
+	private UserAddressRepository userAddressRepo;
+	@Autowired
+	private ProductVariantsRepository variantsRepo;
+	@Autowired
+	private CartItemRepository cartItemRepo;
+
+	@Autowired
+	private LoyaltyPointsService loyaltyPointsService;
 	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
+
+		validateAndAssignUserAddress(dto);
+
+		checkIfCartHasEmptyStock();
+
 		var optimizedCart = createOptimizedCart(dto);
-		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
-		var returnedCart = getCartObject(optimizedCart);
-		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
+		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
+		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
+		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
+		var returnedCart = getCartObject(optimizedCart, dto.getPromoCode());
+		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
 	}
 
+	private void validateAndAssignUserAddress(CartCheckoutDTO dto) {
+		if (dto.getAddressId() == null) {
+			Long addressId = userAddressRepo
+					.findFirstByUser_IdOrderByPrincipalDesc(securityService.getCurrentUser().getId())
+					.map(UserAddressEntity::getAddress)
+					.map(AddressesEntity::getId)
+					.orElse(-1L);
+			dto.setAddressId(addressId);
+		}
+	}
 
+	private void checkIfCartIsEmpty(Cart cart) {
+		Integer totalQuantity = cart.getItems()
+				.stream()
+				.map(CartItem::getQuantity)
+				.reduce(0, Integer::sum);
+		if(totalQuantity == 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0018);
+		}
+	}
 
-	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
-		return optimizedCart
+	private List<LoyaltyPointsCartResponseDto> getUserPointsPerOrg(List<CartItem> items) {
+		UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
+		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getYeshteryUserId(), items);
+	}
+
+	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
+		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode).getItems().size();
+	}
+
+	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, String promoCode) {
+		var returnedCart =  optimizedCart
 				.map(OptimizedCart::getCartItems)
 				.orElse(emptyList())
 				.stream()
 				.map(OptimizedCartItem::getCartItem)
 				.collect(collectingAndThen(toList(), Cart::new));
+
+		checkIfCartIsEmpty(returnedCart);
+
+		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
+		returnedCart.setPromos(promoService.calcPromoDiscountForCart(promoCode, returnedCart));
+		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
+		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
+		returnedCart.setPointsPerOrg(getUserPointsPerOrg(returnedCart.getItems()));
+		return returnedCart;
 	}
 
 
@@ -101,6 +159,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.anyMatch(OptimizedCartItem::getPriceChanged);
 	}
 
+	private boolean isAnyItemChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+				.map(OptimizedCart::getCartItems)
+				.orElse(emptyList())
+				.stream()
+				.anyMatch(OptimizedCartItem::getItemChanged);
+	}
+
 
 	
 	private <T, Config> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
@@ -111,9 +177,38 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart();
-		
+		var cart = cartService.getCart(dto.getPromoCode());
+
 		return optimizer.createOptimizedCart(parameters, config, cart);
+	}
+
+	private void checkIfCartHasEmptyStock() {
+		Long userId = securityService.getCurrentUser().getId();
+		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
+		List<CartItemEntity> movedItems = new ArrayList<>();
+		if (!outOfStockCartItems.isEmpty()) {
+			for (CartItemEntity item : outOfStockCartItems) {
+				boolean isEmpty = item
+					.getStock()
+					.getProductVariantsEntity()
+					.getStocks()
+					.stream()
+					.filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
+					.findFirst()
+					.isEmpty();
+				if (isEmpty) {
+					movedItems.add(item);
+				}
+			}
+			cartService.moveCartItemsToWishlist(movedItems);
+			List<Long> removedVariants = movedItems
+					.stream()
+					.map(CartItemEntity::getStock)
+					.map(StocksEntity::getProductVariantsEntity)
+					.map(ProductVariantsEntity::getId)
+					.collect(toList());
+			//throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019, removedVariants.toString());
+		}
 	}
 
 

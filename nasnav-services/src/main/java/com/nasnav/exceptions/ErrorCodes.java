@@ -55,6 +55,7 @@ public enum ErrorCodes {
 	,P$VAR$008("Missing Extra Attribute name!")
 	,P$VAR$009("Failed to delete variants [%s]!")
 	,P$VAR$010("User can't delete variants from another org!")
+	,P$VAR$011("No variant with feature[%d] exists with id[%d]!")
 	
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
@@ -70,12 +71,14 @@ public enum ErrorCodes {
 	,P$PRO$0012("No collection exists with ID[%d]!")
 	,P$PRO$0013("No collections exists with ID %s!")
 	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
+	,P$PRO$0015("Product with id [%d] has no stocks!")
 
 	,P$IMPORT$0001("Store Manager is allowed only to update stocks!")
 	,P$IMPORT$0002("Store Manager cannot access stocks of another shop!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
+	,P$STO$0003("Stock is linked to %s!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
@@ -98,7 +101,7 @@ public enum ErrorCodes {
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
 	,GEN$0003("Couldn't send mail, reason[%s]")
-	,GEN$0004("Unknown User Entity Type]")
+	,GEN$0004("Unknown User Entity Type")
 	,GEN$0005("the provided url is malformed!")
 	,GEN$0006("Couldn't resize image [%s]")
 	,GEN$0007("Must provide width or height!")
@@ -116,6 +119,7 @@ public enum ErrorCodes {
 	,GEN$0019("Failed to read resource[%s]!")
 	,GEN$0021("Domain and subdir already exist[%s]!")
 	,GEN$0022("Missing required parameters!")
+	,GEN$0023("Failed to delete file with url[%s] at location [%s]")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -123,25 +127,62 @@ public enum ErrorCodes {
 	,S$0004("Shop with id[%d] has invalid address id[%d]")
 	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
 	,S$0006("No shop id provided!")
+	,S$0007("No shop found with provided code[%s]!")
 
 	,S$360$0001("No 360 shop found!")
 	,S$360$0002("No scene found with ID[%d]!")
+	,S$360$0003("Must provide shop_id to attach shop360s to it")
+	,S$360$0004("There exists shop360 attached to this shop already!")
+	,S$360$0005("Must provide type for JsonData (web or mobile)")
 	,S$360$F$0001("floor [%d] number can't be null!")
+	,S$360$F$0002("No floor found")
+	,S$360$F$0003("Provided floor No. [%d] doesn't exist!")
+	,S$360$S$0002("No section found")
+	,S$360$S$0003("Provided section No. [%d] doesn't exist!")
+	,S$360$S$0004("Provided scene No. [%d] doesn't exist!")
 	,S$360$PRO$POS$001("%s is linked to products positions!, please confirm if you want to delete them too")
 
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
 
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
-	,ORG$0001("No organization found with ID[%d]!")
-
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
+	,ORG$SHIP$0002("Couldn't get variant org_id!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
+	,ORG$FTR$0003("Invalid parameters [feature_id], no feature exists with id [%d]!")
+
+	,ORG$IMG$0001("No Image exists with id [%d]!")
+	,ORG$IMG$0002("No Image exists with url [%s]!")
+	,ORG$IMG$0003("Must provide either image_id or url!")
+
+	,CAT$0001("Provided parent category[%d] doesn't exit!")
+	,CAT$0002("Missing or invalid category ID!")
+
+	,ORG$LOY$0001("Missing loyalty point type name!")
+	,ORG$LOY$0002("Missing loyalty point properties!")
+	,ORG$LOY$0003("Invalid loyalty point type id!")
+	,ORG$LOY$0004("No loyalty point type exists with id[%d]!")
+	,ORG$LOY$0005("Loyalty point type linked to loyalty points!")
+	,ORG$LOY$0006("No loyalty point exists with id[%d]!")
+	,ORG$LOY$0007("Loyalty point linked to user transactions!")
+	,ORG$LOY$0008("Missing loyalty point config properties!")
+	,ORG$LOY$0009("Start date can't be after end date!")
+	,ORG$LOY$0010("Amount from can't be bigger than amount to!")
+	,ORG$LOY$0011("No loyalty point config exists with id[%d]!")
+	,ORG$LOY$0012("Can't redeem loyalty point with id[%d]!")
+	,ORG$LOY$0013("Use either amounts or ratio!")
+	,ORG$LOY$0014("User is not linked to org with id[%d] !")
+	,ORG$LOY$0015("Invalid loyalty config for org with id[%d] !")
+	,ORG$LOY$0016("no Loyalty event with id[%d] !")
+	,ORG$LOY$0017("Invalid Pin code [%s] !")
+	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
+	,ORG$LOY$0019("No tier found with id [%d]!")
+	,ORG$LOY$0020("No charity found with id [%d]!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -180,6 +221,10 @@ public enum ErrorCodes {
 	,O$CRT$0013("Missing Cart optimization configuration parameters for organization [%d] and optimizer [%s] !")
 	,O$CRT$0014("Failed to parse optimization configuration json for organization [%d] and optimizer [%s] !")
 	,O$CRT$0015("Failed to optimize cart! Customer address has no Sub-Area, or the sub-area is not supported!")
+	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
+	,O$CRT$0017("Requested price exceeded maximum allowed price")
+	,O$CRT$0018("Cart optimization resulted in empty cart!")
+	,O$CRT$0019("Variants %s has no stocks available!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
@@ -191,7 +236,7 @@ public enum ErrorCodes {
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
-	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
+	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item%s!")
 
 	,O$NEW$0001("Failed to create order! Please try again!")
 	
@@ -284,6 +329,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0012("Invalid promo type_id[%d]!")
 	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
 	,PROMO$PARAM$0014("Usage limit exceeded max value!")
+	,PROMO$PARAM$0015("Missing parameter[%s] in given promotion [%s]!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
@@ -301,8 +347,23 @@ public enum ErrorCodes {
 	,SEO$ADD$0001("SEO keywords for entity of type[%s] and id[%d] cannot be modified by user from organization[%d]!")
 
 	,INTG$EVENT$0001("Failed to create instance of event of type[%s]!")
+
+	,COINS$PARAM$0001("No Coins Drop exists with id[%d]!")
+	,COINS$PARAM$0002("Cannot update coins drop with id[%d], only inactive coins drop can be update!")
+	,COINS$PARAM$0003("Missing parameters in given coins drop [%s]!")
+	,COINS$PARAM$0004("Invalid coins drop type_id[%d]!")
+	,TIERS$PARAM$0001("No Tier exists with id[%d]!")
+	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
+	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
+	,CHARITY$PARAM$0001("Missing Charity properties!")
+	,CHARITY$PARAM$0002("No Charity exists with id[%d]!")
+	,CHARITY$PARAM$0003("No Charity donation exists for user with id[%d]!")
+	,GIFT$PARAM$0001("Missing Gift properties!")
+	,FAMILY$PARAM$0001("Missing parameters in given family [%s]!")
+	,BOOSTER$PARAM$0001("Missing Booster properties!")
+	,BOOSTER$PARAM$0002("No Booster exists with id[%d]!")
 	;
-	
+
 	@Getter
 	@JsonValue
     private final String value;

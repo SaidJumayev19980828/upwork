@@ -9,6 +9,7 @@ import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.*;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -35,6 +36,7 @@ import reactor.core.publisher.Mono;
 import javax.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -93,6 +95,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private ReturnShipmentRepository returnShipmentRepo;
 	@Autowired
 	private ReturnRequestItemRepository returnedItemRepo;
+	@Autowired
+	private OrdersRepository orderRepo;
 
 	@Autowired
 	@Setter
@@ -113,20 +117,18 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
-	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
-		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId);
-		
-		return getOffersFromOrganizationShippingServices(shippingDetails);
+	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, Long orgId, String paymentMethodId, String shippingServiceId) {
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId, paymentMethodId, shippingServiceId);
+		return getOffersFromOrganizationShippingServices(shippingDetails, orgId);
 	}
 
 
 
 	@Override
-	public void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		ShippingService shippingService = getShippingService(dto.getServiceId(), orgId);
+	public void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId) {
+ 		ShippingService shippingService = getShippingService(dto.getServiceId(), orgId);
 
-		List<ShippingDetails> shippingDetails = createShippingDetailsFromCartCheckoutData(cartItemData, dto.getAddressId());
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCartCheckoutData(cartItemData, dto.getAddressId(), dto.getServiceId());
 		for(ShippingDetails shippingDetail : shippingDetails) {
 			shippingDetail.setAdditionalData(dto.getAdditionalData());
 		}
@@ -138,13 +140,13 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCartCheckoutData(List<CartCheckoutData> cartItemData, Long addressId) {
+	private List<ShippingDetails> createShippingDetailsFromCartCheckoutData(List<CartCheckoutData> cartItemData, Long addressId, String shippingServiceId) {
 		List<CartItemShippingData> cartShippingData = 
 				cartItemData
 				.stream()
 				.map(this::createCartShippingData)
 				.collect(toList());
-		return createShippingDetailsFromCartItemShippingData(cartShippingData, addressId);
+		return createShippingDetailsFromCartItemShippingData(cartShippingData, addressId, null, shippingServiceId);
 	}
 
 	
@@ -182,8 +184,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	@Override
-	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
+	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails, Long orgId) {
 		return Flux
 				.fromIterable(orgShippingServiceRepo.getByOrganization_Id(orgId))
 				.map(this::getShippingService)
@@ -295,7 +296,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String type = ofNullable(param.getType())
 						.map(ParameterType::getValue)
 						.orElse(STRING.getValue());
-		return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
+		if (param.getOptions() != null && !param.getOptions().isEmpty()) {
+			return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
+		}
+		return new ShippingAdditionalDataDTO(param.getName(), type, param.getMultipleOptions());
 	}
 	
 	
@@ -333,17 +337,18 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCurrentCart(Long customerAddrId) {
+	private List<ShippingDetails> createShippingDetailsFromCurrentCart(Long customerAddrId, String paymentMethodId, String shippingServiceId) {
 		Long userId = securityService.getCurrentUser().getId();
 		List<CartItemShippingData> cartData = cartRepo.findCartItemsShippingDataByUser_Id(userId);
-		return createShippingDetailsFromCartItemShippingData(cartData, customerAddrId);
+		return createShippingDetailsFromCartItemShippingData(cartData, customerAddrId, paymentMethodId, shippingServiceId);
 	}
 
 
 
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCartItemShippingData(List<CartItemShippingData> cartData, Long customerAddrId) {
+	private List<ShippingDetails> createShippingDetailsFromCartItemShippingData(List<CartItemShippingData> cartData, Long customerAddrId,
+																				String paymentMethodId, String shippingServiceId) {
 		Map<Long, AddressesEntity> addresses = getAddresses(customerAddrId, cartData);
 		
 		validateCartItemShops(cartData);
@@ -353,7 +358,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.collect(groupingBy(this::getShopAndItsAddress))
 				.entrySet()
 				.stream()
-				.map(itemsPerAddr -> createShippingDetails(itemsPerAddr, addresses, customerAddrId))
+				.map(itemsPerAddr -> createShippingDetails(itemsPerAddr, addresses, customerAddrId, paymentMethodId, shippingServiceId))
 				.collect(toList());
 	}
 
@@ -380,7 +385,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	private ShippingDetails createShippingDetails(Map.Entry<ShopAndItsAddress, List<CartItemShippingData>> entry
-			, Map<Long, AddressesEntity> addresses, Long customerAddrId) {
+			, Map<Long, AddressesEntity> addresses, Long customerAddrId, String paymentMethodId, String shippingServiceId) {
 		Long shopAddressId = entry.getKey().getAddressId();
 		List<ShipmentItems> items = 
 				entry
@@ -388,14 +393,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.stream()
 				.map(this::createShipmentItem)
 				.collect(toList());
-		
+
 		AddressesEntity shopAddress = 
 				ofNullable(addresses.get(shopAddressId))
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0002, shopAddressId));
 		
 		AddressesEntity customerAddress =
 				ofNullable(addresses.get(customerAddrId))
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, customerAddrId));
+				.orElse(null);
 		
 		ShippingAddress pickupAddr = createShippingAddress(shopAddress);
 		ShippingAddress customerAddr = createShippingAddress( customerAddress); 
@@ -405,6 +410,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingDetails.setSource(pickupAddr);
 		shippingDetails.setItems(items);
 		shippingDetails.setShopId(entry.getKey().getShopId());
+		shippingDetails.setPaymentMethodId(paymentMethodId);
+		shippingDetails.setShippingServiceId(shippingServiceId);
 		return shippingDetails;
 	}
 	
@@ -426,19 +433,19 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		ShippingAddress addr = new ShippingAddress();
-		addr.setAddressLine1(entity.getAddressLine1());
-		addr.setAddressLine2(entity.getAddressLine2());
+		addr.setAddressLine1(ofNullable(entity).map(AddressesEntity::getAddressLine1).orElse(""));
+		addr.setAddressLine2(ofNullable(entity).map(AddressesEntity::getAddressLine2).orElse(""));
 		addr.setArea(areaId);
 		addr.setSubArea(subAreaId);
-		addr.setBuildingNumber(entity.getBuildingNumber());
+		addr.setBuildingNumber(ofNullable(entity).map(AddressesEntity::getBuildingNumber).orElse(""));
 		addr.setCity(cityId);
 		addr.setCountry(countryId);
-		addr.setFlatNumber(entity.getFlatNumber());
-		addr.setId(entity.getId());
-		addr.setLatitude(entity.getLatitude());
-		addr.setLongitude(entity.getLongitude());
+		addr.setFlatNumber(ofNullable(entity).map(AddressesEntity::getFlatNumber).orElse(""));
+		addr.setId(ofNullable(entity).map(AddressesEntity::getId).orElse(-1L));
+		addr.setLatitude(ofNullable(entity).map(AddressesEntity::getLatitude).orElse(ZERO));
+		addr.setLongitude(ofNullable(entity).map(AddressesEntity::getLatitude).orElse(ZERO));
 		addr.setName(user.getName());
-		addr.setPostalCode(entity.getPostalCode());
+		addr.setPostalCode(ofNullable(entity).map(AddressesEntity::getPostalCode).orElse(""));
 		return addr;
 	}
 
@@ -463,7 +470,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.map(CartItemShippingData::getShopAddressId)
 				.filter(Objects::nonNull)
 				.collect(toList());
-		
+
 		addrIds.add(customerAddrId);
 		 return	addressRepo
 					.findByIdIn(addrIds)
@@ -854,7 +861,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
 		return 	firstExistingValueOf(
-					ofNullable(addr.getPhoneNumber()).orElse(null)
+					ofNullable(addr).map(AddressesEntity::getPhoneNumber).orElse(null)
 					, customer.getMobile()
 					, customer.getPhoneNumber())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId()));
@@ -988,6 +995,45 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.getServiceInfo(shippingServiceId);
 	}
 
+	@Override
+	public OrderConfirmResponseDTO getShippingAirwayBill(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getAirwayBill(airwayBillNo))
+				.get()
+				.blockOptional(Duration.ofSeconds(5))
+				.map(file -> new OrderConfirmResponseDTO(file, "Airway Bill.pdf", "application/pdf"))
+				.orElseGet(() -> new OrderConfirmResponseDTO());
+	}
+
+	@Override
+	public String getTrackingUrl(Long orderId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrdersEntity order = orderRepo
+				.findByIdAndOrganizationEntity_Id(orderId, orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId));
+		String airwayBillNo = order.getShipment().getTrackNumber();
+		return ofNullable(order.getShipment())
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.getTrackingUrl(airwayBillNo))
+				.orElse("");
+	}
+
+	@Override
+	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId, String paymentMethodId, String shippingServiceId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return getShippingOffers(customerAddrId, orgId, paymentMethodId, shippingServiceId);
+	}
+
 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
 			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {
@@ -1001,7 +1047,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ReturnShipmentEntity returnShipment = new ReturnShipmentEntity();
 		returnShipment.setExternalId(tracker.getShipmentExternalId());
 		returnShipment.setShippingServiceId(shippingServiceId);
-		returnShipment.setStatus(REQUSTED.getValue());
+		returnShipment.setStatus(REQUESTED.getValue());
 		returnShipment.setTrackNumber(tracker.getTracker());
 		returnShipment = returnShipmentRepo.save(returnShipment);
 		addReturnedItemsToReturnShipment(tracker, returnShipment);

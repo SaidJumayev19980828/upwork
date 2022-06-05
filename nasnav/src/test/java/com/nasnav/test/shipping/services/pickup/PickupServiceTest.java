@@ -102,7 +102,8 @@ public class PickupServiceTest {
 				.flatMap(List::stream)
 				.map(ShippingAdditionalDataDTO::getOptions)
 				.flatMap(List::stream)
-				.map(option -> Long.valueOf(option))
+				.map(Object::toString)
+				.map(Long::valueOf)
 				.collect(toList());
 	}
 }

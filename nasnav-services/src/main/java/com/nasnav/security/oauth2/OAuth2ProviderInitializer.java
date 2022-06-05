@@ -13,7 +13,6 @@ public class OAuth2ProviderInitializer {
 	@Autowired
 	OAuthProperties oAuthProps;
 	
-	
 	@Autowired
 	OAuth2ProviderRepository providerRepo;
 
@@ -29,11 +28,7 @@ public class OAuth2ProviderInitializer {
 				  .forEach(providerRepo::save); 
 	}
 	
-	
-	
-	
 	private String firstPropertyPath(String prop) {
-		String path = prop.substring(0, prop.indexOf("."));
-		return path;
+		return prop.substring(0, prop.indexOf("."));
 	}
 }

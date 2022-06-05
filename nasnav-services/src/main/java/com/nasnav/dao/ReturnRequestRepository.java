@@ -30,7 +30,7 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " left join fetch item.createdByUser itemUser " +
             " left join fetch item.createdByEmployee itemEmployee " +
             " where returnRequest.id = :id " +
-            " and org.id = :orgId")
+            " and (org.id = :orgId or user.organizationId = :orgId)")
     Optional<ReturnRequestEntity> findByReturnRequestId(@Param("id") Long id,
                                                         @Param("orgId") Long orgId);
 	

@@ -20,7 +20,8 @@ import static java.util.Optional.ofNullable;
 public class EntityUtils {
 
 	private static final Logger logger = LogManager.getLogger();
-	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'"; 
+	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+	public static final String YESHTERY_PNAME = "yeshtery";
 
 	public static void copyNonNullProperties( Object source, Object destination) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Map<String,Object> sourceProperties = PropertyUtils.describe(source);

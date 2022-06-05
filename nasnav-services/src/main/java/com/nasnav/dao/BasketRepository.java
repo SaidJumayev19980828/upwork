@@ -65,6 +65,7 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 			" left join fetch b.ordersEntity o " +
 			" left join fetch o.metaOrder m " +
 			" left join fetch m.user usr " +
-			" where b.id in :ids and m.organization.id = :orgId")
+			" where b.id in :ids and (m.organization.id = :orgId or usr.organizationId = :orgId)")
     List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids, @Param("orgId")Long orgId);
+
 }

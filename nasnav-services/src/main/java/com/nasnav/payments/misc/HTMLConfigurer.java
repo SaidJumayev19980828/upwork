@@ -1,6 +1,5 @@
 package com.nasnav.payments.misc;
 
-import com.nasnav.exceptions.BusinessException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -12,7 +11,7 @@ import java.util.stream.Collectors;
 public class HTMLConfigurer {
 
 	// For testing purposes only!
-	public static String getConfiguredHtml(String jsonResult, String template) throws BusinessException {
+	public static String getConfiguredHtml(String jsonResult, String template) {
 
 		String htmlPage = null;
 		InputStream is = HTMLConfigurer.class.getClassLoader().getResourceAsStream(template);

@@ -4,7 +4,6 @@ import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.cod.CodCommons;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.Tools;
@@ -12,8 +11,6 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.shipping.services.PickupFromShop;
-import com.nasnav.shipping.services.PickupPointsWithInternalLogistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +69,7 @@ public class PaymentControllerCoD {
 		if (orderValue == null) {
 			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
-		// check if CoD is avaialble
+		// check if CoD is available
 		if (paymentCommons.getPaymentAccount(metaOrderId, Gateway.COD) == null) {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
@@ -94,7 +91,7 @@ public class PaymentControllerCoD {
 		payment.setUserId(metaOrderOpt.get().getUser().getId());
 		payment.setMetaOrderId(metaOrderId);
 
-		paymentCommons.finalizePayment(payment);
+		paymentCommons.finalizePayment(payment, false);
 
 		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
 

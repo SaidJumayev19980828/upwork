@@ -77,7 +77,7 @@ public class PickupServiceValidationsTest {
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
 		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
-		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto, 99001L );
 		assertTrue("validate shipment, normal case, all items in an allowed shop", true);
 	}
 
@@ -85,7 +85,7 @@ public class PickupServiceValidationsTest {
 
 	
 	private List<CartCheckoutData> getCheckoutDataFromCurrentCart() {
-		return orderService.createCheckoutData(cartService.getCart());
+		return orderService.createCheckoutData(cartService.getCart(null));
 	}
 
 
@@ -105,7 +105,7 @@ public class PickupServiceValidationsTest {
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
 		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
-		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto,99001L );
 		assertFalse("validate shipment, items at different shops", true);
 	}
 	
@@ -128,7 +128,7 @@ public class PickupServiceValidationsTest {
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
 		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
-		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto, 99001L );
 		assertFalse("validate shipment, shop not allowed", true);
 	}
 	
@@ -147,7 +147,7 @@ public class PickupServiceValidationsTest {
 		dto.setAdditionalData(params);
 		
 		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
-		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto, 99001L );
 		assertFalse("validate shipment, no shop provided", true);
 	}
 }

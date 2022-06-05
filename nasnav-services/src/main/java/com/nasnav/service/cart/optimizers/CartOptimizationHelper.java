@@ -90,29 +90,36 @@ public class CartOptimizationHelper {
             BeanUtils.copyProperties(optimized, item);
         } catch (IllegalAccessException | InvocationTargetException e) {
             logger.error(e,e);
-            return new OptimizedCartItem(item, false);
+            return new OptimizedCartItem(item, false, false);
         }
         StocksEntity stock =
                 ofNullable(item.getVariantId())
                         .map(stocks::get)
-                        .filter(stk -> canFulfillRequiredQuantitiy(stk, item))
                         .orElseThrow(
                                 () -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId()));
 
+        reduceItemQuantityIfNeeded(stock, item, optimized);
+
         boolean priceChanged = isPriceChanged(item, stock);
+        boolean itemChanged = isItemChanged(item, stock);
         optimized.setPrice(stock.getPrice());
         optimized.setStockId(stock.getId());
         optimized.setDiscount(stock.getDiscount());
-        return new OptimizedCartItem(optimized, priceChanged);
+        return new OptimizedCartItem(optimized, priceChanged, itemChanged);
     }
 
-
+    private void reduceItemQuantityIfNeeded(StocksEntity stock, CartItem item, CartItem optimized) {
+        if (stock.getQuantity().compareTo(item.getQuantity()) < 0)
+            optimized.setQuantity(stock.getQuantity());
+    }
 
     private boolean canFulfillRequiredQuantitiy(StocksEntity stock, CartItem item) {
         return stock.getQuantity() >= item.getQuantity();
     }
 
-
+    private boolean isItemChanged(CartItem item, StocksEntity stock) {
+        return !item.getStockId().equals(stock.getId()) || stock.getQuantity().compareTo(item.getQuantity()) < 0;
+    }
 
     private boolean isPriceChanged(CartItem item, StocksEntity stock) {
         BigDecimal itemPrice = ofNullable(item.getPrice()).orElse(ZERO);
@@ -121,7 +128,8 @@ public class CartOptimizationHelper {
         BigDecimal stkDiscount = ofNullable(stock.getDiscount()).orElse(ZERO);
 
         return itemPrice.compareTo(stkPrice) != 0
-                || itemDiscount.compareTo(stkDiscount) != 0;
+                || itemDiscount.compareTo(stkDiscount) != 0
+                || stock.getQuantity().compareTo(item.getQuantity()) < 0;
     }
 
 

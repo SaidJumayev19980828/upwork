@@ -7,13 +7,8 @@ import lombok.Data;
 
 
 @Data
-@Schema(name = "User's order")
 public class OrderJsonDto{
-
-	@Schema(name = "Order ID", example = "12345")
 	@JsonProperty("order_id")
 	private Long id;
-
-	@Schema(name = "Order status", example = "CLIENT_CONFIRMED")
 	private OrderStatus status;
 }

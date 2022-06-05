@@ -2,13 +2,13 @@ package com.nasnav.service;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
+import com.nasnav.enumerations.LoyaltyEvents;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -23,7 +23,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,6 +91,14 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private SubAreaRepository subAreaRepo;
+	@Autowired
+	LoyaltyCoinsDropService loyaltyCoinsDropService;
+	@Autowired
+	MetaOrderRepository metaOrderRepository;
+	@Autowired
+    LoyaltyTierService loyaltyTierService;
+	@Autowired
+    LoyaltyBoosterRepository loyaltyBoosterRepository;
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -121,7 +128,7 @@ public class UserServiceImpl implements UserService {
 		Long orgId = userJson.getOrgId();
 
 		OrganizationEntity org = orgRepo.findById(orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001));
 
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
@@ -236,6 +243,16 @@ public class UserServiceImpl implements UserService {
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
+		if (isNotBlankOrNull(userJson.getFamilyId())) {
+			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+			updateUserBoosterByFamilyMember(userEntity.getId());
+		}
+		if (isNotBlankOrNull(userJson.getTierId())) {
+			loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
+		}
+		if (isNotBlankOrNull(userJson.getFamilyId())) {
+			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
@@ -252,13 +269,23 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional
 	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		validateAddressDTO(addressDTO);
 		AddressDTO newAddressEntity = doUpdateUserAddressesImmutably(addressDTO);
 		setAsPrincipleAddressIfNeeded(addressDTO, newAddressEntity);
 		return newAddressEntity;
 	}
 
-
-
+	private void validateAddressDTO(AddressDTO addressDTO) {
+		if (addressDTO.getAddressLine1() == null || addressDTO.getAddressLine1().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "address_line_1");
+		}
+		if (addressDTO.getAreaId() == null || addressDTO.getAreaId() < 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "area_id");
+		}
+		if (addressDTO.getPhoneNumber() == null || addressDTO.getPhoneNumber().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "phone_number");
+		}
+	}
 
 	private void setAsPrincipleAddressIfNeeded(AddressDTO addressDTO, AddressDTO newAddress) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
@@ -376,23 +403,6 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-
-
-	private void validateName(String name) {
-		if (!StringUtils.validateName(name)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
-		}
-	}
-
-
-
-	private void validateEmail(String email) {
-		if (!StringUtils.validateEmail(email)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0004, email);
-		}
-	}
-
-
 	@Override
 	public void deleteUser(Long userId) {
 		userRepository.deleteById(userId);
@@ -456,12 +466,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	/**
-	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
-	 * never used before.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
+
 	private String generateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -471,12 +476,6 @@ public class UserServiceImpl implements UserService {
 		return generatedToken;
 	}
 
-	/**
-	 * regenerate ResetPasswordToken and if token already exists, make recursive
-	 * call until generating new ResetPasswordToken.
-	 *
-	 * @return unique generated ResetPasswordToken.
-	 */
 	private String reGenerateResetPasswordToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
@@ -527,8 +526,7 @@ public class UserServiceImpl implements UserService {
 		Boolean isEmp = ofNullable(isEmployee).orElse(false);
 		Long requiredUserId = ofNullable(userId).orElse(currentUser.getId());		
 				
-		BaseUserEntity user = 
-				commonUserRepo.findById(requiredUserId, isEmp)
+		BaseUserEntity user = commonUserRepo.findById(requiredUserId, isEmp)
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		
 		return getUserRepresentationWithUserRoles(user);
@@ -544,6 +542,12 @@ public class UserServiceImpl implements UserService {
 		validateActivationRedirectUrl(redirect, user.getOrganizationId());
 		
 		activateUserInDB(user);
+		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
+		Long orgId = user.getOrganizationId();
+		Long userId = user.getId();
+		if (userId > 0 && loyaltyCoinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
+			loyaltyCoinsDropService.giveUserCoinsSignUp(user);
+		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
@@ -559,8 +563,6 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private RedirectView redirectUser(String authToken, String loginUrl) {
-		//String loginUrl = buildOrgLoginPageUrl(orgId);
-		
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
 		attributes.addAttribute("auth_token", authToken);
 		
@@ -577,7 +579,7 @@ public class UserServiceImpl implements UserService {
 
 	private void checkUserActivation(UserEntity user) {
 		if (user == null)
-			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006);
+			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006, "");
 
 		userServicesHelper.checkResetPasswordTokenExpiry(user.getResetPasswordSentAt());
 
@@ -644,8 +646,10 @@ public class UserServiceImpl implements UserService {
 	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
-		if(user == null || !(user instanceof UserEntity)) {
+		if(user == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId);
+		}else if (! (user instanceof UserEntity)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
 		}else if(!isUserDeactivated(user)){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
 		}else if(resendRequestedTooSoon(accountInfo)) {
@@ -773,12 +777,94 @@ public class UserServiceImpl implements UserService {
 	}
 
 	public List<UserRepresentationObject> getUserList(){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return userRepository
-				.findByOrganizationId(orgId)
+		List<UserEntity> customers;
+		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			customers = userRepository.findAll();
+		} else {
+			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+		}
+		return customers
 				.stream()
 				.map(u -> u.getRepresentation())
 				.collect(toList());
 	}
 
+	@Override
+	public List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward) {
+		return userRepository.findByYeshteryUserIdNotNullAndAllowReward(allowReward);
+	}
+
+	@Override
+	public void updateUserByFamilyId(Long familyId, Long userId) {
+		if (userId > 0 && familyId > 0) {
+			userRepository.updateUserWithFamilyId(familyId, userId);
+			UserEntity userEntity = userRepository.findById(userId).get();
+			if (userEntity.getFamily().getId() > 0) {
+				loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+			}
+		}
+	}
+
+	@Override
+	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
+		if (tierId <= 0) {
+			tierId = getTierIdByUserOrders(orgId, userId);
+		}
+		if (userId > 0 && tierId > 0) {
+			userRepository.updateUserTier(tierId, userId);
+			UserEntity userEntity = userRepository.findById(userId).get();
+			if (userEntity.getTier().getId() > 0) {
+				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
+			}
+		}
+	}
+
+	@Override
+	public List<UserEntity> getUsersByFamilyId(Long familyId) {
+		return userRepository.findByFamily_Id(familyId);
+	}
+
+	private Long getTierIdByUserOrders(Long orgId, Long userId) {
+		if (orgId < 0) {
+			orgId = securityService.getCurrentUserOrganizationId();
+		}
+		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
+		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
+				.map(LoyaltyTierEntity::getId)
+				.orElse(-1L);
+	}
+
+	private void updateUserBoosterByFamilyMember(Long userId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		UserEntity userEntity = getUserEntityById(userId);
+		Long familyId = userEntity.getFamily().getId();
+		if (familyId < 0) {
+			return;
+		}
+		List<UserEntity> familyUsers = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
+		Integer familyCount = familyUsers.size();
+		if (familyCount == 0) {
+			return;
+		}
+		LoyaltyBoosterEntity loyaltyBoosterEntity = null;
+		LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
+		List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
+		if (userEntity.getBooster() != null) {
+			userLoyaltyBoosterEntity = userEntity.getBooster();
+		}
+		boosterList = loyaltyBoosterRepository.getAllByLinkedFamilyMember(familyCount+1);
+		if (boosterList.isEmpty()) {
+			boosterList = loyaltyBoosterRepository.getAllByNumberFamilyChildren(familyCount);
+		}
+		if (boosterList.size() > 0) {
+			loyaltyBoosterEntity = boosterList.get(boosterList.size() - 1);
+			if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
+				if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
+					return;
+				}
+			}
+			userEntity.setBooster(loyaltyBoosterEntity);
+		}
+		userRepository.save(userEntity);
+	}
 }
