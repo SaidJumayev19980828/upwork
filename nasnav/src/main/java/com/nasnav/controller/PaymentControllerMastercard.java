@@ -217,6 +217,9 @@ public class PaymentControllerMastercard {
         MastercardAccount merchantAccount = mastercardService.getAccountForOrder(metaOrderId);
 
         PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
+
+        mastercardLogger.debug("Attempting payment via gateway ID: {}", payment == null  ? "null" : payment.getOrgPaymentId() );
+
         if (payment != null) {
             try {
                 response.setOrderRef(payment.getUid());
