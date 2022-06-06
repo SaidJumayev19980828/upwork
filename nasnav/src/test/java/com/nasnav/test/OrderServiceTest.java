@@ -7,10 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.*;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrdersFiltersResponse;
+import com.nasnav.dto.*;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
@@ -26,7 +23,6 @@ import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -64,6 +60,7 @@ import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
@@ -504,22 +501,69 @@ public class OrderServiceTest {
 				.readValue(response.getBody(), new TypeReference<List<DetailedOrderRepObject>>() {});
 	}
 
-	@Ignore("Because of deserialization problem")
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_15.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getOrdersFiltersForOrg_1(){
+	public void getOrdersFilters(){
 		ResponseEntity<OrdersFiltersResponse> response = sendGetFiltersRequest("161718");
 		OrdersFiltersResponse responseBody = response.getBody();
 
-		assertEquals(new BigDecimal(500), responseBody.getPrices().getMinPrice());
-		assertEquals(new BigDecimal(900), responseBody.getPrices().getMaxPrice());
+		assertFiltersShops(responseBody);
+		assertFiltersUsers(responseBody);
+		assertFiltersPrices(responseBody);
+		assertFiltersQuantities(responseBody);
+		assertFiltersDates(responseBody);
 	}
 
 	private ResponseEntity<OrdersFiltersResponse> sendGetFiltersRequest(String token){
+		return template
+					.exchange("/order/filters?details_level=3",
+							GET,
+							getHttpEntity(token),
+							OrdersFiltersResponse.class);
+	}
 
-		return template.exchange("/order/filters?details_level=3", GET,
-					getHttpEntity(token), OrdersFiltersResponse.class);
+	private void assertFiltersShops(OrdersFiltersResponse responseBody) {
+		Set<Long> expectedShopsIds = setOf(501L, 502L);
+		Set<ShopRepresentationObject> actualShops = responseBody.getShops();
+		Set<Long> actualShopsIds = actualShops
+										.stream()
+										.map(ShopRepresentationObject::getId)
+										.collect(toSet());
+		checkExpectedEqualsActualSets(expectedShopsIds, actualShopsIds);
+	}
+
+	private void assertFiltersUsers(OrdersFiltersResponse responseBody) {
+		Set<Long> expectedUsersIds = setOf(88L, 89L, 90L);
+		Set<UserRepresentationObject> actualUsers = responseBody.getUsers();
+		Set<Long> actualShopsIds = actualUsers
+										.stream()
+										.map(UserRepresentationObject::getId)
+										.collect(toSet());
+		checkExpectedEqualsActualSets(expectedUsersIds, actualShopsIds);
+	}
+
+	private void checkExpectedEqualsActualSets(Set<Long> expectedIds, Set<Long> actualIds){
+		actualIds.forEach(shopId -> {
+			if(actualIds.contains(shopId))
+				expectedIds.remove(shopId);
+		});
+		assertEquals(0, expectedIds.size());
+	}
+
+	private void assertFiltersPrices(OrdersFiltersResponse responseBody) {
+		assertEquals(new BigDecimal("100.00"), responseBody.getPrices().getMinPrice());
+		assertEquals(new BigDecimal("2000.00"), responseBody.getPrices().getMaxPrice());
+	}
+
+	private void assertFiltersQuantities(OrdersFiltersResponse responseBody) {
+		assertEquals(Integer.valueOf(2), responseBody.getQuantities().getMinQuantity());
+		assertEquals(Integer.valueOf(15), responseBody.getQuantities().getMaxQuantity());
+	}
+
+	private void assertFiltersDates(OrdersFiltersResponse responseBody) {
+		assertEquals("2022-05-01", responseBody.getDates().minCreatedDate);
+		assertEquals("2022-06-05", responseBody.getDates().maxCreatedDate);
 	}
 
 	@Test

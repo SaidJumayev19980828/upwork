@@ -1,5 +1,8 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +17,8 @@ import static java.util.Objects.isNull;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class OrdersFiltersResponse {
     private Set<ShopRepresentationObject> shops;
     private Set<UserRepresentationObject> users;
@@ -63,7 +68,7 @@ public class OrdersFiltersResponse {
         paymentOperators.add(operator);
     }
 
-    public void setPrices(BigDecimal total){
+    public void setFilterPrices(BigDecimal total){
         if(isNull(total))
             return;
 
@@ -77,7 +82,7 @@ public class OrdersFiltersResponse {
         }
     }
 
-    public void setDates(LocalDate date){
+    public void setFilterDates(LocalDate date){
         String stringDate = date.toString();
 
         if(isNull(dates))
@@ -90,7 +95,7 @@ public class OrdersFiltersResponse {
         }
     }
 
-    public void setQuantities(Integer quantity){
+    public void setFilterQuantities(Integer quantity){
         if(isNull(quantity))
             return;
 

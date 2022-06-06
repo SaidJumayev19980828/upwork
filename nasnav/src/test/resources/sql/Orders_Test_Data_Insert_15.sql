@@ -19,6 +19,8 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
     VALUES (89, 'user2@nasnav.com','user2','456', 99002);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (90, 'user3@nasnav.com','user3','789', 99003);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (91, 'user4@nasnav.com','user4','889', 99003);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
@@ -59,8 +61,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 202, 'brand_3', 99002);
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 102, 99001, 0);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 103, 99002, 0);
 
 --inserting products
@@ -75,9 +77,11 @@ insert into public.product_variants(id, name, product_id) values(310003, 'var', 
 insert into public.product_variants(id, name, product_id) values(310004, 'var', 1003);
 
 --inserting meta orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310031 , now(),88, 99001, 2);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310032 , now(),89, 99001, 8);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , now(),90, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310031 , '2022-05-01', 88, 99001, 2);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310032 , '2022-05-25', 89, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , '2022-06-05', 90, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310034 , '2022-05-10', 90, 99002, 2);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310035 , '2022-05-30', 91, 99002, 8);
 
 INSERT INTO public.payments
 (id, operator, uid, status, executed, amount, currency, "object", user_id, meta_order_id)
@@ -88,11 +92,20 @@ VALUES(210032, 'MCARD:CIB:RASPORT', 'MCARD:CIB:RASPORT', 2, now(), 980, 2, 'dfdf
 INSERT INTO public.payments
 (id, operator, uid, status, executed, amount, currency, "object", user_id, meta_order_id)
 VALUES(210033, 'COD', 'COD', 2, now(), 980, 2, 'dfdfdd', 90, 310033);
+INSERT INTO public.payments
+(id, operator, uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(210034, 'COD', 'COD', 2, now(), 980, 2, 'dfdfdd', 90, 310034);
+INSERT INTO public.payments
+(id, operator, uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(210035, 'MCARD:CIB', 'COD', 2, now(), 980, 2, 'dfdfdd', 91, 310035);
 
-insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330031, 'name_1', 88, now() - INTERVAL '7 DAY', now(), 99001, 2, 501, 310031, 210031, 900.00);
-insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330032, 'name_1', 88, now() - INTERVAL '5 DAY', now(), 99001, 5, 502, 310032, 210031, 500.00);
-insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330033, 'name_2', 89, now(), now(), 99002, 1, 503, 310032, 210033, 100.00);
-insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330034, 'name_3', 90, now(), now(), 99002, 3, 503, 310033, 210033, 2000.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330031, 'name_1', 88, '2022-05-01', '2022-05-01', 99001, 2, 501, 310031, 210031, 900.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330032, 'name_1', 88, '2022-05-01', '2022-05-01', 99001, 5, 501, 310031, 210031, 500.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330033, 'name_2', 89, '2022-05-25', '2022-05-25', 99001, 1, 502, 310032, 210032, 100.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330034, 'name_3', 90, '2022-06-05', '2022-06-05', 99001, 3, 502, 310033, 210033, 2000.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330035, 'name_3', 90, '2022-05-10', '2022-05-10', 99002, 3, 503, 310034, 210034, 20.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330036, 'name_4', 91, '2022-05-30', '2022-05-30', 99002, 3, 503, 310035, 210035, 300.00);
+insert into public.orders(id,name, user_id,created_at, updated_at, organization_id, status,shop_id, meta_order_id, payment_id, total) values(330037, 'name_5', 91, '2022-05-30', '2022-05-30', 99002, 3, 503, 310035, 210035, 400.00);
 
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 10, 99001, 50.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 502, 10, 99001, 40.0, 310002);
@@ -101,20 +114,34 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 5, 50, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 10, 50, 1);
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 3, 40, 1);
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 80, 1);
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 603, 2, 10, 1);
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 604, 7, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 601, 3, 40, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 601, 2, 80, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 602, 2, 10, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 602, 7, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330035, 603, 12, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330035, 604, 2, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330036, 604, 1, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330036, 603, 3, 100, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330037, 604, 15, 100, 1);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
 VALUES(330031, 'BOSTA_LIVES',now(), now(), 0, 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
-VALUES(330032, 'BOSTA_LIVES', now(), now(), 0, 12.0);
+VALUES(330032, 'PARTIAL_PICKUP', now(), now(), 0, 12.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
-VALUES(330033, 'BOSTA_LIVES', now(), now(), 0, 20.0);
+VALUES(330033, 'PICKUP', now(), now(), 0, 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
 VALUES(330034, 'BOSTA_LIVES', now(), now(), 0, 12.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
+VALUES(330035, 'BOSTA_LIVES', now(), now(), 0, 12.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
+VALUES(330036, 'MULTIPLE_PICKUP', now(), now(), 0, 12.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, created_at, updated_at, status, shipping_fee)
+VALUES(330037, 'BOSTA_LIVES', now(), now(), 0, 12.0);

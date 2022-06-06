@@ -83,7 +83,7 @@ public class OrdersFiltersHelper {
         filteredOrders
                 .stream()
                 .map(DetailedOrderRepObject::getTotal)
-                .forEach(price -> filtersResponse.setPrices(price));
+                .forEach(price -> filtersResponse.setFilterPrices(price));
     }
 
     private void assignDates() {
@@ -91,13 +91,13 @@ public class OrdersFiltersHelper {
                 .stream()
                 .map(DetailedOrderRepObject::getCreatedAt)
                 .map(LocalDateTime::toLocalDate)
-                .forEach(date -> filtersResponse.setDates(date));
+                .forEach(date -> filtersResponse.setFilterDates(date));
     }
 
     private void assignQuantities() {
         filteredOrders
                 .stream()
                 .map(DetailedOrderRepObject::getTotalQuantity)
-                .forEach(quantity -> filtersResponse.setQuantities(quantity));
+                .forEach(quantity -> filtersResponse.setFilterQuantities(quantity));
     }
 }
