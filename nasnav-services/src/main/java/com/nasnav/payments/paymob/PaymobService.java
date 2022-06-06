@@ -141,7 +141,8 @@ public class PaymobService {
         TokenResponse authToken = getAuthToken();
         TokenResponse paymentToken = null;
 
-        PaymobSourceEntity sourceEntity = paymobSourceRepository.findByValue(ONLINE_CARD.getValue()).orElseThrow(() -> new BusinessException("Payment source not found", "PAYMENT_FAILED", NOT_ACCEPTABLE));
+        PaymobSourceEntity sourceEntity = paymobSourceRepository.findByNameAndOrganization_Id(ONLINE_CARD.getValue(), metaOrder.getOrganization().getId())
+                .orElseThrow(() -> new BusinessException("Payment source not found", "PAYMENT_FAILED", NOT_ACCEPTABLE));
 
         if (!Objects.isNull(authToken)) {
             HttpClient client = getHttpClient();
