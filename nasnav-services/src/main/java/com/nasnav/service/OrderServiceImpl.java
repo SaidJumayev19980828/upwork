@@ -21,6 +21,7 @@ import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
+import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingServiceInfo;
@@ -95,8 +96,8 @@ public class OrderServiceImpl implements OrderService {
 	private final StockRepository stockRepository;
 	private final StockService stockService;
 	private final UserServicesHelper userServicesHelper;
-
 	private final Logger logger = LogManager.getLogger();
+	private OrdersFiltersHelper ordersFiltersHelper;
 
 	@PersistenceContext
 	@Autowired
@@ -1511,6 +1512,18 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException {
 		return getOrdersList(params);
+	}
+
+	@Override
+	public OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam, Integer yeshteryState) throws BusinessException {
+
+		List<DetailedOrderRepObject> filteredOrders =
+				(yeshteryState == 1)  ?	getYeshteryOrdersList(orderSearchParam) :
+									 	getOrdersList(orderSearchParam);
+
+		ordersFiltersHelper = new OrdersFiltersHelper(filteredOrders);
+
+		return ordersFiltersHelper.getFiltersResponse();
 	}
 
 	@Override

@@ -1,9 +1,6 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.ReturnRequestSearchParams;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
@@ -55,6 +52,13 @@ public class OrdersController {
 	public List<DetailedOrderRepObject> getOrdersList(@RequestHeader(TOKEN_HEADER) String userToken,
 													  OrderSearchParam params) throws BusinessException {
 		return orderService.getOrdersList(params);
+	}
+
+	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)
+	public OrdersFiltersResponse getOrdersFilters(
+			@RequestHeader(name = "User-Token", required = false) String userToken,
+			OrderSearchParam orderSearchParam) throws BusinessException {
+		return orderService.getOrdersAvailableFilters(orderSearchParam, 0);
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)
