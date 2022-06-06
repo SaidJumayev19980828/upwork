@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,7 +15,6 @@ import static java.util.Objects.isNull;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class OrdersFiltersResponse {
@@ -28,43 +26,27 @@ public class OrdersFiltersResponse {
     private Dates dates;
     private Quantities quantities;
 
+    public OrdersFiltersResponse() {
+        this.shops= new HashSet<>();
+        this.users = new HashSet<>();
+        this.shippingServices = new HashSet<>();
+        this.paymentOperators = new HashSet<>();
+    }
+
+
     public void addShop(ShopRepresentationObject shop){
-        if (isNull(shops))
-            shops = new HashSet<>();
-
-        long count = shops
-                       .stream()
-                       .filter(s -> s.getId().equals(shop.getId()))
-                       .count();
-
-        if(count == 0)
-            shops.add(shop);
+        shops.add(shop);
     }
 
     public void addUser(UserRepresentationObject user){
-        if (isNull(users))
-            users = new HashSet<>();
-
-        long count = users
-                       .stream()
-                       .filter(u -> u.getId().equals(user.getId()))
-                       .count();
-
-        if(count == 0)
-            users.add(user);
+        users.add(user);
     }
 
     public void addShippingService(String shippingService){
-        if (isNull(shippingServices))
-            shippingServices = new HashSet<>();
-
         shippingServices.add(shippingService);
     }
 
     public void addPaymentOperator(String operator){
-        if (isNull(paymentOperators))
-            paymentOperators = new HashSet<>();
-
         paymentOperators.add(operator);
     }
 

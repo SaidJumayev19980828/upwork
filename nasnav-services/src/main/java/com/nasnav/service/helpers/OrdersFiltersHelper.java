@@ -5,7 +5,6 @@ import com.nasnav.dto.OrdersFiltersResponse;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.UserRepresentationObject;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class OrdersFiltersHelper {
@@ -17,26 +16,26 @@ public class OrdersFiltersHelper {
         filtersResponse = new OrdersFiltersResponse();
     }
 
-    public OrdersFiltersResponse getFiltersResponse(){
-        assignShops();
-        assignUsers();
-        assignShippingServices();
-        assignPaymentOperators();
-        assignPrices();
-        assignDates();
-        assignQuantities();
+    public OrdersFiltersResponse getFiltersResponse() {
+        filteredOrders.forEach(order -> {
+            assignShops(order);
+            assignUsers(order);
+            assignShippingServices(order);
+            assignPaymentOperators(order);
+            assignPrices(order);
+            assignDates(order);
+            assignQuantities(order);
+        });
+
 
         return filtersResponse;
     }
 
-    private void assignShops() {
-        filteredOrders
-                .stream()
-                .map(this::getShopRepresentationObject)
-                .forEach(shop -> filtersResponse.addShop(shop));
+    private void assignShops(DetailedOrderRepObject order) {
+        filtersResponse.addShop(getShopRepresentationObject(order));
     }
 
-    private ShopRepresentationObject getShopRepresentationObject(DetailedOrderRepObject order){
+    private ShopRepresentationObject getShopRepresentationObject(DetailedOrderRepObject order) {
         long shopId = order.getShopId();
         String shopName = order.getShopName();
         ShopRepresentationObject shop = new ShopRepresentationObject();
@@ -47,15 +46,12 @@ public class OrdersFiltersHelper {
         return shop;
     }
 
-    private void assignUsers() {
-        filteredOrders
-                .stream()
-                .map(this::getUserRepresentationObject)
-                .forEach(user -> filtersResponse.addUser(user));
+    private void assignUsers(DetailedOrderRepObject order) {
+        filtersResponse.addUser(getUserRepresentationObject(order));
     }
 
-    private UserRepresentationObject getUserRepresentationObject(DetailedOrderRepObject order){
-        long userId = order.getUserId();
+    private UserRepresentationObject getUserRepresentationObject(DetailedOrderRepObject order) {
+        Long userId = order.getUserId();
         String userName = order.getUserName();
         UserRepresentationObject user = new UserRepresentationObject();
 
@@ -65,39 +61,23 @@ public class OrdersFiltersHelper {
         return user;
     }
 
-    private void assignShippingServices() {
-        filteredOrders
-                .stream()
-                .map(DetailedOrderRepObject::getShippingService)
-                .forEach(service -> filtersResponse.addShippingService(service));
+    private void assignShippingServices(DetailedOrderRepObject order) {
+        filtersResponse.addShippingService(order.getShippingService());
     }
 
-    private void assignPaymentOperators() {
-        filteredOrders
-                .stream()
-                .map(DetailedOrderRepObject::getPaymentOperator)
-                .forEach(operator -> filtersResponse.addPaymentOperator(operator));
+    private void assignPaymentOperators(DetailedOrderRepObject order) {
+        filtersResponse.addPaymentOperator(order.getPaymentOperator());
     }
 
-    private void assignPrices() {
-        filteredOrders
-                .stream()
-                .map(DetailedOrderRepObject::getTotal)
-                .forEach(price -> filtersResponse.setFilterPrices(price));
+    private void assignPrices(DetailedOrderRepObject order) {
+        filtersResponse.setFilterPrices(order.getTotal());
     }
 
-    private void assignDates() {
-        filteredOrders
-                .stream()
-                .map(DetailedOrderRepObject::getCreatedAt)
-                .map(LocalDateTime::toLocalDate)
-                .forEach(date -> filtersResponse.setFilterDates(date));
+    private void assignDates(DetailedOrderRepObject order) {
+        filtersResponse.setFilterDates(order.getCreatedAt().toLocalDate());
     }
 
-    private void assignQuantities() {
-        filteredOrders
-                .stream()
-                .map(DetailedOrderRepObject::getTotalQuantity)
-                .forEach(quantity -> filtersResponse.setFilterQuantities(quantity));
+    private void assignQuantities(DetailedOrderRepObject order) {
+        filtersResponse.setFilterQuantities(order.getTotalQuantity());
     }
 }

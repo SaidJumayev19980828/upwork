@@ -60,7 +60,6 @@ import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
@@ -526,29 +525,29 @@ public class OrderServiceTest {
 	private void assertFiltersShops(OrdersFiltersResponse responseBody) {
 		Set<Long> expectedShopsIds = setOf(501L, 502L);
 		Set<ShopRepresentationObject> actualShops = responseBody.getShops();
-		Set<Long> actualShopsIds = actualShops
+		List<Long> actualShopsIds = actualShops
 										.stream()
 										.map(ShopRepresentationObject::getId)
-										.collect(toSet());
-		checkExpectedEqualsActualSets(expectedShopsIds, actualShopsIds);
+										.collect(toList());
+		checkExpectedEqualsActualId(expectedShopsIds, actualShopsIds);
 	}
 
 	private void assertFiltersUsers(OrdersFiltersResponse responseBody) {
 		Set<Long> expectedUsersIds = setOf(88L, 89L, 90L);
 		Set<UserRepresentationObject> actualUsers = responseBody.getUsers();
-		Set<Long> actualShopsIds = actualUsers
+		List<Long> actualShopsIds = actualUsers
 										.stream()
 										.map(UserRepresentationObject::getId)
-										.collect(toSet());
-		checkExpectedEqualsActualSets(expectedUsersIds, actualShopsIds);
+										.collect(toList());
+		checkExpectedEqualsActualId(expectedUsersIds, actualShopsIds);
 	}
 
-	private void checkExpectedEqualsActualSets(Set<Long> expectedIds, Set<Long> actualIds){
-		actualIds.forEach(shopId -> {
+	private void checkExpectedEqualsActualId(Set<Long> expectedIds, List<Long> actualIds){
+		expectedIds.forEach(shopId -> {
 			if(actualIds.contains(shopId))
-				expectedIds.remove(shopId);
+				actualIds.remove(shopId);
 		});
-		assertEquals(0, expectedIds.size());
+		assertEquals(0, actualIds.size());
 	}
 
 	private void assertFiltersPrices(OrdersFiltersResponse responseBody) {
