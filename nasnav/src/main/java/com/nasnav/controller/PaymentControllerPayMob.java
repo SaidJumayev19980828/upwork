@@ -47,7 +47,7 @@ public class PaymentControllerPayMob {
     public ResponseEntity<String> confirm(@RequestParam(name = "token") String uid) throws BusinessException {
             RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, false);
             return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
-                    "\"transaction_no\":\""+data.getId()+"\"" +
+                    "\"body\":\""+data+"\"" +
                     "}", HttpStatus.OK);
 
     }
