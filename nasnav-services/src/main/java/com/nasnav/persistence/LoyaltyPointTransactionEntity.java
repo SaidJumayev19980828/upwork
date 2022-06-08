@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.beans.BeanUtils;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import static javax.persistence.FetchType.LAZY;
 
@@ -110,6 +112,12 @@ public class LoyaltyPointTransactionEntity {
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private LoyaltyCoinsDropEntity coinsDrop;
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<LoyaltySpentTransactionEntity> spentTransactions;
 
     @Column(name = "is_coins_drop")
     private Boolean isCoinsDrop;

@@ -54,4 +54,6 @@ public interface LoyaltyPointsService {
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
 
     SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, Long userId, OrganizationEntity org);
+
+    List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
 }

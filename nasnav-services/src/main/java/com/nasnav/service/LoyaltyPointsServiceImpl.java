@@ -62,7 +62,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Autowired
     private ShopsRepository shopsRepo;
-
+    @Autowired
+    private CartItemRepository cartItemRepo;
     @Autowired
     private UserRepository userRepo;
 
@@ -599,6 +600,38 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         BigDecimal suborderPointsDiscount = total.divide(new BigDecimal(subOrders.size()));
         subOrders.forEach(s -> s.setDiscounts(s.getDiscounts().add(suborderPointsDiscount)));
         return new SpentPointsInfo(spentPoints, spentPointsRef);
+    }
+
+    @Override
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints() {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if(! (baseUser instanceof  UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity) baseUser;
+        List<Long> orgIds = cartItemRepo
+                .findCurrentCartItemsByUser_Id(currentUser.getId())
+                .stream()
+                .map(CartItemEntity::getStock)
+                .map(StocksEntity::getOrganizationEntity)
+                .map(OrganizationEntity::getId)
+                .collect(toList());
+        return loyaltyPointTransRepo
+                .getSpendablePointsByUserIdAndOrgIds(currentUser.getYeshteryUserId(), orgIds)
+                .stream()
+                .map(t -> {
+                    BigDecimal spentPoints = t.getSpentTransactions()
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
+                            .map(LoyaltyPointTransactionEntity::getPoints)
+                            .reduce(ZERO, BigDecimal::add);
+                    t.setPoints(t.getPoints().subtract(spentPoints));
+                    return t;
+                })
+                .map(LoyaltyPointTransactionEntity::getRepresentation)
+                .collect(toList());
     }
 
     private Integer getAvailablePoints(ShopsEntity shop, UserEntity user) {
