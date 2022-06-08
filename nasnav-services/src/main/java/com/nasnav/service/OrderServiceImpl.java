@@ -9,10 +9,7 @@ import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.ShippingStatus;
-import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
@@ -21,6 +18,7 @@ import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -735,7 +733,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setCreatedAt(entity.getCreationDate());
 		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
-		obj.setTotal(entity.getAmount());
+		obj.setTotal(entity.getTotal());
 		obj.setMetaOrderId(metaOrderId);
 		obj.setDiscount(entity.getDiscounts());
 
@@ -889,11 +887,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException {
+	public OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException {
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
+		Root<OrdersEntity> root = getOrdersQueryRoot(query);
+		Predicate[] predicatesArr = getOrderQueryPredicates(finalParams, builder, root);
 
-		List<OrdersEntity> ordersEntityList = em.createQuery(getOrderCriteriaQuery(finalParams))
+		query
+			.where(predicatesArr)
+			.orderBy(builder.desc(root.get(getQueryOrderBy(finalParams))));
+
+		List<OrdersEntity> ordersEntityList = em.createQuery(query)
 												.setFirstResult(finalParams.getStart())
 												.setMaxResults(finalParams.getCount())
 												.getResultList();
@@ -910,10 +916,13 @@ public class OrderServiceImpl implements OrderService {
 
 		Map<Long, String> orderPhones = getCustomerPhones(orders);
 		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, orders);
-		return ordersEntityList
+		List<DetailedOrderRepObject> detailedOrders = ordersEntityList
 				.stream()
 				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId()), paymentOperator))
 				.collect(toList());
+		Long ordersCount = getOrderListCount(builder, predicatesArr);
+
+		return new OrdersListResponse(ordersCount, detailedOrders);
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
@@ -926,6 +935,12 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
 				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator, (p1, p2) -> p1));
+	}
+
+	private Long getOrderListCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = em.getCriteriaBuilder().createQuery(Long.class);
+		countQuery.select(  builder.count( countQuery.from(OrdersEntity.class) ) ).where(predicatesArr);
+		return em.createQuery(countQuery).getSingleResult();
 	}
 
 	private Map<Long, String> getCustomerPhones(Set<OrdersEntity> orders) {
@@ -977,6 +992,9 @@ public class OrderServiceImpl implements OrderService {
 		newParams.setUpdated_before( params.getUpdated_before() );
 		newParams.setShipping_service_id(params.getShipping_service_id());
 		newParams.setPayment_operator(params.getPayment_operator());
+		newParams.setMin_total(params.getMin_total());
+		newParams.setMax_total(params.getMax_total());
+		newParams.setOrders_sorting_option(params.getOrders_sorting_option());
 		BaseUserEntity user = securityService.getCurrentUser();
 		if (user instanceof EmployeeUserEntity) {
 			newParams.setUser_id(params.getUser_id());
@@ -1031,9 +1049,7 @@ public class OrderServiceImpl implements OrderService {
 		return null;
 	}
 
-	private CriteriaQuery<OrdersEntity> getOrderCriteriaQuery(OrderSearchParam params) {
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
+	private Root<OrdersEntity> getOrdersQueryRoot(CriteriaQuery<?> query){
 		Root<OrdersEntity> root = query.from(OrdersEntity.class);
 		root.fetch("metaOrder", LEFT);
 		root.fetch("shipment", LEFT);
@@ -1047,14 +1063,7 @@ public class OrderServiceImpl implements OrderService {
 				.fetch("productEntity", LEFT);
 		root.fetch("organizationEntity", LEFT);
 		root.fetch("paymentEntity", LEFT);
-
-		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
-
-		query
-		.where(predicatesArr)
-		.orderBy(builder.desc(root.get("updateDate")));
-
-		return query;
+		return root;
 	}
 
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
@@ -1082,7 +1091,20 @@ public class OrderServiceImpl implements OrderService {
 		if(params.getPayment_operator() != null){
 			predicates.add( builder.equal(root.get("paymentEntity").get("operator"), params.getPayment_operator()) );
 		}
+		if(params.getMin_total() != null) {
+			predicates.add(builder.ge(root.get("total"), params.getMin_total()));
+		}
+		if(params.getMax_total() != null) {
+			predicates.add(builder.le(root.get("total"), params.getMax_total()));
+		}
+
 		return predicates.stream().toArray( Predicate[]::new) ;
+	}
+
+	private String getQueryOrderBy(OrderSearchParam params){
+		return ofNullable(params.getOrders_sorting_option())
+						.map(OrderSortOptions::getValue)
+						.orElse("updateDate");
 	}
 
 	private LocalDateTime readDate(String dateStr) {
@@ -1510,16 +1532,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException {
+	public OrdersListResponse getYeshteryOrdersList(OrderSearchParam params) throws BusinessException {
 		return getOrdersList(params);
 	}
 
 	@Override
-	public OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam, Integer yeshteryState) throws BusinessException {
+	public OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam) throws BusinessException {
 
-		List<DetailedOrderRepObject> filteredOrders =
-				(yeshteryState == 1)  ?	getYeshteryOrdersList(orderSearchParam) :
-									 	getOrdersList(orderSearchParam);
+		List<DetailedOrderRepObject> filteredOrders = getOrdersList(orderSearchParam).getOrders();
 
 		ordersFiltersHelper = new OrdersFiltersHelper(filteredOrders);
 

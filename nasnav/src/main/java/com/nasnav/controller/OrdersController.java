@@ -10,6 +10,7 @@ import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.OrderReturnService;
 import com.nasnav.service.OrderService;
@@ -49,8 +50,8 @@ public class OrdersController {
 	}
 
 	@GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
-	public List<DetailedOrderRepObject> getOrdersList(@RequestHeader(TOKEN_HEADER) String userToken,
-													  OrderSearchParam params) throws BusinessException {
+	public OrdersListResponse getOrdersList(@RequestHeader(TOKEN_HEADER) String userToken,
+                                            OrderSearchParam params) throws BusinessException {
 		return orderService.getOrdersList(params);
 	}
 
@@ -58,7 +59,7 @@ public class OrdersController {
 	public OrdersFiltersResponse getOrdersFilters(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			OrderSearchParam orderSearchParam) throws BusinessException {
-		return orderService.getOrdersAvailableFilters(orderSearchParam, 0);
+		return orderService.getOrdersAvailableFilters(orderSearchParam);
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)
