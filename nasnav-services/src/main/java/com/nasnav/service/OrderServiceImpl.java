@@ -735,7 +735,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setCreatedAt(entity.getCreationDate());
 		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
-		obj.setTotal(entity.getAmount());
+		obj.setTotal(entity.getTotal());
 		obj.setMetaOrderId(metaOrderId);
 		obj.setDiscount(entity.getDiscounts());
 
@@ -753,7 +753,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
-		obj.setSubtotal(entity.getAmount());
+		obj.setSubtotal(entity.getSubTotal());
 		obj.setNotes(notes);
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
@@ -1251,7 +1251,7 @@ public class OrderServiceImpl implements OrderService {
 			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, yeshteryMetaOrder.getGrandTotal());
 		}
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getAmount());
+		loyaltyPointsService.createLoyaltyPointTransaction(order, order.getSubTotal());
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
@@ -1866,7 +1866,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setShipment(shipmentDto);
 		subOrder.setTotalQuantity(totalQuantity);
 		subOrder.setTotal(order.getTotal());
-		subOrder.setSubtotal(order.getAmount());
+		subOrder.setSubtotal(order.getSubTotal());
 		subOrder.setDiscount(order.getDiscounts());
 
 		subOrder.setPoints(getOrderPoints(order));
@@ -1934,7 +1934,7 @@ public class OrderServiceImpl implements OrderService {
 	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
-				.map(OrdersEntity::getAmount)
+				.map(OrdersEntity::getSubTotal)
 				.reduce(ZERO, BigDecimal::add);
 	}
 
@@ -2030,7 +2030,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal subTotal =
 				subOrders
 				.stream()
-				.map(OrdersEntity::getAmount)
+				.map(OrdersEntity::getSubTotal)
 				.reduce(ZERO, BigDecimal::add);
 
 		var promoItems = getPromoItems(subOrders);
@@ -2086,7 +2086,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal subTotal =
 				subOrders
 				.stream()
-				.map(OrdersEntity::getAmount)
+				.map(OrdersEntity::getSubTotal)
 				.reduce(ZERO, BigDecimal::add);
 
 		return subOrders
@@ -2098,7 +2098,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private BigDecimal addPromoDiscount(BigDecimal promoDiscount, OrdersEntity subOrder
 				, BigDecimal subTotal) {
-		BigDecimal proportion = subOrder.getAmount().divide(subTotal, 2, FLOOR);
+		BigDecimal proportion = subOrder.getSubTotal().divide(subTotal, 2, FLOOR);
 		BigDecimal subOrderPromoDiscount = proportion.multiply(promoDiscount).setScale(2, FLOOR);
 		addToSubOrderDiscounts(subOrder, subOrderPromoDiscount);
 
@@ -2116,7 +2116,7 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(subOrder.getShipment())
 				.map(ShipmentEntity::getShippingFee)
 				.orElse(ZERO);
-		BigDecimal subTotal = ofNullable(subOrder.getAmount()).orElse(ZERO);
+		BigDecimal subTotal = ofNullable(subOrder.getSubTotal()).orElse(ZERO);
 		BigDecimal discount = ofNullable(subOrder.getDiscounts()).orElse(ZERO);
 		return subTotal.add(shippingFee).subtract(discount);
 	}
@@ -2128,7 +2128,7 @@ public class OrderServiceImpl implements OrderService {
 
 		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org, yeshteryOrder);
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
-		subOrder.setAmount(calculateSubTotal(subOrder));
+		subOrder.setSubTotal(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
 	}
 

@@ -71,7 +71,8 @@ public class OrdersEntity implements BaseEntity{
 
 	private Integer status;
 
-	private BigDecimal amount;
+	@Column(name = "sub_total")
+	private BigDecimal subTotal;
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "address_id", referencedColumnName = "id")
