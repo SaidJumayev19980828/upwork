@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
@@ -16,6 +17,7 @@ import com.nasnav.response.LoyaltyUserPointsResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 public interface LoyaltyPointsService {
 
@@ -26,7 +28,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointDeleteResponse deleteLoyaltyPoint(Long id);
     LoyaltyPointDeleteResponse deleteLoyaltyPointConfig(Long id);
     LoyaltyPointsUpdateResponse terminateLoyaltyPoint(Long id);
-    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user, MetaOrderEntity yeshteryMetaOrder,
+    LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org, UserEntity user, MetaOrderEntity yeshteryMetaOrder,
                                                               OrdersEntity order, BigDecimal points, BigDecimal amount, Integer expiry);
     void createLoyaltyPointTransaction(OrdersEntity order, BigDecimal pointsAmount);
     void createYeshteryLoyaltyPointTransaction(MetaOrderEntity yeshteryMetaOrder, BigDecimal pointsAmount);
@@ -35,6 +37,7 @@ public interface LoyaltyPointsService {
     List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
+    LoyaltyPointConfigDTO getLoyaltyPointActiveConfig();
     List<RedeemPointsOfferDTO> checkRedeemPoints(String code);
 
     void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
@@ -49,4 +52,8 @@ public interface LoyaltyPointsService {
     String generateUserShopPinCode(Long shopId);
 
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
+
+    SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, Long userId, OrganizationEntity org);
+
+    List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
 }

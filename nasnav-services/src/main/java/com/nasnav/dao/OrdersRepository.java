@@ -24,10 +24,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Query("update OrdersEntity set payment_status = :paymentStatus, updated_at = :updateTimestamp where id = :orderId")
     void setPaymentStatusForOrder(@Param("orderId") Long orderId, @Param("paymentStatus") Integer paymentStatus, @Param("updateTimestamp") Date updateTimestamp);
 
-
-    List<OrdersEntity> findByShopsEntityId(Long shopId);
-    List<OrdersEntity> findByOrganizationEntityId(Long orgId);
-
 	List<OrdersEntity> findByMetaOrderId(Long metaOrderId);
 
 	@Query("SELECT ord "
@@ -44,45 +40,27 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " WHERE meta.id = :metaOrderId" )
 	List<OrdersEntity> findInDetailsByMetaOrderId(@Param("metaOrderId")Long metaOrderId);
 
-    List<OrdersEntity> findByStatus(Integer status);    
-
-	Long countByStatusAndUserId(Integer value, long l);
-
 	Long countByOrganizationEntity_id(long orgId);
 
 	Long countByShopsEntity_id(Long shopId);
 
-	List<OrdersEntity> findByPaymentEntity_idOrderById(Long id);
-
-	@Query(value = "select o from OrdersEntity o join OrganizationEntity org on o.organizationEntity = org where o.id in :orderIds ")
-	List<OrdersEntity> getOrdersIn(@Param("orderIds") List<Long> orderIds);
-
-
-    @Transactional
-    @Modifying
-    @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId")
-    void deleteByStatusAndOrgId(@Param("status") Integer status, @Param("orgId") Long orgId);
-    
-    
-    @Transactional
-    @Modifying
-    @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId and o.id in :idList")
-    void deleteAllByStatusAndIdIn(@Param("idList") Collection<Long> orderIdList,
-								 @Param("orgId") Long orgId,
-							     @Param("status") Integer status);
 
 	long countByStatusAndOrganizationEntity_id(Integer value, Long org);
-	
-	
-	@Query("select ord.id from OrdersEntity ord "
-			+ " left join ord.basketsEntity basket "
-			+ " where basket.stocksEntity.productVariantsEntity.productEntity.id in :idList "
-			+ " and basket.ordersEntity in (select o from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId)")
-	Set<Long> findOrderIdByStatusAndProductIdIn(@Param("idList") List<Long> productIdList,
-								 @Param("orgId") Long orgId,
-							     @Param("status") Integer status);
 
-	List<OrdersEntity> findByIdIn(List<Long> orderIds);
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrder subMeta "
+			+ " LEFT JOIN FETCH meta.user user "
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE ord.id in :orderIds" )
+	List<OrdersEntity> findByIdIn(@Param("orderIds") List<Long> orderIds);
 
 	
 	@Query("SELECT ord "
@@ -224,9 +202,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("select count(subOrder) from OrdersEntity subOrder where subOrder.userId = :userId and subOrder.status in (2, 8, 4, 5) and subOrder.id = :orderId")
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
 											   @Param("userId") Long userId);
-
-	@Query("select order.userId from OrdersEntity order where order.id = :orderId")
-	Long getUserIdByOrderId(@Param("orderId")Long orderId);
 
 	Integer countAllByUserId(Long userId);
 }

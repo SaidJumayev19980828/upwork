@@ -152,7 +152,7 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 	@Transactional
 	@Modifying
 	@Query("DELETE FROM StocksEntity stock "
-			+ " WHERE stock.shopsEntity.id = :shopId")
+			+ " WHERE stock.shopsEntity.id = :shopId and stock not in (select b.stocksEntity from BasketsEntity b )")
 	void deleteByShopsEntity_Id(@Param("shopId") Long shopId);
 
 	@Transactional

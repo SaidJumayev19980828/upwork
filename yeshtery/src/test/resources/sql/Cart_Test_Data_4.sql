@@ -55,18 +55,19 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 --inserting yeshtery users
 INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
     VALUES (808, 'user1@nasnav.com','user1','123', 99001);
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (809, 'test2@nasnav.com','user2','456', 99001);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
     VALUES (88, 'test2@nasnav.com','user1','123', 99001, 808);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
-    VALUES (89, 'test4@nasnav.com','user2','456', 99001, 809);
+    VALUES (89, 'test4@nasnav.com','user2','456', 99002, 808);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
+    VALUES (90, 'test4@nasnav.com','user2','789', 99003, 808);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, '789', now(), null, 90);
 
 
 --inserting Roles
@@ -183,3 +184,5 @@ INSERT into public.organization_payments(id,organization_id ,gateway, account )
 values(100025, 99001, 'cod', 'dummy');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses values(12300002, 89, 12300001, false);
+INSERT INTO public.User_addresses values(12300003, 90, 12300001, false);

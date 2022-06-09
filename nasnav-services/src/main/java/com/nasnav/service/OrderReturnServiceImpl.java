@@ -247,7 +247,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
             returnRequest = returnRequestRepo.save(returnRequest);
             increaseReturnRequestStock(returnRequest);
 
-            loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
+            // Not needed now as user won't be able to spend his points before return expires
+            //loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
 
             sendItemReceivedEmailToCustomer(returnRequest.getId());
             //TODO refund ??

@@ -13,17 +13,6 @@ import java.util.Set;
 
 public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 
-    @Query("select basket from BasketsEntity basket where basket.ordersEntity.id = :orderId")
-    List<BasketsEntity> findByOrdersEntity_Id(@Param("orderId") Long orderId);
-    
-    @Query("select count(p) from BasketsEntity e "
-    		+ " join e.stocksEntity s "
-    		+ " join s.productVariantsEntity v "
-    		+ " join v.productEntity p "
-    		+ " where p.id= :productId ")
-    Long countByProductId(@Param("productId") Long productId);
-
-
     @Query("select count(e) from BasketsEntity e "
     		+ " join e.ordersEntity o"
     		+ " join e.stocksEntity s "
@@ -32,26 +21,6 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     		+ " where p.id= :productId "
     		+ " and o.status = :status ")
 	Long countByProductIdAndOrderEntity_status(Long productId, Integer status);
-
-
-	@Transactional
-	@Modifying
-	@Query("delete from BasketsEntity basket " +
-			" where basket.ordersEntity in (select o from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId)")
-	void deleteByOrganizationIdAndStatus(  @Param("status") Integer status, @Param("orgId") Long orgId);
-
-    List<BasketsEntity> findByOrdersEntity_IdIn(Set<Long> ordersIds);
-    
-    
-    @Transactional
-	@Modifying
-	@Query("delete from BasketsEntity basket "
-			+ " where basket.stocksEntity in "
-			+ "		(select s from StocksEntity s where s.productVariantsEntity.productEntity.id in :idList and s.organizationEntity.id = :orgId) " +
-			" and basket.ordersEntity in (select o from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId)")
-	void deleteByProductIdInAndOrganizationIdAndStatus( @Param("idList") List<Long> productIdList,
-											 @Param("orgId") Long orgId,
-										     @Param("status") Integer status);
     
     @Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockBasicData(variant.id , shop.id , stock.id) "
     		+ " from BasketsEntity basket "
@@ -67,5 +36,12 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 			" left join fetch m.user usr " +
 			" where b.id in :ids and (m.organization.id = :orgId or usr.organizationId = :orgId)")
     List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids, @Param("orgId")Long orgId);
+
+	@Query(value = "select b from BasketsEntity b" +
+			" left join fetch b.ordersEntity o " +
+			" left join fetch o.metaOrder m " +
+			" left join fetch m.user usr " +
+			" where b.id in :ids")
+	List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids);
 
 }
