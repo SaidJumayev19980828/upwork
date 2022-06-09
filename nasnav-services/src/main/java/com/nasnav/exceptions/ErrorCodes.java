@@ -298,7 +298,8 @@ public enum ErrorCodes {
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 
 	,ENUM$0001("Invalid shipping status")
-	
+	,ENUM$0002("Provided status [%s] doesn't match any existing status!")
+
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
 	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")

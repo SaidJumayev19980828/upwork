@@ -16,7 +16,10 @@ import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.*;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
+import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
+import com.nasnav.persistence.dto.query.result.StockAdditionalData;
+import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
@@ -30,7 +33,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -751,7 +753,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
-		obj.setSubtotal(entity.getAmount());
+		obj.setSubtotal(entity.getTotal());
 		obj.setNotes(notes);
 		if (entity.getShipment() != null) {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
@@ -899,10 +901,7 @@ public class OrderServiceImpl implements OrderService {
 			.where(predicatesArr)
 			.orderBy(builder.desc(root.get(getQueryOrderBy(finalParams))));
 
-		List<OrdersEntity> ordersEntityList = em.createQuery(query)
-												.setFirstResult(finalParams.getStart())
-												.setMaxResults(finalParams.getCount())
-												.getResultList();
+		List<OrdersEntity> ordersEntityList = initiateQuery(query, finalParams);
 
 		Set<OrdersEntity> orders = new HashSet<>();
 
@@ -923,6 +922,21 @@ public class OrderServiceImpl implements OrderService {
 		Long ordersCount = getOrderListCount(builder, predicatesArr);
 
 		return new OrdersListResponse(ordersCount, detailedOrders);
+	}
+
+	private List<OrdersEntity> initiateQuery(CriteriaQuery<OrdersEntity> query, OrderSearchParam params) {
+		Boolean useCount = ofNullable(params.getUseCount())
+								.orElse(true);
+		if(useCount){
+			return em.createQuery(query)
+					.setFirstResult(params.getStart())
+					.setMaxResults(params.getCount())
+					.getResultList();
+		}else{
+			return em.createQuery(query)
+					.setFirstResult(params.getStart())
+					.getResultList();
+		}
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
@@ -984,56 +998,51 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrderSearchParam getFinalOrderSearchParams(OrderSearchParam params) throws BusinessException {
 		Integer detailsLevel = ofNullable(params.getDetails_level()).orElse(0);
-
-		OrderSearchParam newParams = new OrderSearchParam();
-		newParams.setStatus_id(getOrderStatusId(params.getStatus()));
-		newParams.setDetails_level( detailsLevel);
-		newParams.setUpdated_after( params.getUpdated_after() );
-		newParams.setUpdated_before( params.getUpdated_before() );
-		newParams.setShipping_service_id(params.getShipping_service_id());
-		newParams.setPayment_operator(params.getPayment_operator());
-		newParams.setMin_total(params.getMin_total());
-		newParams.setMax_total(params.getMax_total());
-		newParams.setOrders_sorting_option(params.getOrders_sorting_option());
 		BaseUserEntity user = securityService.getCurrentUser();
-		if (user instanceof EmployeeUserEntity) {
-			newParams.setUser_id(params.getUser_id());
-			limitSearchParamByUserRole(params, newParams, user);
-		} else {
-			newParams.setUser_id(user.getId());
-			newParams.setOrg_id(asList(user.getOrganizationId()));
-		}
 
-		setOrderSearchStartAndCount(params, newParams);
+		params.setDetails_level( detailsLevel);
+		setListOfStatus(params);
+		setOrderSearchStartAndCount(params);
+		limitSearchParamByUserRole(params, user);
 
-		return newParams;
+		return params;
 	}
 
-	private void limitSearchParamByUserRole(OrderSearchParam params, OrderSearchParam newParams, BaseUserEntity user) {
+	private void setListOfStatus(OrderSearchParam params) {
+		params.setStatus_ids(new ArrayList<>());
+		if(notNullNorEmpty(params.getStatus())){
+			params.getStatus()
+					.forEach(status -> {
+						try {
+							params.getStatus_ids().add(getOrderStatusId(status));
+						} catch (BusinessException e) {
+							e.printStackTrace();
+						}
+					});
+		}
+	}
+
+	private void limitSearchParamByUserRole(OrderSearchParam params, BaseUserEntity user) {
+		if(! (user instanceof EmployeeUserEntity))
+			return;
+
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
 
 		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name() ,ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name()) )  {
-			newParams.setOrg_id(asList(empUser.getOrganizationId()));
+			params.setOrg_id(asList(empUser.getOrganizationId()));
 		} else if ( collectionContainsAnyOf(employeeUserRoles, STORE_MANAGER.name(), STORE_EMPLOYEE.name())) {
-			newParams.setShop_id(asList(empUser.getShopId()));
-		} else {
-			newParams.setOrg_id(params.getOrg_id());
-			newParams.setShop_id(params.getShop_id());
+			params.setShop_id(asList(empUser.getShopId()));
 		}
 	}
 
-	private void setOrderSearchStartAndCount(OrderSearchParam params, OrderSearchParam newParams) {
+	private void setOrderSearchStartAndCount(OrderSearchParam params) {
 		if (params.getStart() == null || params.getStart() <= 0){
-			newParams.setStart(0);
-		}else{
-			newParams.setStart(params.getStart());
+			params.setStart(0);
 		}
 
 		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= ORDER_DEFAULT_COUNT){
-			newParams.setCount(ORDER_DEFAULT_COUNT);
-		}else{
-			newParams.setCount(params.getCount());
+			params.setCount(ORDER_DEFAULT_COUNT);
 		}
 	}
 
@@ -1041,7 +1050,7 @@ public class OrderServiceImpl implements OrderService {
 		if (status != null) {
 			OrderStatus statusEnum = findEnum(status);
 			if (statusEnum == null) {
-				throw new BusinessException("Provided status (" + status + ") doesn't match any existing status!","INVALID PARAM: status",HttpStatus.BAD_REQUEST);
+				throw new RuntimeBusinessException(BAD_REQUEST, ENUM$0002, status);
 			}
 			return findEnum(status).getValue();
 		}
@@ -1077,13 +1086,22 @@ public class OrderServiceImpl implements OrderService {
 		if(params.getShop_id() != null) {
 			predicates.add(root.get("shopsEntity").get("id").in(params.getShop_id()));
 		}
-		if(params.getStatus_id() != null)
-			predicates.add( builder.equal(root.get("status"), params.getStatus_id()) );
+		if(notNullNorEmpty(params.getStatus_ids()))
+			params.getStatus_ids()
+					.forEach(status -> {
+						predicates.add( builder.equal(root.get("status"), status) );
+					});
 		if(params.getUpdated_after() != null) {
 			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
 		}
 		if(params.getUpdated_before() != null) {
 			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
+		}
+		if(params.getCreated_after() != null) {
+			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("creationDate"), builder.literal(readDate(params.getCreated_after())) ) );
+		}
+		if(params.getCreated_before() != null) {
+			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("creationDate"), builder.literal(readDate(params.getCreated_before()))) );
 		}
 		if(params.getShipping_service_id() != null){
 			predicates.add( builder.equal(root.get("shipment").get("shippingServiceId"), params.getShipping_service_id()) );
@@ -1539,6 +1557,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam) throws BusinessException {
 
+		orderSearchParam.setUseCount(false);
 		List<DetailedOrderRepObject> filteredOrders = getOrdersList(orderSearchParam).getOrders();
 
 		ordersFiltersHelper = new OrdersFiltersHelper(filteredOrders);

@@ -271,7 +271,7 @@ public class OrderServiceTest {
 	
 
 	@Test
-	public void ordersListInvalidfiltersTest() {
+	public void ordersListInvalidFiltersTest() {
 		String token = "101112";
 		// by shop_id only
 		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("shop_id=550", token);
@@ -294,7 +294,7 @@ public class OrderServiceTest {
 		// by status
 		response = sendOrdersListRequestWithParamsAndToken("status=invalid_status", token);
 
-		assertTrue(400 == response.getStatusCode().value());
+		assertEquals(400, response.getStatusCodeValue());
 	}
 
 	

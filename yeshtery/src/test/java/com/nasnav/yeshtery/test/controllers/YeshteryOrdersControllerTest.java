@@ -430,7 +430,7 @@ public class YeshteryOrdersControllerTest {
         // by status
         response = sendOrdersListRequestWithParamsAndToken("status=invalid_status", token);
 
-        assertTrue(400 == response.getStatusCode().value());
+        assertEquals(400, response.getStatusCodeValue());
     }
 
     @Test
@@ -682,6 +682,15 @@ public class YeshteryOrdersControllerTest {
         assertEquals(330042L, newestOrder.getOrderId());
     }
 
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Orders_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListFilterByCreationDateTest(){
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("created_after=2022-05-01:12:10:10&created_before=2022-05-30:12:10:10", "252627");
+
+        assertEquals(3, countOrdersFromResponse(response));
+    }
+
     private ResponseEntity sendOrdersListRequestWithParamsAndToken(String params, String token){
         HttpEntity<?> httpEntity = getHttpEntity(token);
 
@@ -792,7 +801,7 @@ public class YeshteryOrdersControllerTest {
     public void getReturnRequestsInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("101112");
         ResponseEntity<String> response = template.exchange(YESHTERY_ORDER_RETURN_REQUESTS_API_PATH, GET, request, String.class);
-        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
+        Assert.assertEquals(FORBIDDEN, response.getStatusCode());
     }
 
     @Test
@@ -834,7 +843,7 @@ public class YeshteryOrdersControllerTest {
     public void getReturnRequestInvalidAuthorization() {
         HttpEntity<?> request = getHttpEntity("192021");
         ResponseEntity<ReturnRequestDTO> response = template.exchange(YESHTERY_ORDER_RETURN_REQUEST_API_PATH + "?id=330031", GET, request, ReturnRequestDTO.class);
-        Assert.assertEquals(FORBIDDEN, response.getStatusCodeValue());
+        Assert.assertEquals(FORBIDDEN, response.getStatusCode());
     }
 
     @Test
@@ -1212,7 +1221,7 @@ public class YeshteryOrdersControllerTest {
         HttpEntity<?> request = getHttpEntity("101112");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
+        Assert.assertEquals(FORBIDDEN, res.getStatusCode());
     }
 
     @Test
