@@ -218,11 +218,16 @@ public class OrderServiceTest {
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("1 order with user_id = 88 and shop_id = 501 and status = NEW",1, countOrdersFromResponse(response));
 	}
-	
-	
-	
-	
-	
+
+	@Test
+	public void ordersListNasnavAdminVariesStatusesFilterTest() {
+		String token = "101112";
+
+		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("status=NEW,CLIENT_CONFIRMED&details_level=3", token);
+
+		assertTrue(200 == response.getStatusCode().value());
+		assertEquals("10 orders with status = NEW and CLIENT_CONFIRMED", 10, countOrdersFromResponse(response));
+	}
 
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {

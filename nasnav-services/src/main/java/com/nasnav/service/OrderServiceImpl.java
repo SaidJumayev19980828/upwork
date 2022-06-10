@@ -1086,11 +1086,9 @@ public class OrderServiceImpl implements OrderService {
 		if(params.getShop_id() != null) {
 			predicates.add(root.get("shopsEntity").get("id").in(params.getShop_id()));
 		}
-		if(notNullNorEmpty(params.getStatus_ids()))
-			params.getStatus_ids()
-					.forEach(status -> {
-						predicates.add( builder.equal(root.get("status"), status) );
-					});
+		if(notNullNorEmpty(params.getStatus_ids())) {
+			predicates.add(root.get("status").in(params.getStatus_ids()));
+		}
 		if(params.getUpdated_after() != null) {
 			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
 		}
