@@ -99,7 +99,7 @@ public enum ErrorCodes {
 	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
 	,P$IMG$0010("Unsupported file MIME [%s]. Select image or video!")
 	,P$IMG$0011("No Image exists with id [%s] within orgId [%s]!")
-	,P$IMG$0012("Image delete require only one parameter (ImageId, productId or brandId)!")
+	,P$IMG$0012("Image delete require only one parameter (Image_id, product_id or brand_id)!")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
