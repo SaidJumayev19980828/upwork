@@ -711,6 +711,58 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 		assertFalse(filesRepo.existsById( origImgFileEntity.getId() ));
 		assertFalse(Files.exists( filePath ));
 	}
+
+	@Test
+	public void brandImagesDeleteTest() throws Exception {
+		//create new image
+		String fileName = TEST_PHOTO;
+		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();
+
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
+
+		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);
+
+		//================================
+		//delete the image
+
+		String origImgUrl = origResponse.getString("image_url");
+		Long origImgId = origResponse.getLong("image_id");
+		FileEntity origImgFileEntity = filesRepo.findByUrl(origImgUrl);
+		Path filePath = basePath.resolve(origImgFileEntity.getLocation());
+		ProductImagesEntity origImgEntity = imgRepo.findById( origResponse.getLong("image_id") ).get();
+
+
+		ResultActions result =
+			    mockMvc.perform(MockMvcRequestBuilders.delete("/product/image")
+			    									 .param("brand_id", String.valueOf(101))
+									                 .header(TOKEN_HEADER, USER_TOKEN));
+		String response = result.andExpect(status().is(200))
+					             .andReturn()
+					             .getResponse()
+					             .getContentAsString();
+
+		assertFalse(imgRepo.existsById( origImgId ));
+		assertFalse(filesRepo.existsById( origImgFileEntity.getId() ));
+		assertFalse(Files.exists( filePath ));
+	}
+
+	@Test
+	public void productImagesDeleteMultiParamsTest() throws Exception {
+		//create new image
+		String fileName = TEST_PHOTO;
+		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();
+
+		ResultActions result =
+			    mockMvc.perform(MockMvcRequestBuilders.delete("/product/image")
+			    									 .param("image_id", String.valueOf(102))
+			    									 .param("brand_id", String.valueOf(99001))
+									                 .header(TOKEN_HEADER, USER_TOKEN));
+
+		result.andExpect(status().is(406))
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+	}
 	
 	
 	
@@ -845,7 +897,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void getProductImagesAnotherOrgAdminTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(68L);
+		BaseUserEntity user = empUserRepo.getById(71L);
 		Long productId = 1008L;
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());

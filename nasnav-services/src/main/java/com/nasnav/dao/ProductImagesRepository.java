@@ -52,6 +52,12 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 			" where p.id in :productIds or v.productEntity.id in :productIds order by i.priority")
 	List<ProductImagesEntity> findByProductsIds(@Param("productIds") List<Long> productIds);
 
+	@Query(value = 	"SELECT image.uri from ProductImagesEntity image " +
+					"LEFT JOIN image.productEntity product " +
+					"LEFT JOIN product.brand b " +
+					"WHERE b.id = :brandId AND product.organizationId = :orgId")
+	List<String> findUrlsByBrandIdAndOrganizationId(@Param("brandId") Long brandId, @Param("orgId") Long orgId);
+
 	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
 
 
@@ -79,6 +85,16 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	@Transactional
     @Modifying
 	void deleteByProductEntity_organizationId(@Param("orgId") Long orgId);
+
+	@Query(value =
+			"DELETE from product_images img " +
+			"WHERE img.product_id in " +
+			"(SELECT id FROM products product " +
+			"WHERE product.brand_id = :brandId AND product.organization_id = :orgId)"
+			, nativeQuery = true)
+	@Transactional
+    @Modifying
+	void deleteByBrandId(@Param("brandId") Long brandId, @Param("orgId") Long orgId);
 
 	Long countByProductEntity_OrganizationId(long l);
 
