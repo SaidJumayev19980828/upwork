@@ -322,7 +322,7 @@ public class ProductImageBulkUploadTest extends AbstractTestWithTempBaseDir {
 
 		boolean oldCollectionImgExistsAfter = imgRepo.existsById(66601L);
 		boolean oldProductImgExistsAfter = imgRepo.existsById(66602L);
-		assertFalse(oldProductImgExistsAfter);
+		assertTrue(oldProductImgExistsAfter); // product images wasn't updated so old images shouldn't be removed
 		assertTrue(oldCollectionImgExistsAfter);
 	}
 	
@@ -677,7 +677,7 @@ public class ProductImageBulkUploadTest extends AbstractTestWithTempBaseDir {
 				, 2
 				, responseJson.length());
 
-		assertEquals( 3L, imgRepo.count());
+		assertEquals( 4L, imgRepo.count());
 
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)
