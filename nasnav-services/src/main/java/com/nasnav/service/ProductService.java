@@ -2524,7 +2524,7 @@ public class ProductService {
 	private Set<VariantFeatureValueEntity> updateVariantFeatureValues(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
 		Set<VariantFeatureValueEntity> featuresValues = entity.getFeatureValues();
 		Set<VariantFeatureValueEntity> newFeaturesValues = new HashSet<>();
-		for (Map.Entry e : variant.getFeatures().entrySet()) {
+		for (Map.Entry<String, String> e : variant.getFeatures().entrySet()) {
 			ProductFeaturesEntity feature = cache.getOrganziationFeatures()
 					.stream()
 					.filter(f -> Objects.equals(f.getId(), Integer.parseInt(e.getKey().toString())))

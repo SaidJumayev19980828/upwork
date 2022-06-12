@@ -211,7 +211,7 @@ public class ProductImageBulkUrlUploadTest extends AbstractTestWithTempBaseDir {
 
 		assertImgsImportedAndCollectionImagesRemained(response);
 		
-		validateImageCountAfter(3L);
+		validateImageCountAfter(4L);
 	}
 
 	
@@ -563,7 +563,7 @@ public class ProductImageBulkUrlUploadTest extends AbstractTestWithTempBaseDir {
 				, 2
 				, responseJson.length());
 
-		assertEquals( 4L, imgRepo.count());
+		assertEquals( 5L, imgRepo.count());
 
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)

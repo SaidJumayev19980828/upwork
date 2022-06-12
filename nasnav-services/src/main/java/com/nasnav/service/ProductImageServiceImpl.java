@@ -597,15 +597,42 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
 		if(deleteOldImages) {
-			deleteOrgProductImages();
+			deleteProductImages(importedImgs);
 		}
 		return saveImgsBulk(importedImgs);
 	}
 
+	private void deleteProductImages(Set<ImportedImage> importedImgs) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 
+		List<ProductImageUpdateDTO> dtos = importedImgs.stream().map(ImportedImage::getImgMetaData).collect(toList());
+		List<Long> productIds =
+				dtos.stream().map(ProductImageUpdateDTO::getProductId).filter(Objects::nonNull).collect(toList());
+		List<Long> variantIds =
+				dtos.stream().map(ProductImageUpdateDTO::getVariantId).filter(Objects::nonNull).collect(toList());
 
+		if (productIds.isEmpty())
+			return;
 
+		List<String> existingImages;
+		if (variantIds.isEmpty()) {
+			existingImages = productImagesRepository
+					.findByProductsIds(productIds)
+					.stream()
+					.map(ProductImagesEntity::getUri)
+					.collect(toList());
+			productImagesRepository.deleteByProductIdIn(productIds);
+		} else {
+			existingImages = productImagesRepository
+					.findByProductVariantsEntity_IdInOrderByPriority(new HashSet<>(variantIds))
+					.stream()
+					.map(ProductImagesEntity::getUri)
+					.collect(toList());
+			productImagesRepository.deleteByVariantIdIn(variantIds);
+		}
 
+		deletePhysicalProductImages(existingImages);
+	}
 
 	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
@@ -618,11 +645,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
 
+		deletePhysicalProductImages(existingImages);
+	}
+
+	private void deletePhysicalProductImages(List<String> existingImages) {
 		existingImages
 				.stream()
 				.forEach(fileService::deleteFileByUrl);
 	}
-	
 
 	private void deleteProductImages(Long productId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
