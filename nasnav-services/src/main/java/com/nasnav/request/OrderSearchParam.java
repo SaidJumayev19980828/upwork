@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class OrderSearchParam {
+public class OrderSearchParam extends BaseSearchParams {
     private Long user_id;
     private List<Long> org_id;
     private List<String> status;
