@@ -107,10 +107,9 @@ public class YeshteryOrdersController {
 	public OrderConfirmResponseDTO confirmOrder(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam("order_id") Long orderId,
-			@RequestParam(value = "pin_code", required = false) String pinCode,
-			@RequestParam(value = "points_amount", required = false) BigDecimal pointsAmount) {
+			@RequestParam(value = "pin_code", required = false) String pinCode ) {
 
-		return orderService.confirmOrder(orderId, pinCode, pointsAmount);
+		return orderService.confirmOrder(orderId, pinCode);
 	}
 
 

@@ -73,7 +73,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //- to created a pattern use one of the overloads of "patternOf" method, each adds
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
-						patternOf( "/**"),
             patternOf( "/v1/360view/**"						, POST  , setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/order"							, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/order/confirm"					, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -140,7 +139,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/integration/dictionary"					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf( "/v1/integration/errors"						, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf( "/v1/integration/**"							, setOf(NASNAV_ADMIN))
-            , patternOf( "/v1/user/list")
+            , patternOf( "/v1/user/list"						, GET	, getNonCustomersRoles())
             , patternOf( "/v1/user/list/customer"				, GET	, getNonCustomersRoles())
             , patternOf( "/v1/user/address"					, PUT   , setOf(CUSTOMER))
             , patternOf( "/v1/user/address"					, DELETE, setOf(CUSTOMER))
@@ -155,17 +154,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/wishlist/**"							, setOf(CUSTOMER))
             , patternOf( "/v1/shipping/**"							, setOf(CUSTOMER))
             , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
-            , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER)),
+            , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER))
+			, patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST   , setOf(NASNAV_ADMIN)),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-            patternOf("/v1/loyalty/points/list"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
+			patternOf("/v1/loyalty/points/list"				, GET	, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/points_per_org"			, GET	, setOf(CUSTOMER)),
+			patternOf("/v1/loyalty/user_tier"							, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/family/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/tier/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/booster/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/config/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			patternOf("/v1/loyalty/user_tier"					, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/check"						, setOf(CUSTOMER)),
-            patternOf("/v1/loyalty/points/redeem"						, setOf(STORE_MANAGER))
+            patternOf("/v1/loyalty/points/redeem"						, setOf(STORE_MANAGER)),
+			patternOf( "/**")
     );
 
    

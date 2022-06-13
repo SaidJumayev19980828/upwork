@@ -687,9 +687,11 @@ public class CartServiceImpl implements CartService{
                 cartItemsIds.add(item.getId());
             }
         }
-        cartItemRepo.saveAll(cartItems);
-        moveCartItemsToWishlist(movedItems);
-        logger.info(format("moved %d items to wishlist", cartItemsIds.size()));
+        if (!cartItems.isEmpty()) {
+            cartItemRepo.saveAll(cartItems);
+            moveCartItemsToWishlist(movedItems);
+            logger.info(format("moved %d items to wishlist", cartItemsIds.size()));
+        }
     }
 
     @Override

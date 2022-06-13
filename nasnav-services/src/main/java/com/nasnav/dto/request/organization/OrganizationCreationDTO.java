@@ -18,4 +18,5 @@ public class OrganizationCreationDTO {
     private Integer currencyIso;
     private YeshteryState yeshteryState;
     private Integer priority;
+    private Boolean enableVideoChat;
 }

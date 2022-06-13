@@ -26,6 +26,8 @@ public class PromosConstraints {
     private Set<Long> tags;
     @JsonProperty("applied_to_products")
     private Set<Long> products;
+    @JsonProperty("applied_to_users")
+    private Set<Long> users;
     private Long useLimit;
     private Long useLimitPerOrder;
     private Long useLimitPerUser;

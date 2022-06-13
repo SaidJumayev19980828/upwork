@@ -167,7 +167,9 @@ public class YeshteryUserController {
     @PostMapping(value = "update", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
-
+        if (json.employee) {
+            return employeeUserService.updateEmployeeUser(json);
+        }
         return userService.updateUser(json);
     }
 
@@ -181,5 +183,10 @@ public class YeshteryUserController {
     public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader (name = "User-Token", required = false) String token,
                                                                     @RequestParam(value = "variant_ids") Set<Long> variantIds) {
         return reviewService.getUserProductsRatings(variantIds);
+    }
+
+    @PostMapping("link_nasnav_users_to_yeshtery_users")
+    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
+        return userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
     }
 }

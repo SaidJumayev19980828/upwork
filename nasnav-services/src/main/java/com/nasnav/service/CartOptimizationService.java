@@ -8,9 +8,11 @@ import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import java.util.List;
 
 public interface CartOptimizationService {
-	public <T> void setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto);
-	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto);
-	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy();
-	public List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies();
+	<T> void setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto);
+	CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto);
+
+	CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto);
+	List<CartOptimizationSettingDTO> getCartOptimizationStrategy();
+	List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies();
     void deleteCartOptimizationStrategy(String strategyName, String shippingService);
 }

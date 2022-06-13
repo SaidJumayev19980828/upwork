@@ -19,7 +19,10 @@ public class ProductImageBulkUpdateDTO{
 	private boolean crop;
 	
 	public ProductImageBulkUpdateDTO() {
-		//TODO: return this to false after the option is implemented on the dashboard
-		ignoreErrors = true;
+		ignoreErrors = false;
+	}
+
+	public ProductImageBulkUpdateDTO(boolean ignoreErrors) {
+		this.ignoreErrors = ignoreErrors;
 	}
 }

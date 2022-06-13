@@ -56,7 +56,7 @@ public enum ErrorCodes {
 	,P$VAR$009("Failed to delete variants [%s]!")
 	,P$VAR$010("User can't delete variants from another org!")
 	,P$VAR$011("No variant with feature[%d] exists with id[%d]!")
-	
+
 	,P$PRO$0001("No product id provided!")
 	,P$PRO$0002("No product exists with ID[%d]!")
 	,P$PRO$0003("Product name Must be provided!")
@@ -97,6 +97,7 @@ public enum ErrorCodes {
 	,P$IMG$0007("Failed to prepare images for import due to errors!\nerrors:[%s]")
 	,P$IMG$0008("Feature is not of the type %s!")
 	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
+	,P$IMG$0010("Unsupported file MIME [%s]. Select image or video!")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
@@ -149,6 +150,12 @@ public enum ErrorCodes {
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 	,ORG$SHIP$0002("Couldn't get variant org_id!")
 
+	,ORG$SITEMAP("User has no access to this sitemap!")
+
+	,THEME$0001("Provided theme_class_id [%d] doesn't match any existing theme class!")
+	,THEME$0002("There are %s linked to class [%d]")
+	,THEME$0003("Provided theme_id [%s] doesn't match any existing theme!")
+
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")
 
@@ -183,6 +190,9 @@ public enum ErrorCodes {
 	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
 	,ORG$LOY$0019("No tier found with id [%d]!")
 	,ORG$LOY$0020("No charity found with id [%d]!")
+	,ORG$LOY$0021("No tier found for user with id [%d]!")
+	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
+	,ORG$LOY$0023("Tier is linked to [%d] users!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -224,7 +234,7 @@ public enum ErrorCodes {
 	,O$CRT$0016("Requested quantity exceeded maximum allowed quantity for this item")
 	,O$CRT$0017("Requested price exceeded maximum allowed price")
 	,O$CRT$0018("Cart optimization resulted in empty cart!")
-	,O$CRT$0019("Variants %s has no stocks available!")
+	,O$CRT$0019("Cart items has no stocks available!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
@@ -330,7 +340,8 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0013("Must provide promo code for promo with type_id[%d]!")
 	,PROMO$PARAM$0014("Usage limit exceeded max value!")
 	,PROMO$PARAM$0015("Missing parameter[%s] in given promotion [%s]!")
-	
+	,PROMO$PARAM$0016("Promo code [%s] is not applicable to the current user!")
+
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
@@ -352,9 +363,9 @@ public enum ErrorCodes {
 	,COINS$PARAM$0002("Cannot update coins drop with id[%d], only inactive coins drop can be update!")
 	,COINS$PARAM$0003("Missing parameters in given coins drop [%s]!")
 	,COINS$PARAM$0004("Invalid coins drop type_id[%d]!")
-	,TIERS$PARAM$0001("No Tier exists with id[%d]!")
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
+	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")
 	,CHARITY$PARAM$0001("Missing Charity properties!")
 	,CHARITY$PARAM$0002("No Charity exists with id[%d]!")
 	,CHARITY$PARAM$0003("No Charity donation exists for user with id[%d]!")
@@ -362,6 +373,13 @@ public enum ErrorCodes {
 	,FAMILY$PARAM$0001("Missing parameters in given family [%s]!")
 	,BOOSTER$PARAM$0001("Missing Booster properties!")
 	,BOOSTER$PARAM$0002("No Booster exists with id[%d]!")
+
+
+	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
+	,VIDEO$PARAM$0002("Invalid user type!")
+	,VIDEO$PARAM$0003("Session not found!")
+	,VIDEO$PARAM$0004("Invalid Session!")
+
 	;
 
 	@Getter

@@ -284,4 +284,39 @@ public class SettingsServiceTest {
 		assertEquals("only one Area has sub-areas", 1, cairo.getAreas().keySet().size());
 		assertTrue(cairo.getAreas().containsKey("new cairo"));
 	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteOptimizationStrategyTest() {
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy?strategy_name=SAME_CITY&shipping_service=TEST",DELETE, req, String.class);
+		assertEquals(OK, res.getStatusCode());
+		assertFalse(optimizationRepo.findByOptimizationStrategyAndOrganization_Id("SAME_CITY", 99001L).isPresent());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteOptimizationStrategyInvalidAuthZ() {
+		HttpEntity<?> req = getHttpEntity("eereeee");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy?strategy_name=SAME_CITY",DELETE, req, String.class);
+		assertEquals(403, res.getStatusCodeValue());
+	}
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteOptimizationStrategyInvalidAuthN() {
+		HttpEntity<?> req = getHttpEntity("Invalid");
+		ResponseEntity<String> res =
+				template
+						.exchange("/organization/settings/cart_optimization/strategy?strategy_name=SAME_CITY",DELETE, req, String.class);
+		assertEquals(401, res.getStatusCodeValue());
+	}
+
 }

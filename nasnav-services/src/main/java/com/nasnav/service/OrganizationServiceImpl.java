@@ -18,7 +18,6 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.paymob.PayMobAccount;
-import com.nasnav.payments.paymob.PaymobSource;
 import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
@@ -32,7 +31,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
-import org.json.simple.JSONArray;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -124,8 +122,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private TagsRepository tagsRepo;
     @Autowired
     private TagGraphNodeRepository tagGraphNodeRepo;
-    @Autowired
-    private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
     @Autowired
@@ -390,6 +386,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         if(nonNull(json.getYeshteryState())){
             organization.setYeshteryState(json.getYeshteryState().getValue());
         }
+        if (json.getEnableVideoChat() != null) {
+            organization.setEnableVideoChat(json.getEnableVideoChat() ? 1 : 0);
+        }
         if (json.getPriority() != null && json.getPriority() >= 0) {
             organization.setPriority(json.getPriority());
         }
@@ -634,6 +633,70 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public List<OrganizationEntity> getYeshteryOrgs() {
         return organizationRepository.findByYeshteryState(1);
+    }
+
+    @Override
+    public Integer createUpdateExtraAttributes(ExtraAttributeDTO extraAttrDTO, String operation){
+
+        if(operation.equalsIgnoreCase("create"))
+            return createExtraAttribute(extraAttrDTO);
+        else if (operation.equalsIgnoreCase("update"))
+            return updateExtraAttributes(extraAttrDTO);
+        else
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
+    }
+
+    private Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
+        validateDTORequiredFields(extraAttrDTO);
+
+        Long orgId = securityService.getCurrentUserOrganizationId();
+
+        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
+        extraAttrEntity.setOrganizationId(orgId);
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        return extraAttributesRepository.save(extraAttrEntity).getId();
+    }
+
+    private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
+        ExtraAttributeType defaultType = ExtraAttributeType.STRING;
+
+        if(extraAttrDTO.getType() == null)
+            extraAttrDTO.setType(defaultType);
+
+        ofNullable(extraAttrDTO.getName())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008));
+
+    }
+
+    private Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        Integer attrId = extraAttrDTO.getId();
+
+        ExtraAttributesEntity extraAttrEntity =
+                extraAttributesRepository
+                .findByIdAndOrganizationId(attrId, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId));
+
+        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
+
+        return extraAttributesRepository.save(extraAttrEntity).getId();
+    }
+
+    private void setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
+        String attrName = extraAttrDTO.getName();
+        String attrIconUrl = extraAttrDTO.getIconUrl();
+        ExtraAttributeType attrType = extraAttrDTO.getType();
+
+        ofNullable(attrName)
+                .ifPresent(extraAttrEntity::setName);
+
+        ofNullable(attrIconUrl)
+                .ifPresent(extraAttrEntity::setIconUrl);
+
+        ofNullable(attrType)
+                .map(ExtraAttributeType::getValue)
+                .ifPresent(extraAttrEntity::setType);
     }
 
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
@@ -1068,7 +1131,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 	@Override
     public List<ExtraAttributeDefinitionDTO> getExtraAttributes() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttrRepo
+		return extraAttributesRepository
 				.findByOrganizationId(orgId)
 				.stream()
 				.map(this::createExtraAttributeDTO)
@@ -1214,17 +1277,16 @@ public class OrganizationServiceImpl implements OrganizationService {
         Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
         Long orgId = domain.getFirst();
         if (orgId.intValue() == 0) {
-            return createEmptyResponseEntity();
+            throw new RuntimeBusinessException(NOT_FOUND, GEN$0012, params.getUrl());
         }
         if (!isBlankOrNull(userToken)) {
             Long userOrgId = userTokenRepo.findEmployeeOrgIdByToken(userToken);
             if (userOrgId == null || !userOrgId.equals(orgId)) {
-                return createEmptyResponseEntity();
+                throw new RuntimeBusinessException(FORBIDDEN, ORG$SITEMAP);
             }
         }
         return createSiteMapResponse(orgId, params);
     }
-
 
     private ResponseEntity<?> createSiteMapResponse(Long orgId, SitemapParams params) throws IOException {
         List<String> allUrls = createSiteMap(orgId, params);
@@ -1240,12 +1302,6 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
                 .body(outStream.toString());
     }
-
-
-    private ResponseEntity<?> createEmptyResponseEntity() {
-        return ResponseEntity.notFound().build();
-    }
-
 
     private List<String> createSiteMap(Long orgId, SitemapParams params) {
         List<String> allUrls = new ArrayList<>();
@@ -1316,36 +1372,46 @@ public class OrganizationServiceImpl implements OrganizationService {
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
                 body.put("script", account.getScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
+                response.put(gateway.getGateway(), body);
             } else if (RAVE.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 RaveAccount raveAccount = new RaveAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
                 body.put("script", raveAccount.getScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+raveAccount.getIcon());
+                response.put(gateway.getGateway(), body);
             } else if (UPG.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 UpgAccount account = new UpgAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
                 body.put("script", account.getUpgScriptUrl());
                 body.put("icon", domainService.getBackendUrl()+account.getIcon());
+                response.put(gateway.getGateway(), body);
             } else if(PAY_MOB.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 PayMobAccount payMobAccount = new PayMobAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
-                String icon = domainService.getBackendUrl()+payMobAccount.getIcon();
-                body.put("script", payMobAccount.getApiUrl());
-                body.put("icon", icon);
+                String icon = domainService.getBackendUrl() + payMobAccount.getIcon();
                 List<PaymobSourceEntity> paymobSources = paymobSourceRepository.findByOrganization_Id(orgId);
-                List<Map<String, String>> sources = new ArrayList<>();
+
                 if (paymobSources != null && paymobSources.size() > 0) {
-                    List<Map<String, String>> list = paymobSources.stream().map(source -> addPayMobSource(source, icon)).collect(toList());
-                    body.put("sources", list);
+                    paymobSources.forEach(source -> {
+                        Map<String, Object> paymobSourceMap = addPayMobSource(source, icon);
+                        response.put(preparePaymobName(source.getName()), paymobSourceMap);
+                    });
+
                 }
             }
-            response.put(gateway.getGateway(), body);
         }
         return response;
     }
 
+    private String preparePaymobName(String name) {
+        String newPaymobName = "paymob_" + name;
+        newPaymobName = newPaymobName.toLowerCase();
+        newPaymobName = newPaymobName.replace(' ', '_');
 
-    private Map<String, String> addPayMobSource(PaymobSourceEntity source, String icon) {
-        Map<String, String> sourceMap = new HashMap<>();
-        sourceMap.put("value", source.getValue());
+        return newPaymobName;
+    }
+
+
+    private Map<String, Object> addPayMobSource(PaymobSourceEntity source, String icon) {
+        Map<String, Object> sourceMap = new HashMap<>();
         sourceMap.put("name", source.getName());
         sourceMap.put("icon", icon);
         sourceMap.put("script", source.getScript());

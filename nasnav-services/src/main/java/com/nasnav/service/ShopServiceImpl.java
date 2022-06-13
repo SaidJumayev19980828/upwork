@@ -318,7 +318,7 @@ public class ShopServiceImpl implements ShopService {
         SQLQuery query = getShopsQuerySelectPart()
                     .from(stock)
                     .innerJoin(shop).on(stock.shopId.eq(shop.id))
-                    .innerJoin(shop360).on(shop360.shopId.eq(shop.id))
+                    .leftJoin(shop360).on(shop360.shopId.eq(shop.id))
                     .innerJoin(variant).on(stock.variantId.eq(variant.id))
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))

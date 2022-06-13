@@ -84,14 +84,17 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Autowired
 	private LoyaltyPointsService loyaltyPointsService;
 	
-	
+	@Override
+	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto) {
+		validateAndAssignUserAddress(dto);
+		checkIfCartHasEmptyStock();
+
+		return optimizeCart(dto);
+	}
+
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
-
-		validateAndAssignUserAddress(dto);
-
-		checkIfCartHasEmptyStock();
 
 		var optimizedCart = createOptimizedCart(dto);
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
@@ -184,6 +187,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	private void checkIfCartHasEmptyStock() {
 		Long userId = securityService.getCurrentUser().getId();
+		int cartItemsCount = cartItemRepo.findCurrentCartItemsByUser_Id(userId).size();
 		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
 		List<CartItemEntity> movedItems = new ArrayList<>();
 		if (!outOfStockCartItems.isEmpty()) {
@@ -200,14 +204,10 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 					movedItems.add(item);
 				}
 			}
-			cartService.moveCartItemsToWishlist(movedItems);
-			List<Long> removedVariants = movedItems
-					.stream()
-					.map(CartItemEntity::getStock)
-					.map(StocksEntity::getProductVariantsEntity)
-					.map(ProductVariantsEntity::getId)
-					.collect(toList());
-			//throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019, removedVariants.toString());
+			if (!movedItems.isEmpty() && movedItems.size() == cartItemsCount) {
+				cartService.moveCartItemsToWishlist(movedItems);
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019);
+			}
 		}
 	}
 

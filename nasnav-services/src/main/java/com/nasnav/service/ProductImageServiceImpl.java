@@ -1623,7 +1623,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Set<ImportedSwatchImage> extractSwatchImgsToImport(MultipartFile zip, MultipartFile csv, SwatchImageBulkUpdateDTO metaData) {
-		return extractImgsToImport(zip, csv, new ProductImageBulkUpdateDTO())
+		return extractImgsToImport(zip, csv, new ProductImageBulkUpdateDTO(metaData.isIgnoreErrors()))
 				.stream()
 				.map(img -> new ImportedSwatchImage(img, metaData.getFeatureId()))
 				.collect(toSet());

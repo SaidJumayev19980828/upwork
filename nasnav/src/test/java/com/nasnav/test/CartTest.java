@@ -482,6 +482,102 @@ public class CartTest {
 		assertEquals(630006L, promoId.longValue());
 	}
 
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountWithApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_0");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountWithNotApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_00");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificBrandsWithApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_7");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificBrandsWithNotApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_77");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificTagsWithApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_8");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificTagsWithNotApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_88");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificProductsWithApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_9");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_14.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void calcPromoDiscountFromSpecificProductsWithNotApplicableUser() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa_99");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Object> res = template.postForEntity("/cart/checkout", request, Object.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
 	//@Test test ignored as auto optimization changes are not acceptable now
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})

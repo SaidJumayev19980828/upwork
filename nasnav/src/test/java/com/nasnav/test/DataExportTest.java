@@ -110,11 +110,18 @@ public class DataExportTest {
 	}
 
 	@Test
-	public void testProductExportXLSX(){
+	public void generateProductsImagesXlsxTest(){
 		var response =
-				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
+				template.exchange("/export/products/images?type=XLSX", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		assertEquals(OK, response.getStatusCode());
+		assertFalse(response.getBody().isEmpty());
+	}
+
+	@Test
+	public void generateProductsImagesCSVTest(){
+		var response =
+				template.exchange("/export/products/images?type=CSV", GET, getHttpEntity("192021"), String.class);
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
