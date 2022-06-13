@@ -1224,7 +1224,7 @@ public class YeshteryOrdersControllerTest {
         HttpEntity<?> request = getHttpEntity("101112");
 
         ResponseEntity<String> res = template.postForEntity(YESHTERY_ORDER_RETURN_CONFIRM_API_PATH + "?id=" + id, request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
+        Assert.assertEquals(403, res.getStatusCodeValue());
     }
 
     @Test
