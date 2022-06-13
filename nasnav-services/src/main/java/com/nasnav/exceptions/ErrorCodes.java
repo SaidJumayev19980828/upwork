@@ -380,6 +380,7 @@ public enum ErrorCodes {
 	,VIDEO$PARAM$0003("Session not found!")
 	,VIDEO$PARAM$0004("Invalid Session!")
 
+	,PROCESS$CANCEL$0001("Process not cancelable")
 	;
 
 	@Getter
