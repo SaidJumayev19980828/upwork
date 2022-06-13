@@ -56,14 +56,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
 import static com.nasnav.enumerations.ProductFeatureType.IMG_SWATCH;
@@ -496,38 +494,71 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Override
 	@Transactional
-	public ProductImageDeleteResponse deleteImage(Long imgId, Long productId) throws BusinessException {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		if (!isBlankOrNull(productId) && isBlankOrNull(imgId)) {
+	public ProductImageDeleteResponse deleteImage(Long imgId, Long productId, Long brandId) throws BusinessException {
+		validateOneParameterProvided(imgId, productId, brandId);
+
+		if (!isBlankOrNull(productId)) {
 			deleteProductImages(productId);
 		}
-		else if(isBlankOrNull(productId) && !isBlankOrNull(imgId)){
-			ProductImagesEntity img =
-					productImagesRepository.findByIdAndProductEntity_OrganizationId(imgId, orgId)
-							.orElseThrow(() -> new BusinessException("No Image exists with id [" + imgId + "] !", "INVALID PARAM:image_id", NOT_ACCEPTABLE));
-
-			productId = Optional.ofNullable(img.getProductEntity())
-					.map(prod -> prod.getId())
-					.orElse(null);
-
-			Long cnt = productImagesRepository.countByUri(img.getUri());
-			productImagesRepository.deleteById(imgId);
-
-			deleteImgFileIfNotUsed(img, cnt);
+		else if (!isBlankOrNull(imgId)){
+			productId = deleteSingleProductImages(imgId);
+		}else if (!isBlankOrNull(brandId)){
+			deleteBrandProductsImages(brandId);
 		}
-		
+
 		return new ProductImageDeleteResponse(productId);
 	}
 
+	private void validateOneParameterProvided(Long ...params) {
+		if(!hasOneNonNull(params)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0012);
+		}
+	}
 
+	private void deleteProductImages(Long productId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<String> images =  productImagesRepository.findUrlsByProductIdAndOrganizationId(productId, orgId);
+		productImagesRepository.deleteByProductEntity_IdAndProductEntity_organizationId(productId, orgId);
+		for(String img : images) {
+			fileService.deleteFileByUrl(img);
+		}
+	}
 
+	private Long deleteSingleProductImages(Long imgId) throws BusinessException {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ProductImagesEntity img =
+				productImagesRepository.findByIdAndProductEntity_OrganizationId(imgId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0011, imgId, orgId));
 
+		Long productId = ofNullable(img.getProductEntity())
+							.map(prod -> prod.getId())
+							.orElse(null);
 
+		Long cnt = productImagesRepository.countByUri(img.getUri());
+		productImagesRepository.deleteById(imgId);
+
+		deleteImgFileIfNotUsed(img, cnt);
+
+		return productId;
+	}
 
 	private void deleteImgFileIfNotUsed(ProductImagesEntity img, Long cnt) throws BusinessException {
 		if(cnt <= 1) {
 			fileService.deleteFileByUrl(img.getUri());
 		}
+	}
+
+	private void deleteBrandProductsImages(Long brandId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		List<String> existingImages = productImagesRepository
+										.findUrlsByBrandIdAndOrganizationId(brandId, orgId);
+
+		productImagesRepository.deleteByBrandId(brandId, orgId);
+
+		existingImages
+				.stream()
+				.forEach(fileService::deleteFileByUrl);
 	}
 
 
@@ -597,15 +628,42 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
 		if(deleteOldImages) {
-			deleteOrgProductImages();
+			deleteProductImages(importedImgs);
 		}
 		return saveImgsBulk(importedImgs);
 	}
 
+	private void deleteProductImages(Set<ImportedImage> importedImgs) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 
+		List<ProductImageUpdateDTO> dtos = importedImgs.stream().map(ImportedImage::getImgMetaData).collect(toList());
+		List<Long> productIds =
+				dtos.stream().map(ProductImageUpdateDTO::getProductId).filter(Objects::nonNull).collect(toList());
+		List<Long> variantIds =
+				dtos.stream().map(ProductImageUpdateDTO::getVariantId).filter(Objects::nonNull).collect(toList());
 
+		if (productIds.isEmpty())
+			return;
 
+		List<String> existingImages;
+		if (variantIds.isEmpty()) {
+			existingImages = productImagesRepository
+					.findByProductsIds(productIds)
+					.stream()
+					.map(ProductImagesEntity::getUri)
+					.collect(toList());
+			productImagesRepository.deleteByProductIdIn(productIds);
+		} else {
+			existingImages = productImagesRepository
+					.findByProductVariantsEntity_IdInOrderByPriority(new HashSet<>(variantIds))
+					.stream()
+					.map(ProductImagesEntity::getUri)
+					.collect(toList());
+			productImagesRepository.deleteByVariantIdIn(variantIds);
+		}
 
+		deletePhysicalProductImages(existingImages);
+	}
 
 	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
@@ -618,25 +676,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
 
+		deletePhysicalProductImages(existingImages);
+	}
+
+	private void deletePhysicalProductImages(List<String> existingImages) {
 		existingImages
 				.stream()
 				.forEach(fileService::deleteFileByUrl);
 	}
-	
-
-	private void deleteProductImages(Long productId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<String> images =  productImagesRepository.findUrlsByProductIdAndOrganizationId(productId, orgId);
-		productImagesRepository.deleteByProductEntity_IdAndProductEntity_organizationId(productId, orgId);
-		for(String img : images) {
-			fileService.deleteFileByUrl(img);
-		}
-	}
-	
-
-
-
-
 
 	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) {
@@ -951,7 +998,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void rollbackImgBulkImport(List<ProductImageUpdateResponse> responses) throws BusinessException {
 		for(ProductImageUpdateResponse res: responses) {
-			deleteImage( res.getImageId(),null);
+			deleteImage( res.getImageId(), null, null);
 		}
 		
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

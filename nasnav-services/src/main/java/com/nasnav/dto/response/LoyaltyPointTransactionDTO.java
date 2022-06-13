@@ -13,6 +13,7 @@ public class LoyaltyPointTransactionDTO {
 
     private Long id;
     private LocalDateTime createdAt;
+    private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Long orgId;
     private Long typeId;

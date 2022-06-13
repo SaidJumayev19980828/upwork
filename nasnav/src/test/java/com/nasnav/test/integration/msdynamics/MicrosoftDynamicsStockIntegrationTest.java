@@ -130,7 +130,7 @@ public class MicrosoftDynamicsStockIntegrationTest {
 		payment.setUid("MLB-<MerchantReference>");
 		payment.setExecuted(new Date());
 		payment.setObject(paymentObj.toString());
-		payment.setAmount(order.getAmount());
+		payment.setAmount(order.getSubTotal());
 		payment.setCurrency(EGP);
 		payment.setStatus(PAID);
 		payment.setUserId(order.getUserId());

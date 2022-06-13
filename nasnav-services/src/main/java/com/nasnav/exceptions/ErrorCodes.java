@@ -98,6 +98,8 @@ public enum ErrorCodes {
 	,P$IMG$0008("Feature is not of the type %s!")
 	,P$IMG$0009("Failed to find data extra-attribute for feature [%d]!")
 	,P$IMG$0010("Unsupported file MIME [%s]. Select image or video!")
+	,P$IMG$0011("No Image exists with id [%s] within orgId [%s]!")
+	,P$IMG$0012("Image delete require only one parameter (Image_id, product_id or brand_id)!")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
@@ -193,6 +195,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0021("No tier found for user with id [%d]!")
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
+	,ORG$LOY$0024("No active config for org with id [%d] !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -298,7 +301,8 @@ public enum ErrorCodes {
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 
 	,ENUM$0001("Invalid shipping status")
-	
+	,ENUM$0002("Provided status [%s] doesn't match any existing status!")
+
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
 	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
