@@ -1009,16 +1009,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void setListOfStatus(OrderSearchParam params) {
-		params.setStatus_ids(new ArrayList<>());
 		if(notNullNorEmpty(params.getStatus())){
-			params.getStatus()
-					.forEach(status -> {
-						try {
-							params.getStatus_ids().add(getOrderStatusId(status));
-						} catch (BusinessException e) {
-							e.printStackTrace();
-						}
-					});
+			params.setStatus_ids(getOrderStatusIds(params.getStatus()));
 		}
 	}
 
@@ -1046,16 +1038,16 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
-	private Integer getOrderStatusId(String status) throws BusinessException {
-		if (status != null) {
-			OrderStatus statusEnum = findEnum(status);
-			if (statusEnum == null) {
-				throw new RuntimeBusinessException(BAD_REQUEST, ENUM$0002, status);
-			}
-			return findEnum(status).getValue();
-		}
-
-		return null;
+	private List<Integer> getOrderStatusIds(List<String> status){
+		return status.stream()
+				.map(OrderStatus::findEnum)
+				.map(s -> {
+					if (s == null)
+						throw new RuntimeBusinessException(BAD_REQUEST, ENUM$0002, status);
+					return s;
+				})
+				.map(OrderStatus::getValue)
+				.collect(toList());
 	}
 
 	private Root<OrdersEntity> getOrdersQueryRoot(CriteriaQuery<?> query){
