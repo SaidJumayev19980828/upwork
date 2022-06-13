@@ -562,7 +562,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         BigDecimal totalWithoutShipping =
                 subOrders
                         .stream()
-                        .map(o -> o.getAmount().subtract(o.getDiscounts()))
+                        .map(o -> o.getSubTotal().subtract(o.getDiscounts()))
                         .reduce(ZERO, BigDecimal::add);
 
         List<LoyaltyPointTransactionEntity> earnedPoints = loyaltyPointTransRepo.getTransactionsByIdInAndUserIdAndOrgId(points, userId, org.getId());

@@ -1277,7 +1277,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, STORE_CONFIRMED);
 
-		BigDecimal orderValueWithoutShipping = order.getSubtotal().subtract(order.getDiscounts());
+		BigDecimal orderValueWithoutShipping = order.getSubTotal().subtract(order.getDiscounts());
 
 		if (metaOrder.getSubMetaOrder() != null) {
 			MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
