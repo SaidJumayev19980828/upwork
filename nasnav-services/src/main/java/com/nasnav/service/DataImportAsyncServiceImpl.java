@@ -16,7 +16,7 @@ import javax.validation.Valid;
 @Service
 @Qualifier("excel")
 @RequiredArgsConstructor
-public class ExcelDataImportAsyncServiceImpl {
+public class DataImportAsyncServiceImpl {
 
     private final HandlingChainingProcessManagerService handlingChainingProcessManagerService;
 
@@ -24,7 +24,7 @@ public class ExcelDataImportAsyncServiceImpl {
 
 
     @Transactional
-    public HandlerChainProcessStatus importProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws Exception {
+    public HandlerChainProcessStatus importExcelProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData) throws Exception {
 
         final byte[] bytes = IOUtils.toByteArray(file.getInputStream());
 
@@ -37,6 +37,18 @@ public class ExcelDataImportAsyncServiceImpl {
 
     }
 
+
+    public HandlerChainProcessStatus importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
+
+        final byte[] bytes = IOUtils.toByteArray(file.getInputStream());
+        return handlingChainingProcessManagerService.startProcess(
+                handlingChainingProcessManagerService.createCsvImportDataHandlerChainProcess(ImportDataCommand.builder()
+                        .importMetaDataDto(importMetaData)
+                        .file(bytes)
+                        .orgId(security.getCurrentUserOrganizationId())
+                        .build()));
+
+    }
 
 }
 

@@ -4,7 +4,7 @@ import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
 import com.nasnav.commons.model.handler.ImportDataCommand;
 import com.nasnav.exceptions.ProcessCancelException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.service.handler.chain.process.ExcelImportDataHandlingChainProcess;
+import com.nasnav.service.handler.chain.process.ImportDataHandlingChainProcess;
 import com.nasnav.service.handler.dataimport.HandlerChainFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,9 +70,9 @@ public class HandlingChainingProcessManagerService {
         return processes.get(processId).getResult();
     }
 
-    public ExcelImportDataHandlingChainProcess createExcelImportDataHandlerChainProcess(ImportDataCommand command) {
+    public ImportDataHandlingChainProcess createExcelImportDataHandlerChainProcess(ImportDataCommand command) {
 
-        return new ExcelImportDataHandlingChainProcess(command, handlerChainFactory.importDataHandlerChain());
+        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importExcelDataHandlerChain());
     }
 
     public void clearAllProcess() {
@@ -84,6 +84,11 @@ public class HandlingChainingProcessManagerService {
 
         validateExistedProcess(processId);
         processes.remove(processId);
+    }
+
+    public ImportDataHandlingChainProcess createCsvImportDataHandlerChainProcess(final ImportDataCommand command) {
+
+        return new ImportDataHandlingChainProcess(command, handlerChainFactory.importCsvDataHandlerChain());
     }
 
 }

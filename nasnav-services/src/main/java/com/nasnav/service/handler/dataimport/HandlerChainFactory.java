@@ -20,6 +20,8 @@ public class HandlerChainFactory {
 
     public static final String PARSE_EXCEL_PRODUCT_IMPORT_DATA = "PARSE_EXCEL_PRODUCT_IMPORT_DATA";
 
+    public static final String PARSE_CSV_PRODUCT_IMPORT_DATA = "PARSE_CSV_PRODUCT_IMPORT_DATA";
+
     public static final String INIT_CONTEXT_PRODUCT_IMPORT_DATA = "INIT_CONTEXT_PRODUCT_IMPORT_DATA";
 
     public static final String CREATE_CACHE_PRODUCT_IMPORT_DATA = "CREATE_CACHE_PRODUCT_IMPORT_DATA";
@@ -33,10 +35,24 @@ public class HandlerChainFactory {
     public static final String DELETE_OLD_PRODUCT_IMPORT_DATA = "DELETE_OLD_PRODUCT_IMPORT_DATA";
 
 
-    public List<Handler<ImportDataCommand>> importDataHandlerChain() {
+    public List<Handler<ImportDataCommand>> importExcelDataHandlerChain() {
 
         return Stream.of(importDataHandlers.get(VALIDATE_PRODUCT_IMPORT_DATA_INPUT)
                 , importDataHandlers.get(PARSE_EXCEL_PRODUCT_IMPORT_DATA)
+                , importDataHandlers.get(INIT_CONTEXT_PRODUCT_IMPORT_DATA)
+                , importDataHandlers.get(CREATE_CACHE_PRODUCT_IMPORT_DATA)
+                , importDataHandlers.get(VALIDATE_PRODUCT_IMPORT_DATA)
+                , importDataHandlers.get(PRODUCT_DATA_LIST_CONVERTER_IMPORT_DATA)
+                , importDataHandlers.get(SAVE_PRODUCT_IMPORT_DATA)
+                , importDataHandlers.get(DELETE_OLD_PRODUCT_IMPORT_DATA)
+        ).collect(Collectors.toList());
+    }
+
+
+    public List<Handler<ImportDataCommand>> importCsvDataHandlerChain() {
+
+        return Stream.of(importDataHandlers.get(VALIDATE_PRODUCT_IMPORT_DATA_INPUT)
+                , importDataHandlers.get(PARSE_CSV_PRODUCT_IMPORT_DATA)
                 , importDataHandlers.get(INIT_CONTEXT_PRODUCT_IMPORT_DATA)
                 , importDataHandlers.get(CREATE_CACHE_PRODUCT_IMPORT_DATA)
                 , importDataHandlers.get(VALIDATE_PRODUCT_IMPORT_DATA)

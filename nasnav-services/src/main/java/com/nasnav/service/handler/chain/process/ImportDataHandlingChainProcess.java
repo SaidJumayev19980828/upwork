@@ -10,9 +10,9 @@ import java.util.List;
 
 
 @Slf4j
-public class ExcelImportDataHandlingChainProcess extends HandlingChainingProcess<ImportDataCommand> {
+public class ImportDataHandlingChainProcess extends HandlingChainingProcess<ImportDataCommand> {
 
-    public ExcelImportDataHandlingChainProcess(final ImportDataCommand processData, final List<Handler<ImportDataCommand>> handlers) {
+    public ImportDataHandlingChainProcess(final ImportDataCommand processData, final List<Handler<ImportDataCommand>> handlers) {
 
         super(processData, handlers);
     }

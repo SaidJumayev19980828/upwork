@@ -3,23 +3,13 @@ package com.nasnav.controller;
 import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
 import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ImportProductException;
-import com.nasnav.service.CsvExcelDataImportService;
-import com.nasnav.service.ExcelDataImportAsyncServiceImpl;
-import com.nasnav.service.model.importproduct.context.ImportProductContext;
+import com.nasnav.service.DataImportAsyncServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -31,7 +21,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RequiredArgsConstructor
 public class DataImportAsyncController {
 
-	private final ExcelDataImportAsyncServiceImpl excelDataImportAsyncService;
+	private final DataImportAsyncServiceImpl excelDataImportAsyncService;
 
 	@PostMapping(value = "productlist/xlsx", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<HandlerChainProcessStatus> importProductListXLSX(
@@ -42,7 +32,7 @@ public class DataImportAsyncController {
 
 		HandlerChainProcessStatus importResult = null;
 		if (FilesUtils.isExcel(file)) {
-			importResult = excelDataImportAsyncService.importProductList(file, importMetaData);
+			importResult = excelDataImportAsyncService.importExcelProductList(file, importMetaData);
 		}
 
 		if (importResult != null && ( importResult.isInProgress() || importResult.isSuccess())) {
@@ -52,7 +42,21 @@ public class DataImportAsyncController {
 		}
 	}
 
-
+	@PostMapping(value = "productlist/csv", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<HandlerChainProcessStatus> importProductListCSV(@RequestHeader(TOKEN_HEADER) String token,
+																	 @RequestPart("csv") @Valid MultipartFile file,
+																	 @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
+			throws Exception {
+		HandlerChainProcessStatus importResult = null;
+		if(FilesUtils.isCsv(file)){
+			importResult =excelDataImportAsyncService.importCsvProductList(file, importMetaData);
+		}
+		if(importResult != null && ( importResult.isInProgress() || importResult.isSuccess())) {
+			return ResponseEntity.ok(importResult);
+		}else {
+			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+		}
+	}
 
 
 }
