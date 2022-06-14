@@ -3,13 +3,14 @@ package com.nasnav.controller;
 import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
 import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.service.DataImportAsyncServiceImpl;
+import com.nasnav.service.OrganizationProcessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.util.List;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -21,7 +22,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RequiredArgsConstructor
 public class DataImportAsyncController {
 
-	private final DataImportAsyncServiceImpl excelDataImportAsyncService;
+	private final OrganizationProcessService organizationProcessService;
 
 	@PostMapping(value = "productlist/xlsx", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<HandlerChainProcessStatus> importProductListXLSX(
@@ -32,7 +33,7 @@ public class DataImportAsyncController {
 
 		HandlerChainProcessStatus importResult = null;
 		if (FilesUtils.isExcel(file)) {
-			importResult = excelDataImportAsyncService.importExcelProductList(file, importMetaData);
+			importResult = organizationProcessService.importExcelProductList(file, importMetaData);
 		}
 
 		if (importResult != null && ( importResult.isInProgress() || importResult.isSuccess())) {
@@ -49,7 +50,7 @@ public class DataImportAsyncController {
 			throws Exception {
 		HandlerChainProcessStatus importResult = null;
 		if(FilesUtils.isCsv(file)){
-			importResult =excelDataImportAsyncService.importCsvProductList(file, importMetaData);
+			importResult =organizationProcessService.importCsvProductList(file, importMetaData);
 		}
 		if(importResult != null && ( importResult.isInProgress() || importResult.isSuccess())) {
 			return ResponseEntity.ok(importResult);
@@ -58,5 +59,42 @@ public class DataImportAsyncController {
 		}
 	}
 
+	@GetMapping("process")
+	public List<HandlerChainProcessStatus> getAllProcess(@RequestHeader(name = "User-Token") String token) {
+
+		return organizationProcessService.getProcessesStatus();
+	}
+
+	@GetMapping("process/{id}/status")
+	public HandlerChainProcessStatus getProcessStatus(@RequestHeader(name = "User-Token") String token,
+													  @PathVariable String id) {
+
+		return organizationProcessService.getProcessStatus(id);
+	}
+
+	@GetMapping("process/{id}/result")
+	public Object getProcessResult(@RequestHeader(name = "User-Token") String token,
+								   @PathVariable String id) {
+
+		return organizationProcessService.getProcessResult(id);
+	}
+
+	@PutMapping("process/cancel/{id}")
+	public HandlerChainProcessStatus cancelProcess(@RequestHeader(name = "User-Token") String token,
+												   @PathVariable String id) {
+
+		return organizationProcessService.cancelProcess(id);
+	}
+
+	@DeleteMapping("process")
+	public void clearAllProcess(@RequestHeader(name = "User-Token") String token){
+		organizationProcessService.clearAllProcess();
+	}
+
+	@DeleteMapping("process/{id}")
+	public void clearProcess(@RequestHeader(name = "User-Token") String token,
+							 @PathVariable String id){
+		organizationProcessService.clearProcess(id);
+	}
 
 }

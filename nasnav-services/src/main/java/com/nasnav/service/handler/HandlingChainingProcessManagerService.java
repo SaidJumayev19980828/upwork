@@ -91,4 +91,16 @@ public class HandlingChainingProcessManagerService {
         return new ImportDataHandlingChainProcess(command, handlerChainFactory.importCsvDataHandlerChain());
     }
 
+    public List<HandlerChainProcessStatus> getProcessesStatus(final List<String> processIds) {
+
+        return processIds.stream().filter(id -> processes.containsKey(id))
+                .map(this::getProcessStatus)
+                .collect(Collectors.toList());
+    }
+
+    public void clearAllProcess(final List<String> processIds) {
+
+        processIds.stream().filter(id -> processes.containsKey(id)).forEach(this::clearProcess);
+    }
+
 }
