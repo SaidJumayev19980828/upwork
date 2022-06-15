@@ -29,7 +29,7 @@ public abstract class HandlingChainingProcess<T> implements Runnable {
                 .id(UUID.randomUUID().toString())
                 .progress(0L)
                 .cancelable(true)
-                .totalItem(handlers.size())
+                .totalItems(handlers.size())
                 .build();
         currentStatus.changeStatusToInProgress();
 

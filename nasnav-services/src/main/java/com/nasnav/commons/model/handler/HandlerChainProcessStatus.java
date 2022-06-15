@@ -2,12 +2,15 @@ package com.nasnav.commons.model.handler;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Builder
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class HandlerChainProcessStatus {
 
     private String id;
@@ -17,7 +20,7 @@ public class HandlerChainProcessStatus {
     @Setter
     private Long progress;
 
-    private int totalItem;
+    private int totalItems;
 
     @Setter
     private String currentHandler;
