@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.nasnav.AppConfig;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
@@ -8,10 +9,7 @@ import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.VideoChatLogEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.response.VideoChatResponse;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
@@ -27,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class VideoChatServiceImpl implements VideoChatService {
@@ -35,6 +34,8 @@ public class VideoChatServiceImpl implements VideoChatService {
     private AppConfig appConfig;
 
     private OpenVidu openVidu;
+    @Autowired
+    private OrganizationRepository organizationRepository;
 
     private Map<String, Session> mapSessionsToToken = new ConcurrentHashMap<>();
 
@@ -117,7 +118,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         if (Strings.isNotEmpty(sessionName)) {
             return getExistingChatSession(userToken, sessionName, orgId);
         }
-        return createNewVideoSession(loggedInUser);
+        return createNewVideoSession(loggedInUser, orgId);
     }
 
     private VideoChatResponse getExistingChatSession(String userToken, String sessionName, Long orgId) {
@@ -141,9 +142,10 @@ public class VideoChatServiceImpl implements VideoChatService {
         }
     }
 
-    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser) {
+    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, Long orgId) {
         String sessionName = RandomString.make(20);
-
+        OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         // New session
         System.out.println("New session " + sessionName);
         try {
@@ -156,6 +158,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             newVideChatLog.setToken(token);
             newVideChatLog.setName(sessionName);
             newVideChatLog.setIsActive(true);
+            newVideChatLog.setOrganization(organizationEntity);
             newVideChatLog.setStatus(VideoChatStatus.NEW.getValue());
 
             videoChatLogRepository.saveAndFlush(newVideChatLog);
