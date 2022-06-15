@@ -1,9 +1,9 @@
 package com.nasnav.service.handler;
 
-import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.commons.model.handler.ImportDataCommand;
 import com.nasnav.exceptions.ProcessCancelException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.service.handler.chain.process.ImportDataHandlingChainProcess;
 import com.nasnav.service.handler.dataimport.HandlerChainFactory;
 import lombok.RequiredArgsConstructor;
@@ -86,12 +86,14 @@ public class ImportDataHandlingChainProcessManagerService {
 
     public void clearAllProcess() {
 
-        processes.clear();
+        clearAllProcess(processes.keySet().stream().collect(Collectors.toList()));
     }
 
     public void clearProcess(final String processId) {
 
         validateExistedProcess(processId);
+        if (processes.get(processId).getCurrentStatus().isNotValidToClear())
+            throw new RuntimeBusinessException("process with id " + processId + " still in progress", "FIND PROCESS FAILED", HttpStatus.NOT_FOUND);
         processes.remove(processId);
     }
 
@@ -109,7 +111,9 @@ public class ImportDataHandlingChainProcessManagerService {
 
     public void clearAllProcess(final List<String> processIds) {
 
-        processIds.stream().filter(id -> processes.containsKey(id)).forEach(this::clearProcess);
+        processIds.stream().filter(id -> processes.containsKey(id)
+                        && !processes.get(id).getCurrentStatus().isNotValidToClear())
+                .forEach(this::clearProcess);
     }
 
 }

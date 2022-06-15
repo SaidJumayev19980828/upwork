@@ -77,6 +77,12 @@ public class HandlerChainProcessStatus {
         return cancelable && isInProgress();
     }
 
+    @JsonIgnore
+    public boolean isNotValidToClear() {
+
+        return isInProgress();
+    }
+
     private enum Status {
         IN_PROGRESS, FAILED, SUCCESS, CANCELED
     }
