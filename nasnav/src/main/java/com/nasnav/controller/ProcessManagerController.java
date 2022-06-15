@@ -1,7 +1,8 @@
 package com.nasnav.controller;
 
 import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
-import com.nasnav.service.handler.HandlingChainingProcessManagerService;
+import com.nasnav.response.ImportProcessStatusResponse;
+import com.nasnav.service.handler.ImportDataHandlingChainProcessManagerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,17 +13,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProcessManagerController {
 
-    private final HandlingChainingProcessManagerService handlingChainingProcessManagerService;
+    private final ImportDataHandlingChainProcessManagerService handlingChainingProcessManagerService;
 
     @GetMapping
-    public List<HandlerChainProcessStatus> getAllProcess(@RequestHeader(name = "User-Token") String token) {
+    public List<ImportProcessStatusResponse> getAllProcess(@RequestHeader(name = "User-Token") String token) {
 
         return handlingChainingProcessManagerService.getProcessesStatus();
     }
 
     @GetMapping("{id}/status")
-    public HandlerChainProcessStatus getProcessStatus(@RequestHeader(name = "User-Token") String token,
-                                                      @PathVariable String id) {
+    public ImportProcessStatusResponse getProcessStatus(@RequestHeader(name = "User-Token") String token,
+                                                        @PathVariable String id) {
 
         return handlingChainingProcessManagerService.getProcessStatus(id);
     }
@@ -35,7 +36,7 @@ public class ProcessManagerController {
     }
 
     @PutMapping("cancel/{id}")
-    public HandlerChainProcessStatus cancelProcess(@RequestHeader(name = "User-Token") String token,
+    public ImportProcessStatusResponse cancelProcess(@RequestHeader(name = "User-Token") String token,
                               @PathVariable String id) {
 
        return handlingChainingProcessManagerService.cancelProcess(id);

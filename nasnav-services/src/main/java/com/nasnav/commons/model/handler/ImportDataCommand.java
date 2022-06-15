@@ -25,6 +25,8 @@ public class ImportDataCommand {
 
     private Long orgId;
 
+    private Long userId;
+
     private List<ProductImportDTO> productsData;
 
     private ProductImportMetadata importMetadata;

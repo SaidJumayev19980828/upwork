@@ -3,7 +3,8 @@ package com.nasnav.service;
 import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
 import com.nasnav.commons.model.handler.ImportDataCommand;
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.service.handler.HandlingChainingProcessManagerService;
+import com.nasnav.response.ImportProcessStatusResponse;
+import com.nasnav.service.handler.ImportDataHandlingChainProcessManagerService;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.io.IOUtils;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,10 @@ import javax.validation.Valid;
 @RequiredArgsConstructor
 public class DataImportAsyncServiceImpl {
 
-    private final HandlingChainingProcessManagerService handlingChainingProcessManagerService;
+    private final ImportDataHandlingChainProcessManagerService handlingChainingProcessManagerService;
 
     @Transactional
-    public HandlerChainProcessStatus importExcelProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData, Long orgId) throws Exception {
+    public ImportProcessStatusResponse importExcelProductList(@Valid MultipartFile file, @Valid ProductListImportDTO importMetaData, Long orgId, Long userId) throws Exception {
 
         final byte[] bytes = IOUtils.toByteArray(file.getInputStream());
 
@@ -28,11 +29,12 @@ public class DataImportAsyncServiceImpl {
                         .importMetaDataDto(importMetaData)
                         .file(bytes)
                         .orgId(orgId)
+                        .userId(userId)
                         .build()));
     }
 
     @Transactional
-    public HandlerChainProcessStatus importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData, Long orgId) throws Exception {
+    public ImportProcessStatusResponse importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData, Long orgId, Long userId) throws Exception {
 
         final byte[] bytes = IOUtils.toByteArray(file.getInputStream());
         return handlingChainingProcessManagerService.startProcess(
@@ -40,6 +42,7 @@ public class DataImportAsyncServiceImpl {
                         .importMetaDataDto(importMetaData)
                         .file(bytes)
                         .orgId(orgId)
+                        .userId(userId)
                         .build()));
     }
 

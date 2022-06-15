@@ -1,6 +1,6 @@
 package com.nasnav.service.handler;
 
-import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
+import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.commons.model.handler.ImportDataCommand;
 import com.nasnav.exceptions.ProcessCancelException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -21,28 +21,37 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class HandlingChainingProcessManagerService {
+public class ImportDataHandlingChainProcessManagerService {
 
     private final HandlerChainFactory handlerChainFactory;
 
-    Map<String, HandlingChainingProcess<?>> processes = new HashMap<>();
+    Map<String, ImportDataHandlingChainProcess> processes = new HashMap<>();
 
     ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-    public HandlerChainProcessStatus startProcess(final HandlingChainingProcess<?> process) {
+    public ImportProcessStatusResponse startProcess(final ImportDataHandlingChainProcess process) {
 
         processes.put(process.getCurrentStatus().getId(), process);
         executorService.submit(process);
-        return process.getCurrentStatus();
+        return ImportProcessStatusResponse.builder()
+                .processStatus(process.getCurrentStatus())
+                .userId(process.getProcessData().getUserId())
+                .orgId(process.getProcessData().getOrgId())
+                .build();
     }
 
-    public HandlerChainProcessStatus getProcessStatus(final String processId) {
+    public ImportProcessStatusResponse getProcessStatus(final String processId) {
 
         validateExistedProcess(processId);
-        return processes.get(processId).getCurrentStatus();
+        final ImportDataHandlingChainProcess importDataHandlingChainProcess = processes.get(processId);
+        return ImportProcessStatusResponse.builder()
+                .processStatus(importDataHandlingChainProcess.getCurrentStatus())
+                .orgId(importDataHandlingChainProcess.getProcessData().getOrgId())
+                .userId(importDataHandlingChainProcess.getProcessData().getUserId())
+                .build();
     }
 
-    public HandlerChainProcessStatus cancelProcess(final String processId) {
+    public ImportProcessStatusResponse cancelProcess(final String processId) {
 
         validateExistedProcess(processId);
         try {
@@ -59,9 +68,9 @@ public class HandlingChainingProcessManagerService {
             throw new RuntimeBusinessException("process with id " + processId + " not found", "FIND PROCESS FAILED", HttpStatus.NOT_FOUND);
     }
 
-    public List<HandlerChainProcessStatus> getProcessesStatus() {
+    public List<ImportProcessStatusResponse> getProcessesStatus() {
 
-        return processes.values().stream().map(HandlingChainingProcess::getCurrentStatus).collect(Collectors.toList());
+        return processes.keySet().stream().map(this::getProcessStatus).collect(Collectors.toList());
     }
 
     public Object getProcessResult(final String processId) {
@@ -91,7 +100,7 @@ public class HandlingChainingProcessManagerService {
         return new ImportDataHandlingChainProcess(command, handlerChainFactory.importCsvDataHandlerChain());
     }
 
-    public List<HandlerChainProcessStatus> getProcessesStatus(final List<String> processIds) {
+    public List<ImportProcessStatusResponse> getProcessesStatus(final List<String> processIds) {
 
         return processIds.stream().filter(id -> processes.containsKey(id))
                 .map(this::getProcessStatus)

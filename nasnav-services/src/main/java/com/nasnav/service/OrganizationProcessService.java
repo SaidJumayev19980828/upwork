@@ -1,9 +1,9 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.model.handler.HandlerChainProcessStatus;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.service.handler.HandlingChainingProcessManagerService;
+import com.nasnav.response.ImportProcessStatusResponse;
+import com.nasnav.service.handler.ImportDataHandlingChainProcessManagerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,18 +23,18 @@ public class OrganizationProcessService {
 
     private final SecurityService security;
 
-    private final HandlingChainingProcessManagerService handlingChainingProcessManagerService;
+    private final ImportDataHandlingChainProcessManagerService handlingChainingProcessManagerService;
 
     private final DataImportAsyncServiceImpl dataImportAsyncService;
 
-    public List<HandlerChainProcessStatus> getProcessesStatus() {
+    public List<ImportProcessStatusResponse> getProcessesStatus() {
 
         final Long orgId = security.getCurrentUserOrganizationId();
         validateExistedProcessesForOrganization(orgId);
         return handlingChainingProcessManagerService.getProcessesStatus(orgProcesses.get(orgId));
     }
 
-    public HandlerChainProcessStatus getProcessStatus(final String processId) {
+    public ImportProcessStatusResponse getProcessStatus(final String processId) {
 
         final Long orgId = security.getCurrentUserOrganizationId();
         validateExistedProcessesForOrganization(orgId, processId);
@@ -48,7 +48,7 @@ public class OrganizationProcessService {
         return handlingChainingProcessManagerService.getProcessResult(processId);
     }
 
-    public HandlerChainProcessStatus cancelProcess(final String processId) {
+    public ImportProcessStatusResponse cancelProcess(final String processId) {
 
         final Long orgId = security.getCurrentUserOrganizationId();
         validateExistedProcessesForOrganization(orgId, processId);
@@ -85,12 +85,13 @@ public class OrganizationProcessService {
                     "FIND PROCESS FAILED", HttpStatus.NOT_FOUND);
     }
 
-    public HandlerChainProcessStatus importExcelProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
+    public ImportProcessStatusResponse importExcelProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
 
         final Long orgId = security.getCurrentUserOrganizationId();
-        final HandlerChainProcessStatus handlerChainProcessStatus = dataImportAsyncService.importExcelProductList(file, importMetaData, orgId);
-        connectOrganizationWithProcess(orgId, handlerChainProcessStatus.getId());
-        return handlerChainProcessStatus;
+        final Long userId = security.getCurrentUser().getId();
+        final ImportProcessStatusResponse response = dataImportAsyncService.importExcelProductList(file, importMetaData, orgId,userId);
+        connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
+        return response;
     }
 
     private void connectOrganizationWithProcess(Long orgId, String processId) {
@@ -101,12 +102,13 @@ public class OrganizationProcessService {
         orgProcesses.get(orgId).add(processId);
     }
 
-    public HandlerChainProcessStatus importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
+    public ImportProcessStatusResponse importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
 
         final Long orgId = security.getCurrentUserOrganizationId();
-        final HandlerChainProcessStatus handlerChainProcessStatus = dataImportAsyncService.importCsvProductList(file, importMetaData, orgId);
-        connectOrganizationWithProcess(orgId, handlerChainProcessStatus.getId());
-        return handlerChainProcessStatus;
+        final Long userId = security.getCurrentUser().getId();
+        final ImportProcessStatusResponse response = dataImportAsyncService.importCsvProductList(file, importMetaData, orgId,userId);
+        connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
+        return response;
     }
 
 }
