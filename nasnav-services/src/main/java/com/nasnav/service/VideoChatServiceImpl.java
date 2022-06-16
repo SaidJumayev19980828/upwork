@@ -97,6 +97,9 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     private VideoChatLogEntity getVideoChatLogEntity(String sessionName, Long orgId) {
+        if (!sessionsMap.containsKey(sessionName)) {
+            throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
+        }
         return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
