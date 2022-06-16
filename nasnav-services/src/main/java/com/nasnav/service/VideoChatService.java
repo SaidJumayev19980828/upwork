@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface VideoChatService {
 
-    VideoChatResponse getSession(String userToken, String sessionName, Long orgId);
+    VideoChatResponse getSession(String sessionName, Long orgId);
 
     List<BaseRepresentationObject> getOrgSessions(Long orgId);
 

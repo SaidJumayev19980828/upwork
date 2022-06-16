@@ -19,14 +19,15 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class VideoChatServiceImpl implements VideoChatService {
@@ -59,11 +60,12 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Autowired
     public void initController() {
         this.openVidu = new OpenVidu(appConfig.openViduUrl, appConfig.openViduSecret);
+        connectionProperties = getConnectionProperties();
     }
 
 
     @Override
-    public VideoChatResponse getSession(String userToken, String sessionName, Long orgId) {
+    public VideoChatResponse getSession(String sessionName, Long orgId) {
 
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationRepresentationObject organization = organizationService.getOrganizationById(orgId, YeshteryState.DISABLED.getValue());
@@ -72,9 +74,9 @@ public class VideoChatServiceImpl implements VideoChatService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
         }
         if (loggedInUser instanceof UserEntity) {
-            return getOrCreateUserVideoSession((UserEntity) loggedInUser, userToken, sessionName, orgId);
+            return getOrCreateUserVideoSession((UserEntity) loggedInUser, sessionName, orgId);
         } else if (loggedInUser instanceof EmployeeUserEntity) {
-            return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, userToken, sessionName, orgId);
+            return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, sessionName, orgId);
         } else {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0002, orgId);
         }
@@ -85,14 +87,13 @@ public class VideoChatServiceImpl implements VideoChatService {
         return new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).role(OpenViduRole.PUBLISHER).build();
     }
 
-    private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String userToken, String sessionName, Long orgId) {
+    private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String sessionName, Long orgId) {
         VideoChatLogEntity videChatLogObj = getVideoChatLogEntity(sessionName, orgId);
-        // Session already exists
         videChatLogObj.setAssignedTo(loggedInUser);
         videoChatLogRepository.save(videChatLogObj);
 
-        String token = videChatLogObj.getToken();
-        mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
+        String token = createConnection(getSession(sessionName));
+        mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
         return new VideoChatResponse(true, null, token, loggedInUser.getName(), sessionName);
     }
 
@@ -104,33 +105,43 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
 
-    private VideoChatResponse getOrCreateUserVideoSession(UserEntity loggedInUser, String userToken, String sessionName, Long orgId) {
+    private VideoChatResponse getOrCreateUserVideoSession(UserEntity loggedInUser, String sessionName, Long orgId) {
         if (Strings.isNotEmpty(sessionName)) {
-            return getExistingChatSession(userToken, sessionName, orgId);
+            return getExistingChatSession(sessionName);
         }
-        return createNewVideoSession(loggedInUser, userToken, orgId);
+        return createNewVideoSession(loggedInUser, orgId);
     }
 
-    private VideoChatResponse getExistingChatSession(String userToken, String sessionName, Long orgId) {
-        VideoChatLogEntity videoChatObj = getVideoChatLogEntity(sessionName, orgId);
-        String token = videoChatObj.getToken();
-        mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
+    private VideoChatResponse getExistingChatSession(String sessionName) {
+        String token = createConnection(getSession(sessionName));
+        mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
         return new VideoChatResponse(true, null, token, null, sessionName);
     }
 
-    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, String userToken, Long orgId) {
-        connectionProperties = getConnectionProperties();
+    private String createConnection(Session session) {
+        try {
+            return session.createConnection(connectionProperties).getToken();
+        } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
+        }
+    }
 
+    private Session getSession(String sessionName) {
+        return ofNullable(sessionName)
+                .map(name -> sessionsMap.get(name))
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003));
+    }
 
+    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, Long orgId) {
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         try {
 
             Session session = this.openVidu.createSession();
             String sessionName = session.getSessionId();
-            String token = session.createConnection(connectionProperties).getToken();
+            String token = createConnection(session);
             VideoChatLogEntity newVideChatLog = new VideoChatLogEntity();
-            newVideChatLog.setCreatedAt(java.time.LocalDateTime.now());
+            newVideChatLog.setCreatedAt(LocalDateTime.now());
             newVideChatLog.setUser(loggedInUser);
             newVideChatLog.setToken(token);
             newVideChatLog.setName(sessionName);
@@ -142,7 +153,7 @@ public class VideoChatServiceImpl implements VideoChatService {
 
             this.sessionsMap.put(sessionName, session);
             this.mapSessionNamesTokens.put(sessionName, new ConcurrentHashMap<>());
-            this.mapSessionNamesTokens.get(sessionName).put(userToken, OpenViduRole.PUBLISHER);
+            this.mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
             return new VideoChatResponse(true, null, token, null, sessionName);
 
         } catch (Exception e) {
@@ -173,7 +184,8 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private void endSession(VideoChatLogEntity videoEntity) {
         try {
-            sessionsMap.get(videoEntity.getName()).close();
+            Session session = getSession(videoEntity.getName());
+            session.close();
         } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
             logger.error("couldn't close session! , "+ ex.getMessage());
         }

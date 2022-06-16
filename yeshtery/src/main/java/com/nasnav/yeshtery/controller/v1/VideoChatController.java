@@ -18,17 +18,17 @@ public class VideoChatController {
     @Autowired
     private VideoChatService videoChatService;
 
-    @GetMapping(value = "/get-session")
+    @GetMapping(value = "/session")
     public VideoChatResponse getSession(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                        @RequestParam(required = false) String sessionName,
+                                        @RequestParam(name = "session_name", required = false) String sessionName,
                                         @RequestParam(name = "org_id") Long orgId) {
-        return videoChatService.getSession(userToken, sessionName, orgId);
+        return videoChatService.getSession(sessionName, orgId);
     }
 
     @GetMapping(value = "/leave")
     public void leaveSession(@RequestHeader(name = "User-Token") String userToken,
-                             @RequestParam String sessionName,
-                             @RequestParam Long orgId) {
+                             @RequestParam("session_name") String sessionName,
+                             @RequestParam(name = "org_id") Long orgId) {
         videoChatService.leaveSession(sessionName, orgId);
     }
 }
