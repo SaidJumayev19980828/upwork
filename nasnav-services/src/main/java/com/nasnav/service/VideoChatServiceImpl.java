@@ -118,14 +118,13 @@ public class VideoChatServiceImpl implements VideoChatService {
     private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, String userToken, Long orgId) {
         connectionProperties = getConnectionProperties();
 
-        String sessionName = RandomString.make(20);
+
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
-        // New session
-        System.out.println("New session " + sessionName);
         try {
 
             Session session = this.openVidu.createSession();
+            String sessionName = session.getSessionId();
             String token = session.createConnection(connectionProperties).getToken();
             VideoChatLogEntity newVideChatLog = new VideoChatLogEntity();
             newVideChatLog.setCreatedAt(java.time.LocalDateTime.now());
