@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.AppliedPointsResponse;
 import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyPointDTO;
@@ -53,7 +54,9 @@ public interface LoyaltyPointsService {
 
     List<LoyaltyPointsCartResponseDto> getUserPointsGroupedByOrg(Long yeshteryUserId, List<CartItem> items);
 
-    SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, Long userId, OrganizationEntity org);
+    SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, BigDecimal totalWithoutShipping,
+                                        Long userId, OrganizationEntity org);
 
+    AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart);
     List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
 }

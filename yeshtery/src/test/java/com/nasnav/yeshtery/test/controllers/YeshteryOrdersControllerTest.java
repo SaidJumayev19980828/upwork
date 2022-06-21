@@ -1690,7 +1690,7 @@ public class YeshteryOrdersControllerTest {
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_13.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-    public void userPaysUsingPoints() {
+    public void userPaysUsingOrgPoints() {
         userObtainPointsThroughOrder();
 
         addCartItems(90L, 601L, 1, 99001L);
@@ -1704,6 +1704,48 @@ public class YeshteryOrdersControllerTest {
         JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(transIds);
 
         Order order = checkOutCart("789", requestBody, new BigDecimal("810.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_13.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void userPaysUsingYeshteryAndOrgsPoints() {
+        userObtainPointsThroughOrder();
+
+        addCartItems(90L, 601L, 1, 99001L);
+        addCartItems(90L, 602L, 1, 99002L);
+
+        Set<Long> transIds = loyaltyPointTransactionRepo.findByOrganization_IdIn(List.of(99001L, 99002L, 99003L))
+                .stream()
+                .map(LoyaltyPointTransactionEntity::getId)
+                .collect(toSet());
+
+        JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest(transIds);
+        // paying using both yeshtery points and organization points gives double discount for current config
+        Order order = checkOutCart("789", requestBody, new BigDecimal("770.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data_13.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void listSpendablePointsInCart() {
+        userObtainPointsThroughOrder();
+
+        addCartItems(90L, 601L, 1, 99001L);
+        addCartItems(90L, 602L, 1, 99002L);
+
+        StringBuilder params = new StringBuilder();
+        loyaltyPointTransactionRepo.findByOrganization_IdIn(List.of(99001L, 99002L, 99003L))
+                .stream()
+                .map(LoyaltyPointTransactionEntity::getId)
+                .forEach(id -> params.append(id+","));
+        params.deleteCharAt(params.lastIndexOf(","));
+
+        HttpEntity<?> request = getHttpEntity("789");
+        ResponseEntity<Cart> response =
+                template.exchange("/v1/cart" + "?points="+params, GET, request, Cart.class);
+        assertEquals(new BigDecimal("80.00"), response.getBody().getDiscount());
+        assertEquals(4, response.getBody().getPoints().getAppliedPoints().size());
     }
 
     private void confirmSubOrdersAndAssertPointsGained(List<Long> orderIds) {

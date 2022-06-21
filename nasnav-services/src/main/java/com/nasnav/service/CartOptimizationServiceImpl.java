@@ -37,8 +37,7 @@ import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAUL
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static java.util.Arrays.stream;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.*;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -56,10 +55,6 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	@Autowired
 	private ObjectMapper objectMapper;
-	
-	@Autowired
-	private OrderService orderService;
-
 	@Autowired
 	private CartService cartService;
 	@Autowired
@@ -85,22 +80,22 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	private LoyaltyPointsService loyaltyPointsService;
 	
 	@Override
-	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto) {
+	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
 		checkIfCartHasEmptyStock();
 
-		return optimizeCart(dto);
+		return optimizeCart(dto, yeshteryCart);
 	}
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto) {
+	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 
 		var optimizedCart = createOptimizedCart(dto);
 		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
-		var returnedCart = getCartObject(optimizedCart, dto.getPromoCode());
+		var returnedCart = getCartObject(optimizedCart, dto, yeshteryCart);
 		return new CartOptimizeResponseDTO(anyPriceChanged, anyItemChanged, returnedCart);
 	}
 
@@ -124,17 +119,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0018);
 		}
 	}
-
-	private List<LoyaltyPointsCartResponseDto> getUserPointsPerOrg(List<CartItem> items) {
-		UserEntity currentUser = (UserEntity) securityService.getCurrentUser();
-		return loyaltyPointsService.getUserPointsGroupedByOrg(currentUser.getYeshteryUserId(), items);
-	}
-
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
-		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode).getItems().size();
+		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode, emptySet(), false).getItems().size();
 	}
 
-	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, String promoCode) {
+	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, CartCheckoutDTO dto, boolean yeshteryCart) {
 		var returnedCart =  optimizedCart
 				.map(OptimizedCart::getCartItems)
 				.orElse(emptyList())
@@ -145,10 +134,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		checkIfCartIsEmpty(returnedCart);
 
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
-		returnedCart.setPromos(promoService.calcPromoDiscountForCart(promoCode, returnedCart));
-		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount());
+		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
+		returnedCart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(returnedCart.getItems(), dto.getPoints(), yeshteryCart));
+
+		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount().add(returnedCart.getPoints().getTotalDiscount()));
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
-		returnedCart.setPointsPerOrg(getUserPointsPerOrg(returnedCart.getItems()));
 		return returnedCart;
 	}
 
@@ -180,7 +170,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart(dto.getPromoCode());
+		var cart = cartService.getCart(dto.getPromoCode(), emptySet(), false);
 
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}

@@ -59,6 +59,8 @@ INSERT INTO public.settings(id, setting_name, setting_value, organization_id, ty
     VALUES (99001, 'RETURN_DAYS_LIMIT', '0', 99001, 0);
 INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
     VALUES (99002, 'RETURN_DAYS_LIMIT', '0', 99002, 0);
+INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
+VALUES (99003, 'RETURN_DAYS_LIMIT', '0', 99003, 0);
 
 --insering employees
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)

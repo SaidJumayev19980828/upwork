@@ -8,6 +8,7 @@ INSERT INTO public.areas(id, "name", city_id)VALUES(3, 'Miami', 2);
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, p_name, currency_iso) VALUES (99003, 'yeshtery', 'yeshtery', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);

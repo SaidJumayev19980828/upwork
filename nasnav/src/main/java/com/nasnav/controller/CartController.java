@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -31,29 +32,33 @@ public class CartController {
 
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
 	public Cart getCart(@RequestHeader(TOKEN_HEADER) String userToken,
-						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-		return cartService.getCart(promoCode);
+						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+						@RequestParam(required = false) Set<Long> points) {
+		return cartService.getCart(promoCode, points, false);
 	}
 
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public Cart addCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
 							@RequestBody CartItem item,
-							@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-		return cartService.addCartItem(item, promoCode);
+							@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+							@RequestParam(required = false) Set<Long> points) {
+		return cartService.addCartItem(item, promoCode, points, false);
 	}
 
 	@PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
 	public Cart addCartItems(@RequestHeader(TOKEN_HEADER) String userToken,
 							 @RequestBody List<CartItem> items,
-							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-		return cartService.addNasnavCartItems(items, promoCode);
+							 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+							 @RequestParam(required = false) Set<Long> points) {
+		return cartService.addNasnavCartItems(items, promoCode, points, false);
 	}
 
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
 	public Cart deleteCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
 							   @RequestParam("item_id") Long itemId,
-							   @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-		return cartService.deleteCartItem(itemId, promoCode);
+							   @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+							   @RequestParam(required = false) Set<Long> points) {
+		return cartService.deleteCartItem(itemId, promoCode, points, false);
 	}
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
@@ -63,7 +68,7 @@ public class CartController {
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
-		return cartOptimizeService.validateAndOptimizeCart(dto);
+		return cartOptimizeService.validateAndOptimizeCart(dto, false);
 	}
 
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)

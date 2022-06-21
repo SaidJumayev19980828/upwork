@@ -215,6 +215,7 @@ public enum ErrorCodes {
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$PRAM$0002("Invalid Parameter value[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
+	,G$ORG$0002("No yeshtery organization found")
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")

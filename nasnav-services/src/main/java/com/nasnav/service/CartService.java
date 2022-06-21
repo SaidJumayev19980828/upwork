@@ -11,16 +11,17 @@ import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 public interface CartService {
-    Cart getCart(String promoCode);
+    Cart getCart(String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart getUserCart(Long userId);
-    Cart getUserCart(Long userId, String promoCode);
-    Cart addCartItem(CartItem item, String promoCode);
-    Cart addNasnavCartItems(List<CartItem> items, String promoCode);
-    Cart addYeshteryCartItems(List<CartItem> items, String promoCode);
-    Cart deleteCartItem(Long itemId, String promoCode);
-    Cart deleteYeshteryCartItem(Long itemId, String promoCode);
+    Cart getUserCart(Long userId, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart addCartItem(CartItem item, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart addNasnavCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart addYeshteryCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart deleteCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart);
     Order checkoutCart(CartCheckoutDTO dto);
     Order checkoutYeshteryCart(CartCheckoutDTO dto);
     BigDecimal calculateCartTotal(Cart cart);

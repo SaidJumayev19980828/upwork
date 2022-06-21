@@ -1407,7 +1407,7 @@ public class OrderServiceImpl implements OrderService {
 	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
 		//TODO: this should be moved to checkOut main method, and then passes
 		//the optimized cart to the rest of the logic.
-		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto);
+		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto, false);
 
 		validateCartCheckoutItems(userCartItems, org);
 
@@ -1420,13 +1420,13 @@ public class OrderServiceImpl implements OrderService {
 						, CartItemsGroupedById::new));
 	}
 
-	private List<CartCheckoutData> getOptimizedCheckoutDataList(CartCheckoutDTO checkoutDto) {
-		Cart optimizedCart = optimizeCartForCheckout(checkoutDto);
+	private List<CartCheckoutData> getOptimizedCheckoutDataList(CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
+		Cart optimizedCart = optimizeCartForCheckout(checkoutDto, yeshteryCart);
 		return createCheckoutData(optimizedCart);
 	}
 
 	private CartItemsGroupedByOrgId getAndValidateCheckoutDataByOrgId(CartCheckoutDTO checkoutDto) {
-		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto);
+		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto, true);
 
 		CartItemsGroupedById result = userCartItems
 				.stream()
@@ -1444,9 +1444,9 @@ public class OrderServiceImpl implements OrderService {
 		return value.stream().collect(collectingAndThen(groupingBy(CartCheckoutData::getShopId), CartItemsGroupedById::new));
 	}
 
-	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
+	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
 		CartOptimizeResponseDTO optimizationResult =
-				cartOptimizationService.validateAndOptimizeCart(checkoutDto);
+				cartOptimizationService.validateAndOptimizeCart(checkoutDto, yeshteryCart);
 		if(optimizationResult.getTotalChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, " prices");
 		}
@@ -1601,11 +1601,15 @@ public class OrderServiceImpl implements OrderService {
 		// 3- link met orders with the main meta order
 		subMetaOrders.forEach(order::addSubMetaOrder);
 		order.setSubMetaOrders(subMetaOrders);
-		// 4- calculate totals and discounts
-		subTotal = subMetaOrders.stream().map(subMetaOrder->calculateSubTotal(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
-		shippingFeeTotal = subMetaOrders.stream().map(subMetaOrder->calculateShippingTotal(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
-		total = subMetaOrders.stream().map(subMetaOrder->calculateTotal(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
-		discounts = subMetaOrders.stream().map(subMetaOrder->calculateDiscounts(subMetaOrder.getSubOrders())).reduce(ZERO, BigDecimal::add);
+
+		// 4- add yeshtery points discount
+		addYeshteryPointsDiscount(dto, order);
+
+		// 5- calculate totals and discounts
+		subTotal = subMetaOrders.stream().map(MetaOrderEntity::getSubTotal).reduce(ZERO, BigDecimal::add);
+		shippingFeeTotal = subMetaOrders.stream().map(MetaOrderEntity::getShippingTotal).reduce(ZERO, BigDecimal::add);
+		total = subMetaOrders.stream().map(MetaOrderEntity::getGrandTotal).reduce(ZERO, BigDecimal::add);
+		discounts = subMetaOrders.stream().map(MetaOrderEntity::getDiscounts).reduce(ZERO, BigDecimal::add);
 		order.setGrandTotal(total);
 		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
@@ -1613,8 +1617,39 @@ public class OrderServiceImpl implements OrderService {
 
 		promotion.ifPresent(order::addPromotion);
 		order = metaOrderRepo.save(order);
-		// 5- return the order info
+		// 6- return the order info
 		return order;
+	}
+
+	private void addYeshteryPointsDiscount(CartCheckoutDTO dto, MetaOrderEntity order) {
+		Set<OrdersEntity> suborders = order
+				.getSubMetaOrders()
+				.stream()
+				.map(MetaOrderEntity::getSubOrders)
+				.flatMap(Set::stream)
+				.collect(toSet());
+		Long userId = securityService.getCurrentUser().getId();
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+
+		SpentPointsInfo data = addPointsDiscount(userId, dto, suborders, org);
+		List<LoyaltyPointTransactionEntity> spentPoints = data.getSpentPoints();
+		List<LoyaltySpentTransactionEntity> spentPointsRef = data.getSpentPointsRef();
+
+		suborders.forEach(subOrder-> {
+			subOrder.setTotal(calculateTotal(subOrder));
+			ordersRepository.save(subOrder);
+		});
+
+		for(MetaOrderEntity subMetaOrder : order.getSubMetaOrders()) {
+			subMetaOrder.setSubTotal(calculateSubTotal(subMetaOrder.getSubOrders()));
+			subMetaOrder.setShippingTotal(calculateShippingTotal(subMetaOrder.getSubOrders()));
+			subMetaOrder.setDiscounts(calculateDiscounts(subMetaOrder.getSubOrders()));
+			subMetaOrder.setGrandTotal(calculateTotal(subMetaOrder.getSubOrders()));
+			metaOrderRepo.save(subMetaOrder);
+		}
+		spentPointsRef.forEach(r -> r.setMetaOrder(order));
+		loyaltyPointTransactionRepository.saveAll(spentPoints);
+		loyaltySpendTransactionRepo.saveAll(spentPointsRef);
 	}
 
 	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, CartCheckoutDTO dto) {
@@ -2010,7 +2045,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private SubordersAndDiscountsInfo createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
-			CartCheckoutDTO dto, OrganizationEntity org) {
+													  CartCheckoutDTO dto, OrganizationEntity org) {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 				.stream()
@@ -2021,11 +2056,13 @@ public class OrderServiceImpl implements OrderService {
 
 		var promoDiscountData = addPromoDiscounts(dto, subOrders, org.getId());
 
-		SpentPointsInfo spentPointsInfo = addPointsDiscount(dto, subOrders, org);
+		Long userId = getSuborderUserId(subOrders);
+		SpentPointsInfo spentPointsInfo = addPointsDiscount(userId, dto, subOrders, org);
 
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
+			ordersRepository.save(subOrder);
 		}
 		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
 	}
@@ -2042,7 +2079,9 @@ public class OrderServiceImpl implements OrderService {
 
 		var promoDiscountData = addPromoDiscounts(dto, subOrders, org.getId());
 
-		SpentPointsInfo spentPointsInfo = addPointsDiscount(dto, subOrders, org);
+
+		Long userId = getSuborderUserId(subOrders);
+		SpentPointsInfo spentPointsInfo = addPointsDiscount(userId, dto, subOrders, org);
 
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
@@ -2051,10 +2090,13 @@ public class OrderServiceImpl implements OrderService {
 		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
 	}
 
+	private Long getSuborderUserId(Set<OrdersEntity> subOrders) {
+		return subOrders.stream().findFirst().map(OrdersEntity::getUserId).orElse(-1L);
+	}
 	private Long getYeshteryOrgId() {
 		return ofNullable(organizationRepository.findByPname(YESHTERY_PNAME))
 				.map(OrganizationEntity::getId)
-				.orElseThrow();
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0002));
 	}
 
 	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
@@ -2092,9 +2134,16 @@ public class OrderServiceImpl implements OrderService {
 		return promoDiscountData;
 	}
 
-	private SpentPointsInfo addPointsDiscount(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, OrganizationEntity org) {
-		Long userId = subOrders.stream().findFirst().map(OrdersEntity::getUserId).orElse(-1L);
-		return loyaltyPointsService.applyPointsOnOrders(dto.getPoints(), subOrders, userId, org);
+	private SpentPointsInfo addPointsDiscount(Long userId, CartCheckoutDTO dto, Set<OrdersEntity> subOrders, OrganizationEntity org) {
+		BigDecimal totalWithoutShipping = getSubordersTotalWithoutShipping(subOrders);
+		return loyaltyPointsService.applyPointsOnOrders(dto.getPoints(), subOrders, totalWithoutShipping, userId, org);
+	}
+
+	private BigDecimal getSubordersTotalWithoutShipping(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(o -> o.getSubTotal().subtract(o.getDiscounts()))
+				.reduce(ZERO, BigDecimal::add);
 	}
 
 	private List<PromoItemDto> getPromoItems(Set<OrdersEntity> subOrders) {
