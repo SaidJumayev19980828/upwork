@@ -14,10 +14,12 @@ import java.util.stream.Collectors;
 
 import com.nasnav.commons.converters.Converters;
 import com.nasnav.commons.converters.DtoToCsvRowMapper;
+import com.nasnav.service.helpers.ExcelDataValidator;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFDataValidation;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jboss.logging.Logger;
@@ -54,6 +56,9 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
 
+		if(addExcelDataValidation != null && addExcelDataValidation){
+			addExcelDataValidation(sheet);
+		}
 		writeFileHeaders(headers, sheet);
 
 		Map<Integer, String> indexToHeader = new HashMap<>();
@@ -80,6 +85,14 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		workbook.close();
 
 		return bos;
+	}
+
+	private void addExcelDataValidation(XSSFSheet sheet) {
+		ExcelDataValidator excelDataValidator = new ExcelDataValidator();
+
+		List<XSSFDataValidation> validations = excelDataValidator.getExcelDataValidations(sheet);
+		validations.forEach(val -> sheet.addValidationData(val));
+		excelDataValidator.setSheetConditionalFormatting(sheet);
 	}
 
 	private void writeFileHeaders(List<String> headers, XSSFSheet sheet) {
