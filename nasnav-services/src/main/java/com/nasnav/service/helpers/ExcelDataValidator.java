@@ -1,133 +1,120 @@
 package com.nasnav.service.helpers;
 
-import org.apache.poi.ss.usermodel.ConditionalFormattingRule;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.PatternFormatting;
-import org.apache.poi.ss.usermodel.SheetConditionalFormatting;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.util.CellRangeAddressList;
-import org.apache.poi.xssf.usermodel.XSSFDataValidation;
-import org.apache.poi.xssf.usermodel.XSSFDataValidationConstraint;
-import org.apache.poi.xssf.usermodel.XSSFDataValidationHelper;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.*;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import static org.apache.poi.ss.usermodel.DataValidationConstraint.OperatorType.GREATER_OR_EQUAL;
+import static org.apache.poi.ss.usermodel.DataValidationConstraint.OperatorType.GREATER_THAN;
 
+@Component
 public class ExcelDataValidator {
-    private static final Integer QUANTITY_COL_NUMBER = 0;
-    private static final Integer DISCOUNT_COL_NUMBER = 2;
-    private static final Integer PRODUCT_NAME_COL_NUMBER = 7;
-    private static final Integer PRICE_COL_NUMBER = 11;
-    private static final Integer BRAND_COL_NUMBER = 14;
-    private int sheetLastRowNumber;
+    private Integer quantityColumn;
+    private Integer discountColumn;
+    private Integer priceColumn;
     private XSSFDataValidationHelper xssfDVHelper;
-    List<XSSFDataValidation> validations;
+    private XSSFSheet sheet;
 
-    public List<XSSFDataValidation> getExcelDataValidations(XSSFSheet sheet){
-        validations = new ArrayList<>();
+    public void addDataValidationsToSheet(XSSFSheet sheet) {
+        initialize(sheet);
+
+        addQuantityConstraintToSheet();
+        addDiscountConstraintToSheet();
+        addPriceConstraintToSheet();
+    }
+
+    private void initialize(XSSFSheet sheet){
         xssfDVHelper = new XSSFDataValidationHelper(sheet);
+        this.sheet = sheet;
 
-        addQuantityConstraint();
-        addDiscountConstraint();
-        addPriceConstraint();
-
-        return validations;
+        assignColumnsNumbersFromHeaders();
     }
 
-    private void addQuantityConstraint() {
-        XSSFDataValidationConstraint quantityConstraint = (XSSFDataValidationConstraint)
-                xssfDVHelper.createNumericConstraint(
-                        XSSFDataValidationConstraint.ValidationType.INTEGER,
-                        XSSFDataValidationConstraint.OperatorType.GREATER_OR_EQUAL,
-                        "0", "");
+    private void assignColumnsNumbersFromHeaders() {
+        XSSFRow row = sheet.getRow(0);
 
-        CellRangeAddressList quantityColumn = getCellRangeAddressListForColumn(QUANTITY_COL_NUMBER);
+        row.iterator().forEachRemaining(cell -> {
+            mapCellIndexToColumnNumber(cell);
+        });
 
-        XSSFDataValidation quantityValidation = (XSSFDataValidation) xssfDVHelper.createValidation(
-                quantityConstraint,
-                quantityColumn);
-
-        quantityValidation.setShowErrorBox(true);
-        validations.add(quantityValidation);
     }
 
-    private void addDiscountConstraint(){
-        XSSFDataValidationConstraint discountConstraint = (XSSFDataValidationConstraint)
-                xssfDVHelper.createNumericConstraint(
-                        XSSFDataValidationConstraint.ValidationType.DECIMAL,
-                        XSSFDataValidationConstraint.OperatorType.GREATER_OR_EQUAL,
-                        "0", "");
+    private void mapCellIndexToColumnNumber(Cell cell) {
+        DataFormatter formatter = new DataFormatter();
+        String header = formatter.formatCellValue(cell);
 
-        CellRangeAddressList discountColumn = getCellRangeAddressListForColumn(DISCOUNT_COL_NUMBER);
-
-        XSSFDataValidation discountValidation = (XSSFDataValidation)xssfDVHelper.createValidation(
-                discountConstraint,
-                discountColumn);
-
-        discountValidation.setShowErrorBox(true);
-        validations.add(discountValidation);
+        if(header.equalsIgnoreCase("price")){
+            priceColumn = cell.getColumnIndex();
+        }else if (header.equalsIgnoreCase("discount")){
+            discountColumn = cell.getColumnIndex();
+        }else if (header.equalsIgnoreCase("quantity")){
+            quantityColumn = cell.getColumnIndex();
+        }
     }
 
-    private void addPriceConstraint(){
-        XSSFDataValidationConstraint priceConstraint = (XSSFDataValidationConstraint)
-                xssfDVHelper.createNumericConstraint(
-                        XSSFDataValidationConstraint.ValidationType.DECIMAL,
-                        XSSFDataValidationConstraint.OperatorType.GREATER_THAN,
-                        "0", "");
+    private void addQuantityConstraintToSheet() {
+        XSSFDataValidationConstraint quantityConstraint = getIntegerConstraint(GREATER_OR_EQUAL);
 
-        CellRangeAddressList priceColumn = getCellRangeAddressListForColumn(PRICE_COL_NUMBER);
+        XSSFDataValidation quantityValidation = getDataValidationForColumn(quantityColumn, quantityConstraint);
 
-        XSSFDataValidation priceValidation = (XSSFDataValidation)xssfDVHelper.createValidation(
-                priceConstraint,
-                priceColumn);
-
-        priceValidation.setShowErrorBox(true);
-        validations.add(priceValidation);
+        setCustomErrorMessage(quantityValidation, "Quantities must be greater than or equal zero and non-fraction values");
+        sheet.addValidationData(quantityValidation);
     }
 
-    private CellRangeAddressList getCellRangeAddressListForColumn(Integer columnNum){
+    private XSSFDataValidationConstraint getIntegerConstraint(Integer operatorType) {
+        return (XSSFDataValidationConstraint) xssfDVHelper.createNumericConstraint(
+                                                            XSSFDataValidationConstraint.ValidationType.INTEGER,
+                                                            operatorType,
+                                                           "0", "");
+    }
+
+    private void addDiscountConstraintToSheet() {
+        XSSFDataValidationConstraint discountConstraint = getDecimalConstraint(GREATER_OR_EQUAL);
+
+        XSSFDataValidation discountValidation = getDataValidationForColumn(discountColumn, discountConstraint);
+
+        setCustomErrorMessage(discountValidation, "Discounts must be greater than or equal zero");
+        sheet.addValidationData(discountValidation);
+    }
+
+    private void addPriceConstraintToSheet() {
+        XSSFDataValidationConstraint priceConstraint = getDecimalConstraint(GREATER_THAN);
+
+        XSSFDataValidation priceValidation = getDataValidationForColumn(priceColumn, priceConstraint);
+
+        setCustomErrorMessage(priceValidation, "Prices must be greater than zero");
+        sheet.addValidationData(priceValidation);
+    }
+
+    private XSSFDataValidation getDataValidationForColumn(Integer column, XSSFDataValidationConstraint constraint){
+        CellRangeAddressList cellsRange = getCellRangeAddressListForColumn(column);
+
+        return (XSSFDataValidation) xssfDVHelper.createValidation(
+                constraint,
+                cellsRange);
+    }
+
+    private void setCustomErrorMessage(XSSFDataValidation validation, String errorMessage){
+        validation.setErrorStyle(DataValidation.ErrorStyle.STOP);
+        validation.createErrorBox("Invalid input", errorMessage);
+        validation.setShowErrorBox(true);
+    }
+
+    private XSSFDataValidationConstraint getDecimalConstraint(int operatorType) {
+        return (XSSFDataValidationConstraint) xssfDVHelper.createNumericConstraint(
+                XSSFDataValidationConstraint.ValidationType.DECIMAL,
+                operatorType,
+                "0", "");
+    }
+
+    private CellRangeAddressList getCellRangeAddressListForColumn(Integer columnNum) {
         return new CellRangeAddressList(
-                    -1,
-                    -1,
-                    columnNum,
-                    columnNum);
+                -1,
+                -1,
+                columnNum,
+                columnNum);
     }
-
-    public void setSheetConditionalFormatting(XSSFSheet sheet){
-        SheetConditionalFormatting conditionalFormatting = sheet.getSheetConditionalFormatting();
-
-        // Is blank rule
-        ConditionalFormattingRule isBlankRule = conditionalFormatting.createConditionalFormattingRule("=ISBLANK(A1)");
-        PatternFormatting isBlankFill = isBlankRule.createPatternFormatting();
-        isBlankFill.setFillBackgroundColor(IndexedColors.GREY_25_PERCENT.index);
-        isBlankFill.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-
-        sheetLastRowNumber = sheet.getWorkbook().getSpreadsheetVersion().getLastRowIndex();
-
-        CellRangeAddressList appliedRanges = getAppliedRangesForConditionalFormatting(
-                QUANTITY_COL_NUMBER,
-                DISCOUNT_COL_NUMBER,
-                PRODUCT_NAME_COL_NUMBER,
-                PRICE_COL_NUMBER,
-                BRAND_COL_NUMBER);
-
-
-        conditionalFormatting.addConditionalFormatting(appliedRanges.getCellRangeAddresses(), isBlankRule);
-    }
-
-    private CellRangeAddressList getAppliedRangesForConditionalFormatting(Integer ...columns){
-        CellRangeAddressList appliedRanges = new CellRangeAddressList();
-        Arrays.stream(columns)
-                .forEach(column -> {
-                    appliedRanges.addCellRangeAddress(
-                            0,
-                            column,
-                            sheetLastRowNumber,
-                            column);
-                });
-
-        return appliedRanges;
-    }
-
 }
