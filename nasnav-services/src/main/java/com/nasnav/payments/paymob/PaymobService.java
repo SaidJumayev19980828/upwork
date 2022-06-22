@@ -243,7 +243,7 @@ public class PaymobService {
         billingDataJsonObject.put("last_name", shippingAddress.getLastName());
         billingDataJsonObject.put("street", shippingAddress.getAddressLine1());
         billingDataJsonObject.put("building", shippingAddress.getBuildingNumber());
-        //billingDataJsonObject.put("floor", );
+        billingDataJsonObject.put("floor", shippingAddress.getFlatNumber());
         billingDataJsonObject.put("apartment", shippingAddress.getFlatNumber());
         billingDataJsonObject.put("phone_number", shippingAddress.getPhoneNumber());
         billingDataJsonObject.put("shipping_method", "");
