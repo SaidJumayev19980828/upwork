@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.Map;
+import java.util.Set;
 
 @Data
 public class CartCheckoutDTO {
@@ -15,6 +16,6 @@ public class CartCheckoutDTO {
     private Map<String, String> additionalData;
     @JsonProperty("promo_code")
     private String promoCode;
-    @JsonProperty("notes")
     private String notes;
+    private Set<Long> points;
 }

@@ -2,6 +2,7 @@ package com.nasnav.commons.utils;
 
 import com.nasnav.constatnts.EntityConstants;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
@@ -55,6 +56,13 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return false;
 	}
 
+	public static boolean hasOneNonNull(Object ...objects){
+		return 1 == Arrays
+						.stream(objects)
+						.filter(Objects::nonNull)
+						.count();
+
+	}
 	
 	
 	public static String generateUUIDToken() {

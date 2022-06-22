@@ -94,6 +94,10 @@ public class MetaOrderEntity implements BaseEntity {
         this.promotions = new HashSet<>();
         this.status = CLIENT_CONFIRMED.getValue();
         subMetaOrders = new HashSet<>();
+        this.subTotal = BigDecimal.ZERO;
+        this.discounts = BigDecimal.ZERO;
+        this.shippingTotal = BigDecimal.ZERO;
+        this.grandTotal = BigDecimal.ZERO;
     }
 
     public void addSubOrder(OrdersEntity subOrder) {

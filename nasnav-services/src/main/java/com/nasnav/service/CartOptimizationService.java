@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface CartOptimizationService {
 	<T> void setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto);
-	CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto);
+	CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto, boolean yeshteryCart);
 
-	CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto);
+	CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart);
 	List<CartOptimizationSettingDTO> getCartOptimizationStrategy();
 	List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies();
     void deleteCartOptimizationStrategy(String strategyName, String shippingService);

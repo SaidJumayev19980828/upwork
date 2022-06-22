@@ -1,6 +1,9 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.AppliedPoints;
+import com.nasnav.dto.AppliedPointsResponse;
+import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
@@ -25,15 +28,18 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.nasnav.commons.utils.EntityUtils.YESHTERY_PNAME;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.Settings.RETURN_DAYS_LIMIT;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.service.OrderReturnServiceImpl.MAX_RETURN_TIME_WINDOW;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -51,19 +57,23 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
     @Autowired
     private LoyaltyPointTransactionRepository loyaltyPointTransRepo;
+    @Autowired
+    private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
 
     @Autowired
     private LoyaltyPointConfigRepository loyaltyPointConfigRepo;
 
     @Autowired
     private ShopsRepository shopsRepo;
-
+    @Autowired
+    private CartItemRepository cartItemRepo;
     @Autowired
     private UserRepository userRepo;
 
     @Autowired
     private OrganizationRepository organizationRepository;
-
+    @Autowired
+    private SettingRepository settingRepo;
     @Autowired
     private LoyaltyPinsRepository loyaltyPinsRepository;
 
@@ -321,7 +331,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
             if (config == null) {
                 continue;
             }
-            LoyaltyTierDTO tier = getLoyaltyTierDTO(user.get());
+            LoyaltyTierEntity tier = user.get().getTier();
 
             if(anyIsNull(points, tier, tier.getCoefficient())) {
                 continue;
@@ -339,24 +349,40 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
-    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, UserEntity user,
+    public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org,
+                                                                     UserEntity user,
                                                                      MetaOrderEntity yeshteryMetaOrder,
                                                                      OrdersEntity order, BigDecimal points,
                                                                      BigDecimal amount, Integer expiry) {
         LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
         entity.setPoints(points);
+        entity.setAmount(amount);
         entity.setShop(shop);
         entity.setIsValid(true);
         entity.setUser(user);
         entity.setOrder(order);
         entity.setMetaOrder(yeshteryMetaOrder);
-        entity.setOrganization(shop.getOrganizationEntity());
-        entity.setAmount(amount);
-        if (expiry != null) {
-            entity.setEndDate(LocalDateTime.now().plusDays(expiry));
-        }
+        entity.setOrganization(org);
+        entity.setStartDate(calculateTransactionStartDate(org));
+        entity.setEndDate(calculateTransactionEndDate(entity.getStartDate(), expiry));
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    private LocalDateTime calculateTransactionStartDate(OrganizationEntity org) {
+        int returnExpirySetting = settingRepo.findBySettingNameAndOrganization_Id(RETURN_DAYS_LIMIT.name(), org.getId())
+                .map(SettingEntity::getSettingValue)
+                .map(Integer::parseInt)
+                .orElse(MAX_RETURN_TIME_WINDOW);
+        return LocalDateTime.now().plusDays(returnExpirySetting);
+    }
+
+    private LocalDateTime calculateTransactionEndDate(LocalDateTime startDate, Integer expiry) {
+        if (expiry == null) {
+            return null;
+        }
+        LocalDateTime startDateCopy = startDate;
+        return startDateCopy.plusDays(expiry);
     }
 
     @Override
@@ -379,7 +405,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = userEntity.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(shop, userEntity, null, order, points, pointsAmount, config.getExpiry());
+        createLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, config.getExpiry());
     }
 
     @Override
@@ -393,7 +419,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         }
         LoyaltyTierDTO tier = user.getTier().getRepresentation();
         BigDecimal points = calculatePoints(config, pointsAmount, tier.getCoefficient());
-        createLoyaltyPointTransaction(null, user, yeshteryMetaOrder, null, points, pointsAmount, config.getExpiry());
+        createLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, config.getExpiry());
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, BigDecimal amount, BigDecimal coefficient) {
@@ -508,12 +534,205 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     }
 
     @Override
+    public LoyaltyPointConfigDTO getLoyaltyPointActiveConfig() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, true)
+                .map(LoyaltyPointConfigEntity::getRepresentation)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0024, orgId));
+    }
+
+    @Override
     public List<RedeemPointsOfferDTO> checkRedeemPoints(String code) {
         UserEntity user = (UserEntity)securityService.getCurrentUser();
         ShopsEntity shop = shopsRepo.findByCode(code)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0007, code));
         Integer availablePoints = getAvailablePoints(shop, user);
         return getRedeemOffers(user.getOrganizationId(), availablePoints);
+    }
+
+    @Override
+    public SpentPointsInfo applyPointsOnOrders(Set<Long> points,
+                                               Set<OrdersEntity> subOrders,
+                                               BigDecimal totalWithoutShipping,
+                                               Long userId,
+                                               OrganizationEntity org) {
+        UserEntity user = userRepo.findById(userId).get();
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), true)
+                .orElse(null);
+        if (config == null) {
+            return new SpentPointsInfo();
+        }
+
+        List<LoyaltyPointTransactionEntity> earnedPoints = loyaltyPointTransRepo.getTransactionsByIdInAndUserIdAndOrgId(points, userId, org.getId());
+        List<LoyaltyPointTransactionEntity> spentPoints = new ArrayList<>();
+        List<LoyaltySpentTransactionEntity> spentPointsRef = new ArrayList<>();
+
+        BigDecimal total =
+                calculatePointsDiscountAndCreateSpendTransactions(
+                        config,
+                        totalWithoutShipping,
+                        user,
+                        org,
+                        earnedPoints,
+                        spentPoints,
+                        spentPointsRef)
+                        .stream()
+                        .map(AppliedPoints::getDiscount)
+                        .reduce(ZERO, BigDecimal::add);
+
+        BigDecimal suborderPointsDiscount = total.divide(new BigDecimal(subOrders.size()));
+        subOrders.forEach(s -> s.setDiscounts(s.getDiscounts().add(suborderPointsDiscount)));
+        return new SpentPointsInfo(spentPoints, spentPointsRef);
+    }
+
+    @Override
+    public AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart) {
+        List<AppliedPoints> appliedPoints = new ArrayList<>();
+        Map<Long, BigDecimal> orgWithTotalPriceMap = new HashMap<>();
+        BigDecimal totalPrice = ZERO;
+        for(CartItem item : items) {
+            BigDecimal price = item.getPrice();
+            BigDecimal discount = item.getDiscount();
+            BigDecimal quantity = new BigDecimal(item.getQuantity());
+            BigDecimal total = (price.subtract(discount)).multiply(quantity);
+            if (orgWithTotalPriceMap.containsKey(item.getOrgId())) {
+                orgWithTotalPriceMap.get(item.getOrgId()).add(total);
+            } else {
+                orgWithTotalPriceMap.put(item.getOrgId(), total);
+            }
+            totalPrice = totalPrice.add(total);
+        }
+        UserEntity user = (UserEntity) securityService.getCurrentUser();
+        for (Map.Entry<Long, BigDecimal> e : orgWithTotalPriceMap.entrySet()) {
+
+            OrganizationEntity org = organizationRepository.findById(e.getKey()).get();
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), true)
+                    .orElse(null);
+            if (config == null) {
+                continue;
+            }
+            if (yeshteryCart) {
+                user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), e.getKey())
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, e.getKey()));
+            }
+            List<LoyaltyPointTransactionEntity> earnedPoints = loyaltyPointTransRepo.getTransactionsByIdInAndUserIdAndOrgId(points, user.getId(), org.getId());
+            appliedPoints.addAll(calculatePointsDiscountAndCreateSpendTransactions(
+                    config,
+                    e.getValue(),
+                    user,
+                    org,
+                    earnedPoints,
+                    new ArrayList<>(),
+                    new ArrayList<>()));
+        }
+        if (yeshteryCart) {
+            Long yeshteryOrgId = getYeshteryOrgId();
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(yeshteryOrgId, true)
+                    .orElse(null);
+            if (config != null) {
+                OrganizationEntity org = organizationRepository.findById(yeshteryOrgId).get();
+                user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), yeshteryOrgId)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, yeshteryOrgId));
+                List<LoyaltyPointTransactionEntity> earnedPoints = loyaltyPointTransRepo.getTransactionsByIdInAndUserIdAndOrgId(points, user.getId(), org.getId());
+                appliedPoints.addAll(calculatePointsDiscountAndCreateSpendTransactions(
+                        config,
+                        totalPrice,
+                        user,
+                        org,
+                        earnedPoints,
+                        new ArrayList<>(),
+                        new ArrayList<>()));
+            }
+
+        }
+        BigDecimal totalDiscount = appliedPoints.stream().map(AppliedPoints::getDiscount).reduce(ZERO, BigDecimal::add);
+
+        return new AppliedPointsResponse(totalDiscount, appliedPoints);
+    }
+
+    private List<AppliedPoints> calculatePointsDiscountAndCreateSpendTransactions(LoyaltyPointConfigEntity config,
+                                                                                    BigDecimal totalWithoutShipping,
+                                                                                    UserEntity user,
+                                                                                    OrganizationEntity org,
+                                                                                    List<LoyaltyPointTransactionEntity> earnedPoints,
+                                                                                    List<LoyaltyPointTransactionEntity> spentPoints,
+                                                                                    List<LoyaltySpentTransactionEntity> spentPointsRef) {
+        List<AppliedPoints> res = new ArrayList<>();
+        BigDecimal to = config.getRatioTo();
+        BigDecimal from = config.getRatioFrom();
+        BigDecimal total = ZERO;
+        BigDecimal pointsAmount;
+        for (LoyaltyPointTransactionEntity earnedPoint : earnedPoints) {
+            BigDecimal tmp = (earnedPoint.getPoints().multiply(to)).divide(from);
+            if (totalWithoutShipping.subtract(total.add(tmp)).compareTo(ZERO) >= 0) {
+                total = total.add(tmp);
+                pointsAmount = earnedPoint.getPoints();
+            }
+            else if (total.compareTo(totalWithoutShipping) >= 0) {
+                break;
+            }
+            else {
+                tmp = totalWithoutShipping.subtract(total);
+                total = total.add(tmp);
+                pointsAmount = tmp.multiply(from).divide(to);
+            }
+            LoyaltyPointTransactionEntity spendPoint = new LoyaltyPointTransactionEntity();
+            spendPoint.setStartDate(earnedPoint.getStartDate());
+            spendPoint.setEndDate(earnedPoint.getEndDate());
+            spendPoint.setOrganization(org);
+            spendPoint.setUser(user);
+            spendPoint.setIsValid(true);
+            spendPoint.setPoints(pointsAmount);
+
+            LoyaltySpentTransactionEntity spentPointRef = new LoyaltySpentTransactionEntity();
+            spentPointRef.setTransaction(earnedPoint);
+            spentPointRef.setReverseTransaction(spendPoint);
+
+            spentPoints.add(spendPoint);
+            spentPointsRef.add(spentPointRef);
+
+            res.add(new AppliedPoints(earnedPoint.getId(), tmp));
+        }
+        return res;
+    }
+
+    @Override
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints() {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if(! (baseUser instanceof  UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity) baseUser;
+        List<Long> orgIds = cartItemRepo
+                .findCurrentCartItemsByUser_Id(currentUser.getId())
+                .stream()
+                .map(CartItemEntity::getStock)
+                .map(StocksEntity::getOrganizationEntity)
+                .map(OrganizationEntity::getId)
+                .collect(toList());
+        orgIds.add(getYeshteryOrgId());
+        return loyaltyPointTransRepo
+                .getSpendablePointsByUserIdAndOrgIds(currentUser.getYeshteryUserId(), orgIds)
+                .stream()
+                .map(t -> {
+                    BigDecimal spentPoints = t.getSpentTransactions()
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
+                            .map(LoyaltyPointTransactionEntity::getPoints)
+                            .reduce(ZERO, BigDecimal::add);
+                    t.setPoints(t.getPoints().subtract(spentPoints));
+                    return t;
+                })
+                .map(LoyaltyPointTransactionEntity::getRepresentation)
+                .collect(toList());
+    }
+
+    private Long getYeshteryOrgId() {
+        return ofNullable(organizationRepository.findByPname(YESHTERY_PNAME))
+                .map(OrganizationEntity::getId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0002));
     }
 
     private Integer getAvailablePoints(ShopsEntity shop, UserEntity user) {

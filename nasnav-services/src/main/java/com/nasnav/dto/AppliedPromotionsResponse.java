@@ -13,7 +13,7 @@ import java.util.Map;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class AppliedPromotionsResponse {
     private BigDecimal totalDiscount;
-    private List<Map<String, Object>> appliedPromos;
+    private List<AppliedPromo> appliedPromos;
     private String error;
 
     public AppliedPromotionsResponse() {

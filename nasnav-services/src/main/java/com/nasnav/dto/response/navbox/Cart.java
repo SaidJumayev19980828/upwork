@@ -2,6 +2,7 @@ package com.nasnav.dto.response.navbox;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.AppliedPointsResponse;
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import lombok.AllArgsConstructor;
@@ -22,12 +23,12 @@ public class Cart {
 	private BigDecimal discount;
 	private BigDecimal subtotal;
 	private AppliedPromotionsResponse promos;
-	private List<LoyaltyPointsCartResponseDto> pointsPerOrg;
+	private AppliedPointsResponse points;
 
 	public Cart(List<CartItem> items) {
 		this.items = items;
 		total = discount = subtotal = BigDecimal.ZERO;
 		promos = new AppliedPromotionsResponse();
-		pointsPerOrg = new ArrayList<>();
+		points = new AppliedPointsResponse();
 	}
 }

@@ -124,26 +124,26 @@ INSERT INTO public.payments(order_id, "operator", uid, status, executed, amount,
 
 --inserting orders
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, amount, payment_status, total, meta_order_id)
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
 VALUES(330002, '', '', 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, '{}'::text, 600.00, 0, 600.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, amount, payment_status, total, meta_order_id)
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
 VALUES(330003, '', '', 88, now(), now()+interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, '{}'::text, 300.00, 0, 300.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, amount, payment_status, total, meta_order_id)
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
 VALUES(330004, '', '', 89, now(), now()+ interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, '{}'::text, 200.00, 0, 200.00, 310001);
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, amount, payment_status, total, meta_order_id)
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
 VALUES(330005, '', '', 89, now(), now()+interval '3 day', now(), 99002, 0, '{}'::character varying[], 502, '{}'::text, 50.00, 0, 50.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, amount, payment_status, total, meta_order_id)
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
 VALUES(330006, '', '', 90, now(), now()+interval '4 day', now(), 99003, 1, '{}'::character varying[], 502, '{}'::text, 100.00, 0, 100.00, 310001);
 
 

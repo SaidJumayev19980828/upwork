@@ -1,9 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ReturnRequestItemRepository;
-import com.nasnav.dao.ReturnRequestRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
@@ -47,6 +44,7 @@ import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.Settings.RETURN_DAYS_LIMIT;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.getTransactionCurrency;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -89,7 +87,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     @Autowired
     private SecurityService securityService;
-
+    @Autowired
+    private SettingRepository settingRepo;
     @Autowired
     private PaymentsRepository paymentsRepo;
 
@@ -247,7 +246,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
             returnRequest = returnRequestRepo.save(returnRequest);
             increaseReturnRequestStock(returnRequest);
 
-            loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
+            // Not needed now as user won't be able to spend his points before return expires
+            //loyaltyPointsService.createLoyaltyPointTransactionForReturnRequest(returnRequest);
 
             sendItemReceivedEmailToCustomer(returnRequest.getId());
             //TODO refund ??
@@ -1123,8 +1123,13 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                         .map(OrdersEntity::getMetaOrder)
                         .map(MetaOrderEntity::getCreatedAt)
                         .orElse(LocalDateTime.MIN);
-        Long orderAge = Duration.between(orderCreationTime, now()).toDays();
-        return orderAge <= MAX_RETURN_TIME_WINDOW;
+        long orgId = basketsEntity.getOrdersEntity().getOrganizationEntity().getId();
+        int returnExpirySetting = settingRepo.findBySettingNameAndOrganization_Id(RETURN_DAYS_LIMIT.name(), orgId)
+                .map(SettingEntity::getSettingValue)
+                .map(Integer::parseInt)
+                .orElse(MAX_RETURN_TIME_WINDOW);
+        long orderAge = Duration.between(orderCreationTime, now()).toDays();
+        return orderAge <= returnExpirySetting;
     }
 
 

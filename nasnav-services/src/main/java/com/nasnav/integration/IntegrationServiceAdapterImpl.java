@@ -191,7 +191,7 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 			data.setAddress((AddressRepObj) order.getAddressEntity().getRepresentation());
 		}
 		data.setShopId(order.getShopsEntity().getId());
-		data.setTotalValue(order.getAmount());
+		data.setTotalValue(order.getTotal());
 		data.setUserId(order.getUserId());
 		data.setItems(getOrderItems(order));
 		data.setOrganizationId(order.getOrganizationEntity().getId());

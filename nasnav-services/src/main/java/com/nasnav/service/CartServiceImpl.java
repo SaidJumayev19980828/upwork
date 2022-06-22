@@ -18,10 +18,10 @@ import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.service.sendpulse.SendPulseService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,76 +40,49 @@ import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
+@RequiredArgsConstructor
 public class CartServiceImpl implements CartService{
 
     private static final Logger logger = LogManager.getLogger();
 
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private PromotionsService promoService;
-    @Autowired
-    private OrganizationRepository organizationRepo;
-    @Autowired
-    private CartItemRepository cartItemRepo;
-    @Autowired
-    private PromotionRepository promotionRepo;
-
-    @Autowired
-    private ProductService productService;
-
-    @Autowired
-    private StockRepository stockRepository;
-
-    @Autowired
-    private ProductImageService imgService;
-    @Autowired
-    private DomainService domainService;
-
-    @Autowired
-    private OrderService orderService;
-    @Autowired
-    private StatisticsService statisticsService;
-    @Autowired
-    private MailService mailService;
-    @Autowired
-    private OrderEmailServiceHelper orderEmailHelper;
-    @Autowired
-    private CartServiceHelper cartServiceHelper;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private SettingRepository settingRepo;
-    @Autowired
-    private AppConfig config;
-
-    @Autowired
-    private LoyaltyTierServiceImp tierServiceImp;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private LoyaltyCoinsDropService loyaltyCoinsDropService;
-    @Autowired
-    private MetaOrderRepository metaOrderRepository;
-    @Autowired
-    private LoyaltyBoosterRepository loyaltyBoosterRepository;
+    private final SecurityService securityService;
+    private final PromotionsService promoService;
+    private final OrganizationRepository organizationRepo;
+    private final CartItemRepository cartItemRepo;
+    private final PromotionRepository promotionRepo;
+    private final ProductService productService;
+    private final StockRepository stockRepository;
+    private final ProductImageService imgService;
+    private final DomainService domainService;
+    private final OrderService orderService;
+    private final StatisticsService statisticsService;
+    private final MailService mailService;
+    private final OrderEmailServiceHelper orderEmailHelper;
+    private final CartServiceHelper cartServiceHelper;
+    private final ObjectMapper objectMapper;
+    private final SettingRepository settingRepo;
+    private final AppConfig config;
+    private final LoyaltyTierServiceImp tierServiceImp;
+    private final UserRepository userRepository;
+    private final LoyaltyCoinsDropService loyaltyCoinsDropService;
+    private final MetaOrderRepository metaOrderRepository;
+    private final LoyaltyBoosterRepository loyaltyBoosterRepository;
+    private final LoyaltyPointsService loyaltyPointsService;
 
     @Override
-    public Cart getCart(String promoCode) {
+    public Cart getCart(String promoCode, Set<Long> points, boolean yeshteryCart) {
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
     @Override
@@ -122,12 +95,12 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public Cart getUserCart(Long userId, String promoCode) {
-        return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId());   
+    public Cart getUserCart(Long userId, String promoCode, Set<Long> points, boolean yeshteryCart) {
+        return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId(), points, yeshteryCart);
     }
     
     
-    private Cart getUserCart(Long userId, String promoCode, Long orgId) {
+    private Cart getUserCart(Long userId, String promoCode, Long orgId, Set<Long> points, boolean yeshteryCart) {
         Cart cart = getUserCart(userId);
         if (promoCode != null && !promoCode.equals("")) {
             if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
@@ -139,13 +112,15 @@ public class CartServiceImpl implements CartService{
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
         }
-        cart.setDiscount(cart.getPromos().getTotalDiscount());
+
+        cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
     }
 
     @Override
-    public Cart addCartItem(CartItem item, String promoCode){
+    public Cart addCartItem(CartItem item, String promoCode, Set<Long> points, boolean yeshteryCart){
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -169,15 +144,15 @@ public class CartServiceImpl implements CartService{
 
         if (item.getQuantity().equals(0)) {
             if (cartItem.getId() != null) {
-                return deleteCartItem(cartItem.getId(), promoCode);
+                return deleteCartItem(cartItem.getId(), promoCode, points, yeshteryCart);
             } else {
-                return getUserCart(user.getId(), promoCode);
+                return getUserCart(user.getId(), promoCode, points, yeshteryCart);
             }
         }
         createCartItemEntity(cartItem, (UserEntity) user, stock, item);
         cartItemRepo.save(cartItem);
 
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
 
@@ -185,7 +160,7 @@ public class CartServiceImpl implements CartService{
 
     @Override
     @Transactional
-    public Cart addNasnavCartItems(List<CartItem> items, String promoCode) {
+    public Cart addNasnavCartItems(List<CartItem> items, String promoCode, Set<Long> points, boolean yeshteryCart) {
         BaseUserEntity user = securityService.getCurrentUser();
         if (user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -194,22 +169,22 @@ public class CartServiceImpl implements CartService{
         Long orgId = securityService.getCurrentUserOrganizationId();
         cartItemRepo.deleteByUser_Id(user.getId());
 
-        return addCartItems(items, promoCode, Set.of(orgId), (UserEntity) user);
+        return addCartItems(items, promoCode, Set.of(orgId), (UserEntity) user, points, yeshteryCart);
     }
 
     @Override
     @Transactional
-    public Cart addYeshteryCartItems(List<CartItem> items, String promoCode){
+    public Cart addYeshteryCartItems(List<CartItem> items, String promoCode, Set<Long> points, boolean yeshteryCart){
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
         }
         cartItemRepo.deleteByUser_Id(user.getId());
         Set<Long> yeshteryOrgsIds = organizationRepo.findIdByYeshteryState(1);
-        return addCartItems(items, promoCode, yeshteryOrgsIds, (UserEntity) user);
+        return addCartItems(items, promoCode, yeshteryOrgsIds, (UserEntity) user, points, yeshteryCart);
     }
 
-    private Cart addCartItems(List<CartItem> items, String promoCode, Set<Long> orgIds, UserEntity user) {
+    private Cart addCartItems(List<CartItem> items, String promoCode, Set<Long> orgIds, UserEntity user, Set<Long> points, boolean yeshteryCart) {
         Map<Long, StocksEntity> stocksEntityMap = getCartStocks(items, orgIds);
         List<CartItemEntity> itemsToSave = new ArrayList<>();
         for (CartItem item : items) {
@@ -225,7 +200,7 @@ public class CartServiceImpl implements CartService{
             itemsToSave.add(cartItem);
         }
         cartItemRepo.saveAll(itemsToSave);
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
     private void createCartItemEntity(CartItemEntity cartItem, UserEntity user, StocksEntity stock, CartItem item) {
@@ -254,7 +229,7 @@ public class CartServiceImpl implements CartService{
         }
         Long productId = stock.getProductVariantsEntity().getProductEntity().getId();
         Long variantId = stock.getProductVariantsEntity().getId();
-        return ofNullable(imgService.getProductsAndVariantsImages(asList(productId), asList(variantId))
+        return Optional.of(imgService.getProductsAndVariantsImages(List.of(productId), List.of(variantId))
                 .stream()
                 .findFirst())
                 .get()
@@ -265,7 +240,7 @@ public class CartServiceImpl implements CartService{
 
 
     @Override
-    public Cart deleteCartItem(Long itemId, String promoCode){
+    public Cart deleteCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
             throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -273,7 +248,7 @@ public class CartServiceImpl implements CartService{
 
         cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
 
-        return getUserCart(user.getId(), promoCode);
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
 
@@ -335,7 +310,7 @@ public class CartServiceImpl implements CartService{
         //it uses an additional query but gives more insurance than calculating variants from
         //cartItemsStocks
         Set<Long> cartItemVariants =
-                getCart(null)
+                getCart(null, emptySet(), false)
                         .getItems()
                         .stream()
                         .map(CartItem::getVariantId)
@@ -651,13 +626,13 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public Cart deleteYeshteryCartItem(Long itemId, String promoCode){
+    public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
             BaseUserEntity user = securityService.getCurrentUser();
             if(user instanceof EmployeeUserEntity) {
                 throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
             }
             cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
-            return getUserCart(user.getId(), promoCode);
+            return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
     @Override

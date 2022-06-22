@@ -40,6 +40,8 @@ DELETE FROM public.return_shipment where id in (
                             and meta.organization_id between 99000 and 99999
 );
 DELETE FROM public.return_shipment where shipping_service_id = 'TEST';
+DELETE FROM public.loyalty_spent_transactions WHERE transaction_id in (select id from loyalty_point_transactions WHERE org_id between 99000 and 99999);
+DELETE FROM public.loyalty_point_transactions WHERE org_id between 99000 and 99999;
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);
