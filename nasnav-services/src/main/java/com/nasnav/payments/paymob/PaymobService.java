@@ -12,10 +12,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.PaymobSourceEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.OrderService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -147,7 +144,7 @@ public class PaymobService {
             HttpClient client = getHttpClient();
             OrderResponse orderResponse = registerOrder(fromOrderValue(orderValue, authToken.getToken(), transactionId));
             if (orderResponse != null) {
-                paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrderId, orderValue, client, orderResponse, userId, sourceEntity, transactionId);
+                paymentToken = getPaymentTokenResponse(authToken.getToken(), metaOrder, orderValue, client, orderResponse, userId, sourceEntity, transactionId);
             }
         }
         if (!Objects.isNull(paymentToken)) {
@@ -219,10 +216,18 @@ public class PaymobService {
         }
     }
 
-    private TokenResponse getPaymentTokenResponse(String authToken, long metaOrderId, OrderService.OrderValue orderValue, HttpClient client, OrderResponse orderResponse, Long userId, PaymobSourceEntity source, Long transactionId) throws BusinessException {
+    private TokenResponse getPaymentTokenResponse(String authToken, MetaOrderEntity metaOrder,
+                                                  OrderService.OrderValue orderValue, HttpClient client,
+                                                  OrderResponse orderResponse, Long userId, PaymobSourceEntity source,
+                                                  Long transactionId) throws BusinessException {
         PaymentRequest paymentRequest = PaymentRequest.fromOrderResponse(orderResponse, source);
         paymentRequest.setAuth_token(authToken);
         TokenResponse paymentToken = null;
+        AddressesEntity shippingAddress;
+        if (metaOrder.getSubMetaOrders() == null || metaOrder.getSubMetaOrders().isEmpty())
+            shippingAddress = metaOrder.getSubOrders().stream().findAny().get().getAddressEntity();
+        else
+            shippingAddress = metaOrder.getSubMetaOrders().stream().findAny().get().getSubOrders().stream().findAny().get().getAddressEntity();
 
         JSONObject paymentJsonObject = new JSONObject();
         paymentJsonObject.put("auth_token", authToken);
@@ -231,20 +236,21 @@ public class PaymobService {
         paymentJsonObject.put("order_id", orderResponse.getId().toString());
         JSONObject billingDataJsonObject = new JSONObject();
 
-        // TODO: add billing data
-        billingDataJsonObject.put("apartment", "1");
-        billingDataJsonObject.put("email", "email@email");
-        billingDataJsonObject.put("floor", "1");
-        billingDataJsonObject.put("first_name", "user");
-        billingDataJsonObject.put("street", "street");
-        billingDataJsonObject.put("building", "1");
-        billingDataJsonObject.put("phone_number", "+21");
+
+        // TODO: add floor and shipping method
+        billingDataJsonObject.put("email", metaOrder.getUser().getEmail());
+        billingDataJsonObject.put("first_name", shippingAddress.getFirstName());
+        billingDataJsonObject.put("last_name", shippingAddress.getLastName());
+        billingDataJsonObject.put("street", shippingAddress.getAddressLine1());
+        billingDataJsonObject.put("building", shippingAddress.getBuildingNumber());
+        //billingDataJsonObject.put("floor", );
+        billingDataJsonObject.put("apartment", shippingAddress.getFlatNumber());
+        billingDataJsonObject.put("phone_number", shippingAddress.getPhoneNumber());
         billingDataJsonObject.put("shipping_method", "");
-        billingDataJsonObject.put("postal_code", "12345");
-        billingDataJsonObject.put("city", "Cairo");
-        billingDataJsonObject.put("country", "Egypt");
-        billingDataJsonObject.put("last_name", "user");
-        billingDataJsonObject.put("state", "Cairo");
+        billingDataJsonObject.put("postal_code", shippingAddress.getPostalCode());
+        billingDataJsonObject.put("city", shippingAddress.getAreasEntity().getName());
+        billingDataJsonObject.put("state", shippingAddress.getAreasEntity().getCitiesEntity().getName());
+        billingDataJsonObject.put("country", shippingAddress.getAreasEntity().getCitiesEntity().getCountriesEntity().getName());
 
         paymentJsonObject.put("billing_data", billingDataJsonObject);
         paymentJsonObject.put("currency", orderValue.currency);
@@ -263,7 +269,7 @@ public class PaymobService {
                 String resBody = readInputStream(response.getEntity().getContent());
                 paymentToken = gson.fromJson(resBody, TokenResponse.class);
 
-                createPaymentEntity(metaOrderId, orderValue, paymentToken, userId, orderResponse.getId().toString(), transactionId);
+                createPaymentEntity(metaOrder.getId(), orderValue, paymentToken, userId, orderResponse.getId().toString(), transactionId);
             } else {
                 throw new BusinessException(readInputStream(response.getEntity().getContent()), "PAYMENT_FAILED", org.springframework.http.HttpStatus.NOT_ACCEPTABLE);
             }
