@@ -336,4 +336,14 @@ public class NavBoxTest {
         responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
         assertEquals(1, responseBody.size());
     }
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shop_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getLocationShopsByBrandNameFilter() throws JsonProcessingException {
+
+        var response = template.getForEntity("/navbox/location_shops?org_id=99001&brand_name=brand_2", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        List<ShopRepresentationObject> responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(3, responseBody.size());
+    }
 }

@@ -239,6 +239,7 @@ public class ShopServiceImpl implements ShopService {
         QProducts product = QProducts.products;
         QTags tag = QTags.tags;
         QOrganizations organization = QOrganizations.organizations;
+        QBrands brand = QBrands.brands;
 
         predicate.and(shop.removed.eq(0));
         predicate.and(product.removed.eq(0));
@@ -264,6 +265,9 @@ public class ShopServiceImpl implements ShopService {
         }
         if (param.getOrgId() != null) {
             predicate.and(product.organizationId.eq(param.getOrgId()));
+        }
+        if(param.getBrandName() != null){
+            predicate.and(brand.name.eq(param.getBrandName()));
         }
         if (param.getProductType() != null) {
             predicate.and(product.productType.in(param.getProductType()));
@@ -313,6 +317,7 @@ public class ShopServiceImpl implements ShopService {
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
         QCities city = QCities.cities;
+        QBrands brand = QBrands.brands;
         QOrganizations organizations = QOrganizations.organizations;
         QShop360s shop360 = QShop360s.shop360s;
         SQLQuery query = getShopsQuerySelectPart()
@@ -323,7 +328,8 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
                     .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id));
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
+                    .innerJoin(brand).on(shop.brandId.eq(brand.id));
         if (collections) {
             query = addShopsQueryCollectionsPart(query);
         } else {

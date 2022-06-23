@@ -1,5 +1,6 @@
 package com.nasnav.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -21,4 +22,5 @@ public class LocationShopsParam {
     private boolean searchInTags;
     private Integer[] productType;
     private Long count;
+    private String brandName;
 }
