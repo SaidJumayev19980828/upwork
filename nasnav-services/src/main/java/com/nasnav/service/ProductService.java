@@ -899,6 +899,9 @@ public class ProductService {
 		if(!params.show_free_products) {
 			predicate.and( stock.price.gt(ZERO));
 		}
+		if(params.variant_barcode != null){
+			predicate.and(variant.barcode.eq(params.variant_barcode));
+		}
 
 		return predicate;
 	}

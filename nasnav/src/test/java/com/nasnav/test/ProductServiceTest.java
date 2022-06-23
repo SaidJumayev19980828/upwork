@@ -1312,6 +1312,18 @@ public class ProductServiceTest {
 	}
 
 	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getProductsWithVariantBarcodeFilter() throws JsonParseException, JsonMappingException, IOException {
+		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?org_id=99001&variant_barcode=barcode_5", ProductsResponse.class);
+		assertEquals(OK, response.getStatusCode());
+
+		List<ProductRepresentationObject> products = response.getBody().getProducts();
+		assertEquals(1, products.size());
+		assertEquals(1005L, products.get(0).getId().longValue());
+	}
+
+	@Test
 	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Shop_360_Test_Data.sql"})
 	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void deleteProductsWithVariantsLinkedToCollection() {
