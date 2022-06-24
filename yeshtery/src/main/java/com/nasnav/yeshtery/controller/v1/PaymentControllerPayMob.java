@@ -23,40 +23,31 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping(PaymentControllerPayMob.API_PATH)
 public class PaymentControllerPayMob {
-
     static final String API_PATH = YeshteryConstants.API_PATH +"/payment/paymob";
-
-
-
-
     @Autowired
     private MetaOrderRepository ordersRepository;
-
     @Autowired
     private PaymobService paymobService;
 
     @PostMapping(value = "card/init", produces = APPLICATION_JSON_VALUE)
     public LinkedHashMap<String, String> cardInitialize(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
-
         Optional<MetaOrderEntity> metaOrder = ordersRepository.findByMetaOrderId(metaOrderId);
         if (metaOrder.isEmpty()) {
             throw new RuntimeBusinessException(NOT_FOUND, O$0001, metaOrderId);
         }
-
         return paymobService.payMobCardInit(metaOrder.get());
     }
 
-
+    @PostMapping(value = "callback/card/confirm")
+    public void cardConfirmCallback(@RequestParam String hmac,
+                                    @RequestBody WebhookCallbackResponse response) throws BusinessException {
+        paymobService.confirmPaymentThroughCallback(hmac, response);
+    }
 
     @PostMapping("card/confirm")
     public ResponseEntity<String> cardConfirm(@RequestParam(name = "token") String uid) throws BusinessException {
-
-        RetrieveTransactionResponse data = paymobService.verifyAndStore(uid, true);
-        return new ResponseEntity<>("{\"status\": \"SUCCESS\", " +
-                "\"transaction_no\":\""+data.getId()+"\"" +
-                "}", HttpStatus.OK);
-
-
+        paymobService.verifyAndStore(uid, true);
+        return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
     }
 
 }
