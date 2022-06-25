@@ -8,6 +8,7 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
@@ -39,10 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -51,7 +49,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -61,12 +58,16 @@ import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
+import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
+import static com.nasnav.enumerations.SortingWay.ASC;
+import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -900,8 +901,7 @@ public class OrderServiceImpl implements OrderService {
 
 		query
 			.where(predicatesArr)
-			.orderBy(builder.desc(root.get(getQueryOrderBy(finalParams))));
-
+			.orderBy(getQueryOrderBy(finalParams, builder, root));
 		List<OrdersEntity> ordersEntityList = initiateQuery(query, finalParams);
 
 		Set<OrdersEntity> orders = new HashSet<>();
@@ -922,6 +922,9 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 		Long ordersCount = getOrderListCount(builder, predicatesArr);
 
+		if(detailsLevel >= 2 && finalParams.getOrders_sorting_option().equals(QUANTITY))
+			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
+
 		return new OrdersListResponse(ordersCount, detailedOrders);
 	}
 
@@ -937,6 +940,20 @@ public class OrderServiceImpl implements OrderService {
 			return em.createQuery(query)
 					.setFirstResult(params.getStart())
 					.getResultList();
+		}
+	}
+
+	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {
+		sortingWay = ofNullable(sortingWay).orElse(DESC);
+
+		if(sortingWay.equals(DESC)){
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity).reversed())
+					.collect(toList());
+		}else {
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity))
+					.collect(toList());
 		}
 	}
 
@@ -1001,12 +1018,25 @@ public class OrderServiceImpl implements OrderService {
 		Integer detailsLevel = ofNullable(params.getDetails_level()).orElse(0);
 		BaseUserEntity user = securityService.getCurrentUser();
 
+		setDefaultSortingParamsIfNull(params);
 		params.setDetails_level( detailsLevel);
 		setListOfStatus(params);
 		setOrderSearchStartAndCount(params);
 		limitSearchParamByUserRole(params, user);
 
 		return params;
+	}
+
+	private void setDefaultSortingParamsIfNull(OrderSearchParam params){
+		OrderSortOptions sortOption =
+				ofNullable(params.getOrders_sorting_option())
+						.orElse(CREATION_DATE);
+		SortingWay sortingWay =
+				ofNullable(params.getSorting_way())
+						.orElse(DESC);
+
+		params.setOrders_sorting_option(sortOption);
+		params.setSorting_way(sortingWay);
 	}
 
 	private void setListOfStatus(OrderSearchParam params) {
@@ -1110,10 +1140,23 @@ public class OrderServiceImpl implements OrderService {
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
 
-	private String getQueryOrderBy(OrderSearchParam params){
-		return ofNullable(params.getOrders_sorting_option())
-						.map(OrderSortOptions::getValue)
-						.orElse("updateDate");
+	private javax.persistence.criteria.Order getQueryOrderBy(OrderSearchParam finalParams, CriteriaBuilder builder, Root<?> root){
+		OrderSortOptions sortOption = finalParams.getOrders_sorting_option();
+		Path<Object> path = getPath(root, sortOption);
+		SortingWay sortingWay = finalParams.getSorting_way();
+
+		if (sortingWay.equals(ASC))
+			return builder.asc(path);
+		else
+			return builder.desc(path);
+	}
+
+	private Path<Object> getPath(Root<?> root, OrderSortOptions sortingOption){
+		if(sortingOption.equals(QUANTITY)){
+			return root.get("updateDate");
+		}else{
+			return root.get(sortingOption.getValue());
+		}
 	}
 
 	private LocalDateTime readDate(String dateStr) {

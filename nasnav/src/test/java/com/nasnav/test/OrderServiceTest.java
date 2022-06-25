@@ -22,8 +22,8 @@ import com.nasnav.test.helpers.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -363,7 +363,7 @@ public class OrderServiceTest {
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue( body.getTotalQuantity() != null);
-		assertTrue( body.getTotalQuantity() == 3);
+		assertEquals(3L, body.getTotalQuantity().longValue());
 		assertEquals(null, body.getItems());
 	}
 
@@ -412,21 +412,47 @@ public class OrderServiceTest {
 
 		body = response.getBody().getOrders().get(0);
 
-		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
+		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("100.00"));
 		assertEquals(expectedBody, body);
 
 		response = sendOrdersListRequestWithParamsAndToken("start=3&count=1&details_level=3", token);
 
 		body = response.getBody().getOrders().get(0);
 
-		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("50.00"));
+		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
 		assertEquals(expectedBody, body);
 
 	}
 
-	
-	
-	
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getOrderListOrderedByQuantityTest() throws IOException {
+		String token = "101112";
+		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("details_level=3&orders_sorting_option=QUANTITY", token);
+		List<DetailedOrderRepObject> orders = response.getBody().getOrders();
+
+		Assert.assertEquals(330002L, orders.get(0).getOrderId());
+		Assert.assertEquals(330003L, orders.get(1).getOrderId());
+	}
+
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getOrderListSortingWayTest() throws IOException {
+		String token = "101112";
+		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("sorting_way=ASC", token);
+		List<DetailedOrderRepObject> orders = response.getBody().getOrders();
+
+		Assert.assertEquals(330002L, orders.get(0).getOrderId());
+		Assert.assertEquals(330003L, orders.get(1).getOrderId());
+
+		response = sendOrdersListRequestWithParamsAndToken("sorting_way=DESC", token);
+		orders = response.getBody().getOrders();
+
+		Assert.assertEquals(330006L, orders.get(0).getOrderId());
+		Assert.assertEquals(330005L, orders.get(1).getOrderId());
+	}
 	
 	private List<DetailedOrderRepObject> getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {
 		return mapper

@@ -5,7 +5,8 @@ import lombok.Getter;
 public enum OrderSortOptions {
     ID("id"),
     CREATION_DATE("creationDate"),
-    TOTAL("total");
+    TOTAL("total"),
+    QUANTITY("quantity");
 
     @Getter
     private String value;
