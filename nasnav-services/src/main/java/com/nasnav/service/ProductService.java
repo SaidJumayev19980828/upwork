@@ -885,6 +885,7 @@ public class ProductService {
 					.or(product.description.lower().like( "% " + params.getName().toLowerCase()))
 					.or(variant.productCode.like("%" + params.name + "%") )
 					.or(variant.sku.like("%" + params.name + "%") )
+					.or(variant.barcode.like("%" + params.name + "%") )
 					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
 			);
 
@@ -898,9 +899,6 @@ public class ProductService {
 
 		if(!params.show_free_products) {
 			predicate.and( stock.price.gt(ZERO));
-		}
-		if(params.variant_barcode != null){
-			predicate.and(variant.barcode.eq(params.variant_barcode));
 		}
 
 		return predicate;
