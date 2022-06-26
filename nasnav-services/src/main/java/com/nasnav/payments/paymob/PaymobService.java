@@ -330,6 +330,8 @@ public class PaymobService {
 
         if (!Objects.equals(generatedPassword, hmac))
             throw new RuntimeBusinessException(UNAUTHORIZED, PAYMENT$CALLBACK$002);
+
+        classLogger.info("Callback confirmed from Paymob");
     }
 
     private String getParamsConcatenatedString(RetrieveTransactionResponse response) {
@@ -358,7 +360,9 @@ public class PaymobService {
 
         return message.toString();
     }
-    public void confirmPaymentThroughCallback(String hmac, WebhookCallbackResponse response) throws BusinessException {
+    public void confirmPaymentThroughCallback(String hmac, WebhookCallbackResponse response, boolean yeshteryMetaOrder) throws BusinessException {
+        classLogger.info("Callback called from Paymob, hmac: "+hmac);
+
         Map<String, Object> data = mapper.convertValue(response.getObj().getData(), Map.class);
         String transactionId = (String) data.get("transaction_no");
         PaymentEntity payment = paymentsRepository.findByObjectContaining(transactionId)
@@ -372,21 +376,27 @@ public class PaymobService {
             return ;
 
         checkPaymentResponse(response.getObj(), payment);
+        paymentCommons.finalizePaymentOnly(payment, yeshteryMetaOrder);
     }
 
-    public RetrieveTransactionResponse verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
+    public void verifyAndStore(String orderUid, boolean yeshteryMetaOrder) throws BusinessException {
         PaymentEntity payment = paymentCommons.getPaymentForOrderUid(orderUid);
+
         if (payment == null) {
             classLogger.warn("No payment associated with order {}", orderUid);
             throw new BusinessException("There is no initiated payment associated with the order", "INVALID_INPUT", NOT_ACCEPTABLE);
         }
+
+        if (List.of(PAID, UNPAID, REFUNDED).contains(payment.getStatus())) {
+            paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
+            return;
+        }
+
         long orderId = payment.getMetaOrderId();
         payMobAccount = getAccountForOrder(orderId);
         if (payMobAccount == null) {
             throw new BusinessException("No account associated with UID: " + orderUid, "INVALID_INPUT", NOT_ACCEPTABLE);
         }
-        if (List.of(PAID, UNPAID, REFUNDED).contains(payment.getStatus()))
-            return null;
 
         if (payment.getStatus() != PaymentStatus.STARTED) {
             classLogger.error("Invalid state ({}) for payment {}", payment.getStatus(), payment.getId());
@@ -427,14 +437,11 @@ public class PaymobService {
                 RetrieveTransactionResponse status = gson.fromJson(resBody, RetrieveTransactionResponse.class);
                 checkPaymentResponse(status, payment);
 
-                if (payment.getStatus().equals(PAID))
-                    paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
+                paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
             }
         } catch (IOException e) {
             throw new BusinessException("Couldn't connect to payment gateway: " + e.getMessage(), "PAYMENT_FAILED", NOT_ACCEPTABLE);
         }
-
-        return null;
     }
 
     private void checkPaymentResponse(RetrieveTransactionResponse response, PaymentEntity payment) {
@@ -450,7 +457,6 @@ public class PaymobService {
             } else {
                 payment.setStatus(PAID);
             }
-            paymentsRepository.saveAndFlush(payment);
         }
     }
 

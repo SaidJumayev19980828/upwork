@@ -42,7 +42,7 @@ public class PaymentControllerPayMob {
     @PostMapping(value = "callback/card/confirm")
     public void cardConfirmCallback(@RequestParam String hmac,
                                     @RequestBody WebhookCallbackResponse response) throws BusinessException {
-        paymobService.confirmPaymentThroughCallback(hmac, response);
+        paymobService.confirmPaymentThroughCallback(hmac, response, false);
     }
 
     @PostMapping("card/confirm")
