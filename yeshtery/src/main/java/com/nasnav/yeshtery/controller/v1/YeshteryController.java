@@ -83,10 +83,9 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double radius,
                                                            @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType,
-                                                           @RequestParam(value = "count", required = false, defaultValue = "999999") Long count,
-                                                           @RequestParam(value = "brand_name", required = false) String brandName) {
+                                                           @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
-                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count, brandName);
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
         return shopService.getLocationShops(param);
     }
 
@@ -106,7 +105,7 @@ public class YeshteryController {
                                                @RequestParam(value = "product_type", required = false) Integer[] productType,
                                                @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
-                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count, null);
+                longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
         return shopService.getLocationShopsCities(param);
     }
 

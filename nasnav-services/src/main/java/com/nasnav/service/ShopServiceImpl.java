@@ -246,28 +246,15 @@ public class ShopServiceImpl implements ShopService {
         predicate.and(product.hide.eq(false));
         predicate.and(variant.removed.eq(0));
         if(param.getName() != null) {
-            if (param.isSearchInTags()) {
-                predicate.and(product.name.lower().like( "%" + param.getName().toLowerCase() + "%")
-                        .or(product.description.lower().like( "% " + param.getName().toLowerCase() + " %"))
-                        .or(product.description.lower().like( param.getName().toLowerCase() + " %"))
-                        .or(product.description.lower().like( "% " + param.getName().toLowerCase()))
-                        .or(tag.name.lower().like("%" + param.getName().toLowerCase() + "%")));
-            }
-            else {
-                predicate.and(product.name.lower().like("%" + param.getName().toLowerCase() + "%")
-                        .or(product.description.lower().like( param.getName().toLowerCase() + " %"))
-                        .or(product.description.lower().like( "% " + param.getName().toLowerCase()))
-                        .or(product.description.lower().like( "% " + param.getName().toLowerCase() + " %")));
-            }
+            predicate.and(brand.name.lower().like( "%" + param.getName().toLowerCase() + "%")
+                            .or(brand.name.lower().like( param.getName().toLowerCase() + " %"))
+                            .or(brand.name.lower().like( "% " + param.getName().toLowerCase())));
         }
         if (param.isYeshteryState()) {
            predicate.and(organization.yeshteryState.eq(1));
         }
         if (param.getOrgId() != null) {
             predicate.and(product.organizationId.eq(param.getOrgId()));
-        }
-        if(param.getBrandName() != null){
-            predicate.and(brand.name.eq(param.getBrandName()));
         }
         if (param.getProductType() != null) {
             predicate.and(product.productType.in(param.getProductType()));
@@ -318,6 +305,7 @@ public class ShopServiceImpl implements ShopService {
         QAreas area = QAreas.areas;
         QCities city = QCities.cities;
         QBrands brand = QBrands.brands;
+        QProducts product = QProducts.products;
         QOrganizations organizations = QOrganizations.organizations;
         QShop360s shop360 = QShop360s.shop360s;
         SQLQuery query = getShopsQuerySelectPart()
@@ -329,7 +317,9 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(area).on(address.areaId.eq(area.id))
                     .innerJoin(city).on(area.cityId.eq(city.id))
                     .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .innerJoin(brand).on(shop.brandId.eq(brand.id));
+                    .innerJoin(product).on(product.id.eq(variant.productId))
+                    .innerJoin(brand).on(brand.id.eq(product.brandId));
+
         if (collections) {
             query = addShopsQueryCollectionsPart(query);
         } else {
