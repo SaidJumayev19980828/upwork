@@ -331,7 +331,7 @@ public class PaymobService {
         if (!Objects.equals(generatedPassword, hmac))
             throw new RuntimeBusinessException(UNAUTHORIZED, PAYMENT$CALLBACK$002);
 
-        classLogger.info("Callback confirmed from Paymob");
+        classLogger.debug("Callback confirmed from Paymob");
     }
 
     private String getParamsConcatenatedString(RetrieveTransactionResponse response) {
@@ -361,7 +361,7 @@ public class PaymobService {
         return message.toString();
     }
     public void confirmPaymentThroughCallback(String hmac, WebhookCallbackResponse response, boolean yeshteryMetaOrder) throws BusinessException {
-        classLogger.info("Callback called from Paymob, hmac: "+hmac);
+        classLogger.debug("Callback called from Paymob, hmac: "+hmac);
 
         Map<String, Object> data = mapper.convertValue(response.getObj().getData(), Map.class);
         String transactionId = (String) data.get("transaction_no");
