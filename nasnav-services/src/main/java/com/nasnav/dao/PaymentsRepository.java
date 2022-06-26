@@ -21,5 +21,5 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
 
     List<PaymentEntity> findByMetaOrderIdIn(List<Long> metaOrderIds);
 
-    Optional<PaymentEntity> findByObjectContaining(String transactionId);
+    Optional<PaymentEntity> findByObjectContainingAndOperator(String ref, String operator);
 }

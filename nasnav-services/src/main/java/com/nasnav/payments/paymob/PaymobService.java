@@ -55,6 +55,8 @@ public class PaymobService {
  */
     private Logger classLogger = LogManager.getLogger("Payment:PAYMOB");
 
+    private final String paymobOperator = "PayMob";
+
     @Autowired
     private Commons paymentCommons;
     @Autowired
@@ -363,10 +365,9 @@ public class PaymobService {
     public void confirmPaymentThroughCallback(String hmac, WebhookCallbackResponse response, boolean yeshteryMetaOrder) throws BusinessException {
         classLogger.debug("Callback called from Paymob, hmac: "+hmac);
 
-        Map<String, Object> data = mapper.convertValue(response.getObj().getData(), Map.class);
-        String transactionId = (String) data.get("transaction_no");
-        PaymentEntity payment = paymentsRepository.findByObjectContaining(transactionId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PAYMENT$CALLBACK$001, transactionId));
+        String merchantOrderId = response.getObj().getOrder().getMerchant_order_id();
+        PaymentEntity payment = paymentsRepository.findByObjectContainingAndOperator(merchantOrderId, paymobOperator)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PAYMENT$CALLBACK$001, merchantOrderId));
 
         String privateKey = getAccountForOrder(payment.getMetaOrderId()).getPrivateKey();
 
