@@ -44,8 +44,10 @@ VALUES (1003, 'collection', 'collection',101, 201, 99001, now(), now(), 2);
 
 insert into public.product_variants(id, "name" , product_id ) values(310001, 'var', 1001);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var', 1002);
+insert into public.product_variants(id, "name" , product_id ) values(310003, 'var', 1003);
 
-insert into product_collections ("id", priority, product_id, variant_id)values (3600001,   2, 1003, 310002);
+insert into product_collections ("id", priority, product_id, variant_id)values (3600001,   2, 1002, 310002);
+insert into product_collections ("id", priority, product_id, variant_id)values (3600002,   2, 1003, 310003);
 
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id)
 values(601, 503, 3, 99001, 600.0, 310001);
@@ -55,6 +57,8 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 values(603, 505, 3, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id)
 values(604, 502, 3, 99001, 600.0, 310002);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id)
+values(605, 502, 3, 99001, 600.0, 310003);
 
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001, 'tag_1', 'tag_1', 201, 99001, '');
 
