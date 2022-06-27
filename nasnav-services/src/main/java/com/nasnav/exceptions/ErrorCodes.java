@@ -389,6 +389,7 @@ public enum ErrorCodes {
 	,PAYMENT$CALLBACK$001("No payment entity found with transaction reference [%s]!")
 	,PAYMENT$CALLBACK$002("Untrusted source!")
 
+	,PROCESS$CANCEL$0001("Process not cancelable")
 	;
 
 	@Getter
