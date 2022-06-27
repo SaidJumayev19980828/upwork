@@ -59,10 +59,7 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
             predicatesList.add(root.get("shopsEntity").get("id").in(params.getShop_id()));
         }
         if(notNullNorEmpty(params.getStatus_ids()))
-            params.getStatus_ids()
-                    .forEach(status -> {
-                        predicatesList.add( builder.equal(root.get("status"), status) );
-                    });
+            predicatesList.add(root.get("status").in(params.getStatus_ids()));
         if(params.getUpdated_after() != null) {
             predicatesList.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
         }
