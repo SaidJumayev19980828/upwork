@@ -325,10 +325,10 @@ public class PaymobService {
         return merchantAccount;
     }
 
-    public void confirmCallbackSource(String hmac, WebhookCallbackResponse response,  String privateKey) {
+    public void confirmCallbackSource(String hmac, WebhookCallbackResponse response,  String publicKey) {
         String message = getParamsConcatenatedString(response.getObj());
 
-        String generatedPassword = new HmacUtils("HmacSHA512", privateKey).hmacHex(message);
+        String generatedPassword = new HmacUtils("HmacSHA512", publicKey).hmacHex(message);
 
         if (!Objects.equals(generatedPassword, hmac))
             throw new RuntimeBusinessException(UNAUTHORIZED, PAYMENT$CALLBACK$002);
@@ -369,9 +369,9 @@ public class PaymobService {
         PaymentEntity payment = paymentsRepository.findByObjectContainingAndOperator(merchantOrderId, paymobOperator)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PAYMENT$CALLBACK$001, merchantOrderId));
 
-        String privateKey = getAccountForOrder(payment.getMetaOrderId()).getPrivateKey();
+        String publicKey = getAccountForOrder(payment.getMetaOrderId()).getPublicKey();
 
-        confirmCallbackSource(hmac, response, privateKey);
+        confirmCallbackSource(hmac, response, publicKey);
 
         if (List.of(PAID, UNPAID, REFUNDED).contains(payment.getStatus()))
             return ;
