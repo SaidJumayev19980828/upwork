@@ -198,14 +198,8 @@ public class OrganizationImageApiTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
-    
-
 
     @Test
-    @Ignore
-    //serving static resources files, depends on taking configurations from AppConfig/
-    //this is done at the configuration phase, and I can't still mock the configuration
-    //at the configuration phase, without using ContextInitializer and slowing down the tests.
     public void getOrganizationImagesTest() {
         String body = "{\"org_id\":99002, \"operation\":\"create\", \"type\":1 }";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();

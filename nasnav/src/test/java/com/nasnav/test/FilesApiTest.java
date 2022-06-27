@@ -252,10 +252,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	@Ignore
-	//serving static resources files, depends on taking configurations from AppConfig/
-	//this is done at the configuration phase, and I can't still mock the configuration
-	//at the configuration phase, without using ContextInitializer and slowing down the tests.
 	public void downloadFileTest() throws IOException, Exception {
 		//first upload a file 
 		
@@ -308,12 +304,8 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	
-	
+	// Sometimes this test fails at dispatcher.forward(request, resp) in FilesController
 	@Test
-	@Ignore
-	//serving static resources files, depends on taking configurations from AppConfig/
-	//this is done at the configuration phase, and I can't still mock the configuration
-	//at the configuration phase, without using ContextInitializer and slowing down the tests.
 	public void downloadFileDeletedOnSystem() throws Exception {
 		//first upload a file
 		String fileName = TEST_PHOTO;
