@@ -673,14 +673,13 @@ public class CartServiceImpl implements CartService{
     @Override
     @Transactional(rollbackFor = Throwable.class)
     public void moveCartItemsToWishlist(List<CartItemEntity> allMovedItems) {
-        Long currentUserId = securityService.getCurrentUser().getId();
         Set<Long> itemsToWishlist = getItemsToWishlist(allMovedItems);
         Set<Long> itemsToRemove = getItemsToRemoveFromCart(allMovedItems, itemsToWishlist);
 
         allMovedItems.forEach(cartServiceHelper::addOutOfStockFlag);
         cartItemRepo.saveAll(allMovedItems);
         cartItemRepo.moveCartItemsToWishlistItems(itemsToWishlist);
-        cartItemRepo.deleteByCartItemIdAndUserId(itemsToRemove, currentUserId);
+        cartItemRepo.deleteByCartItemId(itemsToRemove);
     }
 
     private Set<Long> getItemsToWishlist(List<CartItemEntity> movedItems) {
