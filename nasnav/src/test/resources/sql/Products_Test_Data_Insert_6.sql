@@ -59,11 +59,12 @@ INSERT INTO public.products(id, name, p_name, brand_id, category_id, organizatio
 insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
 insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
-insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
+insert into public.product_variants(id, "name" , product_id, barcode ) values(310005, 'var', 1005, 'barcode_5');
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
-insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
-insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
+insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' , 1008);
+insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' , 1009);
+insert into public.product_variants(id, "name" , product_id ) values(310010, 'var' , 1009);
 
 update public.product_variants 
 set feature_spec = '{"7001":"Blue", "7002":"XL"}'

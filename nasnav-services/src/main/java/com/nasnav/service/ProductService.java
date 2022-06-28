@@ -885,6 +885,7 @@ public class ProductService {
 					.or(product.description.lower().like( "% " + params.getName().toLowerCase()))
 					.or(variant.productCode.like("%" + params.name + "%") )
 					.or(variant.sku.like("%" + params.name + "%") )
+					.or(variant.barcode.like("%" + params.name + "%") )
 					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
 			);
 
