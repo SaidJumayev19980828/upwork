@@ -316,8 +316,6 @@ public class ShopServiceImpl implements ShopService {
         QAddresses address = QAddresses.addresses;
         QAreas area = QAreas.areas;
         QCities city = QCities.cities;
-        QBrands brand = QBrands.brands;
-        QProducts product = QProducts.products;
         QOrganizations organizations = QOrganizations.organizations;
         QShop360s shop360 = QShop360s.shop360s;
         SQLQuery query = getShopsQuerySelectPart()
@@ -328,15 +326,16 @@ public class ShopServiceImpl implements ShopService {
                     .leftJoin(address).on(shop.addressId.eq(address.id))
                     .leftJoin(area).on(address.areaId.eq(area.id))
                     .innerJoin(city).on(area.cityId.eq(city.id))
-                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id))
-                    .innerJoin(product).on(product.id.eq(variant.productId))
-                    .innerJoin(brand).on(brand.id.eq(product.brandId));
+                    .innerJoin(organizations).on(shop.organizationId.eq(organizations.id));
 
         if (collections) {
             query = addShopsQueryCollectionsPart(query);
         } else {
             query = addShopsQueryProductsPart(query);
         }
+
+        query = addShopsQueryBrandsPart(query);
+
         if (searchInTags) {
             query = addShopsQueryTagsPart(query);
         }
@@ -372,6 +371,12 @@ public class ShopServiceImpl implements ShopService {
         return query
                 .innerJoin(collection).on(collection.variantId.eq(variant.id))
                 .innerJoin(product).on(collection.productId.eq(product.id));
+    }
+
+    private SQLQuery<Tuple> addShopsQueryBrandsPart(SQLQuery<Tuple> query) {
+        QProducts product = QProducts.products;
+        QBrands brand = QBrands.brands;
+        return query.innerJoin(brand).on(brand.id.eq(product.brandId));
     }
 
     private SQLQuery<Tuple> addShopsQueryTagsPart(SQLQuery<Tuple> query) {
