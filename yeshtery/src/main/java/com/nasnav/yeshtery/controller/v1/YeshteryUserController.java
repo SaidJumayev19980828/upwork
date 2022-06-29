@@ -116,7 +116,10 @@ public class YeshteryUserController {
     }
 
     @PostMapping(value = "recover")
-    public YeshteryUserApiResponse recoverUser(@RequestBody UserDTOs.PasswordResetObject json) {
+    public UserApiResponse recoverUser(@RequestBody UserDTOs.PasswordResetObject json) {
+        if (json.employee){
+            return employeeUserService.recoverUser(json);
+        }
         return userService.recoverYeshteryUser(json);
     }
 
@@ -184,8 +187,13 @@ public class YeshteryUserController {
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id") Long orgId) {
-        userService.sendEmailRecovery(email, orgId);
+                                  @RequestParam(value = "org_id") Long orgId,
+                                  @RequestParam() boolean employee) {
+        if (employee) {
+            employeeUserService.sendEmailRecovery(email, orgId);
+        } else {
+            userService.sendEmailRecovery(email, orgId);
+        }
     }
 
     @GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
