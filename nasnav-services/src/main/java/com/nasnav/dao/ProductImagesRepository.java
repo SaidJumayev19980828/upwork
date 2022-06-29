@@ -43,14 +43,16 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	Long countByUri(String uri);
 
-	List<ProductImagesEntity> findByPriorityAndProductEntity_IdInOrderByPriority(int priority, List<Long> productIds);
-
-	List<ProductImagesEntity> findByProductEntity_IdInOrderByPriority(List<Long> productIds);
-
 	@Query(value = "select i from ProductImagesEntity i" +
 			" left join fetch i.productVariantsEntity v left join fetch i.productEntity p"+
 			" where p.id in :productIds or v.productEntity.id in :productIds order by i.priority")
 	List<ProductImagesEntity> findByProductsIds(@Param("productIds") List<Long> productIds);
+
+	@Query(value = 	"SELECT image.uri from ProductImagesEntity image " +
+					"LEFT JOIN image.productEntity product " +
+					"LEFT JOIN product.brand b " +
+					"WHERE b.id = :brandId AND product.organizationId = :orgId")
+	List<String> findUrlsByBrandIdAndOrganizationId(@Param("brandId") Long brandId, @Param("orgId") Long orgId);
 
 	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
 
@@ -79,6 +81,32 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	@Transactional
     @Modifying
 	void deleteByProductEntity_organizationId(@Param("orgId") Long orgId);
+
+	@Query(value = "DELETE from ProductImagesEntity img " +
+			" where img.productVariantsEntity.id in :variantIds")
+	@Transactional
+	@Modifying
+	void deleteByVariantIdIn(@Param("variantIds") List<Long> variantIds);
+
+	@Query(value = "DELETE from Product_Images img " +
+			" where img.product_id in(" +
+			"	select id from products product " +
+			"	where product.id in :productIds" +
+			"	and coalesce(product.product_type,0) in (0,1))"
+			, nativeQuery = true)
+	@Transactional
+	@Modifying
+	void deleteByProductIdIn(@Param("productIds") List<Long> productIds);
+
+	@Query(value =
+			"DELETE from product_images img " +
+			"WHERE img.product_id in " +
+			"(SELECT id FROM products product " +
+			"WHERE product.brand_id = :brandId AND product.organization_id = :orgId)"
+			, nativeQuery = true)
+	@Transactional
+    @Modifying
+	void deleteByBrandId(@Param("brandId") Long brandId, @Param("orgId") Long orgId);
 
 	Long countByProductEntity_OrganizationId(long l);
 

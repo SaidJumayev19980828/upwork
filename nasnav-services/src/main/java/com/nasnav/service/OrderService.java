@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
@@ -14,6 +12,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -45,8 +44,6 @@ public interface OrderService {
 
 	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
-	 List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
-
 	void finalizeOrder(Long orderId);
 
 	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);
@@ -58,7 +55,9 @@ public interface OrderService {
 	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id, boolean yeshteryMetaorder);
+
 	Order getYeshteryMetaOrder(Long orderId, boolean yeshteryMetaorder);
+
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	 OrderValue getMetaOrderTotalValue(long metaOrderId);
@@ -76,12 +75,20 @@ public interface OrderService {
 	Order createOrder(CartCheckoutDTO dto);
 
 	Integer countOrdersByUserId(Long userId);
+
 	String trackOrder(Long orderId);
 
 	DetailedOrderRepObject getYeshteryOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
-	List<DetailedOrderRepObject> getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
+	OrdersListResponse getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
+
+	OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException;
+
+	OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam) throws BusinessException;
+
 	List<MetaOrderBasicInfo> getYeshteryMetaOrderList();
+
 	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
+
 	Order createYeshteryOrder(CartCheckoutDTO dto);
 }

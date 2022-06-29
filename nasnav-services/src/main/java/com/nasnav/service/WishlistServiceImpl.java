@@ -28,6 +28,7 @@ import static com.nasnav.constatnts.EmailConstants.RESTOCKED_WISHLIST_TEMPLATE;
 import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -163,7 +164,7 @@ public class WishlistServiceImpl implements WishlistService{
         Long stockId = wishlistRepo.findWishlistItemStockId(itemId, user.getId());
         Integer qty = ofNullable(item.getQuantity()).orElse(1);
         CartItem cartItem = new CartItem(stockId, qty, item.getAdditionalData(), item.getOrgId());
-        return cartService.addCartItem(cartItem, null);
+        return cartService.addCartItem(cartItem, null, emptySet(), false);
     }
 
     // run this method every day 1728000000 in milliseconds means 2 days

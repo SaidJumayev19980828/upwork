@@ -14,11 +14,9 @@ import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
-import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static javax.persistence.criteria.JoinType.INNER;
 import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -33,21 +31,22 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.function.Function;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 
+import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
+import com.nasnav.request.PromotionsSearchParams;
 import lombok.Data;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,9 +72,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private Logger logger = LogManager.getLogger();
 
-	@PersistenceContext
+	@Qualifier("promotionQueryBuilder")
 	@Autowired
-	private EntityManager entityMgr;
+	private AbstractCriteriaQueryBuilder<PromotionsEntity> criteriaQueryBuilder;
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
@@ -106,33 +105,19 @@ public class PromotionsServiceImpl implements PromotionsService {
 				PROMO_CODE_FROM_PRODUCT, this::calcPromoDiscountFromSpecificProducts);
 	}
 
-
-
 	@Override
 	public PromotionResponse getPromotions(PromotionSearchParamDTO searchParams) {
-		SearchParams params = createSearchParam(searchParams);
-		
-		CriteriaBuilder builder = entityMgr.getCriteriaBuilder();
-		CriteriaQuery<PromotionsEntity> query = builder.createQuery(PromotionsEntity.class);
-		Root<PromotionsEntity> root = query.from(PromotionsEntity.class);
-		root.fetch("organization", INNER);
-		root.fetch("createdBy", INNER);
-		
-		ArrayList<Predicate> restrictions = createPromotionsQueryPerdicates(builder, root, params);
-		query.select(root)
-				.where(restrictions.toArray(new Predicate[0]))
-				.orderBy(builder.desc(root.get("id")));
-		setPromotionDefaultParams(searchParams);
+		PromotionsSearchParams params = createSearchParam(searchParams);
 
-		List<PromotionDTO> promotions = entityMgr
-				.createQuery(query)
-				.setFirstResult(searchParams.getStart())
-				.setMaxResults(searchParams.getCount())
-				.getResultList()
-				.stream()
-				.map(this::createPromotionDTO)
-				.collect(toList());
-		Long total = getPromotionsCount(builder, restrictions.toArray(new Predicate[0]));
+		setPromotionDefaultParams(params);
+
+		List<PromotionDTO> promotions =
+				criteriaQueryBuilder.getResultList(params)
+					.stream()
+					.map(this::createPromotionDTO)
+					.collect(toList());
+		Long total = criteriaQueryBuilder.getResultCount();
+
 		return new PromotionResponse(total, promotions);
 	}
 
@@ -172,7 +157,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 
-	private void setPromotionDefaultParams(PromotionSearchParamDTO searchParams) {
+	private void setPromotionDefaultParams(PromotionsSearchParams searchParams) {
 		if(searchParams.getStart() == null || searchParams.getStart() < 0){
 			searchParams.setStart(0);
 		}
@@ -182,17 +167,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 			searchParams.setCount(1000);
 		}
 	}
-
-
-	private Long getPromotionsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
-		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-		countQuery.select(  builder.count(
-				(countQuery.from(PromotionsEntity.class))))
-							.where(predicatesArr);
-		Long count = entityMgr.createQuery(countQuery).getSingleResult();
-		return count;
-	}
-	
 	
 	private PromotionDTO createPromotionDTO(PromotionsEntity entity) {
 		ZoneId zoneId = ZoneId.of("UTC");
@@ -273,7 +247,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private SearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
+	private PromotionsSearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
 
 		Optional<Integer> status = 
 				ofNullable(searchParams)
@@ -294,8 +268,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 		Optional<Long> id = 
 				ofNullable(searchParams)
 				.map(PromotionSearchParamDTO::getId);
-		
-		return new SearchParams(status, startTime, endTime, id);
+
+		Integer start = searchParams.getStart();
+		Integer count = searchParams.getCount();
+
+		return new PromotionsSearchParams(status, startTime, endTime, id, start, count);
 	}
 
 
@@ -304,7 +281,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private ArrayList<Predicate> createPromotionsQueryPerdicates(CriteriaBuilder builder
-			, Root<PromotionsEntity> root ,SearchParams searchParams) {
+			, Root<PromotionsEntity> root , PromotionsSearchParams searchParams) {
 
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
@@ -341,7 +318,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	 * NOT(DP < SW OR DW < SP)
 	 * */
 	private Predicate createPromotionInTimeWindowPerdicate(CriteriaBuilder builder, Root<PromotionsEntity> root,
-			SearchParams searchParams) {
+			PromotionsSearchParams searchParams) {
 		LocalDateTime searchWindowStart = searchParams.startTime.orElse(now().minusYears(1000));
 		LocalDateTime searchWindowEnd = searchParams.endTime.orElse(now().plusYears(1000));
 		Path<LocalDateTime> promotionPeriodStart = root.get("dateStart");
@@ -637,7 +614,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var calculators =  getPromoCalculators(promoCode, orgId);
 		var discountAccumulator = ZERO;
 		var itemsState = new HashSet<>(items);
-		List<Map<String, Object>> appliedPromosData = new ArrayList<>();
+		List<AppliedPromo> appliedPromosData = new ArrayList<>();
 		for(var calc: calculators){
 			var info = new PromoInfoContainer(calc.getPromoEntity(), itemsState, totalCartValue, promoCode);
 			var result = calc.getCalcFunction().apply(info);
@@ -651,10 +628,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 				discountAccumulator = discountAccumulator.add(calculatorDiscount);
 				String promoName = ofNullable(calc.getPromoEntity().getCode())
 						.orElse(calc.getPromoEntity().getIdentifier());
-				Map<String, Object> appliedPromoData = new HashMap<>();
-				appliedPromoData.put("promo_name", promoName);
-				appliedPromoData.put("applied_items", result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
-				appliedPromoData.put("discount", calculatorDiscount);
+				AppliedPromo appliedPromoData = new AppliedPromo();
+				appliedPromoData.setEntity(calc.getPromoEntity());
+				appliedPromoData.setPromoName(promoName);
+				appliedPromoData.setAppliedItems(result.items.stream().map(PromoItemDiscount::getItem).map(PromoItemDto::getStockId).collect(toSet()));
+				appliedPromoData.setDiscount(calculatorDiscount);
 				appliedPromosData.add(appliedPromoData);
 			}
 

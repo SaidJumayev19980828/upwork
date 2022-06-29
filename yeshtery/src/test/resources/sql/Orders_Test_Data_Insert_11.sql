@@ -87,6 +87,7 @@ insert into public.role_employee_users(id, employee_user_id, role_id) values (20
 insert into public.role_employee_users(id, employee_user_id, role_id) values (21, 69, 2);
 insert into public.role_employee_users(id, employee_user_id, role_id) values (23, 69, 7);
 insert into public.role_employee_users(id, employee_user_id, role_id) values (24, 70, 4);
+insert into public.role_employee_users(id, employee_user_id, role_id) values (28, 70, 7);
 insert into public.role_employee_users(id, employee_user_id, role_id) values (25, 71, 5);
 insert into public.role_employee_users(id, employee_user_id, role_id) values (26, 72, 6);
 insert into public.role_employee_users(id, employee_user_id, role_id) values (27, 73, 6);

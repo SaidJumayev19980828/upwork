@@ -19,6 +19,7 @@ import com.nasnav.yeshtery.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,10 +150,9 @@ public class LoyaltyPointTest {
 
         request = getHttpEntity(body, "abcdefg");
 
-        ResponseEntity<List> responseList = template.exchange("/v1/loyalty/config/list?org_id=99001", GET, request, List.class);
+        ResponseEntity<LoyaltyPointConfigDTO> emptyResponse = template.exchange("/v1/loyalty/config", GET, request, LoyaltyPointConfigDTO.class);
 
-        assertEquals(200, responseList.getStatusCodeValue());
-        assertTrue(responseList.getBody().size() == 0);
+        assertEquals(404, emptyResponse.getStatusCodeValue()); // no active config found
     }
     
 
@@ -230,6 +230,7 @@ public class LoyaltyPointTest {
 
     private String getTierJsonString() {
         return json()
+                .put("operation", "create")
                 .put("tier_name", "tier test")
                 .put("selling_price", 10)
                 .put("org_id", 99001)
@@ -265,6 +266,7 @@ public class LoyaltyPointTest {
 
 
     @Test
+    @Ignore("api is hidden for now")
     public void createLoyaltyPointType() {
         String body = json().put("name", "test type").toString();
         var request = getHttpEntity(body, "abcdefg");
@@ -285,6 +287,7 @@ public class LoyaltyPointTest {
     }
 
     @Test
+    @Ignore("api is hidden for now")
     public void updateLoyaltyPointType() {
         String body = json()
                 .put("id", 31001)
@@ -297,6 +300,7 @@ public class LoyaltyPointTest {
      }
 
     @Test
+    @Ignore("api is hidden for now")
     public void getLoyaltyPointType() throws JsonProcessingException {
         var request = getHttpEntity("abcdefg");
         var response = template.exchange("/v1/loyalty/type/list", GET, request, String.class);
@@ -331,6 +335,7 @@ public class LoyaltyPointTest {
     }
 
     @Test
+    @Ignore("api is hidden for now")
     public void testUserObtainPoints() throws JsonProcessingException {
         // confirming order
         var request = getHttpEntity("abcdefg");
@@ -365,6 +370,7 @@ public class LoyaltyPointTest {
     // family
 
     @Test
+    @Ignore("api is hidden for now")
     public void createFamily(){
         String body = json().put("family_name", "family 1")
                 .put("parent_id", "0")
@@ -395,6 +401,7 @@ public class LoyaltyPointTest {
     }
 
     @Test
+    @Ignore("family apis are hidden for now")
     public void creatAndGetFamily() throws JsonProcessingException {
         String body = json().put("family_name", "family 1")
                 .put("parent_id", "0")
@@ -421,6 +428,7 @@ public class LoyaltyPointTest {
 
     //Booster
     @Test
+    @Ignore("api is hidden for now")
     public void creatBooster() {
         String body = json().put("booster_name", "booster 1")
                 .put("linked_family_member", "0")
@@ -463,6 +471,7 @@ public class LoyaltyPointTest {
     }
 
     @Test
+    @Ignore("api is hidden for now")
     public void creatAndGetBooster() throws JsonProcessingException {
         String body = json().put("booster_name", "booster 1")
                 .put("linked_family_member", "0")
@@ -495,6 +504,7 @@ public class LoyaltyPointTest {
 
     //Charity
     @Test
+    @Ignore("api is hidden for now")
     public void creatCharity() {
         String body = json().put("donation_percentage", 10)
                 .put("is_active", true)
@@ -511,6 +521,7 @@ public class LoyaltyPointTest {
     //Gift
 
     @Test
+    @Ignore("api is hidden for now")
     public void creatGift() {
 
          String body = json().put("user_from_id", 424)

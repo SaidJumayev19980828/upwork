@@ -145,7 +145,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/address"					, DELETE, setOf(CUSTOMER))
             , patternOf( "/v1/user/info")
             , patternOf( "/v1/user/create"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) )
-            , patternOf( "/v1/user/update"							, setOf(CUSTOMER) )
+            , patternOf( "/v1/user/update"							, getAllRoles() )
             , patternOf( "/v1/user/logout"							, getAllRoles() )
             , patternOf( "/v1/user/logout_all"						, getAllRoles() )
             , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
@@ -160,6 +160,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/points/list"				, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points_per_org"			, GET	, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/spendable_points"			, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/user_tier"							, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

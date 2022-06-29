@@ -173,6 +173,12 @@ public class YeshteryUserController {
         return userService.updateUser(json);
     }
 
+    @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                              @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+        return employeeUserService.createEmployeeUser(employeeUserJson);
+    }
+
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
                                   @RequestParam(value = "org_id") Long orgId) {

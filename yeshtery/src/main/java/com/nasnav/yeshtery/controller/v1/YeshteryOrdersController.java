@@ -1,9 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.ReturnRequestSearchParams;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
@@ -13,6 +10,7 @@ import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.OrderReturnService;
 import com.nasnav.service.*;
@@ -20,11 +18,9 @@ import com.nasnav.yeshtery.YeshteryConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
@@ -78,10 +74,17 @@ public class YeshteryOrdersController {
 			//@ApiResponse(responseCode = " 406" ,description = "Invalid data"),
 	})
 	@GetMapping(value = "list")
-	public List<DetailedOrderRepObject> getOrdersList(
+	public OrdersListResponse getOrdersList(
 											@RequestHeader(name = "User-Token", required = false) String userToken,
 											OrderSearchParam params) throws BusinessException {
 		return  orderService.getYeshteryOrdersList(params);
+	}
+
+	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)
+	public OrdersFiltersResponse getOrdersFilters(
+										@RequestHeader(name = "User-Token", required = false) String userToken,
+										OrderSearchParam orderSearchParam) throws BusinessException {
+		return orderService.getOrdersAvailableFilters(orderSearchParam);
 	}
 
 	@GetMapping(value = "track_info", produces = TEXT_PLAIN_VALUE)

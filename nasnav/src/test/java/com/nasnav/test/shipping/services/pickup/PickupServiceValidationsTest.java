@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -85,7 +86,7 @@ public class PickupServiceValidationsTest {
 
 	
 	private List<CartCheckoutData> getCheckoutDataFromCurrentCart() {
-		return orderService.createCheckoutData(cartService.getCart(null));
+		return orderService.createCheckoutData(cartService.getCart(null, emptySet(), false));
 	}
 
 

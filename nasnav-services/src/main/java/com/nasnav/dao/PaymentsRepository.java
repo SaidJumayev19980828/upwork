@@ -20,4 +20,6 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
     List<PaymentEntity> findBySessionId(String sessionId);
 
     List<PaymentEntity> findByMetaOrderIdIn(List<Long> metaOrderIds);
+
+    Optional<PaymentEntity> findByObjectContainingAndOperator(String ref, String operator);
 }

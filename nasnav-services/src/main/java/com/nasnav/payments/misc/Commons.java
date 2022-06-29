@@ -105,9 +105,42 @@ public class Commons {
 		return null;
 	}
 
+	public void finalizePaymentOnly(PaymentEntity payment, boolean yeshteryMetaOrder) {
+		MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		Set<OrdersEntity> orders = getSubOrders(payment, metaOrder, yeshteryMetaOrder);
+
+		paymentsRepository.saveAndFlush(payment);
+
+		linkPaymentToOrders(payment, orders);
+	}
+
 	public void finalizePayment(PaymentEntity payment, boolean yeshteryMetaOrder) {
 		MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		Set<OrdersEntity> orders = getSubOrders(payment, metaOrder, yeshteryMetaOrder);
+
+		paymentsRepository.saveAndFlush(payment);
+
+		linkPaymentToOrders(payment, orders);
+
+		ordersRepository.flush();
+		if (yeshteryMetaOrder) {
+			orderService.finalizeYeshteryMetaOrder(metaOrder, orders);
+		} else {
+			orderService.finalizeOrder(metaOrder.getId());
+		}
+	}
+
+	private void linkPaymentToOrders(PaymentEntity payment, Set<OrdersEntity> orders) {
+		for (OrdersEntity order : orders) {
+			order.setPaymentEntity(payment);
+			orderService.setOrderAsPaid(payment, order);
+			ordersRepository.saveAndFlush(order);
+		}
+	}
+
+	private Set<OrdersEntity> getSubOrders(PaymentEntity payment, MetaOrderEntity metaOrder, boolean yeshteryMetaOrder) {
 		Set<OrdersEntity> orders = metaOrder.getSubOrders();
 		if (yeshteryMetaOrder) {
 			orders.addAll(metaOrderRepo
@@ -120,20 +153,7 @@ public class Commons {
 					.collect(toSet())
 			);
 		}
-
-		paymentsRepository.saveAndFlush(payment);
-
-		for (OrdersEntity order : orders) {
-			order.setPaymentEntity(payment);
-			orderService.setOrderAsPaid(payment, order);
-			ordersRepository.saveAndFlush(order);
-		}
-		ordersRepository.flush();
-		if (yeshteryMetaOrder) {
-			orderService.finalizeYeshteryMetaOrder(metaOrder, orders);
-		} else {
-			orderService.finalizeOrder(metaOrder.getId());
-		}
+		return orders;
 	}
 
 	public PaymentEntity getPaymentForOrderUid(String uid) {

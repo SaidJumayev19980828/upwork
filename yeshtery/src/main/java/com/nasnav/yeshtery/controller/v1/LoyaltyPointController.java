@@ -47,6 +47,11 @@ public class LoyaltyPointController {
         return loyaltyPointsService.getUserPoints(orgId);
     }
 
+    @GetMapping(value ="spendable_points")
+    public List<LoyaltyPointTransactionDTO> getUserPoints(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyPointsService.getUserSpendablePoints();
+    }
+
     @GetMapping(value ="points_per_org")
     public List<OrganizationPoints> getUserPointsPerOrg(@RequestHeader(name = "User-Token", required = false) String token){
         return loyaltyPointsService.getUserPointsPerOrg();
@@ -72,7 +77,7 @@ public class LoyaltyPointController {
     @PostMapping(value = "config/update")
     public LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(@RequestHeader(name = "User-Token", required = false) String token,
                                                                 @RequestBody LoyaltyPointConfigDTO dto) {
-        return  loyaltyPointsService.updateLoyaltyPointConfig(dto);
+        return loyaltyPointsService.updateLoyaltyPointConfig(dto);
     }
 
     @DeleteMapping("config/delete")
@@ -84,6 +89,11 @@ public class LoyaltyPointController {
     @GetMapping(value = "config/list", produces = APPLICATION_JSON_VALUE)
     public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token) {
         return loyaltyPointsService.listLoyaltyPointConfigs();
+    }
+
+    @GetMapping(value = "config", produces = APPLICATION_JSON_VALUE)
+    public LoyaltyPointConfigDTO getLoyaltyPointConfig(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyPointsService.getLoyaltyPointActiveConfig();
     }
 
 

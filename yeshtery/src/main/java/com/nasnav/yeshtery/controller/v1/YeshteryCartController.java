@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -29,29 +30,33 @@ public class YeshteryCartController {
 
     @GetMapping(produces= APPLICATION_JSON_VALUE)
     public Cart getYeshteryCart(@RequestHeader(name = "User-Token", required = false) String token,
-                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.getCart(promoCode);
+                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+                                @RequestParam(required = false) Set<Long> points) {
+        return cartService.getCart(promoCode, points, true);
     }
 
     @PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestBody CartItem item,
-                            @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.addCartItem(item, promoCode);
+                            @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+                            @RequestParam(required = false) Set<Long> points) {
+        return cartService.addCartItem(item, promoCode, points, true);
     }
 
     @PostMapping(value = "/items", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
     public Cart addCartItems(@RequestHeader(name = "User-Token", required = false) String userToken,
                              @RequestBody List<CartItem> items,
-                             @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.addYeshteryCartItems(items, promoCode);
+                             @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+                             @RequestParam(required = false) Set<Long> points) {
+        return cartService.addYeshteryCartItems(items, promoCode, points, true);
     }
 
     @DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
     public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
                                @RequestParam("item_id") Long itemId,
-                               @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode) {
-        return cartService.deleteYeshteryCartItem(itemId, promoCode);
+                               @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+                               @RequestParam(required = false) Set<Long> points) {
+        return cartService.deleteYeshteryCartItem(itemId, promoCode, points, true);
     }
 
     @PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
@@ -63,6 +68,6 @@ public class YeshteryCartController {
     @PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                 @RequestBody CartCheckoutDTO dto) {
-        return cartOptimizationService.validateAndOptimizeCart(dto);
+        return cartOptimizationService.validateAndOptimizeCart(dto, true);
     }
 }
