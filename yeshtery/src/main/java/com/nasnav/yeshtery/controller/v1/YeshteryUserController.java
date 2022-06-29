@@ -10,6 +10,7 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.UserService;
 import com.nasnav.yeshtery.YeshteryConstants;
 import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
 import com.nasnav.yeshtery.services.interfaces.YeshteryUserService;
@@ -43,6 +44,8 @@ public class YeshteryUserController {
 
     @Autowired
     private YeshteryUserService userService;
+    @Autowired
+    private UserService nasnavUserService;
     @Autowired
     private ReviewService reviewService;
     @Autowired
@@ -189,6 +192,18 @@ public class YeshteryUserController {
     public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader (name = "User-Token", required = false) String token,
                                                                     @RequestParam(value = "variant_ids") Set<Long> variantIds) {
         return reviewService.getUserProductsRatings(variantIds);
+    }
+
+    @PostMapping(value = "suspend")
+    public void suspendUserAccount(@RequestHeader (name = "User-Token", required = false) String token,
+                                   @RequestParam (value = "user_id")Long userId,
+                                   @RequestParam (defaultValue = "false") Boolean suspend,
+                                   @RequestParam (name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        if (isEmployee) {
+            employeeUserService.suspendEmployeeAccount(userId, suspend);
+        } else {
+            nasnavUserService.suspendUserAccount(userId, suspend);
+        }
     }
 
     @PostMapping("link_nasnav_users_to_yeshtery_users")

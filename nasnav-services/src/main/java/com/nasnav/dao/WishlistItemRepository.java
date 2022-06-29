@@ -71,4 +71,7 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 	void moveToCart(@Param("id")Long id, @Param("qty") Integer qty, @Param("userId") Long userId);
 
 	boolean existsByIdAndUser_Id(Long itemId, Long id);
+
+	@Query(value = "SELECT item.stock.id FROM WishlistItemEntity item WHERE item.user.id = :userId")
+	List<Long> getAllWishlistStocks(@Param("userId") Long userId);
 }

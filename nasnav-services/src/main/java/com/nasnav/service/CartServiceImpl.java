@@ -56,6 +56,7 @@ public class CartServiceImpl implements CartService{
     private final PromotionsService promoService;
     private final OrganizationRepository organizationRepo;
     private final CartItemRepository cartItemRepo;
+    private final WishlistItemRepository wishlistRepo;
     private final PromotionRepository promotionRepo;
     private final ProductService productService;
     private final StockRepository stockRepository;
@@ -670,11 +671,33 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public void moveCartItemsToWishlist(List<CartItemEntity> movedItems) {
-        Set<Long> movedItemsIds = movedItems.stream().map(CartItemEntity::getId).collect(toSet());
-        movedItems.forEach(cartServiceHelper::addOutOfStockFlag);
-        cartItemRepo.saveAll(movedItems);
-        cartItemRepo.moveCartItemsToWishlistItems(movedItemsIds);
+    @Transactional(rollbackFor = Throwable.class)
+    public void moveCartItemsToWishlist(List<CartItemEntity> allMovedItems) {
+        Set<Long> itemsToWishlist = getItemsToWishlist(allMovedItems);
+        Set<Long> itemsToRemove = getItemsToRemoveFromCart(allMovedItems, itemsToWishlist);
+
+        allMovedItems.forEach(cartServiceHelper::addOutOfStockFlag);
+        cartItemRepo.saveAll(allMovedItems);
+        cartItemRepo.moveCartItemsToWishlistItems(itemsToWishlist);
+        cartItemRepo.deleteByCartItemId(itemsToRemove);
     }
 
+    private Set<Long> getItemsToWishlist(List<CartItemEntity> movedItems) {
+        Long currentUserId = securityService.getCurrentUser().getId();
+        List<Long> wishlistStocks = wishlistRepo.getAllWishlistStocks(currentUserId);
+
+        return movedItems
+                    .stream()
+                    .filter(cartItem -> ! wishlistStocks.contains(cartItem.getStock().getId()))
+                    .map(CartItemEntity::getId)
+                    .collect(toSet());
+    }
+
+    private Set<Long> getItemsToRemoveFromCart(List<CartItemEntity> allMovedItems, Set<Long> itemsToWishlist) {
+        return allMovedItems
+                    .stream()
+                    .filter(cartItem -> ! itemsToWishlist.contains(cartItem))
+                    .map(CartItemEntity::getId)
+                    .collect(toSet());
+    }
 }
