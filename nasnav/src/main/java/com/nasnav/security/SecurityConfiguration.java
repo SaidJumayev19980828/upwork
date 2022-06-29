@@ -157,6 +157,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/pickup/**"											, setOf(CUSTOMER)),
 						patternOf( "/wishlist/**"											, setOf(CUSTOMER)),
 						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
+						patternOf( "/videochat/**"),
 						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/list"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

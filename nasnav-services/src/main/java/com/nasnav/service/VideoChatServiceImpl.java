@@ -3,8 +3,8 @@ package com.nasnav.service;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.VideoChatLogRepository;
-import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.enumerations.YeshteryState;
@@ -162,10 +162,10 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     @Override
-    public List<BaseRepresentationObject> getOrgSessions(Long orgId) {
+    public List<VideoChatLogRepresentationObject> getOrgSessions(Long orgId) {
         return videoChatLogRepository.findByStatusAndOrganization_Id(VideoChatStatus.NEW.getValue(), orgId)
                 .stream()
-                .map(VideoChatLogEntity::getRepresentation)
+                .map(e ->(VideoChatLogRepresentationObject) e.getRepresentation())
                 .collect(Collectors.toList());
     }
 

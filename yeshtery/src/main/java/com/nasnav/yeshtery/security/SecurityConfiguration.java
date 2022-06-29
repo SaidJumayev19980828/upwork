@@ -156,6 +156,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
             , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER))
 			, patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST   , setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/videochat/**"),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/points/list"				, GET	, setOf(CUSTOMER)),
