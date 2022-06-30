@@ -14,8 +14,6 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-@AllArgsConstructor
-@NoArgsConstructor
 public class YeshteryUserApiResponse extends UserApiResponse {
 
     public YeshteryUserApiResponse(Long entityId, String token, List<String> roles, Long organizationId, Long storeId,
