@@ -70,7 +70,8 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
 
     private void initiateCountQuery(){
         CriteriaQuery<Long> countQuery = entityManager.getCriteriaBuilder().createQuery(Long.class);
-        countQuery.select(  builder.count( countQuery.from(theClass) ) ).where(predicates);
+        Root<T> root = countQuery.from(theClass);
+        countQuery.select(  builder.count( root ) ).where(predicates);
         resultCount =  entityManager.createQuery(countQuery).getSingleResult();
     }
 
