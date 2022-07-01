@@ -24,6 +24,8 @@ public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBui
     @Autowired
     private SecurityService securityService;
 
+    private Root<PromotionsEntity> root;
+
     @Autowired
     public PromotionsListCriteriaQueryBuilder(EntityManager entityManager) {
         super(entityManager, PromotionsEntity.class);
@@ -67,6 +69,13 @@ public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBui
     @Override
     void setOrderBy() {
         orderBy = "id";
+    }
+
+    @Override
+    void setQueryConditionAndOrderBy() {
+        query
+                .where(predicates)
+                .orderBy(builder.desc(root.get(orderBy)));
     }
 
     @Override

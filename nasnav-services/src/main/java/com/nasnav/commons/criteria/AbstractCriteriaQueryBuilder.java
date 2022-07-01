@@ -18,7 +18,6 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
     EntityManager entityManager;
     CriteriaBuilder builder;
     CriteriaQuery<T> query;
-    Root<T> root;
     BaseSearchParams searchParams;
     String orderBy;
     Predicate [] predicates;
@@ -53,19 +52,11 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
     }
 
     private void setCriteriaBuilder(){
-        if(isNull(builder))
-            builder = entityManager.getCriteriaBuilder();
+        builder = entityManager.getCriteriaBuilder();
     }
 
-        private void setCriteriaQuery(){
-        if(isNull(query))
-            query = builder.createQuery(theClass);
-    }
-
-    private void setQueryConditionAndOrderBy() {
-        query
-            .where(predicates)
-            .orderBy(builder.desc(root.get(orderBy)));
+    private void setCriteriaQuery(){
+        query = builder.createQuery(theClass);
     }
 
     private void initiateCountQuery(){
@@ -77,7 +68,6 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
 
     private void resetResources(){
         builder = null;
-        root = null;
         query = null;
         predicates = new Predicate[50];
     }
@@ -86,4 +76,5 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
     abstract void setPredicates();
     abstract void setOrderBy();
     abstract void initiateListQuery();
+    abstract void setQueryConditionAndOrderBy();
 }

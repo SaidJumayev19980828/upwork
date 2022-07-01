@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -20,6 +21,9 @@ import static javax.persistence.criteria.JoinType.LEFT;
 
 @Component("ordersQueryBuilder")
 public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder {
+
+
+    private Root<OrdersEntity> root;
 
     @Autowired
     public OrdersListCriteriaQueryBuilder(EntityManager entityManager) {
@@ -97,6 +101,13 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
     }
 
     @Override
+    void setQueryConditionAndOrderBy() {
+        query
+                .where(predicates)
+                .orderBy(builder.desc(root.get(orderBy)));
+    }
+
+    @Override
     void initiateListQuery() {
         OrderSearchParam params = (OrderSearchParam) searchParams;
         Boolean useCount = ofNullable(params.getUseCount())
@@ -109,7 +120,6 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
                                     .getResultList();
         }else{
             this.resultList = entityManager.createQuery(query)
-                                    .setFirstResult(params.getStart())
                                     .getResultList();
         }
     }
