@@ -891,6 +891,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException {
+		params.setUseCount(true);
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
 
