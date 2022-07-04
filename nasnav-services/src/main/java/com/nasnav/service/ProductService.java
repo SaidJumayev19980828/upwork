@@ -885,6 +885,7 @@ public class ProductService {
 					.or(product.description.lower().like( "% " + params.getName().toLowerCase()))
 					.or(variant.productCode.like("%" + params.name + "%") )
 					.or(variant.sku.like("%" + params.name + "%") )
+					.or(variant.barcode.like("%" + params.name + "%") )
 					.or(product.id.in(productsCustomRepo.getProductTagsByNameQuery(params)))
 			);
 
@@ -2730,6 +2731,7 @@ public class ProductService {
 		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
 		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
 		productRep.setHas_360_view(product.getSearch360());
+		productRep.setPriority(product.getPriority());
 	}
 
 

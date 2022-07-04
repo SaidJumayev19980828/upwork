@@ -15,41 +15,6 @@ import java.util.ArrayList;
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class RetrieveTransactionResponse {
-    @lombok.Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public class BillingData{
-        public String city;
-        public String email;
-        public String building;
-        public String street;
-        public String country;
-        public String state;
-        public String apartment;
-        public String floor;
-        public String last_name;
-        public String phone_number;
-        public String extra_description;
-        public String postal_code;
-        public String first_name;
-    }
-
-
-    @lombok.Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public class Merchant{
-        public int id;
-        public Object created_at;
-        public Object phones;
-        public Object company_emails;
-        public String company_name;
-        public String state;
-        public String country;
-        public String city;
-        public String postal_code;
-        public String street;
-    }
 
     @lombok.Data
     @NoArgsConstructor
@@ -139,29 +104,6 @@ public class RetrieveTransactionResponse {
         public Object parent_transaction;
         public String unique_ref;
 
-
-    @lombok.Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public class ShippingData{
-        public int id;
-        public String first_name;
-        public String last_name;
-        public String street;
-        public String building;
-        public String floor;
-        public String apartment;
-        public String city;
-        public String state;
-        public String country;
-        public String email;
-        public String phone_number;
-        public String postal_code;
-        public String extra_description;
-        public String shipping_method;
-        public int order_id;
-        public int order;
-    }
 
     @lombok.Data
     @NoArgsConstructor

@@ -41,6 +41,7 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long organizationId;
     private List<ProductImageDTO> images;
     private Double rating;
+    private Integer priority;
 
     public ProductRepresentationObject() {
         images = new ArrayList<>();

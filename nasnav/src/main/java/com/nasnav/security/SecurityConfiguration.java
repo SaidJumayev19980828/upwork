@@ -36,8 +36,8 @@ import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.PUT;
+import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpMethod.GET;
 
 @Configuration
 @EnableWebSecurity
@@ -128,6 +128,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/promotions/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/promotion/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/themes/class"							, setOf(NASNAV_ADMIN)),
+						patternOf( "/process/**"											, setOf(NASNAV_ADMIN)),
 						patternOf( "/organization/themes"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/extra_attribute"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/extra_attribute"		,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -156,6 +157,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/pickup/**"											, setOf(CUSTOMER)),
 						patternOf( "/wishlist/**"											, setOf(CUSTOMER)),
 						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
+						patternOf( "/videochat/**"                   , POST    			, getAllRoles()),
+						patternOf( "/videochat/**"                   , GET    				, getNonCustomersRoles()),
 						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/list"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

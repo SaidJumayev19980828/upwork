@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
@@ -8,7 +9,6 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
-import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
@@ -34,13 +34,17 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -49,6 +53,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -66,8 +71,6 @@ import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
-import static com.nasnav.enumerations.SortingWay.ASC;
-import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -79,7 +82,6 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
-import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -100,10 +102,9 @@ public class OrderServiceImpl implements OrderService {
 	private final Logger logger = LogManager.getLogger();
 	private OrdersFiltersHelper ordersFiltersHelper;
 
-	@PersistenceContext
+	@Qualifier("ordersQueryBuilder")
 	@Autowired
-	private EntityManager em;
-
+	private AbstractCriteriaQueryBuilder<OrdersEntity> criteriaQueryBuilder;
 	@Autowired
 	private SecurityService securityService;
 	@Autowired
@@ -892,17 +893,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException {
+		params.setUseCount(true);
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
-		Root<OrdersEntity> root = getOrdersQueryRoot(query);
-		Predicate[] predicatesArr = getOrderQueryPredicates(finalParams, builder, root);
 
-		query
-			.where(predicatesArr)
-			.orderBy(getQueryOrderBy(finalParams, builder, root));
-		List<OrdersEntity> ordersEntityList = initiateQuery(query, finalParams);
+		List<OrdersEntity> ordersEntityList = criteriaQueryBuilder.getResultList(finalParams);
+		Long ordersCount = criteriaQueryBuilder.getResultCount();
 
 		Set<OrdersEntity> orders = new HashSet<>();
 
@@ -920,41 +916,12 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId()), paymentOperator))
 				.collect(toList());
-		Long ordersCount = getOrderListCount(builder, predicatesArr);
+
 
 		if(detailsLevel >= 2 && finalParams.getOrders_sorting_option().equals(QUANTITY))
 			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
 
 		return new OrdersListResponse(ordersCount, detailedOrders);
-	}
-
-	private List<OrdersEntity> initiateQuery(CriteriaQuery<OrdersEntity> query, OrderSearchParam params) {
-		Boolean useCount = ofNullable(params.getUseCount())
-								.orElse(true);
-		if(useCount){
-			return em.createQuery(query)
-					.setFirstResult(params.getStart())
-					.setMaxResults(params.getCount())
-					.getResultList();
-		}else{
-			return em.createQuery(query)
-					.setFirstResult(params.getStart())
-					.getResultList();
-		}
-	}
-
-	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {
-		sortingWay = ofNullable(sortingWay).orElse(DESC);
-
-		if(sortingWay.equals(DESC)){
-			return detailedOrders.stream()
-					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity).reversed())
-					.collect(toList());
-		}else {
-			return detailedOrders.stream()
-					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity))
-					.collect(toList());
-		}
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
@@ -967,12 +934,6 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
 				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator, (p1, p2) -> p1));
-	}
-
-	private Long getOrderListCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
-		CriteriaQuery<Long> countQuery = em.getCriteriaBuilder().createQuery(Long.class);
-		countQuery.select(  builder.count( countQuery.from(OrdersEntity.class) ) ).where(predicatesArr);
-		return em.createQuery(countQuery).getSingleResult();
 	}
 
 	private Map<Long, String> getCustomerPhones(Set<OrdersEntity> orders) {
@@ -1079,88 +1040,6 @@ public class OrderServiceImpl implements OrderService {
 				})
 				.map(OrderStatus::getValue)
 				.collect(toList());
-	}
-
-	private Root<OrdersEntity> getOrdersQueryRoot(CriteriaQuery<?> query){
-		Root<OrdersEntity> root = query.from(OrdersEntity.class);
-		root.fetch("metaOrder", LEFT);
-		root.fetch("shipment", LEFT);
-		root.fetch("addressEntity", LEFT)
-				.fetch("areasEntity", LEFT)
-				.fetch("citiesEntity", LEFT)
-				.fetch("countriesEntity", LEFT);
-		root.fetch("basketsEntity", LEFT)
-				.fetch("stocksEntity", LEFT)
-				.fetch("productVariantsEntity", LEFT)
-				.fetch("productEntity", LEFT);
-		root.fetch("organizationEntity", LEFT);
-		root.fetch("paymentEntity", LEFT);
-		return root;
-	}
-
-	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
-		List<Predicate> predicates = new ArrayList<>();
-		predicates.add( builder.notEqual(root.get("status"), DISCARDED.getValue()) );
-		if(params.getUser_id() != null)
-			predicates.add( builder.equal(root.get("userId"), params.getUser_id()) );
-		if(params.getOrg_id() != null) {
-			predicates.add(root.get("organizationEntity").get("id").in(params.getOrg_id()));
-		}
-		if(params.getShop_id() != null) {
-			predicates.add(root.get("shopsEntity").get("id").in(params.getShop_id()));
-		}
-		if(notNullNorEmpty(params.getStatus_ids())) {
-			predicates.add(root.get("status").in(params.getStatus_ids()));
-		}
-		if(params.getUpdated_after() != null) {
-			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
-		}
-		if(params.getUpdated_before() != null) {
-			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
-		}
-		if(params.getCreated_after() != null) {
-			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("creationDate"), builder.literal(readDate(params.getCreated_after())) ) );
-		}
-		if(params.getCreated_before() != null) {
-			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("creationDate"), builder.literal(readDate(params.getCreated_before()))) );
-		}
-		if(params.getShipping_service_id() != null){
-			predicates.add( builder.equal(root.get("shipment").get("shippingServiceId"), params.getShipping_service_id()) );
-		}
-		if(params.getPayment_operator() != null){
-			predicates.add( builder.equal(root.get("paymentEntity").get("operator"), params.getPayment_operator()) );
-		}
-		if(params.getMin_total() != null) {
-			predicates.add(builder.ge(root.get("total"), params.getMin_total()));
-		}
-		if(params.getMax_total() != null) {
-			predicates.add(builder.le(root.get("total"), params.getMax_total()));
-		}
-
-		return predicates.stream().toArray( Predicate[]::new) ;
-	}
-
-	private javax.persistence.criteria.Order getQueryOrderBy(OrderSearchParam finalParams, CriteriaBuilder builder, Root<?> root){
-		OrderSortOptions sortOption = finalParams.getOrders_sorting_option();
-		Path<Object> path = getPath(root, sortOption);
-		SortingWay sortingWay = finalParams.getSorting_way();
-
-		if (sortingWay.equals(ASC))
-			return builder.asc(path);
-		else
-			return builder.desc(path);
-	}
-
-	private Path<Object> getPath(Root<?> root, OrderSortOptions sortingOption){
-		if(sortingOption.equals(QUANTITY)){
-			return root.get("updateDate");
-		}else{
-			return root.get(sortingOption.getValue());
-		}
-	}
-
-	private LocalDateTime readDate(String dateStr) {
-		return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss"));
 	}
 
 	//TODO the external stock check must be included in the checkout logic

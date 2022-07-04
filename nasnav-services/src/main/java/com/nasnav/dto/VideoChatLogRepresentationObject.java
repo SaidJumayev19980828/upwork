@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -21,4 +23,5 @@ public class VideoChatLogRepresentationObject  extends BaseRepresentationObject 
     private  String organizationName;
     private VideoChatStatus status;
     private Boolean isActive;
+    private LocalDateTime createdAt;
 }

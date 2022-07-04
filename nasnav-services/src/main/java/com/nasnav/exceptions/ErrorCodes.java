@@ -386,6 +386,10 @@ public enum ErrorCodes {
 	,VIDEO$PARAM$0004("Invalid Session!")
 	,VIDEO$PARAM$0005("Couldn't establish new connection, %s")
 
+	,PAYMENT$CALLBACK$001("No payment entity found with transaction reference [%s]!")
+	,PAYMENT$CALLBACK$002("Untrusted source!")
+
+	,PROCESS$CANCEL$0001("Process not cancelable")
 	;
 
 	@Getter
