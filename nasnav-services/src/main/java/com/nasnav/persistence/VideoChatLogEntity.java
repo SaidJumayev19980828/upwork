@@ -69,6 +69,7 @@ public class VideoChatLogEntity implements BaseEntity {
         obj.setUserName(user.getName());
         obj.setIsActive(isActive);
         obj.setDescription(description);
+        obj.setCreatedAt(getCreatedAt());
 
         VideoChatStatus
                 .getVideoChatState(status)

@@ -84,6 +84,9 @@ public class CartTest {
 	private BasketRepository basketRepo;
 
 	@Autowired
+	private WishlistItemRepository wishlistRepo;
+
+	@Autowired
 	private ObjectMapper objectMapper;
 	
 	@Test
@@ -1037,6 +1040,29 @@ public class CartTest {
         		template.exchange("/cart/optimize", POST, request, Cart.class);
 
         assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Optimize_Test_Data_5.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartOutOfStockExistInWishlistTest() {
+		JSONObject requestJson =
+				new JSONObject()
+					.put("customer_address", 12300001)
+					.put("shipping_service_id", "BOSTA_LEVIS");
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		Long wishlistCount = wishlistRepo.count();
+		Long cartItemsCount = cartItemRepo.countByUser_Id(88L);
+		wishlistRepo.findCurrentCartItemsByUser_Id(88L);
+
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+		assertEquals(1, wishlistCount.longValue());
+		assertEquals(0, cartItemsCount.longValue());
 	}
 
 	@Test
