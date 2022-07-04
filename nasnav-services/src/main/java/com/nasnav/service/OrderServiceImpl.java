@@ -71,6 +71,7 @@ import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
+import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -922,6 +923,20 @@ public class OrderServiceImpl implements OrderService {
 			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
 
 		return new OrdersListResponse(ordersCount, detailedOrders);
+	}
+
+	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {
+		sortingWay = ofNullable(sortingWay).orElse(DESC);
+
+		if(sortingWay.equals(DESC)){
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity).reversed())
+					.collect(toList());
+		}else {
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity))
+					.collect(toList());
+		}
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
