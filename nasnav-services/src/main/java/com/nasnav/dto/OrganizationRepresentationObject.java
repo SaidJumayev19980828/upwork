@@ -89,6 +89,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private YeshteryState yeshteryState;
     private String domain;
     private Integer priority;
-    private VideoChatOrgState enableVideoChat;
+    private boolean enableVideoChat;
 }
 

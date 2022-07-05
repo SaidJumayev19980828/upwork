@@ -139,9 +139,7 @@ public class OrganizationEntity implements BaseEntity {
                 .getYeshteryState(yeshteryState)
                 .ifPresent(obj::setYeshteryState);
 
-        VideoChatOrgState
-                .getVideoChatState(enableVideoChat)
-                .ifPresent(obj::setEnableVideoChat);
+        obj.setEnableVideoChat(enableVideoChat.equals(1));
 
         if(getCountry() != null) {
             obj.setCurrency(getCountry().getCurrency());
