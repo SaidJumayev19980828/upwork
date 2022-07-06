@@ -2,9 +2,6 @@ package com.nasnav.payments.paymob;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.PaymobSourceRepository;
 import com.nasnav.enumerations.PaymentStatus;
@@ -110,7 +107,11 @@ public class PaymobService {
             } else {
                 throw new BusinessException(response.getEntity().getContent().toString(), "PAYMENT_FAILED", NOT_ACCEPTABLE);
             }
-        } catch (Exception ex) {
+        } catch (JsonProcessingException ex) {
+            classLogger.error(ex);
+            throw new BusinessException("Couldn't parse payment response, " + ex.getMessage(), "PAYMENT_FAILED", NOT_ACCEPTABLE);
+        }
+        catch (IOException ex) {
             classLogger.error(ex);
             throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", NOT_ACCEPTABLE);
         }
