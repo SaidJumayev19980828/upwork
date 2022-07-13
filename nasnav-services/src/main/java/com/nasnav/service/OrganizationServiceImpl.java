@@ -395,6 +395,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (organization.getPriority() == null) {
             organization.setPriority(0);
         }
+        if (json.getMatomoId() != null) {
+            organization.setMatomoId(json.getMatomoId());
+        }
+        if (json.getPixelId() != null) {
+            organization.setPixelId(json.getPixelId());
+        }
     }
 
     private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {
