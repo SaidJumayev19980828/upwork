@@ -592,7 +592,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         BigDecimal totalPrice = ZERO;
         for(CartItem item : items) {
             BigDecimal price = item.getPrice();
-            BigDecimal discount = item.getDiscount();
+            BigDecimal discount = ofNullable(item.getDiscount()).orElse(ZERO);
             BigDecimal quantity = new BigDecimal(item.getQuantity());
             BigDecimal total = (price.subtract(discount)).multiply(quantity);
             if (orgWithTotalPriceMap.containsKey(item.getOrgId())) {
