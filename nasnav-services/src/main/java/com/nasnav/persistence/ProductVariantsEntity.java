@@ -74,7 +74,7 @@ public class ProductVariantsEntity {
     private Set<StocksEntity> stocks;
 
 
-    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade=CascadeType.ALL)
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -99,6 +99,11 @@ public class ProductVariantsEntity {
         extraAttr.setValue(extraAttribute.getValue());
         extraAttr.setVariant(this);
         extraAttributes.add(extraAttr);
+    }
+
+    public void addExtraAttribute(Set<ProductExtraAttributesEntity> extraAttributes) {
+        this.extraAttributes.clear();
+        this.extraAttributes.addAll(extraAttributes);
     }
 
     public void addFeatureValues(Set<VariantFeatureValueEntity> featureValues) {

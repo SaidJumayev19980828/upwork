@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
@@ -126,9 +127,58 @@ public class ProductVariantApiTest {
 		
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
-	
-	
+
+	@Test
+	public void addExtraAttributeForProductVariant(){
+		BaseUserEntity user = empRepo.getById(69L);
+
+		JSONObject json = getUpdateExtraAttributeRequestBody(1008L, 310008L);
+
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		ResponseEntity<String> response = template.exchange("/product/variant"
+				, HttpMethod.POST
+				, request
+				, String.class
+		);
+
+		ProductVariantsEntity variantFullData = variantRepo.getVariantFullData(310008L).get();
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(3, variantFullData.getExtraAttributes().size());
+		assertEquals(2, variantFullData.getFeatureValues().size());
+	}
+
+	@Test
+	public void removeExtraAttributeForProductVariant(){
+		BaseUserEntity user = empRepo.getById(70L);
+
+		JSONObject json = getUpdateExtraAttributeRequestBody(1001L, 310001L);
+
+		json.put("extra_attr", "{}");
+		json.put("features", "{}");
+
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		ResponseEntity<String> response = template.exchange("/product/variant"
+				, HttpMethod.POST
+				, request
+				, String.class
+		);
+
+		ProductVariantsEntity variantFullData = variantRepo.getVariantFullData(310001L).get();
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(0, variantFullData.getExtraAttributes().size());
+		assertEquals(0, variantFullData.getFeatureValues().size());
+	}
+
+	private JSONObject getUpdateExtraAttributeRequestBody(Long productId, Long variantId){
+		JSONObject json = createProductVariantRequest();
+				json.put("variant_id", variantId);
+				json.put("product_id", productId);
+				json.put("operation", UPDATE.getValue());
+		return json;
+	}
+
 	@Test
 	public void productVariantCreateMissingProductTest() {
 		BaseUserEntity user = empRepo.getById(69L);

@@ -77,6 +77,17 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting product features
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99002);
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99002);
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe material', 's-material', 'Material of the shoes', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234, 'Shoe size', 's-size', 'Size of the shoes', 99002);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235, 'Shoe color', 's-color', 'Color of the shoes', 99002);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236, 'Shoe material', 's-material', 'Material of the shoes', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(237, 'Shoe size', 's-size', 'size of the shoes', 99001);
+
+
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id) VALUES (334, 'extra', 'Invisible', 99002);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id) VALUES (335, 'Model', 'Invisible', 99002);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id) VALUES (336, '$INV', 'Invisible', 99002);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id) VALUES (337, 'ex_1', 'Invisible', 99001);
+
+INSERT INTO public.products_extra_attributes (id, extra_attribute_id, value, variant_id) VALUES (434, 337, 'ex_1_value', 310001);
+
+INSERT INTO public.variant_feature_values (id, feature_id, value, variant_id) VALUES (534, 237, '41', 310001);

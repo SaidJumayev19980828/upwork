@@ -28,7 +28,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String description;
 	private String barcode;
 	private Map<String, String> features;
-	private String extraAttr;
+	private Map<String, String> extraAttr;
 	private String sku;
 	private String productCode;
 	private BigDecimal weight;
@@ -86,6 +86,14 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 		try {
 			setPropertyAsUpdated("features");
 			this.features = objectMapper.readValue(features, Map.class);
+		} catch (JsonProcessingException e){}
+	}
+
+	public void setExtraAttr(String extraAttr)  {
+		ObjectMapper objectMapper=new ObjectMapper();
+		try {
+			setPropertyAsUpdated("extraAttr");
+			this.extraAttr = objectMapper.readValue(extraAttr, Map.class);
 		} catch (JsonProcessingException e){}
 	}
 
