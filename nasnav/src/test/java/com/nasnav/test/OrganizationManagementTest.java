@@ -173,10 +173,16 @@ public class OrganizationManagementTest {
         assertEquals(406, response.getStatusCode().value());
     }
 
+    private String createOrgJson() {
+        return json()
+                .put("name", "Solad Pant")
+                .put("p_name", "solad-pant-trello")
+                .toString();
+    }
 
     @Test
     public void createOrganizationSuccessTest() {
-        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant-trello\"}";
+        String body = createOrgJson();
         HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
@@ -187,7 +193,9 @@ public class OrganizationManagementTest {
 
     @Test
     public void createOrganizationMissingValuesTest() {
-        String body = "{\"p_name\":\"solad-pant\"}";
+        String body = json()
+                .put("name", "Solad Pant")
+                .toString();
         HttpEntity<Object> json = getHttpEntity(body, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
@@ -202,7 +210,10 @@ public class OrganizationManagementTest {
 
     @Test
     public void createOrganizationInvalidValuesTest() {
-        String body = "{\"name\":\"23Solad Pant#\", \"p_name\":\"solad-pant\"}";
+        String body = json()
+                .put("name", "23Solad Pant#")
+                .put("p_name", "solad-pant")
+                .toString();
         HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
@@ -217,7 +228,7 @@ public class OrganizationManagementTest {
     //trying to create organization with organization_admin user
     @Test
     public void createOrganizationUnauthorizedUserTest() {
-        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
+        String body = createOrgJson();
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
@@ -310,6 +321,32 @@ public class OrganizationManagementTest {
         assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
         assertEquals(818, org.getCountry().getIsoCode().intValue());
+    }
+
+    @Test
+    public void updateOrgMatomoIdTest() {
+        JSONObject body = json()
+                .put("id", 99001)
+                .put("matomo_id", 123);
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        assertEquals(123, org.getMatomoId().intValue());
+    }
+
+    @Test
+    public void updateOrgFacebookPixelTest() {
+        JSONObject body = json()
+                .put("id", 99001)
+                .put("pixel_id", 123);
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        assertEquals(123, org.getPixelId().intValue());
     }
 
 

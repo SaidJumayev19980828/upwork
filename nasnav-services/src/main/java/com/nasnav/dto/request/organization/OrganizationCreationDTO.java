@@ -19,4 +19,6 @@ public class OrganizationCreationDTO {
     private YeshteryState yeshteryState;
     private Integer priority;
     private Boolean enableVideoChat;
+    private Integer matomoId;
+    private Integer pixelId;
 }
