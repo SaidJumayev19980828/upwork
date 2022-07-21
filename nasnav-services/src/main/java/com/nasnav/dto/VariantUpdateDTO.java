@@ -1,5 +1,6 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,13 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String name;	
 	private String description;
 	private String barcode;
+	@JsonProperty("features")
+	private String variantFeatures;
+	@JsonProperty("extra_attr")
+	private String variantExtraAttr;
+	@JsonIgnore
 	private Map<String, String> features;
+	@JsonIgnore
 	private Map<String, String> extraAttr;
 	private String sku;
 	private String productCode;
@@ -81,7 +88,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	}
 
 
-	public void setFeatures(String features)  {
+	public void setVariantFeatures(String features)  {
 		ObjectMapper objectMapper=new ObjectMapper();
 		try {
 			setPropertyAsUpdated("features");
@@ -89,7 +96,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 		} catch (JsonProcessingException e){}
 	}
 
-	public void setExtraAttr(String extraAttr)  {
+	public void setVariantExtraAttr(String extraAttr)  {
 		ObjectMapper objectMapper=new ObjectMapper();
 		try {
 			setPropertyAsUpdated("extraAttr");

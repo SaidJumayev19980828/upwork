@@ -955,7 +955,7 @@ public class DataImportServiceImpl implements DataImportService {
 		variant.setFeatures(features);
 
         if(extraAtrributes != null) {
-        	variant.setExtraAttr(extraAtrributes);
+        	variant.setVariantExtraAttr(extraAtrributes);
         }
         
         Optional<VariantBasicData> variantBasicData = 
