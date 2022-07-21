@@ -55,6 +55,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " where org.id = :orgId "
 			+ " AND promo.typeId in :typeIds "
 			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " AND promo.status = 1"
 			+ " order by promo.priority desc")
 	List<PromotionsEntity> findByOrganization_IdAndTypeIdIn(@Param("orgId") Long orgId,
 															@Param("typeIds") List<Integer> typeIds);
@@ -66,6 +67,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " AND promo.typeId not in :typeIds "
 			+ " AND now() between promo.dateStart and promo.dateEnd"
 			+ " AND (promo.code is null OR LOWER(promo.code) = :promoCode)"
+			+ " AND promo.status = 1"
 			+ " order by promo.priority desc")
 	List<PromotionsEntity> findByOrganization_IdAndTypeIdNotIn(@Param("orgId") Long orgId,
 															   @Param("typeIds") List<Integer> typeIds,

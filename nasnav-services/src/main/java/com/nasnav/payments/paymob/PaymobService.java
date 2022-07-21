@@ -2,9 +2,6 @@ package com.nasnav.payments.paymob;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.PaymobSourceRepository;
 import com.nasnav.enumerations.PaymentStatus;
@@ -50,9 +47,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Service
 public class PaymobService {
-    /* static final String BASE_URL = "https://accept.paymob.com/api";
-     static final String api_key = "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKSVV6VXhNaUo5LmV5SnVZVzFsSWpvaWFXNXBkR2xoYkNJc0ltTnNZWE56SWpvaVRXVnlZMmhoYm5RaUxDSndjbTltYVd4bFgzQnJJam94TkRJNU5EaDkubWFYelNWeDhvRjJoN2pEUTAyMHFSMUg1TE9OaFhJcm5LWE9wd2lKMkgybnotVXp0eWFYY0l5UF9yUV84cHJSUlZnRjlfQWVVUV8tMDdqMWJlMmZQaUE=";
- */
     private Logger classLogger = LogManager.getLogger("Payment:PAYMOB");
 
     private final String paymobOperator = "PayMob";
@@ -84,7 +78,7 @@ public class PaymobService {
             HttpResponse response = httpClient.execute(post);
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
                 String resBody = readInputStream(response.getEntity().getContent());
-                tokenResponse = new Gson().fromJson(resBody, TokenResponse.class);
+                tokenResponse = mapper.readValue(resBody, TokenResponse.class);
             }
         } catch (Exception ex) {
             throw new BusinessException("Couldn't generate payment authentication", "PAYMENT_FAILED", NOT_ACCEPTABLE);
@@ -101,21 +95,23 @@ public class PaymobService {
     public OrderResponse registerOrder(@NotNull OrderRequest order) throws BusinessException {
         OrderResponse orderResponse = null;
         try {
-            Gson gson = getGson();
-
             String orderURL = payMobAccount.getApiUrl() + "/ecommerce/orders";
             HttpPost post = new HttpPost(orderURL);
             post.setHeader("Content-Type", APPLICATION_JSON_VALUE);
-            String body = gson.toJson(order);
+            String body = mapper.writeValueAsString(order);
             post.setEntity(new StringEntity(body));
             HttpResponse response = httpClient.execute(post);
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
                 String resBody = readInputStream(response.getEntity().getContent());
-                orderResponse = gson.fromJson(resBody, OrderResponse.class);
+                orderResponse = mapper.readValue(resBody, OrderResponse.class);
             } else {
                 throw new BusinessException(response.getEntity().getContent().toString(), "PAYMENT_FAILED", NOT_ACCEPTABLE);
             }
-        } catch (Exception ex) {
+        } catch (JsonProcessingException ex) {
+            classLogger.error(ex);
+            throw new BusinessException("Couldn't parse payment response, " + ex.getMessage(), "PAYMENT_FAILED", NOT_ACCEPTABLE);
+        }
+        catch (IOException ex) {
             classLogger.error(ex);
             throw new BusinessException("Couldn't connect to payment gateway", "PAYMENT_FAILED", NOT_ACCEPTABLE);
         }
@@ -244,8 +240,6 @@ public class PaymobService {
         paymentJsonObject.put("order_id", orderResponse.getId().toString());
         JSONObject billingDataJsonObject = new JSONObject();
 
-
-        // TODO: add floor and shipping method
         billingDataJsonObject.put("email", metaOrder.getUser().getEmail());
         billingDataJsonObject.put("first_name", shippingAddress.getFirstName());
         billingDataJsonObject.put("last_name", shippingAddress.getLastName());
@@ -268,14 +262,12 @@ public class PaymobService {
             String paymentKeyUrl = payMobAccount.getApiUrl() + "/acceptance/payment_keys";
             HttpPost post = new HttpPost(paymentKeyUrl);
 
-            Gson gson = getGson();
-
             post.setEntity(new StringEntity(paymentJsonObject.toString(), ContentType.APPLICATION_JSON));
             post.setHeader("Content-Type", APPLICATION_JSON_VALUE);
             HttpResponse response = client.execute(post);
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
                 String resBody = readInputStream(response.getEntity().getContent());
-                paymentToken = gson.fromJson(resBody, TokenResponse.class);
+                paymentToken = mapper.readValue(resBody, TokenResponse.class);
 
                 createPaymentEntity(metaOrder.getId(), orderValue, paymentToken, userId, orderResponse.getId().toString(), transactionId);
             } else {
@@ -434,9 +426,8 @@ public class PaymobService {
             HttpResponse response = httpClient.execute(request);
 
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                Gson gson = getGson();
                 String resBody = readInputStream(response.getEntity().getContent());
-                RetrieveTransactionResponse status = gson.fromJson(resBody, RetrieveTransactionResponse.class);
+                RetrieveTransactionResponse status = mapper.readValue(resBody, RetrieveTransactionResponse.class);
                 checkPaymentResponse(status, payment);
 
                 paymentCommons.finalizePayment(payment, yeshteryMetaOrder);
@@ -460,11 +451,5 @@ public class PaymobService {
                 payment.setStatus(PAID);
             }
         }
-    }
-
-    private Gson getGson() {
-        return new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
     }
 }

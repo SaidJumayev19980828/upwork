@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -68,9 +69,10 @@ public class VideoChatServiceImpl implements VideoChatService {
     public VideoChatResponse getSession(String sessionName, Long orgId) {
 
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        OrganizationRepresentationObject organization = organizationService.getOrganizationById(orgId, YeshteryState.DISABLED.getValue());
+        OrganizationEntity organization = organizationRepository.findById(orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
 
-        if (VideoChatOrgState.DISABLED == organization.getEnableVideoChat()) {
+        if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
         }
         if (loggedInUser instanceof UserEntity) {

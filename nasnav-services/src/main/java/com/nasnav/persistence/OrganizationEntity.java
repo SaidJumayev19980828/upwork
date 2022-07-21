@@ -58,6 +58,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "matomo")
     private Integer matomoId;
 
+    @Column(name = "facebook_pixel")
+    private Integer pixelId;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code")
     @JsonIgnore
@@ -134,14 +137,13 @@ public class OrganizationEntity implements BaseEntity {
         obj.setEcommerce((getEcommerce()));
         obj.setGoogleToken(getGoogleToken());
         obj.setMatomoSiteId(getMatomoId());
+        obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());
         YeshteryState
                 .getYeshteryState(yeshteryState)
                 .ifPresent(obj::setYeshteryState);
 
-        VideoChatOrgState
-                .getVideoChatState(enableVideoChat)
-                .ifPresent(obj::setEnableVideoChat);
+        obj.setEnableVideoChat(enableVideoChat.equals(1));
 
         if(getCountry() != null) {
             obj.setCurrency(getCountry().getCurrency());
