@@ -87,7 +87,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Map<String,String> settings;
     private Integer matomoSiteId;
     private Integer pixelSiteId;
-    private YeshteryState yeshteryState;
+    private Boolean yeshteryState;
     private String domain;
     private Integer priority;
     private boolean enableVideoChat;
