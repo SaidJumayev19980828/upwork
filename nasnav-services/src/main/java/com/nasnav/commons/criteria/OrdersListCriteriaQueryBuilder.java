@@ -107,10 +107,9 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
 
     @Override
     void setQueryConditionAndOrderBy() {
-        if(orderBy == null){
-            query.where(predicates);
-        }else {
-            query.where(predicates).orderBy(getSortingWay());
+        query.where(predicates);
+        if(orderBy != null){
+            query.orderBy(getSortingWay());
         }
     }
 
