@@ -102,14 +102,16 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
                             .orElse("updateDate");
 
         if(orderBy.equalsIgnoreCase("quantity"))
-            orderBy = "updateDate";
+            orderBy = null;
     }
 
     @Override
     void setQueryConditionAndOrderBy() {
-        query
-                .where(predicates)
-                .orderBy(getSortingWay());
+        if(orderBy == null){
+            query.where(predicates);
+        }else {
+            query.where(predicates).orderBy(getSortingWay());
+        }
     }
 
     private Order getSortingWay(){

@@ -533,7 +533,7 @@ public class YeshteryOrdersControllerTest {
         List<DetailedOrderRepObject> orders = response.getBody().getOrders();
 
         Assert.assertEquals(330002L, orders.get(0).getOrderId());
-        Assert.assertEquals(330003L, orders.get(1).getOrderId());
+        Assert.assertEquals(330005L, orders.get(orders.size() - 1).getOrderId());
     }
 
     @Test
