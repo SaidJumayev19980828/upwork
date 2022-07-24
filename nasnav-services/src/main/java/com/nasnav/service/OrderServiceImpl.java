@@ -63,12 +63,15 @@ import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
+import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
+import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -916,7 +919,24 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 
 
+		if(detailsLevel >= 2 && finalParams.getOrders_sorting_option().equals(QUANTITY))
+			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
+
 		return new OrdersListResponse(ordersCount, detailedOrders);
+	}
+
+	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {
+		sortingWay = ofNullable(sortingWay).orElse(DESC);
+
+		if(sortingWay.equals(DESC)){
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity).reversed())
+					.collect(toList());
+		}else {
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity))
+					.collect(toList());
+		}
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
@@ -974,12 +994,25 @@ public class OrderServiceImpl implements OrderService {
 		Integer detailsLevel = ofNullable(params.getDetails_level()).orElse(0);
 		BaseUserEntity user = securityService.getCurrentUser();
 
+		setDefaultSortingParamsIfNull(params);
 		params.setDetails_level( detailsLevel);
 		setListOfStatus(params);
 		setOrderSearchStartAndCount(params);
 		limitSearchParamByUserRole(params, user);
 
 		return params;
+	}
+
+	private void setDefaultSortingParamsIfNull(OrderSearchParam params){
+		OrderSortOptions sortOption =
+				ofNullable(params.getOrders_sorting_option())
+						.orElse(CREATION_DATE);
+		SortingWay sortingWay =
+				ofNullable(params.getSorting_way())
+						.orElse(DESC);
+
+		params.setOrders_sorting_option(sortOption);
+		params.setSorting_way(sortingWay);
 	}
 
 	private void setListOfStatus(OrderSearchParam params) {
