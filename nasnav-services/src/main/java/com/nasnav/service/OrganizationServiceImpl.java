@@ -330,10 +330,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     public OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException {
         OrganizationEntity organization;
         if (json.getId() != null) {
-            organization = orgRepo.findOneById(json.getId());
-            if (organization == null)
-                throw new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.getId()),
-                        "INVALID_PARAM: id", NOT_ACCEPTABLE);
+            organization = orgRepo.findById(json.getId())
+                    .orElseThrow(() ->  new BusinessException(format("Provided id (%d) doesn't match any existing org!", json.getId()),
+                        "INVALID_PARAM: id", NOT_ACCEPTABLE));
             if (json.getName() != null) {
                 validateOrganizationName(json);
                 organization.setName(json.getName());
@@ -365,6 +364,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization = new OrganizationEntity();
         organization.setName(json.getName());
         organization.setPname(json.getPname());
+        organization.setEnableVideoChat(0);
+        organization.setYeshteryState(0);
+        organization.setPriority(0);
         return organization;
     }
 
@@ -384,16 +386,13 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setCountry(country);
         }
         if(nonNull(json.getYeshteryState())){
-            organization.setYeshteryState(json.getYeshteryState().getValue());
+            organization.setYeshteryState(json.getYeshteryState() ? 1 : 0);
         }
         if (json.getEnableVideoChat() != null) {
             organization.setEnableVideoChat(json.getEnableVideoChat() ? 1 : 0);
         }
         if (json.getPriority() != null && json.getPriority() >= 0) {
             organization.setPriority(json.getPriority());
-        }
-        if (organization.getPriority() == null) {
-            organization.setPriority(0);
         }
         if (json.getMatomoId() != null) {
             organization.setMatomoId(json.getMatomoId());
