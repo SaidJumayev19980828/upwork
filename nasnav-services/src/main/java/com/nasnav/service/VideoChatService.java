@@ -11,5 +11,5 @@ public interface VideoChatService {
 
     List<VideoChatLogRepresentationObject> getOrgSessions(Long orgId);
 
-    void leaveSession(String sessionName, Long orgId);
+    void leaveSession(String sessionName, Long orgId, Boolean endCall);
 }

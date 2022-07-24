@@ -92,6 +92,7 @@ public class VideoChatServiceImpl implements VideoChatService {
     private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String sessionName, Long orgId) {
         VideoChatLogEntity videChatLogObj = getVideoChatLogEntity(sessionName, orgId);
         videChatLogObj.setAssignedTo(loggedInUser);
+        videChatLogObj.addDescription(loggedInUser.getName() + " has joined the session");
         videoChatLogRepository.save(videChatLogObj);
 
         String token = createConnection(getSession(sessionName));
@@ -165,21 +166,29 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Override
     public List<VideoChatLogRepresentationObject> getOrgSessions(Long orgId) {
-        return videoChatLogRepository.findByStatusAndOrganization_Id(VideoChatStatus.NEW.getValue(), orgId)
+        return videoChatLogRepository.findByOrganization_Id(orgId)
                 .stream()
                 .map(e ->(VideoChatLogRepresentationObject) e.getRepresentation())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void leaveSession(String sessionName, Long orgId) {
+    public void leaveSession(String sessionName, Long orgId, Boolean endCall) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         VideoChatLogEntity videoEntity = getVideoChatLogEntity(sessionName, orgId);
+
         if (loggedInUser instanceof UserEntity) {
            endSession(videoEntity);
+           videoEntity.setStatus(VideoChatStatus.ENDED_BY_CUSTOMER.getValue());
         } else if (loggedInUser instanceof EmployeeUserEntity) {
             videoEntity.setAssignedTo(null);
             videoEntity.setStatus(VideoChatStatus.STARTED.getValue());
+            videoEntity.addDescription(loggedInUser.getName() + " has left the session");
+
+            if(endCall){
+                endSession(videoEntity);
+                videoEntity.setStatus(VideoChatStatus.ENDED_BY_EMPLOYEE.getValue());
+            }
             videoChatLogRepository.saveAndFlush(videoEntity);
         }
     }
@@ -193,7 +202,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         }
         sessionsMap.remove(videoEntity.getName());
         mapSessionNamesTokens.remove(videoEntity.getName());
-        videoEntity.setStatus(VideoChatStatus.FINISHED.getValue());
+        videoEntity.setEndedAt(LocalDateTime.now());
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
 }

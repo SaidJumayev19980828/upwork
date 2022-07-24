@@ -38,7 +38,8 @@ public class VideoChatController {
     @PostMapping(value = "/leave")
     public void leaveSession(@RequestHeader(name = "User-Token") String userToken,
                              @RequestParam("session_name") String sessionName,
-                             @RequestParam(name = "org_id") Long orgId) {
-        videoChatService.leaveSession(sessionName, orgId);
+                             @RequestParam(name = "org_id") Long orgId,
+                             @RequestParam(name = "end_call ") Boolean endCall) {
+        videoChatService.leaveSession(sessionName, orgId, endCall);
     }
 }

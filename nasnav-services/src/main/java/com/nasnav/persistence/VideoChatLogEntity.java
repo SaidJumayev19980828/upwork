@@ -29,6 +29,10 @@ public class VideoChatLogEntity implements BaseEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "ended_at")
+    @CreationTimestamp
+    private LocalDateTime endedAt;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     @EqualsAndHashCode.Exclude
@@ -77,5 +81,11 @@ public class VideoChatLogEntity implements BaseEntity {
         return obj;
     }
 
+    public void addDescription(String text){
+        if(description == null)
+            description = "";
+
+        description += text + "\n";
+    }
 
 }
