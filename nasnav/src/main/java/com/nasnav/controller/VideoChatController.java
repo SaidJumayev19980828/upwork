@@ -25,17 +25,17 @@ public class VideoChatController {
     }
 
     @PostMapping(value = "/session", produces = APPLICATION_JSON_VALUE)
-    public VideoChatResponse getSession(@RequestHeader(name = "User-Token") String userToken,
+    public VideoChatResponse createOrJoinSession(@RequestHeader(name = "User-Token") String userToken,
                                         @RequestParam(name = "session_name", required = false) String sessionName,
                                         @RequestParam(name = "org_id") Long orgId){
-        return videoChatService.getSession(sessionName, orgId);
+        return videoChatService.createOrJoinSession(sessionName, orgId);
     }
 
     @PostMapping(value = "/leave")
     public void leaveSession(@RequestHeader(name = "User-Token") String userToken,
                              @RequestParam("session_name") String sessionName,
                              @RequestParam(name = "org_id") Long orgId,
-                             @RequestParam(name = "end_call ") Boolean endCall) {
+                             @RequestParam(name = "end_call") Boolean endCall) {
         videoChatService.leaveSession(sessionName, orgId, endCall);
     }
 }

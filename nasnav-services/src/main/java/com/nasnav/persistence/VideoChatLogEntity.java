@@ -30,7 +30,6 @@ public class VideoChatLogEntity implements BaseEntity {
     private LocalDateTime createdAt;
 
     @Column(name = "ended_at")
-    @CreationTimestamp
     private LocalDateTime endedAt;
 
     @ManyToOne
