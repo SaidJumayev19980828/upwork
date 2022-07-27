@@ -393,12 +393,10 @@ public class OrderServiceImpl implements OrderService {
 
 		orders.forEach(this::changeShippingServiceName);
 
-		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
-		String operator = "";
-		if (payment.isPresent()) {
-			operator = payment.get().getOperator();
-			operator = changeOperatorName(operator);
-		}
+		String operator = paymentsRepo.findByMetaOrderId(metaOrder.getId())
+				.map(PaymentEntity::getOperator)
+				.map(this::changeOperatorName)
+				.orElse("");
 
 		String notes = metaOrder.getNotes();
 
@@ -411,7 +409,7 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
-	private AddressRepObj getCustomerAddress (List<SubOrder> orders){
+	private AddressRepObj getCustomerAddress(List<SubOrder> orders){
 		return orders
 				.stream()
 				.map(SubOrder::getDeliveryAddress)
