@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="x-apple-disable-message-reformatting">
+
+    <title>Meta Order Information</title>
+    <style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+			"Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+			sans-serif;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+		}
+		code {
+			font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+			monospace;
+		}
+		hr {
+            border: 0;
+            border-bottom: 1px dashed #ccc;
+            background: #999;
+            margin: 20px 0;
+        }
+		.Header .Header-logo {
+			width: 7rem;
+		}
+		.Header .Header-logo  img {
+			width: 100%;
+		}
+		.Header-orderConfirmation {
+			color: var(--primary-color);
+			font-size: 1.6rem;
+			width: 90%;
+		}
+		.Header-orderConfirmation a {
+			text-decoration: none;
+		}
+		.Header-orderConfirmation a:hover {
+			text-decoration: underline;
+		}
+
+		.title {
+			font-size: 1.4rem;
+		}
+		.summary {
+			color: var(--primary-color);
+		}
+		.order_items {
+		    font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 22px 0;
+		}
+		.bold {
+		    font-weight: 500;
+		}
+		.dark {
+		    color: var(--primary-color);
+		}
+		.shop_info {
+		    margin: 20px 0;
+		}
+		.small_font {
+		    font-size: 15px;
+		}
+		.pricePanel {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		.summary .pricePanel .container {
+			display: flex;
+		}
+		.summary .pricePanel .price {
+			margin: 1rem 4rem 1rem 0;
+		}
+		.summary .pricePanel .container .price p {
+			color: var(--secondary-color);
+			font-size: 1.5rem;
+		}
+		.summary .pricePanel .container .price span {
+			color: var(--primary-color);
+			font-size: 1.3rem;
+		}
+		.summary .pricePanel .total p {
+			color: var(--secondary-color);
+			margin-left: 0.3rem;
+			text-align: left;
+			font-size: 1.5rem;
+		}
+		.summary .pricePanel .total span {
+			color: var(--primary-color);
+			font-weight: 700;
+			font-size: 1.3rem;
+		}
+
+
+
+
+		.thumb {
+			width: 4rem;
+			margin: 1rem 1rem 0 0;
+		}
+		.thumb img {
+			width: 100%;
+		}
+
+		.Item .price {
+			color: var(--primary-color);
+			font-weight: 700;
+			margin-right: 0.5rem;
+		}
+
+		.notes {
+			font-weight: bold;
+		}
+
+		.itemContainer{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding-bottom: 1rem;
+			border-bottom: 1px solid #e1e1ea;
+		}
+
+		.itemContainer .container{
+			display: flex;
+		}
+		.itemContainer .container .details h3{
+			color: var(--primary-color);
+		}
+		.shopName{
+			color: var(--secondary-color) !important;
+		}
+		.itemContainer .container .details span{
+			color: var(--secondary-color);
+
+		}
+
+
+		.itemContainer .price {
+			font-weight: bold;
+		}
+
+		.shippingdate{
+			display: block;
+		}
+		.CustomerInfo {
+			padding-bottom: 5rem;
+			border-bottom: 1px solid #e1e1ea;
+		}
+		.CustomerInfo h3{
+			color: var(--primary-color);
+
+		}
+		.CustomerInfo .container {
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.CustomerInfo .container .column {
+			width: 50%;
+		}
+		.CustomerInfo .container .column h3 {
+			color: var(--secondary-color);
+		}
+		.CustomerInfo .container .column ul {
+			margin: 0;
+			padding: 0;
+		}
+		.CustomerInfo .container .column ul li {
+			list-style-type: none;
+			margin: 0;
+			color: var(--secondary-color);
+		}
+		.CustomerInfo .container .creditCard {
+			width: 50%;
+			display: flex;
+			align-items: center;
+		}
+		.CustomerInfo .container .creditCard img {
+			margin-right: 0.5rem;
+		}
+		.CustomerInfo .container .creditCard p,
+		.help {
+			color: var(--secondary-color);
+		}
+		.help a {
+			text-decoration: none;
+		}
+		.footer p {
+			color: var(--secondary-color);
+		}
+		.footer p a {
+			text-decoration: none;
+		}
+		:root {
+			--white-color: #fff;
+			--black-color: #000;
+			--primary-color: #4a5566;
+			--secondary-color: #8492a6;
+		}
+		body {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		.main {
+			width: 45%;
+			margin: auto;
+			padding: 3rem;
+		}
+
+		@media screen and (max-width:1200px){
+			.main{
+				width:70% ;
+			}
+		}
+		@media screen and (max-width:900px){
+			.main{
+				width:80% ;
+			}
+		}
+		@media screen and (max-width:700px){
+			.main{
+				width:90% ;
+			}
+		}
+		@media screen and (max-width:500px){
+			.main{
+				width:100% ;
+			}
+		}
+		.hover-bg-brand-600:hover {
+			background-color: #0047c3 !important;
+		}
+		.hover-text-brand-700:hover {
+			color: #003ca5 !important;
+		}
+		.hover-underline:hover {
+			text-decoration: underline !important;
+		}
+		@media screen {
+			img {
+				max-width: 100%;
+			}
+			.all-font-sans {
+				font-family: -apple-system, "Segoe UI", sans-serif !important;
+			}
+		}
+		@media (max-width: 640px) {
+			u~div .wrapper {
+				min-width: 100vw;
+			}
+			.sm-block {
+				display: block !important;
+			}
+			.sm-h-16 {
+				height: 16px !important;
+			}
+			.sm-mt-16 {
+				margin-top: 16px !important;
+			}
+			.sm-py-16 {
+				padding-top: 16px !important;
+				padding-bottom: 16px !important;
+			}
+			.sm-px-16 {
+				padding-left: 16px !important;
+				padding-right: 16px !important;
+			}
+			.sm-py-24 {
+				padding-top: 24px !important;
+				padding-bottom: 24px !important;
+			}
+			.sm-text-14 {
+				font-size: 14px !important;
+			}
+			.sm-w-full {
+				width: 100% !important;
+			}
+		}
+	</style>
+</head>
+<body>
+<div class="main">
+    <div class="Header">
+        <div class="Header-logo">
+            <img th:src="${orgLogo}" alt="logo"
+            />
+        </div>
+        <p class="Header-orderConfirmation">
+            New meta order #<span id="order_id" th:text="${metaOrderId}"/> Was Created  <br/>
+            on <span id="order_id" th:text="${creationTime}"/> <br/>
+        </p>
+    </div>
+
+    <div class="summary">
+        <p class="title">
+            Orders summary:
+        </p>
+
+        <div th:each="sub : ${orders}">
+            <span class = "bold dark small_font" >Order Id: </span> <span th:text= "${sub.subOrderId}" >Order Id</span>
+            <br>
+            <span class = "bold dark small_font" >Organization Name: </span> <span th:text= "${sub.organizationName}" >Order Id</span>
+            <br>
+            <div class="order_items">Order Items:</div>
+            <br>
+            <div class="orders">
+                <table>
+                    <tbody>
+                    <tr th:each="item : ${sub.items}">
+                        <img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
+                        <h3 th:text="${item.name}"/>
+                        <div th:if="${item.sku != null}" th:text="'sku: ' + ${item.sku}">12233</div>
+                        <div th:if="${item.productCode != null}" th:text="'Product Code: ' + ${item.productCode}">12233</div>
+                        <table class="variant-features">
+                            <tr th:each="feature : ${item.variantFeatures}">
+                                <span th:text="${feature.key} + ': ' + ${feature.value}"></span> <br/>
+                            </tr>
+                        </table>
+                        <div>
+                            <span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.fromStr} + ' to ' + ${sub.shipment.shippingEta.toStr}"/>
+                        </div>
+                        <div>
+                            <span id="shipping_service" th:text="'Shipping Method: ' + ${sub.shipment.serviceName}"></span>
+                        </div>
+                        <div>
+                            <span class="quantity" th:text="'Quantity: ' + ${item.quantity}"/>
+                        </div>
+                        <div>
+                            <span style="font-weight: bolder; color: red" th:if="${item.availableStock != null}" th:text="'AVAILABLE STOCK: ' + ${item.availableStock}"/>
+                        </div>
+
+                        <div class="shop_info" th:if="${sub.pickup}">Pickup from
+                            <br>
+                            <span class="bold dark">Shop Id: </span> <span th:text = "${sub.shopId}"></span>
+                            <br>
+                            <span class="bold dark">Shop Name: </span> <span th:text = "${sub.shopName}"></span>
+                            <br>
+                        </div>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="pricePanel">
+                    <div class="container">
+                        <div class="price" th:with="subtotal=${sub.subtotal}">
+                            <p>Subtotal</p>
+                            <span id="subtotal" th:text="${subtotal} +' '+ ${sub.items[0].currency}"/>
+                        </div>
+                        <div class="price">
+                            <p>Shipping</p>
+                            <span id="shipping" th:text="${sub.shipment.shippingFee} +' '+ ${sub.items[0].currency}"></span>
+                        </div>
+                        <div class="price total">
+                            <p>Total</p>
+                            <span id="total" th:text="${sub.total} +' '+ ${sub.items[0].currency}"></span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <hr>
+        </div>
+        <div th:if="${notes != null}">
+            <p class="notes">Notes</p>
+            <span id="notes" th:text="${notes}"></span>
+        </div>
+        <div class="CustomerInfo">
+            <h3>Customer Address</h3>
+            <div class="container">
+                <div style="width: 70%;" class="column">
+                    <ul>
+                        <li id="name" th:text="${customerAddress.firstName} + ' ' + ${customerAddress.lastName}">Good Customer</li>
+                        <li id="phone" th:if="${customerAddress.phoneNumber != null}" th:text="${customerAddress.phoneNumber}">011111111</li>
+                        <li id="address_Line_1" th:text="${customerAddress.flatNumber} +', '+ ${customerAddress.buildingNumber}+ ', ' +${customerAddress.addressLine1}">address line1</li>
+                        <li id="sub_area" th:if="${customerAddress.subArea != null}" th:text="${customerAddress.subArea}">subArea</li>
+                        <li id="area" th:text="${customerAddress.area}">area</li>
+                        <li id="city" th:text="${customerAddress.city}">city</li>
+                        <li id="country" th:text="${customerAddress.country}">Egypt</li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h3>Payment Method</h3>
+                    <div class="creditCard">
+                        <ul>
+                            <li><span id="operator" th:text="${operator}"></span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+</body>
+</html>

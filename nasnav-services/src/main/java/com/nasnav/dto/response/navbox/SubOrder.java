@@ -39,7 +39,7 @@ public class SubOrder {
     private BigDecimal discount;
     @JsonIgnore
     private boolean pickup;
-
+    private String organizationName;
     @EqualsAndHashCode.Exclude
     private List<LoyaltyOrderDetailDTO> points;
     @JsonProperty("total_point_amount")
