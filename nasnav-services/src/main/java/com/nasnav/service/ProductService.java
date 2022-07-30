@@ -942,7 +942,8 @@ public class ProductService {
 		if (params.order == null)
 			params.setOrder(defaultOrder);
 
-		Map<String,String> orgSettings = orgService.getOrganizationSettings(params.org_id);
+		Long settingsOrgId = ofNullable(params.org_id).orElse(params.getYeshtery_org_id());
+		Map<String,String> orgSettings = orgService.getOrganizationSettings(settingsOrgId);
 
 		params.show_free_products = isShowFreeProductsAllowed(orgSettings);
 
