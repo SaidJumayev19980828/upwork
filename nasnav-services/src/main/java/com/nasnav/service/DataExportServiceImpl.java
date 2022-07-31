@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dao.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -48,6 +49,8 @@ public class DataExportServiceImpl implements DataExportService{
 	@Autowired
 	private ProductVariantsRepository variantsRepo;
 	@Autowired
+	private ExtraAttributesRepository extraAttributesRepo;
+	@Autowired
 	private ProductExtraAttributesEntityRepository prodExtraAttributeRepo;
 	@Autowired
 	private ShopsRepository shopRepo;
@@ -85,11 +88,15 @@ public class DataExportServiceImpl implements DataExportService{
 				.stream()
 				.collect(toMap(ProductFeaturesEntity::getName, f -> "" ));
 
+		Map<String, String> emptyExtraAttributesMap = extraAttributesRepo.findByOrganizationId(orgId)
+				.stream()
+				.collect(toMap(ExtraAttributesEntity::getName, v -> "" ));
+
 		var extraAttributes = fetchVariantsExtraAttributes(orgId, shopId);
 		var productTags = createProductTagsMap(result);
 		return result
 				.stream()
-				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes, emptyFeatureValuesMap))
+				.map(product -> toCsvRow(product, productTags, variantsFeaturesMap, extraAttributes, emptyFeatureValuesMap, emptyExtraAttributesMap))
 				.collect(toList());
 	}
 
@@ -149,24 +156,30 @@ public class DataExportServiceImpl implements DataExportService{
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Long, Map<String, String>> features
 			, Map<Long, List<VariantExtraAttribute>> extraAttributes
-			, Map<String, String> emptyFeatureValuesMap) {
+			, Map<String, String> emptyFeatureValuesMap
+			, Map<String, String> emptyExtraAttributesMap) {
 		var row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
 		setFeatures(row, productData, features, emptyFeatureValuesMap);
-		setExtraAttributes(row, productData, extraAttributes);
+		setExtraAttributes(row, productData, extraAttributes, emptyExtraAttributesMap);
 		return row;
 	}
 	
 	
 	
 	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
-			Map<Long, List<VariantExtraAttribute>> extraAttributes) {
+			Map<Long, List<VariantExtraAttribute>> extraAttributes, Map<String, String> emptyExtraAttributesMap) {
 		var extraAttrMap  =
 				extraAttributes
 				.getOrDefault(productData.getVariantId(), emptyList())
 				.stream()
 				.collect(toMap(VariantExtraAttribute::getName, VariantExtraAttribute::getValue));
+		for(Map.Entry<String, String> e : emptyExtraAttributesMap.entrySet()) {
+			if (!extraAttrMap.containsKey(e.getKey()) && !e.getValue().isEmpty())
+				extraAttrMap.put(e.getKey(), e.getValue());
+		}
+
 		row.setExtraAttributes(extraAttrMap);
 	}
 
@@ -284,7 +297,7 @@ public class DataExportServiceImpl implements DataExportService{
 											variant.id.as("variant_id"),
 											variant.barcode.as("barcode"),
 											brand.name.as("brand"),
-											product.description.as("description"),
+											variant.description.as("description"),
 											variant.name.as("name"),
 											product.id.as("product_id"),
 											product.hide.as("hide"),
@@ -323,7 +336,7 @@ public class DataExportServiceImpl implements DataExportService{
 											variant.id.as("variant_id"),
 											variant.barcode.as("barcode"),
 											brand.name.as("brand"),
-											product.description.as("description"),
+											variant.description.as("description"),
 											variant.name.as("name"),
 											product.id.as("product_id"),
 											product.hide.as("hide"),
