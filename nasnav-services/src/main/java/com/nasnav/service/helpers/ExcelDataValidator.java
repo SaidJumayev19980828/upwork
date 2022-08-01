@@ -5,12 +5,16 @@ import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import static org.apache.poi.ss.usermodel.DataValidationConstraint.OperatorType.GREATER_OR_EQUAL;
 import static org.apache.poi.ss.usermodel.DataValidationConstraint.OperatorType.GREATER_THAN;
+import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
+import static org.springframework.context.annotation.ScopedProxyMode.TARGET_CLASS;
 
 @Component
+@Scope(value = SCOPE_PROTOTYPE, proxyMode = TARGET_CLASS)
 public class ExcelDataValidator {
     private Integer quantityColumn;
     private Integer discountColumn;
