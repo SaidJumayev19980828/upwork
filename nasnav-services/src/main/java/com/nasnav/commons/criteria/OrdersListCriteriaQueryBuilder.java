@@ -1,12 +1,14 @@
 package com.nasnav.commons.criteria;
 
 import com.nasnav.enumerations.OrderSortOptions;
+import com.nasnav.enumerations.SortingWay;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.request.OrderSearchParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
+import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
@@ -98,13 +100,27 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
         this.orderBy = ofNullable(params.getOrders_sorting_option())
                             .map(OrderSortOptions::getValue)
                             .orElse("updateDate");
+
+        if(orderBy.equalsIgnoreCase("quantity"))
+            orderBy = null;
     }
 
     @Override
     void setQueryConditionAndOrderBy() {
-        query
-                .where(predicates)
-                .orderBy(builder.desc(root.get(orderBy)));
+        query.where(predicates);
+        if(orderBy != null){
+            query.orderBy(getSortingWay());
+        }
+    }
+
+    private Order getSortingWay(){
+        OrderSearchParam params = (OrderSearchParam) this.searchParams;
+        SortingWay sortingWay = params.getSorting_way();
+
+        if(sortingWay.equals(SortingWay.ASC))
+            return builder.asc( root.get(orderBy) );
+        else
+            return builder.desc( root.get(orderBy) );
     }
 
     @Override

@@ -16,7 +16,7 @@ public class OrganizationCreationDTO {
     private Integer ecommerce;
     private String googleToken;
     private Integer currencyIso;
-    private YeshteryState yeshteryState;
+    private Boolean yeshteryState;
     private Integer priority;
     private Boolean enableVideoChat;
     private Integer matomoId;

@@ -8,7 +8,7 @@ import java.util.Optional;
 import static java.util.Arrays.stream;
 
 public enum VideoChatStatus {
-    FAILED(0), NEW(1), STARTED(2), FINISHED( 3);
+    FAILED(0), NEW(1), STARTED(2), ENDED_BY_CUSTOMER(3), ENDED_BY_EMPLOYEE(4);
 
     VideoChatStatus(Integer value){this.value = value;}
 

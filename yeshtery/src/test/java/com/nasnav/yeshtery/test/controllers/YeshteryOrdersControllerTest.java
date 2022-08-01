@@ -514,14 +514,44 @@ public class YeshteryOrdersControllerTest {
         response = sendOrdersListRequestWithParamsAndToken("start=2&count=1&details_level=3", token);
         orders = response.getBody().getOrders();
         actualBody = orders.get(0);
-        expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
+        expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("100.00"));
         Assert.assertEquals(expectedBody, actualBody);
 
         response = sendOrdersListRequestWithParamsAndToken("start=3&count=1&details_level=3", token);
         orders = response.getBody().getOrders();
         actualBody = orders.get(0);
-        expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("50.00"));
+        expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
         Assert.assertEquals(expectedBody, actualBody);
+    }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Order_Info_Test.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListOrderByQuantityTest() throws IOException {
+        String token = "101112";
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("details_level=3&orders_sorting_option=QUANTITY", token);
+        List<DetailedOrderRepObject> orders = response.getBody().getOrders();
+
+        Assert.assertEquals(330002L, orders.get(0).getOrderId());
+        Assert.assertEquals(330005L, orders.get(orders.size() - 1).getOrderId());
+    }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Order_Info_Test.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getOrderListSortingWayTest() throws IOException {
+        String token = "101112";
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("sorting_way=ASC", token);
+        List<DetailedOrderRepObject> orders = response.getBody().getOrders();
+
+        Assert.assertEquals(330002L, orders.get(0).getOrderId());
+        Assert.assertEquals(330003L, orders.get(1).getOrderId());
+
+        response = sendOrdersListRequestWithParamsAndToken("sorting_way=DESC", token);
+        orders = response.getBody().getOrders();
+
+        Assert.assertEquals(330006L, orders.get(0).getOrderId());
+        Assert.assertEquals(330005L, orders.get(1).getOrderId());
     }
 
     private List<DetailedOrderRepObject> getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {

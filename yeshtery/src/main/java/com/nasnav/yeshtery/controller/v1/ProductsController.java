@@ -126,7 +126,7 @@ public class ProductsController {
 	@PostMapping(value = "variant", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public VariantUpdateResponse updateProductVariant(@RequestHeader(name = "User-Token", required = false) String token,
                                                       @RequestBody VariantUpdateDTO variant) throws BusinessException {
-		return  productService.updateVariant(variant);
+		return productService.updateVariant(variant);
     }
 
     @DeleteMapping("variant_feature")

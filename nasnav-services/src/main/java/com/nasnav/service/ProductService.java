@@ -47,7 +47,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -62,10 +61,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -945,7 +942,8 @@ public class ProductService {
 		if (params.order == null)
 			params.setOrder(defaultOrder);
 
-		Map<String,String> orgSettings = orgService.getOrganizationSettings(params.org_id);
+		Long settingsOrgId = ofNullable(params.org_id).orElse(params.getYeshtery_org_id());
+		Map<String,String> orgSettings = orgService.getOrganizationSettings(settingsOrgId);
 
 		params.show_free_products = isShowFreeProductsAllowed(orgSettings);
 
@@ -2464,10 +2462,10 @@ public class ProductService {
 	private ProductVariantsEntity createVariantEntity(VariantUpdateDTO variant, VariantUpdateCache cache) {
 		ProductVariantsEntity entity = new ProductVariantsEntity();
 
-		Operation opr = variant.getOperation();
+		Operation operation = variant.getOperation();
 		Long id = variant.getVariantId();
 
-		if( opr.equals( UPDATE)) {
+		if(operation.equals(UPDATE)) {
 			entity = ofNullable(cache.getVariantsEntities())
 					.map( entities -> entities.get(id))
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id.toString()) );
@@ -2496,6 +2494,11 @@ public class ProductService {
 			entity.addFeatureValues(featuresValues);
 		}
 
+		if(variant.isUpdated("extraAttr")) {
+			Set<ProductExtraAttributesEntity> productExtraAttributesEntities = updateVariantExtraAttributes(variant, entity, cache);
+			entity.addExtraAttribute(productExtraAttributesEntities);
+		}
+
 		if(variant.isUpdated("sku")) {
 			entity.setSku(variant.getSku());
 		}
@@ -2509,13 +2512,9 @@ public class ProductService {
 			entity.setWeight(weight);
 		}
 
-		String pname = getPname(variant, opr);
+		String pname = getPname(variant, operation);
 		if(!isBlankOrNull(pname)) {
 			entity.setPname(pname);
-		}
-
-		if(!isBlankOrNull(variant.getExtraAttr())) {
-			saveExtraAttributesIntoEntity(variant, entity, cache);
 		}
 
 		return entity;
@@ -2523,47 +2522,66 @@ public class ProductService {
 
 
 	private Set<VariantFeatureValueEntity> updateVariantFeatureValues(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
-		Set<VariantFeatureValueEntity> featuresValues = entity.getFeatureValues();
-		Set<VariantFeatureValueEntity> newFeaturesValues = new HashSet<>();
-		for (Map.Entry<String, String> e : variant.getFeatures().entrySet()) {
-			ProductFeaturesEntity feature = cache.getOrganziationFeatures()
-					.stream()
-					.filter(f -> Objects.equals(f.getId(), Integer.parseInt(e.getKey().toString())))
-					.findFirst()
-					.get();
-			VariantFeatureValueEntity featureValue = featuresValues
-					.stream()
-					.filter(f -> Objects.equals(f.getFeature(), feature))
-					.findFirst()
-					.orElseGet(() -> new VariantFeatureValueEntity());
-			featureValue.setFeature(feature);
+		Set<VariantFeatureValueEntity> existingFeaturesValues = entity.getFeatureValues();
+		Set<VariantFeatureValueEntity> allFeaturesValues = new HashSet<>();
+
+		for (var newFeatureEntry : variant.getFeatures().entrySet()) {
+			ProductFeaturesEntity matchedOrgFeature = matchWithOrgFeature(cache, newFeatureEntry);
+
+			VariantFeatureValueEntity featureValue =
+					existingFeaturesValues
+						.stream()
+						.filter(f -> Objects.equals(f.getFeature(), matchedOrgFeature))
+						.findFirst()
+						.orElseGet(() -> new VariantFeatureValueEntity());
+
+			featureValue.setFeature(matchedOrgFeature);
 			featureValue.setVariant(entity);
-			featureValue.setValue(e.getValue().toString());
-			newFeaturesValues.add( featureValue );
+			featureValue.setValue(newFeatureEntry.getValue().toString());
+			allFeaturesValues.add(featureValue);
 		}
-		return newFeaturesValues;
+		return allFeaturesValues;
+	}
+
+	private ProductFeaturesEntity matchWithOrgFeature(VariantUpdateCache cache, Map.Entry<String, String> newFeatureEntry){
+		return cache.getOrganziationFeatures()
+				.stream()
+				.filter(orgFeature -> Objects.equals(orgFeature.getId(), Integer.parseInt(newFeatureEntry.getKey().toString())))
+				.findFirst()
+				.get();
 	}
 
 
-	private void saveExtraAttributesIntoEntity(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
-		try {
-			JSONObject  extraAttrJson = new JSONObject(variant.getExtraAttr());
+	private Set<ProductExtraAttributesEntity> updateVariantExtraAttributes(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
+		Set<ProductExtraAttributesEntity> existingExtraAttributes = entity.getExtraAttributes();
+		Set<ProductExtraAttributesEntity> allExtraAttributes = new HashSet<>();
 
-			extraAttrJson
+		for (var newExtraAttr : variant.getExtraAttr().entrySet()) {
+			ExtraAttributesEntity matchedOrgExtraAttr = matchWithOrgExtraAttribute(cache, newExtraAttr);
+
+			ProductExtraAttributesEntity extraAttributesEntity = existingExtraAttributes
+					.stream()
+					.filter(ex -> ex.getExtraAttribute().getName().equalsIgnoreCase(matchedOrgExtraAttr.getName()))
+					.findFirst()
+					.orElseGet(() -> new ProductExtraAttributesEntity());
+
+			extraAttributesEntity.setExtraAttribute(matchedOrgExtraAttr);
+			extraAttributesEntity.setVariant(entity);
+			extraAttributesEntity.setValue(newExtraAttr.getValue());
+			allExtraAttributes.add(extraAttributesEntity);
+		}
+		return allExtraAttributes;
+	}
+
+	private ExtraAttributesEntity matchWithOrgExtraAttribute(VariantUpdateCache cache, Map.Entry<String, String> newExtraAttr){
+		return cache.getOrgExtraAttributes()
 					.keySet()
 					.stream()
-					.map(attrName -> createVariantExtraAttributeEntity(attrName, extraAttrJson.getString(attrName), cache))
-					.forEach(entity::addExtraAttribute);
-		}catch(Throwable t) {
-			throw new RuntimeBusinessException(
-					ERR_INVALID_EXTRA_ATTR_STRING
-					, "INVLAID: extra_attr"
-					, NOT_ACCEPTABLE);
-		}
+					.filter(orgExtraAttr -> orgExtraAttr.equalsIgnoreCase(newExtraAttr.getKey()))
+					.map(s -> cache.getOrgExtraAttributes().get(s))
+					.findFirst()
+					.get();
 	}
-
-
-
 
 	private ProductExtraAttributesEntity createVariantExtraAttributeEntity(String name, String value, VariantUpdateCache cache) {
 		ExtraAttributesEntity extraAttrEntity = getExtraAttribute(name, cache);

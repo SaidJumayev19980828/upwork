@@ -18,7 +18,7 @@ public class LoyaltySpentTransactionEntity {
 	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne(fetch = LAZY)
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name="transaction_id", referencedColumnName = "id")
 	@JsonIgnore
 	@EqualsAndHashCode.Exclude

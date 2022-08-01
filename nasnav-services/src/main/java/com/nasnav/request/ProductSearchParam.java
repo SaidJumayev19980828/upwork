@@ -17,6 +17,7 @@ public class ProductSearchParam {
 
     //had to ignore java naming convention, because the bundle request parameters will be mapped to these properties by name
     public Long org_id;
+    public Long yeshtery_org_id;
     public Long shop_id;
     public Long brand_id;
     public Long tags_org_id;

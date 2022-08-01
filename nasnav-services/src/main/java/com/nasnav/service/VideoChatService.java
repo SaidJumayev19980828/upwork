@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface VideoChatService {
 
-    VideoChatResponse getSession(String sessionName, Long orgId);
+    VideoChatResponse createOrJoinSession(String sessionName, Long orgId);
 
     List<VideoChatLogRepresentationObject> getOrgSessions(Long orgId);
 
-    void leaveSession(String sessionName, Long orgId);
+    void leaveSession(String sessionName, Long orgId, Boolean endCall);
 }
