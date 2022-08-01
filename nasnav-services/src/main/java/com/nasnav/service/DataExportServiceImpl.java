@@ -124,7 +124,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 
-	private Map<Long, List<VariantExtraAttribute>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
+	private Map<Long, Map<String, String>> fetchVariantsExtraAttributes(Long orgId, Long shopId) {
 		List<VariantExtraAttribute> variantAttributes = emptyList();
 		if(shopId != null){
 			variantAttributes =  prodExtraAttributeRepo.findByVariantShopId(shopId);
@@ -133,7 +133,7 @@ public class DataExportServiceImpl implements DataExportService{
 		}
 		return variantAttributes
 				.stream()
-				.collect(groupingBy(VariantExtraAttribute::getVariantId));
+				.collect(groupingBy(VariantExtraAttribute::getVariantId, toMap(VariantExtraAttribute::getName, VariantExtraAttribute::getValue)));
 	}
 
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
@@ -155,7 +155,7 @@ public class DataExportServiceImpl implements DataExportService{
 	private CsvRow toCsvRow(ProductExportedData productData
 			, Map<Long,List<ProductTagsBasicData>> productTags
 			, Map<Long, Map<String, String>> features
-			, Map<Long, List<VariantExtraAttribute>> extraAttributes
+			, Map<Long, Map<String, String>> extraAttributes
 			, Map<String, String> emptyFeatureValuesMap
 			, Map<String, String> emptyExtraAttributesMap) {
 		var row = createCsvRow(productData);
@@ -168,15 +168,15 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	
 	
-	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
-			Map<Long, List<VariantExtraAttribute>> extraAttributes, Map<String, String> emptyExtraAttributesMap) {
+	private void setExtraAttributes(CsvRow row, ProductExportedData productData, Map<Long, Map<String, String>> extraAttributes,
+									Map<String, String> emptyExtraAttributesMap) {
 		var extraAttrMap  =
-				extraAttributes
-				.getOrDefault(productData.getVariantId(), emptyList())
-				.stream()
-				.collect(toMap(VariantExtraAttribute::getName, VariantExtraAttribute::getValue));
+				ofNullable(productData)
+						.map(ProductExportedData::getVariantId)
+						.map(extraAttributes::get)
+						.orElse(new HashMap<>());
 		for(Map.Entry<String, String> e : emptyExtraAttributesMap.entrySet()) {
-			if (!extraAttrMap.containsKey(e.getKey()) && !e.getValue().isEmpty())
+			if (!extraAttrMap.containsKey(e.getKey()) )
 				extraAttrMap.put(e.getKey(), e.getValue());
 		}
 
@@ -192,9 +192,9 @@ public class DataExportServiceImpl implements DataExportService{
 				ofNullable(productData)
 				.map(ProductExportedData::getVariantId)
 				.map(featuresMap::get)
-				.orElse(emptyMap());
+				.orElse(new HashMap<>());
 		for(Map.Entry<String, String> e : emptyFeatureValuesMap.entrySet()) {
-			if (!features.containsKey(e.getKey()) && !e.getValue().isEmpty())
+			if (!features.containsKey(e.getKey()))
 				features.put(e.getKey(), e.getValue());
 		}
 		
