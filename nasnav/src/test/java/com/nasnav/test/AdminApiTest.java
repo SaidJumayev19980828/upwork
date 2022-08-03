@@ -2,8 +2,8 @@ package com.nasnav.test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonArray;
 import com.nasnav.NavBox;
+import com.nasnav.dao.ApiCallsRepository;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.OrganizationDomainsRepository;
@@ -13,6 +13,8 @@ import com.nasnav.dto.CountriesRepObj;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
+import com.nasnav.dto.response.ApiLogsDTO;
+import com.nasnav.dto.response.ApiLogsResponse;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationDomainsEntity;
 import com.nasnav.service.AddressService;
@@ -40,10 +42,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.nasnav.commons.utils.CollectionUtils.listsEqualsIgnoreOrder;
 import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -68,7 +72,8 @@ public class AdminApiTest {
     private AdminService adminService;
     @Autowired
     private BrandsRepository brandsRepository;
-
+    @Autowired
+    private ApiCallsRepository apiCallsRepo;
 
     @Before
     public void clearCache(){
@@ -393,5 +398,136 @@ public class AdminApiTest {
                 template.getForEntity("/navbox/organization?url=fortune.nasnav.com", OrganizationRepresentationObject.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(Objects.equals(99001L, response.getBody().getId()));
+    }
+
+    @Test
+    public void checkApiLogsFilterTest(){
+        String token = "abcdefg";
+        String requestBody = createCountryJsonBody()
+                .toString();
+
+        HttpEntity<?> request = getHttpEntity(requestBody, token);
+        template.postForEntity("/admin/country", request, Void.class);
+        template.exchange("/order/meta_order/info?id=310001", GET, request, String.class);
+        template.exchange("/order/list", GET, request, String.class);
+
+        wait(3);
+
+        int numberOfLogs = apiCallsRepo.findAll().size();
+
+        assertEquals(3, numberOfLogs);
+    }
+
+    private void wait(int seconds){
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByCount(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("start=0&count=2", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, response.getBody().getApiLogs().size());
+        assertResponseResultCount(response, 9L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByAllEmployees(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=true", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 3L);
+        assertResponseResultIds(response, 101L, 103L, 107L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByAllCustomers(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=false", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 6L);
+        assertResponseResultIds(response, 102L, 104L, 105L, 106L, 108L, 109L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByCustomers(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=false&users=71&users=72", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 5L);
+        assertResponseResultIds(response, 102L, 104L, 105L, 106L, 108L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByEmployees(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=true&users=68&users=69", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 3L);
+        assertResponseResultIds(response, 101L, 103L, 107L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByCallDate(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("created_after=2022-07-01:00:00:00&created_before=2022-07-04:12:12:12", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 5L);
+        assertResponseResultIds(response, 101L, 102L, 103L, 104L, 105L);
+    }
+
+    @Test
+    @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Api_Logs_Test_Data.sql"})
+    @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getApiLogsFilterByOrganization(){
+        String token = "abcdefg";
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("organizations=99001", token);
+
+        assertEquals(OK, response.getStatusCode());
+        assertResponseResultCount(response, 4L);
+        assertResponseResultIds(response, 101L, 104L, 107L, 108L);
+    }
+
+    private ResponseEntity<ApiLogsResponse> sendGetApiLogsRequest(String parameters, String token){
+        HttpEntity<Object> httpEntity = getHttpEntity(token);
+        String url = "/admin/api/logs?" + parameters ;
+        return template.exchange(url, GET, httpEntity, ApiLogsResponse.class);
+    }
+
+    private void assertResponseResultCount(ResponseEntity<ApiLogsResponse> response, Long expected){
+        ApiLogsResponse responseBody = response.getBody();
+        assertEquals(expected, responseBody.getTotal());
+    }
+
+    private void assertResponseResultIds(ResponseEntity<ApiLogsResponse> response, Long ...expectedIds){
+        ApiLogsResponse responseBody = response.getBody();
+        List<Long> responseIds = responseBody.getApiLogs()
+                                             .stream()
+                                             .map(ApiLogsDTO::getId)
+                                             .collect(Collectors.toList());
+
+        assertTrue(listsEqualsIgnoreOrder(responseIds, List.of(expectedIds)));
     }
 }
