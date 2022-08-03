@@ -88,4 +88,13 @@ public class CollectionUtils {
 				.concat(collection1.stream(), collection2.stream())
 				.collect(toList());
     }
+
+	public static <T> boolean listsEqualsIgnoreOrder(List<T> list1, List<T> list2) {
+		if (list1 == null)
+			return list2==null;
+		if (list2 == null)
+			return list1 == null;
+
+		return new HashSet<>(list1).equals(new HashSet<>(list2));
+	}
 }
