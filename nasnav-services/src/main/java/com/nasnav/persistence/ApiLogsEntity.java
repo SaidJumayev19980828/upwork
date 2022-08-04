@@ -56,7 +56,6 @@ public class ApiLogsEntity implements BaseEntity{
 		dto.setId(id);
 		dto.setUrl(url);
 		dto.setCallDate(callDate.toString());
-
 		dto.setOrganizationId(organization.getId());
 		dto.setRequestContent(requestContent);
 		dto.setResponseCode(responseCode);
