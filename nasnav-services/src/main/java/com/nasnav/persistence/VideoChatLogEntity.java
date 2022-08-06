@@ -84,7 +84,7 @@ public class VideoChatLogEntity implements BaseEntity {
         if(description == null)
             description = "";
 
-        description += text + "\n";
+        description += text + " at " + LocalDateTime.now() + "\n";
     }
 
 }
