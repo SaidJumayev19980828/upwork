@@ -1,8 +1,8 @@
-package com.nasnav.yeshtery.services.interfaces;
+package com.nasnav.service.yeshtery;
 
 import com.nasnav.dto.UserDTOs;
-import com.nasnav.persistence.BaseYeshteryUserEntity;
-import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
+import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
 
 public interface CommonYeshteryUserServiceInterface {
 

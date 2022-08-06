@@ -1,4 +1,4 @@
-package com.nasnav.yeshtery.response;
+package com.nasnav.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.nasnav.response.ResponseStatus;

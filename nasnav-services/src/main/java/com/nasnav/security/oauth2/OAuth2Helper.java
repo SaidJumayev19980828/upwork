@@ -1,14 +1,18 @@
 package com.nasnav.security.oauth2;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OAuth2ProviderRepository;
 import com.nasnav.dao.OAuth2UserRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.persistence.OAuth2ProviderEntity;
 import com.nasnav.persistence.OAuth2UserEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.security.oauth2.exceptions.RegistrationEmailExistsException;
+import com.nasnav.service.yeshtery.YeshteryUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +41,11 @@ public class OAuth2Helper {
 	@Autowired
 	private UserRepository userRepo;
 
-	
+	@Autowired
+	private YeshteryUserService yeshteryUserService;
+
+	@Autowired
+	private AppConfig appConfig;
 	
 	@Transactional
     public OAuth2UserEntity registerNewOAuth2User(UserPrincipal user, String token, Long orgId) {
@@ -49,7 +57,14 @@ public class OAuth2Helper {
     		throw new RegistrationEmailExistsException( format(EMAIL_EXISTS, email, provider));
     	}
     	
-    	UserEntity nasnavUser = registerNasnavUser(user, orgId);    	
+    	UserEntity nasnavUser = registerNasnavUser(user, orgId);
+
+		int yeshteryOrgId = appConfig.yeshteryOrgId;
+
+		if (yeshteryOrgId > 0) {
+			yeshteryUserService.createYeshteryEntity(user.getUsername(), user.getEmail(), nasnavUser, yeshteryOrgId, orgId);
+		}
+
     	OAuth2UserEntity oAuthUser = saveNewOAuthUserToDB(user, token, orgId, nasnavUser);
     	
 		return oAuthUser;

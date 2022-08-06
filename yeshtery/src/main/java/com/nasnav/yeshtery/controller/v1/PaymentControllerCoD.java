@@ -4,7 +4,6 @@ import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.Tools;
@@ -12,7 +11,7 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.payments.cod.CodCommons.COD_OPERATOR;

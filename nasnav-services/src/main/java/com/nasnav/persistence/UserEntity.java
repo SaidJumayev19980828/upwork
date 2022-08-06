@@ -5,7 +5,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
-import com.nasnav.persistence.listeners.UserEntityListener;
+import com.nasnav.persistence.yeshtery.listeners.UserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

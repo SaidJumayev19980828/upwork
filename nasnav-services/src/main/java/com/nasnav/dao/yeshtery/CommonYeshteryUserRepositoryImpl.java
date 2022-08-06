@@ -1,9 +1,11 @@
-package com.nasnav.yeshtery.dao;
+package com.nasnav.dao.yeshtery;
 
 import com.nasnav.dao.RoleRepository;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

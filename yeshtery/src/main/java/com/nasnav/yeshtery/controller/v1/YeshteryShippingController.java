@@ -2,13 +2,11 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.service.ShippingManagementService;
-import com.nasnav.yeshtery.YeshteryConstants;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;

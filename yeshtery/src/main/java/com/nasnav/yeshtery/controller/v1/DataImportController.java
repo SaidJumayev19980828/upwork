@@ -6,7 +6,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;

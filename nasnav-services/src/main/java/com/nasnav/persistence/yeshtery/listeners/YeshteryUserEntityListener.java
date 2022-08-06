@@ -1,10 +1,10 @@
-package com.nasnav.persistence.listeners;
+package com.nasnav.persistence.yeshtery.listeners;
 
 import com.nasnav.integration.IntegrationServiceAdapter;
 import com.nasnav.integration.events.data.AddressData;
 import com.nasnav.integration.events.data.CustomerData;
 import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.YeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.sun.istack.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

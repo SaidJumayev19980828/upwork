@@ -1,8 +1,10 @@
-package com.nasnav.persistence;
+package com.nasnav.persistence.yeshtery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

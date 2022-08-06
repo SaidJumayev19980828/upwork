@@ -10,7 +10,7 @@ import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.service.OrderService;
 import com.nasnav.yeshtery.Yeshtery;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;

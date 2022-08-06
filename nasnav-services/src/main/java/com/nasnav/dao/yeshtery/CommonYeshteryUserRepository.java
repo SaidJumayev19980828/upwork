@@ -1,11 +1,10 @@
-package com.nasnav.yeshtery.dao;
+package com.nasnav.dao.yeshtery;
 
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BaseYeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface CommonYeshteryUserRepository {

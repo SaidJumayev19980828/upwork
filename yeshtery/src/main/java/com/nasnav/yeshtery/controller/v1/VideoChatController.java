@@ -3,7 +3,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.VideoChatService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,7 +1,7 @@
-package com.nasnav.yeshtery.dao;
+package com.nasnav.dao.yeshtery;
 
-import com.nasnav.persistence.YeshteryUserEntity;
-import com.nasnav.persistence.YeshteryUserTokensEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserTokensEntity;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

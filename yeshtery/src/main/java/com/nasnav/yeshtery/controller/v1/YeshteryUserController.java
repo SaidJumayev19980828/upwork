@@ -11,10 +11,9 @@ import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
-import com.nasnav.yeshtery.YeshteryConstants;
-import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
-import com.nasnav.yeshtery.services.interfaces.YeshteryUserService;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
+import com.nasnav.service.yeshtery.YeshteryUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -87,7 +86,7 @@ public class YeshteryUserController {
        //
         ResponseEntity.BodyBuilder response = ResponseEntity.ok();
         try {
-            UserApiResponse body = securityService.socialLogin(socialLoginToken);
+            UserApiResponse body = securityService.socialLogin(socialLoginToken, true);
             return response.body(body);
         }catch(Exception e) {
             //change it to forward to a server rendered page

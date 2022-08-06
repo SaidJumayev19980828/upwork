@@ -1,7 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.service.FileService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;

@@ -148,7 +148,7 @@ public class UserController {
     public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
     	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     	try {
-    		UserApiResponse body = securityService.socialLogin(socialLoginToken);
+    		UserApiResponse body = securityService.socialLogin(socialLoginToken, false);
     		return response.body(body);
     	}catch(InCompleteOAuthRegistration e) {
     		//change it to forward to a server rendered page

@@ -1,4 +1,4 @@
-package com.nasnav.persistence;
+package com.nasnav.persistence.yeshtery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;

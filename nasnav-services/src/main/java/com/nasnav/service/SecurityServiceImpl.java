@@ -14,6 +14,7 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
+import com.nasnav.service.yeshtery.YeshteryUserService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +74,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	@Autowired
-	private UserService userService;
+	private YeshteryUserService yeshteryUserService;
 
 	@Autowired
 	private UserTokenRepository userTokenRepo;
@@ -488,11 +489,18 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse socialLogin(String socialLoginToken) {
+	public UserApiResponse socialLogin(String socialLoginToken, boolean yeshteryInstance) {
 		BaseUserEntity userEntity = getUserBySocialLoginToken(socialLoginToken);
 		
 		validateLoginUser(userEntity);			
-		
+
+		if (yeshteryInstance) {
+			yeshteryUserService.createYeshteryEntity(userEntity.getEmail(),
+					userEntity.getName(),
+					(UserEntity) userEntity,
+					config.yeshteryOrgId,
+					userEntity.getOrganizationId());
+		}
 		return login(userEntity, false);
 	}
 

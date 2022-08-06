@@ -1,7 +1,8 @@
-package com.nasnav.yeshtery.services.impl;
+package com.nasnav.service.yeshtery;
 
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -9,15 +10,18 @@ import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserTokensEntity;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.UserPrincipal;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
-import com.nasnav.yeshtery.YeshteryConstants;
-import com.nasnav.yeshtery.dao.CommonYeshteryUserRepository;
-import com.nasnav.yeshtery.dao.YeshteryUserRepository;
-import com.nasnav.yeshtery.dao.YeshteryUserTokenRepository;
-import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
-import com.nasnav.yeshtery.services.interfaces.YeshteryUserService;
+import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dao.yeshtery.CommonYeshteryUserRepository;
+import com.nasnav.dao.yeshtery.YeshteryUserRepository;
+import com.nasnav.dao.yeshtery.YeshteryUserTokenRepository;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.http.client.utils.URIBuilder;
@@ -235,13 +239,17 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity() {
-        List<OrganizationEntity> orgs = orgRepo.findYeshteryOrganizations();
         List<YeshteryUserEntity> yeshteryUsers = userRepository.findAll();
+        return doLinkNonYeshteryUsersToCorrespondingYeshteryUserEntity(yeshteryUsers);
+    }
+
+    private int doLinkNonYeshteryUsersToCorrespondingYeshteryUserEntity(List<YeshteryUserEntity> yeshteryUsers) {
+        List<OrganizationEntity> orgs = orgRepo.findYeshteryOrganizations();
         int count = 0;
         if (yeshteryUsers.isEmpty())
             return count;
-        for(OrganizationEntity org : orgs) {
-            for (YeshteryUserEntity yeshteryUser : yeshteryUsers) {
+        for (YeshteryUserEntity yeshteryUser : yeshteryUsers) {
+            for(OrganizationEntity org : orgs) {
                 Optional<UserEntity> optionalUser = nasNavUserRepository.findByEmailAndOrganizationId(yeshteryUser.getEmail(), org.getId());
                 UserEntity user;
                 if (optionalUser.isEmpty()) {
@@ -269,6 +277,30 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         }
         return count;
     }
+
+    @Override
+    public YeshteryUserEntity createYeshteryEntity(String name, String email, UserEntity nasnavUser, int yeshteryOrgId, Long orgId) {
+        YeshteryUserEntity yeshteryUser = userRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+        if (yeshteryUser == null) {
+            yeshteryUser = new YeshteryUserEntity();
+            yeshteryUser.setName(name);
+            yeshteryUser.setEmail(email);
+            yeshteryUser.setOrganizationId((long) yeshteryOrgId);
+            yeshteryUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
+            yeshteryUser.setUserStatus(ACTIVATED.getValue());
+            yeshteryUser = userRepository.save(yeshteryUser);
+        }
+        nasnavUser.setYeshteryUserId(yeshteryUser.getId());
+        nasNavUserRepository.save(nasnavUser);
+        this.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(yeshteryUser);
+        return yeshteryUser;
+    }
+
+    @Override
+    public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(YeshteryUserEntity yeshteryUser) {
+        return doLinkNonYeshteryUsersToCorrespondingYeshteryUserEntity(asList(yeshteryUser));
+    }
+
 
     private void  createNewYeshtryUserForOrg(UserDTOs.UserRegistrationObjectV2 userJson, OrganizationEntity org, Long referencedUserId) {
         Optional<UserEntity> userEntity = nasNavUserRepository.findByEmailAndOrganizationId(userJson.getEmail(), org.getId());

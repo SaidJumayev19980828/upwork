@@ -1,6 +1,7 @@
-package com.nasnav.persistence;
+package com.nasnav.persistence.yeshtery;
 
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.persistence.DefaultBusinessEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

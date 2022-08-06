@@ -1,12 +1,14 @@
-package com.nasnav.yeshtery.services.interfaces;
+package com.nasnav.service.yeshtery;
 
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
@@ -25,4 +27,7 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     List<UserRepresentationObject> getUserList();
 
     int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
+    int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(YeshteryUserEntity yeshteryUser);
+
+    YeshteryUserEntity createYeshteryEntity(String name, String email, UserEntity nasnavUser, int yeshteryOrgId, Long orgId);
 }

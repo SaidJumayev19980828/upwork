@@ -5,7 +5,7 @@ import com.nasnav.dto.response.ProductStatisticsInfo;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.dto.query.result.CartStatisticsData;
 import com.nasnav.service.StatisticsService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

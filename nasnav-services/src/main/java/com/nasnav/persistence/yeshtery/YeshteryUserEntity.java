@@ -1,9 +1,10 @@
-package com.nasnav.persistence;
+package com.nasnav.persistence.yeshtery;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
-import com.nasnav.persistence.listeners.YeshteryUserEntityListener;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.yeshtery.listeners.YeshteryUserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
