@@ -24,6 +24,8 @@ public class LoyaltyPointTransactionDTO {
     private Long orderId;
     private Long metaOrderId;
     private Long shopId;
+    private String shopName;
+    private String shopLogo;
     private Boolean isCoinsDrop;
     private Boolean isGift;
     private Boolean gotOnline;

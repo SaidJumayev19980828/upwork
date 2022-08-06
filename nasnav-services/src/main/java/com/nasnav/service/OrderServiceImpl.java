@@ -39,12 +39,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -53,7 +47,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -63,12 +56,15 @@ import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
+import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
+import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -77,8 +73,7 @@ import static java.math.RoundingMode.FLOOR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Objects.isNull;
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
+import static java.util.Optional.*;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 @Service
@@ -310,6 +305,7 @@ public class OrderServiceImpl implements OrderService {
 
 		try {
 			subOrders.forEach(this::sendNotificationEmailToStoreManager);
+			sendNotificationEmailToYeshteryOrgManager(metaOrder, subOrders);
 		} catch(Throwable t) {
 			logger.error(t,t);
 		}
@@ -319,6 +315,26 @@ public class OrderServiceImpl implements OrderService {
 		}catch(Throwable t) {
 			logger.error(t,t);
 		}
+	}
+
+	private void sendNotificationEmailToYeshteryOrgManager(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders) {
+		Long metaOrderId = metaOrder.getId();
+		Long yeshteryOrgId = metaOrder.getOrganization().getId();
+		String yeshteryOrgName = metaOrder.getOrganization().getName();
+		List<String> to = getYeshteryOrgManagerEmails(yeshteryOrgId);
+		List<String> cc = emptyList();
+		String subject = format("New Meta Order[%d] Created!", metaOrderId);
+		Map<String,Object> parametersMap = createEmailParamsForYeshteryMetaOrder(metaOrder, subOrders);
+		String template = META_ORDER_NOTIFICATION_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(yeshteryOrgName, to, subject, cc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+	private List<String> getYeshteryOrgManagerEmails(Long yeshteryOrgId) {
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), yeshteryOrgId);
 	}
 
 	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
@@ -367,6 +383,42 @@ public class OrderServiceImpl implements OrderService {
 		return params;
 	}
 
+	private Map<String, Object> createEmailParamsForYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders) {
+		Map<String,Object> params = createOrgPropertiesParams(metaOrder.getOrganization());
+		OrdersEntity anySubOrder = subOrders.stream().findAny().get();
+		String orderTime = getZonedDateTimeStr(metaOrder.getCreatedAt(), getOrderCurrency(anySubOrder));
+		List<SubOrder> orders =
+				subOrders
+					.stream()
+					.map(this::getSubOrder)
+					.collect(toList());
+		AddressRepObj customerAddress = getCustomerAddress(orders);
+
+		orders.forEach(this::changeShippingServiceName);
+
+		String operator = paymentsRepo.findByMetaOrderId(metaOrder.getId())
+				.map(PaymentEntity::getOperator)
+				.map(this::changeOperatorName)
+				.orElse("");
+
+		String notes = metaOrder.getNotes();
+
+		params.put("metaOrderId", metaOrder.getId());
+		params.put("creationTime", orderTime);
+		params.put("customerAddress", customerAddress);
+		params.put("orders", orders);
+		params.put("operator", operator);
+		params.put("notes", notes);
+		return params;
+	}
+
+	private AddressRepObj getCustomerAddress(List<SubOrder> orders){
+		return orders
+				.stream()
+				.map(SubOrder::getDeliveryAddress)
+				.findFirst()
+				.orElse(new AddressRepObj());
+	}
 	private Map<String, Object> createRejectionEmailParams(OrdersEntity order, String rejectionReason) {
 		String message =
 				ofNullable(rejectionReason)
@@ -916,7 +968,24 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 
 
+		if(detailsLevel >= 2 && finalParams.getOrders_sorting_option().equals(QUANTITY))
+			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
+
 		return new OrdersListResponse(ordersCount, detailedOrders);
+	}
+
+	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {
+		sortingWay = ofNullable(sortingWay).orElse(DESC);
+
+		if(sortingWay.equals(DESC)){
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity).reversed())
+					.collect(toList());
+		}else {
+			return detailedOrders.stream()
+					.sorted(Comparator.comparingInt(DetailedOrderRepObject::getTotalQuantity))
+					.collect(toList());
+		}
 	}
 
 	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<OrdersEntity> orders) {
@@ -974,12 +1043,25 @@ public class OrderServiceImpl implements OrderService {
 		Integer detailsLevel = ofNullable(params.getDetails_level()).orElse(0);
 		BaseUserEntity user = securityService.getCurrentUser();
 
+		setDefaultSortingParamsIfNull(params);
 		params.setDetails_level( detailsLevel);
 		setListOfStatus(params);
 		setOrderSearchStartAndCount(params);
 		limitSearchParamByUserRole(params, user);
 
 		return params;
+	}
+
+	private void setDefaultSortingParamsIfNull(OrderSearchParam params){
+		OrderSortOptions sortOption =
+				ofNullable(params.getOrders_sorting_option())
+						.orElse(CREATION_DATE);
+		SortingWay sortingWay =
+				ofNullable(params.getSorting_way())
+						.orElse(DESC);
+
+		params.setOrders_sorting_option(sortOption);
+		params.setSorting_way(sortingWay);
 	}
 
 	private void setListOfStatus(OrderSearchParam params) {
@@ -1796,7 +1878,7 @@ public class OrderServiceImpl implements OrderService {
 		String status = ofNullable(findEnum(order.getStatus()))
 				.orElse(NEW)
 				.name();
-
+		String organizationName = order.getOrganizationEntity().getName();
 		List<BasketItem> items = getBasketItemsDetailsMap( setOf(order) ).get(order.getId());
 
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
@@ -1830,8 +1912,9 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setTotal(order.getTotal());
 		subOrder.setSubtotal(order.getSubTotal());
 		subOrder.setDiscount(order.getDiscounts());
-
+		subOrder.setOrganizationName(organizationName);
 		subOrder.setPoints(getOrderPoints(order));
+
 		if(!isNullOrEmpty(subOrder.getPoints())) {
 			BigDecimal totalPointAmount = subOrder.getPoints().stream().map(point -> ofNullable(point.getAmount()).orElse(ZERO))
 					.reduce(ZERO, BigDecimal::add);

@@ -139,9 +139,9 @@ public class OrganizationEntity implements BaseEntity {
         obj.setMatomoSiteId(getMatomoId());
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());
-        YeshteryState
-                .getYeshteryState(yeshteryState)
-                .ifPresent(obj::setYeshteryState);
+        if (yeshteryState != null) {
+            obj.setYeshteryState(yeshteryState == 1);
+        }
 
         obj.setEnableVideoChat(enableVideoChat.equals(1));
 

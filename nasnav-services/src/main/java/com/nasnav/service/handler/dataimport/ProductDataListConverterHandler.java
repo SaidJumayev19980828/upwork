@@ -232,7 +232,7 @@ public class ProductDataListConverterHandler implements Handler<ImportDataComman
         variant.setFeatures(features);
 
         if (extraAtrributes != null) {
-            variant.setExtraAttr(extraAtrributes);
+            variant.setVariantExtraAttr(extraAtrributes);
         }
 
         Optional<VariantBasicData> variantBasicData =

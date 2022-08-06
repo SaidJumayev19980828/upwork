@@ -126,8 +126,11 @@ public class LoyaltyPointTransactionEntity {
         LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
         BeanUtils.copyProperties(this, dto);
 
-        if (shop != null)
+        if (shop != null) {
             dto.setShopId(shop.getId());
+            dto.setShopName(shop.getName());
+            dto.setShopLogo(shop.getLogo());
+        }
 
         if(order != null)
             dto.setOrderId(order.getId());

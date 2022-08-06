@@ -13,6 +13,8 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.VideoChatResponse;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.bytebuddy.utility.RandomString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,12 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.nasnav.enumerations.VideoChatStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.*;
@@ -44,11 +45,7 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
-
-
-    @Autowired
-    private OrganizationService organizationService;
+    private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
     @Autowired
     private SecurityService securityService;
@@ -66,7 +63,7 @@ public class VideoChatServiceImpl implements VideoChatService {
 
 
     @Override
-    public VideoChatResponse getSession(String sessionName, Long orgId) {
+    public VideoChatResponse createOrJoinSession(String sessionName, Long orgId) {
 
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationEntity organization = organizationRepository.findById(orgId)
@@ -91,12 +88,25 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String sessionName, Long orgId) {
         VideoChatLogEntity videChatLogObj = getVideoChatLogEntity(sessionName, orgId);
-        videChatLogObj.setAssignedTo(loggedInUser);
-        videoChatLogRepository.save(videChatLogObj);
+        String token;
+        if (Objects.equals(videChatLogObj.getAssignedTo(), loggedInUser)) {
+            token = getUserInfoFromSessionsMap(sessionName, loggedInUser.getId())
+                    .map(UserSessionInfo::getToken)
+                    .orElse(addTokenToSession(loggedInUser, sessionName));
+        } else {
+            videChatLogObj.setAssignedTo(loggedInUser);
+            videChatLogObj.addDescription("employee (" +loggedInUser.getName() + ") has joined the session");
+            videoChatLogRepository.save(videChatLogObj);
+            token = addTokenToSession(loggedInUser, sessionName);
+        }
 
-        String token = createConnection(getSession(sessionName));
-        mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
         return new VideoChatResponse(true, null, token, loggedInUser.getName(), sessionName);
+    }
+
+    private String addTokenToSession(EmployeeUserEntity loggedInUser, String sessionName) {
+        String token = createConnection(getSession(sessionName));
+        mapSessionNamesTokens.get(sessionName).add(new UserSessionInfo(loggedInUser.getId(), true, token));
+        return token;
     }
 
     private VideoChatLogEntity getVideoChatLogEntity(String sessionName, Long orgId) {
@@ -109,15 +119,14 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private VideoChatResponse getOrCreateUserVideoSession(UserEntity loggedInUser, String sessionName, Long orgId) {
         if (Strings.isNotEmpty(sessionName)) {
-            return getExistingChatSession(sessionName);
+            return getExistingChatSession(sessionName, orgId);
         }
         return createNewVideoSession(loggedInUser, orgId);
     }
 
-    private VideoChatResponse getExistingChatSession(String sessionName) {
-        String token = createConnection(getSession(sessionName));
-        mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
-        return new VideoChatResponse(true, null, token, null, sessionName);
+    private VideoChatResponse getExistingChatSession(String sessionName, Long orgId) {
+        VideoChatLogEntity entity = getVideoChatLogEntity(sessionName, orgId);
+        return new VideoChatResponse(true, null, entity.getToken(), null, sessionName);
     }
 
     private String createConnection(Session session) {
@@ -149,13 +158,14 @@ public class VideoChatServiceImpl implements VideoChatService {
             newVideChatLog.setName(sessionName);
             newVideChatLog.setIsActive(true);
             newVideChatLog.setOrganization(organizationEntity);
-            newVideChatLog.setStatus(VideoChatStatus.NEW.getValue());
+            newVideChatLog.setStatus(NEW.getValue());
 
             videoChatLogRepository.saveAndFlush(newVideChatLog);
 
             this.sessionsMap.put(sessionName, session);
-            this.mapSessionNamesTokens.put(sessionName, new ConcurrentHashMap<>());
-            this.mapSessionNamesTokens.get(sessionName).put(token, OpenViduRole.PUBLISHER);
+            List<UserSessionInfo> sessionInfos = new ArrayList<>();
+            sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, token));
+            this.mapSessionNamesTokens.put(sessionName, sessionInfos);
             return new VideoChatResponse(true, null, token, null, sessionName);
 
         } catch (Exception e) {
@@ -165,26 +175,47 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Override
     public List<VideoChatLogRepresentationObject> getOrgSessions(Long orgId) {
-        return videoChatLogRepository.findByStatusAndOrganization_Id(VideoChatStatus.NEW.getValue(), orgId)
+        return videoChatLogRepository.findByOrganization_Id(orgId)
                 .stream()
                 .map(e ->(VideoChatLogRepresentationObject) e.getRepresentation())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void leaveSession(String sessionName, Long orgId) {
+    public void leaveSession(String sessionName, Long orgId, Boolean endCall) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         VideoChatLogEntity videoEntity = getVideoChatLogEntity(sessionName, orgId);
+
         if (loggedInUser instanceof UserEntity) {
-           endSession(videoEntity);
+           endSession(videoEntity, ENDED_BY_CUSTOMER);
         } else if (loggedInUser instanceof EmployeeUserEntity) {
-            videoEntity.setAssignedTo(null);
-            videoEntity.setStatus(VideoChatStatus.STARTED.getValue());
-            videoChatLogRepository.saveAndFlush(videoEntity);
+            if(endCall){
+                endSession(videoEntity, ENDED_BY_EMPLOYEE);
+            } else {
+                removeUserSessionInfoFromMap(sessionName, loggedInUser.getId());
+
+                videoEntity.setAssignedTo(null);
+                videoEntity.setStatus(STARTED.getValue());
+                videoEntity.addDescription("employee ("+loggedInUser.getName() + ") has left the session");
+                videoChatLogRepository.saveAndFlush(videoEntity);
+            }
         }
     }
 
-    private void endSession(VideoChatLogEntity videoEntity) {
+    private Optional<UserSessionInfo> getUserInfoFromSessionsMap(String sessionName, Long userId) {
+        return mapSessionNamesTokens
+                .get(sessionName)
+                .stream()
+                .filter(u -> Objects.equals(u.getUserId(), userId))
+                .findAny();
+    }
+
+    private void removeUserSessionInfoFromMap(String sessionName, Long userId) {
+        getUserInfoFromSessionsMap(sessionName, userId)
+                .ifPresent(u -> mapSessionNamesTokens.get(sessionName).remove(u));
+    }
+
+    private void endSession(VideoChatLogEntity videoEntity, VideoChatStatus status) {
         try {
             Session session = getSession(videoEntity.getName());
             session.close();
@@ -193,7 +224,17 @@ public class VideoChatServiceImpl implements VideoChatService {
         }
         sessionsMap.remove(videoEntity.getName());
         mapSessionNamesTokens.remove(videoEntity.getName());
-        videoEntity.setStatus(VideoChatStatus.FINISHED.getValue());
+        videoEntity.setIsActive(false);
+        videoEntity.setEndedAt(LocalDateTime.now());
+        videoEntity.setStatus(status.getValue());
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
+}
+
+@Data
+@AllArgsConstructor
+class UserSessionInfo {
+    private Long userId;
+    private Boolean isEmployee;
+    private String token;
 }
