@@ -45,7 +45,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 			setLogEntityContextAttributes(apiLogsEntity);
 			apiCallsRepo.save(apiLogsEntity);
 		} catch (IllegalStateException exception) {
-			exception.printStackTrace();
+
 		}
 	}
 
@@ -95,14 +95,10 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 
 	private void setLoggedUser(ApiLogsEntity apiLogsEntity) throws IllegalStateException {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
-		if (loggedUserIsEmployee(currentUser)) {
-			apiLogsEntity.setLoggedEmployee((EmployeeUserEntity) currentUser);
-		} else {
+		if (securityService.currentUserIsCustomer()) {
 			apiLogsEntity.setLoggedCustomer((UserEntity) currentUser);
+		} else {
+			apiLogsEntity.setLoggedEmployee((EmployeeUserEntity) currentUser);
 		}
-	}
-
-	private boolean loggedUserIsEmployee(BaseUserEntity currentUser) {
-		return currentUser instanceof EmployeeUserEntity;
 	}
 }
