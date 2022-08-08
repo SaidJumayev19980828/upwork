@@ -25,7 +25,7 @@ public class CollectionUtils {
 		return Flux
 				.fromIterable(nullFree)
 				.window(maxSize)				
-				.flatMap(batch -> batch.buffer())
+				.flatMap(Flux::buffer)
 				.collectList()
 				.blockOptional()
 				.orElse(emptyList());
@@ -88,4 +88,11 @@ public class CollectionUtils {
 				.concat(collection1.stream(), collection2.stream())
 				.collect(toList());
     }
+
+	public static <T> boolean listsEqualsIgnoreOrder(List<T> list1, List<T> list2) {
+		if (list1 == null || list2 == null)
+			return list1 == list2;
+
+		return new HashSet<>(list1).equals(new HashSet<>(list2));
+	}
 }
