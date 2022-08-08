@@ -10,7 +10,7 @@ public class ApiLogsSearchParam extends BaseSearchParams{
 	private List<Long> organizations;
 	private String created_after;
 	private String created_before;
-	private Boolean only_employees;
+	private Boolean employees;
 	private Integer start;
 	private Integer count;
 }

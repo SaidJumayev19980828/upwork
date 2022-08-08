@@ -435,7 +435,7 @@ public class AdminApiTest {
 
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getApiLogs().size());
-        assertResponseResultCount(response, 9L);
+        assertResponseResultCount(response, 3L);
     }
 
     @Test
@@ -443,7 +443,7 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByAllEmployees(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=true", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true", token);
 
         assertEquals(OK, response.getStatusCode());
         assertResponseResultCount(response, 3L);
@@ -455,7 +455,7 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByAllCustomers(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=false", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=false", token);
 
         assertEquals(OK, response.getStatusCode());
         assertResponseResultCount(response, 6L);
@@ -467,7 +467,7 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByCustomers(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=false&users=71&users=72", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=false&users=71&users=72", token);
 
         assertEquals(OK, response.getStatusCode());
         assertResponseResultCount(response, 5L);
@@ -479,7 +479,7 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByEmployees(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("only_employees=true&users=68&users=69", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true&users=68&users=69", token);
 
         assertEquals(OK, response.getStatusCode());
         assertResponseResultCount(response, 3L);
@@ -494,7 +494,7 @@ public class AdminApiTest {
         ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("created_after=2022-07-01:00:00:00&created_before=2022-07-04:12:12:12", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 5L);
+        assertResponseResultCount(response, 2L);
         assertResponseResultIds(response, 101L, 102L, 103L, 104L, 105L);
     }
 
@@ -506,7 +506,7 @@ public class AdminApiTest {
         ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("organizations=99001", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 4L);
+        assertResponseResultCount(response, 2L);
         assertResponseResultIds(response, 101L, 104L, 107L, 108L);
     }
 

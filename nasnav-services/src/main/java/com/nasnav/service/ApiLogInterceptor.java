@@ -28,15 +28,10 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 	public void afterCompletion(HttpServletRequest request,
 								HttpServletResponse response,
 								Object handler,
-								@Nullable Exception ex) throws Exception {
+								@Nullable Exception ex) {
 		ApiLogsEntity apiLogsEntity = prepareLogEntity(request, response);
 
-		Thread thread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				saveApiLogs(apiLogsEntity);
-			}
-		});
+		Thread thread = new Thread(() -> saveApiLogs(apiLogsEntity));
 		thread.start();
 	}
 

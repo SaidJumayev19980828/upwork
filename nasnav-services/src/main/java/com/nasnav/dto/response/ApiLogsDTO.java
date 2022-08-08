@@ -13,8 +13,9 @@ public class ApiLogsDTO extends BaseRepresentationObject {
 	private Long id;
 	private String url;
 	private String callDate;
-	private Long employeeId;
-	private Long customerId;
+	private Long userId;
+	private String userName;
+	private String userEmail;
 	private Long organizationId;
 	private String requestParameters;
 	private String requestContent;

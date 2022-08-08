@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Optional.ofNullable;
 import static javax.persistence.criteria.JoinType.LEFT;
 
 @Component("apiLogsQueryBuilder")
@@ -39,17 +40,18 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 		List<Predicate> predicatesList = new ArrayList<>();
 
 
-		if(searchInAllEmployees(searchParam)){ //1
-			predicatesList.add(root.get("loggedEmployee").isNotNull());
-		}
-		if(searchForSpecificEmployees(searchParam)){
-			predicatesList.add(root.get("loggedEmployee").in(searchParam.getUsers()));
-		}
-		if(searchInAllCustomers(searchParam)){
-			predicatesList.add(root.get("loggedCustomer").isNotNull());
-		}
-		if(searchForSpecificCustomers(searchParam)){
-			predicatesList.add(root.get("loggedCustomer").in(searchParam.getUsers()));
+		if(searchInEmployees(searchParam)){
+			if (containUsersIds(searchParam)) {
+				predicatesList.add(root.get("loggedEmployee").in(searchParam.getUsers()));
+			} else {
+				predicatesList.add(root.get("loggedEmployee").isNotNull());
+			}
+		} else {
+			if (containUsersIds(searchParam)) {
+				predicatesList.add(root.get("loggedCustomer").in(searchParam.getUsers()));
+			} else {
+				predicatesList.add(root.get("loggedCustomer").isNotNull());
+			}
 		}
 		if (searchParam.getOrganizations() != null){
 			predicatesList.add(root.get("organization").in(searchParam.getOrganizations()));
@@ -66,26 +68,8 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 		this.predicates = predicatesList.stream().toArray(Predicate[]::new);
 	}
 
-	private boolean searchInAllEmployees(ApiLogsSearchParam searchParam){
-		return searchParam.getOnly_employees() != null && searchParam.getOnly_employees() && ! containUsersIds(searchParam);
-	}
-
-	private boolean searchForSpecificEmployees(ApiLogsSearchParam searchParam){
-		return searchParam.getOnly_employees() != null &&
-				searchParam.getOnly_employees() &&
-				containUsersIds(searchParam);
-	}
-
-	private boolean searchInAllCustomers(ApiLogsSearchParam searchParam){
-		return searchParam.getOnly_employees() != null &&
-				! searchParam.getOnly_employees() &&
-				! containUsersIds(searchParam);
-	}
-
-	private boolean searchForSpecificCustomers(ApiLogsSearchParam searchParam){
-		return searchParam.getOnly_employees() != null &&
-				! searchParam.getOnly_employees() &&
-				containUsersIds(searchParam);
+	private boolean searchInEmployees(ApiLogsSearchParam searchParam){
+		return ofNullable(searchParam.getEmployees()).orElse(true);
 	}
 
 	private boolean containUsersIds(ApiLogsSearchParam searchParam){

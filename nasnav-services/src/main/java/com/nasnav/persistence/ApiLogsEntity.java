@@ -60,14 +60,18 @@ public class ApiLogsEntity implements BaseEntity{
 		dto.setRequestContent(requestContent);
 		dto.setResponseCode(responseCode);
 
-		ofNullable(loggedCustomer)
-				.map(UserEntity::getId)
-				.ifPresent(dto::setCustomerId);
-
-		ofNullable(loggedEmployee)
-				.map(EmployeeUserEntity::getId)
-				.ifPresent(dto::setEmployeeId);
+		if (loggedEmployee != null) {
+			setUserInfo(dto, loggedEmployee);
+		} else {
+			setUserInfo(dto, loggedCustomer);
+		}
 
 		return dto;
+	}
+
+	private void setUserInfo(ApiLogsDTO dto, BaseUserEntity user) {
+		dto.setUserId(user.getId());
+		dto.setUserName((user.getName()));
+		dto.setUserEmail(user.getEmail());
 	}
 }
