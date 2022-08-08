@@ -44,11 +44,12 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     @Autowired
     protected ProductRepository productRepo;
 
+    protected Boolean addExcelDataValidation;
 
     @Override
-    public ByteArrayOutputStream generateProductsFile(Long shopId) throws IOException {
+    public ByteArrayOutputStream generateProductsFile(Long shopId, Boolean addExcelDataValidation) throws IOException {
         Long orgId = security.getCurrentUserOrganizationId();
-
+        this.addExcelDataValidation = addExcelDataValidation;
         List<String> headers = importService.getProductImportTemplateHeaders();
 
         List<CsvRow> products = exportService.exportProductsData(orgId, shopId);
