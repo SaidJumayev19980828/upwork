@@ -17,7 +17,6 @@ public class ApiLogsDTO extends BaseRepresentationObject {
 	private String userName;
 	private String userEmail;
 	private Long organizationId;
-	private String requestParameters;
 	private String requestContent;
 	private Integer responseCode;
 }

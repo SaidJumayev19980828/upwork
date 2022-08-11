@@ -2,12 +2,11 @@ package com.nasnav.enumerations;
 
 import lombok.Getter;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static java.util.Collections.emptySet;
 
 /**
  * Hold User Roles
@@ -35,20 +34,25 @@ public enum Roles {
     private static final Set<String> nasnavAdminPrivilege =
             setOf(NASNAV_ADMIN.name(), NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
                     ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
+
+    @Getter
+    private static final Set<String> nasnavEmployeePrivilege =
+            setOf(NASNAV_EMPLOYEE.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+                    ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
     private static final Set<String> organizationAdminPrivilege =
-            setOf(ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
-                    STORE_MANAGER.name(), STORE_EMPLOYEE.name());
-    @Getter
-    private static final Set<String> organizationManagerPrivilege =
             setOf(ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
                     STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> organizationEmployeePrivilege = setOf(ORGANIZATION_EMPLOYEE.name(), STORE_EMPLOYEE.name());
+    private static final Set<String> organizationManagerPrivilege =
+            setOf(ORGANIZATION_EMPLOYEE.name(),
+                    STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeManagerPrivilege = setOf(STORE_MANAGER.name(), STORE_EMPLOYEE.name());
+    private static final Set<String> organizationEmployeePrivilege = setOf(STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeEmployeePrivilege = setOf(STORE_EMPLOYEE.name());
+    private static final Set<String> storeManagerPrivilege = setOf(STORE_EMPLOYEE.name());
+    @Getter
+    private static final Set<String> storeEmployeePrivilege = emptySet();
 
 
     Roles(String value, int level, boolean canCreateUsers) {
@@ -67,14 +71,17 @@ public enum Roles {
     }
 
 
-
+    public static List<Roles> getSortedEmployeeRoles() {
+        return List.of(NASNAV_ADMIN, NASNAV_EMPLOYEE, ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
+    }
 
     public static Map<String, Set<String>> getAllPrivileges(){
         Map<String, Set<String>> result = new HashMap<>();
         result.put(NASNAV_ADMIN.name(), nasnavAdminPrivilege);
+        result.put(NASNAV_EMPLOYEE.name(), nasnavEmployeePrivilege);
         result.put(ORGANIZATION_ADMIN.name(), organizationAdminPrivilege);
         result.put(ORGANIZATION_MANAGER.name(), organizationManagerPrivilege);
-        result.put(STORE_EMPLOYEE.name(), organizationEmployeePrivilege);
+        result.put(ORGANIZATION_EMPLOYEE.name(), organizationEmployeePrivilege);
         result.put(STORE_MANAGER.name(), storeManagerPrivilege);
         result.put(STORE_EMPLOYEE.name(), storeEmployeePrivilege);
         return result;

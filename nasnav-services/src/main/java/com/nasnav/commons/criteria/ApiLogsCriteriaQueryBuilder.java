@@ -40,17 +40,19 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 		List<Predicate> predicatesList = new ArrayList<>();
 
 
-		if(searchInEmployees(searchParam)){
-			if (containUsersIds(searchParam)) {
-				predicatesList.add(root.get("loggedEmployee").in(searchParam.getUsers()));
+		if(searchParam.getEmployees() != null) {
+			if (searchParam.getEmployees()) {
+				if (containUsersIds(searchParam)) {
+					predicatesList.add(root.get("loggedEmployee").in(searchParam.getUsers()));
+				} else {
+					predicatesList.add(root.get("loggedEmployee").isNotNull());
+				}
 			} else {
-				predicatesList.add(root.get("loggedEmployee").isNotNull());
-			}
-		} else {
-			if (containUsersIds(searchParam)) {
-				predicatesList.add(root.get("loggedCustomer").in(searchParam.getUsers()));
-			} else {
-				predicatesList.add(root.get("loggedCustomer").isNotNull());
+				if (containUsersIds(searchParam)) {
+					predicatesList.add(root.get("loggedCustomer").in(searchParam.getUsers()));
+				} else {
+					predicatesList.add(root.get("loggedCustomer").isNotNull());
+				}
 			}
 		}
 		if (searchParam.getOrganizations() != null){
@@ -66,10 +68,6 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 		}
 
 		this.predicates = predicatesList.stream().toArray(Predicate[]::new);
-	}
-
-	private boolean searchInEmployees(ApiLogsSearchParam searchParam){
-		return ofNullable(searchParam.getEmployees()).orElse(true);
 	}
 
 	private boolean containUsersIds(ApiLogsSearchParam searchParam){

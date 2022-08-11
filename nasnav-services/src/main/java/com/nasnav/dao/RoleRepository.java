@@ -8,17 +8,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface RoleRepository extends JpaRepository<Role, Integer> {
-    /**
-     * Gel list of roles assigned to passed employeeUserId
-     *
-     * @param employeeUserId Id of employee user entity.
-     * @return list or roles
-     */
-    @Query("from Role  role where role.id in (select empRole.roleId from  RoleEmployeeUser empRole where empRole.employeeUserId = :employeeUserId)")
-    List<Role> getRolesOfEmployeeUser(@Param("employeeUserId") Long employeeUserId);
 
-    // get all existing roles
-    List<Role> findAll();
+    @Query("select r from Role r left join r.employees e where e.id = :employeeUserId")
+    List<Role> getRolesOfEmployeeUser(@Param("employeeUserId") Long employeeUserId);
 
     // get role by its name
     Role findByName(String name);

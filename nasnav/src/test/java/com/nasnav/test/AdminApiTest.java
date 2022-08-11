@@ -435,7 +435,7 @@ public class AdminApiTest {
 
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getApiLogs().size());
-        assertResponseResultCount(response, 3L);
+        assertResponseResultCount(response, 9L);
     }
 
     @Test
@@ -491,10 +491,10 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByCallDate(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("created_after=2022-07-01:00:00:00&created_before=2022-07-04:12:12:12", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("created_after=2022-06-30:23:59:00&created_before=2022-07-04:12:12:12", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 2L);
+        assertResponseResultCount(response, 5L);
         assertResponseResultIds(response, 101L, 102L, 103L, 104L, 105L);
     }
 
@@ -506,7 +506,7 @@ public class AdminApiTest {
         ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("organizations=99001", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 2L);
+        assertResponseResultCount(response, 4L);
         assertResponseResultIds(response, 101L, 104L, 107L, 108L);
     }
 

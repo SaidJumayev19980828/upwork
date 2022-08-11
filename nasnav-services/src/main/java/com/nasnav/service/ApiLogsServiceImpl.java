@@ -25,30 +25,22 @@ public class ApiLogsServiceImpl implements ApiLogsService{
 	public ApiLogsResponse getAPIsCalls(ApiLogsSearchParam searchParam) {
 		setSearchStartAndCount(searchParam);
 
-		List<ApiLogsEntity> resultList = criteriaQueryBuilder.getResultList(searchParam);
-		List<ApiLogsDTO> resultDTOs = convertEntities(resultList);
+		List<ApiLogsDTO> resultList = criteriaQueryBuilder
+				.getResultList(searchParam, true)
+				.stream()
+				.map(log -> (ApiLogsDTO) log.getRepresentation())
+				.collect(Collectors.toList());
 
-		return getApiLogsResponse(resultDTOs);
+		return new ApiLogsResponse(criteriaQueryBuilder.getResultCount(), resultList);
 	}
 
 	private void setSearchStartAndCount(ApiLogsSearchParam params) {
-		if (params.getStart() == null || params.getStart() < 0){
+		if (params.getStart() == null || params.getStart() < 0) {
 			params.setStart(0);
 		}
 
-		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= API_LOGS_DEFAULT_COUNT){
+		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= API_LOGS_DEFAULT_COUNT) {
 			params.setCount(API_LOGS_DEFAULT_COUNT);
 		}
-	}
-
-	private List<ApiLogsDTO> convertEntities(List<ApiLogsEntity> entities){
-		return entities.stream()
-					.map(ApiLogsEntity::getRepresentation)
-					.map(ApiLogsDTO.class::cast)
-					.collect(Collectors.toList());
-	}
-
-	private ApiLogsResponse getApiLogsResponse(List<ApiLogsDTO> dtos){
-		return new ApiLogsResponse(criteriaQueryBuilder.getResultCount(), dtos);
 	}
 }

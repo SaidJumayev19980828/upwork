@@ -2,9 +2,12 @@ package com.nasnav.dao;
 
 import com.nasnav.persistence.EmployeeUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Long> {
@@ -17,13 +20,13 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	 */
 	boolean existsByAuthenticationToken(String authenticationToken);
 
-	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
-
 	boolean existsByEmailIgnoreCase(String email);
 
 	Optional<EmployeeUserEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
 	Optional<EmployeeUserEntity> findByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
+	Optional<EmployeeUserEntity> findByEmailIgnoreCase(String email);
 
 	EmployeeUserEntity getOneByEmail(String email);
 
@@ -39,18 +42,15 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 
 	List<EmployeeUserEntity> findByShopId(Long shopId);
 
-	List<EmployeeUserEntity> findByOrganizationIdAndShopId(Long orgId, Long shopId);
-
 	List<EmployeeUserEntity> findByIdIn(List<Long> employeesIds);
-
-	List<EmployeeUserEntity> findByOrganizationIdAndIdIn(Long orgId, List<Long> employeesIds);
-
-	List<EmployeeUserEntity> findByShopIdAndIdIn(Long shopId, List<Long> employeesIds);
-
-	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
 
 	EmployeeUserEntity getByEmailIgnoreCase(String email);
 
+	@Query("select e from EmployeeUserEntity e " +
+			" left join e.roles r where e.id = :id and e.organizationId = :orgId and r.name in :roles")
+	Optional<EmployeeUserEntity> findByIdAndOrgIdAndRoles(@Param("id") Long id,
+										@Param("orgId") Long orgId,
+										@Param("roles") Set<String> roles);
 }
 
 

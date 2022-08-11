@@ -947,7 +947,7 @@ public class OrderServiceImpl implements OrderService {
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
 
-		List<OrdersEntity> ordersEntityList = criteriaQueryBuilder.getResultList(finalParams);
+		List<OrdersEntity> ordersEntityList = criteriaQueryBuilder.getResultList(finalParams, true);
 		Long ordersCount = criteriaQueryBuilder.getResultCount();
 
 		Set<OrdersEntity> orders = new HashSet<>();

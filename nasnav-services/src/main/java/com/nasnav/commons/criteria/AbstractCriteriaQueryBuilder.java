@@ -27,12 +27,13 @@ public abstract class AbstractCriteriaQueryBuilder<T> {
         this.theClass = theClass;
     }
 
-    public List<T> getResultList(BaseSearchParams searchParams){
+    public List<T> getResultList(BaseSearchParams searchParams, boolean count){
         this.searchParams = searchParams;
 
         buildQuery();
         initiateListQuery();
-        initiateCountQuery();
+        if (count)
+            initiateCountQuery();
         resetResources();
 
         return resultList;

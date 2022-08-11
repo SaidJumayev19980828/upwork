@@ -12,6 +12,7 @@ public enum ErrorCodes {
 	, UXACTVX0004("Invalid redirection url[%s]!")
 	, UXACTVX0005("Missing recovery token!")
 	, UXACTVX0006("Invalid token! %s")
+	, UXACTVX0007("Employee with email[%s] doesn't exists")
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
 	, U$LOG$0002("Invalid credentials!")
@@ -43,6 +44,8 @@ public enum ErrorCodes {
 	,U$EMP$0010("Created employee must be in the same organization as the manager!")
 	,U$EMP$0011("Created employee must be in the same store as the manager!")
 	,U$EMP$0012("Invalid store_id [%d]!")
+	,U$EMP$0013("Employee can't view other employees with requested roles!")
+	,U$EMP$0014("Employee can't view customers!")
 
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")

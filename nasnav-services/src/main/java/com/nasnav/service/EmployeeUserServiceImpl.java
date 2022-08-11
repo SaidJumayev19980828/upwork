@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.google.common.base.Enums;
+import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -14,19 +15,20 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.request.UsersSearchParam;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -56,6 +58,10 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private ShopsRepository shopRepo;
 	@Autowired
 	private UserTokenRepository userTokenRepo;
+
+	@Autowired
+	@Qualifier("userListQueryBuilder")
+	private AbstractCriteriaQueryBuilder<EmployeeUserEntity> criteriaQueryBuilder;
 
 	@Override
 	@Transactional
@@ -99,7 +105,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserEntity doCreateNewEmpAccount(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> rolesList) {
 		EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserJson);
-		empUserSvcHelper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
+		empUserSvcHelper.createRoles(rolesList, employeeUserEntity, employeeUserJson.orgId);
 		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
 		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 		return employeeUserEntity;
@@ -113,7 +119,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (empUserSvcHelper.roleCannotManageUsers(userId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0008);
 		}
-		if ( empUserSvcHelper.hasInsuffiecentLevel(userId, rolesList)) {
+		if ( empUserSvcHelper.hasInsufficientLevel(userId, rolesList)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0009);
 		}
 
@@ -186,7 +192,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 		validateCurrentUserCanManageEmpAccount(updateUser.getOrganizationId(), updateUser.getShopId(), allRolesToCheck);
 
-		empUserSvcHelper.createRoles(updatedUserNewRoles, updatedUserId, updateUser.getOrganizationId());
+		empUserSvcHelper.createRoles(updatedUserNewRoles, updateUser, updateUser.getOrganizationId());
 
 		return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
 	}
@@ -211,9 +217,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 
-	@Override
-	public void sendEmailRecovery(String email, Long orgId) {
-		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email, orgId);
+	public void sendEmailRecovery(String email) {
+		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email);
 		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
 		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 	}
@@ -248,95 +253,52 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 
-	private EmployeeUserEntity getEmployeeUserByEmail(String email, Long orgId) {
-		empUserSvcHelper.validateEmail(email);
-		empUserSvcHelper.validateOrgId(orgId);
+	private EmployeeUserEntity getEmployeeUserByEmail(String email) {
 		return employeeUserRepository
-						.findByEmailIgnoreCaseAndOrganizationId(email, orgId)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId));
+						.findByEmailIgnoreCase(email)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0007, email));
 	}
 
 
-	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) {
-		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
-		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(user.getId());
+	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long shopId, String role) {
+		EmployeeUserEntity user = (EmployeeUserEntity) securityService.getCurrentUser();
+		Roles userHighestRole = roleService.getEmployeeHighestRole(user.getId());
 		Set<String> roles = new HashSet<>();
-		List<EmployeeUserEntity> usersEntites = new ArrayList<>();
-		List<Long> employeesIds = new ArrayList<>();
-		List<UserRepresentationObject> userRepObjs = new ArrayList<>();
-		if (role != null) {
+
+		if (isNotBlankOrNull(role)) {
 			if (!Enums.getIfPresent(Roles.class, role).isPresent())
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0007,  role);
-			for (String userRole : userRoles)
-				if (roleService.checkRoleOrder(userRole, role)) {
-					roles.add(role);
-					if (userRole.startsWith("O"))
-						orgId = user.getOrganizationId();
-					else if (userRole.startsWith("S")){
-						orgId = user.getOrganizationId();
-						storeId = user.getShopId();
-					}
-					break;
-				}
-			if (roles.isEmpty())
-				return userRepObjs;
-		} else {
-			if (!userRoles.contains("NASNAV_ADMIN")) {
-				if ( collectionContainsAnyOf(userRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE")) {
-					orgId = user.getOrganizationId();
-					if (userRoles.contains("ORGANIZATION_ADMIN")) {
-                        roles = Roles.getOrganizationAdminPrivilege();
-					} else if (userRoles.contains("ORGANIZATION_MANAGER")) {
-                        roles = Roles.getOrganizationManagerPrivilege();
-					} else {
-                        roles = Roles.getOrganizationEmployeePrivilege();
-					}
-				}
-                else if (collectionContainsAnyOf(userRoles, "STORE_MANAGER", "STORE_EMPLOYEE")) {
-                    orgId = user.getOrganizationId();
-                    storeId = user.getShopId();
-                    if (userRoles.contains("STORE_MANAGER")) {
-                        roles = Roles.getStoreManagerPrivilege();
-                    } else
-                        roles.add("STORE_EMPLOYEE");
-                }
+			if (!roleService.checkRoleOrder(userHighestRole.getValue(), role)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0013);
 			}
-		}
-		if (roles.isEmpty()) {
-			if (storeId == null && orgId == null)
-				usersEntites = employeeUserRepository.findAll();
-			else if (storeId != null && orgId == null)
-				usersEntites = employeeUserRepository.findByShopId(storeId);
-			else if (storeId == null && orgId != null)
-				usersEntites = employeeUserRepository.findByOrganizationId(orgId);
-			else
-				usersEntites = employeeUserRepository.findByOrganizationIdAndShopId(orgId, storeId);
+			roles = Set.of(role);
 		} else {
-			employeesIds = empUserSvcHelper.getEmployeesIds(new ArrayList<>(roles));
-			if (storeId == null && orgId == null)
-				usersEntites = employeeUserRepository.findByIdIn(employeesIds);
-			else if (storeId != null && orgId == null)
-				usersEntites = employeeUserRepository.findByShopIdAndIdIn(storeId, employeesIds);
-			else if (storeId == null && orgId != null)
-				usersEntites = employeeUserRepository.findByOrganizationIdAndIdIn(orgId, employeesIds);
-			else
-				usersEntites = employeeUserRepository.findByOrganizationIdAndShopIdAndIdIn(orgId, storeId, employeesIds);
+			if (!userHighestRole.equals(NASNAV_ADMIN))
+				roles = Roles.getAllPrivileges().get(userHighestRole.name());
 		}
+		orgId = getUserOrgId(orgId, user, userHighestRole);
+		shopId = getUserShopId(shopId, user, userHighestRole);
 
-		userRepObjs = usersEntites
+		UsersSearchParam params = new UsersSearchParam(roles, orgId, shopId);
+		return criteriaQueryBuilder
+				.getResultList(params, false)
 				.stream()
-				.map(entity -> entity.getRepresentation())
+				.map(EmployeeUserEntity::getRepresentation)
 				.collect(toList());
-
-		userRepObjs
-				.stream()
-				.forEach(obj -> obj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(obj.getId()))));
-
-		return userRepObjs;
 	}
-	
 
-	
+	private Long getUserOrgId(Long orgId, EmployeeUserEntity user, Roles userHighestRole) {
+		if (userHighestRole.name().startsWith("O") || userHighestRole.name().startsWith("S"))
+			return user.getOrganizationId();
+		return orgId;
+	}
+
+	private Long getUserShopId(Long shopId, EmployeeUserEntity user, Roles userHighestRole) {
+		if (userHighestRole.name().startsWith("S"))
+			return user.getShopId();
+		return shopId;
+	}
+
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
 		return user.getUserStatus().equals(NOT_ACTIVATED.getValue());

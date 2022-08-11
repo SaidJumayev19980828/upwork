@@ -50,7 +50,7 @@ public class YeshteryUserController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    EmployeeUserService employeeUserService;
+    private EmployeeUserService employeeUserService;
 
 
     @GetMapping(value = "info")
@@ -186,10 +186,10 @@ public class YeshteryUserController {
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id") Long orgId,
+                                  @RequestParam(value = "org_id", required = false) Long orgId,
                                   @RequestParam() boolean employee) {
         if (employee) {
-            employeeUserService.sendEmailRecovery(email, orgId);
+            employeeUserService.sendEmailRecovery(email);
         } else {
             userService.sendEmailRecovery(email, orgId);
         }

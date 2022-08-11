@@ -6,6 +6,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -47,7 +48,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -102,7 +103,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private UserService nasNavUserService;
     @Autowired
     private UserTokenRepository nasnavUserTokenRepo;
-
+    @Autowired
+    private RoleService roleService;
     @Autowired
     AppConfig appConfig;
 
@@ -334,17 +336,27 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public UserRepresentationObject getYeshteryUserData(Long id, Boolean isEmployee) {
+    public UserRepresentationObject getYeshteryUserData(Long userId, Boolean isEmployee) {
         BaseUserEntity currentUser = securityService.getCurrentUser();
-        if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
+        BaseUserEntity user;
+        if (securityService.currentUserIsCustomer() || userId == null || userId.equals(currentUser.getId())) {
             return getUserRepresentationWithUserRoles(currentUser);
-        }
+        } else {
+            Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
 
-        Boolean isEmp = ofNullable(isEmployee).orElse(false);
-        Long requiredUserId = ofNullable(id).orElse(currentUser.getId());
-        BaseUserEntity user =
-                commonNasnavUserRepo.findById(requiredUserId, isEmp)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, requiredUserId));
+            if (userHighestRole.equals(NASNAV_ADMIN)) {
+                user = commonNasnavUserRepo.findById(userId, isEmployee)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+            } else {
+                Set<String> roles = Roles.getAllPrivileges().get(userHighestRole.name());
+                if (!isEmployee) {
+                    if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
+                        throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
+                }
+                user = commonNasnavUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+            }
+        }
         return getUserRepresentationWithUserRoles(user);
     }
 

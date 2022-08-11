@@ -4,7 +4,9 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
+import com.nasnav.dto.response.ApiLogsResponse;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.ApiLogsSearchParam;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ThemeClassResponse;
@@ -44,6 +46,8 @@ public class AdminController {
 	private SearchService searchService;
 	@Autowired
 	private BrandService brandService;
+	@Autowired
+	private ApiLogsService apiLogsService;
 
     @PostMapping(value = "organization", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public OrganizationResponse createOrganization(@RequestHeader(TOKEN_HEADER) String userToken,
@@ -163,5 +167,11 @@ public class AdminController {
 	public void bulkUpdateBrandsPriority(@RequestHeader(TOKEN_HEADER) String userToken,
 										 @RequestBody List<BrandIdAndPriority> brandIdAndPriorityList) {
 		brandService.changeBrandsPriority(brandIdAndPriorityList);
+	}
+
+	@GetMapping(value = "api/logs")
+	public ApiLogsResponse getApiCalls(@RequestHeader(TOKEN_HEADER) String userToken,
+									   ApiLogsSearchParam searchParam){
+		return apiLogsService.getAPIsCalls(searchParam);
 	}
 }

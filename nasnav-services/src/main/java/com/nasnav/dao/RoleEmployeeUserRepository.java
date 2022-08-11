@@ -10,30 +10,22 @@ import java.util.List;
 
 public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUser, Integer> {
 
-    @Query("select roleEmp from RoleEmployeeUser roleEmp where roleEmp.employeeUserId = :employeeUserId")
-    List<RoleEmployeeUser> findRoleEmployeeUsersById(@Param("employeeUserId") Integer employeeUserId);
-
-    boolean existsByEmployeeUserIdAndRoleId(Long employeeUserId, Integer roleRolesId);
 
     @Transactional
-    void deleteByEmployeeUserId(Long employeeUserId);
-
-    @Query("select roleEmp.employeeUserId from RoleEmployeeUser roleEmp where roleEmp.roleId in (select id from Role roles where roles.name in :rolesNames)")
-    List<Long> findEmployeeUsersIds(@Param("rolesNames") List<String> rolesNames);
+    void deleteByEmployee_Id(Long employeeUserId);
     
-    
-    @Query("SELECT emp.email "
-    		+ " FROM RoleEmployeeUser roleEmp "
-    		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
-    		+ " WHERE roleEmp.roleId = (select id from Role roles where roles.name = :roleName) "
-    		+ "   AND emp.shopId = :shopId AND emp.userStatus = 201")
+    @Query("SELECT e.email " +
+            " from RoleEmployeeUser roleEmp " +
+            " left join roleEmp.employee e " +
+            " left join roleEmp.role r " +
+            " where r.name = :roleName and e.shopId = :shopId AND e.userStatus = 201")
     List<String> findEmailOfEmployeeWithRoleAndShop(@Param("roleName") String roleName, @Param("shopId")Long shopId);
     
     
-    @Query("SELECT emp.email "
-    		+ " FROM RoleEmployeeUser roleEmp "
-    		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
-    		+ " WHERE roleEmp.roleId in (select id from Role roles where roles.name = :roleName) "
-    		+ "   AND emp.organizationId = :orgId AND emp.userStatus = 201")
+    @Query("SELECT e.email " +
+            " from RoleEmployeeUser roleEmp " +
+            " left join roleEmp.employee e " +
+            " left join roleEmp.role r " +
+            " where r.name = :roleName and e.organizationId = :orgId AND e.userStatus = 201")
     List<String> findEmailOfEmployeeWithRoleAndOrganization(@Param("roleName") String roleName, @Param("orgId")Long orgId);
 }
