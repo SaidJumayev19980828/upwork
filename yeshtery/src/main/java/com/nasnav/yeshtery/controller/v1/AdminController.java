@@ -101,7 +101,7 @@ public class AdminController {
 
 	@PostMapping(value = "themes", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public ThemeResponse updateTheme(@RequestHeader(TOKEN_HEADER) String userToken,
-									 @RequestParam String uid,
+									 @RequestParam(required = false) String uid,
 									 @RequestBody ThemeDTO jsonDTO) throws BusinessException {
 		return themeService.updateTheme(uid, jsonDTO);
 	}

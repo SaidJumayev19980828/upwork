@@ -29,6 +29,8 @@ import java.util.*;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
@@ -102,13 +104,11 @@ public class ThemeServiceImpl implements ThemeService{
     }
 
     private void validateThemeUpdateDTO(String uid, ThemeDTO dto) {
-        if (uid == null) {
+        if (allIsNull(uid, dto.getUid())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "uid");
         }
-        try {
-            Integer.parseInt(uid);
-        } catch (NumberFormatException e){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0002, "uid");
+        if (uid != null && !themesRepo.existsByUid(uid)) {
+            throw new RuntimeBusinessException(NOT_FOUND, THEME$0003, uid);
         }
         if (dto.getThemeClassId() == null) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "theme_class_id");
@@ -164,6 +164,7 @@ public class ThemeServiceImpl implements ThemeService{
             }
             orgThemeSettingsRepo.deleteByTheme_Id(id);
         } catch (NumberFormatException e) {
+            //throw new RuntimeBusinessException(NOT_ACCEPTABLE, )
         }
 
         ThemeEntity entity = themesRepo.findByUid(themeId)
