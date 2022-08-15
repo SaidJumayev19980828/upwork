@@ -25,7 +25,7 @@ public class UserListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<E
 
     @Override
     void setRoot() {
-        root = query.from(EmployeeUserEntity.class);
+        root = query.distinct(true).from(EmployeeUserEntity.class);
         root.fetch("roles", LEFT);
     }
 
