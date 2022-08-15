@@ -15,7 +15,7 @@ public interface ThemeService {
     List<ThemeClassDTO> listThemeClasses();
     List<ThemeDTO> listThemes(Integer classId);
     ThemeClassResponse updateThemeClass(ThemeClassDTO dto) throws BusinessException;
-    ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException;
+    ThemeResponse updateTheme(String uid, ThemeDTO dto) throws BusinessException;
     void deleteThemeClass(Integer id) throws BusinessException;
     void deleteTheme(String themeId) throws BusinessException;
     List<ThemeClassDTO> getOrgThemeClasses(Long orgId) throws BusinessException;

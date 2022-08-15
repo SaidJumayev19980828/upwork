@@ -160,6 +160,7 @@ public enum ErrorCodes {
 	,THEME$0001("Provided theme_class_id [%d] doesn't match any existing theme class!")
 	,THEME$0002("There are %s linked to class [%d]")
 	,THEME$0003("Provided theme_id [%s] doesn't match any existing theme!")
+	,THEME$0004("uid is already used by another theme!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
 	,ORG$THEME$0002("Removed theme is used by organizations %s!")
