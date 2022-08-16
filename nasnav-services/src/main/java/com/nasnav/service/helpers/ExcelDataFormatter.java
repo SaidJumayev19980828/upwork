@@ -1,5 +1,9 @@
 package com.nasnav.service.helpers;
 
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.service.SecurityService;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.ss.usermodel.*;
@@ -12,10 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 import static org.springframework.context.annotation.ScopedProxyMode.TARGET_CLASS;
 
@@ -24,6 +31,10 @@ import static org.springframework.context.annotation.ScopedProxyMode.TARGET_CLAS
 public class ExcelDataFormatter {
     @Autowired
     protected SecurityService security;
+    @Autowired
+    private ProductFeaturesRepository featureRepo;
+    @Autowired
+    protected ExtraAttributesRepository extraAttrRepo;
 
     private Integer quantityColumn;
     private Integer discountColumn;
@@ -33,7 +44,10 @@ public class ExcelDataFormatter {
     private int sheetLastRowNumber;
     private XSSFSheet sheet;
     private SheetConditionalFormatting conditionalFormatting;
-
+    private List<Integer> extraAttributesColumns;
+    private Set<String> extraAttributesNames;
+    private List<Integer> variantFeaturesColumns;
+    private Set<String> variantFeaturesNames;
 
     public void addConditionalFormattingToSheet(XSSFSheet sheet) {
         initialize(sheet);
@@ -62,6 +76,8 @@ public class ExcelDataFormatter {
     }
 
     private void initialize(XSSFSheet sheet){
+        variantFeaturesColumns = new ArrayList<>();
+        extraAttributesColumns = new ArrayList<>();
         this.sheet = sheet;
 
         assignColumnsNumbersFromHeaders();
@@ -69,10 +85,29 @@ public class ExcelDataFormatter {
 
     private void assignColumnsNumbersFromHeaders() {
         XSSFRow row = sheet.getRow(0);
-
+        setExtraAttributesNames();
+        setVariantFeaturesNames();
         row.iterator().forEachRemaining(cell -> {
             mapCellIndexToColumnNumber(cell);
         });
+    }
+
+    private void setExtraAttributesNames(){
+        var orgId = security.getCurrentUserOrganizationId();
+        extraAttributesNames =
+                extraAttrRepo.findByOrganizationId(orgId)
+                        .stream()
+                        .map(ExtraAttributesEntity::getName)
+                        .collect(toSet());
+    }
+
+    private void setVariantFeaturesNames(){
+        var orgId = security.getCurrentUserOrganizationId();
+        variantFeaturesNames =
+                featureRepo.findByOrganizationId(orgId)
+                        .stream()
+                        .map(ProductFeaturesEntity::getName)
+                        .collect(toSet());
     }
 
     private void mapCellIndexToColumnNumber(Cell cell) {
@@ -89,6 +124,10 @@ public class ExcelDataFormatter {
             productNameColumn = cell.getColumnIndex();
         }else if (header.equalsIgnoreCase("brand")){
             brandColumn = cell.getColumnIndex();
+        }else if (extraAttributesNames.contains(header)){
+            extraAttributesColumns.add(cell.getColumnIndex());
+        }else if (variantFeaturesNames.contains(header)){
+            variantFeaturesColumns.add(cell.getColumnIndex());
         }
     }
 
@@ -116,6 +155,23 @@ public class ExcelDataFormatter {
     public void addStyleFormattingToSheet(XSSFSheet sheet) {
         initialize(sheet);
         addNumericFormatting(sheet);
+        addTextFormatting(sheet);
+    }
+
+    private void addTextFormatting(XSSFSheet sheet){
+        XSSFWorkbook workbook = sheet.getWorkbook();
+        CellStyle textStyle = workbook.createCellStyle();
+        textStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("@"));
+
+        extraAttributesColumns.forEach(col -> {
+            sheet.setDefaultColumnStyle(col, textStyle);
+            changeExistingCellsFormat(sheet, textStyle, col);
+        });
+
+        variantFeaturesColumns.forEach(col -> {
+            sheet.setDefaultColumnStyle(col, textStyle);
+            changeExistingCellsFormat(sheet, textStyle, col);
+        });
     }
 
     private void addNumericFormatting(XSSFSheet sheet){

@@ -94,7 +94,7 @@ public class DataImportController {
 	@GetMapping(value = {"/productlist/csv/template", "/productlist/template"})
 	@ResponseBody
 	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
-		ByteArrayOutputStream s = csvImportService.generateProductsTemplate();
+		ByteArrayOutputStream s = csvImportService.generateProductsTemplate(false);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
@@ -103,8 +103,9 @@ public class DataImportController {
 
 	@GetMapping(value = "/productlist/xls/template")
 	@ResponseBody
-	public ResponseEntity<byte[]> generateXlsTemplate(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
-		ByteArrayOutputStream s = excelDataImportService.generateProductsTemplate();
+	public ResponseEntity<byte[]> generateXlsTemplate(@RequestHeader(TOKEN_HEADER) String token,
+													  @RequestParam(name = "validate", required = false) Boolean validate) throws IOException {
+		ByteArrayOutputStream s = excelDataImportService.generateProductsTemplate(validate);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Product_Template.xlsx")
