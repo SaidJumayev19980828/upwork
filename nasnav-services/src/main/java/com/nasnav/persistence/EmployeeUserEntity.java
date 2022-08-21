@@ -1,17 +1,22 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.ToString;
 import org.springframework.beans.BeanUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import java.time.LocalDateTime;
+import javax.persistence.*;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 @Data
 @Entity
@@ -22,10 +27,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
 	
 	@Column(name = "name")
 	private String name;
-
-    @Column(name = "remember_created_at")
-    @CreationTimestamp
-    private LocalDateTime rememberCreatedAt;
 
     @Column(name = "created_by")
     private Integer createdBy;
@@ -39,18 +40,29 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "avatar")
-    private String avatar;
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "role_employee_users"
+            ,joinColumns = {@JoinColumn(name="employee_user_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="role_id")})
+    private Set<Role> roles;
 
     @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
-        obj.setCreationDate(getRememberCreatedAt());
-        obj.setImage(this.avatar);
+        obj.setId(getId());
+        obj.setCreationDate(getCreationTime());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
-        obj.id = this.getId();
-
+        obj.setRoles(
+                ofNullable(roles)
+                .orElse(emptySet())
+                .stream()
+                .map(Role::getName)
+                .collect(toSet())
+        );
         return obj;
     }
 }

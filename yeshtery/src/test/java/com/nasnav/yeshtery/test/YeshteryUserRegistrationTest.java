@@ -38,7 +38,7 @@ import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.INVALID_PARAMETERS;
-import static com.nasnav.yeshtery.YeshteryConstants.API_PATH;
+import static com.nasnav.commons.YeshteryConstants.API_PATH;
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;

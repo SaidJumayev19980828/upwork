@@ -56,10 +56,10 @@ public class UserController {
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id") Long orgId,
+                                  @RequestParam(value = "org_id", required = false) Long orgId,
                                   @RequestParam() boolean employee) {
         if (employee) {
-            employeeUserService.sendEmailRecovery(email, orgId);
+            employeeUserService.sendEmailRecovery(email);
         } else {
             userService.sendEmailRecovery(email, orgId);
         }
@@ -117,7 +117,7 @@ public class UserController {
     @GetMapping(value = "info", produces = APPLICATION_JSON_VALUE)
     public UserRepresentationObject getUserData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                 @RequestParam (value = "id", required = false) Long id,
-                                                @RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException{
+                                                @RequestParam (value = "is_employee", required = false, defaultValue = "false") Boolean isEmployee) throws BusinessException{
         return userService.getUserData(id, isEmployee);
     }
 
@@ -148,7 +148,7 @@ public class UserController {
     public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
     	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     	try {
-    		UserApiResponse body = securityService.socialLogin(socialLoginToken);
+    		UserApiResponse body = securityService.socialLogin(socialLoginToken, false);
     		return response.body(body);
     	}catch(InCompleteOAuthRegistration e) {
     		//change it to forward to a server rendered page

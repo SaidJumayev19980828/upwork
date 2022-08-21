@@ -30,16 +30,6 @@ public interface CommonUserServiceInterface {
     BaseUserEntity update(BaseUserEntity userEntity);
 
     /**
-     * Used to send the user a recovery token to reset his password
-     *
-     * @param email user email
-     * @param orgId user organization id
-     * @return UserApiResponse object holding the status
-     */
-    void sendEmailRecovery(String email, Long orgId);
-
-
-    /**
      * change user password
      *
      * @param body json object containing token and new password

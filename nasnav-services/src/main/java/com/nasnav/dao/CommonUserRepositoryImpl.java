@@ -10,10 +10,7 @@ import com.nasnav.persistence.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.enumerations.YeshteryState.ACTIVE;
@@ -110,7 +107,18 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		}
 	}
 
-
+	public Optional<BaseUserEntity> getByIdAndOrganizationIdAndRoles(Long id, Long orgId, Boolean isEmployee, Set<String> roles) {
+		if(isEmployee != null && isEmployee) {
+			return empRepo.findByIdAndOrgIdAndRoles(id, orgId, roles)
+					.map(BaseUserEntity.class::cast);
+		}else {
+			if (isBlankOrNull(orgId)) {
+				throw new RuntimeBusinessException(UNAUTHORIZED, U$LOG$0002);
+			}
+			return userRepo.findByIdAndOrganizationId(id, orgId)
+					.map(BaseUserEntity.class::cast);
+		}
+	}
 
 
 	@Override

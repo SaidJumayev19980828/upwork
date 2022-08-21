@@ -1,5 +1,7 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
@@ -12,6 +14,7 @@ import com.nasnav.response.BaseResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.helpers.UserServicesHelper;
+import lombok.SneakyThrows;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -32,6 +35,7 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +63,8 @@ public class EmployeeUserCreationTest {
 
 	@Autowired
 	private AppConfig config;
-
+	@Autowired
+	private ObjectMapper mapper;
 	@Autowired
 	EmployeeUserService employeeUserService;
 	@Autowired
@@ -798,7 +803,7 @@ public class EmployeeUserCreationTest {
 		assertEquals(200, response.getStatusCodeValue());
 
 		//-------------------------------------------------------------------
-		// logged user is ORGANIZATION_ADMIN ,so, he will just get his own data
+		// logged user is ORGANIZATION_ADMIN ,so, he will get  his own data
 		header = getHttpEntity("hijkllm");
 		response = template.exchange("/user/info?id=88", GET,
 									header, UserRepresentationObject.class);
@@ -806,7 +811,7 @@ public class EmployeeUserCreationTest {
 		System.out.println(response.toString());
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
-		assertEquals( 69L, response.getBody().getId().longValue());
+		assertEquals( 88, response.getBody().getId().longValue());
 		assertNotNull(user.roles);
 		assertFalse(user.roles.isEmpty());
 	}
@@ -824,8 +829,16 @@ public class EmployeeUserCreationTest {
 		assertEquals( 406, response.getStatusCodeValue());
 	}
 	
-	
-	
+	@SneakyThrows
+	private List<UserRepresentationObject> parseResponse(String response) {
+		return mapper.readValue(response, new TypeReference<List<UserRepresentationObject>>(){});
+	}
+
+	private void assertSizeCorrect(int expectedSize, ResponseEntity<String> response) {
+		assertEquals(response.getStatusCodeValue(), 200);
+		List<UserRepresentationObject> parsedResponse = parseResponse(response.getBody());
+		assertEquals(expectedSize, parsedResponse.size());
+	}
 
 	// with NASNAV_ADIMN ACCOUNT
 	@Test
@@ -835,70 +848,58 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> header = getHttpEntity( "abcdefg");
 
 		// no filter
-		ResponseEntity<List> response = template.exchange("/user/list", GET,header, java.util.List.class);
-		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(17, response.getBody().size());
+		ResponseEntity<String> response = template.exchange("/user/list", GET,header, String.class);
+		assertSizeCorrect(17,response);
 
 		// org_id filter
-		response = template.exchange("/user/list?org_id=99001", GET,header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99001", GET,header, String.class);
 		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(10 ,response.getBody().size());
+		assertSizeCorrect(10,response);
 
-		response = template.exchange("/user/list?org_id=99002", GET,header, java.util.List.class);
-		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(7, response.getBody().size());
-
+		response = template.exchange("/user/list?org_id=99002", GET,header, String.class);
+		assertSizeCorrect(7,response);
 		// store_id filter
-		response = template.exchange("/user/list?shop_id=501", GET,header, java.util.List.class);
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(7, response.getBody().size());
+		response = template.exchange("/user/list?shop_id=501", GET,header, String.class);
+		assertSizeCorrect(7,response);
 
-		response = template.exchange("/user/list?shop_id=502", GET,header, java.util.List.class);
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(10, response.getBody().size());
+		response = template.exchange("/user/list?shop_id=502", GET,header, String.class);
+		assertSizeCorrect(10,response);
 
 		// role filter
-		response = template.exchange("/user/list?role=NASNAV_ADMIN", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(2, response.getBody().size());
+		response = template.exchange("/user/list?role=NASNAV_ADMIN", GET,header, String.class);
+		assertSizeCorrect(2,response);
+
 
 		ResponseEntity<String> failResponse = template.exchange("/user/list?role=invalid_role", GET,header, String.class);
 		assertEquals(failResponse.getStatusCode(), NOT_ACCEPTABLE);
 
-		response = template.exchange("/user/list?role=STORE_MANAGER", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(4, response.getBody().size());
+		response = template.exchange("/user/list?role=STORE_MANAGER", GET,header, String.class);
+		assertSizeCorrect(4,response);
+
 
 		// role and org_id filter
-		response = template.exchange("/user/list?role=STORE_MANAGER&org_id=99001", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(2, response.getBody().size());
+		response = template.exchange("/user/list?role=STORE_MANAGER&org_id=99001", GET,header, String.class);
+		assertSizeCorrect(2,response);
+
 
 		// role and store_id filter
-		response = template.exchange("/user/list?role=STORE_MANAGER&shop_id=501", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(2, response.getBody().size());
+		response = template.exchange("/user/list?role=STORE_MANAGER&shop_id=501", GET,header, String.class);
+		assertSizeCorrect(2,response);
+
 
 		// org_id and store_id filter
-		response = template.exchange("/user/list?org_id=99001&shop_id=502", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(10, response.getBody().size());
+		response = template.exchange("/user/list?org_id=99001&shop_id=502", GET,header, String.class);
+		assertSizeCorrect(10,response);
+
 
 		// org_id and store_id and role filter
-		response = template.exchange("/user/list?org_id=99001&shop_id=502&role=STORE_MANAGER", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(2, response.getBody().size());
+		response = template.exchange("/user/list?org_id=99001&shop_id=502&role=STORE_MANAGER", GET,header, String.class);
+		assertSizeCorrect(2,response);
 
-		response = template.exchange("/user/list?org_id=99002&shop_id=501&role=STORE_MANAGER", GET,header, java.util.List.class);
-		System.out.println(response.getBody());
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(2, response.getBody().size());
+
+		response = template.exchange("/user/list?org_id=99002&shop_id=501&role=STORE_MANAGER", GET,header, String.class);
+		assertSizeCorrect(2,response);
+
 	}
 
 
@@ -910,28 +911,21 @@ public class EmployeeUserCreationTest {
 	public void listEmpUsersDifferentPrelivages() {
 		// ORGANIZATION_ADMIN account with org_id = 99001
 		HttpEntity<Object> header = getHttpEntity("hijkllm");
-		ResponseEntity<List> response = template.exchange("/user/list", GET, header, java.util.List.class);
+		ResponseEntity<List> response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(response.getBody().size(), 7);
-
-		// trying to filter with NASNAV_ADMIN role
-		response = template.exchange("/user/list?role=NASNAV_ADMIN", GET, header, java.util.List.class);
-		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
-		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(response.getBody().size(), 0);
+		assertEquals(6, response.getBody().size());
 
 		// trying to filter with different org_id
-		response = template.exchange("/user/list?org_id=99002", GET, header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99002", GET, header, List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(response.getBody().size(), 7);
+		assertEquals(response.getBody().size(), 6);
 
 		// trying to filter with store_id not exits in the organization
-		response = template.exchange("/user/list?shop_id=501", GET, header, java.util.List.class);
+		response = template.exchange("/user/list?shop_id=501", GET, header, List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
@@ -939,19 +933,24 @@ public class EmployeeUserCreationTest {
 
 		// ORGANIZATION_MANAGER account
 		header = getHttpEntity("123");
-		response = template.exchange("/user/list", GET, header, java.util.List.class);
+		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_MANAGER
 		System.out.println(response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(6, response.getBody().size());
+		assertEquals(5, response.getBody().size());
 
 		// ORGANIZATION_EMPLOYEE account
 		header = getHttpEntity("hhhkkk");
-		response = template.exchange("/user/list", GET, header, java.util.List.class);
+		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_EMPLOYEE
 		System.out.println(response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
-		assertEquals(response.getBody().size(), 3);
+		assertEquals(1, response.getBody().size());
+
+		// trying to filter with NASNAV_ADMIN role
+		ResponseEntity<String> res = template.exchange("/user/list?role=NASNAV_ADMIN", GET, header, String.class);
+		assertEquals(res.getStatusCodeValue(), 406);
+		assertTrue(res.getBody().contains("U$EMP$0013"));
 	}
 	
 	

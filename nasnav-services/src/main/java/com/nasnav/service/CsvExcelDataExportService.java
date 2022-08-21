@@ -11,7 +11,7 @@ import com.nasnav.exceptions.BusinessException;
 public interface CsvExcelDataExportService {
 
 	ByteArrayOutputStream generateImagesTemplate(ImageFileTemplateType type) throws IOException;
-	ByteArrayOutputStream generateProductsFile(Long shopId) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException, IOException;
+	ByteArrayOutputStream generateProductsFile(Long shopId, Boolean addDataValidate) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException, IOException;
 	ByteArrayOutputStream generateProductsImagesFile() throws IOException;
 
 }

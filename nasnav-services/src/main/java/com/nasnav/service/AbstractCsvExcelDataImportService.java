@@ -9,6 +9,8 @@ import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.service.helpers.ExcelDataFormatter;
+import com.nasnav.service.helpers.ExcelDataValidator;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +33,11 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataImportService {
+    @Autowired
+    protected ExcelDataValidator excelDataValidator;
+
+    @Autowired
+    protected ExcelDataFormatter excelDataFormatter;
 
     @Autowired
     protected ShopsRepository shopRepo;
@@ -208,12 +215,12 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
     }
 
     @Override
-    public ByteArrayOutputStream generateProductsTemplate() throws IOException {
+    public ByteArrayOutputStream generateProductsTemplate(Boolean addExcelDataValidation) throws IOException {
         var baseHeaders = getProductImportTemplateHeaders();
 
-        return writeFileHeaders(baseHeaders);
+        return writeFileHeaders(baseHeaders, addExcelDataValidation);
     }
 
-    abstract ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException;
+    abstract ByteArrayOutputStream writeFileHeaders(List<String> headers, Boolean addExcelDataValidation) throws IOException;
 
 }

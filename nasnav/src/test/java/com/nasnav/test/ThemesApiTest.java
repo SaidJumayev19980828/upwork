@@ -38,7 +38,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Themes_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Themes_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ThemesApiTest {
 
@@ -209,7 +209,7 @@ public class ThemesApiTest {
     public void createThemeSuccess() {
         JSONObject body = json().put("theme_class_id", 990011)
                                 .put("name", "new theme_class_1")
-                                .put("uid", "5001");
+                                .put("uid", "5004");
 
         HttpEntity<?> request =  getHttpEntity(body.toString(),"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
@@ -228,11 +228,10 @@ public class ThemesApiTest {
         JSONObject body = json().put("name", "new theme name")
                                 .put("preview_image", "new theme image")
                                 .put("default_settings", "new theme settings")
-                                .put("theme_class_id", 990012)
-                                .put("uid", "5002");
+                                .put("theme_class_id", 990012);
 
         HttpEntity<?> request =  getHttpEntity(body.toString(),"101112");
-        ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
+        ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes?uid=5002",
                 POST, request, ThemeResponse.class);
 
         assertEquals(200,response.getStatusCodeValue());

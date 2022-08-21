@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -25,12 +28,32 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<Role> getRolesOfEmployeeUser(Long employeeUserId) {
-        if ( isBlankOrNull(employeeUserId)) {
-            return Collections.emptyList();
-        }
-        return roleRepository.getRolesOfEmployeeUser(employeeUserId);
+        return ofNullable(employeeUserId)
+                .map(roleRepository::getRolesOfEmployeeUser)
+                .orElse(emptyList());
     }
 
+    private List<Roles> getRolesEnumOfEmployeeUser(Long employeeUserId) {
+        return ofNullable(employeeUserId)
+                .map(roleRepository::getRolesOfEmployeeUser)
+                .orElse(emptyList())
+                .stream()
+                .map(r -> Roles.fromString(r.getName()))
+                .collect(toList());
+    }
+
+    public Roles getEmployeeHighestRole(List<Roles> employeeRoles) {
+        return Roles
+                .getSortedEmployeeRoles()
+                .stream()
+                .filter(employeeRoles::contains)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Roles getEmployeeHighestRole(Long userId) {
+        return getEmployeeHighestRole(getRolesEnumOfEmployeeUser(userId));
+    }
 
     public boolean checkRoleOrder(String userRole, String requestedRole) {
         Map<String,Set<String>> privileges = Roles.getAllPrivileges();

@@ -8,7 +8,7 @@ import com.nasnav.response.ShopResponse;
 import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
