@@ -202,11 +202,10 @@ public class UserServicesHelper {
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
 			validateEmail(employeeUserJson.getEmail());
 			employeeUserEntity.setEmail(employeeUserJson.getEmail());
-			if ((employeeUserJson.getUpdatedUserId() == null) || employeeUserJson.getUpdatedUserId().intValue() == currentUserId.intValue()) {
-				employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
-				sendRecoveryMail(employeeUserEntity);
-				successResponseStatusList.addAll( asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT) );
-			}
+			employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
+
+			sendRecoveryMail(employeeUserEntity);
+			successResponseStatusList.addAll( asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT) );
 		}
 
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
