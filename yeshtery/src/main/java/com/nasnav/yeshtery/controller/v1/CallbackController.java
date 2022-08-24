@@ -1,7 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.service.ShippingManagementService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

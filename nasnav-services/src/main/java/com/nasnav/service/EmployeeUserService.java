@@ -17,4 +17,6 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	void suspendEmployeeAccount(Long id, Boolean suspend);
 
 	List<UserRepresentationObject> getAvailableEmployeesByOrgId(Long orgId);
+
+	void sendEmailRecovery(String email);
 }

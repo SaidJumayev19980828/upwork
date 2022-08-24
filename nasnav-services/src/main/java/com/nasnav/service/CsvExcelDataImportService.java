@@ -74,7 +74,7 @@ public interface CsvExcelDataImportService {
 			@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException ;
 
-	ByteArrayOutputStream generateProductsTemplate() throws IOException;
+	ByteArrayOutputStream generateProductsTemplate(Boolean addExcelDataValidation) throws IOException;
 
 	List<String> getProductImportTemplateHeaders();
 

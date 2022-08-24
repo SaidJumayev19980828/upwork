@@ -15,7 +15,7 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -38,72 +38,57 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
+@RequiredArgsConstructor
 public class UserServicesHelper {
 
-	private EmployeeUserRepository employeeUserRepository;
-	private RoleRepository roleRepository;
-	private RoleEmployeeUserRepository roleEmployeeUserRepository;
-	private RoleService roleService;
-	private MailService mailService;
-	private OrganizationRepository organizationRepo;
+	private final EmployeeUserRepository employeeUserRepository;
+	private final RoleRepository roleRepository;
+	private final RoleEmployeeUserRepository roleEmployeeUserRepository;
+	private final RoleService roleService;
+	private final MailService mailService;
+	private final OrganizationRepository organizationRepo;
+	private final AppConfig appConfig;
 
-	@Autowired
-	public UserServicesHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
-							  RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService,
-							  MailService mailService, OrganizationRepository organizationRepo) {
-		this.employeeUserRepository = userRepository;
-		this.roleRepository = roleRepository;
-		this.roleEmployeeUserRepository = roleEmployeeUserRepository;
-		this.roleService = roleService;
-		this.mailService = mailService;
-		this.organizationRepo = organizationRepo;
-	}
-
-	@Autowired
-	AppConfig appConfig;
-
-	@Autowired
-	private ShopsRepository shopRepo;
+	private final ShopsRepository shopRepo;
 
 
-	public void createRoles(List<String> rolesList, Long employeeUserId, Long orgId) {
+	public void createRoles(List<String> rolesList, EmployeeUserEntity employee, Long orgId) {
 		List<String> existingRolesListNames = roleRepository
 				.findAll()
 				.stream()
-				.map( role -> role.getName())
+				.map(Role::getName)
 				.collect(toList());
-		Integer roleId;
+		Role role;
 		Roles roleEnum;
-		roleEmployeeUserRepository.deleteByEmployeeUserId(employeeUserId); //delete all existing rolesemployeeuser relations
-		for (String role : rolesList) {
+		roleEmployeeUserRepository.deleteByEmployee_Id(employee.getId()); //delete all existing rolesemployeeuser relations
+		for (String r : rolesList) {
 			// check if role exists in db
-			if (!existingRolesListNames.contains(role)) {
+			if (!existingRolesListNames.contains(r)) {
 				// find the Role enum from the string value
-				roleEnum = Roles.valueOf(role);
-				roleId = createRole(orgId, roleEnum);
+				roleEnum = Roles.valueOf(r);
+				role = createRole(roleEnum);
 			} else {
-				roleId = roleRepository.findByName(role).getId();
+				role = roleRepository.findByName(r);
 			}
-			createRoleEmployeeUser(employeeUserId, roleId);
+			createRoleEmployeeUser(employee, role);
 		}
 	}
 
 
 
-	private void createRoleEmployeeUser(Long employeeUserId, Integer roleId) {
+	private void createRoleEmployeeUser(EmployeeUserEntity employee, Role role) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
-		roleEmployeeUser.setRoleId(roleId);
-		roleEmployeeUser.setEmployeeUserId(employeeUserId);
+		roleEmployeeUser.setRole(role);
+		roleEmployeeUser.setEmployee(employee);
 		roleEmployeeUserRepository.save(roleEmployeeUser);
 	}
 
 
-	private Integer createRole(Long orgId, Roles roleEnum) {
+	private Role createRole( Roles roleEnum) {
 		Role role = new Role();
-		role.setOrganizationId(orgId);
 		role.setName(roleEnum.name());
 
-		return roleRepository.save(role).getId();
+		return roleRepository.save(role);
 	}
 
 
@@ -134,7 +119,7 @@ public class UserServicesHelper {
 
 
 
-	public boolean hasInsuffiecentLevel(Long currentUserId, List<String> otherUserRolesNames) {
+	public boolean hasInsufficientLevel(Long currentUserId, List<String> otherUserRolesNames) {
 		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
 		List<Roles> newUserRoles =
 				otherUserRolesNames
@@ -191,7 +176,7 @@ public class UserServicesHelper {
 		employeeUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
 		employeeUser.setOrganizationId(employeeUserJson.orgId);
 		employeeUser.setShopId(employeeUserJson.storeId);
-		employeeUser.setAvatar(employeeUserJson.getAvatar());
+		employeeUser.setImage(employeeUserJson.getAvatar());
 		employeeUser.setUserStatus(NOT_ACTIVATED.getValue());
 
 		return employeeUserRepository.save(employeeUser);
@@ -262,7 +247,7 @@ public class UserServicesHelper {
 
 	private EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		if (employeeUserJson.getAvatar() != null)
-			employeeUserEntity.setAvatar(employeeUserJson.getAvatar());
+			employeeUserEntity.setImage(employeeUserJson.getAvatar());
 
 		if (employeeUserJson.getPhoneNumber() != null)
 			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());
@@ -311,23 +296,13 @@ public class UserServicesHelper {
 	}
 
 
-	public List<String> getEmployeeUserRoles(Long integer) {
+	public List<String> getEmployeeUserRoles(Long userId) {
 		return roleService
-				.getRolesOfEmployeeUser(integer)
+				.getRolesOfEmployeeUser(userId)
 				.stream()
 				.map(Role::getName)
 				.collect(toList());
 	}
-
-
-
-	public List<Long> getEmployeesIds(List<String> roles) { //returns list of employees ids that has roles in the roles list
-		List<Long> employeesIds = roleEmployeeUserRepository.findEmployeeUsersIds(roles);
-		return employeesIds;
-	}
-
-
-
 
 	public void validateBusinessRules(String name, String email, Long orgId) {
 		validateName(name);

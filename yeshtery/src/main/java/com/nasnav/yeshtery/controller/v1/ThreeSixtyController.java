@@ -12,9 +12,8 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.ShopThreeSixtyService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;

@@ -12,7 +12,7 @@ import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.HTMLConfigurer;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -26,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.Properties;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)

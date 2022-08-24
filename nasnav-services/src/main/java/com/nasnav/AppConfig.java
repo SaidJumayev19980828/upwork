@@ -21,7 +21,8 @@ public class AppConfig {
     @Value("${email.ssl}")         		public String mailUseSSL;
     @Value("${payment.properties_dir}") public String paymentPropertiesDir = "";
     @Value("${yeshtery.mastercard}")    public String yeshteryMastercardProperties = "";
-    @Value("${yeshtery.orgid}")         public int yeshteryOrgId = 0;
+    @Value("${yeshtery.orgid:0}")
+    public int yeshteryOrgId;
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     @Value("${environment.development}") public boolean develEnvironment = false;

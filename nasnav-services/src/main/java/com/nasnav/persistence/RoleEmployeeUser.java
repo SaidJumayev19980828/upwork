@@ -1,11 +1,10 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Data
 @Entity
@@ -14,9 +13,17 @@ import javax.persistence.Table;
 public class RoleEmployeeUser extends DefaultBusinessEntity<Integer> {
 
 
-    @Column(name = "employee_user_id")
-    private Long employeeUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_user_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private EmployeeUserEntity employee;
 
-    @Column(name = "role_id")
-    private Integer roleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Role role;
 }

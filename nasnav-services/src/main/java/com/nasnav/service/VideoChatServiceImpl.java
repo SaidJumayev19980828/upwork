@@ -167,9 +167,8 @@ public class VideoChatServiceImpl implements VideoChatService {
             sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, token));
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
             return new VideoChatResponse(true, null, token, null, sessionName);
-
-        } catch (Exception e) {
-            return new VideoChatResponse(false, e.getMessage(), null, null, null);
+        } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
         }
     }
 

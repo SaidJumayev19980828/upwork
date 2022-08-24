@@ -44,4 +44,6 @@ public interface UserService extends CommonUserServiceInterface{
     void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId);
 
     List<UserEntity> getUsersByFamilyId(Long familyId);
+
+    void sendEmailRecovery(String email, Long orgId);
 }

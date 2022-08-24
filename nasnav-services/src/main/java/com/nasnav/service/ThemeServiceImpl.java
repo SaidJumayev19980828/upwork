@@ -29,6 +29,8 @@ import java.util.*;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
@@ -90,10 +92,10 @@ public class ThemeServiceImpl implements ThemeService{
     
 
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
-        validateThemeUpdateDTO(dto);
+    public ThemeResponse updateTheme(String uid, ThemeDTO dto) throws BusinessException {
+        validateThemeUpdateDTO(uid, dto);
 
-        ThemeEntity theme = themesRepo.findByUid(dto.getUid())
+        ThemeEntity theme = themesRepo.findByUid(uid)
                 .orElseGet(ThemeEntity::new);
 
         setThemeProperties(theme, dto);
@@ -101,14 +103,12 @@ public class ThemeServiceImpl implements ThemeService{
         return new ThemeResponse(themesRepo.save(theme).getUid());
     }
 
-    private void validateThemeUpdateDTO(ThemeDTO dto) {
-        if (dto.getUid() == null) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "theme_id");
+    private void validateThemeUpdateDTO(String uid, ThemeDTO dto) {
+        if (allIsNull(uid, dto.getUid())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "uid");
         }
-        try {
-            Integer.parseInt(dto.getUid());
-        } catch (NumberFormatException e){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0002, "theme_id");
+        if (uid != null && !themesRepo.existsByUid(uid)) {
+            throw new RuntimeBusinessException(NOT_FOUND, THEME$0003, uid);
         }
         if (dto.getThemeClassId() == null) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "theme_class_id");
@@ -116,6 +116,12 @@ public class ThemeServiceImpl implements ThemeService{
     }
 
     private void setThemeProperties(ThemeEntity theme, ThemeDTO dto) {
+        if (dto.getUid() != null) {
+            if (themesRepo.existsByUid(dto.getUid()))
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, THEME$0004);
+            theme.setUid(dto.getUid());
+        }
+
         if (dto.getName() != null)
             theme.setName(dto.getName());
 
@@ -131,8 +137,6 @@ public class ThemeServiceImpl implements ThemeService{
 
             theme.setThemeClassEntity(themeClass);
         }
-
-        theme.setUid(dto.getUid());
     }
 
 
@@ -160,6 +164,7 @@ public class ThemeServiceImpl implements ThemeService{
             }
             orgThemeSettingsRepo.deleteByTheme_Id(id);
         } catch (NumberFormatException e) {
+            //throw new RuntimeBusinessException(NOT_ACCEPTABLE, )
         }
 
         ThemeEntity entity = themesRepo.findByUid(themeId)

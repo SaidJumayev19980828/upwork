@@ -5,11 +5,10 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.UserStatus;
-import com.nasnav.persistence.listeners.UserEntityListener;
+import com.nasnav.persistence.yeshtery.listeners.UserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
@@ -35,15 +34,8 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="last_name")
     private String lastName;
 
-    @Column(name="image")
-    private String image;
-
     @Column(name="mobile")
     private String mobile;
-
-    @Column(name = "remember_created_at")
-    @CreationTimestamp
-    private LocalDateTime creationTime;
 
     @Column(name = "date_of_birth")
     private LocalDateTime dateOfBirth;
@@ -110,8 +102,8 @@ public class UserEntity extends BaseUserEntity{
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();
-        user.setName(userJson.name);
-        user.setEmail(userJson.email);
+        user.setName(userJson.getName());
+        user.setEmail(userJson.getEmail());
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         user.setOrganizationId(userJson.getOrgId());
         user.setUserStatus(NOT_ACTIVATED.getValue());
@@ -124,18 +116,13 @@ public class UserEntity extends BaseUserEntity{
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
-        obj.id = this.getId();
-        obj.name = this.getName();
-        obj.email = this.getEmail();
-        obj.phoneNumber = this.getPhoneNumber();
-        obj.image = this.getImage();
-        obj.mobile = this.getMobile();
+        obj.setId(getId());
         if (this.getFamily() != null)
-            obj.familyId = this.getFamily().getId();
+            obj.setFamilyId(this.getFamily().getId());
         if (this.getTier() != null)
-            obj.tierId = this.getTier().getId();
-        obj.allowReward = this.getAllowReward();
-        obj.setCreationDate(creationTime);
+            obj.setTierId(this.getTier().getId());
+        obj.setAllowReward(getAllowReward());
+        obj.setCreationDate(getCreationTime());
         obj.setTierCreatedAt(this.getTierCreatedAt());
         if (this.getBooster() != null)
             obj.setBoosterId(this.booster.getId());

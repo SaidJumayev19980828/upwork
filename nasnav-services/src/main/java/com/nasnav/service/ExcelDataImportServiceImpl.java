@@ -20,6 +20,8 @@ import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.service.helpers.ExcelDataFormatter;
+import com.nasnav.service.helpers.ExcelDataValidator;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -174,7 +176,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 	}
 
 	@Override
-	ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException {
+	ByteArrayOutputStream writeFileHeaders(List<String> headers, Boolean addExcelDataValidation) throws IOException {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
@@ -183,6 +185,12 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		Row row = sheet.createRow(0);
 
 		headers.forEach(header ->  row.createCell(column.getAndIncrement()).setCellValue(header));
+
+		if(addExcelDataValidation != null && addExcelDataValidation){
+			this.excelDataValidator.addDataValidationsToSheet(sheet);
+			this.excelDataFormatter.addConditionalFormattingToSheet(sheet);
+			this.excelDataFormatter.addStyleFormattingToSheet(sheet);
+		}
 
  		workbook.write(bos);
 		workbook.close();

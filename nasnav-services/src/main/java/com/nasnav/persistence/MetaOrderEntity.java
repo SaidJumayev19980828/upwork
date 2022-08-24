@@ -2,7 +2,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.persistence.listeners.MetaOrderEntityListener;
+import com.nasnav.persistence.yeshtery.listeners.MetaOrderEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;

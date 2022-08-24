@@ -11,10 +11,9 @@ import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
-import com.nasnav.yeshtery.YeshteryConstants;
-import com.nasnav.yeshtery.response.YeshteryUserApiResponse;
-import com.nasnav.yeshtery.services.interfaces.YeshteryUserService;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.response.YeshteryUserApiResponse;
+import com.nasnav.service.yeshtery.YeshteryUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -51,7 +50,7 @@ public class YeshteryUserController {
     @Autowired
     private SecurityService securityService;
     @Autowired
-    EmployeeUserService employeeUserService;
+    private EmployeeUserService employeeUserService;
 
 
     @GetMapping(value = "info")
@@ -87,7 +86,7 @@ public class YeshteryUserController {
        //
         ResponseEntity.BodyBuilder response = ResponseEntity.ok();
         try {
-            UserApiResponse body = securityService.socialLogin(socialLoginToken);
+            UserApiResponse body = securityService.socialLogin(socialLoginToken, true);
             return response.body(body);
         }catch(Exception e) {
             //change it to forward to a server rendered page
@@ -187,10 +186,10 @@ public class YeshteryUserController {
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id") Long orgId,
+                                  @RequestParam(value = "org_id", required = false) Long orgId,
                                   @RequestParam() boolean employee) {
         if (employee) {
-            employeeUserService.sendEmailRecovery(email, orgId);
+            employeeUserService.sendEmailRecovery(email);
         } else {
             userService.sendEmailRecovery(email, orgId);
         }

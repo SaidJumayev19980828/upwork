@@ -112,7 +112,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		setPromotionDefaultParams(params);
 
 		List<PromotionDTO> promotions =
-				criteriaQueryBuilder.getResultList(params)
+				criteriaQueryBuilder.getResultList(params, true)
 					.stream()
 					.map(this::createPromotionDTO)
 					.collect(toList());

@@ -41,8 +41,6 @@ public class LoyaltyCoinsDropServiceImp implements LoyaltyCoinsDropService {
     @Autowired
     OrganizationRepository organizationRepository;
     @Autowired
-    UserService userService;
-    @Autowired
     LoyaltyCoinsDropLogsService loyaltyCoinsDropLogsService;
     @Autowired
     LoyaltyPointsService loyaltyPointsService;
@@ -167,7 +165,7 @@ public class LoyaltyCoinsDropServiceImp implements LoyaltyCoinsDropService {
         
     }
     private List<UserEntity> loadUsersAllowReward() {
-        return userService.getYeshteryUsersByAllowReward(true);
+        return userRepository.findByYeshteryUserIdNotNullAndAllowReward(true);
     }
 
     private LoyaltyCoinsDropEntity createCoinsDropEntity(LoyaltyCoinsDropDTO coins) {

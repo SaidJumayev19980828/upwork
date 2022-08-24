@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -11,9 +12,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @Data
 @EqualsAndHashCode(callSuper=false)
-public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{	
-
-
+public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	
 	@Column(name = "email")
 	private String email;
@@ -28,7 +27,7 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	private LocalDateTime resetPasswordSentAt;
 	
 	@Column(name = "avatar")
-	private String avatar;
+	private String image;
 	
 	@Column(name = "organization_id")
 	private Long organizationId;
@@ -50,9 +49,14 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 
 	@Column(name="user_status")
 	private Integer userStatus;
-	
+
+	@Column(name = "remember_created_at")
+	@CreationTimestamp
+	private LocalDateTime creationTime;
+
 	abstract public String getName();
 	abstract public void setName(String name);
+
 	abstract public UserRepresentationObject getRepresentation();
 	
 }

@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 
 import com.nasnav.commons.converters.Converters;
 import com.nasnav.commons.converters.DtoToCsvRowMapper;
+import com.nasnav.service.helpers.ExcelDataFormatter;
+import com.nasnav.service.helpers.ExcelDataValidator;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
@@ -21,6 +23,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jboss.logging.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.dto.ProductImageDTO;
@@ -31,6 +34,11 @@ import com.nasnav.service.model.importproduct.csv.CsvRow;
 public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 	private final Logger logger = Logger.getLogger(getClass());
+
+	@Autowired
+	private ExcelDataValidator excelDataValidator;
+	@Autowired
+	private ExcelDataFormatter excelDataFormatter;
 
 	protected ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException {
 
@@ -76,6 +84,11 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 		else
 			data.forEach(line ->  createNewRow(sheet, indexToHeader, dtoToCsvRowMapper.map(line)));
 
+		if(addExcelDataValidation != null && addExcelDataValidation){
+			excelDataValidator.addDataValidationsToSheet(sheet);
+			excelDataFormatter.addConditionalFormattingToSheet(sheet);
+			excelDataFormatter.addStyleFormattingToSheet(sheet);
+		}
  		workbook.write(bos);
 		workbook.close();
 

@@ -9,6 +9,7 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.LoyaltyEvents;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -16,6 +17,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.UserServicesHelper;
+import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +38,7 @@ import java.util.*;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
@@ -51,54 +53,43 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
 	private Logger logger = LogManager.getLogger();
 
-	@Autowired
-	private PasswordEncoder passwordEncoder;
+	private final PasswordEncoder passwordEncoder;
+	private final UserServicesHelper userServicesHelper;
+	private final SecurityService securityService;
+	private final DomainService domainService;
+	private final OrganizationService orgService;
+	private final MailService mailService;
+	private final RoleService roleService;
 
-	@Autowired
-	private UserServicesHelper userServicesHelper;
-	@Autowired
-	private SecurityService securityService;
-	@Autowired
-	private DomainService domainService;
-	@Autowired
-	private OrganizationService orgService;
-	@Autowired
-	private MailService mailService;
+	private final UserTokenRepository userTokenRepo;
+	private final AddressRepository addressRepo;
+	private final UserAddressRepository userAddressRepo;
+	private final CommonUserRepository commonUserRepo;
+	private final OrganizationRepository orgRepo;
+	private final AreaRepository areaRepo;
+	private final UserRepository userRepository;
+	private final UserSubscriptionRepository subsRepo;
 
-	@Autowired
-	private UserTokenRepository userTokenRepo;
-	@Autowired
-	private AddressRepository addressRepo;
-	@Autowired
-	private UserAddressRepository userAddressRepo;
-	@Autowired
-	private CommonUserRepository commonUserRepo;
-	@Autowired
-	private OrganizationRepository orgRepo;
-	@Autowired
-	private AreaRepository areaRepo;
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private UserSubscriptionRepository subsRepo;
 
-	@Autowired
 	AppConfig appConfig;
 
-	@Autowired
-	private SubAreaRepository subAreaRepo;
-	@Autowired
-	LoyaltyCoinsDropService loyaltyCoinsDropService;
-	@Autowired
-	MetaOrderRepository metaOrderRepository;
-	@Autowired
-    LoyaltyTierService loyaltyTierService;
-	@Autowired
-    LoyaltyBoosterRepository loyaltyBoosterRepository;
+
+	private final SubAreaRepository subAreaRepo;
+
+	private final LoyaltyCoinsDropService loyaltyCoinsDropService;
+
+	private final MetaOrderRepository metaOrderRepository;
+
+	private final LoyaltyTierService loyaltyTierService;
+
+	private final LoyaltyBoosterRepository loyaltyBoosterRepository;
+
+
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -419,7 +410,6 @@ public class UserServiceImpl implements UserService {
 		return userRepository.saveAndFlush((UserEntity) userEntity);
 	}
 
-	@Override
 	public void sendEmailRecovery(String email, Long orgId) {
 		UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
 		generateResetPasswordToken(userEntity);
@@ -514,21 +504,33 @@ public class UserServiceImpl implements UserService {
 		return userTokenRepo.save(tokenEntity).getToken();
 	}
 	
-
+	/* get user own info or other user info
+	for customer, get his own info only
+	for nasnav admin, get requested user info regardless of its roles or organization
+	for employees, only organization admins and managers can get employee or customer info withing the same organization
+	 */
 	@Override
 	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
-		
-		if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
+		BaseUserEntity user;
+		if (securityService.currentUserIsCustomer() || userId == null || userId.equals(currentUser.getId())) {
 			return getUserRepresentationWithUserRoles(currentUser);
+		} else {
+			Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
+
+			if (userHighestRole.equals(NASNAV_ADMIN)) {
+				user = commonUserRepo.findById(userId, isEmployee)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+			} else {
+				Set<String> roles = Roles.getAllPrivileges().get(userHighestRole.name());
+				if (!isEmployee) {
+					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
+						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
+				}
+				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+			}
 		}
-		
-		Boolean isEmp = ofNullable(isEmployee).orElse(false);
-		Long requiredUserId = ofNullable(userId).orElse(currentUser.getId());		
-				
-		BaseUserEntity user = commonUserRepo.findById(requiredUserId, isEmp)
-							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-		
 		return getUserRepresentationWithUserRoles(user);
 	}
 
@@ -785,7 +787,7 @@ public class UserServiceImpl implements UserService {
 		}
 		return customers
 				.stream()
-				.map(u -> u.getRepresentation())
+				.map(UserEntity::getRepresentation)
 				.collect(toList());
 	}
 

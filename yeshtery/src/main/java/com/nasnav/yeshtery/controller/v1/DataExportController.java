@@ -2,7 +2,7 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.enumerations.FileType;
 import com.nasnav.service.CsvExcelDataExportService;
-import com.nasnav.yeshtery.YeshteryConstants;
+import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -31,7 +31,7 @@ public class DataExportController {
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsCsv(@RequestHeader(TOKEN_HEADER) String token,
 													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
-			ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId);
+			ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId, false);
 			return ResponseEntity.ok()
 					.contentType(MediaType.parseMediaType("text/csv"))
 					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
@@ -40,8 +40,9 @@ public class DataExportController {
  	@GetMapping(value = "/products/xlsx")
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsXLSX(@RequestHeader(TOKEN_HEADER) String token,
-													   @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
-			ByteArrayOutputStream s = excelExportService.generateProductsFile(shopId);
+													   @RequestParam(name = "shop_id", required = false) Long shopId,
+													   @RequestParam(name = "validate", required = false) Boolean validate) throws Exception {
+			ByteArrayOutputStream s = excelExportService.generateProductsFile(shopId, validate);
 			return ResponseEntity.ok()
 					.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
@@ -52,7 +53,7 @@ public class DataExportController {
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsCSV(@RequestHeader(TOKEN_HEADER) String token,
 													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
-		ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId);
+		ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId, false);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
