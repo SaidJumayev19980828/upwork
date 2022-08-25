@@ -4,14 +4,13 @@ import com.nasnav.dao.ApiCallsRepository;
 import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 @Component
@@ -23,16 +22,12 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 	@Autowired
 	private ApiCallsRepository apiCallsRepo;
 
-
 	@Override
-	public void afterCompletion(HttpServletRequest request,
-								HttpServletResponse response,
-								Object handler,
-								@Nullable Exception ex) {
-		ApiLogsEntity apiLogsEntity = prepareLogEntity(request, response);
-
-		Thread thread = new Thread(() -> saveApiLogs(apiLogsEntity));
-		thread.start();
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+		HttpServletRequest requestCacheWrapperObject = new ContentCachingRequestWrapper(request);
+		ApiLogsEntity apiLogsEntity = prepareLogEntity(requestCacheWrapperObject, response);
+		saveApiLogs(apiLogsEntity);
+		return true;
 	}
 
 	private void saveApiLogs(ApiLogsEntity apiLogsEntity){
@@ -47,7 +42,7 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 	private ApiLogsEntity prepareLogEntity(HttpServletRequest request, HttpServletResponse response) {
 		ApiLogsEntity apiLogsEntity = new ApiLogsEntity();
 		String apiUrl = getApiURL(request);
-		String requestContent = getRequestContent((ContentCachingRequestWrapper) request);
+		String requestContent = getRequestContent(request);
 		Integer responseCode = response.getStatus();
 
 		apiLogsEntity.setUrl(apiUrl);
@@ -61,21 +56,23 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 		return request.getMethod() + " " + request.getRequestURI();
 	}
 
-	private String getRequestContent(ContentCachingRequestWrapper request) {
+	private String getRequestContent(HttpServletRequest request) {
 		JSONObject requestBodyJson = readRequestBodyAsJson(request);
 
-		String requestContent = new JSONObject()
-									.put("request_body", requestBodyJson)
-									.put("request_parameters", request.getQueryString())
-									.toString();
-		return requestContent;
+		return new JSONObject()
+						.put("request_body", requestBodyJson)
+						.put("request_parameters", request.getQueryString())
+						.toString();
 	}
 
-	private JSONObject readRequestBodyAsJson(ContentCachingRequestWrapper request){
-		String requestBody = new String(request.getContentAsByteArray(), StandardCharsets.UTF_8);
-		requestBody = requestBody.lines().collect(Collectors.joining(""));
+	private JSONObject readRequestBodyAsJson(HttpServletRequest request){
+		try {
+			var requestBody = request.getParameterMap();
 
-		return requestBody.isEmpty() ? new JSONObject("{}") : new JSONObject(requestBody);
+			return requestBody.isEmpty() ? new JSONObject("{}") : new JSONObject(requestBody);
+		} catch (Exception e) {
+			return new JSONObject("{}");
+		}
 	}
 
 	private void setLogEntityContextAttributes(ApiLogsEntity apiLogsEntity) throws IllegalStateException {

@@ -501,7 +501,10 @@ public class ProductService {
 				.orElse(STRING);
 		Map<String,?> extraData = emptyMap();
 		try{
-			extraData = new JSONObject(entity.getExtraData()).toMap();
+			extraData = ofNullable(entity.getExtraData())
+					.map(JSONObject::new)
+					.map(JSONObject::toMap)
+					.orElse(emptyMap());
 		}catch(Throwable e){
 			logger.error(e,e);
 		}

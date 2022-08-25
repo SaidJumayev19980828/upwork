@@ -435,7 +435,7 @@ public class AdminApiTest {
 
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getApiLogs().size());
-        assertResponseResultCount(response, 9L);
+        assertResponseResultCount(response, 10L);
     }
 
     @Test
@@ -443,10 +443,10 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByAllEmployees(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true&start=1", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 3L);
+        assertResponseResultCount(response, 4L);
         assertResponseResultIds(response, 101L, 103L, 107L);
     }
 
@@ -479,10 +479,10 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByEmployees(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true&users=68&users=69", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("employees=true&users=68&users=69&start=1", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 3L);
+        assertResponseResultCount(response, 4L);
         assertResponseResultIds(response, 101L, 103L, 107L);
     }
 
@@ -503,10 +503,10 @@ public class AdminApiTest {
     @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getApiLogsFilterByOrganization(){
         String token = "abcdefg";
-        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("organizations=99001", token);
+        ResponseEntity<ApiLogsResponse> response = sendGetApiLogsRequest("organizations=99001&start=1", token);
 
         assertEquals(OK, response.getStatusCode());
-        assertResponseResultCount(response, 4L);
+        assertResponseResultCount(response, 5L);
         assertResponseResultIds(response, 101L, 104L, 107L, 108L);
     }
 
