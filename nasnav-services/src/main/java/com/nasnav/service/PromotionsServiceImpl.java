@@ -34,6 +34,7 @@ import javax.annotation.PostConstruct;
 import javax.persistence.criteria.*;
 
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.response.PromotionResponse;
@@ -47,6 +48,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -358,6 +360,16 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 	}
 
+	private void validatePromotionDates(PromotionDTO promotion){
+		String startDate = promotion.getStartDate().toString();
+		String endDate = promotion.getEndDate().toString();
+
+		if(!StringUtils.validateDateTime(startDate))
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PROMO$PARAM$0017);
+		if(!StringUtils.validateDateTime(endDate))
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PROMO$PARAM$0018);
+	}
+
 	private void validatePromotionConstraints(PromotionDTO promotion) {
 		PromotionType promoType = PromotionType.getPromotionType(promotion.getTypeId());
 		switch (promoType) {
@@ -557,7 +569,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private void validatePromotion(PromotionDTO promotion) {
-		
 		if(anyIsNull(promotion, promotion.getDiscount()
 				, promotion.getEndDate(), promotion.getIdentifier()
 				, promotion.getStartDate(), promotion.getStatus()
@@ -586,6 +597,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 		validatePromotionConstraints(promotion);
 		validatePromotionDiscount(promotion, promoType);
+		validatePromotionDates(promotion);
 	}
 
 
