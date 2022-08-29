@@ -109,6 +109,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public PromotionResponse getPromotions(PromotionSearchParamDTO searchParams) {
+		validateDates(searchParams);
 		PromotionsSearchParams params = createSearchParam(searchParams);
 
 		setPromotionDefaultParams(params);
@@ -123,6 +124,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return new PromotionResponse(total, promotions);
 	}
 
+	private void validateDates(PromotionSearchParamDTO searchParams) {
+		if(!StringUtils.validDateTime(searchParams.getStartTime()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "start_date");
+		if(!StringUtils.validDateTime(searchParams.getEndTime()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "end_date");
+	}
 
 
 	@Override
@@ -364,9 +371,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 		String startDate = promotion.getStartDate().toString();
 		String endDate = promotion.getEndDate().toString();
 
-		if(!StringUtils.validateDateTime(startDate))
+		if(!StringUtils.validDateTime(startDate))
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PROMO$PARAM$0017);
-		if(!StringUtils.validateDateTime(endDate))
+		if(!StringUtils.validDateTime(endDate))
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PROMO$PARAM$0018);
 	}
 

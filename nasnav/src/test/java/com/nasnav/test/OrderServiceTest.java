@@ -305,13 +305,13 @@ public class OrderServiceTest {
 	
 	@Test
 	public void testDateFilteration() {
-		modifyOrderUpdateTime(330044L, LocalDateTime.of(2017, 11, 26, 10, 00, 00));
-		modifyOrderUpdateTime(330045L, LocalDateTime.of(2017, 12, 15, 10, 00, 00));
-		modifyOrderUpdateTime(330046L, LocalDateTime.of(2017, 12, 16, 10, 00, 00));
+		modifyOrderUpdateTime(330044L, LocalDateTime.of(2020, 11, 26, 10, 00, 00));
+		modifyOrderUpdateTime(330045L, LocalDateTime.of(2020, 12, 15, 10, 00, 00));
+		modifyOrderUpdateTime(330046L, LocalDateTime.of(2020, 12, 16, 10, 00, 00));
 		
 		//-------------------------------------------------------------------
 		// by shop_id only
-		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12&updated_after=2017-12-01:12:12:12", "101112");
+		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2020-12-23:12:12:12&updated_after=2020-12-01:12:12:12", "101112");
 		
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));

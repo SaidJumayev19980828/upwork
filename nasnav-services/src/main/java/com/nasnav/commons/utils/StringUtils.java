@@ -35,11 +35,11 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return patternMatcher(email, EntityConstants.EMAIL_PATTERN);
 	}
 
-	public static boolean validateDateTime(String dateTime) {
-		return patternMatcher(dateTime, EntityConstants.DATE_TIME_PATTERN);
+	public static boolean validDateTime(String dateTime) {
+		return dateTime == null || patternMatcher(dateTime, EntityConstants.DATE_TIME_PATTERN);
 	}
 
-	
+
 	
 	public static boolean isNotBlankOrNull(Object object) {
 		return !isBlankOrNull(object);

@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
@@ -943,6 +944,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException {
+		validateDates(params);
 		params.setUseCount(true);
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
@@ -972,6 +974,17 @@ public class OrderServiceImpl implements OrderService {
 			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
 
 		return new OrdersListResponse(ordersCount, detailedOrders);
+	}
+
+	private void validateDates(OrderSearchParam params) {
+		if(!StringUtils.validDateTime(params.getUpdated_after()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "updated_after");
+		if(!StringUtils.validDateTime(params.getUpdated_before()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "updated_before");
+		if(!StringUtils.validDateTime(params.getCreated_after()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "created_after");
+		if(!StringUtils.validDateTime(params.getCreated_before()))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "created_before");
 	}
 
 	private List<DetailedOrderRepObject> sortByTotalQuantity(List<DetailedOrderRepObject> detailedOrders, SortingWay sortingWay) {

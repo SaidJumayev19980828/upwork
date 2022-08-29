@@ -353,6 +353,8 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0017("Invalid start date")
 	,PROMO$PARAM$0018("Invalid end date")
 
+	,DATE$TIME$0001("Invalid date time field [%s]")
+
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
 
