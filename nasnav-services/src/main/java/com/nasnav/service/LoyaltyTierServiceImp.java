@@ -1,19 +1,24 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
+import com.nasnav.dto.LoyaltyConfigConstraint;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
@@ -21,10 +26,13 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class LoyaltyTierServiceImp implements LoyaltyTierService {
+
+    private static final Logger logger = LogManager.getLogger("LoyaltyTierService");
 
     @Autowired
     private LoyaltyTierRepository tierRepository;
@@ -38,7 +46,8 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     private UserRepository userRepository;
     @Autowired
     private SecurityService securityService;
-
+    @Autowired
+    private ObjectMapper objectMapper;
     @Override
     public LoyaltyTierUpdateResponse updateTier(LoyaltyTierDTO tier) {
         validateTier(tier);
@@ -66,7 +75,17 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
 
     @Override
     public LoyaltyTierDTO getTierById(Long id) {
-        return getExistingTier(id).getRepresentation();
+        LoyaltyTierEntity e = getExistingTier(id);
+        return getTierRepresentation(e);
+    }
+
+    public HashMap<LoyaltyPointType, BigDecimal> readTierJsonStr(String jsonStr){
+        try {
+            return objectMapper.readValue(jsonStr, new TypeReference<HashMap<LoyaltyPointType, BigDecimal>>() {});
+        } catch (Exception e) {
+            logger.error(e,e);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$JSON$0001, jsonStr);
+        }
     }
 
     @Override
@@ -84,8 +103,14 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
                 tierRepository.getByOrganization_Id(orgId);
 
         return tierList.stream()
-                .map(LoyaltyTierEntity::getRepresentation)
+                .map(this::getTierRepresentation)
                 .collect(toList());
+    }
+
+    private LoyaltyTierDTO getTierRepresentation(LoyaltyTierEntity entity) {
+        LoyaltyTierDTO dto = entity.getRepresentation();
+        dto.setConstraints(readTierJsonStr(entity.getConstraints()));
+        return dto;
     }
 
     @Override
@@ -130,8 +155,8 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         }
         if (tier.getCashBackPercentage() != null) {
             entity.setCashBackPercentage(tier.getCashBackPercentage());
-        }if (tier.getCoefficient() != null) {
-            entity.setCoefficient(tier.getCoefficient());
+        }if (tier.getConstraints() != null) {
+            entity.setConstraints(serializeDTO(tier.getConstraints()));
         }
 
         if (tier.getIsSpecial() != null &&
@@ -143,6 +168,15 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             entity.setBooster(booster);
         }
         return tierRepository.save(entity);
+    }
+
+    private String serializeDTO(Map<LoyaltyPointType, BigDecimal> dto) {
+        try {
+            return objectMapper.writeValueAsString(dto);
+        } catch (JsonProcessingException e) {
+            logger.error(e,e);
+            return "{}";
+        }
     }
 
     private LoyaltyTierEntity getOrCreateTierEntity(LoyaltyTierDTO tiers) {
@@ -180,7 +214,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
         }
         if (tier.getOperation().equals("create"))
-            if (anyIsNull(tier, tier.getTierName(), tier.getCoefficient())) {
+            if (anyIsNull(tier, tier.getTierName(), tier.getConstraints())) {
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0003, tier.toString());
             }
     }

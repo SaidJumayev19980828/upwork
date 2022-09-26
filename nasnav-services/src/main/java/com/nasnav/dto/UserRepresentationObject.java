@@ -37,6 +37,6 @@ public class UserRepresentationObject {
     public String referral;
 
     public String getReferral() {
-        return  "ref" + id;
+        return id + "";
     }
 }

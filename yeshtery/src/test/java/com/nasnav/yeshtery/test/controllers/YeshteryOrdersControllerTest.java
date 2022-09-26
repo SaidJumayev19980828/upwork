@@ -24,6 +24,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrdersListResponse;
 import com.nasnav.response.ReturnRequestsResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
 import com.nasnav.service.OrderService;
 import com.nasnav.shipping.ShippingService;
@@ -39,6 +40,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.BeanUtils;
@@ -78,6 +80,7 @@ import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.*;
@@ -133,7 +136,8 @@ public class YeshteryOrdersControllerTest {
 
     @Autowired
     private CartItemRepository cartItemRepo;
-
+    @Autowired
+    private LoyaltyTierRepository tierRepo;
     @Autowired
     private MetaOrderRepository metaOrderRepo;
 
@@ -145,7 +149,8 @@ public class YeshteryOrdersControllerTest {
 
     @Autowired
     private UserRepository userRepository;
-
+    @Autowired
+    private UserTokenRepository tokenRepository;
     @Autowired
     private EmployeeUserRepository empRepository;
 
@@ -445,7 +450,7 @@ public class YeshteryOrdersControllerTest {
 
         //-------------------------------------------------------------------
         // by shop_id only
-        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12&updated_after=2017-12-01:12:12:12", "101112");
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12Z&updated_after=2017-12-01:12:12:12Z", "101112");
 
         assertTrue(200 == response.getStatusCode().value());
         Assert.assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));
@@ -1531,7 +1536,7 @@ public class YeshteryOrdersControllerTest {
             organization = organizationRepository.findOneById(99001L);
         }
 
-        persistentUser = Optional.ofNullable(organization)
+        persistentUser = ofNullable(organization)
                 .map(o -> userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", o.getId()))
                 .orElse(null);
 
@@ -1709,9 +1714,10 @@ public class YeshteryOrdersControllerTest {
         Order order = checkOutCart("789", requestBody, new BigDecimal("850.00"), new BigDecimal("800.00"), new BigDecimal("50.00"));
         List<Long> orderIds = order.getSubOrders().stream().map(SubOrder::getSubOrderId).sorted().collect(toList());
 
-        MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
+        MetaOrderEntity metaOrder = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(order.getOrderId()).get();
         Set<OrdersEntity> subOrders = new HashSet<>(orderRepository.findByIdIn(orderIds));
-        orderService.finalizeYeshteryMetaOrder(metaOrder, subOrders);
+
+        template.exchange(YeshteryConstants.API_PATH + "/payment/cod/execute?order_id=" + order.getOrderId(), POST, null, String.class);
 
         confirmSubOrdersAndAssertPointsGained(orderIds);
     }
@@ -1777,6 +1783,68 @@ public class YeshteryOrdersControllerTest {
         assertEquals(4, response.getBody().getPoints().getAppliedPoints().size());
     }
 
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void userGetPointsThroughReferral() {
+        Long userId = 88L;
+        String requestBody = json()
+                .put("email", "a@b.com")
+                .put("name", "test")
+                .put("password", "123456")
+                .put("confirmation_flag", true)
+                .put("org_id", 99001)
+                .put("phone_number", "4545564")
+                .put("redirect_url", "https://nasnav.org/dummy_org/login")
+                .toString();
+        HttpEntity request = getHttpEntity(requestBody, null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity("/v1/user/register?referral=88", request, UserApiResponse.class);
+        Assertions.assertEquals(201, response.getStatusCodeValue());
+        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
+        Assertions.assertEquals(false, transaction.getIsValid());
+
+        UserEntity newUser = userRepository.findByEmailAndOrganizationId("a@b.com", 99001L).get();
+        newUser.setUserStatus(201);
+        newUser.setTier(tierRepo.findByIdAndOrganization_Id(1L, 99001L).get());
+        userRepository.saveAndFlush(newUser);
+        UserTokensEntity token = new UserTokensEntity();
+        token.setUserEntity(newUser);
+        token.setToken("456987");
+        tokenRepository.saveAndFlush(token);
+
+        addCartItems(newUser.getId(), 601L, 1, 99001L, "456987");
+        requestBody = createCartCheckoutBodyWithPickup().toString();
+        request = getHttpEntity(requestBody, "456987");
+        ResponseEntity<Order> response2 = template.postForEntity("/v1/cart/checkout/", request, Order.class);
+        assertEquals(200, response2.getStatusCodeValue());
+
+        Order resBody = response2.getBody();
+
+        // finalize payment
+        ResponseEntity res = template.postForEntity("/v1/payment/cod/execute?order_id="+ resBody.getOrderId(), null, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        // confirm order
+        request = getHttpEntity( "abcdefg");
+        ResponseEntity response3 =
+                template.postForEntity("/v1/order/confirm?order_id="+resBody.getSubOrders().get(0).getSubOrderId(), request, String.class);
+        assertEquals(200, response3.getStatusCodeValue());
+
+        transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
+        Assertions.assertEquals(true, transaction.getIsValid());
+
+    }
+
+    private JSONObject createCartCheckoutBodyWithPickup() {
+        JSONObject body = new JSONObject();
+        Map<String, String> additionalData = new HashMap<>();
+        additionalData.put("SHOP_ID", "501");
+        body.put("customer_address", 12300001);
+        body.put("shipping_service_id", "TEST");
+        body.put("additional_data", additionalData);
+        return body;
+    }
+
     private void confirmSubOrdersAndAssertPointsGained(List<Long> orderIds) {
         //confirm first suborder
         HttpEntity<?> request = getHttpEntity("131415");
@@ -1796,11 +1864,15 @@ public class YeshteryOrdersControllerTest {
     }
 
     private void addCartItems(Long userId, Long stockId, Integer quantity, Long orgId) {
+        addCartItems(userId, stockId, quantity, orgId, null);
+    }
+    private void addCartItems(Long userId, Long stockId, Integer quantity, Long orgId, String t) {
+        String token = ofNullable(t).orElse("789");
         var itemsCountBefore = cartItemRepo.countByUser_Id(userId);
 
         JSONObject item = createCartItem(stockId, quantity, orgId);
 
-        HttpEntity<?> request = getHttpEntity(item.toString(), "789");
+        HttpEntity<?> request = getHttpEntity(item.toString(), token);
         ResponseEntity<Cart> response =
                 template.exchange(YESHTERY_CART_ITEM_API_PATH, POST, request, Cart.class);
 
