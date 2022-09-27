@@ -15,6 +15,7 @@ public class OrganizationCreationDTO {
     private String pname;
     private Integer ecommerce;
     private String googleToken;
+    private String facebookToken;
     private Integer currencyIso;
     private Boolean yeshteryState;
     private Integer priority;

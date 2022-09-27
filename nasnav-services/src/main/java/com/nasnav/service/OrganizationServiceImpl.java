@@ -381,6 +381,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.getGoogleToken() != null) {
             organization.setGoogleToken(json.getGoogleToken());
         }
+        if (json.getFacebookToken() != null) {
+            organization.setFacebookToken(json.getFacebookToken());
+        }
         if (json.getCurrencyIso() != null) {
             CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
             organization.setCountry(country);

@@ -55,6 +55,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "google_token")
     private String googleToken;
 
+    @Column(name = "facebook_token")
+    private String facebookToken;
+
     @Column(name = "matomo")
     private Integer matomoId;
 
@@ -136,6 +139,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setThemeId(getThemeId().toString());
         obj.setEcommerce((getEcommerce()));
         obj.setGoogleToken(getGoogleToken());
+        obj.setFacebookToken(getFacebookToken());
         obj.setMatomoSiteId(getMatomoId());
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());

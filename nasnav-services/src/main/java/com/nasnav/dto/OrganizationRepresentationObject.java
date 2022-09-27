@@ -82,6 +82,8 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @Schema(name = "Token used to identify websites at Google")
     private String googleToken;
 
+    private String facebookToken;
+
     private String currency;
     private Integer currencyIso;
     private Map<String,String> settings;
