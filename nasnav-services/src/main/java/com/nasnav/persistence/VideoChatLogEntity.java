@@ -52,6 +52,13 @@ public class VideoChatLogEntity implements BaseEntity {
     @ToString.Exclude
     private OrganizationEntity organization;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ShopsEntity shop;
+
     @Column(name = "is_active")
     private Boolean isActive;
 
@@ -69,6 +76,9 @@ public class VideoChatLogEntity implements BaseEntity {
         if(assignedTo != null) {
             obj.setAssignedToName(assignedTo.getName());
         }
+        if(getShop() != null) {
+            obj.setShopId(getShop().getId());
+        }
         obj.setUserName(user.getName());
         obj.setIsActive(isActive);
         obj.setDescription(description);
@@ -84,7 +94,7 @@ public class VideoChatLogEntity implements BaseEntity {
         if(description == null)
             description = "";
 
-        description += text + " at " + LocalDateTime.now() + "\n";
+        description += text + " at " + LocalDateTime.now() + ".\n";
     }
 
 }

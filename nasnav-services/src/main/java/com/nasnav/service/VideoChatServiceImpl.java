@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
@@ -26,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.enumerations.VideoChatStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Optional.ofNullable;
@@ -42,6 +44,8 @@ public class VideoChatServiceImpl implements VideoChatService {
     private OpenVidu openVidu;
     @Autowired
     private OrganizationRepository organizationRepository;
+    @Autowired
+    private ShopsRepository shopsRepository;
 
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
@@ -63,17 +67,16 @@ public class VideoChatServiceImpl implements VideoChatService {
 
 
     @Override
-    public VideoChatResponse createOrJoinSession(String sessionName, Long orgId) {
-
+    public VideoChatResponse createOrJoinSession(String sessionName, Long orgId, Long shopId) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        OrganizationEntity organization = organizationRepository.findById(orgId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
+        OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
+        orgId = organization.getId();
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
         }
         if (loggedInUser instanceof UserEntity) {
-            return getOrCreateUserVideoSession((UserEntity) loggedInUser, sessionName, orgId);
+            return getOrCreateUserVideoSession((UserEntity) loggedInUser, sessionName, orgId, shopId);
         } else if (loggedInUser instanceof EmployeeUserEntity) {
             return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, sessionName, orgId);
         } else {
@@ -100,7 +103,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             token = addTokenToSession(loggedInUser, sessionName);
         }
 
-        return new VideoChatResponse(true, null, token, loggedInUser.getName(), sessionName);
+        return new VideoChatResponse(true, null, token, loggedInUser.getName(), sessionName, getVideoChatShopId(videChatLogObj));
     }
 
     private String addTokenToSession(EmployeeUserEntity loggedInUser, String sessionName) {
@@ -117,16 +120,21 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
 
-    private VideoChatResponse getOrCreateUserVideoSession(UserEntity loggedInUser, String sessionName, Long orgId) {
+    private VideoChatResponse getOrCreateUserVideoSession(UserEntity loggedInUser, String sessionName, Long orgId, Long shopId) {
         if (Strings.isNotEmpty(sessionName)) {
             return getExistingChatSession(sessionName, orgId);
         }
-        return createNewVideoSession(loggedInUser, orgId);
+        return createNewVideoSession(loggedInUser, orgId, shopId);
     }
 
     private VideoChatResponse getExistingChatSession(String sessionName, Long orgId) {
         VideoChatLogEntity entity = getVideoChatLogEntity(sessionName, orgId);
-        return new VideoChatResponse(true, null, entity.getToken(), null, sessionName);
+        Long shopId = getVideoChatShopId(entity);
+        return new VideoChatResponse(true, null, entity.getToken(), null, sessionName, shopId);
+    }
+
+    private Long getVideoChatShopId(VideoChatLogEntity entity) {
+        return ofNullable(entity.getShop()).map(ShopsEntity::getId).orElse(null);
     }
 
     private String createConnection(Session session) {
@@ -143,9 +151,14 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003));
     }
 
-    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, Long orgId) {
+    private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, Long orgId, Long shopId) {
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
+        ShopsEntity shop = ofNullable(shopId)
+                .map(shopsRepository::findByIdAndRemoved)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .orElse(null);
         try {
 
             Session session = this.openVidu.createSession();
@@ -157,6 +170,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             newVideChatLog.setToken(token);
             newVideChatLog.setName(sessionName);
             newVideChatLog.setIsActive(true);
+            newVideChatLog.setShop(shop);
             newVideChatLog.setOrganization(organizationEntity);
             newVideChatLog.setStatus(NEW.getValue());
 
@@ -166,7 +180,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             List<UserSessionInfo> sessionInfos = new ArrayList<>();
             sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, token));
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
-            return new VideoChatResponse(true, null, token, null, sessionName);
+            return new VideoChatResponse(true, null, token, null, sessionName, getVideoChatShopId(newVideChatLog));
         } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
         }
@@ -181,9 +195,11 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     @Override
-    public void leaveSession(String sessionName, Long orgId, Boolean endCall) {
+    public void leaveSession(String sessionName, Long orgId, Long shopId, Boolean endCall) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        VideoChatLogEntity videoEntity = getVideoChatLogEntity(sessionName, orgId);
+
+        OrganizationEntity org = validateAndGetOrganization(orgId, shopId);
+        VideoChatLogEntity videoEntity = getVideoChatLogEntity(sessionName, org.getId());
 
         if (loggedInUser instanceof UserEntity) {
            endSession(videoEntity, ENDED_BY_CUSTOMER);
@@ -195,9 +211,23 @@ public class VideoChatServiceImpl implements VideoChatService {
 
                 videoEntity.setAssignedTo(null);
                 videoEntity.setStatus(STARTED.getValue());
-                videoEntity.addDescription("employee ("+loggedInUser.getName() + ") has left the session");
+                videoEntity.addDescription("employee (" +loggedInUser.getName() + ") has left the session");
                 videoChatLogRepository.saveAndFlush(videoEntity);
             }
+        }
+    }
+
+    private OrganizationEntity validateAndGetOrganization(Long orgId, Long shopId) {
+        if (allIsNull(shopId, orgId))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0006);
+
+        if (shopId != null) {
+            return shopsRepository.findByIdAndRemoved(shopId)
+                    .map(ShopsEntity::getOrganizationEntity)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopId));
+        } else {
+            return organizationRepository.findById(orgId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
     }
 

@@ -20,4 +20,5 @@ public class VideoChatResponse {
     private String sessionToken;
     private String employeeName;
     private String sessionName;
+    private Long shopId;
 }
