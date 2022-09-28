@@ -346,7 +346,7 @@ public class OrganizationManagementTest {
                 json, OrganizationResponse.class);
         assertEquals(200, response.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
-        assertEquals(123, org.getPixelId().intValue());
+        assertEquals("123", org.getPixelId());
     }
 
 
