@@ -378,10 +378,10 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.getEcommerce() != null) {
             organization.setEcommerce(json.getEcommerce());
         }
-        if (json.getGoogleToken() != null) {
+        if (json.isUpdated("googleToken")) {
             organization.setGoogleToken(json.getGoogleToken());
         }
-        if (json.getFacebookToken() != null) {
+        if (json.isUpdated("facebookToken")) {
             organization.setFacebookToken(json.getFacebookToken());
         }
         if (json.getCurrencyIso() != null) {
@@ -397,11 +397,11 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.getPriority() != null && json.getPriority() >= 0) {
             organization.setPriority(json.getPriority());
         }
-        if (json.getMatomoId() != null) {
-            organization.setMatomoId(json.getMatomoId());
+        if (json.isUpdated("matomoSiteId")) {
+            organization.setMatomoId(json.getMatomoSiteId());
         }
-        if (json.getPixelId() != null) {
-            organization.setPixelId(json.getPixelId());
+        if (json.isUpdated("pixelSiteId")) {
+            organization.setPixelId(json.getPixelSiteId());
         }
     }
 
