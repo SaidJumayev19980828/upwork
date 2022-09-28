@@ -22,7 +22,7 @@ public class OrganizationCreationDTO extends BaseJsonDTO {
     private Integer priority;
     private Boolean enableVideoChat;
     private Integer matomoSiteId;
-    private Integer pixelSiteId;
+    private String pixelSiteId;
 
     @Override
     protected void initRequiredProperties() {
@@ -84,7 +84,7 @@ public class OrganizationCreationDTO extends BaseJsonDTO {
         this.matomoSiteId = matomoSiteId;
     }
 
-    public void setPixelSiteId(Integer pixelSiteId) {
+    public void setPixelSiteId(String pixelSiteId) {
         setPropertyAsUpdated("pixelSiteId");
         this.pixelSiteId = pixelSiteId;
     }

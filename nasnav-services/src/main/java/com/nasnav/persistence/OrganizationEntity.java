@@ -62,7 +62,7 @@ public class OrganizationEntity implements BaseEntity {
     private Integer matomoId;
 
     @Column(name = "facebook_pixel")
-    private Integer pixelId;
+    private String pixelId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code")

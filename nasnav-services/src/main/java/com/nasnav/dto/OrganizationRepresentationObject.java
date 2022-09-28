@@ -88,7 +88,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Integer currencyIso;
     private Map<String,String> settings;
     private Integer matomoSiteId;
-    private Integer pixelSiteId;
+    private String pixelSiteId;
     private Boolean yeshteryState;
     private String domain;
     private Integer priority;
