@@ -2,8 +2,8 @@
 
 INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 --inserting organizations
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99001, 'organization_1', 818, 1);
+INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99002, 'organization_2', 818, 1);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -71,3 +71,4 @@ insert into public.seo_keywords(id, entity_id, type_id, organization_id, keyword
 insert into public.seo_keywords(id, entity_id, type_id, organization_id, keyword) values(333003, 5001, 2, 99001, 'Search bot konafa with mango!');
 insert into public.seo_keywords(id, entity_id, type_id, organization_id, keyword) values(333004, 5002, 2, 99002, 'Search bot notella!');
 insert into public.seo_keywords(id, entity_id, type_id, organization_id, keyword) values(333005, 5003, 2, 99002, 'Search bot dark chocolate bars!');
+insert into public.seo_keywords(id, entity_id, type_id, organization_id, keyword) values(333006, 201, 3, 99002, 'Category Keyword!');

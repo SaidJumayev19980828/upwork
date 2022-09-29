@@ -55,11 +55,14 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "google_token")
     private String googleToken;
 
+    @Column(name = "facebook_token")
+    private String facebookToken;
+
     @Column(name = "matomo")
     private Integer matomoId;
 
     @Column(name = "facebook_pixel")
-    private Integer pixelId;
+    private String pixelId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code")
@@ -136,6 +139,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setThemeId(getThemeId().toString());
         obj.setEcommerce((getEcommerce()));
         obj.setGoogleToken(getGoogleToken());
+        obj.setFacebookToken(getFacebookToken());
         obj.setMatomoSiteId(getMatomoId());
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());

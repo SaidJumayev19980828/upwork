@@ -350,6 +350,10 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0014("Usage limit exceeded max value!")
 	,PROMO$PARAM$0015("Missing parameter[%s] in given promotion [%s]!")
 	,PROMO$PARAM$0016("Promo code [%s] is not applicable to the current user!")
+	,PROMO$PARAM$0017("Invalid start date")
+	,PROMO$PARAM$0018("Invalid end date")
+
+	,DATE$TIME$0001("Invalid date time field [%s]")
 
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
@@ -389,6 +393,7 @@ public enum ErrorCodes {
 	,VIDEO$PARAM$0003("Session not found!")
 	,VIDEO$PARAM$0004("Invalid Session!")
 	,VIDEO$PARAM$0005("Couldn't establish new connection, %s")
+	,VIDEO$PARAM$0006("Must provide either org_id or shop_id!")
 
 	,PAYMENT$CALLBACK$001("No payment entity found with transaction reference [%s]!")
 	,PAYMENT$CALLBACK$002("Untrusted source!")
