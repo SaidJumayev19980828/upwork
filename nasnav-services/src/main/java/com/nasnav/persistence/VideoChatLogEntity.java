@@ -52,8 +52,8 @@ public class VideoChatLogEntity implements BaseEntity {
     @ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "shop_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
