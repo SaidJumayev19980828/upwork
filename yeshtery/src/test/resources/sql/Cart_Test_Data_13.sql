@@ -6,6 +6,10 @@ INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES 
 INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99002, 'organization_2', 818, 1);
 INSERT INTO public.organizations(id, name, p_name, currency_iso, yeshtery_state) VALUES (99003, 'yeshtery', 'yeshtery', 818, 1);
 
+INSERT into public.organization_payments(id,organization_id ,gateway, account ) values(100025, 99001, 'cod', 'dummy');
+INSERT into public.organization_payments(id,organization_id ,gateway, account ) values(100026, 99002, 'cod', 'dummy');
+INSERT into public.organization_payments(id,organization_id ,gateway, account ) values(100027, 99003, 'cod', 'dummy');
+
 --insert organization domain
 INSERT INTO public.organization_domains
 ("domain", organization_id, subdir)
@@ -41,19 +45,19 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUE
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99002, 12300001);
 
 --loyalty data
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
-    VALUES (1, 'default_tier', true, now(), 99001, 0.05);
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
-    VALUES (2, 'default_tier for org 2', true, now(), 99002, 0.05);
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, coefficient)
-    VALUES (3, 'default_tier for org 3', true, now(), 99003, 0.05);
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints)
+    VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints)
+    VALUES (2, 'default_tier for org 2', true, now(), 99002, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints)
+    VALUES (3, 'default_tier for org 3', true, now(), 99003, '{"ORDER_ONLINE":0.05}');
 
-insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
-    values (31001, 'desctiption', 99001, null, true, now(), 7, 1, 0.5, 1, null);
-insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
-    values (31002, 'desctiption', 99002, null, true, now(), 7, 1, 0.5, 2, null);
-insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, ratio_from, ratio_to, coefficient, default_tier_id, expiry)
-    values (31003, 'desctiption', 99003, null, true, now(), 7, 1, 0.5, 3, null);
+insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, default_tier_id, constraints)
+    values (31001, 'desctiption', 99001, null, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, default_tier_id, constraints)
+    values (31002, 'desctiption', 99002, null, true, now(), 2, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, default_tier_id, constraints)
+    values (31003, 'desctiption', 99003, null, true, now(), 3, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
 
 INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
     VALUES (99001, 'RETURN_DAYS_LIMIT', '0', 99001, 0);
@@ -166,10 +170,6 @@ values('BOSTA_LEVIS', 99003,
            "UPPER_EGYPT":45,
            "TRACKING_URL": "https://stg-app.bosta.co/api/tracking/26522"
         }');
-
---assign organization to cod payment
-INSERT into public.organization_payments(id,organization_id ,gateway, account )
-values(100025, 99001, 'cod', 'dummy');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 INSERT INTO public.User_addresses values(12300002, 89, 12300001, false);

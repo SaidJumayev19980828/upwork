@@ -132,27 +132,6 @@ public class LoyaltyPointController {
         return loyaltyTierService.changeUserTier(userId, tierId);
     }
 
-    /**
-     * points APIs
-     */
-
-    //@PostMapping(value = "points/update")
-    public LoyaltyPointsUpdateResponse updateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                                          @RequestBody LoyaltyPointDTO dto) {
-        return loyaltyPointsService.updateLoyaltyPoint(dto);
-    }
-
-    //@DeleteMapping("points/delete")
-    public LoyaltyPointDeleteResponse deleteLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                                         @RequestParam Long id) {
-        return loyaltyPointsService.deleteLoyaltyPoint(id);
-    }
-
-    //@PostMapping("points/terminate")
-    public LoyaltyPointsUpdateResponse terminateLoyaltyPoint(@RequestHeader(name = "User-Token", required = false) String token,
-                                                             @RequestParam Long id) {
-        return loyaltyPointsService.terminateLoyaltyPoint(id);
-    }
 
     /*
     @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)
@@ -160,38 +139,19 @@ public class LoyaltyPointController {
                                                         @RequestParam String code) {
         return loyaltyPointsService.checkRedeemPoints(code);
     }
-
-    @PostMapping(value = "points/redeem")
-    public LoyaltyPointsUpdateResponse redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("point_id") Long pointId, @RequestParam("user_id") Long userId) {
-        return loyaltyPointsService.redeemPoints(pointId, userId);
-    }
     */
+    @PostMapping(value = "points/code/redeem")
+    public void redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
+                             @RequestParam("order_id") Long orderId,
+                             @RequestParam("code") String code) {
+        loyaltyPointsService.redeemPoints(orderId, code);
+    }
 
-    //@GetMapping(value = "points/user/scan")
-    public String userScan(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long shopId) {
+
+    @GetMapping(value = "points/code/generate")
+    public String userScan(@RequestHeader(name = "User-Token", required = false) String token,
+                           @RequestParam("shop_id") Long shopId) {
         return loyaltyPointsService.generateUserShopPinCode(shopId);
-    }
-
-    /**
-     * Type APIs
-     */
-
-    //@PostMapping(value = "type/update")
-    public LoyaltyPointsUpdateResponse updateLoyaltyPointType(@RequestHeader(name = "User-Token", required = false) String token,
-                                                              @RequestBody LoyaltyPointTypeDTO dto) {
-        return loyaltyPointsService.updateLoyaltyPointType(dto);
-    }
-
-    //@DeleteMapping("type/delete")
-    public LoyaltyPointDeleteResponse deleteLoyaltyPointType(@RequestHeader(name = "User-Token", required = false) String token,
-                                                             @RequestParam Long id) {
-        return loyaltyPointsService.deleteLoyaltyPointType(id);
-    }
-
-    //@GetMapping(value = "type/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointTypeDTO> getLoyaltyPointTypes(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyPointsService.listLoyaltyPointTypes();
     }
 
 

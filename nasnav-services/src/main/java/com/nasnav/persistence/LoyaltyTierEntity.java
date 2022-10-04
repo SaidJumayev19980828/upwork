@@ -58,8 +58,8 @@ public class LoyaltyTierEntity {
     @Column( name = "cash_back_percentage")
     private BigDecimal cashBackPercentage;
 
-    @Column(name = "coefficient")
-    private BigDecimal coefficient;
+    @Column(name = "constraints")
+    private String constraints;
 
 
     public LoyaltyTierDTO getRepresentation() {

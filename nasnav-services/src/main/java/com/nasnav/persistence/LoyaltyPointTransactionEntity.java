@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -77,24 +78,11 @@ public class LoyaltyPointTransactionEntity {
     private MetaOrderEntity metaOrder;
 
     @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "loyalty_point_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyPointEntity loyaltyPoint;
-
-    @Column(name = "got_online")
-    private Boolean gotOnline;
-
-    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "charity_id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private LoyaltyCharityEntity charity;
-
-    @Column(name = "is_donate")
-    private Boolean isDonate;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "gift_id")
@@ -102,9 +90,6 @@ public class LoyaltyPointTransactionEntity {
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private LoyaltyGiftEntity gift;
-
-    @Column(name = "is_gift")
-    private Boolean isGift;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "coins_drop_id")
@@ -119,12 +104,13 @@ public class LoyaltyPointTransactionEntity {
     @EqualsAndHashCode.Exclude
     private Set<LoyaltySpentTransactionEntity> spentTransactions;
 
-    @Column(name = "is_coins_drop")
-    private Boolean isCoinsDrop;
+    private Integer type;
 
     public LoyaltyPointTransactionDTO getRepresentation() {
         LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
         BeanUtils.copyProperties(this, dto);
+
+        dto.setType(LoyaltyPointType.getLoyaltyPointType(getType()).name());
 
         if (shop != null) {
             dto.setShopId(shop.getId());

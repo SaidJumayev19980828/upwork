@@ -16,7 +16,6 @@ public class LoyaltyPointTransactionDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Long orgId;
-    private Long typeId;
     private String type;
     private BigDecimal amount;
     private BigDecimal points;

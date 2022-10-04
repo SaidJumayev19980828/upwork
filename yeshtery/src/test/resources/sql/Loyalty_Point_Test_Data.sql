@@ -79,14 +79,10 @@ INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name"
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id) VALUES (1, 'default_tier', true, now(), 99001);
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
 
-insert into public.loyalty_point_types values (31001, 'old name');
-
-insert into public.loyalty_point_config values (31001, 'desctiption', 99001, 501, true, now(), 7, 1, 0.5, 1);
-
-insert into public.loyalty_points values (31001, 'desctiption_1', 99001, 31001, 500, 50, now(), now() + interval '30 day');
-insert into public.loyalty_points values (31002, 'desctiption_2', 99001, 31001, 1000, 110, now(), now() + interval '30 day');
+insert into public.loyalty_point_config
+values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
 
 INSERT INTO public.loyalty_booster
 (booster_name, linked_family_member, number_family_children, review_products, number_purchase_offline, social_media_reviews, organization_id, level_booster, activation_months, id, is_active, purchase_size)

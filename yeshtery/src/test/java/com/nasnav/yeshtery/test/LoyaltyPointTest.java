@@ -9,8 +9,10 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.persistence.LoyaltyFamilyEntity;
 import com.nasnav.persistence.LoyaltyPointConfigEntity;
+import com.nasnav.persistence.LoyaltyPointTransactionEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.*;
 import com.nasnav.service.LoyaltyPointsService;
@@ -27,6 +29,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -85,28 +88,13 @@ public class LoyaltyPointTest {
 
 
     @Test
-    public void createLoyaltyPointConfig() {
+    public void createLoyaltyPointConfigInvalidConstraints() {
 
         var body = createConfigJson()
-                .put("ratio_from", NULL)
+                .put("constraints", NULL)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(406, response.getStatusCodeValue());
-
-        body = createConfigJson()
-                .put("ratio_to", NULL)
-                .toString();
-        request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(406, response.getStatusCodeValue());
-
-
-        body = createConfigJson()
-                .put("coefficient", NULL)
-                .toString();
-        request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(406, response.getStatusCodeValue());
 
         request = getHttpEntity(body, "abcdefg");
@@ -115,16 +103,6 @@ public class LoyaltyPointTest {
 
         assertEquals(200, responseList.getStatusCodeValue());
         assertEquals(1, responseList.getBody().size());
-
-    }
-
-    private void assertConfigValues(LoyaltyPointConfigEntity config) {
-        assertEquals(config.getCoefficient(), new BigDecimal(0.5));
-        assertEquals(config.getRatioFrom(),  new BigDecimal(7));
-        assertEquals(config.getRatioTo(),  new BigDecimal(1));
-        assertNotNull(config.getOrganization());
-        assertNotNull(config.getDefaultTier());
-        assertEquals(config.getOrganization().getId(), 99001);
 
     }
     
@@ -171,13 +149,15 @@ public class LoyaltyPointTest {
     }
 
     private JSONObject createConfigJson() {
+        JSONObject constraints = json()
+                .put("ORDER_ONLINE",
+                        json()
+                        .put("ratio_from", new BigDecimal("7.00"))
+                        .put("ratio_to", new BigDecimal("1.00")));
         return json()
                 .put("description", "this is a configuration")
-                .put("coefficient", 0.5)
-                .put("ratio_from", 7)
-                .put("ratio_to", 1)
-                .put("default_tier", json().put("id", 1))
-                ;
+                .put("constraints", constraints)
+                .put("default_tier", json().put("id", 1));
     }
 
 
@@ -222,19 +202,21 @@ public class LoyaltyPointTest {
         LoyaltyTierDTO loyaltyTierDTO = resBody.get(1);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
-        assertEquals(loyaltyTierDTO.getCoefficient(), new BigDecimal(0.8) );
+        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyPointType.ORDER_ONLINE).doubleValue(), 0.8);
 
         tierRepository.deleteById(loyaltyTierDTO.getId());
     }
 
 
     private String getTierJsonString() {
+        JSONObject constraints = json()
+                .put("ORDER_ONLINE", "0.8");
         return json()
                 .put("operation", "create")
                 .put("tier_name", "tier test")
                 .put("selling_price", 10)
                 .put("org_id", 99001)
-                .put("coefficient", new BigDecimal(0.8) )
+                .put("constraints", constraints )
                 .put("is_active", true)
                 .put("is_special", false)
                 .toString();

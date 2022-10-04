@@ -15,7 +15,6 @@ import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserTokensEntity;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.security.oauth2.UserPrincipal;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.commons.YeshteryConstants;
@@ -105,6 +104,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private UserTokenRepository nasnavUserTokenRepo;
     @Autowired
     private RoleService roleService;
+    @Autowired
+    private LoyaltyPointsService loyaltyPointsService;
     @Autowired
     AppConfig appConfig;
 
@@ -223,20 +224,29 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public YeshteryUserApiResponse registerYeshteryUserV2(String referral, UserDTOs.UserRegistrationObjectV2 userJson) {
+    public YeshteryUserApiResponse registerYeshteryUserV2(Long referrer, UserDTOs.UserRegistrationObjectV2 userJson) {
             validateNewUserRegistration(userJson);
 
             YeshteryUserEntity user = createNewUserEntity(userJson);
             setUserAsDeactivated(user);
             generateYeshteryResetPasswordToken(user);
-            user.setReferral(referral);
+            user.setReferral(String.valueOf(referrer));
             userRepository.saveAndFlush(user);
+
+            givePointsToReferrer(referrer, userJson.getOrgId());
 
             sendActivationMail(user, userJson.getRedirectUrl());
             List<OrganizationEntity> yeshteryOrgs = orgService.getYeshteryOrgs();
             yeshteryOrgs.forEach(org -> createNewYeshtryUserForOrg(userJson, org, user.getId()));
 
             return new YeshteryUserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
+    }
+
+    private void givePointsToReferrer(Long referrer, Long orgId) {
+        UserEntity referrerEntity = nasNavUserRepository.findById(referrer)
+                .orElse(null);
+        if (referrerEntity != null)
+            loyaltyPointsService.givePointsToReferrer(referrerEntity, orgId);
     }
 
     @Override

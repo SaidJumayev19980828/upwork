@@ -56,6 +56,7 @@ import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
+import static com.nasnav.enumerations.LoyaltyPointType.ORDER_ONLINE;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
 import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
@@ -530,10 +531,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private AddressRepObj getBillDeliveryAddress(MetaOrderEntity metaOrder) {
 		OrdersEntity subOrder =
-				ofNullable(metaOrder)
-				.map(MetaOrderEntity::getSubOrders)
-				.map(Set::stream)
-				.flatMap(Stream::findFirst)
+				getSubordersStreamFromMetaOrder(metaOrder)
+				.findFirst()
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0005, metaOrder.getId()));
 		return getBillDeliveryAddress(subOrder);
 	}
@@ -579,7 +578,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private String changeOperatorName(String operator) {
-		if (operator.equals("COD")) {
+		if (operator != null && operator.equals("COD")) {
 			return "Cash on delivery";
 		}
 		return operator;
@@ -1206,16 +1205,10 @@ public class OrderServiceImpl implements OrderService {
 	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
-		if(!isNull(pinCode)) {
-			Optional<LoyaltyPinsEntity> pinEntity = loyaltyPinsRepository.findByUser_IdAndShop_IdAndPin(subOrder.getUserId(), subOrder.getShopsEntity().getId(), pinCode);
-			if(pinEntity.isEmpty()) {
-				throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0017, pinEntity);
-			}
-		}
 
 		confirmSubOrderAndMetaOrder(subOrder);
 
-		return  shippingMgrService
+		return shippingMgrService
 				.requestShipment(subOrder)
 				.doOnNext(trackerData -> saveShipmentTracker(trackerData, subOrder))
 				.map(OrderConfirmResponseDTO::new)
@@ -1280,10 +1273,11 @@ public class OrderServiceImpl implements OrderService {
 
 		if (metaOrder.getSubMetaOrder() != null) {
 			MetaOrderEntity yeshteryMetaOrder = metaOrder.getSubMetaOrder();
-			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, orderValueWithoutShipping);
+			loyaltyPointsService.createYeshteryLoyaltyPointTransaction(yeshteryMetaOrder, ORDER_ONLINE, orderValueWithoutShipping);
+			loyaltyPointsService.activateReferralPoints(order);
 		}
 
-		loyaltyPointsService.createLoyaltyPointTransaction(order, orderValueWithoutShipping);
+		loyaltyPointsService.createLoyaltyPointTransaction(order, ORDER_ONLINE, orderValueWithoutShipping);
 	}
 
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
@@ -1749,7 +1743,7 @@ public class OrderServiceImpl implements OrderService {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder))
+		.map(this::getSubOrder)
 		.collect(toList());
 	}
 
@@ -1759,7 +1753,7 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(MetaOrderEntity::getSubOrders)
 				.flatMap(Set::stream)
-				.map(subOrder -> getSubOrder(subOrder))
+				.map(this::getSubOrder)
 				.collect(toList());
 	}
 
@@ -1865,9 +1859,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {
-		return order
-				.getSubOrders()
-				.stream()
+		return getSubordersStreamFromMetaOrder(order)
 				.findFirst()
 				.map(OrdersEntity::getBasketsEntity)
 				.orElse(new HashSet<BasketsEntity>())
@@ -2566,14 +2558,20 @@ public class OrderServiceImpl implements OrderService {
 	private Boolean isCancelable(MetaOrderEntity order) {
 		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
 		OrderStatus status = getCancelOrderStatus(order);
+
 		boolean areAllSubOrdersFinalized =
-				order
-						.getSubOrders()
-						.stream()
+				getSubordersStreamFromMetaOrder(order)
 						.map(OrdersEntity::getStatus)
 						.map(OrderStatus::findEnum)
 						.allMatch(acceptedStatuses::contains);
 		return acceptedStatuses.contains(status) && areAllSubOrdersFinalized;
+	}
+
+	private Stream<OrdersEntity> getSubordersStreamFromMetaOrder(MetaOrderEntity metaOrder) {
+		if (metaOrder.getSubMetaOrders() == null || metaOrder.getSubMetaOrders().isEmpty())
+			return metaOrder.getSubOrders().stream();
+		else
+			return metaOrder.getSubMetaOrders().stream().map(MetaOrderEntity::getSubOrders).flatMap(Set::stream);
 	}
 
 	private OrderStatus getCancelOrderStatus(MetaOrderEntity order) {

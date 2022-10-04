@@ -12,8 +12,6 @@ import java.util.Optional;
 
 public interface LoyaltyPointConfigRepository extends JpaRepository<LoyaltyPointConfigEntity, Long> {
 
-    boolean existsByIdAndOrganization_IdAndIsActive(Long id, Long orgId, Boolean isActive);
-
     Optional<LoyaltyPointConfigEntity> findByIdAndOrganization_IdAndIsActive(Long id, Long orgId, Boolean isActive);
 
 

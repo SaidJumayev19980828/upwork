@@ -136,8 +136,8 @@ public class YeshteryUserController {
 
     @PostMapping(value = "register")
     @ResponseStatus(CREATED)
-    public YeshteryUserApiResponse registerUserV2( @RequestParam(required = false) String referral,
-            @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
+    public YeshteryUserApiResponse registerUserV2( @RequestParam(required = false) Long referral,
+                                                   @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
         return this.userService.registerYeshteryUserV2(referral, userJson);
     }
 

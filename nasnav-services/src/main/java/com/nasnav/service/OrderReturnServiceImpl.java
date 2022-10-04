@@ -1428,7 +1428,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     }
 
     private void validateDates(ReturnRequestSearchParams searchParams) {
-        if(StringUtils.validDateTime(searchParams.getDate_from()))
+        if(!StringUtils.validDateTime(searchParams.getDate_from()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "date_from");
         if(!StringUtils.validDateTime(searchParams.getDate_to()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "date_to");

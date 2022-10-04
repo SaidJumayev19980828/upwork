@@ -115,8 +115,14 @@ public class Commons {
 	}
 
 	public void finalizePayment(PaymentEntity payment, boolean yeshteryMetaOrder) {
-		MetaOrderEntity metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		MetaOrderEntity metaOrder;
+		if (yeshteryMetaOrder) {
+			metaOrder = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(payment.getMetaOrderId())
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		} else {
+			metaOrder = metaOrderRepo.findByMetaOrderId(payment.getMetaOrderId())
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, payment.getMetaOrderId()));
+		}
 		Set<OrdersEntity> orders = getSubOrders(payment, metaOrder, yeshteryMetaOrder);
 
 		paymentsRepository.saveAndFlush(payment);

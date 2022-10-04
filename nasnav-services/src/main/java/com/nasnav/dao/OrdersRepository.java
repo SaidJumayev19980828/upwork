@@ -203,5 +203,16 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Integer getStoreConfirmedOrderCountPerUser(@Param("orderId") Long orderId,
 											   @Param("userId") Long userId);
 
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.shipment shipment"
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user"
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " WHERE ord.id = :orderId and user.id = :userId and shop.id = :shopId and ord.status = 2" )
+	Optional<OrdersEntity> findPickUpOrderByOrderIdUserIdAndShopId(@Param("orderId")Long orderId,
+																   @Param("userId")Long userId,
+																   @Param("shopId")Long shopId);
+
 	Integer countAllByUserId(Long userId);
 }
