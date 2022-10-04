@@ -386,17 +386,17 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         ordersRepo.save(order);
 
-        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP);
+        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP, order.getTotal());
         loyaltyPinsRepository.delete(pinEntity);
     }
 
-    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type) {
+    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount) {
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE)
                 .orElse(null);
         if (config == null || user.getTier() == null) {
             return;
         }
-        BigDecimal points = calculatePoints(config, user.getTier(), null, type);
+        BigDecimal points = calculatePoints(config, user.getTier(), amount, type);
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
         LoyaltyPointTransactionEntity transaction = createLoyaltyPointTransaction(org,
                 user,
@@ -650,7 +650,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
         OrganizationEntity org = organizationRepository.findById(orgId).get();
-        prepareLoyaltyPointTransaction(user, org, REFERRAL);
+        prepareLoyaltyPointTransaction(user, org, REFERRAL, null);
     }
 
     @Override
