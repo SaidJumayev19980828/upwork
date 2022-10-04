@@ -384,21 +384,28 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
         order.getShipment().setStatus(PICKED_UP.getValue());
         order.setStatus(DELIVERED.getValue());
 
+        ordersRepo.save(order);
+
+        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP);
+        loyaltyPinsRepository.delete(pinEntity);
+    }
+
+    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type) {
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE)
                 .orElse(null);
         if (config == null || user.getTier() == null) {
             return;
         }
-        BigDecimal points = calculatePoints(config, user.getTier(), null, PICKUP_FROM_SHOP);
-        LoyaltyConfigConstraint constraint = getConfigConstraint(config, PICKUP_FROM_SHOP);
+        BigDecimal points = calculatePoints(config, user.getTier(), null, type);
+        LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
         LoyaltyPointTransactionEntity transaction = createLoyaltyPointTransaction(org,
                 user,
                 points,
                 constraint.getAmount(),
                 constraint.getExpiry());
-        transaction.setType(PICKUP_FROM_SHOP.getValue());
+        transaction.setType(type.getValue());
+        transaction.setIsValid(true);
         loyaltyPointTransRepo.save(transaction);
-        loyaltyPinsRepository.delete(pinEntity);
     }
 
 
@@ -643,19 +650,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
         OrganizationEntity org = organizationRepository.findById(orgId).get();
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
-        if (config == null || user.getTier() == null) {
-            return;
-        }
-        BigDecimal points = calculatePoints(config, user.getTier(), null, REFERRAL);
-        LoyaltyConfigConstraint constraint = getConfigConstraint(config, REFERRAL);
-        LoyaltyPointTransactionEntity transaction = createLoyaltyPointTransaction(org,
-                user,
-                points,
-                constraint.getAmount(),
-                constraint.getExpiry());
-        transaction.setType(REFERRAL.getValue());
-        loyaltyPointTransRepo.save(transaction);
+        prepareLoyaltyPointTransaction(user, org, REFERRAL);
     }
 
     @Override

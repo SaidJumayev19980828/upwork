@@ -62,7 +62,7 @@ public class UserEntity extends BaseUserEntity{
     @lombok.ToString.Exclude
     private LoyaltyFamilyEntity family;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tier_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude

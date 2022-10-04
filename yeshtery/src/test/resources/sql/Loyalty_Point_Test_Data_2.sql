@@ -16,10 +16,12 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 2
 
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id, code, allow_other_points) VALUES (501, 'shop_1', 101, 99001, 0, 12300001, 'code1', false);
 
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05, "REFERRAL": 0.01}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints)
+    VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05, "REFERRAL": 0.01, "PICKUP_FROM_SHOP": 0.01}');
 
 insert into public.loyalty_point_config
-values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}, "REFERRAL":{"ratio_from":7, "ratio_to":1, "amount": 100}}');
+    values (31001, 'description', 99001, 501, true, now(), 1,
+        '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}, "REFERRAL":{"ratio_from":7, "ratio_to":1, "amount": 100}, "PICKUP_FROM_SHOP":{"ratio_from":7, "ratio_to":1, "amount": 100}}');
 
 INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
 VALUES (88, 'yuser1@nasnav.com','yuser1','456', 99001);

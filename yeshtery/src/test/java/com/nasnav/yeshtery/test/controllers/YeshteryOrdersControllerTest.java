@@ -1787,34 +1787,20 @@ public class YeshteryOrdersControllerTest {
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void userGetPointsThroughReferral() {
-        Long userId = 88L;
-        String requestBody = json()
-                .put("email", "a@b.com")
-                .put("name", "test")
-                .put("password", "123456")
-                .put("confirmation_flag", true)
-                .put("org_id", 99001)
-                .put("phone_number", "4545564")
-                .put("redirect_url", "https://nasnav.org/dummy_org/login")
-                .toString();
-        HttpEntity request = getHttpEntity(requestBody, null);
-        ResponseEntity<UserApiResponse> response = template.postForEntity("/v1/user/register?referral=88", request, UserApiResponse.class);
-        Assertions.assertEquals(201, response.getStatusCodeValue());
-        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
-        Assertions.assertEquals(false, transaction.getIsValid());
+        registerNewUser();
 
-        UserEntity newUser = userRepository.findByEmailAndOrganizationId("a@b.com", 99001L).get();
-        newUser.setUserStatus(201);
-        newUser.setTier(tierRepo.findByIdAndOrganization_Id(1L, 99001L).get());
-        userRepository.saveAndFlush(newUser);
-        UserTokensEntity token = new UserTokensEntity();
-        token.setUserEntity(newUser);
-        token.setToken("456987");
-        tokenRepository.saveAndFlush(token);
+        UserEntity newUser = prepareNewUserInfo();
 
-        addCartItems(newUser.getId(), 601L, 1, 99001L, "456987");
-        requestBody = createCartCheckoutBodyWithPickup().toString();
-        request = getHttpEntity(requestBody, "456987");
+        createAndConfirmOrder(newUser.getId(), "456987");
+
+        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(88L, 99001L).get(0);
+        Assertions.assertEquals(true, transaction.getIsValid());
+    }
+
+    private Long createAndConfirmOrder(Long userId, String token) {
+        addCartItems(userId, 601L, 1, 99001L, token);
+        String requestBody = createCartCheckoutBodyWithPickup().toString();
+        HttpEntity request = getHttpEntity(requestBody, token);
         ResponseEntity<Order> response2 = template.postForEntity("/v1/cart/checkout/", request, Order.class);
         assertEquals(200, response2.getStatusCodeValue());
 
@@ -1830,9 +1816,65 @@ public class YeshteryOrdersControllerTest {
                 template.postForEntity("/v1/order/confirm?order_id="+resBody.getSubOrders().get(0).getSubOrderId(), request, String.class);
         assertEquals(200, response3.getStatusCodeValue());
 
-        transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
-        Assertions.assertEquals(true, transaction.getIsValid());
+        return resBody.getOrderId();
 
+    }
+    private void registerNewUser() {
+        Long userId = 88L;
+        String requestBody = json()
+                .put("email", "a@b.com")
+                .put("name", "test")
+                .put("password", "123456")
+                .put("confirmation_flag", true)
+                .put("org_id", 99001)
+                .put("phone_number", "4545564")
+                .put("redirect_url", "https://nasnav.org/dummy_org/login")
+                .toString();
+        HttpEntity request = getHttpEntity(requestBody, null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity("/v1/user/register?referral=88", request, UserApiResponse.class);
+        Assertions.assertEquals(201, response.getStatusCodeValue());
+        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
+        Assertions.assertEquals(false, transaction.getIsValid());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void userGetPointsThroughShopPickup() {
+        Long orderId = metaOrderRepo.findYeshteryMetaorderByMetaOrderId(createAndConfirmOrder(88L, "123"))
+                .map(MetaOrderEntity::getSubMetaOrders)
+                .get()
+                .stream()
+                .map(MetaOrderEntity::getSubOrders)
+                .flatMap(Set::stream)
+                .findFirst()
+                .map(OrdersEntity::getId)
+                .orElse(-1L);
+
+        HttpEntity request = getHttpEntity("192021");
+        ResponseEntity<String> response = template.exchange("/v1/loyalty/points/code/generate?shop_id=501", GET, request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        String code = response.getBody();
+
+        request = getHttpEntity("123");
+        response = template.postForEntity("/v1/loyalty/points/code/redeem?order_id=" + orderId + "&code="+ code, request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+
+        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_IdAndType(88L, 99001L, 3).get(0);
+        Assertions.assertEquals(true, transaction.getIsValid());
+    }
+
+    private UserEntity prepareNewUserInfo() {
+        UserEntity newUser = userRepository.findByEmailAndOrganizationId("a@b.com", 99001L).get();
+        newUser.setUserStatus(201);
+        newUser.setTier(tierRepo.findByIdAndOrganization_Id(1L, 99001L).get());
+        newUser = userRepository.saveAndFlush(newUser);
+        UserTokensEntity token = new UserTokensEntity();
+        token.setUserEntity(newUser);
+        token.setToken("456987");
+        tokenRepository.saveAndFlush(token);
+
+        return newUser;
     }
 
     private JSONObject createCartCheckoutBodyWithPickup() {
@@ -1884,7 +1926,7 @@ public class YeshteryOrdersControllerTest {
         JSONObject body = new JSONObject();
         Map<String, String> additionalData = new HashMap<>();
         body.put("customer_address", 12300001);
-        body.put("shipping_service_id", SERVICE_ID);
+        body.put("shipping_service_id", "BOSTA_LEVIS");
         body.put("additional_data", additionalData);
         body.put("notes", "come after dinner");
         body.put("points", points);

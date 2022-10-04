@@ -17,6 +17,8 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId); // used for listing transactions only
 
+    List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndType(Long userId, Long orgId, Integer type);
+
     List<LoyaltyPointTransactionEntity> findByOrganization_IdIn(List<Long> orgIds); // used for testing only
 
     @Query("select t from LoyaltyPointTransactionEntity t " +

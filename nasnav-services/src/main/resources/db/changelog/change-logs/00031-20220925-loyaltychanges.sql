@@ -24,3 +24,6 @@ ALTER TABLE public.loyalty_point_transactions drop COLUMN loyalty_point_id;
 ALTER TABLE public.loyalty_point_transactions drop COLUMN got_online;
 ALTER TABLE public.loyalty_point_transactions drop COLUMN is_donate;
 ALTER TABLE public.loyalty_point_transactions drop COLUMN is_gift;
+
+
+ALTER TABLE public.loyalty_pins ALTER COLUMN user_id DROP NOT NULL;

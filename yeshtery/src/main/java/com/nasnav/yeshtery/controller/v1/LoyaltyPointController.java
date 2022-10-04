@@ -142,14 +142,15 @@ public class LoyaltyPointController {
     */
     @PostMapping(value = "points/code/redeem")
     public void redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam("orderId") Long orderId,
-                                                    @RequestParam("code") String code) {
+                             @RequestParam("order_id") Long orderId,
+                             @RequestParam("code") String code) {
         loyaltyPointsService.redeemPoints(orderId, code);
     }
 
 
     @GetMapping(value = "points/code/generate")
-    public String userScan(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam Long shopId) {
+    public String userScan(@RequestHeader(name = "User-Token", required = false) String token,
+                           @RequestParam("shop_id") Long shopId) {
         return loyaltyPointsService.generateUserShopPinCode(shopId);
     }
 
