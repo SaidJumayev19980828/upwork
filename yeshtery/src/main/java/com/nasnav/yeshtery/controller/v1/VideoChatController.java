@@ -1,6 +1,8 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.VideoChatLogRepresentationObject;
+import com.nasnav.request.VideoChatSearchParam;
+import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.VideoChatService;
 import com.nasnav.commons.YeshteryConstants;
@@ -23,9 +25,9 @@ public class VideoChatController {
     private VideoChatService videoChatService;
 
     @GetMapping(value = "/sessions", produces = APPLICATION_JSON_VALUE)
-    public List<VideoChatLogRepresentationObject> getOrgSessions(@RequestHeader(name = "User-Token") String userToken,
-                                                                 @RequestParam(name = "org_id") Long orgId) {
-        return videoChatService.getOrgSessions(orgId);
+    public VideoChatListResponse getOrgSessions(@RequestHeader(name = "User-Token") String userToken,
+                                                @RequestParam VideoChatSearchParam param) {
+        return videoChatService.getOrgSessions(param);
     }
 
     @PostMapping(value = "/session")
