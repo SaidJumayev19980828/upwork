@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
@@ -28,6 +29,7 @@ import java.util.Set;
 
 import static com.nasnav.enumerations.SeoEntityType.*;
 import static com.nasnav.test.commons.TestCommons.*;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.json.JSONObject.NULL;
@@ -352,5 +354,35 @@ public class SeoApiTest {
                 .map(SeoKeywordsDTO::getKeywords)
                 .flatMap(List::stream)
                 .collect(toSet());
+    }
+
+    @Test
+    public void keywordsCreatedOrderTest() throws JsonProcessingException {
+        Long orgId = 99001L;
+        Long entityId = orgId;
+        SeoEntityType type = ORGANIZATION;
+
+        List<String> keywords = asList("Keyword_1", "Keyword_2", "Keyword_3");
+
+        JSONObject requestBody = createAddSeoKeywordRequest(keywords, entityId, type);
+
+        ResponseEntity<String> response = template.postForEntity("/organization/seo",
+                getHttpEntity(requestBody.toString(), "192021"), String.class);
+        assertEquals(OK, response.getStatusCode());
+        assertKeywordsCreatedOrder(orgId, requestBody);
+    }
+
+    private void assertKeywordsCreatedOrder(Long orgId, JSONObject requestBody) throws JsonProcessingException {
+        Long entityId = requestBody.getLong("id");
+        String type = requestBody.getString("type" );
+
+        ResponseEntity<String> response = template.getForEntity(format("/navbox/seo?id=%d&type=%s&org_id=%d", entityId, type, orgId), String.class);
+        var seoEntities = objectMapper.readValue(response.getBody(), new TypeReference<List<SeoKeywordsDTO>>(){});
+        List<String> keywords = seoEntities.get(0).getKeywords();
+
+        assertEquals(1, seoEntities.size());
+        assertEquals("Keyword_1", keywords.get(0));
+        assertEquals("Keyword_2", keywords.get(1));
+        assertEquals("Keyword_3", keywords.get(2));
     }
 }

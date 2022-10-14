@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.ReturnRequestSearchParams;
@@ -1419,10 +1420,18 @@ public class OrderReturnServiceImpl implements OrderReturnService{
 
     @Override
     public ReturnRequestsResponse getYeshteryOrderReturnRequests(ReturnRequestSearchParams params) {
+        validateDates(params);
         if (securityService.getYeshteryState() == 1) {
             return getOrderReturnRequests(params);
         }
         return null;
+    }
+
+    private void validateDates(ReturnRequestSearchParams searchParams) {
+        if(StringUtils.validDateTime(searchParams.getDate_from()))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "date_from");
+        if(!StringUtils.validDateTime(searchParams.getDate_to()))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, DATE$TIME$0001, "date_to");
     }
 
     @Override

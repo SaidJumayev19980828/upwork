@@ -21,6 +21,7 @@ public class VideoChatLogRepresentationObject  extends BaseRepresentationObject 
     private String userName;
     private String assignedToName;
     private  String organizationName;
+    private Long shopId;
     private VideoChatStatus status;
     private Boolean isActive;
     private LocalDateTime createdAt;
