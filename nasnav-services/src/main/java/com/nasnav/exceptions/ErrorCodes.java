@@ -394,6 +394,7 @@ public enum ErrorCodes {
 	,VIDEO$PARAM$0004("Invalid Session!")
 	,VIDEO$PARAM$0005("Couldn't establish new connection, %s")
 	,VIDEO$PARAM$0006("Must provide either org_id or shop_id!")
+	,VIDEO$PARAM$0007("User has active session!")
 
 	,PAYMENT$CALLBACK$001("No payment entity found with transaction reference [%s]!")
 	,PAYMENT$CALLBACK$002("Untrusted source!")

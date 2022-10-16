@@ -9,9 +9,11 @@ import java.util.List;
 
 public interface VideoChatService {
 
-    VideoChatResponse createOrJoinSession(String sessionName, Long orgId, Long shopId);
+    VideoChatResponse createOrJoinSession(String sessionName, Boolean force, Long orgId, Long shopId);
 
     VideoChatListResponse getOrgSessions(VideoChatSearchParam params);
 
     void leaveSession(String sessionName, Long orgId, Long shopId, Boolean endCall);
+
+    void handelCallbackEvent(String eventDTO);
 }

@@ -2,6 +2,7 @@ package com.nasnav.commons.criteria;
 
 import com.nasnav.persistence.VideoChatLogEntity;
 import com.nasnav.request.VideoChatSearchParam;
+import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.Predicate;
@@ -11,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static javax.persistence.criteria.JoinType.LEFT;
+
+@Component("videoChatQueryBuilder")
 
 public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<VideoChatLogEntity>{
 
