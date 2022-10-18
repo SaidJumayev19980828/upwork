@@ -64,9 +64,9 @@ public class BrandService {
                     "INVALID_PARAM: brand_id", NOT_ACCEPTABLE);
         }
 
-        Long linkedProductsCount = productRepo.countByBrandId(brandId);
-        if (linkedProductsCount > 0) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0003, brandId, linkedProductsCount);
+        List<Long> linkedProducts = productRepo.findByBrandId(brandId);
+        if (linkedProducts.size() > 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0003, brandId, linkedProducts.toString());
         }
 
         brandsRepository.setBrandHidden(brandId);

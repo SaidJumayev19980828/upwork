@@ -84,8 +84,8 @@ public enum ErrorCodes {
 	,P$STO$0003("Stock is linked to %s!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
-	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
-	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+	,P$BRA$0002("Brand with id [%d] doesn't belong to organization with id [%d]")
+	,P$BRA$0003("Brand with id [%d] linked to products [%s]!")
 	,P$BRA$0004("No Brand id is provided!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
