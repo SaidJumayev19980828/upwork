@@ -20,7 +20,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     List<ProductEntity> findByOrganizationId(Long organizationId);
 
-    List<ProductEntity> findByOrganizationIdAndProductType(Long orgId, Integer type);
+    @Query("select p from ProductEntity p left join p.productVariants v " +
+            "where p.removed = 0 and v.removed = 0 and p.organizationId = :orgId and p.productType = :type")
+    List<ProductEntity> findEmptyProductsByOrganizationIdAndProductType(@Param("orgId") Long orgId,
+                                                           @Param("type") Integer type);
 
     List<ProductEntity> findByIdIn(List<Long> ids);
     List<ProductEntity> findByIdInOrderByIdAsc(List<Long> ids);

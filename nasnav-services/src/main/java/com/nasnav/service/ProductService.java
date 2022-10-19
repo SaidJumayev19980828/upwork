@@ -74,7 +74,6 @@ import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.*;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
@@ -3269,13 +3268,10 @@ public class ProductService {
 
 
 
-	public List<ProductDetailsDTO> getProducts()  {
+	public List<ProductDetailsDTO> getEmptyProducts()  {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<ProductEntity> productsEntities = productRepository.findByOrganizationIdAndProductType(orgId, 0);
-
-		return productsEntities
+		return productRepository.findEmptyProductsByOrganizationIdAndProductType(orgId, 0)
 				.stream()
-				.filter(c -> c.getProductVariants().isEmpty())
 				.map(c -> createProductDetailsDTO(c, null, null, true))
 				.collect(toList());
 	}

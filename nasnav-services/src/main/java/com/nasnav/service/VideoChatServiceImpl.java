@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
@@ -31,11 +32,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.enumerations.Settings.CONCURRENT_VIDEO_CHAT_CONNECTIONS;
 import static com.nasnav.enumerations.VideoChatStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
@@ -53,6 +55,8 @@ public class VideoChatServiceImpl implements VideoChatService {
     private OrganizationRepository organizationRepository;
     @Autowired
     private ShopsRepository shopsRepository;
+    @Autowired
+    private SettingRepository settingRepo;
     @Autowired
     @Qualifier("videoChatQueryBuilder")
     private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
@@ -104,6 +108,11 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private VideoChatResponse addEmployeeIntoSession(EmployeeUserEntity loggedInUser, String sessionName, Long orgId) {
         VideoChatLogEntity videChatLogObj = getVideoChatLogEntity(sessionName, orgId);
+
+        if (isMaxLimitReached(orgId)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0008);
+        }
+
         String token = addTokenToSession(loggedInUser, sessionName);
         if (!Objects.equals(videChatLogObj.getAssignedTo(), loggedInUser)) {
             videChatLogObj.setAssignedTo(loggedInUser);
@@ -113,6 +122,16 @@ public class VideoChatServiceImpl implements VideoChatService {
         }
 
         return new VideoChatResponse(token, loggedInUser.getName(), sessionName, getVideoChatShopId(videChatLogObj));
+    }
+
+    private Boolean isMaxLimitReached(Long orgId) {
+        Long limit = settingRepo.findBySettingNameAndOrganization_Id(CONCURRENT_VIDEO_CHAT_CONNECTIONS.name(), orgId)
+                .map(SettingEntity::getSettingValue)
+                .map(Long::parseLong)
+                .orElse(Long.MAX_VALUE);
+
+        long count = videoChatLogRepository.countByOrganization_IdAndStatusIn(orgId, asList(NEW.getValue(), STARTED.getValue()));
+        return count >= limit;
     }
 
     private String addTokenToSession(EmployeeUserEntity loggedInUser, String sessionName) {
@@ -127,6 +146,11 @@ public class VideoChatServiceImpl implements VideoChatService {
             throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
         }
         return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
+    }
+
+    private VideoChatLogEntity getVideoChatLogEntity(String sessionName) {
+        return videoChatLogRepository.findByName(sessionName)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
 
@@ -279,18 +303,21 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private void handleSessionDestroyed(OpenViduCallbackDTO dto) {
         String sessionName = dto.getSessionId();
-        Optional<VideoChatLogEntity> entity = videoChatLogRepository.findByName(sessionName);
-        if (entity.isEmpty())
-            return;
-        endSession(entity.get(), ENDED_BY_CALLBACK);
+        VideoChatLogEntity entity = getVideoChatLogEntity(sessionName);
+        entity.addDescription("ended by callback, reason :" + dto.getReason().name());
+        endSession(entity, ENDED_BY_CALLBACK);
     }
 
     private void handelParticipantLeft(OpenViduCallbackDTO dto) {
-        //TODO not finished!
         String sessionName = dto.getSessionId();
-        Session session = getSession(sessionName);
-        session.getConnection(dto.getConnectionId());
-
+        VideoChatLogEntity entity = getVideoChatLogEntity(sessionName);
+        entity.addDescription("participant "+ dto.getClientData()+" left the session, reason : "+ dto.getReason().name());
+        mapSessionNamesTokens.get(sessionName)
+                .stream()
+                .filter(i -> i.getConnection().equals(dto.getConnectionId()))
+                .findFirst()
+                .ifPresent(userSessionInfo -> mapSessionNamesTokens.get(sessionName).remove(userSessionInfo));
+        videoChatLogRepository.save(entity);
     }
 
     private OrganizationEntity validateAndGetOrganization(Long orgId, Long shopId) {

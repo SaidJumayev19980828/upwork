@@ -11,5 +11,5 @@ public class OpenViduCallbackDTO {
 	private String connectionId;
 	private Long duration;
 	private OpenViduCallbackReason reason;
-
+	private String clientData;
 }

@@ -231,7 +231,7 @@ public class ProductsController {
 
     @GetMapping(value = "empty_products", produces = APPLICATION_JSON_VALUE)
     public List<ProductDetailsDTO> getProducts(@RequestHeader(name = "User-Token", required = false) String token) {
-        return productService.getProducts();
+        return productService.getEmptyProducts();
     }
 
     @GetMapping(produces=APPLICATION_JSON_VALUE)
