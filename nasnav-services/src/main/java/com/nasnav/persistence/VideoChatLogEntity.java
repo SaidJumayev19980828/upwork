@@ -78,8 +78,11 @@ public class VideoChatLogEntity implements BaseEntity {
         }
         if(getShop() != null) {
             obj.setShopId(getShop().getId());
+            obj.setShopName(getShop().getName());
         }
+        obj.setUserId(user.getId());
         obj.setUserName(user.getName());
+        obj.setUserName(user.getEmail());
         obj.setIsActive(isActive);
         obj.setDescription(description);
         obj.setCreatedAt(getCreatedAt());

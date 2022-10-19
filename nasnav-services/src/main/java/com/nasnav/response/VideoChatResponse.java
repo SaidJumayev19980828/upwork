@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class VideoChatResponse {
-    private boolean success;
-    private String message;
     private String sessionToken;
     private String employeeName;
     private String sessionName;

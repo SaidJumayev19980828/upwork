@@ -16,4 +16,6 @@ public interface VideoChatLogRepository extends JpaRepository<VideoChatLogEntity
     List<VideoChatLogEntity> findByOrganization_Id(Long orgId);
 
     List<VideoChatLogEntity> findByStatusAndOrganization_Id(Integer status, Long orgId);
+
+    Long countByOrganization_IdAndStatusIn(Long orgId, List<Integer> statusList);
 }

@@ -9,4 +9,7 @@ public enum Settings {
 	,ORG_EMAIL
 	,STOCK_ALERT_LIMIT
 	,RETURN_DAYS_LIMIT
+	,smtp_id
+	,smtp_key
+	,CONCURRENT_VIDEO_CHAT_CONNECTIONS
 }

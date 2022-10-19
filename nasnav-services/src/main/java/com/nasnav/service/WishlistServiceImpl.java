@@ -25,7 +25,7 @@ import java.util.Map;
 
 import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.RESTOCKED_WISHLIST_TEMPLATE;
-import static com.nasnav.enumerations.Settings.ORG_EMAIL;
+import static com.nasnav.enumerations.Settings.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
@@ -175,9 +175,9 @@ public class WishlistServiceImpl implements WishlistService{
                 .stream()
                 .collect(groupingBy(WishlistItemEntity::getUser));
 
-        for(Map.Entry info : usersWishlists.entrySet()) {
-            UserEntity user = (UserEntity) info.getKey();
-            List<WishlistMailItem> items = ((List<WishlistItemEntity>) info.getValue())
+        for(Map.Entry<UserEntity, List<WishlistItemEntity>> info : usersWishlists.entrySet()) {
+            UserEntity user = info.getKey();
+            List<WishlistMailItem> items = info.getValue()
                     .stream()
                     .map(this::toWishlistMailItem)
                     .collect(toList());
@@ -185,14 +185,14 @@ public class WishlistServiceImpl implements WishlistService{
             String orgName = org.getName();
             String email = getOrganizationEmail(org.getId());
 
-            String sendPulseId = getOrganizationEmailData("smtp_id", org.getId());
-            String sendPulseKey = getOrganizationEmailData("smtp_key", org.getId());
+            String sendPulseId = getOrganizationEmailData(smtp_id.name(), org.getId());
+            String sendPulseKey = getOrganizationEmailData(smtp_key.name(), org.getId());
             SendPulseService service = new SendPulseService(sendPulseId, sendPulseKey);
 
             Map<String,Object> variables = createUserWishlistEmailBody(org, user, items);
             String body = mailService.createBodyFromThymeleafTemplate(RESTOCKED_WISHLIST_TEMPLATE, variables);
             service.smtpSendMail(orgName, email, user.getName(), user.getEmail(),
-                    body, "Items back in stock "+orgName, null);
+                    body, "Items back in stock at "+orgName, null);
         }
     }
 
