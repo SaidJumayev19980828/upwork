@@ -21,8 +21,7 @@ public class VideoChatController {
     private VideoChatService videoChatService;
 
     @GetMapping(value = "/sessions", produces = APPLICATION_JSON_VALUE)
-    public VideoChatListResponse getOrgSessions(@RequestHeader(name = "User-Token") String userToken,
-                                                @RequestParam VideoChatSearchParam params) {
+    public VideoChatListResponse getOrgSessions(@RequestHeader(name = "User-Token") String userToken, VideoChatSearchParam params) {
       return videoChatService.getOrgSessions(params);
     }
 
