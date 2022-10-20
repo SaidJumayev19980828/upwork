@@ -327,7 +327,7 @@ public class OrganizationManagementTest {
     public void updateOrgMatomoIdTest() {
         JSONObject body = json()
                 .put("id", 99001)
-                .put("matomo_id", 123);
+                .put("matomo_site_id", 123);
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);
@@ -340,7 +340,7 @@ public class OrganizationManagementTest {
     public void updateOrgFacebookPixelTest() {
         JSONObject body = json()
                 .put("id", 99001)
-                .put("pixel_id", 123);
+                .put("pixel_site_id", 123);
         HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
                 json, OrganizationResponse.class);

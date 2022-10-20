@@ -12,5 +12,5 @@ import java.util.List;
 @NoArgsConstructor
 public class VideoChatListResponse {
     private Long total;
-    private List<VideoChatLogRepresentationObject> orders;
+    private List<VideoChatLogRepresentationObject> sessions;
 }
