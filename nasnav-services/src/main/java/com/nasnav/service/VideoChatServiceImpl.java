@@ -76,10 +76,17 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     private ConnectionProperties connectionProperties;
 
+    private SessionProperties sessionProperties;
+
     @Autowired
     public void initController() {
         this.openVidu = new OpenVidu(appConfig.openViduUrl, appConfig.openViduSecret);
+        sessionProperties = getSessionProperties();
         connectionProperties = getConnectionProperties();
+    }
+
+    private SessionProperties getSessionProperties() {
+        return new SessionProperties.Builder().build();
     }
 
 
@@ -217,7 +224,7 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .orElse(null);
         try {
 
-            Session session = this.openVidu.createSession();
+            Session session = this.openVidu.createSession(sessionProperties);
             String sessionName = session.getSessionId();
             Connection connection = createConnection(session);
             String token = connection.getToken();
