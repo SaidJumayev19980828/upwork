@@ -75,9 +75,7 @@ public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
 	private final UserSubscriptionRepository subsRepo;
 
-
-	AppConfig appConfig;
-
+	private final AppConfig appConfig;
 
 	private final SubAreaRepository subAreaRepo;
 
