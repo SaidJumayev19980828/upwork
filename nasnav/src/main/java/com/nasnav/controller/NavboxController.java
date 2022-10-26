@@ -91,9 +91,6 @@ public class NavboxController {
 
 	@GetMapping(value = "/products", produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException {
-		if (productSearchParam.tag_ids == null) {
-			productSearchParam.setTag_ids(productSearchParam.getTags());
-		}
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 		if (productsResponse == null)
 			return new ResponseEntity<>(NO_CONTENT);

@@ -24,7 +24,6 @@ public class ProductSearchParam {
     public Long category_id;
     public Set<Long> category_ids;
     public String category_name;
-    public Set<Long> tags;
     public Set<Long> tag_ids;
     public String name;
     public Integer start;
