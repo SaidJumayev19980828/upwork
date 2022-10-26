@@ -1360,6 +1360,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		List<Record> allRecords = new ArrayList<>();
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		CsvParser parser = new CsvParser(settings );		
 		

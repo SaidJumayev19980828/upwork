@@ -82,6 +82,7 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 		BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(metaData, orgFeatures);
 		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler(context);
 		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);
+		settings.setLineSeparatorDetectionEnabled(true);
 		
 		CsvParser parser = new CsvParser(settings);
 		
@@ -108,6 +109,8 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 	private CsvParserSettings createParsingSettings(BeanListProcessor<CsvRow> rowProcessor,
 			RowParseErrorHandler rowParsingErrHandler) {
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);		
 		settings.setProcessorErrorHandler(rowParsingErrHandler);

@@ -35,6 +35,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setColumnMapper(mapper);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		
@@ -62,6 +63,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setColumnMapper(mapper);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		
@@ -89,6 +91,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setColumnMapper(mapper);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		
@@ -118,6 +121,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		
@@ -138,6 +142,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setColumnMapper(mapper);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		
@@ -179,6 +184,7 @@ public class UniVocityCvsParserTest {
 		rowProcessor.setColumnMapper(mapper);
 		
 		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);
 		settings.setAutoClosingEnabled(true);
