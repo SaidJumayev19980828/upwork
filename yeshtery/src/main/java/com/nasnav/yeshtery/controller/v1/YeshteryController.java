@@ -172,9 +172,6 @@ public class YeshteryController {
     @GetMapping("products")
     public ProductsResponse getProducts(ProductSearchParam productSearchParam) throws BusinessException {
         productSearchParam.setYeshtery_products(true);
-        if (productSearchParam.tag_ids == null) {
-            productSearchParam.setTag_ids(productSearchParam.getTags());
-        }
         return productService.getProducts(productSearchParam);
     }
 
