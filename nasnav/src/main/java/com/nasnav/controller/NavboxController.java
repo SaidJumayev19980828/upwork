@@ -53,6 +53,9 @@ public class NavboxController {
 	@Autowired
 	private SeoService seoService;
 
+	@Autowired
+	private PromotionsServiceImpl promotionsService;
+
 	@GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
 	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {
 		return brandService.getBrandById(brandId, false);
@@ -251,5 +254,10 @@ public class NavboxController {
 		if (productId != null)
 			return reviewService.getProductRatings(productId);
 		return reviewService.getVariantRatings(variantId);
+	}
+
+	@GetMapping(value = "/promotions_list", produces = APPLICATION_JSON_VALUE)
+	public List<ProductsPromotionsDTO> getPromotionsList(@RequestParam(value = "ids") Set<Long> ids) {
+		return promotionsService.getPromotionsListFromProductsList(ids);
 	}
 }
