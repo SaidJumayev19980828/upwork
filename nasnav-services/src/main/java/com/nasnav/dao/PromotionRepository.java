@@ -72,4 +72,12 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 	List<PromotionsEntity> findByOrganization_IdAndTypeIdNotIn(@Param("orgId") Long orgId,
 															   @Param("typeIds") List<Integer> typeIds,
 															   @Param("promoCode") String promoCode);
+
+	@Query("select promo "
+			+ " FROM PromotionsEntity promo "
+			+ " where promo.typeId in :typeIds "
+			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " AND promo.status = 1"
+			+ " order by promo.priority desc")
+	List<PromotionsEntity> findActivePromosByTypeIdIn(@Param("typeIds") List<Integer> typeIds);
 }

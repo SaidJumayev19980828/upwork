@@ -67,6 +67,13 @@ public class YeshteryController {
     private OrganizationService orgService;
     @Autowired
     private SeoService seoService;
+    @Autowired
+    private PromotionsServiceImpl promotionsService;
+
+    @GetMapping(value = "/promotions_list", produces = APPLICATION_JSON_VALUE)
+    public List<ProductsPromotionsDTO> getPromotionsList(@RequestParam(value = "ids") Set<Long> ids) {
+        return promotionsService.getPromotionsListFromProductsList(ids);
+    }
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)
     public List<ShopRepresentationObject> getLocationShops(@RequestParam(value = "name", required = false) String name,

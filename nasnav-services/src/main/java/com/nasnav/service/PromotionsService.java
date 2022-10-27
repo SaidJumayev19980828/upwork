@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.PromoItemDto;
@@ -32,4 +33,5 @@ public interface PromotionsService {
 	AppliedPromotionsResponse calculateAllApplicablePromos(List<PromoItemDto> items, BigDecimal totalCartValue, String promoCode, Long orgId);
 
 	BigDecimal calculateShippingPromoDiscount(BigDecimal totalShippingValue, BigDecimal totalCartValue);
+	List<ProductsPromotionsDTO> getPromotionsListFromProductsList(Set<Long> ids);
 }

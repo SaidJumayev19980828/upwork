@@ -40,6 +40,14 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
 
+    @Query(value = "select p from ProductEntity p " +
+			"left join p.brand b " +
+            "left join p.tags t " +
+            "where p.id in :productIds and ( b.id in :brandIds or t.id in :tagIds)")
+    List<ProductEntity> findProductsByProductIdsAndBrandIdsAndTagIds(@Param("productIds") Set<Long> productId,
+														  @Param("brandIds") Set<Long> brandIds,
+                                                          @Param("tagIds") Set<Long> tagId);
+
 	@Query(value = "select p.id from Products p where p.category_id = :categoryId", nativeQuery = true)
     List<Long> findProductsIdsByCategoryId(@Param("categoryId") Long categoryId);
 

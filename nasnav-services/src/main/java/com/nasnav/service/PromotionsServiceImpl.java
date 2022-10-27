@@ -14,6 +14,7 @@ import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
+import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import javax.persistence.criteria.*;
 
+import com.google.common.collect.Sets;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
@@ -41,6 +43,7 @@ import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
+import com.nasnav.persistence.*;
 import com.nasnav.request.PromotionsSearchParams;
 import lombok.Data;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -58,11 +61,6 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.enumerations.PromotionStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PromotionsCodesUsedEntity;
-import com.nasnav.persistence.PromotionsEntity;
-import com.nasnav.persistence.UserEntity;
 
 import lombok.AllArgsConstructor;
 
@@ -1087,6 +1085,102 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.orElse(ZERO);
 	}
 
+    @Override
+    public List<ProductsPromotionsDTO> getPromotionsListFromProductsList(Set<Long> ids) {
+        List<ProductsPromotionsDTO> productsWithPromotionsList = new ArrayList<>();
+
+		List<PromotionDTO> promotions = getActivePromotions();
+
+		Map<Long, PromotionDTO> tagsIdAndPromotionMap = new HashMap<>();
+		Map<Long, PromotionDTO> brandsIdAndPromotionMap = new HashMap<>();
+		Map<Long, PromotionDTO> productsIdAndPromotionMap = new HashMap<>();
+
+		getRelatedIdsFromPromotions(promotions, tagsIdAndPromotionMap, brandsIdAndPromotionMap, productsIdAndPromotionMap);
+
+		List<ProductEntity> productsInPromotions = productRepo
+				.findProductsByProductIdsAndBrandIdsAndTagIds(ids, brandsIdAndPromotionMap.keySet(), tagsIdAndPromotionMap.keySet());
+
+		for (ProductEntity product : productsInPromotions) {
+			List<PromotionDTO> promotionDTOs = new ArrayList<>();
+			if (productsIdAndPromotionMap.containsKey(product.getId())) {
+				promotionDTOs.add(productsIdAndPromotionMap.get(product.getId()));
+			}
+			if (brandsIdAndPromotionMap.containsKey(product.getBrand().getId())) {
+				promotionDTOs.add(brandsIdAndPromotionMap.get(product.getBrand().getId()));
+			}
+			Set <Long> productTagsIds = product.getTags()
+					.stream()
+					.map(TagsEntity::getId)
+					.collect(toSet());
+			Long firstTagIdIntersection = Sets.intersection(productTagsIds, tagsIdAndPromotionMap.keySet())
+					.stream()
+					.findFirst()
+					.orElse(null);
+
+			if (tagsIdAndPromotionMap.containsKey(firstTagIdIntersection)) {
+				promotionDTOs.add(tagsIdAndPromotionMap.get(firstTagIdIntersection));
+			}
+			if (!promotionDTOs.isEmpty()) {
+				productsWithPromotionsList.add(new ProductsPromotionsDTO(product.getId(), getPromotionDTOWithHighestPriority(promotionDTOs)));
+			}
+		}
+        return productsWithPromotionsList;
+    }
+
+	private PromotionDTO getPromotionDTOWithHighestPriority(List<PromotionDTO> list) {
+		return list
+				.stream()
+				.max(comparing(PromotionDTO::getPriority))
+				.orElse(null);
+	}
+
+	private void getRelatedIdsFromPromotions(List<PromotionDTO> promotionsPrimaryList,
+											 Map<Long, PromotionDTO> tagsIdAndPromotionMap,
+											 Map<Long, PromotionDTO> brandsIdAndPromotionMap,
+											 Map<Long, PromotionDTO> productsIdAndPromotionMap) {
+		for (PromotionDTO promo : promotionsPrimaryList) {
+			var constrains = promo.getConstrains();
+			if (constrains.getTags() != null) {
+				for (Long tag : constrains.getTags()) {
+					if (!tagsIdAndPromotionMap.containsKey(tag)) {
+						tagsIdAndPromotionMap.put(tag, promo);
+						break;
+					}
+				}
+			}
+			if (constrains.getBrands() != null) {
+				for (Long brand : constrains.getBrands()) {
+					if (!brandsIdAndPromotionMap.containsKey(brand)) {
+						brandsIdAndPromotionMap.put(brand, promo);
+						break;
+					}
+				}
+			}
+			if (constrains.getProducts() != null) {
+				if (constrains.getProducts() != null) {
+					for (Long prod : constrains.getProducts()) {
+						if (!productsIdAndPromotionMap.containsKey(prod)) {
+							productsIdAndPromotionMap.put(prod, promo);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private List<PromotionDTO> getActivePromotions() {
+		List<Integer> types = new ArrayList<>(
+				asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
+						BUY_X_GET_Y_FROM_TAG.getValue(),
+						BUY_X_GET_Y_FROM_PRODUCT.getValue(),
+						PROMO_CODE_FROM_BRAND.getValue(),
+						PROMO_CODE_FROM_TAG.getValue()));
+		return promoRepo.findActivePromosByTypeIdIn(types)
+				.stream()
+				.map(this::createPromotionDTO)
+				.collect(toList());
+	}
 
 
 	private BigDecimal getDiscount(BigDecimal value, PromotionsEntity promo) {
