@@ -1170,12 +1170,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private List<PromotionDTO> getActivePromotions() {
-		List<Integer> types = new ArrayList<>(
-				asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
+		List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
 						BUY_X_GET_Y_FROM_TAG.getValue(),
 						BUY_X_GET_Y_FROM_PRODUCT.getValue(),
 						PROMO_CODE_FROM_BRAND.getValue(),
-						PROMO_CODE_FROM_TAG.getValue()));
+						PROMO_CODE_FROM_TAG.getValue(),
+						PROMO_CODE_FROM_PRODUCT.getValue());
 		return promoRepo.findActivePromosByTypeIdIn(types)
 				.stream()
 				.map(this::createPromotionDTO)
