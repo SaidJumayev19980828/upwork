@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
@@ -253,8 +255,13 @@ public class NavboxController {
 		return reviewService.getVariantRatings(variantId);
 	}
 
-	@GetMapping(value = "/promotions_list", produces = APPLICATION_JSON_VALUE)
-	public List<ProductsPromotionsDTO> getPromotionsList(@RequestParam(value = "ids") Set<Long> ids) {
-		return promotionsService.getPromotionsListFromProductsList(ids);
+	@GetMapping(value = "/applicable_promotions_list", produces = APPLICATION_JSON_VALUE)
+	public ItemsPromotionsDTO getPromotionsList(@RequestParam(value = "product_ids", required = false) Set<Long> productIds,
+			@RequestParam(value = "brand_ids", required = false) Set<Long> brandIds,
+			@RequestParam(value = "tag_ids", required = false) Set<Long> tagIds) {
+		return promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(
+				Optional.ofNullable(productIds).orElse(Collections.emptySet()),
+				Optional.ofNullable(brandIds).orElse(Collections.emptySet()),
+				Optional.ofNullable(tagIds).orElse(Collections.emptySet()));
 	}
 }

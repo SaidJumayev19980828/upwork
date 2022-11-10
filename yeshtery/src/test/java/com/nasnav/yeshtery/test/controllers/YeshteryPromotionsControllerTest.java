@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.service.ProductsPromotionsDTO;
+import com.nasnav.service.ItemsPromotionsDTO;
 import com.nasnav.yeshtery.Yeshtery;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class YeshteryPromotionsControllerTest {
     @Test
     public void getPromotionsList() throws JsonProcessingException {
         ResponseEntity<String> response = template.getForEntity(YESHTERY_PROMOTIONS_LIST_API_PATH+"?ids=1001,1002,1003,1004,1005", String.class);
-        List<ProductsPromotionsDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ProductsPromotionsDTO>>() {});
+        List<ItemsPromotionsDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ItemsPromotionsDTO>>() {});
 
         assertEquals(4, body.size());
     }

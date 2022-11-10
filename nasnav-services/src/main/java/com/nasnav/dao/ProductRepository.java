@@ -207,7 +207,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     long countByProductType(Integer productType);
 
     boolean existsByIdAndOrganizationId(Long productId, Long orgId);
+
+    @Query(value = "select p from ProductEntity p " +
+                    "left join p.brand b " +
+                    "left join p.tags t " +
+                    "where p.id in :productIds or b.id in :brandIds or t.id in :tagIds")
+    List<ProductEntity> findProductsByProductIdsOrBrandIdsOrTagIds(@Param("productIds") Set<Long> productId,
+                    @Param("brandIds") Set<Long> brandIds,
+                    @Param("tagIds") Set<Long> tagId);
 }
-
-
-
