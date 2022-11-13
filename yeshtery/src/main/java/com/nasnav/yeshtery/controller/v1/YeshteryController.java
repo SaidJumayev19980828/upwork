@@ -72,12 +72,14 @@ public class YeshteryController {
 
     @GetMapping(value = "/applicable_promotions_list", produces = APPLICATION_JSON_VALUE)
 	public ItemsPromotionsDTO getPromotionsList(@RequestParam(value = "product_ids", required = false) Set<Long> productIds,
-			@RequestParam(value = "brand_ids", required = false) Set<Long> brandIds,
-			@RequestParam(value = "tag_ids", required = false) Set<Long> tagIds) {
+            @RequestParam(value = "brand_ids", required = false) Set<Long> brandIds,
+            @RequestParam(value = "tag_ids", required = false) Set<Long> tagIds,
+            @RequestParam(value = "promotions_per_item", required = false) Long promotionsPerItem) {
         return promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(
                 Optional.ofNullable(productIds).orElse(Collections.emptySet()),
                 Optional.ofNullable(brandIds).orElse(Collections.emptySet()),
-                Optional.ofNullable(tagIds).orElse(Collections.emptySet()));
+                Optional.ofNullable(tagIds).orElse(Collections.emptySet()),
+                Optional.ofNullable(promotionsPerItem).orElse(1L));
     }
 
     @GetMapping(value = "/location_shops", produces = APPLICATION_JSON_VALUE)

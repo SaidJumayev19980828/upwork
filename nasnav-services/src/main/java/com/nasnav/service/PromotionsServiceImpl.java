@@ -1091,11 +1091,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.orElse(ZERO);
 	}
 
-	private Map<Long, List<Long>> convertPromotionsMapToPromotionIdsMap(Map<Long, SortedSet<PromotionDTO>> source) {
+	private Map<Long, List<Long>> convertPromotionsMapToPromotionIdsMap(Map<Long, SortedSet<PromotionDTO>> source, Long limitPerItem) {
 		return source.entrySet()
 		.stream()
 		.map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()
 				.stream()
+				.limit(limitPerItem)
 				.map(PromotionDTO::getId)
 				.collect(Collectors.toList())))
 				.collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
@@ -1103,7 +1104,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public ItemsPromotionsDTO getPromotionsListFromProductsAndBrandsAndTagsLists(Set<Long> productIds, Set<Long> brandIds,
-			Set<Long> tagIds) {
+			Set<Long> tagIds, Long limitPerItem) {
 
 		List<PromotionDTO> promotions = getActivePromotionsWithBrandsOrTagsOrProductsConstrains();
 		List<ProductEntity> products = productRepo.findProductsByProductIdsOrBrandIdsOrTagIds(productIds, brandIds, tagIds);
@@ -1112,7 +1113,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		Map<Long, List<PromotionDTO>> brandDirectPromotionsMap = new HashMap<>();
 		Map<Long, List<PromotionDTO>> productDirectPromotionsMap = new HashMap<>();
 
-		getRelatedIdsFromPromotions(promotions, tagDirectPromotionsMap, brandDirectPromotionsMap, productDirectPromotionsMap);
+		getRelatedIdsFromPromotions(promotions, tagDirectPromotionsMap, brandDirectPromotionsMap,
+				productDirectPromotionsMap, limitPerItem);
 
 		Map<Long, SortedSet<PromotionDTO>> brandPromotionsMap = brandIds
 				.stream()
@@ -1162,9 +1164,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.flatMap(Set::stream)
 				.collect(Collectors.toMap(PromotionDTO::getId, Function.identity()));
 
-		Map<Long, List<Long>> productPromotionIds = convertPromotionsMapToPromotionIdsMap(productPromotionsMap);
-		Map<Long, List<Long>> brandPromotionIds = convertPromotionsMapToPromotionIdsMap(brandPromotionsMap);
-		Map<Long, List<Long>> tagPromotionIds = convertPromotionsMapToPromotionIdsMap(tagPromotionsMap);
+		Map<Long, List<Long>> productPromotionIds = convertPromotionsMapToPromotionIdsMap(productPromotionsMap, limitPerItem);
+		Map<Long, List<Long>> brandPromotionIds = convertPromotionsMapToPromotionIdsMap(brandPromotionsMap, limitPerItem);
+		Map<Long, List<Long>> tagPromotionIds = convertPromotionsMapToPromotionIdsMap(tagPromotionsMap, limitPerItem);
 
 		return new ItemsPromotionsDTO(productPromotionIds, brandPromotionIds, tagPromotionIds, promotionsMap);
 	}
@@ -1172,27 +1174,34 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private void getRelatedIdsFromPromotions(List<PromotionDTO> promotionsPrimaryList,
 											 Map<Long, List<PromotionDTO>> tagsIdAndPromotionMap,
 											 Map<Long, List<PromotionDTO>> brandsIdAndPromotionMap,
-											 Map<Long, List<PromotionDTO>> productsIdAndPromotionMap) {
+											 Map<Long, List<PromotionDTO>> productsIdAndPromotionMap, Long limitPerItem) {
+		List<PromotionDTO> promosRelatedToId = null;
 		for (PromotionDTO promo : promotionsPrimaryList) {
 			var constrains = promo.getConstrains();
 			if (TAGS_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
 				for (Long tagId : constrains.getTags()) {
-					if (!tagsIdAndPromotionMap.containsKey(tagId)) {
-						tagsIdAndPromotionMap.put(tagId, new LinkedList<PromotionDTO>());
-					} 
+					promosRelatedToId = tagsIdAndPromotionMap.get(tagId);
+					if (promosRelatedToId == null) {
+						promosRelatedToId = tagsIdAndPromotionMap.put(tagId, new LinkedList<PromotionDTO>());
+					}
+					if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 				}
 			} else if (Brands_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
 				for (Long brandId : constrains.getBrands()) {
-					if (!brandsIdAndPromotionMap.containsKey(brandId)) {
-						tagsIdAndPromotionMap.put(brandId,  new LinkedList<PromotionDTO>());
+					promosRelatedToId = tagsIdAndPromotionMap.get(brandId);
+					if (promosRelatedToId == null) {
+						promosRelatedToId = tagsIdAndPromotionMap.put(brandId,  new LinkedList<PromotionDTO>());
 					}
+					if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 				}
 			} else if (PROUDUCTS_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
 				if (constrains.getProducts() != null) {
 					for (Long productId : constrains.getProducts()) {
-						if (!productsIdAndPromotionMap.containsKey(productId)) {
-							productsIdAndPromotionMap.put(productId,  new LinkedList<PromotionDTO>());
+						promosRelatedToId = tagsIdAndPromotionMap.get(productId);
+						if (promosRelatedToId == null) {
+							promosRelatedToId = productsIdAndPromotionMap.put(productId,  new LinkedList<PromotionDTO>());
 						}
+						if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 					}
 				}
 			}
