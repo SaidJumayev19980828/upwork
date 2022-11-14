@@ -19,10 +19,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
@@ -42,12 +47,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.PromotionRepository;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.service.ItemsPromotionsDTO;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -137,6 +144,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionStartAndCountTest() {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
+
 		ResponseEntity<PromotionResponse> res =
 				template.exchange("/organization/promotions?count=1", GET, req, PromotionResponse.class);
 
@@ -902,6 +910,39 @@ public class PromotionsTest {
 		assertEquals(400 , order.getSubtotal().intValue());
 		assertEquals(12.76 , order.getShipping().doubleValue(), 1e-15);
 		assertEquals("total is subTotal - discount + shipping", 312.76 , order.getTotal().doubleValue(), 1e-15);
+	}
+
+	private ItemsPromotionsDTO getApplicaPromotions(Set<String> productIds, Set<String> brandIds, Set<String> tagIds) {
+		Map<String, String> queryParams = new HashMap<>();
+		queryParams.put("productIds", String.join(",", productIds));
+		queryParams.put("brandIds", String.join(",", brandIds));
+		queryParams.put("tagIds", String.join(",", tagIds));
+
+		ResponseEntity<ItemsPromotionsDTO> res = template
+				.getForEntity(
+						"/navbox/applicable_promotions_list?product_ids={productIds}&brand_ids={brandIds}&tag_ids={tagIds}",
+						ItemsPromotionsDTO.class, queryParams);
+		assertEquals(200, res.getStatusCodeValue());
+
+		var responseBody = res.getBody();
+		List<List<Long>> promoIdsFromLists = new LinkedList<>();
+		promoIdsFromLists.addAll(responseBody.getProductPromotionIds().values());
+		promoIdsFromLists.addAll(responseBody.getBrandPromotionIds().values());
+		promoIdsFromLists.addAll(responseBody.getTagPromotionIds().values());
+
+		Set<Long> promoIdsFromListsSet = promoIdsFromLists.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+		Set<Long> promoIdsFromMap = responseBody.getPromotions().keySet();
+
+		assertEquals(promoIdsFromListsSet,promoIdsFromMap);
+		return responseBody;
+	}
+
+	
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getApplicablePromotionsList() throws JsonProcessingException {
+		ItemsPromotionsDTO applicaPromotions = getApplicaPromotions(setOf("1001", "1005"),setOf("2103"), setOf("1101"));
 	}
 
 
