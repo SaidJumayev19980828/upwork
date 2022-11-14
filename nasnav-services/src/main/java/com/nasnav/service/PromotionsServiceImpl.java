@@ -1152,7 +1152,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 			for (TagsEntity tag : product.getTags()) {
 				SortedSet<PromotionDTO> tagPromotions = brandPromotionsMap.get(tag.getId());
-				if (brandPromotions != null) {
+				if (tagPromotions != null) {
 					tagPromotions.addAll(productPromotions);
 				}
 			}
@@ -1162,7 +1162,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.values()
 				.stream()
 				.flatMap(Set::stream)
-				.collect(Collectors.toMap(PromotionDTO::getId, Function.identity()));
+				.collect(Collectors.toMap(PromotionDTO::getId, Function.identity(), (promoA, promoB) -> promoA));
 
 		Map<Long, List<Long>> productPromotionIds = convertPromotionsMapToPromotionIdsMap(productPromotionsMap, limitPerItem);
 		Map<Long, List<Long>> brandPromotionIds = convertPromotionsMapToPromotionIdsMap(brandPromotionsMap, limitPerItem);
@@ -1182,24 +1182,27 @@ public class PromotionsServiceImpl implements PromotionsService {
 				for (Long tagId : constrains.getTags()) {
 					promosRelatedToId = tagsIdAndPromotionMap.get(tagId);
 					if (promosRelatedToId == null) {
-						promosRelatedToId = tagsIdAndPromotionMap.put(tagId, new LinkedList<PromotionDTO>());
+						promosRelatedToId = new LinkedList<PromotionDTO>();
+						tagsIdAndPromotionMap.put(tagId, promosRelatedToId);
 					}
 					if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 				}
 			} else if (Brands_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
 				for (Long brandId : constrains.getBrands()) {
-					promosRelatedToId = tagsIdAndPromotionMap.get(brandId);
+					promosRelatedToId = brandsIdAndPromotionMap.get(brandId);
 					if (promosRelatedToId == null) {
-						promosRelatedToId = tagsIdAndPromotionMap.put(brandId,  new LinkedList<PromotionDTO>());
+						promosRelatedToId = new LinkedList<PromotionDTO>();
+						brandsIdAndPromotionMap.put(brandId, promosRelatedToId);
 					}
 					if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 				}
 			} else if (PROUDUCTS_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
 				if (constrains.getProducts() != null) {
 					for (Long productId : constrains.getProducts()) {
-						promosRelatedToId = tagsIdAndPromotionMap.get(productId);
+						promosRelatedToId = productsIdAndPromotionMap.get(productId);
 						if (promosRelatedToId == null) {
-							promosRelatedToId = productsIdAndPromotionMap.put(productId,  new LinkedList<PromotionDTO>());
+							promosRelatedToId = new LinkedList<PromotionDTO>();
+							productsIdAndPromotionMap.put(productId,  promosRelatedToId);
 						}
 						if (promosRelatedToId.size() < limitPerItem) promosRelatedToId.add(promo);
 					}
