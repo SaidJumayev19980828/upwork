@@ -14,6 +14,6 @@ import lombok.*;
 public class ItemsPromotionsDTO {
     private Map<Long, List<Long>> productPromotionIds;
     private Map<Long, List<Long>> brandPromotionIds;
-    private Map<Long, List<Long>> TagPromotionIds;
+    private Map<Long, List<Long>> tagPromotionIds;
     private Map<Long, PromotionDTO> promotions;
 }
