@@ -1106,7 +1106,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	public ItemsPromotionsDTO getPromotionsListFromProductsAndBrandsAndTagsLists(Set<Long> productIds, Set<Long> brandIds,
 			Set<Long> tagIds, Long limitPerItem) {
 
-		List<PromotionDTO> promotions = getActivePromotionsWithBrandsOrTagsOrProductsConstrains();
+		List<PromotionDTO> promotions = getActivePublicPromotionsWithBrandsOrTagsOrProductsConstrains();
 		List<ProductEntity> products = productRepo.findProductsByProductIdsOrBrandIdsOrTagIds(productIds, brandIds, tagIds);
 
 		Map<Long, List<PromotionDTO>> tagDirectPromotionsMap = new HashMap<>();
@@ -1118,10 +1118,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 		Map<Long, SortedSet<PromotionDTO>> brandPromotionsMap = brandIds
 				.stream()
-				.collect(Collectors.toMap(Function.identity(), x -> new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority))));
+				.collect(Collectors.toMap(Function.identity(), x -> new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority).reversed())));
 
 		Map<Long, SortedSet<PromotionDTO>> tagPromotionsMap = tagIds.stream()
-				.collect(Collectors.toMap((tagId) -> tagId, x -> new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority))));
+				.collect(Collectors.toMap((tagId) -> tagId, x -> new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority).reversed())));
 
 		Map<Long, SortedSet<PromotionDTO>> productPromotionsMap = new HashMap<Long, SortedSet<PromotionDTO>>();
 
@@ -1135,7 +1135,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 					.flatMap(tag -> tagDirectPromotionsMap.getOrDefault(tag.getId(), new LinkedList<PromotionDTO>()).stream())
 					.collect(Collectors.toList());
 
-			SortedSet<PromotionDTO> productPromotions = new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority));
+			SortedSet<PromotionDTO> productPromotions = new TreeSet<PromotionDTO>(comparing(PromotionDTO::getPriority).reversed());
 			productPromotions.addAll(promotionsByProduct);
 			productPromotions.addAll(promotionsByBrand);
 			productPromotions.addAll(promotionsByTags);
@@ -1151,15 +1151,21 @@ public class PromotionsServiceImpl implements PromotionsService {
 			
 
 			for (TagsEntity tag : product.getTags()) {
-				SortedSet<PromotionDTO> tagPromotions = brandPromotionsMap.get(tag.getId());
+				SortedSet<PromotionDTO> tagPromotions = tagPromotionsMap.get(tag.getId());
 				if (tagPromotions != null) {
 					tagPromotions.addAll(productPromotions);
 				}
 			}
 		}
 
-		Map<Long, PromotionDTO> promotionsMap = productPromotionsMap
-				.values()
+		
+		List<Set<PromotionDTO>> promotionsFromMaps = new LinkedList<>();
+
+		promotionsFromMaps.addAll(productPromotionsMap.values());
+		promotionsFromMaps.addAll(brandPromotionsMap.values());
+		promotionsFromMaps.addAll(tagPromotionsMap.values());
+
+		Map<Long, PromotionDTO> promotionsMap = promotionsFromMaps
 				.stream()
 				.flatMap(Set::stream)
 				.collect(Collectors.toMap(PromotionDTO::getId, Function.identity(), (promoA, promoB) -> promoA));
@@ -1211,7 +1217,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 	}
 
-	private List<PromotionDTO> getActivePromotionsWithBrandsOrTagsOrProductsConstrains() {
+	private List<PromotionDTO> getActivePublicPromotionsWithBrandsOrTagsOrProductsConstrains() {
 		List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
 						BUY_X_GET_Y_FROM_TAG.getValue(),
 						BUY_X_GET_Y_FROM_PRODUCT.getValue(),
@@ -1221,7 +1227,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return promoRepo.findActivePromosByTypeIdIn(types)
 				.stream()
 				.map(this::createPromotionDTO)
+				.filter(this::isPromoUserRestricted)
 				.collect(toList());
+	}
+
+	private boolean isPromoUserRestricted(PromotionDTO promo) {
+		return Optional.ofNullable(promo.getConstrains()).map(PromosConstraints::getUsers).orElse(emptySet()).isEmpty();
 	}
 
 
