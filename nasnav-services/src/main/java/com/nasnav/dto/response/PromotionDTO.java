@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class PromotionDTO {
+public class PromotionDTO implements Comparable<PromotionDTO> {
 	private Long id;
 	private String identifier;
 	private String name;
@@ -35,4 +35,9 @@ public class PromotionDTO {
 	private String userName;
 	private LocalDateTime createdOn;
 	private Integer priority;
+
+	@Override
+	public int compareTo(PromotionDTO promo) {
+		return promo.getPriority() - this.getPriority();
+	}
 }
