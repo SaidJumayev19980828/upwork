@@ -37,8 +37,8 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',2103, 201, 99002, now(), now());
 
 -- insert tags
-INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'test1', 'test1', 'squishy_things', '{}', 0, 99001);
-INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'test2', 'test2', 'mountain_equipment', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'test1', 'test1', 'test1', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'test2', 'test2', 'test2', '{}', 0, 99001);
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22003, 202, 'test3', 'test3', 'test3', '{}', 0, 99001);
 
 -- insert product_tags
@@ -59,7 +59,7 @@ insert into public.product_tags(product_id, tag_id) values(1007, 22003);
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
 VALUES (99001, 'promotion1invalid', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '1',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101],"applied_to_users":[101111]}', '{"amount":1}', 6801, now(), 6,2, 5);
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2103],"applied_to_users":[101111]}', '{"amount":1}', 6801, now(), 6,2, 5);
 
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
@@ -74,27 +74,27 @@ VALUES (99003, 'promotion3invalid', 99001, now() + INTERVAL '5 DAY', now() + INT
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
 VALUES (99004, 'promotion4invalid', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 0, 1, '4',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101],"applied_to_users":[101111]}', '{"amount":1}', 6801, now(), 6,2, 5);
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101]}', '{"amount":1}', 6801, now(), 6,2, 5);
 
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
-VALUES (99005, 'promotion5invalid', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 2, 1, '4',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101],"applied_to_users":[101111]}', '{"amount":1}', 6801, now(), 6,2, 5);
+VALUES (99005, 'promotion5invalid', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 2, 1, '5',
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101]}', '{"amount":1}', 6801, now(), 6,2, 5);
 
 
 
 
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
-VALUES (99006, 'promotion6', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '5',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101,2102]}', '{"amount":1}', 6801, now(), 6,7, 9);
+VALUES (99006, 'promotion6', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '6',
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_brands":[2101,2102]}', '{"amount":1}', 6801, now(), 6,7, 8);
 
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
-VALUES (99007, 'promotion7', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '6',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_tags":[2201,2202]}', '{"amount":1}', 6801, now(), 6,8, 8);
+VALUES (99007, 'promotion7', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '7',
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_tags":[22001,22002]}', '{"amount":1}', 6801, now(), 6,8, 9);
 
 INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
                               discount, created_by, created_on, class_id, type_id, priority)
-VALUES (99008, 'promotion8', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '6',
-        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_products":[1002,1005]}', '{"amount":1}', 6801, now(), 6,9, 7);
+VALUES (99008, 'promotion8', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '8',
+        '{"discount_value_max":1,"cart_amount_min":1,"applied_to_products":[1002,1006]}', '{"amount":1}', 6801, now(), 6,9, 7);

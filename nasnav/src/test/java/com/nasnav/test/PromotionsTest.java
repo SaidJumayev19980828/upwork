@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -912,15 +913,16 @@ public class PromotionsTest {
 		assertEquals("total is subTotal - discount + shipping", 312.76 , order.getTotal().doubleValue(), 1e-15);
 	}
 
-	private ItemsPromotionsDTO getApplicaPromotions(Set<String> productIds, Set<String> brandIds, Set<String> tagIds) {
+	private ItemsPromotionsDTO getApplicaPromotions(Set<String> productIds, Set<String> brandIds, Set<String> tagIds, Long promotionsPerItem) {
 		Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("productIds", String.join(",", productIds));
 		queryParams.put("brandIds", String.join(",", brandIds));
 		queryParams.put("tagIds", String.join(",", tagIds));
+		queryParams.put("promotions_per_item", "" + promotionsPerItem);
 
 		ResponseEntity<ItemsPromotionsDTO> res = template
 				.getForEntity(
-						"/navbox/applicable_promotions_list?product_ids={productIds}&brand_ids={brandIds}&tag_ids={tagIds}",
+						"/navbox/applicable_promotions_list?product_ids={productIds}&brand_ids={brandIds}&tag_ids={tagIds}&promotions_per_item={promotions_per_item}",
 						ItemsPromotionsDTO.class, queryParams);
 		assertEquals(200, res.getStatusCodeValue());
 
@@ -931,9 +933,12 @@ public class PromotionsTest {
 		promoIdsFromLists.addAll(responseBody.getTagPromotionIds().values());
 
 		Set<Long> promoIdsFromListsSet = promoIdsFromLists.stream().flatMap(Collection::stream).collect(Collectors.toSet());
-		Set<Long> promoIdsFromMap = responseBody.getPromotions().keySet();
+		Map<Long, PromotionDTO> promosMap = responseBody.getPromotions();
 
-		assertEquals(promoIdsFromListsSet,promoIdsFromMap);
+		assertEquals(promoIdsFromListsSet, promosMap.keySet());
+
+		assertTrue(promosMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue().getId())));
+
 		return responseBody;
 	}
 
@@ -942,7 +947,18 @@ public class PromotionsTest {
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_6.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getApplicablePromotionsList() throws JsonProcessingException {
-		ItemsPromotionsDTO applicaPromotions = getApplicaPromotions(setOf("1001", "1005"),setOf("2103"), setOf("1101"));
+		ItemsPromotionsDTO applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), setOf("2103"), setOf("22001"),
+				10L);
+		var productPromotions = applicablePromotions.getProductPromotionIds();
+		assertEquals(2, productPromotions.size());
+		assertEquals(List.of(99007L, 99006L), productPromotions.get(1001L));
+		assertEquals(List.of(99007L, 99006L), productPromotions.get(1005L));
+		var brandsPromotions = applicablePromotions.getBrandPromotionIds();
+		assertEquals(1, brandsPromotions.size());
+		assertEquals(Collections.<Long>emptyList(), brandsPromotions.get(2103L));
+		var tagsPromotions = applicablePromotions.getTagPromotionIds();
+		assertEquals(1, tagsPromotions.size());
+		assertEquals(List.of(99007L, 99006L, 99008L), tagsPromotions.get(22001L));
 	}
 
 
