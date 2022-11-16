@@ -9,6 +9,8 @@ import com.nasnav.service.AdminService;
 import com.nasnav.service.UserService;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.yeshtery.test.commons.TestCommons;
+
+import liquibase.pro.packaged.A;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -33,6 +35,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
@@ -139,6 +143,31 @@ public class YeshteryUserRegistrationTest {
         Assert.assertEquals(406, response.getStatusCode().value());
         // Delete this user
         userService.deleteUser(userId);
+    }
+
+    @Test
+    public void testRegisterSuccess() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+        // get userId for deletion after test
+        Long userId = response.getBody().getEntityId();
+
+        System.out.println(response.getBody());
+        Assert.assertEquals(201, response.getStatusCode().value());
+
+        Set<Long> yeshteryOrgIds = organizationRepository.findByYeshteryState(1)
+                .stream()
+                .map(OrganizationEntity::getId)
+                .collect(Collectors.toSet());
+        Set<Long> userOrgIds = userRepository.findByYeshteryUserId(userId)
+                .stream()
+                .map(UserEntity::getOrganizationId)
+                .collect(Collectors.toSet());
+        assertEquals(yeshteryOrgIds, userOrgIds);
     }
 
     @Test
