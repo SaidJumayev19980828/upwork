@@ -233,7 +233,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             user.setReferral(String.valueOf(referrer));
             userRepository.saveAndFlush(user);
 
-            givePointsToReferrer(referrer, userJson.getOrgId());
+            if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
 
             sendActivationMail(user, userJson.getRedirectUrl());
             List<OrganizationEntity> yeshteryOrgs = orgService.getYeshteryOrgs();
@@ -467,7 +467,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         Long orgId = userJson.getOrgId();
 
         orgRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001));
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, G$ORG$0001, orgId));
 
         if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
