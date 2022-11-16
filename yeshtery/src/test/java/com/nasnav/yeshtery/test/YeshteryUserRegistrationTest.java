@@ -9,8 +9,6 @@ import com.nasnav.service.AdminService;
 import com.nasnav.service.UserService;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.yeshtery.test.commons.TestCommons;
-
-import liquibase.pro.packaged.A;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
