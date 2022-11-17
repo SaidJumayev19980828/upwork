@@ -914,15 +914,21 @@ public class PromotionsTest {
 	}
 
 	private ItemsPromotionsDTO getApplicaPromotions(Set<String> productIds, Set<String> brandIds, Set<String> tagIds, Long promotionsPerItem) {
-		Map<String, String> queryParams = new HashMap<>();
-		queryParams.put("productIds", String.join(",", productIds));
-		queryParams.put("brandIds", String.join(",", brandIds));
-		queryParams.put("tagIds", String.join(",", tagIds));
-		queryParams.put("promotions_per_item", "" + promotionsPerItem);
+		List<String> queryParams = new LinkedList<>();
+		if (!isNull(productIds))
+			queryParams.add("product_ids=" + String.join(",", productIds));
+		if (!isNull(brandIds))
+			queryParams.add("brand_ids=" + String.join(",", brandIds));
+		if (!isNull(tagIds))
+			queryParams.add("tag_ids=" + String.join(",", tagIds));
+		if (!isNull(promotionsPerItem))
+			queryParams.add("promotions_per_item=" + promotionsPerItem);
+
+		String queryString = queryParams.isEmpty() ? "" : "?" + String.join("&", queryParams);
 
 		ResponseEntity<ItemsPromotionsDTO> res = template
 				.getForEntity(
-						"/navbox/applicable_promotions_list?product_ids={productIds}&brand_ids={brandIds}&tag_ids={tagIds}&promotions_per_item={promotions_per_item}",
+						"/navbox/applicable_promotions_list" + queryString,
 						ItemsPromotionsDTO.class, queryParams);
 		assertEquals(200, res.getStatusCodeValue());
 
@@ -944,8 +950,8 @@ public class PromotionsTest {
 
 	
 	@Test
-	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert_6.sql" })
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
 	public void getApplicablePromotionsList() throws JsonProcessingException {
 		ItemsPromotionsDTO applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), setOf("2103"), setOf("22001"),
 				10L);
@@ -959,6 +965,17 @@ public class PromotionsTest {
 		var tagsPromotions = applicablePromotions.getTagPromotionIds();
 		assertEquals(1, tagsPromotions.size());
 		assertEquals(List.of(99007L, 99006L, 99008L), tagsPromotions.get(22001L));
+
+		applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), null, null,
+				null);
+		productPromotions = applicablePromotions.getProductPromotionIds();
+		assertEquals(2, productPromotions.size());
+		assertEquals(List.of(99007L), productPromotions.get(1001L));
+		assertEquals(List.of(99007L), productPromotions.get(1005L));
+		brandsPromotions = applicablePromotions.getBrandPromotionIds();
+		assertTrue(brandsPromotions.isEmpty());
+		tagsPromotions = applicablePromotions.getTagPromotionIds();
+		assertTrue(tagsPromotions.isEmpty());
 	}
 
 
