@@ -6,6 +6,7 @@ DELETE FROM public.integration_param_type;
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.topic_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shipment where id IN (
 	SELECT shp.id FROM public.shipment shp
@@ -130,3 +131,4 @@ DELETE FROM public.addon_stocks
 	WHERE id > 0;
 DELETE FROM public.cart_item_addon_details
 	WHERE id=1006;
+DELETE FROM public.notification_topics;

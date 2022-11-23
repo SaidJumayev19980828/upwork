@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Long> {
 
@@ -48,4 +49,6 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
 
     @Query("select e.organizationId from UserTokensEntity t inner join t.employeeUserEntity e where t.token = :token")
     Long findEmployeeOrgIdByToken(@Param("token") String token);
+
+    List<UserTokensEntity> getAllByNotificationToken(String token);
 }

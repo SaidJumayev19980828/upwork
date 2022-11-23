@@ -49,6 +49,15 @@ public class EmployeeUserEntity extends BaseUserEntity {
             ,inverseJoinColumns = {@JoinColumn(name="role_id")})
     private Set<Role> roles;
 
+    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "topic_employee_users"
+            ,joinColumns = {@JoinColumn(name="employee_user_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="topic_id")})
+    private Set<NotificationTopicsEntity> topics;
+
     @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
