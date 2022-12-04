@@ -7,21 +7,20 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.NotificationTopicsRepository;
-import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
 import com.nasnav.dto.request.notification.SubscriptionRequestDto;
+import com.nasnav.enumerations.TopicType;
 import com.nasnav.persistence.*;
 import com.nasnav.service.SecurityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,8 +29,9 @@ import java.util.Set;
 @Slf4j
 @Service
 public class NotificationServiceImpl implements NotificationService{
-    private static final String NOTIFICATION_CONFIG_JSON = "json/notification/yeshtery-notification-firebase-adminsdk-s909h-0c50712cc3.json";
     private FirebaseApp firebaseApp;
+    @Value("${app.firebase-config}")
+    private String firebaseConfig;
 
     @Autowired
     private SecurityService securityService;
@@ -41,12 +41,16 @@ public class NotificationServiceImpl implements NotificationService{
     private NotificationTopicsRepository notificationTopicsRepository;
     @Autowired
     private UserTokenRepository userTokenRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private ShopsRepository shopsRepository;
 
     @PostConstruct
     private void initialize() {
         try {
             FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(NOTIFICATION_CONFIG_JSON).getInputStream())).build();
+                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(firebaseConfig).getInputStream())).build();
 
             if (FirebaseApp.getApps().isEmpty()) {
                 this.firebaseApp = FirebaseApp.initializeApp(options);
@@ -61,9 +65,6 @@ public class NotificationServiceImpl implements NotificationService{
     @Override
     public void subscribeToTopic(SubscriptionRequestDto subscriptionRequestDto) {
         try {
-            boolean topicFlag = false;
-            boolean tokenFlag = false;
-
             BaseUserEntity loggedInUser = securityService.getCurrentUser();
             UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(loggedInUser.getAuthenticationToken());
             EmployeeUserEntity employeeUserEntity = userTokensEntity.getEmployeeUserEntity();
@@ -74,26 +75,20 @@ public class NotificationServiceImpl implements NotificationService{
 
                 if(userTokensEntity.getNotificationToken() == null || !userTokensEntity.getNotificationToken().equals(subscriptionRequestDto.getToken())){
                     userTokensEntity.setNotificationToken(subscriptionRequestDto.getToken());
-                    tokenFlag = true;
+                    userTokenRepository.save(userTokensEntity);
                 }
 
                 NotificationTopicsEntity notificationTopicsEntity = notificationTopicsRepository.getByTopic(subscriptionRequestDto.getTopicName());
                 Set<NotificationTopicsEntity> notificationTopicsEntities = employeeUserEntity.getTopics();
                 if(notificationTopicsEntities.add(notificationTopicsEntity)){
                     employeeUserEntity.setTopics(notificationTopicsEntities);
-                    topicFlag = true;
-                }
-                if(topicFlag){
                     employeeUserRepository.save(employeeUserEntity);
                 }
-                if(tokenFlag){
-                    userTokenRepository.save(userTokensEntity);
-                }
-
             }
         } catch (FirebaseMessagingException e) {
             log.error("Firebase subscribe to topic fail", e);
         }
+
     }
 
     @Override
@@ -155,16 +150,16 @@ public class NotificationServiceImpl implements NotificationService{
     }
 
     @Override
-    public boolean createOrUpdateEmployeeToken(String newToken) {
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(loggedInUser.getAuthenticationToken());
+    public boolean createOrUpdateEmployeeToken(String newToken, String authToken) {
+        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(authToken);
         EmployeeUserEntity employeeUserEntity = userTokensEntity.getEmployeeUserEntity();
         String oldToken = userTokensEntity.getNotificationToken();
         Set<NotificationTopicsEntity> userTopics = employeeUserEntity.getTopics();
         if(employeeUserEntity != null){
             if(oldToken == null){
-                userTokensEntity.setNotificationToken(newToken);
                 try {
+                    loginFirstTimeNotificationToken(employeeUserEntity,newToken);
+                    userTokensEntity.setNotificationToken(newToken);
                     userTokenRepository.save(userTokensEntity);
                     return true;
                 }
@@ -173,39 +168,40 @@ public class NotificationServiceImpl implements NotificationService{
                     return false;
                 }
             }
-            try {
-                for(NotificationTopicsEntity topic : userTopics){
-                    FirebaseMessaging.getInstance(firebaseApp).unsubscribeFromTopic(Arrays.asList(oldToken),
-                            topic.getTopic());
+            else if (!oldToken.equals(newToken)){
+                try {
+                    for(NotificationTopicsEntity topic : userTopics){
+                        FirebaseMessaging.getInstance(firebaseApp).unsubscribeFromTopic(Arrays.asList(oldToken),
+                                topic.getTopic());
 
-                    FirebaseMessaging.getInstance(firebaseApp).subscribeToTopic(Arrays.asList(newToken),
-                            topic.getTopic());
+                        FirebaseMessaging.getInstance(firebaseApp).subscribeToTopic(Arrays.asList(newToken),
+                                topic.getTopic());
+                    }
                 }
-            }
-            catch (FirebaseMessagingException e){
-                log.error("Fail to send firebase notification", e);
-                return false;
-            }
+                catch (FirebaseMessagingException e){
+                    log.error("Fail to send firebase notification", e);
+                    return false;
+                }
 
-            List<UserTokensEntity> userTokensEntities = userTokenRepository.getAllByNotificationToken(oldToken);
-            for(UserTokensEntity user : userTokensEntities){
-                user.setNotificationToken(newToken);
-            }
-            try {
-                userTokenRepository.saveAll(userTokensEntities);
-            }
-            catch (Exception e){
-                log.error("failed to save entity",e);
-                return false;
+                List<UserTokensEntity> userTokensEntities = userTokenRepository.getAllByNotificationToken(oldToken);
+                for(UserTokensEntity user : userTokensEntities){
+                    user.setNotificationToken(newToken);
+                }
+                try {
+                    userTokenRepository.saveAll(userTokensEntities);
+                }
+                catch (Exception e){
+                    log.error("failed to save entity",e);
+                    return false;
+                }
             }
         }
         return true;
     }
 
     @Override
-    public boolean createOrUpdateUserToken(String token) {
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(loggedInUser.getAuthenticationToken());
+    public boolean createOrUpdateUserToken(String token, String authToken) {
+        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(authToken);
         userTokensEntity.setNotificationToken(token);
         try {
             userTokenRepository.save(userTokensEntity);
@@ -215,6 +211,85 @@ public class NotificationServiceImpl implements NotificationService{
             return false;
         }
         return true;
+    }
+
+
+    @Override
+    public void refreshNotificationTopics() {
+        List<OrganizationEntity> organizationEntities = organizationRepository.findAllOrganizations();
+        List<ShopsEntity> shopsEntities = shopsRepository.findAllShops();
+        List<NotificationTopicsEntity> notificationTopicsEntities = new ArrayList<>();
+
+        for(OrganizationEntity org : organizationEntities){
+            if(org.getTopic() == null){
+                org.setTopic(checkTopicExistence(TopicType.ORG.getValue()+org.getId()));
+                organizationRepository.save(org);
+            }
+            else if(!notificationTopicsRepository.existsByTopic(org.getTopic().getTopic())){
+                NotificationTopicsEntity notificationTopicsEntity = new NotificationTopicsEntity();
+                notificationTopicsEntity.setTopic(org.getTopic().getTopic());
+                notificationTopicsEntities.add(notificationTopicsEntity);
+            }
+        }
+
+        for(ShopsEntity shop : shopsEntities){
+            if(shop.getTopic() == null){
+                shop.setTopic(checkTopicExistence(TopicType.SHOP.getValue()+shop.getId()));
+                shopsRepository.save(shop);
+            }
+            else if(!notificationTopicsRepository.existsByTopic(shop.getTopic().getTopic())){
+                NotificationTopicsEntity notificationTopicsEntity = new NotificationTopicsEntity();
+                notificationTopicsEntity.setTopic(shop.getTopic().getTopic());
+                notificationTopicsEntities.add(notificationTopicsEntity);
+            }
+        }
+        notificationTopicsRepository.saveAll(notificationTopicsEntities);
+    }
+
+    private NotificationTopicsEntity checkTopicExistence(String topicName) {
+        NotificationTopicsEntity notificationTopicsEntity = new NotificationTopicsEntity();
+        if(!notificationTopicsRepository.existsByTopic(topicName)){
+            notificationTopicsEntity.setTopic(topicName);
+            notificationTopicsEntity = notificationTopicsRepository.save(notificationTopicsEntity);
+        }
+        else {
+            notificationTopicsEntity = notificationTopicsRepository.getByTopic(topicName);
+        }
+        return notificationTopicsEntity;
+    }
+
+    @Override
+    public NotificationRequestDto getTopicByTopicName(String topicName) {
+        NotificationTopicsEntity notificationTopicsEntity = notificationTopicsRepository.getByTopic(topicName);
+        if(notificationTopicsEntity == null){
+            return null;
+        }
+        else {
+            return new NotificationRequestDto(notificationTopicsEntity.getTopic());
+        }
+    }
+
+    private void loginFirstTimeNotificationToken(EmployeeUserEntity employeeUserEntity,String token) {
+        List<String> topics = Arrays.asList(TopicType.ORG.getValue() +employeeUserEntity.getOrganizationId());
+        if(employeeUserEntity.getShopId() != null){
+            topics.add(TopicType.SHOP.getValue()+employeeUserEntity.getShopId());
+        }
+        try{
+            for(String topic : topics){
+                FirebaseMessaging.getInstance(firebaseApp).subscribeToTopic(Arrays.asList(token),
+                        topic);
+
+                NotificationTopicsEntity notificationTopicsEntity = notificationTopicsRepository.getByTopic(topic);
+                Set<NotificationTopicsEntity> notificationTopicsEntities = employeeUserEntity.getTopics();
+                if(notificationTopicsEntities.add(notificationTopicsEntity)){
+                    employeeUserEntity.setTopics(notificationTopicsEntities);
+                    employeeUserRepository.save(employeeUserEntity);
+                }
+            }
+        }
+        catch (FirebaseMessagingException e){
+            log.error("Can't subscribe to topic: "+e);
+        }
     }
 
 }

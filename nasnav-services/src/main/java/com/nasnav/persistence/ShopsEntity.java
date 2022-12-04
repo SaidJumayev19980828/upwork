@@ -79,6 +79,10 @@ public class ShopsEntity implements BaseEntity{
     @Column(name = "yeshtery_state")
     private Integer yeshteryState;
 
+    @OneToOne
+    @JoinColumn(name = "notification_topic")
+    private NotificationTopicsEntity topic;
+
     public ShopsEntity() {
     	this.isWarehouse = 0;
     }

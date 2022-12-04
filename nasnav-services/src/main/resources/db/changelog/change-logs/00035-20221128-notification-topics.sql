@@ -7,7 +7,7 @@
 
 CREATE TABLE notification_topics
 (
-id bigint NOT NULL, 
+id bigserial NOT NULL,
 topic VARCHAR NOT NULL,
 PRIMARY KEY(id)
 );
@@ -29,3 +29,15 @@ add constraint
 alter table topic_employee_users
 add constraint 
     fk_notification__Employee foreign key(employee_user_id) references employee_users(id);
+
+ALTER TABLE organizations ADD notification_topic bigint;
+
+alter table organizations
+    add constraint
+        fk_notification__Orgranization foreign key(notification_topic) references notification_topics(id);
+
+ALTER TABLE shops ADD notification_topic bigint;
+
+alter table shops
+    add constraint
+        fk_notification__shops foreign key(notification_topic) references notification_topics(id);

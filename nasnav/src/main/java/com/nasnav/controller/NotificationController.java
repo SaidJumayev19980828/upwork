@@ -6,6 +6,7 @@ import com.nasnav.service.notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequestMapping("/notification")
 @CrossOrigin("*")
@@ -35,11 +36,16 @@ public class NotificationController {
 
     @PostMapping("/updateToken")
     public void updateToken(@RequestHeader(name = "User-Token") String userToken,@RequestBody String newToken) {
-        notificationService.createOrUpdateEmployeeToken(newToken);
+        notificationService.createOrUpdateEmployeeToken(newToken,userToken);
     }
 
     @PostMapping("/user/updateToken")
     public void updateUserToken(@RequestHeader(name = "User-Token") String userToken,@RequestBody String newToken) {
-        notificationService.createOrUpdateUserToken(newToken);
+        notificationService.createOrUpdateUserToken(newToken,userToken);
+    }
+
+    @PostMapping(value = "/refreshTopics")
+    public void refreshTopics(@RequestHeader(name = "User-Token") String userToken){
+        notificationService.refreshNotificationTopics();
     }
 }

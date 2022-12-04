@@ -38,7 +38,9 @@ public interface SecurityService {
 	UserApiResponse socialLogin(String socialLoginToken, boolean yeshteryInstance) throws BusinessException;
 
 	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) ;
-	
+
+	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe, String notificationToken) ;
+
 	UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity token);
 
     UserApiResponse logoutAll(BaseUserEntity entity);

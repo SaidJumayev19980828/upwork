@@ -10,6 +10,7 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
+import com.nasnav.enumerations.TopicType;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.enumerations.YeshteryState;
@@ -20,6 +21,7 @@ import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
+import com.nasnav.service.notification.NotificationService;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
@@ -63,6 +65,9 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Qualifier("videoChatQueryBuilder")
     private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
@@ -97,12 +102,18 @@ public class VideoChatServiceImpl implements VideoChatService {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
         orgId = organization.getId();
+        String topic = TopicType.ORG.getValue()+orgId;
+        if(shopId != null){
+            topic = TopicType.SHOP.getValue()+shopId;
+        }
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
         }
         if (loggedInUser instanceof UserEntity) {
-            return getOrCreateUserVideoSession((UserEntity) loggedInUser, force, sessionName, orgId, shopId);
+            VideoChatResponse response = getOrCreateUserVideoSession((UserEntity) loggedInUser, force, sessionName, orgId, shopId);
+            notificationService.sendPnsToTopic(notificationService.getTopicByTopicName(topic));
+            return response;
         } else if (loggedInUser instanceof EmployeeUserEntity) {
             return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, sessionName, orgId);
         } else {

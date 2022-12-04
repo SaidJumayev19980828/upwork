@@ -3,9 +3,13 @@ package com.nasnav.service.notification;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
 import com.nasnav.dto.request.notification.SubscriptionRequestDto;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.NotificationTopicsEntity;
+
+import java.util.List;
 
 public interface NotificationService {
     /**
+     * consumed from service
      * this method for subcribe Employee user to topic
      * it take the token and topic then update the relation between employee entity
      * also check if the token is need to be updated or not and update it
@@ -37,13 +41,22 @@ public interface NotificationService {
      * @param token
      * @return
      */
-    public boolean createOrUpdateEmployeeToken(String token);
+    public boolean createOrUpdateEmployeeToken(String token, String authToken);
 
     /**
      * update or create normal user token
      * @param token
      * @return
      */
-    public boolean createOrUpdateUserToken(String token);
+    public boolean createOrUpdateUserToken(String token, String authToken);
+
+    public void refreshNotificationTopics();
+
+    /**
+     * getting the notification dto request by Topic Name
+     * @return
+     */
+    public NotificationRequestDto getTopicByTopicName(String topicName);
+
 
 }

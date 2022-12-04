@@ -2,14 +2,12 @@ package com.nasnav.test;
 
 
 import com.nasnav.NavBox;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.UserTokenRepository;
-import com.nasnav.dto.request.notification.SubscriptionRequestDto;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.NotificationTopicsEntity;
-import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
+import com.nasnav.response.UserApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
+import org.json.JSONObject;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,29 +46,33 @@ public class NotificationTest {
     private EmployeeUserRepository employeeUserRepository;
     @Autowired
     private UserTokenRepository userTokenRepository;
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private ShopsRepository shopsRepository;
+    @Autowired
+    private NotificationTopicsRepository notificationTopicsRepository;
 
 
     @Test
     public void subscribeToTopicTest(){
         String token = "cmplcFidnbv8xBJViEGqR3:APA91bFEHYDsEdoevXcRWy4OZ-dBfgGjf96MnA4RM-B6ILN_OWgL2mgq_vpKTWWtVQC6U04S9HUEIipI7Wvr2rz0u9Jr8WaTtRMeGbkv7bLj43XwWxzBHkkcU5V2CMD3uoYUkvshFgdx";
-        SubscriptionRequestDto subscriptionRequestDto = new SubscriptionRequestDto("topic1",token);
-
         String requestBody =
                 json()
-                        .put("topicName", "topic1")
+                        .put("topicName", "ORG99001")
                         .put("token", token)
                         .toString();
-        HttpEntity<?> json = getHttpEntity(requestBody, "hijkllm");
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/notification/subscribe", json, Void.class);
         assertEquals(200,response.getStatusCodeValue());
 
-        EmployeeUserEntity employeeUserEntity = employeeUserRepository.getById(69L);
+        EmployeeUserEntity employeeUserEntity = employeeUserRepository.getById(70L);
         Set<NotificationTopicsEntity> notificationTopicsEntities = employeeUserEntity.getTopics();
         Optional<NotificationTopicsEntity> result = notificationTopicsEntities.stream().findFirst();
         assertTrue(result.isPresent());
-        assertEquals(subscriptionRequestDto.getTopicName(),result.get().getTopic());
+        assertEquals("ORG99001",result.get().getTopic());
 
-        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken("hijkllm");
+        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken("abcdefg");
         assertEquals(userTokensEntity.getNotificationToken(),token);
     }
 
@@ -79,7 +82,7 @@ public class NotificationTest {
 
         String requestBody =
                 json()
-                        .put("topicName", "topic1")
+                        .put("topicName", "ORG99001")
                         .put("token", token)
                         .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
@@ -93,7 +96,7 @@ public class NotificationTest {
             assertFalse(result.isPresent());
         }
         else {
-            assertNotEquals("topic1",result.get().getTopic());
+            assertNotEquals("ORG99001",result.get().getTopic());
         }
     }
 
@@ -121,6 +124,50 @@ public class NotificationTest {
 
         assertEquals(token,userTokenRepository.getUserEntityByToken("123").getNotificationToken());
     }
+
+    @Test
+    public void refreshNotificationTopics(){
+
+        HttpEntity<?> json = getHttpEntity("abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/notification/refreshTopics", json, Void.class);
+        assertEquals(200,response.getStatusCodeValue());
+
+        List<OrganizationEntity> organizationEntities = organizationRepository.findAllOrganizations();
+        for(OrganizationEntity org : organizationEntities){
+            assertTrue(notificationTopicsRepository.existsByTopic(org.getTopic().getTopic()));
+        }
+
+        List<ShopsEntity> shopsEntities = shopsRepository.findAllShops();
+        for (ShopsEntity shop : shopsEntities){
+            assertTrue(notificationTopicsRepository.existsByTopic(shop.getTopic().getTopic()));
+        }
+
+        assertEquals(organizationEntities.size()+shopsEntities.size(),notificationTopicsRepository.count());
+    }
+
+    @Test
+    public void loginTest(){
+        String email = "user1@nasnav.com";
+        String password = "12345678";
+
+        String request = new JSONObject()
+                .put("password", password)
+                .put("email", email)
+                .put("org_id", 99001L)
+                .put("employee", true)
+                .put("notificationToken","cecrvZZ1VbO3jKyhMTPxBW:APA91bGXxLfjL-pEhAWympWeGUgWPXcs1kijXIAUyhNHo_sh2zmRiGYsDJHtdtFPawCf3rUgL1YT2rsESuAfD4JrdrjoQATTivb6ZLDaAol5uPrKnBsbJlslNoEsqtiNCBmRhRcR2YPj")
+                .toString();
+
+        HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+        ResponseEntity<UserApiResponse> response =
+                template.postForEntity("/user/login", userJson,	UserApiResponse.class);
+
+        assertEquals(200, response.getStatusCode().value());
+
+        EmployeeUserEntity employeeUserEntity = employeeUserRepository.getById(71L);
+        assertEquals(1,employeeUserEntity.getTopics().size());
+    }
+
     /*
     if you would like to use the following test you have to get two real tokens from two different ui machines and
     replace them with token, token1
@@ -159,5 +206,4 @@ public class NotificationTest {
 //        ResponseEntity<Void> response3 = template.postForEntity("/notification/topic", json3, Void.class);
 //        assertEquals(200,response3.getStatusCodeValue());
 //    }
-
 }

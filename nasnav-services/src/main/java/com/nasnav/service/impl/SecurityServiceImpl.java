@@ -15,6 +15,7 @@ import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
+import com.nasnav.service.notification.NotificationService;
 import com.nasnav.service.yeshtery.YeshteryUserService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -85,6 +86,9 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Autowired
 	private UserServicesHelper helper;
+
+	@Autowired
+	private NotificationService notificationService;
 
 
 
@@ -200,7 +204,7 @@ public class SecurityServiceImpl implements SecurityService {
 		validateLoginUser(userEntity);
 		validateUserPassword(loginData, userEntity);
 
-		return login(userEntity, loginData.rememberMe);
+		return login(userEntity, loginData.rememberMe, loginData.getNotificationToken());
 	}
 
 
@@ -225,7 +229,12 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) {
-		UserPostLoginData userData = updatePostLogin(userEntity);
+		return login(userEntity,rememberMe,null);
+	}
+
+	@Override
+	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe, String notificationToken) {
+		UserPostLoginData userData = updatePostLogin(userEntity, notificationToken);
 
 		Cookie cookie = createCookie(userData.getToken(), rememberMe);
 
@@ -233,10 +242,6 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
-	
-	
-	
-	
 	private Cookie createCookie(String token, boolean rememberMe) {
 		Cookie cookie = new Cookie("User-Token", token);
 
@@ -314,23 +319,28 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity) {
+	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity, String notificationToken) {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 
-		String authToken = generateUserToken(userEntity);
+		String authToken = generateUserToken(userEntity, notificationToken);
 		
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
 		userEntity.setAuthenticationToken(authToken);
 		BaseUserEntity savedUserData = userRepo.saveAndFlush(userEntity);
-
+		if(userEntity instanceof EmployeeUserEntity){
+			notificationService.createOrUpdateEmployeeToken(notificationToken,authToken);
+		}
+		else {
+			notificationService.createOrUpdateUserToken(notificationToken,authToken);
+		}
 		return new UserPostLoginData(savedUserData, authToken);
 	}
 
 
 	
 	
-	private String generateUserToken(BaseUserEntity user) {
+	private String generateUserToken(BaseUserEntity user, String notificationToken) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
         if (user instanceof EmployeeUserEntity) {

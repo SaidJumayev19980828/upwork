@@ -92,6 +92,10 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "enable_video_chat")
     private Integer enableVideoChat;
 
+    @OneToOne
+    @JoinColumn(name = "notification_topic")
+    private NotificationTopicsEntity topic;
+
 
     public OrganizationEntity() {
         id = null;

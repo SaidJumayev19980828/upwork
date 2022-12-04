@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NotificationTopicsRepository extends JpaRepository<NotificationTopicsEntity,Long> {
     NotificationTopicsEntity getByTopic(String topic);
+    boolean existsByTopic(String topic);
 }

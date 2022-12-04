@@ -79,6 +79,9 @@ public class UserDTOs {
 
         @JsonProperty("remember_me")
         public boolean rememberMe;
+
+        @Schema(example = "cecrvZZ1VbO3jKyhMTPxBW:APA91bGXxLfjL-pEhAWympWeGUgWPXcs1kijXIAUyhNHo_sh2zmRiGYsDJHtdtFPawCf3rUgL1YT2rsESuAfD4JrdrjoQATTivb6ZLDaAol5uPrKnBsbJlslNoEsqtiNCBmRhRcR2YPj")
+        private String notificationToken;
     }
 
     @Getter
