@@ -94,7 +94,7 @@ public class OrganizationEntity implements BaseEntity {
 
     @OneToOne
     @JoinColumn(name = "notification_topic")
-    private NotificationTopicsEntity topic;
+    private NotificationTopicsEntity notificationTopic;
 
 
     public OrganizationEntity() {

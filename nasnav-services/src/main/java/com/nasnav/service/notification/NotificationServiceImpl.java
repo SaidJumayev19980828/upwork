@@ -221,13 +221,13 @@ public class NotificationServiceImpl implements NotificationService{
         List<NotificationTopicsEntity> notificationTopicsEntities = new ArrayList<>();
 
         for(OrganizationEntity org : organizationEntities){
-            if(org.getTopic() == null){
-                org.setTopic(checkTopicExistence(TopicType.ORG.getValue()+org.getId()));
+            if(org.getNotificationTopic() == null){
+                org.setNotificationTopic(checkTopicExistence(TopicType.ORG.getValue()+org.getId()));
                 organizationRepository.save(org);
             }
-            else if(!notificationTopicsRepository.existsByTopic(org.getTopic().getTopic())){
+            else if(!notificationTopicsRepository.existsByTopic(org.getNotificationTopic().getTopic())){
                 NotificationTopicsEntity notificationTopicsEntity = new NotificationTopicsEntity();
-                notificationTopicsEntity.setTopic(org.getTopic().getTopic());
+                notificationTopicsEntity.setTopic(org.getNotificationTopic().getTopic());
                 notificationTopicsEntities.add(notificationTopicsEntity);
             }
         }
@@ -267,6 +267,26 @@ public class NotificationServiceImpl implements NotificationService{
         else {
             return new NotificationRequestDto(notificationTopicsEntity.getTopic());
         }
+    }
+
+    @Override
+    public boolean logoutNotificationTokenCleaner(String authToken) {
+        UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(authToken);
+        EmployeeUserEntity employeeUserEntity = userTokensEntity.getEmployeeUserEntity();
+        if(employeeUserEntity != null){
+            Set<NotificationTopicsEntity> topicsEntities = employeeUserEntity.getTopics();
+            try {
+                for(NotificationTopicsEntity topic : topicsEntities){
+                    FirebaseMessaging.getInstance(firebaseApp).unsubscribeFromTopic(Arrays.asList(userTokensEntity.getNotificationToken()),
+                            topic.getTopic());
+                }
+            }
+            catch (FirebaseMessagingException e){
+                log.error("can't unsubscribeFromTopic in firebase", e);
+                return false;
+            }
+        }
+        return true;
     }
 
     private void loginFirstTimeNotificationToken(EmployeeUserEntity employeeUserEntity,String token) {

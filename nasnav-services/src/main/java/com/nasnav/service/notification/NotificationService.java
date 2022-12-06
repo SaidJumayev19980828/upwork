@@ -50,6 +50,9 @@ public interface NotificationService {
      */
     public boolean createOrUpdateUserToken(String token, String authToken);
 
+    /**
+     * this method refresh all topics of org and shop
+     */
     public void refreshNotificationTopics();
 
     /**
@@ -57,6 +60,14 @@ public interface NotificationService {
      * @return
      */
     public NotificationRequestDto getTopicByTopicName(String topicName);
+
+    /**
+     * this method unsubscribe from all topics WRT token
+     * @param notificationToken
+     * @param authToken
+     * @return
+     */
+    public boolean logoutNotificationTokenCleaner(String authToken);
 
 
 }

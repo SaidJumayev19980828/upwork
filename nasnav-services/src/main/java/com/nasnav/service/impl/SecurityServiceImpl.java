@@ -148,6 +148,7 @@ public class SecurityServiceImpl implements SecurityService {
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
 	public UserApiResponse logout(String headerToken, String cookieToken) {
 		String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
+		notificationService.logoutNotificationTokenCleaner(token);
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
@@ -322,7 +323,7 @@ public class SecurityServiceImpl implements SecurityService {
 	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity, String notificationToken) {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 
-		String authToken = generateUserToken(userEntity, notificationToken);
+		String authToken = generateUserToken(userEntity);
 		
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
@@ -340,7 +341,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 	
 	
-	private String generateUserToken(BaseUserEntity user, String notificationToken) {
+	private String generateUserToken(BaseUserEntity user) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
         if (user instanceof EmployeeUserEntity) {
