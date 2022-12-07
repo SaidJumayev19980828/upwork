@@ -82,17 +82,17 @@ public class NotificationTest {
         ResponseEntity<Void> response = template.postForEntity("/notification/refreshTopics", json, Void.class);
         assertEquals(200,response.getStatusCodeValue());
 
-        List<OrganizationEntity> organizationEntities = organizationRepository.findAllOrganizations();
+        List<OrganizationEntity> organizationEntities = organizationRepository.findAll();
         for(OrganizationEntity org : organizationEntities){
             assertTrue(notificationTopicsRepository.existsByTopic(org.getNotificationTopic().getTopic()));
         }
 
-        List<ShopsEntity> shopsEntities = shopsRepository.findAllShops();
+        Iterable<ShopsEntity> shopsEntities = shopsRepository.findAll();
         for (ShopsEntity shop : shopsEntities){
-            assertTrue(notificationTopicsRepository.existsByTopic(shop.getTopic().getTopic()));
+            assertTrue(notificationTopicsRepository.existsByTopic(shop.getNotificationTopic().getTopic()));
         }
 
-        assertEquals(organizationEntities.size()+shopsEntities.size(),notificationTopicsRepository.count());
+        assertEquals(organizationEntities.size()+shopsRepository.count(),notificationTopicsRepository.count());
     }
 
     @Test

@@ -2,10 +2,6 @@ package com.nasnav.service.notification;
 
 import com.nasnav.dto.request.notification.NotificationRequestDto;
 import com.nasnav.dto.request.notification.SubscriptionRequestDto;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.NotificationTopicsEntity;
-
-import java.util.List;
 
 public interface NotificationService {
     /**

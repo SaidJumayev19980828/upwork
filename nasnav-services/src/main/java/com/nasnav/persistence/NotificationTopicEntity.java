@@ -13,7 +13,7 @@ import java.util.Set;
 @Table(name = "notification_topics")
 @Data
 @NoArgsConstructor
-public class NotificationTopicsEntity {
+public class NotificationTopicEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -31,7 +31,7 @@ public class NotificationTopicsEntity {
             ,inverseJoinColumns = {@JoinColumn(name="employee_user_id")})
     private Set<EmployeeUserEntity> employees;
 
-    public NotificationTopicsEntity(String topic) {
+    public NotificationTopicEntity(String topic) {
         this.topic = topic;
     }
 }

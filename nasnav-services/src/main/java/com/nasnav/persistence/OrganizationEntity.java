@@ -92,9 +92,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "enable_video_chat")
     private Integer enableVideoChat;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_topic")
-    private NotificationTopicsEntity notificationTopic;
+    private NotificationTopicEntity notificationTopic;
 
 
     public OrganizationEntity() {

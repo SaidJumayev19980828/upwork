@@ -79,9 +79,9 @@ public class ShopsEntity implements BaseEntity{
     @Column(name = "yeshtery_state")
     private Integer yeshteryState;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notification_topic")
-    private NotificationTopicsEntity topic;
+    private NotificationTopicEntity notificationTopic;
 
     public ShopsEntity() {
     	this.isWarehouse = 0;
