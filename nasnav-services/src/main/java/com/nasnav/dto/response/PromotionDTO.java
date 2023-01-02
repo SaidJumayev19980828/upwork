@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.PromosConstraints;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
 import java.util.Map;
 
 @Data
+@EqualsAndHashCode
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class PromotionDTO implements Comparable<PromotionDTO> {
 	private Long id;
@@ -38,6 +41,9 @@ public class PromotionDTO implements Comparable<PromotionDTO> {
 
 	@Override
 	public int compareTo(PromotionDTO promo) {
-		return promo.getPriority() - this.getPriority();
+		return Comparator
+				.comparing(PromotionDTO::getPriority, Comparator.reverseOrder())
+				.thenComparing(PromotionDTO::getId)
+				.compare(this, promo);
 	}
 }
