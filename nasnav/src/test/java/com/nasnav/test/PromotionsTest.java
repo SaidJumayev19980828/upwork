@@ -953,18 +953,19 @@ public class PromotionsTest {
 	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert_6.sql" })
 	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
 	public void getApplicablePromotionsList() throws JsonProcessingException {
-		ItemsPromotionsDTO applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), setOf("2103"), setOf("22001"),
+		ItemsPromotionsDTO applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), setOf("2103", "2101"), setOf("22001"),
 				10L);
 		var productPromotions = applicablePromotions.getProductPromotionIds();
 		assertEquals(2, productPromotions.size());
-		assertEquals(List.of(99007L, 99006L), productPromotions.get(1001L));
-		assertEquals(List.of(99007L, 99006L), productPromotions.get(1005L));
+		assertEquals(List.of(99007L, 99006L, 99009L), productPromotions.get(1001L));
+		assertEquals(List.of(99007L, 99006L, 99009L), productPromotions.get(1005L));
 		var brandsPromotions = applicablePromotions.getBrandPromotionIds();
-		assertEquals(1, brandsPromotions.size());
+		assertEquals(2, brandsPromotions.size());
 		assertEquals(Collections.<Long>emptyList(), brandsPromotions.get(2103L));
+		assertEquals(List.of(99007L, 99006L, 99009L, 99008L), brandsPromotions.get(2101L));
 		var tagsPromotions = applicablePromotions.getTagPromotionIds();
 		assertEquals(1, tagsPromotions.size());
-		assertEquals(List.of(99007L, 99006L, 99008L), tagsPromotions.get(22001L));
+		assertEquals(List.of(99007L, 99006L, 99009L, 99008L), tagsPromotions.get(22001L));
 
 		applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), null, null,
 				null);

@@ -98,3 +98,8 @@ INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_
                               discount, created_by, created_on, class_id, type_id, priority)
 VALUES (99008, 'promotion8', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '8',
         '{"discount_value_max":1,"cart_amount_min":1,"applied_to_products":[1002,1006]}', '{"amount":1}', 6801, now(), 6,9, 7);
+
+INSERT INTO public.promotions(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains,
+                              discount, created_by, created_on, class_id, type_id, priority)
+VALUES (99009, 'promotion9', 99001, now() - INTERVAL '5 DAY', now() + INTERVAL '7 DAY', 1, 1, '6',
+        '{"product_quantity_min":5,"product_to_give":2,"applied_to_brands":[2101,2102]}', '{}', 6801, now(), 6,2, 8);
