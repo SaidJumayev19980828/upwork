@@ -357,6 +357,7 @@ public enum ErrorCodes {
 
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
+	,ORG$NOTFOUND("No Organization found")
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 	,TAG$TREE$0002("No tag exists with name[%s]!")
@@ -401,6 +402,9 @@ public enum ErrorCodes {
 	,PAYMENT$CALLBACK$002("Untrusted source!")
 
 	,PROCESS$CANCEL$0001("Process not cancelable")
+
+	,AVA$NOT$EXIST("No Availability found")
+	,AVA$OVER$LAPPED("Availabilities is overlapped with others")
 	;
 
 	@Getter
