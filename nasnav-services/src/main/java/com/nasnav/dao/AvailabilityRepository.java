@@ -12,7 +12,6 @@ import java.util.List;
 public interface AvailabilityRepository extends JpaRepository<AvailabilityEntity,Long> {
     boolean existsByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser(LocalDateTime start, LocalDateTime end, EmployeeUserEntity employee);
     boolean existsByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUserAndIdNotIn(LocalDateTime start, LocalDateTime end, EmployeeUserEntity employee,List<Long> ids);
-    boolean existsByEndsAtIsGreaterThanAndStartsAtIsLessThan(LocalDateTime start, LocalDateTime end);
     @Query("SELECT c from AvailabilityEntity c where c.organization =:organizationEntity and c.startsAt > CURRENT_DATE and c.user is null group by c.id,c.organization,c.startsAt order by c.startsAt")
     List<AvailabilityEntity> getAllFreeAvailabilitiesByOrganization(OrganizationEntity organizationEntity);
     @Query("SELECT c from AvailabilityEntity c where c.shop =:shopsEntity and c.startsAt > CURRENT_DATE and c.user is null group by c.id,c.shop,c.startsAt order by c.startsAt")
@@ -27,6 +26,5 @@ public interface AvailabilityRepository extends JpaRepository<AvailabilityEntity
     List<AvailabilityEntity> getAllByEmployeeUserAndStartsAtAfterAndUserNotNull(EmployeeUserEntity employeeUserEntity, LocalDateTime now);
     List<AvailabilityEntity> getAllByUserAndStartsAtAfter(UserEntity userEntity, LocalDateTime now);
     List<AvailabilityEntity> getAllByIdInOrderByStartsAtAsc(List<Long> ids);
-//    void deleteAllByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser(LocalDateTime start, LocalDateTime end, EmployeeUserEntity employee);
     List<AvailabilityEntity> deleteAllByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser(LocalDateTime start, LocalDateTime end, EmployeeUserEntity employee);
 }

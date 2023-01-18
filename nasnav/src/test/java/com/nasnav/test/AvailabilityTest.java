@@ -27,7 +27,6 @@ import java.util.Optional;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

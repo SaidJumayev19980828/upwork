@@ -1,6 +1,8 @@
 package com.nasnav.service.scheduler;
 
 import com.nasnav.persistence.SchedulerTaskEntity;
+import com.nasnav.service.MailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
@@ -18,6 +20,8 @@ import java.util.concurrent.ScheduledFuture;
 public class ScheduleTaskHelper {
     TaskScheduler scheduler;
     Map<Long, ScheduledFuture<?>> jobsMap = new HashMap<>();
+    @Autowired
+    private MailService mailService;
 
     public ScheduleTaskHelper(TaskScheduler scheduler) {
         this.scheduler = scheduler;
@@ -29,9 +33,14 @@ public class ScheduleTaskHelper {
                   @Override
                   public void run() {
                       try {
-                          // we can run any task
-                          System.out.println("Running Task Schedular  NUM ...: " + schedulerTaskEntity.getId() + "  " + schedulerTaskEntity.getStartsAt() + "   " + Calendar.getInstance().getTime());
-
+                          switch (schedulerTaskEntity.getType()){
+                              case "appointment":{
+                                    mailService.send(schedulerTaskEntity.getAvailability().getOrganization().getName(),schedulerTaskEntity.getAvailability().getUser().getEmail(),
+                                  "Appointment",null,null);
+                                    mailService.send(schedulerTaskEntity.getAvailability().getOrganization().getName(),schedulerTaskEntity.getAvailability().getEmployeeUser().getEmail(),
+                                  "Appointment",null,null);
+                              }
+                          }
                       } catch (Exception e) {
                           throw new RuntimeException(e);
                       }
