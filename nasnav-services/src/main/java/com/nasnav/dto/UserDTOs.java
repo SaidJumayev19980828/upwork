@@ -40,6 +40,7 @@ public class UserDTOs {
         private String avatar;
         @JsonProperty("phone_number")
         private String phoneNumber;
+        private ActivationMethod activationMethod;
     }
 
     @Getter

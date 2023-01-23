@@ -48,7 +48,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static  RequestMatcher protectedUrlList ;
     private static  RequestMatcher publicUrlList ;
     
-    
+
     @Autowired
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> oAuth2RequestRepository;
 
@@ -185,10 +185,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 					    , patternOf("/360view/**"						, HttpMethod.GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
+                        , patternOf("/user/recovery/otp-verify")
                         , patternOf("/user/login/**")
                         , patternOf("/user/register")
 						, patternOf("/user/v2/register")
 						, patternOf("/user/v2/register/activate")
+						, patternOf("/user/v2/register/otp/activate")
 						, patternOf("/user/v2/register/activate/resend")
 						, patternOf( "/user/subscribe")
 						, patternOf( "/user/subscribe/activate")

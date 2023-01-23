@@ -3,19 +3,21 @@ package com.nasnav.service;
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.LoyaltyEvents;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.OTP.OTPService;
+import com.nasnav.service.OTP.OTPType;
 import com.nasnav.service.helpers.UserServicesHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
@@ -87,6 +89,8 @@ public class UserServiceImpl implements UserService {
 
 	private final LoyaltyBoosterRepository loyaltyBoosterRepository;
 
+	private final OTPService otpService;
+
 
 
 	@Override
@@ -97,14 +101,19 @@ public class UserServiceImpl implements UserService {
 		setUserAsDeactivated(user);
 		generateResetPasswordToken(user);
 		user = userRepository.saveAndFlush(user);
-		
-		sendActivationMail(user, userJson.getRedirectUrl());
+
+		if (userJson.getActivationMethod() == ActivationMethod.OTP) {
+			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
+			sendUserOTP(user, userOTP.getOtp(), userJson.getRedirectUrl());
+		} else {
+			sendActivationMail(user, userJson.getRedirectUrl());
+		}
 
 		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 
-	
-	
+
+
 	
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if (!userJson.confirmationFlag) {
@@ -636,8 +645,12 @@ public class UserServiceImpl implements UserService {
 			generateResetPasswordToken(user);
 			userRepository.save(user);
 		}
-		
-		sendActivationMail(user, accountInfo.getRedirectUrl());
+		if (accountInfo.getActivationMethod() == ActivationMethod.OTP) {
+			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
+			sendUserOTP(user, userOTP.getOtp(), accountInfo.getRedirectUrl());
+		} else {
+			sendActivationMail(user, accountInfo.getRedirectUrl());
+		}
 	}
 
 
@@ -866,5 +879,62 @@ public class UserServiceImpl implements UserService {
 			userEntity.setBooster(loyaltyBoosterEntity);
 		}
 		userRepository.save(userEntity);
+	}
+
+	private void sendUserOTP(UserEntity userEntity, String otp, String redirectUrl) {
+		try {
+			String orgName = orgRepo.findById(userEntity.getOrganizationId()).orElseThrow().getName();
+			Map<String, String> parametersMap = new HashMap<>();
+			parametersMap.put(OTP_PARAMETER, otp);
+			mailService.send(orgName, userEntity.getEmail(), orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT, OTP_TEMPLATE, parametersMap);
+		} catch (Exception e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
+		}
+	}
+
+	public void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod) {
+		UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
+		generateResetPasswordToken(userEntity);
+		userEntity = userRepository.saveAndFlush(userEntity);
+		sendRecoveryMail(userEntity, activationMethod);
+	}
+
+	@Override
+	@Transactional
+	public RecoveryUserResponse activateRecoveryOTP(ActivateOtpDto activateOtp) throws BusinessException {
+		UserEntity user = userRepository.findByEmailAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail()));
+		otpService.validateOtp(activateOtp.getOtp(), user, OTPType.RESET_PASSWORD);
+		generateResetPasswordToken(user);
+		return new RecoveryUserResponse(user.getResetPasswordToken());
+	}
+
+	private void sendRecoveryMail(UserEntity userEntity, ActivationMethod activationMethod) {
+		String userName = ofNullable(userEntity.getName()).orElse("User");
+		String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
+		try {
+			// create parameter map to replace parameter by actual UserEntity data.
+			Map<String, String> parametersMap = new HashMap<>();
+			if (activationMethod == ActivationMethod.OTP) {
+				UserOtpEntity userOTP = otpService.createUserOTP(userEntity, OTPType.RESET_PASSWORD);
+				sendUserOTP(userEntity, userOTP.getOtp(), null);
+			} else if (activationMethod == ActivationMethod.VERIFICATION_LINK) {
+				parametersMap.put(USERNAME_PARAMETER, userName);
+				parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER, appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
+				this.mailService.send(orgName, userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT, CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+			}
+		} catch (Exception e) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
+		}
+	}
+
+	@Override
+	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto) {
+		UserEntity user = userRepository.findByEmailAndOrganizationId(activateOtpDto.getEmail(), activateOtpDto.getOrgId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
+		otpService.validateOtp(activateOtpDto.getOtp(), user, OTPType.REGISTER);
+		activateUserInDB(user);
+		return securityService.login(user, false);
 	}
 }
