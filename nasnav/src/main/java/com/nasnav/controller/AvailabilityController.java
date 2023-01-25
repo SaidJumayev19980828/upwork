@@ -28,7 +28,7 @@ public class AvailabilityController {
         return availabilityService.shiftUpcomingAppointments(ids, period);
     }
 
-    @DeleteMapping(consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
+    @DeleteMapping
     public void deleteAvailabilitiesByRange(@RequestHeader(TOKEN_HEADER) String userToken,
             @RequestBody AvailabilityDTO dto,
             @RequestParam(required = false, defaultValue = "false") boolean force) {
