@@ -50,9 +50,9 @@ public class AvailabilityTest {
         LocalDateTime end = LocalDateTime.now().plusMinutes(60);
         String requestBody =
                 json()
-                        .put("startsAt", now)
-                        .put("endsAt", end)
-                        .put("organizationID", 99001L)
+                        .put("starts_at", now)
+                        .put("ends_at", end)
+                        .put("organization_id", 99001L)
                         .put("period", 15)
                         .toString();
 
@@ -62,9 +62,9 @@ public class AvailabilityTest {
 
         String requestBody2 =
                 json()
-                        .put("startsAt", now)
-                        .put("endsAt", half)
-                        .put("organizationID", 99001L)
+                        .put("starts_at", now)
+                        .put("ends_at", half)
+                        .put("organization_id", 99001L)
                         .put("period", 20)
                         .toString();
 
