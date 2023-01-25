@@ -178,12 +178,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
     private AvailabilityEntity toEntity(AvailabilityDTO dto, LocalDateTime from, LocalDateTime to){
         ShopsEntity shopEntity = null;
-        if(dto.getShopID() != null){
-            shopEntity = shopsRepository.findById(dto.getShopID())
-                    .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,S$0003, " with id : "+dto.getShopID()));
+        if(dto.getShopId() != null){
+            shopEntity = shopsRepository.findById(dto.getShopId())
+                    .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,S$0003, " with id : "+dto.getShopId()));
         }
-        OrganizationEntity organizationEntity = organizationRepository.findById(dto.getOrganizationID())
-                .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,ORG$NOTFOUND, " with id : "+dto.getOrganizationID()));
+        OrganizationEntity organizationEntity = organizationRepository.findById(dto.getOrganizationId())
+                .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,ORG$NOTFOUND, " with id : "+dto.getOrganizationId()));
 
         AvailabilityEntity entity = new AvailabilityEntity();
         entity.setStartsAt(from);
@@ -199,10 +199,10 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         availabilityDTO.setId(entity.getId());
         availabilityDTO.setStartsAt(entity.getStartsAt());
         availabilityDTO.setEndsAt(entity.getEndsAt());
-        availabilityDTO.setOrganizationID(entity.getOrganization().getId());
+        availabilityDTO.setOrganizationId(entity.getOrganization().getId());
         availabilityDTO.setPeriod(Duration.between(entity.getStartsAt(),entity.getEndsAt()).toMinutes());
         if(entity.getShop() != null)
-            availabilityDTO.setShopID(entity.getShop().getId());
+            availabilityDTO.setShopId(entity.getShop().getId());
         return availabilityDTO;
     }
 

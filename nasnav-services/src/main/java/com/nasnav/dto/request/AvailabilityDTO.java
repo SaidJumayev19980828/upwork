@@ -3,18 +3,25 @@ package com.nasnav.dto.request;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 @Data
 public class AvailabilityDTO {
     private Long id;
     @NotNull
+    @JsonProperty("starts_at")
     private LocalDateTime startsAt;
     @NotNull
+    @JsonProperty("ends_at")
     private LocalDateTime endsAt;
     @NotNull
-    private Long organizationID;
-    private Long shopID;
+    @JsonProperty("organization_id")
+    private Long organizationId;
+    @JsonProperty("shop_id")
+    private Long shopId;
     @NotNull
     private Long period;
     private Long user;
