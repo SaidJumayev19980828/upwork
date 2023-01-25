@@ -57,7 +57,7 @@ public class AvailabilityTest {
                         .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
-        ResponseEntity<Void> response = template.postForEntity("/availability/0", json, Void.class);
+        ResponseEntity<Void> response = template.postForEntity("/availability", json, Void.class);
         assertEquals(200, response.getStatusCode().value());
 
         String requestBody2 =
@@ -69,7 +69,7 @@ public class AvailabilityTest {
                         .toString();
 
         HttpEntity<?> json2 = getHttpEntity(requestBody2, "abcdefg");
-        ResponseEntity<Void> response2 = template.postForEntity("/availability/1", json2, Void.class);
+        ResponseEntity<Void> response2 = template.postForEntity("/availability?force=true", json2, Void.class);
         assertEquals(200, response2.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
         List<AvailabilityEntity> entities = availabilityRepository.getAllFreeAvailabilitiesByOrganization(org);
