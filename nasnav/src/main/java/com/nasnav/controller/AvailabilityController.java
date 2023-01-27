@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -30,9 +31,10 @@ public class AvailabilityController {
 
     @DeleteMapping
     public void deleteAvailabilitiesByRange(@RequestHeader(TOKEN_HEADER) String userToken,
-            @RequestBody AvailabilityDTO dto,
-            @RequestParam(required = false, defaultValue = "false") boolean force) {
-        availabilityService.deleteAvailabilitiesByRange(dto, force);
+                                            @RequestParam LocalDateTime startsAt,
+                                            @RequestParam LocalDateTime endsAt,
+                                            @RequestParam(required = false, defaultValue = "false") boolean force) {
+        availabilityService.deleteAvailabilitiesByRange(startsAt,endsAt, force);
     }
 
     @GetMapping(value = "/shop/{shopId}")

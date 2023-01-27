@@ -38,7 +38,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private UserService userService;
 
     private List<AvailabilityEntity> createAvailabilities(AvailabilityDTO dto) {
-        if(overlappingValidator(dto)){
+        if(overlappingValidator(dto.getStartsAt(), dto.getEndsAt())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,AVA$OVER$LAPPED,"please input empty interval");
         }
 
@@ -62,11 +62,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     @Transactional
     @Override
     public List<AvailabilityDTO> overrideAvailabilities(AvailabilityDTO dto, boolean forceFlag) {
-        boolean overLapped = overlappingValidator(dto);
+        boolean overLapped = overlappingValidator(dto.getStartsAt(), dto.getEndsAt());
         if(!forceFlag && overLapped)
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,AVA$OVER$LAPPED,"please input empty interval");
 
-        List<AvailabilityEntity> deletedReservedEntities = getDeletedReservedAvailabilities(dto);
+        List<AvailabilityEntity> deletedReservedEntities = getDeletedReservedAvailabilities(dto.getStartsAt(), dto.getEndsAt());
         List<AvailabilityEntity> savedEntities = createAvailabilities(dto);
         if(overLapped){
             schedulerTaskService.overrideAppointment(deletedReservedEntities,savedEntities);
@@ -116,12 +116,12 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     }
 
     @Override
-    public void deleteAvailabilitiesByRange(AvailabilityDTO dto, boolean forceFlag) {
-        boolean overLapped = overlappingValidator(dto);
+    public void deleteAvailabilitiesByRange(LocalDateTime startsAt ,LocalDateTime endsAt, boolean forceFlag) {
+        boolean overLapped = overlappingValidator(startsAt, endsAt);
         if(!forceFlag && overLapped)
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,AVA$OVER$LAPPED,"please input empty interval");
 
-        schedulerTaskService.deleteAppointmentFromEmployee(getDeletedReservedAvailabilities(dto));
+        schedulerTaskService.deleteAppointmentFromEmployee(getDeletedReservedAvailabilities(startsAt, endsAt));
     }
 
     @Override
@@ -166,9 +166,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return null;
     }
 
-    private boolean overlappingValidator(AvailabilityDTO dto) {
+    private boolean overlappingValidator(LocalDateTime startsAt ,LocalDateTime endsAt) {
         return availabilityRepository.existsByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser
-                (dto.getStartsAt(), dto.getEndsAt(),getEmployee());
+                (startsAt, endsAt, getEmployee());
     }
 
     private boolean overlappingValidator(AvailabilityEntity entity, List<Long> ids) {
@@ -206,8 +206,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         return availabilityDTO;
     }
 
-    private List<AvailabilityEntity> getDeletedReservedAvailabilities(AvailabilityDTO dto){
-        List<AvailabilityEntity> deletedEntities = availabilityRepository.deleteAllByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser(dto.getStartsAt(),dto.getEndsAt(),getEmployee());
+    private List<AvailabilityEntity> getDeletedReservedAvailabilities(LocalDateTime startsAt ,LocalDateTime endsAt){
+        List<AvailabilityEntity> deletedEntities = availabilityRepository.deleteAllByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUser(startsAt, endsAt,getEmployee());
         return deletedEntities.stream()
                 .filter((entity) -> entity.getUser() != null).collect(Collectors.toList());
     }

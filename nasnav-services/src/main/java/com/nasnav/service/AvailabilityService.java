@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.request.AvailabilityDTO;
 import com.nasnav.persistence.AvailabilityEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AvailabilityService {
@@ -14,7 +15,7 @@ public interface AvailabilityService {
 
     public void cancelReserveAvailability(Long id);
 
-    public void deleteAvailabilitiesByRange(AvailabilityDTO dto, boolean forceFlag);
+    public void deleteAvailabilitiesByRange(LocalDateTime startsAt ,LocalDateTime endsAt, boolean forceFlag);
 
     public AvailabilityEntity getById(Long id);
 
