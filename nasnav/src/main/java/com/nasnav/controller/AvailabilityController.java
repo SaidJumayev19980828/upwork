@@ -25,7 +25,9 @@ public class AvailabilityController {
     }
 
     @PostMapping(value = "/shift/{period}")
-    public List<AvailabilityDTO> shiftAvailability(@RequestBody List<Long> ids, @PathVariable Long period){
+    public List<AvailabilityDTO> shiftAvailability(@RequestHeader(TOKEN_HEADER) String userToken,
+            @RequestBody List<Long> ids,
+            @PathVariable Long period) {
         return availabilityService.shiftUpcomingAppointments(ids, period);
     }
 
