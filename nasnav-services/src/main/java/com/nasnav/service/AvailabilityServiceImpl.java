@@ -115,6 +115,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         availabilityRepository.save(availabilityEntity.get());
     }
 
+    @Transactional
     @Override
     public void deleteAvailabilitiesByRange(LocalDateTime startsAt ,LocalDateTime endsAt, boolean forceFlag) {
         boolean overLapped = overlappingValidator(startsAt, endsAt);
