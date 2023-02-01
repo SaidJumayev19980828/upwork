@@ -4,6 +4,7 @@ import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.request.AvailabilityDTO;
 import com.nasnav.service.AvailabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = AvailabilityController.API_PATH, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = AvailabilityController.API_PATH, produces = APPLICATION_JSON_VALUE)
 @CrossOrigin("*")
 public class AvailabilityController {
     static final String API_PATH = YeshteryConstants.API_PATH + "/availability";
@@ -35,9 +36,9 @@ public class AvailabilityController {
 
     @DeleteMapping
     public void deleteAvailabilitiesByRange(@RequestHeader(TOKEN_HEADER) String userToken,
-                                            @RequestParam LocalDateTime startsAt,
-                                            @RequestParam LocalDateTime endsAt,
-                                            @RequestParam(required = false, defaultValue = "false") boolean force) {
+            @RequestParam("starts_at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startsAt,
+            @RequestParam("ends_at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endsAt,
+            @RequestParam(required = false, defaultValue = "false") boolean force) {
         availabilityService.deleteAvailabilitiesByRange(startsAt,endsAt, force);
     }
 

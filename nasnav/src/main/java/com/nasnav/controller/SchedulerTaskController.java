@@ -7,7 +7,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping(value = "/appointment", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/appointment", produces = APPLICATION_JSON_VALUE)
 @CrossOrigin("*")
 public class SchedulerTaskController {
     @Autowired

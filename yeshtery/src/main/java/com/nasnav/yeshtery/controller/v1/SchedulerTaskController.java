@@ -8,7 +8,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping(value = SchedulerTaskController.API_PATH, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = SchedulerTaskController.API_PATH, produces = APPLICATION_JSON_VALUE)
 @CrossOrigin("*")
 public class SchedulerTaskController {
     static final String API_PATH = YeshteryConstants.API_PATH + "/appointment";
