@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.Where;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
@@ -56,7 +59,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @JoinTable(name = "topic_employee_users"
             ,joinColumns = {@JoinColumn(name="employee_user_id")}
             ,inverseJoinColumns = {@JoinColumn(name="topic_id")})
-    private Set<NotificationTopicEntity> topics;
+    private Set<NotificationTopicEntity> notificationTopics;
 
     @Override
     public UserRepresentationObject getRepresentation() {

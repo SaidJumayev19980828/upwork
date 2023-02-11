@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -333,7 +335,7 @@ public class SecurityServiceImpl implements SecurityService {
 			notificationService.createOrUpdateEmployeeToken(notificationToken,authToken);
 		}
 		else {
-			notificationService.createOrUpdateUserToken(notificationToken,authToken);
+			notificationService.createOrUpdateCustomerToken(notificationToken,authToken);
 		}
 		return new UserPostLoginData(savedUserData, authToken);
 	}
@@ -554,7 +556,49 @@ public class SecurityServiceImpl implements SecurityService {
 				.filter(liveTime -> liveTime.getSeconds() >= (long)(0.7*AUTH_TOKEN_VALIDITY))
 				.isPresent();			
 	}
-	
+
+	@Override
+	public Set<String> getValidEmployeeNotificationTokens(EmployeeUserEntity employee) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidEmployeeNotificationTokens(Set<EmployeeUserEntity> employees) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntities(employees);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidUserNotificationTokens(UserEntity user) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidUserNotificationTokens(Set<UserEntity> users) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntities(users);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		return getFilteredNotificationTokens(tokenEntities, false);
+	}
+
+	@Override
+	public Set<String> getInvalidUserNotificationTokens(UserEntity user) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		return getFilteredNotificationTokens(tokenEntities, false);
+	}
+
+
+	private Set<String> getFilteredNotificationTokens(Set<UserTokensEntity> tokenEntities, boolean valid) {
+		Predicate<UserTokensEntity> predicate = valid ? Predicate.not(this::isExpired) : this::isExpired;
+		return tokenEntities.stream().filter(predicate)
+				.map(UserTokensEntity::getNotificationToken).collect(toSet());
+	}
 }
 
 
@@ -568,3 +612,4 @@ class UserPostLoginData{
 	private String token;
 }
 
+ 

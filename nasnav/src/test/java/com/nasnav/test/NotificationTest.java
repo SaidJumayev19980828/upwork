@@ -4,10 +4,12 @@ package com.nasnav.test;
 import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.NotificationTopicEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.notification.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
@@ -25,8 +27,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
@@ -42,6 +47,8 @@ import static org.junit.Assert.assertTrue;
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Notifications_Test_Data.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class NotificationTest {
+    @Autowired
+    private SecurityService securityService;
     @Autowired
     private NotificationService notificationService;
     @Autowired
@@ -71,7 +78,7 @@ public class NotificationTest {
     public void createOrUpdateUserToken(){
         String token = "cecrvZZ1VbO3jKyhMTPxBW:APA91bGXxLfjL-pEhAWympWeGUgWPXcs1kijXIAUyhNHo_sh2zmRiGYsDJHtdtFPawCf3rUgL1YT2rsESuAfD4JrdrjoQATTivb6ZLDaAol5uPrKnBsbJlslNoEsqtiNCBmRhRcR2YPj";
 
-        notificationService.createOrUpdateUserToken(token,"123");
+        notificationService.createOrUpdateCustomerToken(token,"123");
         assertEquals(token,userTokenRepository.getUserEntityByToken("123").getNotificationToken());
     }
 
@@ -115,7 +122,7 @@ public class NotificationTest {
         assertEquals(200, response.getStatusCode().value());
 
         EmployeeUserEntity employeeUserEntity = employeeUserRepository.getById(71L);
-        assertEquals(1,employeeUserEntity.getTopics().size());
+        assertEquals(1,employeeUserEntity.getNotificationTopics().size());
     }
 
     @Test
@@ -123,6 +130,17 @@ public class NotificationTest {
         HttpEntity<?> json = getHttpEntity("abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/user/logout", json, Void.class);
         assertEquals(200,response.getStatusCodeValue());
+    }
+
+    @Test
+    @Transactional
+    public void getEmployeeNotificationTokens() {
+        EmployeeUserEntity employee1 = employeeUserRepository.getById(70L);
+        EmployeeUserEntity employee2 = employeeUserRepository.getById(71L);
+        Set<EmployeeUserEntity> employees = Set.of(employee1, employee2);
+        Set<String> employeesNotificationTokens = securityService.getValidEmployeeNotificationTokens(employee1);
+        employeesNotificationTokens.addAll(securityService.getValidEmployeeNotificationTokens(employee2));
+        userTokenRepository.getByEmployeeUserEntities(employees);
     }
 
     /*

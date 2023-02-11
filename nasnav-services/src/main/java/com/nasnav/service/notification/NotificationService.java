@@ -2,23 +2,31 @@ package com.nasnav.service.notification;
 
 import com.nasnav.dto.request.notification.NotificationRequestDto;
 import com.nasnav.dto.request.notification.SubscriptionRequestDto;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.NotificationTopicEntity;
 
 public interface NotificationService {
     /**
      * consumed from service
      * this method for subcribe Employee user to topic
-     * it take the token and topic then update the relation between employee entity
-     * also check if the token is need to be updated or not and update it
-     * @param subscriptionRequestDto
+     * it takes the emplyee user and topic then update the relation between employee entity
+     * @param employee
+     * @param topic
      */
-    public void subscribeToTopic(SubscriptionRequestDto subscriptionRequestDto);
+    public void subscribeToTopic(EmployeeUserEntity employee, NotificationTopicEntity topic);
 
     /**
-     * the oppsite of subscribe method that it check first if the token is the same the delete the relation with
-     * the topic Entity and then unsubscribe from fire base
-     * @param subscriptionRequestDto
+     * the oppsite of subscribe method that it deletes the relation with
+     * the topic Entity and unsubscribe from fire base
+     * @param employee
+     * @param topic
      */
-    public void unsubscribeFromTopic(SubscriptionRequestDto subscriptionRequestDto);
+    public void unsubscribeFromTopic(EmployeeUserEntity employee, NotificationTopicEntity topic);
+
+    /**
+     * (un)subscribes to (un)needed notification topics
+     */
+    public void updateEmployeeTopics(EmployeeUserEntity employee);
 
     /**
      * send notification to specific token
@@ -44,7 +52,7 @@ public interface NotificationService {
      * @param token
      * @return
      */
-    public boolean createOrUpdateUserToken(String token, String authToken);
+    public boolean createOrUpdateCustomerToken(String token, String authToken);
 
     /**
      * this method refresh all topics of org and shop

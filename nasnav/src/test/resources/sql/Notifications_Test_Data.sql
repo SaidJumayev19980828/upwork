@@ -36,9 +36,16 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id,notification_token)
 VALUES (3, 'abcdefg', now(), 70, null,'cmplcFidnbv8xBJViEGqR3:APA91bFEHYDsEdoevXcRWy4OZ-dBfgGjf96MnA4RM-B6ILN_OWgL2mgq_vpKTWWtVQC6U04S9HUEIipI7Wvr2rz0u9Jr8WaTtRMeGbkv7bLj43XwWxzBHkkcU5V2CMD3uoYUkvshFgdx');
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id,notification_token)
-VALUES (4, '123456', now(), 70, null,'cmplcFidnbv8xBJViEGqR3:APA91bFEHYDsEdoevXcRWy4OZ-dBfgGjf96MnA4RM-B6ILN_OWgL2mgq_vpKTWWtVQC6U04S9HUEIipI7Wvr2rz0u9Jr8WaTtRMeGbkv7bLj43XwWxzBHkkcU5V2CMD3uoYUkvshFgdx');
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, 'uvwxyz', now(), 71, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (8, 'qwerret', now(), 71, null);
+VALUES (4, 'ghgsfdg', now(), 70, null,'cmplcFidnbv8xBJViEGqR3:APA91bFEHYDsEdoevXcRWy4OZ-dBfgGjf96MnA4RM-B6ILN_OWgL2mgq_vpKTWWtVQC6U04S9HUEIipI7Wvr2rz0u9Jr8WaTtRMeGbkv7bLj43XwWxzBHkkcU5V2CMD3uoYUkvshFgdx');
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id,notification_token)
+VALUES (5, 'ertrref', now(), 70, null,'testShared');
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id,notification_token)
+VALUES (6, 'uilujkyuk', now(), 71, null,'testShared');
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id,notification_token)
+VALUES (7, 'junythgdfgf', now() - INTERVAL '2 month', 71, null,'testInvalid');
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (51, 'uvwxyz', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (52, 'qwerret', now(), 71, null);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -59,5 +66,5 @@ VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
 VALUES (89, 'user2@nasnav.com','user2','456', 99001);
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, '123', now(), null, 88);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (105, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (106, '456', now(), null, 89);
