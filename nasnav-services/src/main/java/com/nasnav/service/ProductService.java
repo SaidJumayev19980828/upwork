@@ -86,6 +86,7 @@ import static com.querydsl.core.types.dsl.Expressions.cases;
 import static com.querydsl.core.types.dsl.Expressions.constant;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.math.BigDecimal.ONE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Comparator.comparing;
@@ -643,7 +644,10 @@ public class ProductService {
 				product.organizationId,
 				SQLExpressions.rowNumber()
 						.over()
-						.partitionBy(product.id)
+						.partitionBy(product.id).orderBy(cases()
+								.when(stock.quantity.gt(ZERO))
+								.then(ONE)
+								.otherwise(ZERO).desc())
 						.orderBy(stock.price).as("row_num"));
 
 		return productsQuery;
