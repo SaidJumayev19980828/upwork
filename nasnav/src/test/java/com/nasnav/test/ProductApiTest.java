@@ -35,6 +35,7 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 
 import static com.nasnav.commons.enums.SortOrder.ASC;
@@ -920,6 +921,31 @@ public class ProductApiTest {
 		assertEquals(2, res.getTotal().intValue());
 		assertEquals(1001, res.getProducts().get(0).getId().intValue());
 		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+	}
+
+	@Test
+	public void testPriceFromAvailableStock() {
+
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99003L;
+
+		// product has no available stocks
+		param.name = "product_16";
+		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		ProductsResponse res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
+		assertEquals(0, BigDecimal.valueOf(100.0).compareTo(res.getProducts().get(0).getPrice()));
+		assertEquals(619L, res.getProducts().get(0).getStockId().longValue());
+		assertEquals(0L, res.getProducts().get(0).getQuantity().longValue());
+
+		// product has an available stock
+		param.name = "product_15";
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = response.getBody();
+		assertEquals(1, res.getTotal().intValue());
+		assertEquals(0, BigDecimal.valueOf(200.0).compareTo(res.getProducts().get(0).getPrice()));
+		assertEquals(615L, res.getProducts().get(0).getStockId().longValue());
+		assertEquals(1L, res.getProducts().get(0).getQuantity().longValue());
 	}
 
     @Test
