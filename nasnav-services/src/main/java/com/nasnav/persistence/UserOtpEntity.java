@@ -26,6 +26,12 @@ public class UserOtpEntity {
     @Enumerated(EnumType.STRING)
     private OTPType type;
 
+    private Long attempts;
+
     @Column(name = "created_at")
     private Date createdAt;
+
+    public Long incrementAttempts() {
+        return ++attempts;
+    }
 }
