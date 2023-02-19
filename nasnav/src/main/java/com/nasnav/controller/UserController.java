@@ -62,7 +62,7 @@ public class UserController {
     public void sendEmailRecovery(@RequestParam String email,
                                   @RequestParam(value = "org_id", required = false) Long orgId,
                                   @RequestParam() boolean employee,
-                                  @RequestParam(value = "activation_method") ActivationMethod activationMethod) {
+                                  @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
         if (employee) {
             employeeUserService.sendEmailRecovery(email);
         } else {
