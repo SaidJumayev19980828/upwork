@@ -17,7 +17,7 @@ public class UserOtpEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
@@ -26,7 +26,7 @@ public class UserOtpEntity {
     @Enumerated(EnumType.STRING)
     private OTPType type;
 
-    private Long attempts;
+    private Long attempts = 0L;
 
     @Column(name = "created_at")
     private Date createdAt;
