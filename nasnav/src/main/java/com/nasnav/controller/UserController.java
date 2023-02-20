@@ -232,7 +232,7 @@ public class UserController {
     }
 
     @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<RecoveryUserResponse> OTPVerify(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
+    public ResponseEntity<RecoveryUserResponse> verifyOTP(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
         return ResponseEntity.ok(userService.activateRecoveryOTP(activateOtp));
     }
 }
