@@ -401,6 +401,20 @@ public enum ErrorCodes {
 	,PAYMENT$CALLBACK$002("Untrusted source!")
 
 	,PROCESS$CANCEL$0001("Process not cancelable")
+
+	,G$INFLU$0001("Influencer Not found with id[%d]!")
+	,G$INFLU$0002("Influencer with id[%d] request already exist!")
+	,G$INFLU$0003("Influencer with id[%d] is suspended")
+
+	,G$EVENT$0001("Event Not fount with id[%d]!")
+	,EVENT$NOT$EDITABLE$0002("Event with id[%d] can't be updated due to it passed!")
+	,EVENT$MODIFICATION$0003("Event request can't be modified")
+	,EVENT$REQUEST$0004("Event request with id[%d] already exist!!")
+	,EVENT$HAS$HOST$0005("Event with id[%d] already has host!!")
+	,EVENT$HAS$INTEREST$0006("You already interested in Event with id[%d]!!")
+
+
+
 	;
 
 	@Getter
