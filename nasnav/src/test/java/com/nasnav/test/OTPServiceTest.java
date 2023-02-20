@@ -1,6 +1,6 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.UserOTPRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.UserEntity;
@@ -13,14 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -38,18 +36,15 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
-public class OTPServiceTest {
+class OTPServiceTest {
     @MockBean
     private UserOTPRepository userOTPRepository;
 
     @Autowired
     private OTPService otpService;
 
-    @Value("${otp.max-retries:3}")
-    private long maxRetries;
-
-    @Value("${otp.length:6}")
-    private int otpLength;
+    @Autowired
+    private AppConfig appConfig;
 
     UserEntity userEntity = buildUserEntity();
 
@@ -67,7 +62,7 @@ public class OTPServiceTest {
     void createUserOTP() {
         UserOtpEntity userOTP = otpService.createUserOTP(userEntity, userOtpEntity.getType());
         assertNotNull(userOTP);
-        assertEquals(userOTP.getOtp().length(), otpLength);
+        assertEquals(userOTP.getOtp().length(), appConfig.otpLength);
     }
 
     @Test
@@ -83,7 +78,7 @@ public class OTPServiceTest {
         Mockito.when(userOTPRepository.findByUserAndType(userEntity, userOtpEntity.getType())).thenReturn(Optional.of(userOtpEntity));
         String invalidOTP = "invalid otp";
         OTPType type = userOtpEntity.getType();
-        for (int i = 0; i < maxRetries - 1; i++) {
+        for (int i = 0; i < appConfig.otpMaxRetries - 1; i++) {
             Assertions.assertThrows(RuntimeBusinessException.class, () ->
                 otpService.validateOtp(invalidOTP, userEntity, type));
             Mockito.verify(userOTPRepository, Mockito.never()).delete(userOtpEntity);

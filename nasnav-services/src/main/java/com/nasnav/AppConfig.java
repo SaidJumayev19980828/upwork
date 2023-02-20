@@ -32,6 +32,14 @@ public class AppConfig {
     @Value("${openvidu_url}") public String openViduUrl = "";
     @Value("${openvidu_secret}") public String openViduSecret = "";
 
+    
+    @Value("${otp.valid-duration-in-seconds:600}")
+    public int otpValidDurationInSeconds;
+    @Value("${otp.length:6}")
+    public int otpLength;
+    @Value("${otp.max-retries:3}")
+    public int otpMaxRetries;
+
 
     @Value("${files.basepath}")
     @Getter

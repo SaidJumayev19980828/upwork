@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -79,10 +78,6 @@ public class UserRegisterTest {
 	private MockMvc mockMvc;
 	private UserEntity persistentUser;
 	private OrganizationEntity organization;
-
-	
-	@Value("${otp.max-retries:3}")
-	private long maxOtpRetries;
 
 	@Mock
 	private UserController userController;
@@ -333,7 +328,7 @@ public class UserRegisterTest {
 		ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 		Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
 
-		for(int i = 0; i < maxOtpRetries; i++) {
+		for (int i = 0; i < config.otpMaxRetries; i++) {
 			recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 			Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
 		}
@@ -747,7 +742,7 @@ public class UserRegisterTest {
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		ResponseEntity<String> response;
 
-		for (int i = 0; i < maxOtpRetries; i++) {
+		for (int i = 0; i < config.otpMaxRetries; i++) {
 			response = template.postForEntity("/user/v2/register/otp/activate", request, String.class);
 			Assert.assertEquals(400, response.getStatusCodeValue());
 		}
