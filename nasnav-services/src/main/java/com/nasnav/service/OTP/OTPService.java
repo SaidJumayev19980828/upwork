@@ -13,6 +13,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
@@ -43,6 +44,8 @@ public class OTPService {
         return userOTPRepository.save(userOtpEntity);
     }
 
+    // new transaction is needed to keep retries consistent in case of transaction or no transaction
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = RuntimeBusinessException.class)
     public void validateOtp(String otp, UserEntity user, OTPType otpType) {
 
         UserOtpEntity userOTP = getUserOTP(user, otpType);
