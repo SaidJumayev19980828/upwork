@@ -159,6 +159,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/videochat/**"                   , POST    , getAllRoles()),
             patternOf( "/v1/videochat/**"                   , GET    , getNonCustomersRoles()),
             patternOf( "/v1/event"                   , POST    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/event"                   , DELETE    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/event/list/**"                                , getNonCustomersRoles()),
             patternOf( "/v1/influencer/host/**"             , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/influencer/response"             ,POST                 , setOf(NASNAV_ADMIN)),

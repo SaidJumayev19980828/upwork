@@ -16,67 +16,77 @@ import java.util.List;
 @RestController
 @RequestMapping(InfluencerController.API_PATH)
 public class InfluencerController {
-    static final String API_PATH = YeshteryConstants.API_PATH +"/influencer";
+        static final String API_PATH = YeshteryConstants.API_PATH +"/influencer";
 
     @Autowired
     private InfluencerService influencerService;
 
     @GetMapping("/{influencerId}")
-    public InfluencerDTO getInfluencerById(@PathVariable Long influencerId) {
+    public InfluencerDTO getInfluencerById(@RequestHeader(name = "User-Token", required = false) String token,
+                                           @PathVariable Long influencerId) {
         return influencerService.getInfluencerById(influencerId);
     }
 
     @GetMapping
-    public PageImpl<InfluencerDTO> getAllPageable(@RequestParam(required = false, defaultValue = "0") Integer start,
+    public PageImpl<InfluencerDTO> getAllPageable(@RequestHeader(name = "User-Token", required = false) String token,
+                                                  @RequestParam(required = false, defaultValue = "0") Integer start,
                                                  @RequestParam(required = false, defaultValue = "10") Integer count,
                                                   @RequestParam(required = false) Boolean status) {
         return influencerService.getAllInfluencers(start, count, status);
     }
 
     @PostMapping("/request")
-    public void becomeInfluencerRequest(@RequestBody List<Long> categoryIds) {
+    public void becomeInfluencerRequest(@RequestHeader(name = "User-Token", required = false) String token,
+                                        @RequestBody List<Long> categoryIds) {
         influencerService.becomeInfluencerRequest(categoryIds);
     }
 
     @PostMapping("/response")
-    public void becomeInfluencerResponse(@RequestParam Long influencerId, @RequestParam boolean action) {
+    public void becomeInfluencerResponse(@RequestHeader(name = "User-Token", required = false) String token,
+                                         @RequestParam Long influencerId, @RequestParam boolean action) {
         influencerService.becomeInfluencerResponse(influencerId, action);
     }
 
     @PostMapping("/host")
-    public void requestEventHosting(@RequestBody EventOrganiseRequestDTO dto){
+    public void requestEventHosting(@RequestHeader(name = "User-Token", required = false) String token,
+                                    @RequestBody EventOrganiseRequestDTO dto){
         influencerService.requestEventHosting(dto);
     }
 
     @GetMapping("/request/{requestId}")
-    public EventRequestsDTO getEventRequestById(@PathVariable Long requestId) {
+    public EventRequestsDTO getEventRequestById(@RequestHeader(name = "User-Token", required = false) String token,
+                                                @PathVariable Long requestId) {
         return influencerService.getEventRequestById(requestId);
     }
 
     @PutMapping("host/approveAndRejectTheRest/{requestId}")
-    public void approveEventHostingAndRejectTheRest(@PathVariable Long requestId) {
+    public void approveEventHostingAndRejectTheRest(@RequestHeader(name = "User-Token", required = false) String token,
+                                                    @PathVariable Long requestId) {
         influencerService.rejectTheRestIfEventHostingRequestApproved(requestId);
     }
 
     @PutMapping("/host/{requestId}")
-    public void responseEventHosting(@RequestParam boolean approve, @PathVariable Long requestId){
+    public void responseEventHosting(@RequestHeader(name = "User-Token", required = false) String token,
+                                     @RequestParam boolean approve, @PathVariable Long requestId){
         influencerService.approveOrCancelEventHostingRequest(requestId,approve);
     }
 
     @GetMapping("/myEvents")
-    public List<EventResponseDto> getMyEvents(){
+    public List<EventResponseDto> getMyEvents(@RequestHeader(name = "User-Token", required = false) String token){
         return influencerService.getMyEvents();
     }
 
     @GetMapping("/myEventRequests")
-    public PageImpl<EventRequestsDTO> getMyEventRequests(@RequestParam(required = false, defaultValue = "0") Integer start,
+    public PageImpl<EventRequestsDTO> getMyEventRequests(@RequestHeader(name = "User-Token", required = false) String token,
+                                                         @RequestParam(required = false, defaultValue = "0") Integer start,
                                                          @RequestParam(required = false, defaultValue = "10") Integer count,
                                                          @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getMyEventRequests(start, count, status);
     }
 
     @GetMapping("/hostingRequests")
-    public PageImpl<EventRequestsDTO> getOrgEventsRequests(@RequestParam(required = false, defaultValue = "0") Integer start,
+    public PageImpl<EventRequestsDTO> getOrgEventsRequests(@RequestHeader(name = "User-Token", required = false) String token,
+                                                           @RequestParam(required = false, defaultValue = "0") Integer start,
                                                            @RequestParam(required = false, defaultValue = "10") Integer count,
                                                            @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getEventsRequestByOrgForEmployee(start, count, status);

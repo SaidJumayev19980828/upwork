@@ -26,50 +26,58 @@ public class EventController {
     }
 
     @GetMapping("/listForUser/{orgId}")
-    public List<EventResponseDto> getEventsByOrgIdForUser(@PathVariable Long orgId,@RequestParam(required = false) EventStatus status){
+    public List<EventResponseDto> getEventsByOrgIdForUser(@RequestHeader(name = "User-Token", required = false) String token,
+                                                          @PathVariable Long orgId,@RequestParam(required = false) EventStatus status){
         return eventService.getEventsByOrgIdForUsers(orgId,status);
     }
 
     @GetMapping("/list")
-    public PageImpl<EventResponseDto> getEventsForEmployeePageable(@RequestParam(required = false, defaultValue = "0") Integer start,
+    public PageImpl<EventResponseDto> getEventsForEmployeePageable(@RequestHeader(name = "User-Token", required = false) String token,
+                                                                   @RequestParam(required = false, defaultValue = "0") Integer start,
                                                                    @RequestParam(required = false, defaultValue = "10") Integer count,
                                                                    @RequestParam(required = false) EventStatus status){
         return eventService.getEventsForEmployee(start, count, status);
     }
 
     @GetMapping("/list/advertise")
-    public List<EventResponseDto> getAdvertisedEvents(){
+    public List<EventResponseDto> getAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token){
         return eventService.getAdvertisedEvents();
     }
 
     @GetMapping("/list/advertiseForInfluencer")
-    public List<EventResponseDto> getAdvertisedEventsForInfluencer(){
+    public List<EventResponseDto> getAdvertisedEventsForInfluencer(@RequestHeader(name = "User-Token", required = false) String token){
         return eventService.getAdvertisedEventsForInfluencer();
     }
 
     @GetMapping("/interests/{eventId}")
-    public PageImpl<EventInterestDTO> getInterestsByEventId(@PathVariable Long eventId,
+    public PageImpl<EventInterestDTO> getInterestsByEventId(@RequestHeader(name = "User-Token", required = false) String token,
+                                                            @PathVariable Long eventId,
                                                             @RequestParam(required = false, defaultValue = "0") Integer start,
                                                             @RequestParam(required = false, defaultValue = "10") Integer count){
         return eventService.getInterestsByEventId(eventId,start,count);
     }
 
     @GetMapping("/{eventId}")
-    public EventResponseDto getEventById(@PathVariable Long eventId){
+    public EventResponseDto getEventById(@RequestHeader(name = "User-Token", required = false) String token,
+                                         @PathVariable Long eventId){
         return eventService.getEventById(eventId);
     }
 
     @PutMapping("/{eventId}")
-    public void updateEventById(@RequestBody EventForRequestDTO eventForRequestDto, @PathVariable Long eventId){
+    public void updateEventById(@RequestHeader(name = "User-Token", required = false) String token,
+                                @RequestBody EventForRequestDTO eventForRequestDto,
+                                @PathVariable Long eventId){
         eventService.updateEvent(eventForRequestDto, eventId);
     }
     @DeleteMapping("/{eventId}")
-    public void deleteEventById(@PathVariable Long eventId){
+    public void deleteEventById(@RequestHeader(name = "User-Token", required = false) String token,
+                                @PathVariable Long eventId){
         eventService.deleteEvent(eventId);
     }
 
     @PostMapping("/interset/{eventId}")
-    public void intersetForUser(@PathVariable Long eventId){
+    public void intersetForUser(@RequestHeader(name = "User-Token", required = false) String token,
+                                @PathVariable Long eventId){
         eventService.intersetEventForUser(eventId);
     }
 }
