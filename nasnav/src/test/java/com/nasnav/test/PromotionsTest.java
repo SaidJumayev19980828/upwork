@@ -991,7 +991,7 @@ public class PromotionsTest {
 						new ParameterizedTypeReference<List<PromotionDTO>>(){});
 		assertEquals(200, res.getStatusCodeValue());
 
-		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
 		assertEquals(List.of(), promotionIds);
 	}
 
@@ -1006,7 +1006,7 @@ public class PromotionsTest {
 						new ParameterizedTypeReference<List<PromotionDTO>>(){});
 		assertEquals(200, res.getStatusCodeValue());
 
-		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
 		assertEquals(List.of(630002L, 630003L), promotionIds);
 	}
 

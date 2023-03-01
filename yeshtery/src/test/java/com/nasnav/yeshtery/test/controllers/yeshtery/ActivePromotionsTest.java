@@ -3,6 +3,7 @@ package com.nasnav.yeshtery.test.controllers.yeshtery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -45,7 +46,7 @@ class ActivePromotionsTest {
 						});
 		assertEquals(200, res.getStatusCodeValue());
 
-		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
 		assertEquals(List.of(), promotionIds);
 	}
 
@@ -60,7 +61,7 @@ class ActivePromotionsTest {
 						});
 		assertEquals(200, res.getStatusCodeValue());
 
-		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
 		assertEquals(List.of(630002L, 630003L), promotionIds);
 	}
 
