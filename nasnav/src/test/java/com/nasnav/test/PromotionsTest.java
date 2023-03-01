@@ -43,7 +43,9 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -977,6 +979,35 @@ public class PromotionsTest {
 		assertTrue(brandsPromotions.isEmpty());
 		tagsPromotions = applicablePromotions.getTagPromotionIds();
 		assertTrue(tagsPromotions.isEmpty());
+	}
+
+	@Test
+	public void getActivePromotions() {
+		ResponseEntity<List<PromotionDTO>> res = template
+				.exchange(
+						"/navbox/active_promotions?org_id=99001&type_ids=1",
+						HttpMethod.GET,
+						null,
+						new ParameterizedTypeReference<List<PromotionDTO>>(){});
+		assertEquals(200, res.getStatusCodeValue());
+
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		assertEquals(List.of(), promotionIds);
+	}
+
+
+	@Test
+	public void getActivePromotionsWithoutFilter() {
+		ResponseEntity<List<PromotionDTO>> res = template
+				.exchange(
+						"/navbox/active_promotions?org_id=99001",
+						HttpMethod.GET,
+						null,
+						new ParameterizedTypeReference<List<PromotionDTO>>(){});
+		assertEquals(200, res.getStatusCodeValue());
+
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).toList();
+		assertEquals(List.of(630002L, 630003L), promotionIds);
 	}
 
 
