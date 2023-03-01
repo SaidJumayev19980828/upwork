@@ -1242,14 +1242,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.stream()
 				.map(this::createPromotionDTO)
 				.filter(this::isPromoUserRestricted)
-				.toList();
+				.collect(Collectors.toList());
 	}
 
 	public List<PromotionDTO> getYeshteryActivePublicPromotions(Set<Long> orgIds, Collection<Integer> typeIds) {
 		Set<Long> yeshteryOrgIds = orgService.getYeshteryOrgs().stream().map(OrganizationEntity::getId).collect(Collectors.toSet());
 		Set<Long> handledOrgIds = orgIds != null && !orgIds.isEmpty() ? orgIds : yeshteryOrgIds;
 		if (!yeshteryOrgIds.containsAll(handledOrgIds)) {
-			Collection<String> invalidOrgIds = Sets.difference(yeshteryOrgIds, handledOrgIds).stream().map(Object::toString).toList();
+			Collection<String> invalidOrgIds = Sets.difference(yeshteryOrgIds, handledOrgIds).stream().map(Object::toString).collect(Collectors.toList());
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0019, String.join(", ", invalidOrgIds));
 		}
 		return getActivePublicPromotions(handledOrgIds, typeIds);
