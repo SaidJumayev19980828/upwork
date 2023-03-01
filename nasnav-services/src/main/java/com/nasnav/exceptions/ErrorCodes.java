@@ -352,6 +352,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0016("Promo code [%s] is not applicable to the current user!")
 	,PROMO$PARAM$0017("Invalid start date")
 	,PROMO$PARAM$0018("Invalid end date")
+	,PROMO$PARAM$0019("organization(s) [%s] not found in yeshtery")
 
 	,DATE$TIME$0001("Invalid date time field [%s]")
 

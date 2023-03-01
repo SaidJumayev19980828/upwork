@@ -4,6 +4,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
@@ -329,4 +330,12 @@ public class YeshteryController {
                             @RequestBody ProductRateDTO dto) {
         reviewService.rateProduct(dto);
     }
+
+    
+	@GetMapping(value = "/active_promotions", produces = APPLICATION_JSON_VALUE)
+	public List<PromotionDTO> getActivePromotionsList(
+			@RequestParam(name = "org_ids", required = false) Set<Long> orgIds,
+			@RequestParam(name = "type_ids", required = false) Set<Integer> typeIds) {
+		return promotionsService.getYeshteryActivePublicPromotions(orgIds, typeIds);
+	}
 }

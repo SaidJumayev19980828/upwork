@@ -37,4 +37,6 @@ public interface PromotionsService {
 	ItemsPromotionsDTO getPromotionsListFromProductsAndBrandsAndTagsLists(Set<Long> productIds, Set<Long> brandIds, Set<Long> tagIds, Long limitPerItem);
 
 	List<PromotionDTO> getActivePublicPromotions(Collection<Long> orgIds, Collection<Integer> typeIds);
+
+	List<PromotionDTO> getYeshteryActivePublicPromotions(Set<Long> orgIds, Collection<Integer> typeIds);
 }
