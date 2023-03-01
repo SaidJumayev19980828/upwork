@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,5 +80,23 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " AND now() between promo.dateStart and promo.dateEnd"
 			+ " AND promo.status = 1"
 			+ " order by promo.priority desc")
-	List<PromotionsEntity> findActivePromosByTypeIdIn(@Param("typeIds") List<Integer> typeIds);
+	List<PromotionsEntity> findActivePromosByTypeIdIn(@Param("typeIds") Collection<Integer> typeIds);
+
+	@Query("select promo "
+			+ " FROM PromotionsEntity promo "
+			+ " WHERE promo.organization.id in :orgIds"
+			+ " AND promo.typeId in :typeIds "
+			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " AND promo.status = 1"
+			+ " order by promo.priority desc")
+	List<PromotionsEntity> findActivePromosByOrgIdInAndTypeIdIn(@Param("orgIds") Collection<Long> orgIds,
+			@Param("typeIds") Collection<Integer> typeIds);
+
+	@Query("select promo "
+			+ " FROM PromotionsEntity promo "
+			+ " where promo.organization.id in :orgIds "
+			+ " AND now() between promo.dateStart and promo.dateEnd"
+			+ " AND promo.status = 1"
+			+ " order by promo.priority desc")
+	List<PromotionsEntity> findActivePromosByOrgIdIn(@Param("orgIds") Collection<Long> orgIds);
 }

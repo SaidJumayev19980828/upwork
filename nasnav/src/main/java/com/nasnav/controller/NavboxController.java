@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
 import com.nasnav.dto.response.navbox.VariantsResponse;
@@ -20,10 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
@@ -256,7 +255,7 @@ public class NavboxController {
 	}
 
 	@GetMapping(value = "/applicable_promotions_list", produces = APPLICATION_JSON_VALUE)
-	public ItemsPromotionsDTO getPromotionsList(
+	public ItemsPromotionsDTO getApplicablePromotionsList(
 			@RequestParam(value = "product_ids", required = false, defaultValue = "") Set<Long> productIds,
 			@RequestParam(value = "brand_ids", required = false, defaultValue = "") Set<Long> brandIds,
 			@RequestParam(value = "tag_ids", required = false, defaultValue = "") Set<Long> tagIds,
@@ -266,5 +265,12 @@ public class NavboxController {
 				brandIds,
 				tagIds,
 				promotionsPerItem);
+	}
+
+	@GetMapping(value = "/active_promotions", produces = APPLICATION_JSON_VALUE)
+	public List<PromotionDTO> getActivePromotionsList(
+			@RequestParam(name = "org_id") Long orgId,
+			@RequestParam(name = "type_ids", required = false) Set<Integer> typeIds) {
+		return promotionsService.getActivePublicPromotions(List.of(orgId), typeIds);
 	}
 }

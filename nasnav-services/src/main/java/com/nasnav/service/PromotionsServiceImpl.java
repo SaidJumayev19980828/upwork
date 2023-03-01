@@ -1232,6 +1232,16 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 	}
 
+	public List<PromotionDTO> getActivePublicPromotions(Collection<Long> orgIds, Collection<Integer> typeIds) {
+		List<PromotionsEntity> promotions = typeIds != null && !typeIds.isEmpty() ? promoRepo.findActivePromosByOrgIdInAndTypeIdIn(orgIds, typeIds)
+				: promoRepo.findActivePromosByOrgIdIn(orgIds);
+		return promotions
+				.stream()
+				.map(this::createPromotionDTO)
+				.filter(this::isPromoUserRestricted)
+				.toList();
+	}
+
 	private List<PromotionDTO> getActivePublicPromotionsWithBrandsOrTagsOrProductsConstrains() {
 		List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
 						BUY_X_GET_Y_FROM_TAG.getValue(),
