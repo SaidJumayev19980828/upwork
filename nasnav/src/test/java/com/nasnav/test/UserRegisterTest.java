@@ -697,8 +697,7 @@ public class UserRegisterTest {
 	}
 
 	private JSONObject registerWithOTPAndAssert() throws MessagingException, IOException {
-		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		JSONObject jsonBody = createUserRegisterV2Request(redirectUrl).put("activation_method", "OTP");
+		JSONObject jsonBody = createUserRegisterV2Request(null).put("activation_method", "OTP");
 		String body = jsonBody.toString();
 		HttpEntity<Object> request = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", request, String.class);
@@ -782,6 +781,24 @@ public class UserRegisterTest {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		
 		JSONObject body = createActivationResendRequest(redirectUrl); 
+		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
+
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(Mockito.eq("organization_1")
+				, Mockito.eq("not.activated@nasnav.com")
+				, Mockito.eq("organization_1"+ ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+	}
+
+	@Test
+	public void activationEmailResendOTPTest() throws MessagingException, IOException {
+		
+		JSONObject body = createActivationResendRequest(null);
+		body.put("activation_method", "OTP");
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
