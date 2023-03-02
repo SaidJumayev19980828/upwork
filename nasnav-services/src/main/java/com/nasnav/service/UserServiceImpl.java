@@ -104,7 +104,7 @@ public class UserServiceImpl implements UserService {
 
 		if (userJson.getActivationMethod() == ActivationMethod.OTP) {
 			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
-			sendUserOTP(user, userOTP.getOtp(), userJson.getRedirectUrl());
+			sendUserOTP(user, userOTP.getOtp());
 		} else {
 			sendActivationMail(user, userJson.getRedirectUrl());
 		}
@@ -132,7 +132,8 @@ public class UserServiceImpl implements UserService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
 		}
 		
-		validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
+		if (userJson.getActivationMethod() == ActivationMethod.VERIFICATION_LINK)
+			validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
 	}
 
 
@@ -647,7 +648,7 @@ public class UserServiceImpl implements UserService {
 		}
 		if (accountInfo.getActivationMethod() == ActivationMethod.OTP) {
 			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
-			sendUserOTP(user, userOTP.getOtp(), accountInfo.getRedirectUrl());
+			sendUserOTP(user, userOTP.getOtp());
 		} else {
 			sendActivationMail(user, accountInfo.getRedirectUrl());
 		}
@@ -881,7 +882,7 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(userEntity);
 	}
 
-	private void sendUserOTP(UserEntity userEntity, String otp, String redirectUrl) {
+	private void sendUserOTP(UserEntity userEntity, String otp) {
 		try {
 			String orgName = orgRepo.findById(userEntity.getOrganizationId()).orElseThrow().getName();
 			Map<String, String> parametersMap = new HashMap<>();
@@ -918,7 +919,7 @@ public class UserServiceImpl implements UserService {
 			Map<String, String> parametersMap = new HashMap<>();
 			if (activationMethod == ActivationMethod.OTP) {
 				UserOtpEntity userOTP = otpService.createUserOTP(userEntity, OTPType.RESET_PASSWORD);
-				sendUserOTP(userEntity, userOTP.getOtp(), null);
+				sendUserOTP(userEntity, userOTP.getOtp());
 			} else if (activationMethod == ActivationMethod.VERIFICATION_LINK) {
 				parametersMap.put(USERNAME_PARAMETER, userName);
 				parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER, appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
