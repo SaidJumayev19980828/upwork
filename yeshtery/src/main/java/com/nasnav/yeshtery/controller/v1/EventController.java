@@ -21,7 +21,8 @@ public class EventController {
     private EventService eventService;
 
     @PostMapping
-    public void createEvent(@RequestBody EventForRequestDTO eventForRequestDto){
+    public void createEvent(@RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestBody EventForRequestDTO eventForRequestDto) {
         eventService.createEvent(eventForRequestDto);
     }
 
