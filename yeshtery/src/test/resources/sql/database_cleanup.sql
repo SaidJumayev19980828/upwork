@@ -4,6 +4,13 @@ DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
+delete from public.event_requests;
+delete from public.event_products;
+delete from public.event_attachments;
+delete from public.event_logs;
+DELETE FROM public.EVENTS;
+delete from public.influencer_categories;
+delete from public.influencers;
 DELETE FROM public.api_logs WHERE organization_id between 99000 AND 99999;
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
