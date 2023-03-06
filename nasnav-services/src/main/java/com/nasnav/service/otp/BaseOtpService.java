@@ -1,67 +1,69 @@
-package com.nasnav.service.OTP;
+package com.nasnav.service.otp;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.UserOTPRepository;
+import com.nasnav.dao.BaseUserOtpRepository;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.UserOtpEntity;
+import com.nasnav.persistence.BaseUserOtpEntity;
 import com.nasnav.util.RandomGenerator;
 
 import lombok.RequiredArgsConstructor;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
 @RequiredArgsConstructor
-@Service
-public class OTPService {
+public abstract class BaseOtpService<U extends DefaultBusinessEntity<Long>, O extends BaseUserOtpEntity<U>, R extends BaseUserOtpRepository<U, O>> {
 
-    private final UserOTPRepository userOTPRepository;
+    protected final R userOTPRepository;
 
-    private final AppConfig appConfig;
+    protected final AppConfig appConfig;
+
+    protected abstract O createEntity();
 
     @Transactional
-    public UserOtpEntity createUserOTP(UserEntity user, OTPType otpType) {
+    public O createUserOtp(U user, OtpType otpType) {
         userOTPRepository.deleteByUser(user);
-        UserOtpEntity userOtpEntity = new UserOtpEntity();
+        O userOtpEntity = createEntity();
         userOtpEntity.setUser(user);
         userOtpEntity.setOtp(RandomGenerator.randomNumber(appConfig.otpLength));
         userOtpEntity.setType(otpType);
         userOtpEntity.setCreatedAt(new Date());
         return userOTPRepository.save(userOtpEntity);
+        
     }
 
     // new transaction is needed to keep retries consistent in case of transaction or no transaction
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = RuntimeBusinessException.class)
-    public void validateOtp(String otp, UserEntity user, OTPType otpType) {
+    public void validateOtp(String otp, U user, OtpType otpType) {
 
-        UserOtpEntity userOTP = getUserOTP(user, otpType);
+        O userOtp = getUserOtp(user, otpType);
 
         Date currentDate = new Date();
 
-        Date expiration = DateUtils.addSeconds(userOTP.getCreatedAt(), appConfig.otpValidDurationInSeconds);
+        Date expiration = DateUtils.addSeconds(userOtp.getCreatedAt(), appConfig.otpValidDurationInSeconds);
 
-        Long attempts = userOTP.incrementAttempts();
-        userOTP = userOTPRepository.save(userOTP);
+        Long attempts = userOtp.incrementAttempts();
+        userOtp = userOTPRepository.save(userOtp);
 
-        if (userOTP.getOtp().equals(otp)
+        if (userOtp.getOtp().equals(otp)
                 && attempts <= appConfig.otpMaxRetries
-                && currentDate.after(userOTP.getCreatedAt())
+                && currentDate.after(userOtp.getCreatedAt())
                 && currentDate.before(expiration)) {
-            userOTPRepository.delete(userOTP);
+            userOTPRepository.delete(userOtp);
         } else {
-            if (attempts >= appConfig.otpMaxRetries) userOTPRepository.delete(userOTP);
+            if (attempts >= appConfig.otpMaxRetries) userOTPRepository.delete(userOtp);
             throw new RuntimeBusinessException(ErrorCodes.OTP$INVALID.getValue(), HttpStatus.BAD_REQUEST.name(), HttpStatus.BAD_REQUEST);
         }
     }
 
-    public UserOtpEntity getUserOTP(UserEntity user, OTPType type) {
+    public O getUserOtp(U user, OtpType type) {
         return userOTPRepository.findByUserAndType(user, type).
                 orElseThrow(() -> new RuntimeBusinessException(ErrorCodes.OTP$NOTFOUND.getValue(), HttpStatus.BAD_REQUEST.name(), HttpStatus.BAD_REQUEST));
     }

@@ -16,8 +16,8 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.OTP.OTPService;
-import com.nasnav.service.OTP.OTPType;
+import com.nasnav.service.otp.OtpService;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.service.helpers.UserServicesHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,7 +88,7 @@ public class UserServiceImpl implements UserService {
 
 	private final LoyaltyBoosterRepository loyaltyBoosterRepository;
 
-	private final OTPService otpService;
+	private final OtpService otpService;
 
 
 
@@ -103,8 +102,8 @@ public class UserServiceImpl implements UserService {
 		user = userRepository.saveAndFlush(user);
 
 		if (userJson.getActivationMethod() == ActivationMethod.OTP) {
-			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
-			sendUserOTP(user, userOTP.getOtp());
+			UserOtpEntity userOtp = otpService.createUserOtp(user, OtpType.REGISTER);
+			sendUserOtp(user, userOtp.getOtp());
 		} else {
 			sendActivationMail(user, userJson.getRedirectUrl());
 		}
@@ -647,8 +646,8 @@ public class UserServiceImpl implements UserService {
 			userRepository.save(user);
 		}
 		if (accountInfo.getActivationMethod() == ActivationMethod.OTP) {
-			UserOtpEntity userOTP = otpService.createUserOTP(user, OTPType.REGISTER);
-			sendUserOTP(user, userOTP.getOtp());
+			UserOtpEntity userOtp = otpService.createUserOtp(user, OtpType.REGISTER);
+			sendUserOtp(user, userOtp.getOtp());
 		} else {
 			sendActivationMail(user, accountInfo.getRedirectUrl());
 		}
@@ -882,7 +881,7 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(userEntity);
 	}
 
-	private void sendUserOTP(UserEntity userEntity, String otp) {
+	private void sendUserOtp(UserEntity userEntity, String otp) {
 		try {
 			String orgName = orgRepo.findById(userEntity.getOrganizationId()).orElseThrow().getName();
 			Map<String, String> parametersMap = new HashMap<>();
@@ -903,10 +902,10 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public RecoveryUserResponse activateRecoveryOTP(ActivateOtpDto activateOtp) throws BusinessException {
+	public RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException {
 		UserEntity user = userRepository.findByEmailAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail()));
-		otpService.validateOtp(activateOtp.getOtp(), user, OTPType.RESET_PASSWORD);
+		otpService.validateOtp(activateOtp.getOtp(), user, OtpType.RESET_PASSWORD);
 		generateResetPasswordToken(user);
 		return new RecoveryUserResponse(user.getResetPasswordToken());
 	}
@@ -918,8 +917,8 @@ public class UserServiceImpl implements UserService {
 			// create parameter map to replace parameter by actual UserEntity data.
 			Map<String, String> parametersMap = new HashMap<>();
 			if (activationMethod == ActivationMethod.OTP) {
-				UserOtpEntity userOTP = otpService.createUserOTP(userEntity, OTPType.RESET_PASSWORD);
-				sendUserOTP(userEntity, userOTP.getOtp());
+				UserOtpEntity userOtp = otpService.createUserOtp(userEntity, OtpType.RESET_PASSWORD);
+				sendUserOtp(userEntity, userOtp.getOtp());
 			} else if (activationMethod == ActivationMethod.VERIFICATION_LINK) {
 				parametersMap.put(USERNAME_PARAMETER, userName);
 				parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER, appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
@@ -934,7 +933,7 @@ public class UserServiceImpl implements UserService {
 	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto) {
 		UserEntity user = userRepository.findByEmailAndOrganizationId(activateOtpDto.getEmail(), activateOtpDto.getOrgId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
-		otpService.validateOtp(activateOtpDto.getOtp(), user, OTPType.REGISTER);
+		otpService.validateOtp(activateOtpDto.getOtp(), user, OtpType.REGISTER);
 		activateUserInDB(user);
 		return securityService.login(user, false);
 	}

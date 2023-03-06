@@ -18,7 +18,7 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
-import com.nasnav.service.OTP.OTPType;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
@@ -107,7 +107,7 @@ public class UserRegisterTest {
 	@Autowired
 	private UserTokenRepository userTokenRepo;
 	@Autowired
-	UserOTPRepository userOTPRepository;
+	UserOtpRepository userOtpRepository;
 	@Autowired
 	private UserSubscriptionRepository subsRepo;
 
@@ -299,11 +299,11 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void testPasswordResetWithOTP() {
+	public void testPasswordResetWithOtp() {
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
 				+ "&employee=false&activation_method=OTP", UserApiResponse.class);
-		String otp = userOTPRepository.findByUserAndType(persistentUser, OTPType.RESET_PASSWORD).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		
@@ -317,11 +317,11 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void testPasswordResetWithInvalidOTP() {
+	public void testPasswordResetWithInvalidOtp() {
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
 				+ "&employee=false&activation_method=OTP", UserApiResponse.class);
-		String otp = userOTPRepository.findByUserAndType(persistentUser, OTPType.RESET_PASSWORD).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), "invalid otp", persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		
@@ -696,7 +696,7 @@ public class UserRegisterTest {
 				, Mockito.anyMap());
 	}
 
-	private JSONObject registerWithOTPAndAssert() throws MessagingException, IOException {
+	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
 		JSONObject jsonBody = createUserRegisterV2Request(null).put("activation_method", "OTP");
 		String body = jsonBody.toString();
 		HttpEntity<Object> request = getHttpEntity((Object)body);
@@ -715,12 +715,12 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void newUserRegisterWithOTPTest() throws MessagingException, IOException {
-		JSONObject userJson = registerWithOTPAndAssert();
+	public void newUserRegisterWithOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
 		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
-		String otp = userOTPRepository.findByUserAndType(newUser, OTPType.REGISTER).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/otp/activate", request, String.class);
@@ -731,12 +731,12 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void newUserRegisterWithInvalidOTPTest() throws MessagingException, IOException {
-		JSONObject userJson = registerWithOTPAndAssert();
+	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
 		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
-		String otp = userOTPRepository.findByUserAndType(newUser, OTPType.REGISTER).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(email, "invalid otp", orgId);
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		ResponseEntity<String> response;
@@ -795,7 +795,7 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void activationEmailResendOTPTest() throws MessagingException, IOException {
+	public void activationEmailResendOtpTest() throws MessagingException, IOException {
 		
 		JSONObject body = createActivationResendRequest(null);
 		body.put("activation_method", "OTP");

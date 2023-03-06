@@ -1,12 +1,13 @@
 package com.nasnav.test;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.UserOTPRepository;
+import com.nasnav.dao.UserOtpRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserOtpEntity;
-import com.nasnav.service.OTP.OTPService;
-import com.nasnav.service.OTP.OTPType;
+import com.nasnav.persistence.UserOtpEntity;
+import com.nasnav.service.otp.OtpService;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.util.RandomGenerator;
 
 import org.junit.jupiter.api.Test;
@@ -36,12 +37,12 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
-class OTPServiceTest {
+class OtpServiceTest {
     @MockBean
-    private UserOTPRepository userOTPRepository;
+    private UserOtpRepository userOtpRepository;
 
     @Autowired
-    private OTPService otpService;
+    private OtpService otpService;
 
     @Autowired
     private AppConfig appConfig;
@@ -52,47 +53,47 @@ class OTPServiceTest {
 
     @BeforeEach
     void reInit() {
-        userOtpEntity = buildUserOTPEntity();
-        Mockito.when(userOTPRepository.save(any(UserOtpEntity.class))).then(AdditionalAnswers.returnsFirstArg());
-        Mockito.when(userOTPRepository.findByUserAndType(any(UserEntity.class), any(OTPType.class)))
+        userOtpEntity = buildUserOtpEntity();
+        Mockito.when(userOtpRepository.save(any(UserOtpEntity.class))).then(AdditionalAnswers.returnsFirstArg());
+        Mockito.when(userOtpRepository.findByUserAndType(any(UserEntity.class), any(OtpType.class)))
                 .thenReturn(Optional.of(userOtpEntity));
     }
 
     @Test
-    void createUserOTP() {
-        UserOtpEntity userOTP = otpService.createUserOTP(userEntity, userOtpEntity.getType());
-        assertNotNull(userOTP);
-        assertEquals(userOTP.getOtp().length(), appConfig.otpLength);
+    void createUserOtp() {
+        UserOtpEntity userOtp = otpService.createUserOtp(userEntity, userOtpEntity.getType());
+        assertNotNull(userOtp);
+        assertEquals(userOtp.getOtp().length(), appConfig.otpLength);
     }
 
     @Test
-    void validateOTPWithValidOTP() {
+    void validateOtpWithValidOtp() {
         otpService.validateOtp(userOtpEntity.getOtp(), userEntity, userOtpEntity.getType());
-        Mockito.verify(userOTPRepository, Mockito.times(1)).delete(userOtpEntity);
+        Mockito.verify(userOtpRepository, Mockito.times(1)).delete(userOtpEntity);
     }
 
     @Test
-    void validateOTPWithInvalidOTP() {
+    void validateOtpWithInvalidOtp() {
         UserEntity userEntity = buildUserEntity();
-        UserOtpEntity userOtpEntity = buildUserOTPEntity();
-        Mockito.when(userOTPRepository.findByUserAndType(userEntity, userOtpEntity.getType())).thenReturn(Optional.of(userOtpEntity));
-        String invalidOTP = "invalid otp";
-        OTPType type = userOtpEntity.getType();
+        UserOtpEntity userOtpEntity = buildUserOtpEntity();
+        Mockito.when(userOtpRepository.findByUserAndType(userEntity, userOtpEntity.getType())).thenReturn(Optional.of(userOtpEntity));
+        String invalidOtp = "invalid otp";
+        OtpType type = userOtpEntity.getType();
         for (int i = 0; i < appConfig.otpMaxRetries - 1; i++) {
             Assertions.assertThrows(RuntimeBusinessException.class, () ->
-                otpService.validateOtp(invalidOTP, userEntity, type));
-            Mockito.verify(userOTPRepository, Mockito.never()).delete(userOtpEntity);
+                otpService.validateOtp(invalidOtp, userEntity, type));
+            Mockito.verify(userOtpRepository, Mockito.never()).delete(userOtpEntity);
         }
         Assertions.assertThrows(RuntimeBusinessException.class,
-                () -> otpService.validateOtp(invalidOTP, userEntity, type));
-        Mockito.verify(userOTPRepository, Mockito.times(1)).delete(userOtpEntity);
+                () -> otpService.validateOtp(invalidOtp, userEntity, type));
+        Mockito.verify(userOtpRepository, Mockito.times(1)).delete(userOtpEntity);
     }
 
-    private UserOtpEntity buildUserOTPEntity() {
+    private UserOtpEntity buildUserOtpEntity() {
         UserOtpEntity userOtpEntity = new UserOtpEntity();
         userOtpEntity.setUser(buildUserEntity());
         userOtpEntity.setOtp(RandomGenerator.randomNumber(6));
-        userOtpEntity.setType(OTPType.REGISTER);
+        userOtpEntity.setType(OtpType.REGISTER);
         userOtpEntity.setCreatedAt(new Date());
         userOtpEntity.setId(1L);
         userOtpEntity.setAttempts(0L);
