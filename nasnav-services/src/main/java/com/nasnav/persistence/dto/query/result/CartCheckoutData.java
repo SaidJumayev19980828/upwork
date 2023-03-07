@@ -25,4 +25,5 @@ public class CartCheckoutData {
     private Long organizationId;
     private BigDecimal discount;
     private BigDecimal weight;
+    private BigDecimal addonsPrice;
 }

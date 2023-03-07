@@ -362,7 +362,11 @@ public enum ErrorCodes {
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 	,TAG$TREE$0002("No tag exists with name[%s]!")
-
+	,
+	ORG$ADDON$0001("No addon type exists with [%d]!")
+	,ORG$ADDON$0002("No addon stock exists with [%d]!"),
+	ORG$ADDON$0003("addon and cart item not in the same shop!")
+	,ORG$ADDON$0004("Cart item  addons has no stocks available!")
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
 	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")
 

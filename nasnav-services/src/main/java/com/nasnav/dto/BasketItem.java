@@ -39,6 +39,7 @@ public class BasketItem {
     private String sku;
     private String productCode;
     private String currency;
+    private BigDecimal addonTotal;
     @JsonIgnore
     private Integer availableStock;
 }

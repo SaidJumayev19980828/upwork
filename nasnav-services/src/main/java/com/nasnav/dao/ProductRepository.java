@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.model.IdAndNamePair;
@@ -96,6 +97,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Transactional
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
+    
 
     @Query(value = "update Products set category_id = :categoryId where id in :productsIds", nativeQuery = true)
     @Transactional
@@ -207,4 +209,15 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findProductsByProductIdsOrBrandIdsOrTagIds(@Param("productIds") Set<Long> productId,
                     @Param("brandIds") Set<Long> brandIds,
                     @Param("tagIds") Set<Long> tagId);
+    
+
+    @Query(nativeQuery = true)
+    List<Pair> getProductAddons(@Param("productsIds") List<Long> productsIds, @Param("addonsIds") List<Long> addonsIds);
+    
+    @Query(value = "delete from Product_addons where addon_id = :addon_id", nativeQuery = true)
+    @Transactional
+    @Modifying
+    void detachProductsFromAddon(@Param("addon_id") Long addonId);
+
+
 }

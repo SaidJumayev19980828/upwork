@@ -40,6 +40,9 @@ public class BasketsEntity implements BaseEntity{
 
     @Column(name = "item_data")
     private String itemData;
+    
+    @Column(name = "addon_price")
+    private BigDecimal addonsPrice;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

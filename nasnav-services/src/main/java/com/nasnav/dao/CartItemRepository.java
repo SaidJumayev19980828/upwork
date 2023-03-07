@@ -27,6 +27,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN FETCH featureValues.feature feature "
 			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " LEFT JOIN FETCH product.brand brand "
+			+ " LEFT JOIN FETCH item.addons addons "
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 

@@ -2,10 +2,13 @@ package com.nasnav.dto.response.navbox;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.CartItemAddonDetailsDTO;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -32,6 +35,8 @@ public class CartItem {
 	private BigDecimal weight;
 	private String unit;
 	private Long orgId;
+	List<CartItemAddonDetailsDTO> addonList;
+	
 	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {
 		this.stockId = stockId;

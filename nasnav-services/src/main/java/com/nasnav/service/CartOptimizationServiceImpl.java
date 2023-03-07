@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.CartItemAddonDetailsRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.ProductVariantsRepository;
@@ -78,6 +79,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private LoyaltyPointsService loyaltyPointsService;
+    @Autowired
+	private CartItemAddonDetailsRepository cartItemAddonDetailsRepo;
 	
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
@@ -198,6 +201,12 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				cartService.moveCartItemsToWishlist(movedItems);
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019);
 			}
+			
+		}
+		List<CartItemAddonDetailsEntity> addonsOutOfStock=cartItemAddonDetailsRepo.findOutOfStockCartItemsAddons(userId);
+		if(addonsOutOfStock.size()!=0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$ADDON$0004);
+
 		}
 	}
 

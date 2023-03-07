@@ -1,31 +1,12 @@
 package com.nasnav.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.*;
-import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
-import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
-import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.dto.request.theme.OrganizationThemeClass;
-import com.nasnav.dto.response.*;
-import com.nasnav.enumerations.ProductFeatureType;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
-import com.nasnav.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
+import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
-import javax.validation.Valid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -33,12 +14,77 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0007;
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.*;
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.AddonsDTO;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.OrganizationThemesSettingsDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.PromotionSearchParamDTO;
+import com.nasnav.dto.SeoKeywordsDTO;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsTreeCreationDTO;
+import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
+import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
+import com.nasnav.dto.response.CartOptimizationStrategyDTO;
+import com.nasnav.dto.response.OrderConfirmResponseDTO;
+import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.dto.response.PromotionResponse;
+import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddonEntity;
+import com.nasnav.persistence.TagsEntity;
+import com.nasnav.response.AddonResponse;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductFeatureUpdateResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.TagResponse;
+import com.nasnav.service.AddonService;
+import com.nasnav.service.AddressService;
+import com.nasnav.service.BrandService;
+import com.nasnav.service.CartOptimizationService;
+import com.nasnav.service.CategoryService;
+import com.nasnav.service.FileService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.PromotionsService;
+import com.nasnav.service.SearchService;
+import com.nasnav.service.SeoService;
+import com.nasnav.service.ShippingManagementService;
+import com.nasnav.service.ThemeService;
+
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/organization")
@@ -66,6 +112,7 @@ public class OrganizationController {
     private SeoService seoService;
     @Autowired
     private AddressService addressService;
+  
 
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
@@ -160,6 +207,8 @@ public class OrganizationController {
                                              @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         return categoryService.deleteOrgTag(tagId);
     }
+
+
 
     @PostMapping(value = "tag/tree", produces = APPLICATION_JSON_VALUE)
     public void createTagTree(@RequestHeader (name = "User-Token", required = false) String userToken,

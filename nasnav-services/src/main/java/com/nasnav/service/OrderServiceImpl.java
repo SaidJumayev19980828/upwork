@@ -164,7 +164,8 @@ public class OrderServiceImpl implements OrderService {
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
-
+	@Autowired
+	private CartItemAddonDetailsRepository cartItemAddonDetailsRepository;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -637,6 +638,7 @@ public class OrderServiceImpl implements OrderService {
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
 		cartItemRepo.deleteByVariantIdInAndUser_Id(variantIds, userId);
+		cartItemAddonDetailsRepository.deleteByUserId(userId);
 	}
 
 	private void reduceStocks(OrdersEntity orderEntity) {
@@ -927,6 +929,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setCurrency(currency);
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
+		item.setAddonTotal(entity.getAddonsPrice());
 
 		if(entity.getStocksEntity().getQuantity() < quantityLimit) {
 			item.setAvailableStock(entity.getStocksEntity().getQuantity());
@@ -1510,9 +1513,25 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
 		checkoutData.setDiscount(stockData.getDiscount());
 		checkoutData.setWeight(item.getWeight());
+		checkoutData.setAddonsPrice(calculateAddonsTotal(item));
 		return checkoutData;
 	}
 
+	
+	 public BigDecimal calculateAddonsTotal(CartItem cartItem) {
+	    	
+	    	
+         if (cartItem.getAddonList()!=null &&!cartItem.getAddonList().isEmpty()) {
+        return	 cartItem.getAddonList()
+                .stream()
+                .map(item ->
+                        item.getPrice()
+                                
+                                .multiply(new BigDecimal(cartItem.getQuantity())))
+                .reduce(ZERO, BigDecimal::add);
+         }
+        	 return new BigDecimal(0);
+    }
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
 	public Order createOrder(CartCheckoutDTO dto) {
@@ -2241,7 +2260,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private BigDecimal calcBasketItemValue(BasketsEntity item) {
-		return item.getPrice().multiply(item.getQuantity());
+		return item.getPrice().multiply(item.getQuantity()).add(item.getAddonsPrice());
 	}
 
 	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems, Long orgId) {
@@ -2302,6 +2321,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
 		basket.setItemData(serializeItemData(basket));
+		basket.setAddonsPrice(data.getAddonsPrice());
 		return basket;
 	}
 
