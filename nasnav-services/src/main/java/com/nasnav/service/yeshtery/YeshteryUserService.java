@@ -3,10 +3,12 @@ package com.nasnav.service.yeshtery;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import org.springframework.web.servlet.view.RedirectView;
@@ -30,4 +32,8 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(YeshteryUserEntity yeshteryUser);
 
     YeshteryUserEntity createYeshteryEntity(String name, String email, UserEntity nasnavUser, int yeshteryOrgId, Long orgId);
+
+    UserApiResponse activateUserAccount(ActivateOtpDto activateOtp);
+
+    RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
 }
