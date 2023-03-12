@@ -333,6 +333,8 @@ public class UserRegisterTest {
 			Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
 		}
 
+		activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+		request = new HttpEntity<ActivateOtpDto>(activationBody);
 		// otp is now deleted after max retries
 		recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 		Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
