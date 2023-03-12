@@ -498,7 +498,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
         }
 
-        validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
+        if (userJson.getActivationMethod() == ActivationMethod.VERIFICATION_LINK)
+            validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
     }
 
     private YeshteryUserEntity createNewUserEntity(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -850,11 +851,22 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Override
     @Transactional
     public RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException {
+        UserEntity user = nasNavUserRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
+                if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
+        nasnavOtpService.validateOtp(activateOtp.getOtp(), user, OtpType.RESET_PASSWORD);
+        generateResetPasswordToken(user);
+        return new RecoveryUserResponse(user.getResetPasswordToken());
+    }
+
+    @Override
+    public UserApiResponse activateUserAccount(ActivateOtpDto activateOtp) {
         YeshteryUserEntity user = userRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
                 if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
-        otpService.validateOtp(activateOtp.getOtp(), user, OtpType.RESET_PASSWORD);
-        generateYeshteryResetPasswordToken(user);
-        return new RecoveryUserResponse(user.getResetPasswordToken());
+		otpService.validateOtp(activateOtp.getOtp(), user, OtpType.REGISTER);
+
+        activateUserInDB(user);
+        activateOrgUser(user);
+        return login(user, false);
     }
 }
 
