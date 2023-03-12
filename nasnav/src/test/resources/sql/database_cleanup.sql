@@ -115,3 +115,11 @@ DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
+
+DELETE FROM public.addons
+	WHERE id > 0;
+
+DELETE FROM public.addon_stocks
+	WHERE id > 0;
+DELETE FROM public.cart_item_addon_details
+	WHERE id=1006;
