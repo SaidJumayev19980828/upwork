@@ -18,7 +18,7 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
-import com.nasnav.service.OTP.OTPType;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
@@ -107,7 +107,7 @@ public class UserRegisterTest {
 	@Autowired
 	private UserTokenRepository userTokenRepo;
 	@Autowired
-	UserOTPRepository userOTPRepository;
+	UserOtpRepository userOtpRepository;
 	@Autowired
 	private UserSubscriptionRepository subsRepo;
 
@@ -299,11 +299,11 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void testPasswordResetWithOTP() {
+	public void testPasswordResetWithOtp() {
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
 				+ "&employee=false&activation_method=OTP", UserApiResponse.class);
-		String otp = userOTPRepository.findByUserAndType(persistentUser, OTPType.RESET_PASSWORD).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		
@@ -317,11 +317,11 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void testPasswordResetWithInvalidOTP() {
+	public void testPasswordResetWithInvalidOtp() {
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
 				+ "&employee=false&activation_method=OTP", UserApiResponse.class);
-		String otp = userOTPRepository.findByUserAndType(persistentUser, OTPType.RESET_PASSWORD).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), "invalid otp", persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		
@@ -333,6 +333,8 @@ public class UserRegisterTest {
 			Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
 		}
 
+		activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+		request = new HttpEntity<ActivateOtpDto>(activationBody);
 		// otp is now deleted after max retries
 		recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 		Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
@@ -696,9 +698,8 @@ public class UserRegisterTest {
 				, Mockito.anyMap());
 	}
 
-	private JSONObject registerWithOTPAndAssert() throws MessagingException, IOException {
-		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		JSONObject jsonBody = createUserRegisterV2Request(redirectUrl).put("activation_method", "OTP");
+	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
+		JSONObject jsonBody = createUserRegisterV2Request(null).put("activation_method", "OTP");
 		String body = jsonBody.toString();
 		HttpEntity<Object> request = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", request, String.class);
@@ -716,12 +717,12 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void newUserRegisterWithOTPTest() throws MessagingException, IOException {
-		JSONObject userJson = registerWithOTPAndAssert();
+	public void newUserRegisterWithOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
 		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
-		String otp = userOTPRepository.findByUserAndType(newUser, OTPType.REGISTER).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/otp/activate", request, String.class);
@@ -732,12 +733,12 @@ public class UserRegisterTest {
 	}
 
 	@Test
-	public void newUserRegisterWithInvalidOTPTest() throws MessagingException, IOException {
-		JSONObject userJson = registerWithOTPAndAssert();
+	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");
 		Long orgId = userJson.getLong("org_id");
 		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
-		String otp = userOTPRepository.findByUserAndType(newUser, OTPType.REGISTER).map(UserOtpEntity::getOtp).orElse(null);
+		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(email, "invalid otp", orgId);
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
 		ResponseEntity<String> response;
@@ -782,6 +783,24 @@ public class UserRegisterTest {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		
 		JSONObject body = createActivationResendRequest(redirectUrl); 
+		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
+
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(Mockito.eq("organization_1")
+				, Mockito.eq("not.activated@nasnav.com")
+				, Mockito.eq("organization_1"+ ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+	}
+
+	@Test
+	public void activationEmailResendOtpTest() throws MessagingException, IOException {
+		
+		JSONObject body = createActivationResendRequest(null);
+		body.put("activation_method", "OTP");
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 

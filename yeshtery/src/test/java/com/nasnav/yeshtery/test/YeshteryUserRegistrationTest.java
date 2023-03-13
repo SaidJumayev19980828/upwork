@@ -1,12 +1,21 @@
 package com.nasnav.yeshtery.test;
 
+import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
+import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
+import com.nasnav.dao.yeshtery.YeshteryUserRepository;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserOtpEntity;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
+import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.yeshtery.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
@@ -17,9 +26,11 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.*;
@@ -29,6 +40,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.annotation.PreDestroy;
+import javax.mail.MessagingException;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -36,6 +49,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
@@ -65,10 +79,20 @@ public class YeshteryUserRegistrationTest {
     private UserEntity persistentUser;
     private OrganizationEntity organization;
 
+    
+	@MockBean
+	private MailService mailService;
+
     @Autowired
     private TestRestTemplate template;
     @Autowired
     private UserService userService;
+    @Autowired
+    private YeshteryUserOtpRepository yeshteryUserOtpRepository;
+    @Autowired
+    private UserOtpRepository userOtpRepository;
+    @Autowired
+    private YeshteryUserRepository yeshteryUserRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -81,6 +105,8 @@ public class YeshteryUserRegistrationTest {
     private UserSubscriptionRepository subsRepo;
     @Autowired
     private AdminService adminService;
+    @Autowired
+    private AppConfig config;
 
     @Before
     public void clearCache() {
@@ -166,6 +192,136 @@ public class YeshteryUserRegistrationTest {
                 .map(UserEntity::getOrganizationId)
                 .collect(Collectors.toSet());
         assertEquals(yeshteryOrgIds, userOrgIds);
+    }
+
+    private JSONObject createUserRegisterRequest(String redirectUrl) {
+        return json()
+                .put("name", "Ahmad")
+                .put("email", "test@nasnav.com")
+                .put("password", "password")
+                .put("org_id", 99001)
+                .put("confirmation_flag", true)
+                .put("redirect_url", redirectUrl);
+    }
+
+	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
+		JSONObject jsonBody = createUserRegisterRequest(null).put("activation_method", "OTP");
+		String body = jsonBody.toString();
+		HttpEntity<Object> request = getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/register", request, String.class);
+
+		Assert.assertEquals(201, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(
+				  Mockito.eq("organization_1")
+				, Mockito.eq("test@nasnav.com")
+				, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+		return jsonBody;
+	}
+
+	@Test
+	public void newUserRegisterWithOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
+		String email = userJson.getString("email");
+		Long orgId = userJson.getLong("org_id");
+		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
+		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
+		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		// otp is deleted request should fail
+		response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
+		String email = userJson.getString("email");
+		Long orgId = userJson.getLong("org_id");
+		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
+		ActivateOtpDto activationBody = new ActivateOtpDto(email, "invalid otp", orgId);
+		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ResponseEntity<String> response;
+
+		for (int i = 0; i < config.otpMaxRetries; i++) {
+			response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+			Assert.assertEquals(400, response.getStatusCodeValue());
+		}
+
+		// next request will fail as otp is deleted after max retries
+		activationBody = new ActivateOtpDto("test@nasnav.com", otp, 99001L);
+		request = new HttpEntity<ActivateOtpDto>(activationBody);
+		response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+    private void assertResetTocken(String token) {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}", null);
+
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/recover", userJson,
+                UserApiResponse.class);
+
+        
+        Assert.assertEquals(OK.value(), response.getStatusCode().value());
+
+        userJson = getHttpEntity(
+                "{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\""
+                        + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
+
+        response = template.postForEntity(API_PATH + "/user/login", userJson, UserApiResponse.class);
+
+        // Delete this user
+        
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void testPasswordResetWithOtp() {
+
+        getResponseFromGet(API_PATH + "/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
+                + "&employee=false&activation_method=OTP", UserApiResponse.class);
+        String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
+        ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+        HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+        
+        ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(200, recoveryResponse.getStatusCodeValue());
+        String token = recoveryResponse.getBody().getResetToken();
+
+        assertResetTocken(token);
+        recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+    }
+
+    @Test
+    public void testPasswordResetWithInvalidOtp() {
+
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
+                + "&employee=false&activation_method=OTP", UserApiResponse.class);
+        String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
+        ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), "invalid otp", persistentUser.getOrganizationId());
+        HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+        
+        ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+
+        for (int i = 0; i < config.otpMaxRetries; i++) {
+            recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+            Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+        }
+
+        activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+        request = new HttpEntity<ActivateOtpDto>(activationBody);
+        // otp is now deleted after max retries
+        recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
     }
 
     @Test

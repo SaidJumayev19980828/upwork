@@ -1,11 +1,14 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
@@ -24,6 +27,7 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import java.util.List;
 import java.util.Set;
@@ -187,11 +191,12 @@ public class YeshteryUserController {
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecovery(@RequestParam String email,
                                   @RequestParam(value = "org_id", required = false) Long orgId,
-                                  @RequestParam() boolean employee) {
+                                  @RequestParam() boolean employee,
+                                  @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
         if (employee) {
             employeeUserService.sendEmailRecovery(email);
         } else {
-            userService.sendEmailRecovery(email, orgId);
+            userService.sendEmailRecovery(email, orgId, activationMethod);
         }
     }
 
@@ -216,5 +221,15 @@ public class YeshteryUserController {
     @PostMapping("link_nasnav_users_to_yeshtery_users")
     public int linkNonYeshteryUsersToCorrespondingYeshteryUserEntity(@RequestHeader (name = "User-Token", required = false) String token) {
         return userService.linkNonYeshteryUsersToCorrespondingYeshteryUserEntity();
+    }
+
+    @PostMapping(value = "register/otp/activate", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserApiResponse> activateUser(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
+        return ResponseEntity.ok(userService.activateUserAccount(activateOtp));
+    }
+
+    @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity<RecoveryUserResponse> verifyOtp(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
+        return ResponseEntity.ok(userService.activateRecoveryOtp(activateOtp));
     }
 }

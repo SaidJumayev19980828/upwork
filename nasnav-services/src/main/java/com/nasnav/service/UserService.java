@@ -54,6 +54,6 @@ public interface UserService extends CommonUserServiceInterface {
 
     void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod);
 
-    RecoveryUserResponse activateRecoveryOTP(ActivateOtpDto activateOtp) throws BusinessException;
+    RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
 
 }

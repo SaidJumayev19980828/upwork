@@ -5,18 +5,24 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.persistence.yeshtery.YeshteryUserOtpEntity;
 import com.nasnav.persistence.yeshtery.YeshteryUserTokensEntity;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.service.otp.OtpService;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dao.yeshtery.CommonYeshteryUserRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
@@ -107,6 +113,10 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private LoyaltyPointsService loyaltyPointsService;
     @Autowired
+    private YeshteryOtpService otpService;
+    @Autowired
+    private OtpService nasnavOtpService;
+    @Autowired
     AppConfig appConfig;
 
 
@@ -127,11 +137,11 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
-    public void sendEmailRecovery(String email, Long orgId) {
+    public void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod) {
         UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
         generateResetPasswordToken(userEntity);
         userEntity = nasNavUserRepository.saveAndFlush(userEntity);
-        sendRecoveryMail(userEntity);
+        sendRecoveryMail(userEntity, activationMethod);
     }
 
     private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
@@ -144,18 +154,23 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
 
 
-    private void sendRecoveryMail(UserEntity userEntity) {
+    private void sendRecoveryMail(UserEntity userEntity, ActivationMethod activationMethod) {
         String userName = ofNullable(userEntity.getName()).orElse("User");
         String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
         try {
             // create parameter map to replace parameter by actual UserEntity data.
             Map<String, String> parametersMap = new HashMap<>();
-            parametersMap.put(USERNAME_PARAMETER, userName);
-            parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER,
-                    appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
-            // send Recovery mail to user
-            this.mailService.send(orgName, userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
-                    CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+            if (activationMethod == ActivationMethod.OTP) {
+                UserOtpEntity userOtp = nasnavOtpService.createUserOtp(userEntity, OtpType.RESET_PASSWORD);
+                sendUserOtp(userEntity.getOrganizationId(), userEntity.getEmail(), userOtp.getOtp());
+            } else if (activationMethod == ActivationMethod.VERIFICATION_LINK) {
+                parametersMap.put(USERNAME_PARAMETER, userName);
+                parametersMap.put(CHANGE_PASSWORD_URL_PARAMETER,
+                        appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
+                // send Recovery mail to user
+                this.mailService.send(orgName, userEntity.getEmail(), CHANGE_PASSWORD_EMAIL_SUBJECT,
+                        CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+            }
         } catch (Exception e) {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
         }
@@ -235,7 +250,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
             if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
 
-            sendActivationMail(user, userJson.getRedirectUrl());
+            if (userJson.getActivationMethod() == ActivationMethod.OTP) {
+                YeshteryUserOtpEntity userOtp = otpService.createUserOtp(user, OtpType.REGISTER);
+                sendUserOtp(user.getOrganizationId(), user.getEmail(), userOtp.getOtp());
+            } else {
+                sendActivationMail(user, userJson.getRedirectUrl());
+            }
             List<OrganizationEntity> yeshteryOrgs = orgService.getYeshteryOrgs();
             yeshteryOrgs.forEach(org -> createNewYeshtryUserForOrg(userJson, org, user.getId()));
 
@@ -383,7 +403,12 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 userRepository.save(user);
             }
 
-            sendActivationMail(user, accountInfo.getRedirectUrl());
+            if (accountInfo.getActivationMethod() == ActivationMethod.OTP) {
+                YeshteryUserOtpEntity userOtp = otpService.createUserOtp(user, OtpType.REGISTER);
+                sendUserOtp(user.getOrganizationId(), user.getEmail(), userOtp.getOtp());
+            } else {
+                sendActivationMail(user, accountInfo.getRedirectUrl());
+            }
     }
 
     @Override
@@ -473,7 +498,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
         }
 
-        validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
+        if (userJson.getActivationMethod() == ActivationMethod.VERIFICATION_LINK)
+            validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
     }
 
     private YeshteryUserEntity createNewUserEntity(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -808,6 +834,39 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 .stream()
                 .map(YeshteryUserEntity::getRepresentation)
                 .collect(toList());
+    }
+
+    private void sendUserOtp(Long orgId, String email, String otp) {
+        try {
+            String orgName = orgRepo.findById(orgId).orElseThrow().getName();
+            Map<String, String> parametersMap = new HashMap<>();
+            parametersMap.put(OTP_PARAMETER, otp);
+            mailService.send(orgName, email, orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT, OTP_TEMPLATE, parametersMap);
+        } catch (Exception e) {
+            logger.error(e, e);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException {
+        UserEntity user = nasNavUserRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
+                if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
+        nasnavOtpService.validateOtp(activateOtp.getOtp(), user, OtpType.RESET_PASSWORD);
+        generateResetPasswordToken(user);
+        return new RecoveryUserResponse(user.getResetPasswordToken());
+    }
+
+    @Override
+    public UserApiResponse activateUserAccount(ActivateOtpDto activateOtp) {
+        YeshteryUserEntity user = userRepository.getByEmailIgnoreCaseAndOrganizationId(activateOtp.getEmail(), activateOtp.getOrgId());
+                if (user == null) throw new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtp.getEmail());
+		otpService.validateOtp(activateOtp.getOtp(), user, OtpType.REGISTER);
+
+        activateUserInDB(user);
+        activateOrgUser(user);
+        return login(user, false);
     }
 }
 
