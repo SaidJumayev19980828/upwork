@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.dto.ProductListImportDTO;
+import com.nasnav.exceptions.DataImportAsyncException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.service.handler.ImportDataHandlingChainProcessManagerService;
@@ -85,13 +87,21 @@ public class OrganizationProcessService {
                     "FIND PROCESS FAILED", HttpStatus.NOT_FOUND);
     }
 
-    public ImportProcessStatusResponse importExcelProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
 
-        final Long orgId = security.getCurrentUserOrganizationId();
-        final Long userId = security.getCurrentUser().getId();
-        final ImportProcessStatusResponse response = dataImportAsyncService.importExcelProductList(file, importMetaData, orgId,userId);
-        connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
-        return response;
+
+    public ImportProcessStatusResponse importExcelProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
+        ImportProcessStatusResponse response = null;
+        if (FilesUtils.isExcel(file)) {
+            final Long orgId = security.getCurrentUserOrganizationId();
+            final Long userId = security.getCurrentUser().getId();
+            response = dataImportAsyncService.importExcelProductList(file, importMetaData, orgId, userId);
+            connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
+        }
+        if (response != null && ( response.getProcessStatus().isInProgress() || response.getProcessStatus().isSuccess())) {
+            return response;
+        } else {
+            throw new DataImportAsyncException(response);
+        }
     }
 
     private void connectOrganizationWithProcess(Long orgId, String processId) {
@@ -103,12 +113,19 @@ public class OrganizationProcessService {
     }
 
     public ImportProcessStatusResponse importCsvProductList(final MultipartFile file, final ProductListImportDTO importMetaData) throws Exception {
-
-        final Long orgId = security.getCurrentUserOrganizationId();
-        final Long userId = security.getCurrentUser().getId();
-        final ImportProcessStatusResponse response = dataImportAsyncService.importCsvProductList(file, importMetaData, orgId,userId);
-        connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
-        return response;
+        ImportProcessStatusResponse response = null;
+        if (FilesUtils.isCsv(file)) {
+            final Long orgId = security.getCurrentUserOrganizationId();
+            final Long userId = security.getCurrentUser().getId();
+            response = dataImportAsyncService.importCsvProductList(file, importMetaData, orgId, userId);
+            connectOrganizationWithProcess(orgId, response.getProcessStatus().getId());
+        }
+        if (response != null && ( response.getProcessStatus().isInProgress() || response.getProcessStatus().isSuccess())) {
+            return response;
+        } else {
+            throw new DataImportAsyncException(response);
+        }
+        
     }
 
 }

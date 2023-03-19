@@ -1,5 +1,6 @@
 package com.nasnav.exceptions;
 
+import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
@@ -103,6 +104,16 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 
 		return new ResponseEntity<>(errorResponseDTO,
 				e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@ExceptionHandler(DataImportAsyncException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProcessStatusResponse> handleDataImportAsyncException(DataImportAsyncException e,
+			WebRequest requestInfo, HttpServletRequest request) {
+
+		logException(requestInfo, request, e);
+
+		return new ResponseEntity<>(e.getStatusResponse(), HttpStatus.NOT_ACCEPTABLE);
 	}
 	
 	
