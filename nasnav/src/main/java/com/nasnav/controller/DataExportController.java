@@ -30,7 +30,7 @@ public class DataExportController {
 	@Qualifier("excel")
 	private CsvExcelDataExportService excelExportService;
 
-	@GetMapping(value = "/products")
+	@GetMapping(value = { "/products", "/products/csv" })
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsCsv(@RequestHeader(TOKEN_HEADER) String token,
 													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
@@ -40,6 +40,7 @@ public class DataExportController {
 					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
 					.body(s.toByteArray());
 	}
+
  	@GetMapping(value = "/products/xlsx")
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsXLSX(@RequestHeader(TOKEN_HEADER) String token,
@@ -52,48 +53,36 @@ public class DataExportController {
 					.body(s.toByteArray());
 	}
 
-	@GetMapping(value = "/products/csv")
+	@GetMapping(value = "/products/images", params = { "type=CSV" })
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsCSV(@RequestHeader(TOKEN_HEADER) String token,
-													  @RequestParam(name = "shop_id", required = false)Long shopId) throws Exception {
-		ByteArrayOutputStream s = csvExportService.generateProductsFile(shopId, false);
+	public ResponseEntity<byte[]> generateProductsImagesCsvByType(@RequestHeader(TOKEN_HEADER) String token,
+			@RequestParam(name = "type") FileType type) throws IOException {
+		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
-				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
 				.body(s.toByteArray());
 	}
 
-	@GetMapping(value = "/products/images")
+	@GetMapping(value = "/products/images", params = { "type=XLSX" })
 	@ResponseBody
-	public ResponseEntity<byte[]> generateProductsImagesCsv(@RequestHeader(TOKEN_HEADER) String token,
-															@RequestParam(name = "type") FileType type) throws IOException {
-		if(FileType.CSV == type) {
-			ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
-			return ResponseEntity.ok()
-					.contentType(MediaType.parseMediaType("text/csv"))
-					.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
-					.body(s.toByteArray());
-		}else if(FileType.XLSX == type) {
-
-			ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
-			return ResponseEntity.ok()
-					.contentType(MediaType.parseMediaType("text/csv"))
-					.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
-					.body(s.toByteArray());
-		}
-		throw  new UnsupportedOperationException();
-
+	public ResponseEntity<byte[]> generateProductsImagesExcelByType(@RequestHeader(TOKEN_HEADER) String token,
+			@RequestParam(name = "type") FileType type) throws IOException {
+		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
+				.body(s.toByteArray());
 	}
 
 	@GetMapping(value = "/products/images/csv")
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsImagesCSV(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
 		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
-			return ResponseEntity.ok()
-					.contentType(MediaType.parseMediaType("text/csv"))
-					.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
-					.body(s.toByteArray());
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
+				.body(s.toByteArray());
 	}
 
 	@GetMapping(value = "/products/images/xlsx")
@@ -101,7 +90,6 @@ public class DataExportController {
 	public ResponseEntity<byte[]> generateProductsImagesXLSX(@RequestHeader(TOKEN_HEADER) String token) throws IOException {
 		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
 		return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType("text/csv"))
 				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
 				.body(s.toByteArray());
