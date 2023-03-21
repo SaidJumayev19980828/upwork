@@ -78,6 +78,8 @@ public enum ErrorCodes {
 
 	,P$IMPORT$0001("Store Manager is allowed only to update stocks!")
 	,P$IMPORT$0002("Store Manager cannot access stocks of another shop!")
+	,P$IMPORT$0003("Imported file isn't supported")
+	,P$IMPORT$0004("Imported file is ambiguous and can be read as multiple types")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")

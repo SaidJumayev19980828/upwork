@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -33,20 +34,9 @@ import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 
 import lombok.Data;
-import org.jboss.logging.Logger;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.io.*;
-import java.util.Arrays;
-import java.util.List;
 
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-
-import javax.validation.Valid;
 @Service
 @Qualifier("csv")
 public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService {
@@ -70,7 +60,13 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 				.stream()
 				.map(CsvRow::toProductImportDto)
 				.collect(toList());
-		return dataImportService.importProducts(productsData, importMetadata);
+
+		ImportProductContext importResult = dataImportService.importProducts(productsData, importMetadata);
+		if (importResult != null && importResult.isSuccess()) {
+			return importResult;
+		} else {
+			throw new ImportProductException(importResult);
+		}
 	}
 
 
@@ -166,6 +162,11 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 	private CsvWriterSettings createWritingSettings() {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		return settings;
+	}
+
+	@Override
+	public boolean isFileSupported(MultipartFile file) {
+		return FilesUtils.isCsv(file);
 	}
 }
 

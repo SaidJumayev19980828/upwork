@@ -79,4 +79,6 @@ public interface CsvExcelDataImportService {
 	List<String> getProductImportTemplateHeaders();
 
 	List<String> getProductImportTemplateHeadersWithoutExtraAttributes();
+
+	boolean isFileSupported(MultipartFile file);
 }

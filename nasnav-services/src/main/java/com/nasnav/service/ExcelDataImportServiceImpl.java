@@ -16,12 +16,11 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.service.helpers.ExcelDataFormatter;
-import com.nasnav.service.helpers.ExcelDataValidator;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -63,12 +62,19 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 					.stream()
 					.map(CsvRow::toProductImportDto)
 					.collect(toList());
+
+		ImportProductContext importResult = null;
 		try {
-			return dataImportService.importProducts(productsData, importMetadata);
+			importResult = dataImportService.importProducts(productsData, importMetadata);
 		} catch (BusinessException e) {
 			throw new RuntimeBusinessException(e);
 		}
 
+		if (importResult != null && importResult.isSuccess()) {
+			return importResult;
+		} else {
+			throw new ImportProductException(importResult);
+		}
 	}
 
 	private List<CsvRow> parseExcelFile(MultipartFile file, ImportProductContext initialContext) throws ImportProductException {
@@ -195,6 +201,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
  		workbook.write(bos);
 		workbook.close();
 		return bos;
+	}
+
+	@Override
+	public boolean isFileSupported(MultipartFile file) {
+		return FilesUtils.isExcel(file);
 	}
 }
 
