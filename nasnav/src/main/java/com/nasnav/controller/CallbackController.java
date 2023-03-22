@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
-import static java.lang.String.format;
-
 @RestController
 @RequestMapping("/callbacks")
 @CrossOrigin("*")
