@@ -1,8 +1,10 @@
 package com.nasnav.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ProductFetchDTO {
     private Long productId;
     private Long shopId;

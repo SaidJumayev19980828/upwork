@@ -425,6 +425,10 @@ public enum ErrorCodes {
 	,EVENT$HAS$HOST$0005("Event with id[%d] already has host!!")
 	,EVENT$HAS$INTEREST$0006("You already interested in Event with id[%d]!!")
 
+	,G$POST$0001("Post Not found with id[%id]!")
+	,POST$LIKE$0002("no record found that the user liked this post before!")
+	,POST$LIKE$0003("user already liked this post before!")
+
 
 
 	;
