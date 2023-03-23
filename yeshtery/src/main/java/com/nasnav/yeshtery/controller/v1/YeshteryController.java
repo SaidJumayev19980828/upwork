@@ -211,13 +211,7 @@ public class YeshteryController {
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
-        String resourceInternalUrl;
-        String modUrl = "/"+orgId+"/"+url;
-        if (height != null || width != null) {
-            resourceInternalUrl = fileService.getResizedImageInternalUrl(modUrl, width, height, type);
-        } else {
-            resourceInternalUrl = fileService.getResourceInternalUrl(modUrl);
-        }
+        String resourceInternalUrl = fileService.getResourceInternalUrlByOrg(url, orgId, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 
         RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
@@ -230,13 +224,7 @@ public class YeshteryController {
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
                              @RequestParam(required = false) String type) throws ServletException, IOException {
-        String resourceInternalUrl;
-        String modUrl = "/"+url;
-        if (height != null || width != null) {
-            resourceInternalUrl = fileService.getResizedImageInternalUrl(modUrl, width, height, type);
-        } else {
-            resourceInternalUrl = fileService.getResourceInternalUrl(modUrl);
-        }
+        String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 
         RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
