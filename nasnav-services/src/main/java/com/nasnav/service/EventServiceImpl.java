@@ -57,8 +57,11 @@ public class EventServiceImpl implements EventService{
         EventEntity entity = eventRepository.findById(eventId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId)
         );
-
-        return toDto(entity);
+        List<Long> categoryIds = entity.getProducts().stream().map(o -> o.getCategoryId()).collect(Collectors.toList());
+        List<EventEntity> relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
+        EventResponseDto dto = toDto(entity);
+        dto.setRelatedEvents(relatedEvents.stream().map(this::toDto).collect(Collectors.toList()));
+        return dto;
     }
 
     @Override
@@ -84,9 +87,9 @@ public class EventServiceImpl implements EventService{
             if(status != null){
                 statusValue = status.getValue();
             }
-            List<EventResponseDto> dtos = eventRepository.getAllEventForOrg(employeeUserEntity.getOrganizationId(),statusValue, page)
-                    .stream().map(this::toDto).collect(Collectors.toList());
-            return new PageImpl<>(dtos);
+            PageImpl<EventEntity> source = eventRepository.getAllEventForOrg(employeeUserEntity.getOrganizationId(),statusValue, page);
+            List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
+            return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
         }
         return null;
     }
@@ -111,9 +114,9 @@ public class EventServiceImpl implements EventService{
     @Override
     public PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
-        List<EventInterestDTO> dtos = eventLogsRepository.getAllByEventIdPageable(eventId, page).stream()
-                .map(this::toEventInterstDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos);
+        PageImpl<EventLogsEntity> source = eventLogsRepository.getAllByEventIdPageable(eventId, page);
+        List<EventInterestDTO> dtos = source.getContent().stream().map(this::toEventInterstDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
     @Override
@@ -223,10 +226,16 @@ public class EventServiceImpl implements EventService{
         if(entity.getUser() != null){
             dto.setEmail(entity.getUser().getEmail());
             dto.setName(entity.getUser().getName());
+            dto.setImage(entity.getUser().getImage());
+            dto.setUserId(entity.getUser().getId());
+            dto.setUserType("Customer");
         }
         else {
             dto.setEmail(entity.getEmployee().getEmail());
             dto.setName(entity.getEmployee().getName());
+            dto.setImage(entity.getEmployee().getImage());
+            dto.setUserId(entity.getEmployee().getId());
+            dto.setUserType("Employee");
         }
         return dto;
     }

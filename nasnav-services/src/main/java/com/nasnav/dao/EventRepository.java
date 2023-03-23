@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -18,4 +19,10 @@ public interface EventRepository extends CrudRepository<EventEntity, Long> {
     List<EventEntity> getAllByInfluencerNull();
     List<EventEntity> getAllByOrganizationInAndInfluencerNull(List<OrganizationEntity> orgs);
     List<EventEntity> getAllByInfluencer(InfluencerEntity entity);
+    @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id,e.influencer_id,e.name,e.description,e.status,e.visible from events e" +
+            " inner join event_products ep on ep.event_id = e.id inner join products p on p.id = ep.product_id " +
+            "where p.category_id in (:categories) and e.visible=true" +
+            " and e.status=0 and e.influencer_id is not null" +
+            " and e.id != :sourceEventId", nativeQuery = true)
+    List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
 }

@@ -25,4 +25,5 @@ public class EventResponseDto {
     private String description;
     private EventStatus status;
     private List<ProductEntity> products;
+    private List<EventResponseDto> relatedEvents;
 }

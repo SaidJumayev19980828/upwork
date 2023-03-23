@@ -60,7 +60,6 @@ public class EventEntity {
 
     @Column(name = "status")
     private Integer status;
-//    private EventStatus status;
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore

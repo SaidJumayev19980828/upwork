@@ -54,9 +54,9 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Override
     public PageImpl<InfluencerDTO> getAllInfluencers(Integer start, Integer count, Boolean status) {
         PageRequest page = getQueryPage(start, count);
-        List<InfluencerDTO> resultList = influencerRepository.findAllPageable(status,page).stream().map(this::toInfluencerDto).collect(Collectors.toList());
-        PageImpl<InfluencerDTO> result = new PageImpl<>(resultList);
-        return result;
+        PageImpl<InfluencerEntity> source = influencerRepository.findAllPageable(status,page);
+        List<InfluencerDTO> resultList = source.getContent().stream().map(this::toInfluencerDto).collect(Collectors.toList());
+        return new PageImpl<>(resultList, source.getPageable(), source.getTotalElements());
     }
 
     @Override
@@ -211,9 +211,9 @@ public class InfluencerServiceImpl implements InfluencerService {
         if(status != null){
             statusValue = status.getValue();
         }
-        List<EventRequestsDTO> dtos = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(), statusValue, page).stream()
-                .map(this::eventRequestToDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos);
+        PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByInfluencerIdPageable(influencerEntity.getId(), statusValue, page);
+        List<EventRequestsDTO> dtos = source.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
     @Override
@@ -228,8 +228,8 @@ public class InfluencerServiceImpl implements InfluencerService {
             if(status != null){
                 statusValue = status.getValue();
             }
-            List<EventRequestsDTO> dtos = eventRequestsRepository.getAllByOrgIdPageable(orgId, statusValue, page).stream()
-                    .map(this::eventRequestToDto).collect(Collectors.toList());
+            PageImpl<EventRequestsEntity> source = eventRequestsRepository.getAllByOrgIdPageable(orgId, statusValue, page);
+            List<EventRequestsDTO> dtos = source.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList());
             return new PageImpl<>(dtos);
         }
         return null;
@@ -237,9 +237,6 @@ public class InfluencerServiceImpl implements InfluencerService {
 
     @Override
     public void joinEvent() {
-//        if(!influencer.getApproved())
-//            throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencer.getId());
-        //TODO
     }
 
     private EventRequestsDTO eventRequestToDto(EventRequestsEntity entity){

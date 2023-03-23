@@ -118,6 +118,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     private OtpService nasnavOtpService;
     @Autowired
     AppConfig appConfig;
+    @Autowired
+    private InfluencerRepository influencerRepository;
 
 
     @Override
@@ -621,6 +623,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         UserRepresentationObject userRepObj = user.getRepresentation();
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+        userRepObj.setIsInfluencer(influencerRepository.existsByUser_IdOrEmployeeUser_Id(user.getId(),user.getId()));
         return userRepObj;
     }
 

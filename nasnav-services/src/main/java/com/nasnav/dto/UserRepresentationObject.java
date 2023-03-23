@@ -35,6 +35,7 @@ public class UserRepresentationObject {
     public LocalDateTime tierCreatedAt;
     public Long boosterId;
     public String referral;
+    public Boolean isInfluencer;
 
     public String getReferral() {
         return id + "";
