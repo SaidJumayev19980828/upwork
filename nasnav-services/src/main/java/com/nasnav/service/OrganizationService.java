@@ -23,6 +23,8 @@ import java.util.*;
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
 
+    OrganizationRepresentationObject getOrganizationByNameOrUrlOrId(String name, String url, Long id) throws BusinessException;
+
     OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException;
 
     OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState);

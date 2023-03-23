@@ -72,6 +72,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.*;
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 
 
 @Service
@@ -1429,5 +1430,23 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public List<ProductFeatureType> getProductFeatureTypes() {
         return asList(ProductFeatureType.values());
+    }
+
+    @Override
+    public OrganizationRepresentationObject getOrganizationByNameOrUrlOrId(String name, String url, Long id)
+            throws BusinessException {
+        if (allIsNull(name, url, id))
+            throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
+
+        if (name != null)
+            return getOrganizationByName(name, 0);
+
+        if (url != null) {
+            Pair domain = getOrganizationAndSubdirsByUrl(url, 0);
+            OrganizationRepresentationObject orgObj = getOrganizationById(domain.getFirst(), 0);
+            orgObj.setSubDir(domain.getSecond());
+            return orgObj;
+        }
+        return getOrganizationById(id, 0);
     }
 }

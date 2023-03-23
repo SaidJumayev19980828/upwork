@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.nasnav.commons.utils.EntityUtils.allIsNull;
-import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -67,20 +65,7 @@ public class NavboxController {
 			@RequestParam(name = "p_name", required = false) String organizationName,
 			@RequestParam(name = "org_id", required = false) Long organizationId,
 			@RequestParam(name = "url", required = false) String url) throws BusinessException {
-
-		if (allIsNull(organizationName, organizationId, url))
-			throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
-
-		if (organizationName != null)
-			return organizationService.getOrganizationByName(organizationName, 0);
-
-		if (url != null) {
-			Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 0);
-			OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst(), 0);
-			orgObj.setSubDir(domain.getSecond());
-			return orgObj;
-		}
-		return organizationService.getOrganizationById(organizationId, 0);
+		return organizationService.getOrganizationByNameOrUrlOrId(organizationName, url, organizationId);
 	}
 
 	@GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
@@ -94,20 +79,14 @@ public class NavboxController {
 	}
 
 	@GetMapping(value = "/products", produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException {
-		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
-		if (productsResponse == null)
-			return new ResponseEntity<>(NO_CONTENT);
-		return new ResponseEntity<>(productsResponse, OK);
+	public ProductsResponse getProducts(ProductSearchParam productSearchParam) throws BusinessException {
+		return productService.getProducts(productSearchParam);
 	}
 
 	@Operation(description =  "Get list of products (POST version)", summary = "productList")
 	@PostMapping("/products")
-	public ResponseEntity<?> getProductsWithFeaturesFilter(@RequestBody ProductSearchParam productSearchParam) throws BusinessException {
-		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
-		if (productsResponse == null)
-			return new ResponseEntity<>(NO_CONTENT);
-		return new ResponseEntity<>(productsResponse, OK);
+	public ProductsResponse getProductsWithFeaturesFilter(@RequestBody ProductSearchParam productSearchParam) throws BusinessException {
+		return productService.getProducts(productSearchParam);
 	}
 
 	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)
@@ -118,14 +97,9 @@ public class NavboxController {
 	@GetMapping(value="/product",produces=APPLICATION_JSON_VALUE)
 	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId,
-										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
+										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") boolean includeOutOfStock)
 			throws BusinessException {
-		var params = new ProductFetchDTO(productId);
-		params.setShopId(shopId);
-		params.setCheckVariants(true);
-		params.setIncludeOutOfStock(includeOutOfStock);
-		params.setOnlyYeshteryProducts(false);
-		return productService.getProduct(params);
+		return productService.getProduct(productId, shopId, includeOutOfStock);
 	}
 
 	@GetMapping(value = "collection", produces = APPLICATION_JSON_VALUE)
