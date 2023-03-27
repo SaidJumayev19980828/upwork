@@ -153,16 +153,12 @@ public class ProductsController {
     }
 
 	@PostMapping(value = "image/bulk", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-    public List<ProductImageUpdateResponse> importProductImagesBulk(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                                    @RequestPart("imgs_zip") @Valid MultipartFile zip,
-                                                                    @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
-                                                                    @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-        if(nonNull(metaData.getFeatureId())){
-            SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
-            productImgService.updateSwatchImagesBulk(zip, csv, swatchMetaData);
-            return emptyList();
-        }
-		return productImgService.updateProductImageBulk(zip, csv, metaData);
+    public List<ProductImageUpdateResponse> importProductImagesBulk(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestPart("imgs_zip") @Valid MultipartFile zip,
+            @RequestPart(name = "imgs_barcode_csv", required = false) MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+        return productImgService.updateImagesBulk(zip, csv, metaData);
     }
 
 	@PostMapping(value = "image/bulk/url", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
@@ -240,14 +236,9 @@ public class ProductsController {
 
     @GetMapping(produces=APPLICATION_JSON_VALUE)
     public ProductDetailsDTO getProduct(@RequestHeader(name = "User-Token", required = false) String token,
-                                        @RequestParam(name = "product_id") Long productId,
-                                        @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
-        var params = new ProductFetchDTO(productId);
-        params.setShopId(shopId);
-        params.setCheckVariants(false);
-        params.setIncludeOutOfStock(true);
-        params.setOnlyYeshteryProducts(false);
-        return productService.getProduct(params);
+            @RequestParam(name = "product_id") Long productId,
+            @RequestParam(name = "shop_id", required = false) Long shopId) throws BusinessException {
+        return productService.getProduct(productId, shopId, true, false, false);
     }
 
     @PostMapping(value = "related_products", consumes = APPLICATION_JSON_VALUE)

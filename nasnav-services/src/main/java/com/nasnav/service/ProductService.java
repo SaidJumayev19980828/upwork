@@ -213,12 +213,13 @@ public class ProductService {
 	}
 
 	@Transactional
-	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean includeOutOfStock) throws BusinessException {
+	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
+			boolean getOnlyYeshteryProducts) throws BusinessException {
 		var params = new ProductFetchDTO(productId);
 		params.setShopId(shopId);
-		params.setCheckVariants(true);
+		params.setCheckVariants(checkVariants);
 		params.setIncludeOutOfStock(includeOutOfStock);
-		params.setOnlyYeshteryProducts(false);
+		params.setOnlyYeshteryProducts(getOnlyYeshteryProducts);
 		return getProduct(params);
 	}
 

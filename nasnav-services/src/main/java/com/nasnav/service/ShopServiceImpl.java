@@ -426,5 +426,27 @@ public class ShopServiceImpl implements ShopService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "employees "+linkedEmployees.toString());
         }
     }
+
+    @Override
+    public List<ShopRepresentationObject> getLocationShops(String name, Long orgId, Long areaId, Long cityId,
+            Double minLongitude, Double minLatitude, Double maxLongitude, Double maxLatitude, Double longitude,
+            Double latitude, Double radius, boolean yeshteryState, boolean searchInTags, Integer[] productType,
+            Long count) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude,
+                maxLongitude, maxLatitude,
+                longitude, latitude, radius, false, searchInTags, productType, count);
+        return getLocationShops(param);
+    }
+
+    @Override
+    public Set<CityIdAndName> getLocationShopsCities(String name, Long orgId, Long areaId, Long cityId,
+            Double minLongitude, Double minLatitude, Double maxLongitude, Double maxLatitude, Double longitude,
+            Double latitude, Double radius, boolean yeshteryState, boolean searchInTags, Integer[] productType,
+            Long count) {
+        LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude,
+                maxLongitude, maxLatitude,
+                longitude, latitude, radius, false, searchInTags, productType, count);
+        return getLocationShopsCities(param);
+    }
 	
 }

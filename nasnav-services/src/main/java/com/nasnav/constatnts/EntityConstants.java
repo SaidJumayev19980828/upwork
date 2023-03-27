@@ -31,8 +31,10 @@ public final class EntityConstants {
 
     //Number of seconds that login token stay valid during
     public static final int AUTH_TOKEN_VALIDITY = 2592000; // 1 month
-    
-    
+
+    public static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+
+
     public static final String NASNAV_DOMAIN = "nasnav.com";
     public static final String NASORG_DOMAIN = "nasnav.org";
 

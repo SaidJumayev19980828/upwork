@@ -21,7 +21,7 @@ public interface SecurityService {
 
     UserApiResponse login(UserDTOs.UserLoginObject body, YeshteryState state) ;
 
-    UserApiResponse logout(String token);
+    UserApiResponse logout(String token, String cookieToken);
 
     BaseUserEntity getCurrentUser();
     

@@ -181,11 +181,8 @@ public class LoyaltyPointController {
     public List<UserEntity> addNewMemberToFamily(@RequestHeader(name = "User-Token", required = false) String token,
                                                  @RequestParam(value = "family_id") Long familyId,
                                                  @RequestParam(value = "user_id") Long userId) {
-        if (familyId > 0 && userId > 0) {
-            loyaltyFamilyService.addNewMemberToFamily(userId, familyId);
-        }
-
-        return loyaltyFamilyService.getFamilyMembers(familyId);
+        
+        return loyaltyFamilyService.addNewMemberToFamily(userId, familyId);
     }
 
     //@DeleteMapping(value = "family/delete")
@@ -232,10 +229,8 @@ public class LoyaltyPointController {
     //@GetMapping(value = "booster/list")
     public List<LoyaltyBoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token,
                                               @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
-        if (orgId > 0) {
-            return loyaltyBoosterService.getBoosterByOrgId(orgId);
-        }
-        return loyaltyBoosterService.getBoosters();
+        
+        return loyaltyBoosterService.getBoosters(orgId);
     }
 
     //@DeleteMapping(value = "booster/delete")
@@ -295,10 +290,7 @@ public class LoyaltyPointController {
     public List<LoyaltyGiftEntity> getUserGiftsNotRedeem(@RequestHeader(name = "User-Token", required = false) String token,
                                                          @RequestParam(value = "user_id") Long userId,
                                                          @RequestParam(value = "is_redeem", required = false) Boolean isRedeem) {
-        if (isRedeem) {
-            return loyaltyGiftService.getGiftsRedeemByUserReceiveId(userId);
-        }
-        return loyaltyGiftService.getGiftsNotRedeemByUserId(userId);
+        return loyaltyGiftService.getGiftsByUserIdAndIsRedeem(userId, isRedeem);
     }
 
     /**

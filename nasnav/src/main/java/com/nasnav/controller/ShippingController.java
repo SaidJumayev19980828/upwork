@@ -23,7 +23,6 @@ public class ShippingController {
 													@RequestParam(value = "customer_address", required = false, defaultValue = "-1") Long customerAddress,
 													@RequestParam(value = "payment_method_id", required = false, defaultValue = "") String paymentMethodId,
 													@RequestParam(value = "shipping_service_id", required = false, defaultValue = "") String shippingServiceId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shippingService.getShippingOffers(customerAddress, orgId, paymentMethodId, shippingServiceId);
+		return shippingService.getShippingOffers(customerAddress, paymentMethodId, shippingServiceId);
 	}
 }

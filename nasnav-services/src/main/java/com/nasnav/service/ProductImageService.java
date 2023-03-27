@@ -25,6 +25,9 @@ public interface ProductImageService {
 	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	
 	ProductImageDeleteResponse deleteImage(Long imgId, Long productId, Long brandId) throws BusinessException;
+
+	List<ProductImageUpdateResponse> updateImagesBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException;
 	
 	List<ProductImageUpdateResponse> updateProductImageBulk(
 			@Valid MultipartFile zip

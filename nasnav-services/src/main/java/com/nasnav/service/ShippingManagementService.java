@@ -18,7 +18,7 @@ import java.util.Optional;
 
 public interface ShippingManagementService {
 
-	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, Long orgId, String paymentMethodId, String shippingServiceId);
+	List<ShippingOfferDTO> getShippingOffers(Long customerAddress, String paymentMethodId, String shippingServiceId);
 	void registerToShippingService(ShippingServiceRegistration registration);
 	void unregisterFromShippingService(String serviceId);
 	void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto, Long orgId);

@@ -117,7 +117,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
-	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, Long orgId, String paymentMethodId, String shippingServiceId) {
+	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId, String paymentMethodId, String shippingServiceId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId, paymentMethodId, shippingServiceId);
 		return getOffersFromOrganizationShippingServices(shippingDetails, orgId);
 	}
@@ -1030,8 +1031,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public List<ShippingOfferDTO> getYeshteryShippingOffers(Long customerAddrId, String paymentMethodId, String shippingServiceId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return getShippingOffers(customerAddrId, orgId, paymentMethodId, shippingServiceId);
+		return getShippingOffers(customerAddrId, paymentMethodId, shippingServiceId);
 	}
 
 

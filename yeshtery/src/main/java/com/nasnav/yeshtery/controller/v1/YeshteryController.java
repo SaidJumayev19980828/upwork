@@ -154,11 +154,16 @@ public class YeshteryController {
         return productService.getVariantsForYeshtery(name, start, count);
     }
 
-    @GetMapping(value="/review", produces = APPLICATION_JSON_VALUE)
-    public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
-                                                                   @RequestParam(value = "product_id", required = false)Long productId) {
-        if (productId != null)
-            return reviewService.getYeshteryProductRatings(productId);
+    @GetMapping(value = "/review", params = { "product_id",
+            "!variant_id" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getProductRatings(
+            @RequestParam(value = "product_id", required = false) Long productId) {
+        return reviewService.getYeshteryProductRatings(productId);
+    }
+
+    @GetMapping(value = "/review", params = "variant_id", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ProductRateRepresentationObject> getVariantRatings(
+            @RequestParam(value = "variant_id", required = false) Long variantId) {
         return reviewService.getYeshteryVariantRatings(variantId);
     }
 
@@ -177,12 +182,7 @@ public class YeshteryController {
                                         @RequestParam(name = "shop_id",required=false) Long shopId,
                                         @RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") Boolean includeOutOfStock)
             throws BusinessException {
-        var params = new ProductFetchDTO(productId);
-        params.setShopId(shopId);
-        params.setCheckVariants(true);
-        params.setIncludeOutOfStock(includeOutOfStock);
-        params.setOnlyYeshteryProducts(true);
-        return productService.getProduct(params);
+        return productService.getProduct(productId, shopId, includeOutOfStock, true, true);
     }
 
     @GetMapping("products")
@@ -273,22 +273,11 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/organization")
-    public OrganizationRepresentationObject getOrgInfo(@RequestParam(name = "p_name", required = false) String organizationName,
-                                                       @RequestParam(name = "org_id", required = false) Long organizationId,
-                                                       @RequestParam(name = "url", required = false) String url) throws BusinessException {
-        if (allIsNull(organizationName, organizationId, url))
-            throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
-
-        if (organizationName != null)
-            return organizationService.getOrganizationByName(organizationName, 1);
-
-        if (url != null) {
-            Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 1);
-            OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst(), 1);
-            orgObj.setSubDir(domain.getSecond());
-            return orgObj;
-        }
-        return organizationService.getOrganizationById(organizationId, 1);
+    public OrganizationRepresentationObject getOrgInfo(
+            @RequestParam(name = "p_name", required = false) String organizationName,
+            @RequestParam(name = "org_id", required = false) Long organizationId,
+            @RequestParam(name = "url", required = false) String url) throws BusinessException {
+        return organizationService.getOrganizationByNameOrUrlOrId(organizationName, url, organizationId, 1);
     }
 
     @GetMapping(value ="/tagstree", produces = APPLICATION_JSON_VALUE)

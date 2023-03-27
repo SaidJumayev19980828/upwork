@@ -1,8 +1,10 @@
 package com.nasnav.exceptions;
 
+import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,6 +145,15 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 			WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , ex);
 		return new ResponseEntity<UserApiResponse>(ex.getUserApiResponse(), ex.getHttpStatus());
+	}
+
+	@ExceptionHandler(InCompleteOAuthRegistration.class)
+	public final ResponseEntity<Object> handleInCompleteOAuthRegistration(InCompleteOAuthRegistration ex,
+			WebRequest requestInfo, HttpServletRequest request) {
+		logException(requestInfo, request, ex);
+		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+				.header(HttpHeaders.LOCATION, EntityConstants.OAUTH_ENTER_EMAIL_PAGE + ex.getSocialLoginToken())
+				.build();
 	}
 	
 	

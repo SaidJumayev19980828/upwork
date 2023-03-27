@@ -11,6 +11,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.SitemapParams;
+import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +66,7 @@ public class NavboxController {
 			@RequestParam(name = "p_name", required = false) String organizationName,
 			@RequestParam(name = "org_id", required = false) Long organizationId,
 			@RequestParam(name = "url", required = false) String url) throws BusinessException {
-		return organizationService.getOrganizationByNameOrUrlOrId(organizationName, url, organizationId);
+		return organizationService.getOrganizationByNameOrUrlOrId(organizationName, url, organizationId, 0);
 	}
 
 	@GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
@@ -99,7 +100,7 @@ public class NavboxController {
 										@RequestParam(name = "shop_id",required=false) Long shopId,
 										@RequestParam(value = "include_out_of_stock", required = false, defaultValue = "false") boolean includeOutOfStock)
 			throws BusinessException {
-		return productService.getProduct(productId, shopId, includeOutOfStock);
+		return productService.getProduct(productId, shopId, includeOutOfStock, true, false);
 	}
 
 	@GetMapping(value = "collection", produces = APPLICATION_JSON_VALUE)
@@ -144,48 +145,47 @@ public class NavboxController {
 
 	@GetMapping(value="/location_shops",produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "name", required = false) String name,
-														   @RequestParam(name = "org_id") Long orgId,
-														   @RequestParam(value = "area_id", required = false) Long areaId,
-														   @RequestParam(value = "city_id", required = false) Long cityId,
-														   @RequestParam(required = false) Double minLongitude,
-														   @RequestParam(required = false) Double maxLongitude,
-														   @RequestParam(required = false) Double minLatitude,
-														   @RequestParam(required = false) Double maxLatitude,
-														   @RequestParam(required = false) Double longitude,
-														   @RequestParam(required = false) Double latitude,
-														   @RequestParam(required = false) Double radius,
-														   @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
-														   @RequestParam(value = "product_type", required = false) Integer[] productType,
-														   @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
-		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
+			@RequestParam(name = "org_id") Long orgId,
+			@RequestParam(value = "area_id", required = false) Long areaId,
+			@RequestParam(value = "city_id", required = false) Long cityId,
+			@RequestParam(required = false) Double minLongitude,
+			@RequestParam(required = false) Double maxLongitude,
+			@RequestParam(required = false) Double minLatitude,
+			@RequestParam(required = false) Double maxLatitude,
+			@RequestParam(required = false) Double longitude,
+			@RequestParam(required = false) Double latitude,
+			@RequestParam(required = false) Double radius,
+			@RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+			@RequestParam(value = "product_type", required = false) Integer[] productType,
+			@RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+		return shopService.getLocationShops(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude,
+				maxLatitude,
 				longitude, latitude, radius, false, searchInTags, productType, count);
-		return shopService.getLocationShops(param);
 	}
 
 	@GetMapping(value = "/location_shops_cities", produces = APPLICATION_JSON_VALUE)
 	public Set<CityIdAndName> getLocationShopsCities(@RequestParam(value = "name", required = false) String name,
-													 @RequestParam(name = "org_id", required = false) Long orgId,
-													 @RequestParam(value = "area_id", required = false) Long areaId,
-													 @RequestParam(value = "city_id", required = false) Long cityId,
-													 @RequestParam(required = false) Double minLongitude,
-													 @RequestParam(required = false) Double maxLongitude,
-													 @RequestParam(required = false) Double minLatitude,
-													 @RequestParam(required = false) Double maxLatitude,
-													 @RequestParam(required = false) Double longitude,
-													 @RequestParam(required = false) Double latitude,
-													 @RequestParam(required = false) Double radius,
-													 @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
-													 @RequestParam(value = "product_type", required = false) Integer[] productType,
-													 @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
-		LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
-				longitude, latitude, radius, false, searchInTags.booleanValue(), productType, count);
-		return shopService.getLocationShopsCities(param);
+			@RequestParam(name = "org_id", required = false) Long orgId,
+			@RequestParam(value = "area_id", required = false) Long areaId,
+			@RequestParam(value = "city_id", required = false) Long cityId,
+			@RequestParam(required = false) Double minLongitude,
+			@RequestParam(required = false) Double maxLongitude,
+			@RequestParam(required = false) Double minLatitude,
+			@RequestParam(required = false) Double maxLatitude,
+			@RequestParam(required = false) Double longitude,
+			@RequestParam(required = false) Double latitude,
+			@RequestParam(required = false) Double radius,
+			@RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
+			@RequestParam(value = "product_type", required = false) Integer[] productType,
+			@RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+		return shopService.getLocationShopsCities(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude,
+				maxLatitude,
+				longitude, latitude, radius, false, searchInTags, productType, count);
 	}
 
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) {
-		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url, 0);
-		return new ResponseEntity<>("{\"id\":" + domain.getFirst() + ", \"sub_dir\":" + domain.getSecond() + "}", HttpStatus.OK);
+	public DomainOrgIdResponse getOrganizationByDomain(@RequestParam(name = "url") String url) {
+		return organizationService.getOrganizationAndSubdirsByUrl(url, 0);
 	}
 
 	@GetMapping(value="/countries", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -220,11 +220,15 @@ public class NavboxController {
 		return seoService.getSeoKeywords(orgId, entityId, type);
 	}
 
-	@GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<ProductRateRepresentationObject> getVariantRatings(@RequestParam(value = "variant_id", required = false)Long variantId,
-																   @RequestParam(value = "product_id", required = false)Long productId) {
-		if (productId != null)
-			return reviewService.getProductRatings(productId);
+	@GetMapping(value = "/review", params = { "product_id", "!variant_id" }, produces = MediaType.APPLICATION_JSON_VALUE)
+	public List<ProductRateRepresentationObject> getProductRatings(
+			@RequestParam(value = "product_id", required = false) Long productId) {
+		return reviewService.getProductRatings(productId);
+	}
+
+	@GetMapping(value = "/review", params = "variant_id", produces = MediaType.APPLICATION_JSON_VALUE)
+	public List<ProductRateRepresentationObject> getVariantRatings(
+			@RequestParam(value = "variant_id", required = false) Long variantId) {
 		return reviewService.getVariantRatings(variantId);
 	}
 

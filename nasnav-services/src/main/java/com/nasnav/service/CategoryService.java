@@ -345,9 +345,13 @@ public class CategoryService {
 
     
 
+	public TagResponse createOrUpdateTagThroughApi(TagsDTO tagDTO) throws BusinessException {
+		tagDTO.setHasCategory(true);
+		TagsEntity tag = createOrUpdateTag(tagDTO);
+		return new TagResponse(tag.getId());
+	}
 
 
-    
 	@CacheEvict(allEntries = true ,cacheNames = ORGANIZATIONS_TAG_TREES)
     public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException{
         validateTagDto(tagDTO);

@@ -42,7 +42,6 @@ public class YeshteryUserController {
 
     static final String API_PATH = YeshteryConstants.API_PATH +"/user/";
 
-    private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
 
 
     @Autowired
@@ -86,27 +85,15 @@ public class YeshteryUserController {
     }
 
     @PostMapping(value = "login/oauth2")
-    public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
-       //
-        ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-        try {
-            UserApiResponse body = securityService.socialLogin(socialLoginToken, true);
-            return response.body(body);
-        }catch(Exception e) {
-            //change it to forward to a server rendered page
-            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-                    .header(HttpHeaders.LOCATION, OAUTH_ENTER_EMAIL_PAGE + socialLoginToken)
-                    .build();
-        }
+    public UserApiResponse oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
+        return securityService.socialLogin(socialLoginToken, true);
     }
 
     @PostMapping(value = "logout")
-    public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
-                                  HttpServletRequest request,
-                                  HttpServletResponse response) {
-        if (token == null || token.isEmpty())
-            token = request.getCookies()[0].getValue();
-        UserApiResponse userApiResponse = securityService.logout(token);
+    public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String headerToken,
+            @CookieValue(name = "User-Token", required = false) String cookieToken,
+            HttpServletResponse response) {
+        UserApiResponse userApiResponse = securityService.logout(headerToken, cookieToken);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
     }
@@ -188,16 +175,19 @@ public class YeshteryUserController {
         return employeeUserService.createEmployeeUser(employeeUserJson);
     }
 
+    @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
+    public void sendEmailRecoveryToEmplyee(@RequestParam String email,
+            @RequestParam(value = "org_id", required = false) Long orgId,
+            @RequestParam() boolean employee) {
+        employeeUserService.sendEmailRecovery(email);
+    }
+
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
-    public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id", required = false) Long orgId,
-                                  @RequestParam() boolean employee,
-                                  @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
-        if (employee) {
-            employeeUserService.sendEmailRecovery(email);
-        } else {
-            userService.sendEmailRecovery(email, orgId, activationMethod);
-        }
+    public void sendEmailRecoveryToUser(@RequestParam String email,
+            @RequestParam(value = "org_id", required = false) Long orgId,
+            @RequestParam() boolean employee,
+            @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
+        userService.sendEmailRecovery(email, orgId, activationMethod);
     }
 
     @GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -206,16 +196,20 @@ public class YeshteryUserController {
         return reviewService.getUserProductsRatings(variantIds);
     }
 
+    @PostMapping(value = "suspend", params = "is_employee=true")
+    public void suspendEmployeeAccount(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(value = "user_id") Long userId,
+            @RequestParam(defaultValue = "false") Boolean suspend,
+            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        employeeUserService.suspendEmployeeAccount(userId, suspend);
+    }
+
     @PostMapping(value = "suspend")
-    public void suspendUserAccount(@RequestHeader (name = "User-Token", required = false) String token,
-                                   @RequestParam (value = "user_id")Long userId,
-                                   @RequestParam (defaultValue = "false") Boolean suspend,
-                                   @RequestParam (name = "is_employee", defaultValue = "false") Boolean isEmployee) {
-        if (isEmployee) {
-            employeeUserService.suspendEmployeeAccount(userId, suspend);
-        } else {
-            nasnavUserService.suspendUserAccount(userId, suspend);
-        }
+    public void suspendUserAccount(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(value = "user_id") Long userId,
+            @RequestParam(defaultValue = "false") Boolean suspend,
+            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        nasnavUserService.suspendUserAccount(userId, suspend);
     }
 
     @PostMapping("link_nasnav_users_to_yeshtery_users")
