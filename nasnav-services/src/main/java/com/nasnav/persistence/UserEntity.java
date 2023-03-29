@@ -127,6 +127,7 @@ public class UserEntity extends BaseUserEntity{
         if (this.getBooster() != null)
             obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
+        obj.setImage(this.getImage());
 
         return obj;
     }

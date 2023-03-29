@@ -42,6 +42,12 @@ DELETE FROM public.return_shipment where id in (
     on req.meta_order_id = meta.id
     and meta.organization_id between 99000 and 99999
 );
+DELETE FROM public.post_attachments;
+DELETE FROM public.post_likes;
+DELETE FROM public.post_clicks;
+DELETE FROM public.post_products;
+DELETE FROM public.posts;
+DELETE FROM public.user_followers;
 DELETE FROM public.return_shipment where shipping_service_id = 'TEST';
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;

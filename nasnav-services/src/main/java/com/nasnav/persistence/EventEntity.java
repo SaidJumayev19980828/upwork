@@ -1,7 +1,6 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.enumerations.EventStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -24,11 +23,9 @@ public class EventEntity {
     private LocalDateTime createdAt;
 
     @Column(name = "starts_at")
-    @CreationTimestamp
     private LocalDateTime startsAt;
 
     @Column(name = "ends_at")
-    @CreationTimestamp
     private LocalDateTime endsAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

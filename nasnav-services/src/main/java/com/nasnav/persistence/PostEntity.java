@@ -22,6 +22,12 @@ public class PostEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "status")
+    private Integer status;
+
+    @Column(name = "type")
+    private Integer type;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "org_id", nullable = false)
     @JsonIgnore

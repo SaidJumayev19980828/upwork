@@ -428,6 +428,7 @@ public enum ErrorCodes {
 	,G$POST$0001("Post Not found with id[%id]!")
 	,POST$LIKE$0002("no record found that the user liked this post before!")
 	,POST$LIKE$0003("user already liked this post before!")
+	,POST$REVIEW$ATTACHMENT("No attachments found fot review you should upload images")
 
 
 
