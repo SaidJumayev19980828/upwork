@@ -178,14 +178,14 @@ public class YeshteryUserController {
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToEmplyee(@RequestParam String email,
             @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam() boolean employee) {
+            @RequestParam boolean employee) {
         employeeUserService.sendEmailRecovery(email);
     }
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToUser(@RequestParam String email,
             @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam() boolean employee,
+            @RequestParam boolean employee,
             @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
         userService.sendEmailRecovery(email, orgId, activationMethod);
     }
