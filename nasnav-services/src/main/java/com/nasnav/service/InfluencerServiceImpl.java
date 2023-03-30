@@ -1,15 +1,12 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.*;
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.EventRequestsDTO;
-import com.nasnav.dto.InfluencerDTO;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
-import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
-import com.nasnav.dto.response.GeneralRepresentationDto;
 import com.nasnav.enumerations.EventRequestStatus;
 import com.nasnav.enumerations.EventStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -42,6 +41,10 @@ public class InfluencerServiceImpl implements InfluencerService {
     private CategoriesRepository categoriesRepository;
     @Autowired
     private EventLogsRepository eventLogsRepository;
+    @Autowired
+    private OrganizationService organizationService;
+    @Autowired
+    private ProductService productService;
 
     @Override
     public InfluencerDTO getInfluencerById(Long id) {
@@ -250,24 +253,37 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     private EventResponseDto eventToDto(EventEntity entity){
+        ProductFetchDTO productFetchDTO = new ProductFetchDTO();
+        productFetchDTO.setCheckVariants(false);
+        productFetchDTO.setIncludeOutOfStock(true);
+        productFetchDTO.setOnlyYeshteryProducts(false);
+        Set<ProductDetailsDTO> productDetailsDTOS = new HashSet<>();
+        entity.getProducts().forEach(o -> {
+            try {
+                productFetchDTO.setProductId(o.getId());
+                productDetailsDTOS.add(productService.getProduct(productFetchDTO));
+            } catch (BusinessException e) {
+                e.printStackTrace();
+            }
+        });
         EventResponseDto dto = new EventResponseDto();
         dto.setId(entity.getId());
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
-        dto.setOrganization(new GeneralRepresentationDto(entity.getOrganization().getId(),entity.getOrganization().getName()));
+        dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(), 0));
         if(entity.getInfluencer() != null){
             if(entity.getInfluencer().getUser() != null){
-                dto.setInfluencer(new GeneralRepresentationDto(entity.getInfluencer().getId(),entity.getInfluencer().getUser().getName()));
+                dto.setInfluencer(entity.getInfluencer().getUser().getRepresentation());
             }
             else {
-                dto.setInfluencer(new GeneralRepresentationDto(entity.getInfluencer().getId(),entity.getInfluencer().getEmployeeUser().getName()));
+                dto.setInfluencer(entity.getInfluencer().getEmployeeUser().getRepresentation());
             }
         }
         dto.setVisible(entity.getVisible());
         dto.setAttachments(entity.getAttachments());
         dto.setDescription(entity.getDescription());
         dto.setName(entity.getName());
-        dto.setProducts(entity.getProducts());
+        dto.setProducts(productDetailsDTOS);
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
         return dto;
     }
@@ -304,19 +320,5 @@ public class InfluencerServiceImpl implements InfluencerService {
         return dto;
     }
 
-    EventInterestDTO toEventInterestDto(EventLogsEntity entity){
-        EventInterestDTO dto = new EventInterestDTO();
-        dto.setId(entity.getId());
-        dto.setDate(entity.getInterestedAt());
-        if(entity.getUser() != null){
-            dto.setName(entity.getUser().getName());
-            dto.setEmail(entity.getUser().getEmail());
-        }
-        else if(entity.getEmployee() != null){
-            dto.setName(entity.getEmployee().getName());
-            dto.setEmail(entity.getEmployee().getEmail());
-        }
-        return dto;
-    }
 
 }

@@ -1,11 +1,13 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
-import com.nasnav.dto.response.GeneralRepresentationDto;
 import com.nasnav.enumerations.EventStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.Pageable;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +38,10 @@ public class EventServiceImpl implements EventService{
     private SecurityService securityService;
     @Autowired
     private EventLogsRepository eventLogsRepository;
+    @Autowired
+    private OrganizationService organizationService;
+    @Autowired
+    private ProductService productService;
 
     @Override
     public void createEvent(EventForRequestDTO dto) {
@@ -57,8 +62,11 @@ public class EventServiceImpl implements EventService{
         EventEntity entity = eventRepository.findById(eventId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId)
         );
+        List<EventEntity> relatedEvents = new ArrayList<>();
         List<Long> categoryIds = entity.getProducts().stream().map(o -> o.getCategoryId()).collect(Collectors.toList());
-        List<EventEntity> relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
+        if(!categoryIds.isEmpty() && !categoryIds.stream().anyMatch(o -> o == null)){
+            relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
+        }
         EventResponseDto dto = toDto(entity);
         dto.setRelatedEvents(relatedEvents.stream().map(this::toDto).collect(Collectors.toList()));
         return dto;
@@ -196,18 +204,30 @@ public class EventServiceImpl implements EventService{
     }
 
     private EventResponseDto toDto(EventEntity entity){
-        List<EventLogsEntity> logs = eventLogsRepository.getAllByEvent_Id(entity.getId());
+        ProductFetchDTO productFetchDTO = new ProductFetchDTO();
+        productFetchDTO.setCheckVariants(false);
+        productFetchDTO.setIncludeOutOfStock(true);
+        productFetchDTO.setOnlyYeshteryProducts(false);
+        Set<ProductDetailsDTO> productDetailsDTOS = new HashSet<>();
+        entity.getProducts().forEach(o -> {
+            try {
+                productFetchDTO.setProductId(o.getId());
+                productDetailsDTOS.add(productService.getProduct(productFetchDTO));
+            } catch (BusinessException e) {
+                e.printStackTrace();
+            }
+        });
         EventResponseDto dto = new EventResponseDto();
         dto.setId(entity.getId());
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
-        dto.setOrganization(new GeneralRepresentationDto(entity.getOrganization().getId(),entity.getOrganization().getName()));
+        dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         if(entity.getInfluencer() != null){
             if(entity.getInfluencer().getUser() != null){
-                dto.setInfluencer(new GeneralRepresentationDto(entity.getInfluencer().getId(),entity.getInfluencer().getUser().getName()));
+                dto.setInfluencer(entity.getInfluencer().getUser().getRepresentation());
             }
             else {
-                dto.setInfluencer(new GeneralRepresentationDto(entity.getInfluencer().getId(),entity.getInfluencer().getEmployeeUser().getName()));
+                dto.setInfluencer(entity.getInfluencer().getEmployeeUser().getRepresentation());
             }
         }
         dto.setVisible(entity.getVisible());
@@ -215,7 +235,7 @@ public class EventServiceImpl implements EventService{
         dto.setDescription(entity.getDescription());
         dto.setName(entity.getName());
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
-        dto.setProducts(entity.getProducts());
+        dto.setProducts(productDetailsDTOS);
         return dto;
     }
 

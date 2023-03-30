@@ -4,7 +4,6 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.PostCreationDTO;
-import com.nasnav.dto.response.GeneralRepresentationDto;
 import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.enumerations.PostType;

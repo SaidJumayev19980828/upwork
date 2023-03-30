@@ -63,6 +63,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
                 .map(Role::getName)
                 .collect(toSet())
         );
+        obj.setImage(this.getImage());
         return obj;
     }
 }
