@@ -27,7 +27,7 @@ public interface CartItemAddonDetailsRepository extends JpaRepository<CartItemAd
 	@Query("delete from CartItemAddonDetailsEntity cr where cr.user.id=:id ")
 	public void deleteByUserId(@Param("id") Long userId);
 	
-	@Query(value = "select NEW com.nasnav.dto.AddonDetailsDTO(st.id,a.name,a.id) from CartItemAddonDetailsEntity dt, AddonStocksEntity st ,  AddonEntity a where st.id=dt.addonStockEntity.id and a.id=st.addonEntity.id and dt.cartItemEntity.id = :itemId")
+	@Query(value = "select NEW com.nasnav.dto.AddonDetailsDTO(st.id,a.name,a.id,st.price,a.type) from CartItemAddonDetailsEntity dt, AddonStocksEntity st ,  AddonEntity a where st.id=dt.addonStockEntity.id and a.id=st.addonEntity.id and dt.cartItemEntity.id = :itemId")
     List<AddonDetailsDTO> listItemAddons( @Param("itemId")Long itemId);
 	
 	@Query("select dt from CartItemAddonDetailsEntity dt" +
