@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
+import static com.nasnav.constatnts.DefaultValueStrings.AS_MANY_AS_POSSIBLE;
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -98,7 +100,7 @@ public class YeshteryController {
                                                            @RequestParam(required = false) Double radius,
                                                            @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                            @RequestParam(value = "product_type", required = false) Integer[] productType,
-                                                           @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+                                                           @RequestParam(value = "count", required = false, defaultValue = AS_MANY_AS_POSSIBLE) Long count) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
                 longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
         return shopService.getLocationShops(param);
@@ -118,7 +120,7 @@ public class YeshteryController {
                                                @RequestParam(required = false) Double radius,
                                                @RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
                                                @RequestParam(value = "product_type", required = false) Integer[] productType,
-                                               @RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+                                               @RequestParam(value = "count", required = false, defaultValue = AS_MANY_AS_POSSIBLE) Long count) {
         LocationShopsParam param = new LocationShopsParam(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude, maxLatitude,
                 longitude, latitude, radius, true, searchInTags.booleanValue(), productType, count);
         return shopService.getLocationShopsCities(param);
@@ -141,7 +143,7 @@ public class YeshteryController {
 
     @GetMapping(value = "/brands", produces = APPLICATION_JSON_VALUE)
     public PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(@RequestParam(required = false, defaultValue = "0") Integer start,
-                                                                              @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                              @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                                               @RequestParam(value = "org_id", required = false) Long orgId,
                                                                               @RequestParam(value = "brand_id", required = false) Set<Long> brands) {
         return brandService.getYeshteryBrands(start, count, orgId, brands);
@@ -150,7 +152,7 @@ public class YeshteryController {
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
     public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,                                                                                                                                                                                                  
                                         @RequestParam(required = false, defaultValue = "0") Integer start,
-                                        @RequestParam(required = false, defaultValue = "10") Integer count) {
+                                        @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
         return productService.getVariantsForYeshtery(name, start, count);
     }
 

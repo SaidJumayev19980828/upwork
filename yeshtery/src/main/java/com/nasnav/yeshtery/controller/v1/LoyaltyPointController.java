@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+import static com.nasnav.constatnts.DefaultValueStrings.INVALID_ID;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -173,7 +174,7 @@ public class LoyaltyPointController {
 
     //@GetMapping(value = "family/list")
     public List<LoyaltyFamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                                               @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
+                                               @RequestParam(value = "org_id", required = false, defaultValue = INVALID_ID) Long orgId) {
         return loyaltyFamilyService.listFamily(orgId);
     }
 
@@ -228,7 +229,7 @@ public class LoyaltyPointController {
 
     //@GetMapping(value = "booster/list")
     public List<LoyaltyBoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                                              @RequestParam(value = "org_id", required = false, defaultValue = "-1") Long orgId) {
+                                              @RequestParam(value = "org_id", required = false, defaultValue = INVALID_ID) Long orgId) {
         
         return loyaltyBoosterService.getBoosters(orgId);
     }

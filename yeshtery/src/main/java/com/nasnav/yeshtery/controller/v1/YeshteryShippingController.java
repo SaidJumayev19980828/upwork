@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.nasnav.constatnts.DefaultValueStrings.INVALID_ID;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -24,7 +25,7 @@ public class YeshteryShippingController {
 
     @GetMapping(path = "/offers", produces= APPLICATION_JSON_VALUE)
     public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestParam(value = "customer_address", required = false, defaultValue = "-1") Long customerAddress,
+                                                    @RequestParam(value = "customer_address", required = false, defaultValue = INVALID_ID) Long customerAddress,
                                                     @RequestParam(value = "payment_method_id", required = false, defaultValue = "") String paymentMethodId,
                                                     @RequestParam(value = "shipping_service_id", required = false, defaultValue = "") String shippingServiceId) {
         return shippingService.getYeshteryShippingOffers(customerAddress, paymentMethodId, shippingServiceId);

@@ -15,7 +15,6 @@ import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.nasnav.constatnts.DefaultValueStrings.AS_MANY_AS_POSSIBLE;
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -112,7 +113,7 @@ public class NavboxController {
 	public VariantsResponse getVariants(@RequestParam("org_id") Long orgId,
 										@RequestParam(required = false, defaultValue = "") String name,
 										@RequestParam(required = false, defaultValue = "0") Integer start,
-										@RequestParam(required = false, defaultValue = "10") Integer count) {
+										@RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
 		return productService.getVariants(orgId, name, start, count);
 	}
 
@@ -157,7 +158,7 @@ public class NavboxController {
 			@RequestParam(required = false) Double radius,
 			@RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
 			@RequestParam(value = "product_type", required = false) Integer[] productType,
-			@RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+			@RequestParam(value = "count", required = false, defaultValue = AS_MANY_AS_POSSIBLE) Long count) {
 		return shopService.getLocationShops(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude,
 				maxLatitude,
 				longitude, latitude, radius, false, searchInTags, productType, count);
@@ -177,7 +178,7 @@ public class NavboxController {
 			@RequestParam(required = false) Double radius,
 			@RequestParam(required = false, defaultValue = "true") Boolean searchInTags,
 			@RequestParam(value = "product_type", required = false) Integer[] productType,
-			@RequestParam(value = "count", required = false, defaultValue = "999999") Long count) {
+			@RequestParam(value = "count", required = false, defaultValue = AS_MANY_AS_POSSIBLE) Long count) {
 		return shopService.getLocationShopsCities(name, orgId, areaId, cityId, minLongitude, minLatitude, maxLongitude,
 				maxLatitude,
 				longitude, latitude, radius, false, searchInTags, productType, count);
