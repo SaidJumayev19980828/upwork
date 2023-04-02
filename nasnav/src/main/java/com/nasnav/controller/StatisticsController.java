@@ -8,6 +8,8 @@ import com.nasnav.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_STATISTICS_MONTH_COUNT;
+
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +25,7 @@ public class StatisticsController {
     public List<Map<String,Object>> getOrderStatistics(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                         @RequestParam List<OrderStatus> statuses,
                                                         @RequestParam RequestType type,
-                                                        @RequestParam (name = "month_count", required = false, defaultValue = "12") Integer months) {
+                                                        @RequestParam (name = "month_count", required = false, defaultValue = DEFAULT_STATISTICS_MONTH_COUNT) Integer months) {
         return statisticsService.getOrderStatistics(statuses, type, months);
     }
 
@@ -34,7 +36,7 @@ public class StatisticsController {
 
     @GetMapping("sold_products")
     public Map<String, List<ProductStatisticsInfo>> getProductsStatistics(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                        @RequestParam (name = "month_count", required = false, defaultValue = "12") Integer months) {
+                                        @RequestParam (name = "month_count", required = false, defaultValue = DEFAULT_STATISTICS_MONTH_COUNT) Integer months) {
         return statisticsService.getProductsStatistics(months);
     }
 

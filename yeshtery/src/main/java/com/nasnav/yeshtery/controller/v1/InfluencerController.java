@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
+
 import java.util.List;
 
 @RestController
@@ -30,7 +32,7 @@ public class InfluencerController {
     @GetMapping
     public PageImpl<InfluencerDTO> getAllPageable(@RequestHeader(name = "User-Token", required = false) String token,
                                                   @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                 @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                 @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                   @RequestParam(required = false) Boolean status) {
         return influencerService.getAllInfluencers(start, count, status);
     }
@@ -79,7 +81,7 @@ public class InfluencerController {
     @GetMapping("/myEventRequests")
     public PageImpl<EventRequestsDTO> getMyEventRequests(@RequestHeader(name = "User-Token", required = false) String token,
                                                          @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                         @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                         @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                          @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getMyEventRequests(start, count, status);
     }
@@ -87,7 +89,7 @@ public class InfluencerController {
     @GetMapping("/hostingRequests")
     public PageImpl<EventRequestsDTO> getOrgEventsRequests(@RequestHeader(name = "User-Token", required = false) String token,
                                                            @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                           @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                           @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                            @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getEventsRequestByOrgForEmployee(start, count, status);
     }

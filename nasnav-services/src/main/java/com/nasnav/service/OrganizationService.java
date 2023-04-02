@@ -11,6 +11,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.request.SitemapParams;
+import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -22,6 +23,8 @@ import java.util.*;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
+
+    OrganizationRepresentationObject getOrganizationByNameOrUrlOrId(String name, String url, Long id, Integer yeshteryState) throws BusinessException;
 
     OrganizationRepresentationObject getOrganizationByName(String organizationName, Integer yeshteryState) throws BusinessException;
 
@@ -45,7 +48,7 @@ public interface OrganizationService {
 
     void deleteImage(Long imgId, String url);
 
-    Pair getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState);
+    DomainOrgIdResponse getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState);
 
     void deleteExtraAttribute(Integer attrId);
 

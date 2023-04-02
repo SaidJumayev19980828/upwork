@@ -81,7 +81,7 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
 
 
     protected void validateProductImporFile(@Valid MultipartFile file) throws RuntimeBusinessException {
-        if(file == null || file.isEmpty()) {
+        if(file == null || file.isEmpty() || !isFileSupported(file)) {
             throw new RuntimeBusinessException(
                     ERR_NO_FILE_UPLOADED
                     , "INVALID PARAM"

@@ -141,7 +141,8 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	@Transactional
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
-	public UserApiResponse logout(String token) {
+	public UserApiResponse logout(String headerToken, String cookieToken) {
+		String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
@@ -515,7 +516,7 @@ public class SecurityServiceImpl implements SecurityService {
 		return oAuthUserRepo
 				.findByLoginToken(socialLoginToken)
 				.map(OAuth2UserEntity::getUser)
-				.orElseThrow(() -> new InCompleteOAuthRegistration());
+				.orElseThrow(() -> new InCompleteOAuthRegistration(socialLoginToken));
 	}
 
 

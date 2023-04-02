@@ -5,6 +5,7 @@ import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.dto.request.ProductPositionDTO;
+import com.nasnav.dto.response.FloorsData;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_360_PRODUCTS_COUNT;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -48,10 +50,8 @@ public class ShopThreeSixtyController {
     }
 
     @GetMapping(value = "/sections", produces = APPLICATION_JSON_VALUE)
-    public Map<String, List<ShopFloorDTO>> getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List<ShopFloorDTO>> res = new HashMap<>();
-        res.put("floors", shop360Svc.getSections(shopId));
-        return res;
+    public FloorsData getShop360Sections(@RequestParam("shop_id") Long shopId) {
+        return shop360Svc.getFloorsData(shopId);
     }
 
     @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
@@ -111,7 +111,7 @@ public class ShopThreeSixtyController {
     public LinkedHashMap<String, List<ThreeSixtyProductsDTO>> getShop360products(
              @RequestParam("shop_id") Long shopId,
              @RequestParam(required = false) String name,
-             @RequestParam(required = false, defaultValue = "5") Integer count,
+             @RequestParam(required = false, defaultValue = DEFAULT_360_PRODUCTS_COUNT) Integer count,
              @RequestParam(value = "product_type", required = false) Integer productType,
              @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
              @RequestParam(value = "published", required = false) Short published,

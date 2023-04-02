@@ -580,9 +580,19 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 	}
 
-	
-	
-	
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public List<ProductImageUpdateResponse> updateImagesBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		if (nonNull(metaData.getFeatureId())) {
+			SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
+			updateSwatchImagesBulk(zip, csv, swatchMetaData);
+			return emptyList();
+		}
+		return updateProductImageBulk(zip, csv, metaData);
+	}
+
 
 
 	@Override

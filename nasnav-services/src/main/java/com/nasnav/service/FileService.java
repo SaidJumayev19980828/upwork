@@ -27,6 +27,7 @@ import org.apache.tika.mime.MimeTypeException;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -370,6 +371,23 @@ public class FileService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		FileEntity file = filesRepo.findByUrlAndOrganization_Id(fileName, orgId);
 		deleteFile(file);
+	}
+
+	private String addSlash(String url) {
+		return url.startsWith("/") ? url : "/" + url;
+	}
+
+	public String getResourceInternalUrlByOrg(String orgSpeificUrl, Long orgId, Integer width, Integer height, String type) {
+		String url = "/" + orgId + addSlash(orgSpeificUrl);
+		return getResourceInternalUrl(url, width, height, type);
+	}
+
+	public String getResourceInternalUrl(String url, Integer width, Integer height, String type) {
+		String normalizedUrl = addSlash(url);
+
+		//TODO: why don't we support changing type without resizing?
+		return width == null && height == null ? getResourceInternalUrl(normalizedUrl)
+				: getResizedImageInternalUrl(normalizedUrl, width, height, type);
 	}
 
 

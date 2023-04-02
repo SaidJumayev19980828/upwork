@@ -51,8 +51,11 @@ public class LoyaltyFamilyServiceImp implements LoyaltyFamilyService {
     }
 
     @Override
-    public void addNewMemberToFamily(Long userId, Long familyId) {
-        userService.updateUserByFamilyId(familyId, userId);
+    public List<UserEntity> addNewMemberToFamily(Long userId, Long familyId) {
+        if (familyId > 0 && userId > 0) {
+            userService.updateUserByFamilyId(familyId, userId);
+        }
+        return getFamilyMembers(familyId);
     }
 
     @Override

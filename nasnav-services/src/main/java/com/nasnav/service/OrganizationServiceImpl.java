@@ -22,6 +22,7 @@ import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.request.SitemapParams;
+import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -72,6 +73,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.*;
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 
 
 @Service
@@ -1073,6 +1075,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             img = organizationImagesRepository
                     .findByUriAndOrganizationEntity_Id(url, orgId)
                     .orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0002, url));
+        } else {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
         }
         organizationImagesRepository.deleteById(img.getId());
 
@@ -1082,7 +1086,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
-    public Pair getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState) {
+    public DomainOrgIdResponse getOrganizationAndSubdirsByUrl(String urlString, Integer yeshteryState) {
         urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
         URIBuilder url = domainService.validateDomainCharacters(urlString);
 
@@ -1112,12 +1116,12 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    }
 	    if (orgDom != null)
             if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
-                return new Pair(0L, 0L);
+                return new DomainOrgIdResponse(0L, 0L);
             }
 	    
 //	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
 	    
-		return (orgDom == null) ? new Pair(0L, 0L) : new Pair(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
+		return (orgDom == null) ? new DomainOrgIdResponse(0L, 0L) : new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
 
 
@@ -1282,8 +1286,8 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
-        Pair domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
-        Long orgId = domain.getFirst();
+        DomainOrgIdResponse domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
+        Long orgId = domain.getId();
         if (orgId.intValue() == 0) {
             throw new RuntimeBusinessException(NOT_FOUND, GEN$0012, params.getUrl());
         }
@@ -1429,5 +1433,23 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public List<ProductFeatureType> getProductFeatureTypes() {
         return asList(ProductFeatureType.values());
+    }
+
+    @Override
+    public OrganizationRepresentationObject getOrganizationByNameOrUrlOrId(String name, String url, Long id, Integer yeshteryState)
+            throws BusinessException {
+        if (allIsNull(name, url, id))
+            throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
+
+        if (name != null)
+            return getOrganizationByName(name, yeshteryState);
+
+        if (url != null) {
+            DomainOrgIdResponse domain = getOrganizationAndSubdirsByUrl(url, yeshteryState);
+            OrganizationRepresentationObject orgObj = getOrganizationById(domain.getId(), yeshteryState);
+            orgObj.setSubDir(domain.getSubDir());
+            return orgObj;
+        }
+        return getOrganizationById(id, yeshteryState);
     }
 }

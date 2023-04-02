@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
+
 import java.util.List;
 
 @RestController
@@ -35,7 +37,7 @@ public class EventController {
     @GetMapping("/list")
     public PageImpl<EventResponseDto> getEventsForEmployeePageable(@RequestHeader(name = "User-Token", required = false) String token,
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                                   @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                   @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                                    @RequestParam(required = false) EventStatus status){
         return eventService.getEventsForEmployee(start, count, status);
     }
@@ -54,7 +56,7 @@ public class EventController {
     public PageImpl<EventInterestDTO> getInterestsByEventId(@RequestHeader(name = "User-Token", required = false) String token,
                                                             @PathVariable Long eventId,
                                                             @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                            @RequestParam(required = false, defaultValue = "10") Integer count){
+                                                            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count){
         return eventService.getInterestsByEventId(eventId,start,count);
     }
 

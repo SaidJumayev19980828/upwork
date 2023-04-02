@@ -144,18 +144,13 @@ public class OrganizationController {
     public void deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam(value = "image_id", required = false) Long imageId,
                                       @RequestParam(value = "url", required = false) String url) {
-        if (imageId == null && url == null) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
-        }
         orgService.deleteImage(imageId, url);
     }
 
     @PostMapping(value = "tag", produces = APPLICATION_JSON_VALUE)
     public TagResponse updateOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
                                              @RequestBody TagsDTO tagDTO) throws BusinessException {
-        tagDTO.setHasCategory(true);
-        TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
-        return new TagResponse(tag.getId());
+        return categoryService.createOrUpdateTagThroughApi(tagDTO);
     }
 
     @DeleteMapping(value = "tag", produces = APPLICATION_JSON_VALUE)

@@ -26,7 +26,38 @@ public interface ShopService {
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     ShopResponse shopModification(ShopJsonDTO shopJson);
 
+    List<ShopRepresentationObject> getLocationShops(String name,
+            Long orgId,
+            Long areaId,
+            Long cityId,
+            Double minLongitude,
+            Double minLatitude,
+            Double maxLongitude,
+            Double maxLatitude,
+            Double longitude,
+            Double latitude,
+            Double radius,
+            boolean yeshteryState,
+            boolean searchInTags,
+            Integer[] productType,
+            Long count);
     List<ShopRepresentationObject> getLocationShops(LocationShopsParam param);
+
+    Set<CityIdAndName> getLocationShopsCities(String name,
+            Long orgId,
+            Long areaId,
+            Long cityId,
+            Double minLongitude,
+            Double minLatitude,
+            Double maxLongitude,
+            Double maxLatitude,
+            Double longitude,
+            Double latitude,
+            Double radius,
+            boolean yeshteryState,
+            boolean searchInTags,
+            Integer[] productType,
+            Long count);
 
     Set<CityIdAndName> getLocationShopsCities(LocationShopsParam param);
 

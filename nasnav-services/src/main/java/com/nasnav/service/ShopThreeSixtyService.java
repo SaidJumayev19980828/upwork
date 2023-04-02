@@ -7,6 +7,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.FloorsData;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -146,14 +147,16 @@ public class ShopThreeSixtyService {
     }
 
 
-    public List<ShopFloorDTO> getSections(Long shopId) {
+    public FloorsData getFloorsData(Long shopId) {
         ShopThreeSixtyEntity shop = getShopThreeSixtyEntity(shopId);
-        return shopFloorsRepo
-                .findByShopThreeSixtyEntity_Id(shop.getId())
-                .stream()
-                .map(f -> (ShopFloorDTO) f.getRepresentation())
-                .sorted(Comparator.comparing(f -> getFloorNumber(f.getNumber())))
-                .collect(toList());
+        List<ShopFloorDTO> floors = shopFloorsRepo
+        .findByShopThreeSixtyEntity_Id(shop.getId())
+        .stream()
+        .map(f -> (ShopFloorDTO) f.getRepresentation())
+        .sorted(Comparator.comparing(f -> getFloorNumber(f.getNumber())))
+        .collect(toList());
+
+        return new FloorsData(floors);
     }
 
 

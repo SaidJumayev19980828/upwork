@@ -11,7 +11,7 @@ public interface LoyaltyBoosterService {
 
     List<LoyaltyBoosterDTO> getBoosterByOrgId(Long orgId);
 
-    List<LoyaltyBoosterDTO> getBoosters();
+    List<LoyaltyBoosterDTO> getBoosters(Long orgId);
 
     LoyaltyBoosterDTO getBoosterById(Long id);
 

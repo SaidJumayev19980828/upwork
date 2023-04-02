@@ -212,6 +212,17 @@ public class ProductService {
 		this.stockService = stockService;
 	}
 
+	@Transactional
+	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean includeOutOfStock, boolean checkVariants,
+			boolean getOnlyYeshteryProducts) throws BusinessException {
+		var params = new ProductFetchDTO(productId);
+		params.setShopId(shopId);
+		params.setCheckVariants(checkVariants);
+		params.setIncludeOutOfStock(includeOutOfStock);
+		params.setOnlyYeshteryProducts(getOnlyYeshteryProducts);
+		return getProduct(params);
+	}
+
 
 
 	@Transactional

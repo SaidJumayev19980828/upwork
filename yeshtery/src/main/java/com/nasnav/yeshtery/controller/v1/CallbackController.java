@@ -31,7 +31,7 @@ public class CallbackController {
     public void shippingCallback(@PathVariable("service_id") String serviceId,
                                  @PathVariable("org_id") Long orgId,
                                  @RequestBody String dto) throws IOException {
-    	logger.info(format("Shipping Service [%s] for org[%d] sent a callback with body[%s]", serviceId, orgId, dto));
+    	logger.info("Shipping Service [%s] for org[%d] sent a callback with body[%s]", serviceId, orgId, dto);
         shippingService.updateShipmentStatus(serviceId, orgId, dto);
     }
 

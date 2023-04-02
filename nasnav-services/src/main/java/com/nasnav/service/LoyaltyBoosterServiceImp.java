@@ -54,7 +54,10 @@ public class LoyaltyBoosterServiceImp implements LoyaltyBoosterService {
     }
 
     @Override
-    public List<LoyaltyBoosterDTO> getBoosters() {
+    public List<LoyaltyBoosterDTO> getBoosters(Long orgId) {
+        if (orgId > 0) {
+            return getBoosterByOrgId(orgId);
+        }
         return prepareBoosterListToDto(loyaltyBoosterRepository.findAll());
     }
 

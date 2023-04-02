@@ -46,13 +46,11 @@ public class LoyaltyGiftServiceImp implements LoyaltyGiftService {
     }
 
     @Override
-    public List<LoyaltyGiftEntity> getGiftsNotRedeemByUserId(Long userId) {
+    public List<LoyaltyGiftEntity> getGiftsByUserIdAndIsRedeem(Long userId, boolean isRedeem) {
+        if (isRedeem) {
+            return loyaltyGiftRepository.getByUserTo_IdAndIsRedeemTrue(userId);
+        }
         return loyaltyGiftRepository.getByUserFrom_IdAndIsRedeemFalse(userId);
-    }
-
-    @Override
-    public List<LoyaltyGiftEntity> getGiftsRedeemByUserReceiveId(Long userId) {
-        return loyaltyGiftRepository.getByUserTo_IdAndIsRedeemTrue(userId);
     }
 
     @Override

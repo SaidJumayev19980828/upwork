@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nasnav.constatnts.DefaultValueStrings.INVALID_ID;
+
 import java.util.List;
 
 @RestController
@@ -20,10 +22,9 @@ public class ShippingController {
 
 	@GetMapping(path = "/offers", produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ShippingOfferDTO> getShippingOffers(@RequestHeader(name = "User-Token", required = false) String userToken,
-													@RequestParam(value = "customer_address", required = false, defaultValue = "-1") Long customerAddress,
+													@RequestParam(value = "customer_address", required = false, defaultValue = INVALID_ID) Long customerAddress,
 													@RequestParam(value = "payment_method_id", required = false, defaultValue = "") String paymentMethodId,
 													@RequestParam(value = "shipping_service_id", required = false, defaultValue = "") String shippingServiceId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shippingService.getShippingOffers(customerAddress, orgId, paymentMethodId, shippingServiceId);
+		return shippingService.getShippingOffers(customerAddress, paymentMethodId, shippingServiceId);
 	}
 }

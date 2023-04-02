@@ -58,16 +58,19 @@ public class UserController {
         return employeeUserService.createEmployeeUser(employeeUserJson);
     }
 
+    @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
+    public void sendEmailRecoveryToEmplyee(@RequestParam String email,
+            @RequestParam(value = "org_id", required = false) Long orgId,
+            @RequestParam boolean employee) {
+        employeeUserService.sendEmailRecovery(email);
+    }
+
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
-    public void sendEmailRecovery(@RequestParam String email,
-                                  @RequestParam(value = "org_id", required = false) Long orgId,
-                                  @RequestParam() boolean employee,
-                                  @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
-        if (employee) {
-            employeeUserService.sendEmailRecovery(email);
-        } else {
-            userService.sendEmailRecovery(email, orgId, activationMethod);
-        }
+    public void sendEmailRecoveryToUser(@RequestParam String email,
+            @RequestParam(value = "org_id", required = false) Long orgId,
+            @RequestParam boolean employee,
+            @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
+        userService.sendEmailRecovery(email, orgId, activationMethod);
     }
 
     @PostMapping(value = "recover", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -86,17 +89,10 @@ public class UserController {
     }
 
     @PostMapping(value = "logout")
-    public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
-                                  HttpServletRequest request,
-                                  HttpServletResponse response) {
-        if (token == null || token.isEmpty()) {
-            for(Cookie c : request.getCookies()) {
-                if (c.getName().equals("User-Token")){
-                    token = c.getValue();
-                }
-            }
-        }
-        UserApiResponse userApiResponse = securityService.logout(token);
+    public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String headerToken,
+            @CookieValue(name = "User-Token", required = false) String cookieToken,
+            HttpServletResponse response) {
+        UserApiResponse userApiResponse = securityService.logout(headerToken, cookieToken);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
     }
@@ -140,27 +136,16 @@ public class UserController {
     }
     
     
-    @Operation(description =  "Log in user using a social login token, "
-    		+ "mainly used as a redirect destination at the end of the OAuth2 login process"
-    		, summary = "userSocialLogin")
+    @Operation(description = "Log in user using a social login token, "
+            + "mainly used as a redirect destination at the end of the OAuth2 login process", summary = "userSocialLogin")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = " 200" ,description = "User logged in"),
-            @ApiResponse(responseCode = " 401" ,description = "Invalid credentials"),
-            @ApiResponse(responseCode = " 423" ,description = "Account unavailable"),
+            @ApiResponse(responseCode = " 200", description = "User logged in"),
+            @ApiResponse(responseCode = " 401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = " 423", description = "Account unavailable"),
     })
-    @PostMapping(value = "login/oauth2",
-            produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
-    	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    	try {
-    		UserApiResponse body = securityService.socialLogin(socialLoginToken, false);
-    		return response.body(body);
-    	}catch(InCompleteOAuthRegistration e) {
-    		//change it to forward to a server rendered page
-    		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-    							.header(HttpHeaders.LOCATION, OAUTH_ENTER_EMAIL_PAGE + socialLoginToken)
-    							.build();
-    	}    	
+    @PostMapping(value = "login/oauth2", produces = APPLICATION_JSON_VALUE)
+    public UserApiResponse oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
+        return securityService.socialLogin(socialLoginToken, false);
     }
 
     @PostMapping(value = "v2/register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -197,16 +182,20 @@ public class UserController {
         userService.removeUserAddress(id);
     }
 
+    @PostMapping(value = "suspend", params = "is_employee=true")
+    public void suspendEmployeeAccount(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(value = "user_id") Long userId,
+            @RequestParam(defaultValue = "false") Boolean suspend,
+            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        employeeUserService.suspendEmployeeAccount(userId, suspend);
+    }
+
     @PostMapping(value = "suspend")
-    public void suspendUserAccount(@RequestHeader (name = "User-Token", required = false) String token,
-                                   @RequestParam (value = "user_id")Long userId,
-                                   @RequestParam (defaultValue = "false") Boolean suspend,
-                                   @RequestParam (name = "is_employee", defaultValue = "false") Boolean isEmployee) {
-        if (isEmployee) {
-            employeeUserService.suspendEmployeeAccount(userId, suspend);
-        } else {
-            userService.suspendUserAccount(userId, suspend);
-        }
+    public void suspendUserAccount(@RequestHeader(name = "User-Token", required = false) String token,
+            @RequestParam(value = "user_id") Long userId,
+            @RequestParam(defaultValue = "false") Boolean suspend,
+            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+        userService.suspendUserAccount(userId, suspend);
     }
 
     @PostMapping(value = "subscribe")
