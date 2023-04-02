@@ -77,6 +77,7 @@ public class DataImportXlsxApiTest {
 
 	private static final long TEST_VARIANT_UPDATED = 310003L;
 
+	private static final String URL_SHARED_UPLOAD_PRODUCT_LIST = "/upload/productlist";
 
 	private static final String URL_UPLOAD_PRODUCT_LIST = "/upload/productlist/xlsx";
 
@@ -356,6 +357,24 @@ public class DataImportXlsxApiTest {
 
 		long unitsCountBefore = stockUnitRepo.count();
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileWithUnit, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long unitsCountAfter = stockUnitRepo.count();
+		assertEquals("imported two units, one already exists and the other is new"
+				, unitsCountAfter, unitsCountBefore + 1);
+	}
+
+	@Test
+	public void uploadProductXLSthroughSharedApi() throws Exception{
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		long unitsCountBefore = stockUnitRepo.count();
+		MockMultipartFile filePart = new MockMultipartFile("csv", xlsxFileWithUnit.getFilename(), "text/xlsx", xlsxFileWithUnit.getInputStream());
+
+    ResultActions result = uploadProductXlsx(URL_SHARED_UPLOAD_PRODUCT_LIST, "ggr45r5", filePart, importProperties);
+		uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFile, importProperties);
 
 		result.andExpect(status().is(200));
 
