@@ -1,7 +1,7 @@
 package com.nasnav.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dao.*;
+import com.nasnav.dto.UserCartInfo;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
@@ -9,7 +9,7 @@ import com.nasnav.dto.response.navbox.StatisticsCartItem;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartStatisticsData;
-import lombok.Data;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -207,15 +207,5 @@ public class StatisticsService {
     private Integer getWeekNumber(Integer week) {
         return ofNullable(week).orElseGet(() -> now().get(ChronoField.ALIGNED_WEEK_OF_MONTH));
     }
-}
-
-@Data
-class UserCartInfo {
-    Long id;
-    String name;
-    String email;
-    @JsonProperty("phone_number")
-    String phoneNumber;
-    List<StatisticsCartItem> items;
 }
 

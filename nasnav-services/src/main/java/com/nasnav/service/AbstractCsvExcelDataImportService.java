@@ -221,6 +221,6 @@ public abstract class AbstractCsvExcelDataImportService implements CsvExcelDataI
         return writeFileHeaders(baseHeaders, addExcelDataValidation);
     }
 
-    abstract ByteArrayOutputStream writeFileHeaders(List<String> headers, Boolean addExcelDataValidation) throws IOException;
+    protected abstract ByteArrayOutputStream writeFileHeaders(List<String> headers, Boolean addExcelDataValidation) throws IOException;
 
 }

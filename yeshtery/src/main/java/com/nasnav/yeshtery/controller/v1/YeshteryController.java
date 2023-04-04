@@ -4,6 +4,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
@@ -14,6 +15,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
+import com.nasnav.service.PromotionsService;
 import com.nasnav.commons.YeshteryConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -71,7 +73,7 @@ public class YeshteryController {
     @Autowired
     private SeoService seoService;
     @Autowired
-    private PromotionsServiceImpl promotionsService;
+    private PromotionsService promotionsService;
 
     @GetMapping(value = "/applicable_promotions_list", produces = APPLICATION_JSON_VALUE)
     public ItemsPromotionsDTO getPromotionsList(

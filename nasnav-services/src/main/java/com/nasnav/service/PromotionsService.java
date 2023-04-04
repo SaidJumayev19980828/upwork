@@ -8,6 +8,7 @@ import java.util.Set;
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.PromoItemDto;
 import com.nasnav.dto.PromotionSearchParamDTO;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.dto.response.navbox.Cart;
