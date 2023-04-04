@@ -13,7 +13,6 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.FileService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.*;
@@ -93,7 +92,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private static final int IMG_DOWNLOAD_TIMEOUT_SEC = 90;
 
-	private Logger logger = Logger.getLogger(ProductService.class);
+	private Logger logger = Logger.getLogger(ProductServiceImpl.class);
 	
 	@Autowired
 	private  ProductRepository productRepository;
