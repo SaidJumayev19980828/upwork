@@ -37,6 +37,12 @@ public class InfluencerController {
         return influencerService.getAllInfluencers(start, count, status);
     }
 
+    @GetMapping("/org")
+    public List<InfluencerDTO> getAllInfluencersByOrgId(@RequestHeader(name = "User-Token", required = false) String token,
+                                                        @RequestParam long orgId) {
+        return influencerService.getAllInfluencersByOrg(orgId);
+    }
+
     @PostMapping("/request")
     public void becomeInfluencerRequest(@RequestHeader(name = "User-Token", required = false) String token,
                                         @RequestBody List<Long> categoryIds) {

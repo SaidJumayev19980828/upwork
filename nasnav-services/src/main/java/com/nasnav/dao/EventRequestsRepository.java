@@ -13,6 +13,7 @@ import java.util.List;
 public interface EventRequestsRepository extends CrudRepository<EventRequestsEntity, Long> {
     boolean existsByInfluencerAndEvent(InfluencerEntity influencerEntity, EventEntity eventEntity);
     List<EventRequestsEntity> getAllByEvent_Organization_Id(Long orgId);
+    void deleteAllByEvent_Id(Long eventId);
     @Query("select request from EventRequestsEntity request where request.event.organization.id =:orgId  and (:status IS null or request.status =:status)")
     PageImpl<EventRequestsEntity> getAllByOrgIdPageable(Long orgId, Integer status, Pageable page);
     @Query("select request from EventRequestsEntity request where request.influencer.id =:id and (:status IS null or request.status =:status)")

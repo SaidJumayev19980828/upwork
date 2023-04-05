@@ -63,6 +63,11 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
+    public List<InfluencerDTO> getAllInfluencersByOrg(Long orgId) {
+        return influencerRepository.getAllByEmployeeUser_OrganizationId(orgId).stream().map(this::toInfluencerDto).collect(Collectors.toList());
+    }
+
+    @Override
     public void becomeInfluencerRequest(List<Long> categoryIds) {
         List<CategoriesEntity> categories = categoriesRepository.findAllByIdIn(categoryIds);
         InfluencerEntity entity = new InfluencerEntity();
@@ -121,7 +126,7 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Override
     public EventRequestsDTO getEventRequestById(Long requestId) {
         EventRequestsEntity entity = eventRequestsRepository.findById(requestId)
-                .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,EVENT$REQUEST$0004,requestId));
+                .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,EVENT$REQUEST$0005,requestId));
         return eventRequestToDto(entity);
     }
 

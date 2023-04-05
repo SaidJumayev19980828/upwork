@@ -9,7 +9,7 @@ import org.springframework.data.domain.PageImpl;
 import java.util.List;
 
 public interface EventService {
-    void createEvent(EventForRequestDTO dto);
+    EventResponseDto createEvent(EventForRequestDTO dto);
     EventResponseDto getEventById(Long eventId);
     List<EventResponseDto> getEventsByOrgIdForUsers(Long orgID, EventStatus status);
     PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status);
@@ -17,6 +17,6 @@ public interface EventService {
     List<EventResponseDto> getAdvertisedEventsForInfluencer();
     PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count);
     void updateEvent(EventForRequestDTO dto, Long eventId);
-    void deleteEvent(Long eventId);
+    void deleteEvent(Long eventId, Boolean force);
     void intersetEventForUser(Long eventId);
 }

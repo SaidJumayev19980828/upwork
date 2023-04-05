@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -42,9 +43,11 @@ public class EventServiceImpl implements EventService{
     private OrganizationService organizationService;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private EventRequestsRepository eventRequestsRepository;
 
     @Override
-    public void createEvent(EventForRequestDTO dto) {
+    public EventResponseDto createEvent(EventForRequestDTO dto) {
         InfluencerEntity influencer = null;
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, dto.getOrganizationId())
@@ -54,7 +57,13 @@ public class EventServiceImpl implements EventService{
                     () -> new RuntimeBusinessException(NOT_FOUND, G$INFLU$0001, dto.getOrganizationId())
             );
         }
-        eventRepository.save(toEntity(dto, org, influencer, null));
+        dto.getProductsIds().forEach(id -> {
+            ProductEntity productEntity = productRepository.findById(id).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,P$PRO$0002,id));
+            if(!Arrays.asList(ProductTypes.STOCK_ITEM,ProductTypes.BUNDLE).contains(productEntity.getProductType()))
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE,P$PRO$0016,id);
+        });
+
+        return toDto(eventRepository.save(toEntity(dto, org, influencer, null)));
     }
 
     @Override
@@ -141,11 +150,15 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public void deleteEvent(Long eventId) {
+    @Transactional
+    public void deleteEvent(Long eventId, Boolean force) {
         EventEntity entity = eventRepository.findById(eventId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId)
         );
-
+        if(force){
+            eventLogsRepository.deleteAllByEvent_Id(eventId);
+            eventRequestsRepository.deleteAllByEvent_Id(eventId);
+        }
         eventRepository.delete(entity);
     }
 
