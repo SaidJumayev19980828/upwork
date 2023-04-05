@@ -201,8 +201,11 @@ public class PostServiceImpl implements PostService {
         }
         dto.getProductsIds().forEach(i -> {
             Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
-            if (product.isPresent()) {
+            if (product.isPresent() && Arrays.asList(ProductTypes.STOCK_ITEM,ProductTypes.BUNDLE).contains(product.get().getProductType())) {
                 products.add(product.get());
+            }
+            else {
+                throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,P$PRO$0016,i);
             }
         });
         PostEntity entity = new PostEntity();

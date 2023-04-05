@@ -75,6 +75,7 @@ public enum ErrorCodes {
 	,P$PRO$0013("No collections exists with ID %s!")
 	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
 	,P$PRO$0015("Product with id [%d] has no stocks!")
+	,P$PRO$0016("Product with id [%d] Not Item or Bundle or not found")
 
 	,P$IMPORT$0001("Store Manager is allowed only to update stocks!")
 	,P$IMPORT$0002("Store Manager cannot access stocks of another shop!")
@@ -424,6 +425,7 @@ public enum ErrorCodes {
 	,EVENT$NOT$EDITABLE$0002("Event with id[%d] can't be updated due to it passed!")
 	,EVENT$MODIFICATION$0003("Event request can't be modified")
 	,EVENT$REQUEST$0004("Event request with id[%d] already exist!!")
+	,EVENT$REQUEST$0005("Event request with id[%d] not found!!")
 	,EVENT$HAS$HOST$0005("Event with id[%d] already has host!!")
 	,EVENT$HAS$INTEREST$0006("You already interested in Event with id[%d]!!")
 

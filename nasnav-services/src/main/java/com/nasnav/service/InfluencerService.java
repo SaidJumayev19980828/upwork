@@ -13,6 +13,7 @@ public interface InfluencerService {
 
     InfluencerDTO getInfluencerById(Long id);
     PageImpl<InfluencerDTO> getAllInfluencers(Integer start, Integer count, Boolean status);
+    List<InfluencerDTO> getAllInfluencersByOrg(Long orgId);
     void becomeInfluencerRequest(List<Long> categoryIds);
 
     /**

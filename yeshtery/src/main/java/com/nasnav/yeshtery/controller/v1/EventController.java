@@ -23,9 +23,9 @@ public class EventController {
     private EventService eventService;
 
     @PostMapping
-    public void createEvent(@RequestHeader(name = "User-Token", required = false) String userToken,
+    public EventResponseDto createEvent(@RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestBody EventForRequestDTO eventForRequestDto) {
-        eventService.createEvent(eventForRequestDto);
+        return eventService.createEvent(eventForRequestDto);
     }
 
     @GetMapping("/listForUser/{orgId}")
@@ -74,8 +74,9 @@ public class EventController {
     }
     @DeleteMapping("/{eventId}")
     public void deleteEventById(@RequestHeader(name = "User-Token", required = false) String token,
-                                @PathVariable Long eventId){
-        eventService.deleteEvent(eventId);
+                                @PathVariable Long eventId,
+                                @RequestParam(required = false, defaultValue = "false") boolean force){
+        eventService.deleteEvent(eventId, force);
     }
 
     @PostMapping("/interset/{eventId}")
