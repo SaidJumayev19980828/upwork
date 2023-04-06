@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
@@ -13,6 +14,9 @@ import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.service.*;
+import com.nasnav.service.PromotionsService;
+import com.nasnav.service.ReviewService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -44,7 +48,7 @@ public class NavboxController {
 	@Autowired
 	private ProductService productService;
 	@Autowired
-	private ReviewServiceImpl reviewService;
+	private ReviewService reviewService;
 	@Autowired
 	private CategoryService categoryService;
 	@Autowired
@@ -55,7 +59,7 @@ public class NavboxController {
 	private SeoService seoService;
 
 	@Autowired
-	private PromotionsServiceImpl promotionsService;
+	private PromotionsService promotionsService;
 
 	@GetMapping(value = "/brand", produces = APPLICATION_JSON_VALUE)
 	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {

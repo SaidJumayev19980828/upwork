@@ -22,8 +22,8 @@ import com.nasnav.persistence.AddonStocksEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
+import com.nasnav.service.ReviewService;
 
-import com.nasnav.service.ReviewServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -58,7 +58,7 @@ public class ProductsController {
     @Qualifier("excel")
     private CsvExcelDataExportService excelDataExportService;
     @Autowired
-    private ReviewServiceImpl reviewService;
+    private ReviewService reviewService;
     
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,

@@ -100,9 +100,9 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     }
 
 
-    abstract ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException;
+    protected abstract ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException;
 
-    abstract ByteArrayOutputStream buildImagesFile(List<String> headers, List<ProductImageDTO> images) throws IOException;
+    protected abstract ByteArrayOutputStream buildImagesFile(List<String> headers, List<ProductImageDTO> images) throws IOException;
 
     protected void removeSpecialColumns(Map<String, String> imgDataToColumnMapping) {
         imgDataToColumnMapping.remove("externalId");
@@ -115,7 +115,7 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
         return writeFileHeaders(IMG_CSV_BASE_HEADERS);
     }
 
-    abstract ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException ;
+    protected abstract ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException ;
 
-    abstract ByteArrayOutputStream buildProductWithNoImgsFile(List<String> headers, List<VariantWithNoImagesDTO> variants) throws IOException;
+    protected abstract ByteArrayOutputStream buildProductWithNoImgsFile(List<String> headers, List<VariantWithNoImagesDTO> variants) throws IOException;
 }
