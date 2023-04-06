@@ -1,7 +1,7 @@
 package com.nasnav.test;
 
 import static com.nasnav.enumerations.ImageFileTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static com.nasnav.service.CsvDataImportServiceImpl.IMG_CSV_BASE_HEADERS;
+import static com.nasnav.service.impl.CsvDataImportServiceImpl.IMG_CSV_BASE_HEADERS;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;

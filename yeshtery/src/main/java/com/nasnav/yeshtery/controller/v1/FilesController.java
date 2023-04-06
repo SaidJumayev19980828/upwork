@@ -2,6 +2,8 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.service.FileService;
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.enumerations.ConvertedImageTypes;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -38,7 +40,7 @@ public class FilesController {
                              HttpServletResponse resp,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String url = request.getRequestURI().replaceFirst(API_PATH, "");
         String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
 		resp.setStatus(HttpStatus.OK.value());

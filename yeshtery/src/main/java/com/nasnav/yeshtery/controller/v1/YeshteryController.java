@@ -4,16 +4,19 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.SearchParameters;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
+import com.nasnav.enumerations.ConvertedImageTypes;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
+import com.nasnav.service.PromotionsService;
 import com.nasnav.commons.YeshteryConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -71,7 +74,7 @@ public class YeshteryController {
     @Autowired
     private SeoService seoService;
     @Autowired
-    private PromotionsServiceImpl promotionsService;
+    private PromotionsService promotionsService;
 
     @GetMapping(value = "/applicable_promotions_list", produces = APPLICATION_JSON_VALUE)
     public ItemsPromotionsDTO getPromotionsList(
@@ -212,7 +215,7 @@ public class YeshteryController {
                              @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String resourceInternalUrl = fileService.getResourceInternalUrlByOrg(url, orgId, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 
@@ -225,7 +228,7 @@ public class YeshteryController {
                              @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 

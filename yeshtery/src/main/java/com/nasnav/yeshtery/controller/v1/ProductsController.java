@@ -12,7 +12,7 @@ import com.nasnav.response.*;
 import com.nasnav.service.CsvExcelDataExportService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
-import com.nasnav.service.ReviewServiceImpl;
+import com.nasnav.service.ReviewService;
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,7 +50,7 @@ public class ProductsController {
     @Qualifier("excel")
     private CsvExcelDataExportService excelDataExportService;
     @Autowired
-    private ReviewServiceImpl reviewService;
+    private ReviewService reviewService;
     
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,
