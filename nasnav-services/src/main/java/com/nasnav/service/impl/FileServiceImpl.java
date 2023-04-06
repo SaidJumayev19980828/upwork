@@ -7,6 +7,7 @@ import com.google.common.net.MediaType;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
+import com.nasnav.enumerations.ConvertedImageTypes;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -72,8 +73,6 @@ import static org.springframework.http.HttpStatus.*;
 public class FileServiceImpl implements FileService {
 
 	private static Logger logger = Logger.getLogger(FileServiceImpl.class);
-
-	private static List<String> SUPPORTED_IMAGE_FORMATS = asList("jpg", "jpeg", "png", "webp");
 
 	@Autowired
 	private AppConfig appConfig;
@@ -387,13 +386,13 @@ public class FileServiceImpl implements FileService {
 	}
 
 	@Override
-	public String getResourceInternalUrlByOrg(String orgSpeificUrl, Long orgId, Integer width, Integer height, String type) {
+	public String getResourceInternalUrlByOrg(String orgSpeificUrl, Long orgId, Integer width, Integer height, ConvertedImageTypes type) {
 		String url = "/" + orgId + addSlash(orgSpeificUrl);
 		return getResourceInternalUrl(url, width, height, type);
 	}
 
 	@Override
-	public String getResourceInternalUrl(String url, Integer width, Integer height, String type) {
+	public String getResourceInternalUrl(String url, Integer width, Integer height, ConvertedImageTypes type) {
 		String normalizedUrl = addSlash(url);
 
 		//TODO: why don't we support changing type without resizing?
@@ -416,7 +415,7 @@ public class FileServiceImpl implements FileService {
 
 	@Override
 	@CacheResult(cacheName = IMGS_RESIZED)
-	public String getResizedImageInternalUrl(String url, Integer width, Integer height, String type) {
+	public String getResizedImageInternalUrl(String url, Integer width, Integer height, ConvertedImageTypes type) {
 		String modUrl = reformUrl(url);
 		FileEntity originalFile = ofNullable(filesRepo.findByUrl(modUrl))
 				.orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, GEN$0011, url));
@@ -544,17 +543,17 @@ public class FileServiceImpl implements FileService {
 
 
 
-	private Optional<String> getImageType(String type, String mimeType) {
-		if (nonNull(type) && SUPPORTED_IMAGE_FORMATS.contains(type.toLowerCase())) {
-			return ofNullable(type.toLowerCase());
+	private Optional<String> getImageType(ConvertedImageTypes type, String mimeType) {
+		if (nonNull(type)) {
+			return ofNullable(type.getValue());
 		}
-		return ofNullable(mimeType.substring(mimeType.indexOf("/")+1));
+		return ofNullable(mimeType.substring(mimeType.indexOf("/") + 1));
 	}
 
 
 
 	private String getResizedImageName(String imageName, int size, String type) {
-		return getNameWithoutExtension(imageName) + "-"+ size + "." + type;
+		return getNameWithoutExtension(imageName) + "-" + size + "." + type;
 	}
 
 

@@ -10,6 +10,7 @@ import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.dto.response.navbox.SearchResult;
+import com.nasnav.enumerations.ConvertedImageTypes;
 import com.nasnav.enumerations.SeoEntityType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.LocationShopsParam;
@@ -214,7 +215,7 @@ public class YeshteryController {
                              @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String resourceInternalUrl = fileService.getResourceInternalUrlByOrg(url, orgId, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 
@@ -227,7 +228,7 @@ public class YeshteryController {
                              @PathVariable String url,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
         resp.setStatus(HttpStatus.OK.value());
 
