@@ -24,6 +24,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
+import com.nasnav.service.AddonService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.DomainService;
 import com.nasnav.service.LoyaltyPointsService;
@@ -908,6 +909,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantFeatures(parseVariantFeatures(variant, 0));
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
+		item.setAddonTotal(entity.getAddonsPrice());
+		item.setAddons(addonService.listItemAddonsPreSave(entity));;
 
 		return item;
 	}
@@ -2343,7 +2346,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
-		basket.setItemData(serializeItemData(basket));
+		
 		basket.setAddonsPrice(data.getAddonsPrice());
 		if (data.getAddons() != null && !data.getAddons().isEmpty()) {
 			Set<AddonBasketEntity> addonsBaskets = new HashSet<>();
@@ -2358,6 +2361,7 @@ public class OrderServiceImpl implements OrderService {
 			}
 			basket.setAddons(addonsBaskets);
 		}
+		basket.setItemData(serializeItemData(basket));
 		return basket;
 	}
 
