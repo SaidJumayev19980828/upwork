@@ -47,9 +47,6 @@ public class BasketsEntity implements BaseEntity{
     
     
     @OneToMany(mappedBy = "basketEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<AddonBasketEntity> addons;
 
     @Override
