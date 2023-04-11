@@ -1,0 +1,46 @@
+FROM debian:bullseye AS base_jdk
+
+ENV BUILD_PACKAGES="openjdk-11-jdk maven"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends $BUILD_PACKAGES \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/*
+
+SHELL ["/bin/bash", "-c"]
+ENV MAVEN_OPTS="-XX:MaxDirectMemorySize=256M"
+
+# build ....................................................................
+
+FROM base_jdk AS builder
+WORKDIR /app
+
+COPY . .
+
+RUN mkdir build \
+    && touch nasnav/src/main/resources/database.properties \
+    && touch yeshtery/src/main/resources/database.properties
+
+RUN mvn -Dmaven.test.skip clean package \
+    && mv nasnav/target/*.jar build/ \
+    && mv yeshtery/target/*.jar build/ \
+    && mv nasnav-services/target/*.jar build/
+
+# runner ...................................................................
+
+#-- Production image, copy all the files and run next
+FROM openjdk:11-jre-slim AS runner
+
+ARG branch
+ENV BASEPATH=/srv/nasnav
+WORKDIR $BASEPATH
+
+COPY --from=builder /app/build/nasnav-1.0.0.jar $BASEPATH
+COPY --from=builder /app/build/nasnav-services-1.0.0.jar $BASEPATH
+COPY --from=builder /app/build/yeshtery-1.0.0.jar $BASEPATH
+
+# COPY nasnav.props/*.properties $BASEPATH/
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "nasnav-1.0.0.jar"]
