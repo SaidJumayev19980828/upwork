@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 
-@Table(name = "addons_basket")
+@Table(name = "addon_basket")
 @Entity
 @Data
 public class AddonBasketEntity {
