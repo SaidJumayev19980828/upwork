@@ -47,7 +47,7 @@ public class BasketsEntity implements BaseEntity{
     
     
     @OneToMany(mappedBy = "basketEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<AddonBasketEntity> addons;
+    private Set<AddonBasketEntity> addons = Set.of();
 
     @Override
     public BaseRepresentationObject getRepresentation() {
