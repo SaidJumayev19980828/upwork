@@ -24,6 +24,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
+import com.nasnav.service.AddonService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.DomainService;
 import com.nasnav.service.LoyaltyPointsService;
@@ -51,6 +52,7 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -181,7 +183,12 @@ public class OrderServiceImpl implements OrderService {
 	private Set<OrderStatus> orderStatusForManagers;
 	@Autowired
 	private CartItemAddonDetailsRepository cartItemAddonDetailsRepository;
-
+	@Autowired
+	AddonService addonService;
+	@Autowired
+	AddonStockRepository addonStockRepository;
+	@Autowired
+	AddonsBasketRepository addonsBasketRepository;
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
 							StockRepository stockRepository , StockService stockService,
@@ -902,6 +909,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantFeatures(parseVariantFeatures(variant, 0));
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
+		item.setAddonTotal(entity.getAddonsPrice());
+		item.setAddons(addonService.listItemAddonsPreSave(entity));;
 
 		return item;
 	}
@@ -945,6 +954,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
 		item.setAddonTotal(entity.getAddonsPrice());
+		item.setAddons(addonsBasketRepository.listItemAddons(entity.getId()));
 
 		if(entity.getStocksEntity().getQuantity() < quantityLimit) {
 			item.setAvailableStock(entity.getStocksEntity().getQuantity());
@@ -1529,6 +1539,7 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setDiscount(stockData.getDiscount());
 		checkoutData.setWeight(item.getWeight());
 		checkoutData.setAddonsPrice(calculateAddonsTotal(item));
+		checkoutData.setAddons(addonService.listItemAddons(item.getId()));
 		return checkoutData;
 	}
 
@@ -2335,8 +2346,22 @@ public class OrderServiceImpl implements OrderService {
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
-		basket.setItemData(serializeItemData(basket));
+		
 		basket.setAddonsPrice(data.getAddonsPrice());
+		if (data.getAddons() != null && !data.getAddons().isEmpty()) {
+			Set<AddonBasketEntity> addonsBaskets = new HashSet<>();
+			for (AddonDetailsDTO dto : data.getAddons()) {
+				AddonBasketEntity en = new AddonBasketEntity();
+				en.setBasketEntity(basket);
+				AddonStocksEntity addonStock = addonStockRepository.getOne(dto.getAddonStockId());
+				en.setStocksEntity(addonStock);
+				en.setPrice(addonStock.getPrice());
+				addonsBaskets.add(en);
+				
+			}
+			basket.setAddons(addonsBaskets);
+		}
+		basket.setItemData(serializeItemData(basket));
 		return basket;
 	}
 

@@ -12,6 +12,7 @@ import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.AddonEntity;
 import com.nasnav.persistence.AddonStocksEntity;
+import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.response.AddonResponse;
 import com.nasnav.service.model.ProductAddonPair;
 
@@ -40,5 +41,7 @@ public interface AddonService {
   List<AddonDetailsDTO> listItemAddons(Long itemId);
 
   List<ProductAddonsDTO> getProductAddonsInStock(Long productId, Long shopeId) throws BusinessException;
+
+  List<AddonDetailsDTO> listItemAddonsPreSave(BasketsEntity entity);
 
 }

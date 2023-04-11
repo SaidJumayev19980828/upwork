@@ -8,6 +8,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Entity
 @Table(name="baskets")
@@ -43,6 +44,10 @@ public class BasketsEntity implements BaseEntity{
     
     @Column(name = "addon_price")
     private BigDecimal addonsPrice;
+    
+    
+    @OneToMany(mappedBy = "basketEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AddonBasketEntity> addons;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

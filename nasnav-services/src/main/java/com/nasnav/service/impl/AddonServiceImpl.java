@@ -40,14 +40,17 @@ import com.nasnav.dto.AddonDetailsDTO;
 import com.nasnav.dto.AddonStockDTO;
 import com.nasnav.dto.AddonStocksDTO;
 import com.nasnav.dto.AddonsDTO;
+import com.nasnav.dto.CartItemAddonDetailsDTO;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductAddonDTO;
 import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.enumerations.AddonType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddonBasketEntity;
 import com.nasnav.persistence.AddonEntity;
 import com.nasnav.persistence.AddonStocksEntity;
+import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CartItemAddonDetailsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -59,7 +62,7 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.model.ProductAddonPair;
 
 @Service
-public class AddonServiceImpl implements AddonService {
+public class AddonServiceImpl  implements AddonService{
 	Logger logger = LogManager.getLogger(getClass());
 	@Autowired
     private AddonsRepository addonRepo;
@@ -79,8 +82,8 @@ public class AddonServiceImpl implements AddonService {
 	
 	@Autowired
 	ShopsRepository shopsRepo;
-	    @Override
-			public AddonEntity createOrUpdateAddon(AddonsDTO addonDTO)  throws BusinessException{
+	@Override
+	    public AddonEntity createOrUpdateAddon(AddonsDTO addonDTO)  throws BusinessException{
 	    	validateAddonDto(addonDTO);
 	        
 	        String operation = addonDTO.getOperation();
@@ -157,15 +160,13 @@ public class AddonServiceImpl implements AddonService {
 	            throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + addonDTO.getOperation(), NOT_ACCEPTABLE);
 	        }
 		}
-
-	   @Override
-		public List<AddonEntity>  findAllAddonPerOrganization(){
+      @Override
+	   public List<AddonEntity>  findAllAddonPerOrganization(){
 		   Long orgId = securityService.getCurrentUserOrganizationId();
 		   return addonRepo.findByOrganizationEntity_Id(orgId);
 	   }
-
-	   @Override
-		public AddonResponse deleteOrgAddon(Long addonId) throws BusinessException {
+       @Override
+	   public AddonResponse deleteOrgAddon(Long addonId) throws BusinessException {
 	        Long orgId = securityService.getCurrentUserOrganizationId();
 	    	AddonEntity addon = addonRepo
 					.findByIdAndOrganizationEntity_Id(addonId, orgId)
@@ -190,8 +191,7 @@ public class AddonServiceImpl implements AddonService {
 	   
 
 
-
-		@Override
+        @Override
 		public boolean updateProductAddons(ProductAddonDTO productAddonDTO) throws BusinessException {
 			validateProductAddonDTO(productAddonDTO.getProductIds(), productAddonDTO.getAddonIds());
 
@@ -216,8 +216,7 @@ public class AddonServiceImpl implements AddonService {
 		}
 
 
-
-		@Override
+        @Override
 		public void addAddonsToProducts(Set<ProductAddonPair> newProductAddons) {
 			Set<Long> prodIds = getProductIds(newProductAddons);
 			Set<Long> addonsIds = getAddonIds(newProductAddons);
@@ -346,7 +345,6 @@ public class AddonServiceImpl implements AddonService {
 				throw new BusinessException("Provided addons_ids can't be empty", "MISSING PARAM:addons_ids", NOT_ACCEPTABLE);
 		}
 
-		
 		@Override
 		public boolean deleteProductAddons(List<Long> productIds, List<Long> addonsIds) throws BusinessException {
 			validateProductAddonDTO(productIds, addonsIds);
@@ -416,9 +414,8 @@ public class AddonServiceImpl implements AddonService {
 			return addonsMap;
 		}
 
-
-	    @Override
-			public AddonStocksEntity createOrUpdateAddonStock(AddonStockDTO addonStockDTO)  throws BusinessException{
+        @Override
+	    public AddonStocksEntity createOrUpdateAddonStock(AddonStockDTO addonStockDTO)  throws BusinessException{
 	    	validateAddonStockDto(addonStockDTO);
 	        
 	        String operation = addonStockDTO.getOperation();
@@ -499,8 +496,7 @@ public class AddonServiceImpl implements AddonService {
 	            throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + addonStockDTO.getOperation(), NOT_ACCEPTABLE);
 	        }
 		}
-
-		@Override
+        @Override
 		public void deleteAddonStock(Long id, Long shopId, Long addonId) throws BusinessException {
 
 			AddonStocksEntity entity = addonStockRepo.findByIdAndShopsEntity_IdAndAddonEntity_Id(id, shopId, addonId)
@@ -513,14 +509,12 @@ public class AddonServiceImpl implements AddonService {
 				throw new BusinessException("", "the stock has items in cart ", NOT_ACCEPTABLE);
 			}
 		}
-	    
 	    @Override
-			public List<AddonStocksDTO> getAllAddonStocks(Long shopId) {
+	    public List<AddonStocksDTO> getAllAddonStocks(Long shopId) {
 	    	return addonStockRepo.listStocks(shopId);
 	    }
-	    
 	    @Override
-			public void deleteAddonFromProduct(Long addonItemId) throws BusinessException {
+	    public void deleteAddonFromProduct(Long addonItemId) throws BusinessException {
 	    	CartItemAddonDetailsEntity entity = cartItemAddonDetailsRepository
 					.findById(addonItemId)
 					.orElseThrow(() -> new BusinessException(
@@ -529,37 +523,70 @@ public class AddonServiceImpl implements AddonService {
 											, NOT_ACCEPTABLE));
 	    	cartItemAddonDetailsRepository.delete(entity);;
 	    }
-	    
-	   @Override
-		public  List<AddonDetailsDTO> listItemAddons(Long itemId){
+	    @Override
+	   public  List<AddonDetailsDTO> listItemAddons(Long itemId){
 	    	return cartItemAddonDetailsRepository.listItemAddons(itemId);
+	    }
+	   @Override
+	   public List<ProductAddonsDTO> getProductAddonsInStock(Long productId,Long shopeId) throws BusinessException{
+			ProductEntity pr = productRepository.getById(productId);
+			Set<AddonEntity> addons = pr.getAddons();
+
+			List<ProductAddonsDTO> list = new ArrayList<>();
+			for (AddonEntity addon : addons) {
+				AddonStocksEntity st = addonStockRepo.findByShopsEntity_IdAndAddonEntity_Id(shopeId, addon.getId());
+
+				if (st != null && st.getQuantity() > 0) {
+
+					ProductAddonsDTO dto = new ProductAddonsDTO();
+					dto.setAddonId(addon.getId());
+					dto.setName(addon.getName());
+					dto.setType(addon.getType());
+					dto.setQuantity(st.getQuantity());
+					dto.setProductId(productId);
+					dto.setPrice(st.getPrice());
+					dto.setAddonStockId(st.getId());
+					list.add(dto);
+				}
+			}
+
+	    	return list;
 	    }
 	   
 	   @Override
-		public List<ProductAddonsDTO> getProductAddonsInStock(Long productId,Long shopeId) throws BusinessException{
-		   ProductEntity pr=productRepository.getById(productId);
-		   Set<AddonEntity> addons=pr.getAddons();
-		 
-		   List<ProductAddonsDTO> list=new ArrayList<>();
-		   for(AddonEntity addon:addons) {
-			   AddonStocksEntity st=addonStockRepo.findByShopsEntity_IdAndAddonEntity_Id(shopeId,addon.getId());
+	   public  List<AddonDetailsDTO> listItemAddonsPreSave(BasketsEntity entity) {
+		   List<AddonDetailsDTO> list = new ArrayList<>();
+			for (AddonBasketEntity basket : entity.getAddons()) {
+				AddonStocksEntity st = addonStockRepo.getOne(basket.getStocksEntity().getId());
+                    AddonEntity addon=null;
+					try {
+						addon = addonRepo
+								.findById(st.getAddonEntity().getId())
+								.orElseThrow(() -> new BusinessException(
+														"INVALID PARAM: id"
+														, "No addon exists in the organization with provided id"
+														, NOT_ACCEPTABLE));
+					} catch (BusinessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				
+
+				AddonDetailsDTO dto = new AddonDetailsDTO();
+					dto.setAddonId(addon.getId());
+					dto.setAddonName(addon.getName());
+					dto.setType(addon.getType());
 					
-					   
-					   if(st!=null && st.getQuantity()>0) {
-					  
-             
-			   ProductAddonsDTO dto=new ProductAddonsDTO();
-			   dto.setAddonId(addon.getId());
-			   dto.setName(addon.getName());
-			   dto.setType(addon.getType());
-			  dto.setQuantity(st.getQuantity());
-			  dto.setProductId(productId);
-			  list.add(dto);
-					   }
-		   }
+					
+					dto.setPrice(st.getPrice());
+					dto.setAddonStockId(st.getId());
+					list.add(dto);
+			
+			}
+
+	    
 		   
 	    	return list;
 	    }
 	 
 }
-
