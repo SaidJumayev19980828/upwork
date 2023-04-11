@@ -1,0 +1,49 @@
+variables:
+  VERSION: "1.0"
+
+stages:
+  - compile
+  - build
+  - deploy
+
+build:compile:
+  stage: compile
+  image: docker:20.10.16
+  script:
+    - sh ./deploy/docker_build.sh
+  artifacts:
+    reports:
+      dotenv: build/env
+  tags:
+    - meetusvr
+    - docker
+
+build:publish:
+  image: docker:20.10.16
+  stage: build
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - sh ./deploy/docker_publish.sh
+  only:
+    - develop
+    - uat
+    - prod
+  tags:
+    - meetusvr
+    - docker
+
+deploy:
+  stage: deploy
+  trigger:
+    project: meetusvr/devops
+    branch: main
+    strategy: depend
+  variables:
+    MEETUSVR_BACKEND_ENV: $CI_COMMIT_BRANCH
+    MEETUSVR_BACKEND_IMAGE_TAG_FQN: $IMAGE_TAG_FQN
+    UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
+  only:
+    - develop
+    - uat
+    - prod
