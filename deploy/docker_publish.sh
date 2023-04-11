@@ -11,4 +11,5 @@ cd "$BASE_PATH"
 
 echo -e "${COLOR}-> Publish to ${IMAGE_REGISTRY}${NC}"
 docker push $IMAGE_TAG_FQN
+docker push $IMAGE_TAG_BRANCH
 if [ "$BRANCH" == "prod" ]; then docker push $IMAGE_REGISTRY:latest; fi
