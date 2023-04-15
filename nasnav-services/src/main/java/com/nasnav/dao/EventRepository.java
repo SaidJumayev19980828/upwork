@@ -18,7 +18,9 @@ public interface EventRepository extends CrudRepository<EventEntity, Long> {
     List<EventEntity> getAllEventForUser(Long orgId, Integer status);
     List<EventEntity> getAllByInfluencerNull();
     List<EventEntity> getAllByOrganizationInAndInfluencerNull(List<OrganizationEntity> orgs);
-    List<EventEntity> getAllByInfluencer(InfluencerEntity entity);
+    @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
+    PageImpl<EventEntity> getAllByInfluencer_Id(Long influencerId, Long orgId, Pageable page);
+    Integer countAllByInfluencer_Id(Long influencerId);
     @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id,e.influencer_id,e.name,e.description,e.status,e.visible from events e" +
             " inner join event_products ep on ep.event_id = e.id inner join products p on p.id = ep.product_id " +
             "where p.category_id in (:categories) and e.visible=true" +

@@ -23,4 +23,5 @@ public class PostResponseDTO {
     private List<PostAttachmentsEntity> attachments;
     private Long likesCount;
     private Long clicksCount;
+    private Boolean isLiked;
 }

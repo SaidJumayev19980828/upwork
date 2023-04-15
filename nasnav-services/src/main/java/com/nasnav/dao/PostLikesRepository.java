@@ -8,4 +8,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface PostLikesRepository extends CrudRepository<PostLikesEntity, Long> {
     Long countAllByPost_Id(Long postId);
     PostLikesEntity getByUserAndPost(UserEntity userEntity, PostEntity postEntity);
+    boolean existsByUser_IdAndPost_Id(Long userId, Long post_id);
 }

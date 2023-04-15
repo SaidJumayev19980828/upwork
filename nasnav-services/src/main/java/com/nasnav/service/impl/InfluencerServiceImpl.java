@@ -97,6 +97,7 @@ public class InfluencerServiceImpl implements InfluencerService {
         InfluencerEntity influencer = influencerRepository.findById(influencerId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,influencerId));
         influencer.setApproved(action);
+        influencer.setCreatedAt(LocalDateTime.now());
         influencerRepository.save(influencer);
     }
 
@@ -199,7 +200,8 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
-    public List<EventResponseDto> getMyEvents() {
+    public PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         InfluencerEntity influencerEntity = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(),loggedInUser.getId());
         if(influencerEntity == null)
@@ -207,7 +209,17 @@ public class InfluencerServiceImpl implements InfluencerService {
         if(!influencerEntity.getApproved())
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencerEntity.getId());
 
-        return eventRepository.getAllByInfluencer(influencerEntity).stream().map(this::eventToDto).collect(Collectors.toList());
+        PageImpl<EventEntity> source = eventRepository.getAllByInfluencer_Id(influencerEntity.getId(), null, page);
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
+    public PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId) {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventEntity> source = eventRepository.getAllByInfluencer_Id(influencerId, orgId, page);
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos,source.getPageable(),source.getTotalElements());
     }
 
     @Override
@@ -306,14 +318,16 @@ public class InfluencerServiceImpl implements InfluencerService {
             dto.setEmail(entity.getEmployeeUser().getEmail());
             dto.setPhoneNumber(entity.getEmployeeUser().getPhoneNumber());
             dto.setImage(entity.getEmployeeUser().getImage());
+            dto.setEmployeeId(entity.getEmployeeUser().getId());
         }
         else {
             dto.setName(entity.getUser().getName());
             dto.setEmail(entity.getUser().getEmail());
             dto.setImage(entity.getUser().getImage());
+            dto.setUserId(entity.getUser().getId());
         }
         dto.setCategories(entity.getCategories().stream().map(this::toCategoryDTO).collect(Collectors.toList()));
-        dto.setHostedEvents(eventRepository.getAllByInfluencer(entity).stream().map(this::eventToDto).collect(Collectors.toList()));
+        dto.setHostedEvents(eventRepository.countAllByInfluencer_Id(entity.getId()));
         dto.setInterests(eventLogsRepository.countByEvent_Influencer_Id(entity.getId()));
         dto.setAttends(eventLogsRepository.countByEvent_Influencer_IdAndAttendAtNotNull(entity.getId()));
         return dto;
