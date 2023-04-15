@@ -80,8 +80,19 @@ public class InfluencerController {
     }
 
     @GetMapping("/myEvents")
-    public List<EventResponseDto> getMyEvents(@RequestHeader(name = "User-Token", required = false) String token){
-        return influencerService.getMyEvents();
+    public PageImpl<EventResponseDto> getMyEvents(@RequestHeader(name = "User-Token", required = false) String token,
+                                              @RequestParam(required = false, defaultValue = "0") Integer start,
+                                              @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count){
+        return influencerService.getMyEvents(start, count);
+    }
+
+    @GetMapping("/events")
+    public PageImpl<EventResponseDto> getEventsByInfluencerId(@RequestHeader(name = "User-Token", required = false) String token,
+                                                              @RequestParam Long influencerId,
+                                                              @RequestParam(required = false) Long orgId,
+                                                              @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                              @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count){
+        return influencerService.getEventsByInfluencerId(influencerId,start, count, orgId);
     }
 
     @GetMapping("/myEventRequests")
@@ -92,7 +103,7 @@ public class InfluencerController {
         return influencerService.getMyEventRequests(start, count, status);
     }
 
-    @GetMapping("/hostingRequests")
+    @GetMapping("/hosting-requests")
     public PageImpl<EventRequestsDTO> getOrgEventsRequests(@RequestHeader(name = "User-Token", required = false) String token,
                                                            @RequestParam(required = false, defaultValue = "0") Integer start,
                                                            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,

@@ -263,6 +263,14 @@ public class PostServiceImpl implements PostService {
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         dto.setUser(entity.getUser().getRepresentation());
 
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        if (loggedInUser instanceof UserEntity) {
+            dto.setIsLiked(postLikesRepository.existsByUser_IdAndPost_Id(loggedInUser.getId(), entity.getId()));
+        }
+        else {
+            dto.setIsLiked(false);
+        }
+
         return dto;
     }
 

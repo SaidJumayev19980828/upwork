@@ -29,7 +29,8 @@ public interface InfluencerService {
     void approveOrCancelEventHostingRequest(Long requestId, boolean action);
     void rejectTheRestIfEventHostingRequestApproved(Long requestId);
     void deleteEventHostingRequest(Long requestId);
-    List<EventResponseDto> getMyEvents();
+    PageImpl<EventResponseDto> getMyEvents(Integer start, Integer count);
+    PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId);
     PageImpl<EventRequestsDTO> getMyEventRequests(Integer start, Integer count, EventRequestStatus status);
     PageImpl<EventRequestsDTO> getEventsRequestByOrgForEmployee(Integer start, Integer count, EventRequestStatus status);
     void joinEvent();
