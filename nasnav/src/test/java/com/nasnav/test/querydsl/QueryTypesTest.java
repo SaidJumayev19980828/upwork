@@ -46,10 +46,10 @@ public class QueryTypesTest {
         Constructor<?>[] constructors = classInfo.load().getConstructors();
           for(Constructor<?> ctor : constructors) {
             if (ctor != mainCtorRef.get()) {
-              Stream<Class<?>> paramTypesStream = Arrays.stream(ctor.getParameterTypes());
+              Class<?>[] paramTypes = ctor.getParameterTypes();
 
-              if (paramTypesStream.allMatch(paramsMap::containsKey)) {
-                Object[] params = paramTypesStream.map(paramsMap::get).toArray();
+              if (Arrays.stream(paramTypes).allMatch(paramsMap::containsKey)) {
+                Object[] params = Arrays.stream(paramTypes).map(paramsMap::get).toArray();
                 assertDoesNotThrow(() -> {
                   ctor.newInstance(params);
                 });
