@@ -21,6 +21,7 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	private List<VariantDTO> variants;
 	private List<VariantFeatureDTO> variantFeatures;
 	private List<ProductRepresentationObject> bundleItems;
+	private List<SeoKeywordsDTO> keywords;
 
 	public ProductDetailsDTO() {
 		variants = new ArrayList<>();

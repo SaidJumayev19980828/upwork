@@ -67,4 +67,6 @@ public interface ProductImageService {
 	void updateSwatchImagesBulk(@Valid MultipartFile zip
 			,@Valid MultipartFile csv
 			,@Valid SwatchImageBulkUpdateDTO metaData);
+
+	void deleteVarientImages(Long varId);
 }

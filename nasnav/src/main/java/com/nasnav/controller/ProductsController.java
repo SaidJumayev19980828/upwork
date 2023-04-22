@@ -8,6 +8,7 @@ import static org.springframework.http.MediaType.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 
@@ -19,10 +20,12 @@ import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.AddonStocksEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewService;
+import com.nasnav.service.StockService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -59,6 +62,9 @@ public class ProductsController {
     private CsvExcelDataExportService excelDataExportService;
     @Autowired
     private ReviewService reviewService;
+    @Autowired
+    private StockService stockService;
+    
     
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,
@@ -264,5 +270,54 @@ public class ProductsController {
         reviewService.approveRate(id);
     }
     
+    
+    @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
+    public ProductUpdateResponse createProductV2(@RequestHeader(name = "User-Token", required = false) String token,
+    		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
+    		@RequestPart(value = "img1", required = false) @Valid MultipartFile img1,	@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,
+    		@RequestHeader(name = "tags_ids",required = false) List<Long> tagsIds,
+    		@RequestHeader(name = "keywords",required = false)List<String> keywords ) throws BusinessException {
+		return productService.createProductV2(productJson,cover,img1,img2,tagsIds,keywords);
+    }
+    @PostMapping(value = "v2/update", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
+    public ProductUpdateResponse updateProductV2(@RequestHeader(name = "User-Token", required = false) String token,
+    		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
+    		@RequestPart(value = "img1", required = false) @Valid MultipartFile img1,	@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,
+    		@RequestHeader(name = "tags_ids",required = false) List<Long> tagsIds,
+    		@RequestHeader(name = "keywords",required = false)List<String> keywords ) throws BusinessException {
+		return productService.updateProductV2(productJson,cover,img1,img2,tagsIds,keywords);
+    }
+    
+    
+	@PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
+    public VariantUpdateResponse updateProductVariantV2(@RequestHeader(name = "User-Token", required = false) String token,
+    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "img1", required = false) @Valid MultipartFile img1, 
+                                              		@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,	
+                                              		@RequestPart(value = "img3", required = false) @Valid MultipartFile img3) throws BusinessException {
+		return  productService.updateVariantV2(variant, img1, img2, img3);
+    }
+	
+	   @GetMapping(value = "v2/productdata",produces=APPLICATION_JSON_VALUE)
+	    public ProductDetailsDTO getProductData(@RequestHeader(name = "User-Token", required = false) String token,
+	                                        @RequestParam(name = "product_id") Long productId,
+	                                        @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
+	        var params = new ProductFetchDTO(productId);
+	        params.setShopId(shopId);
+	        params.setCheckVariants(false);
+	        params.setIncludeOutOfStock(true);
+	        params.setOnlyYeshteryProducts(false);
+	        return productService.getProductData(params);
+	    }
+	   @PostMapping(value = "v2/stock", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	    public Long updateStock(@RequestHeader(name = "User-Token", required = false) String userToken,
+	                                           @RequestBody ProductStocksDTO productStocksDTO) throws BusinessException {
+	        return stockService.updateStocks(productStocksDTO);
+	    }
+	   @GetMapping(value = "v2/stock", produces = APPLICATION_JSON_VALUE)
+	    public Map<Long, List<StocksEntity>>getProductStocks(@RequestHeader(name = "User-Token", required = false) String userToken,
+	    		  @RequestParam(name = "product_id") Long productId) throws BusinessException {
+	        return stockService.getProductStocks(productId);
+	    }
+	   
    
 }

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.validation.Valid;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -103,5 +105,16 @@ public interface ProductService {
   void deleteCollection(List<Long> ids);
 
   List<Long> getVariantsWithFeature(ProductFeaturesEntity feature);
+
+ProductUpdateResponse createProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile img1,
+		@Valid MultipartFile img2, List<Long> tagsIds, List<String> keywords) throws BusinessException;
+
+ProductUpdateResponse updateProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile img1,
+		@Valid MultipartFile img2, List<Long> tagsIds, List<String> keywords) throws BusinessException;
+
+VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid MultipartFile img1,
+		@Valid MultipartFile img2, @Valid MultipartFile img3) throws BusinessException;
+
+ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
 }

@@ -32,6 +32,7 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ProductServiceTransactions;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.SeoService;
 import com.nasnav.service.StockService;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
@@ -74,7 +75,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
+import com.nasnav.enumerations.SeoEntityType;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
@@ -205,6 +206,9 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ProductCollectionItemRepository collectionItemRepo;
 
+	@Autowired
+	private SeoService seoService;
+	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
@@ -3542,6 +3546,198 @@ public class ProductServiceImpl implements ProductService {
 		public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
 		return variantFeatureValuesRepo.findByFeature(feature.getId(), feature.getOrganization().getId());
     }
+    @Override
+    public ProductUpdateResponse createProductV2(String productJson, MultipartFile coverImg, MultipartFile img1,
+			MultipartFile img2, List<Long> tagsId, List<String> keywords) throws BusinessException {
+		Long id = updateProductBatch(asList(productJson), false, false).stream().findFirst().orElse(null);
+		if (id != null) {
+			if (coverImg != null) {
+				ProductImageUpdateDTO coverMetaData = new ProductImageUpdateDTO();
+				coverMetaData.setOperation(Operation.CREATE);
+				coverMetaData.setProductId(id);
+				coverMetaData.setPriority(0);
+				coverMetaData.setType(7);
+				imgService.updateProductImage(coverImg, coverMetaData);
+			}
+
+			if (img1 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setProductId(id);
+				img.setPriority(1);
+				img.setType(7);
+				imgService.updateProductImage(img1, img);
+			}
+			if (img2 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setProductId(id);
+				img.setPriority(2);
+				img.setType(7);
+				imgService.updateProductImage(img2, img);
+			}
+			if (!tagsId.isEmpty() && tagsId != null) {
+				ProductTagDTO tags = new ProductTagDTO();
+				tags.setTagIds(tagsId);
+				tags.setProductIds(Arrays.asList(id));
+				updateProductTags(tags);
+
+			}
+
+			if (!keywords.isEmpty() && keywords != null) {
+				SeoKeywordsDTO seo = new SeoKeywordsDTO(SeoEntityType.PRODUCT, id, keywords);
+				seoService.addSeoKeywords(seo);
+			}
+		}
+		return new ProductUpdateResponse(id);
+	}
+    @Override
+	public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg, MultipartFile img1,
+			MultipartFile img2, List<Long> tagsId, List<String> keywords) throws BusinessException {
+		Long id = updateProductBatch(asList(productJson), false, false).stream().findFirst().orElse(null);
+		if (id != null) {
+			imgService.deleteImage(null, id, null);
+			if (coverImg != null) {
+				ProductImageUpdateDTO coverMetaData = new ProductImageUpdateDTO();
+				coverMetaData.setOperation(Operation.CREATE);
+				coverMetaData.setProductId(id);
+				coverMetaData.setPriority(0);
+				coverMetaData.setType(7);
+				imgService.updateProductImage(coverImg, coverMetaData);
+			}
+
+			if (img1 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setProductId(id);
+				img.setPriority(1);
+				img.setType(7);
+				imgService.updateProductImage(img1, img);
+			}
+			if (img2 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setProductId(id);
+				img.setPriority(2);
+				img.setType(7);
+				imgService.updateProductImage(img2, img);
+			}
+			if (!tagsId.isEmpty() && tagsId != null) {
+				ProductTagDTO tags = new ProductTagDTO();
+				tags.setTagIds(tagsId);
+				tags.setProductIds(Arrays.asList(id));
+				updateProductTags(tags);
+
+			}
+
+			if (!keywords.isEmpty() && keywords != null) {
+				SeoKeywordsDTO seo = new SeoKeywordsDTO(SeoEntityType.PRODUCT, id, keywords);
+				seoService.addSeoKeywords(seo);
+			}
+		}
+		return new ProductUpdateResponse(id);
+	}
+	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile img1, MultipartFile img2,
+			MultipartFile img3) throws BusinessException {
+		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
+		if (id != null) {
+
+			Operation operation = variant.getOperation();
+
+			if (operation.equals(UPDATE)) {
+				imgService.deleteVarientImages(id);
+
+			}
+			if (img1 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setVariantId(id);
+				img.setPriority(0);
+				img.setType(7);
+				img.setProductId(variant.getProductId());
+				imgService.updateProductImage(img1, img);
+			}
+			if (img2 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setVariantId(id);
+				img.setPriority(1);
+				img.setType(7);
+				img.setProductId(variant.getProductId());
+				imgService.updateProductImage(img2, img);
+			}
+			if (img3 != null) {
+				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+				img.setOperation(Operation.CREATE);
+				img.setVariantId(id);
+				img.setPriority(2);
+				img.setType(7);
+				img.setProductId(variant.getProductId());
+				imgService.updateProductImage(img3, img);
+			}
+		}
+
+		return new VariantUpdateResponse(id);
+	}
+
+	@Transactional
+	@Override
+	public ProductDetailsDTO getProductData(ProductFetchDTO productFetchDTO) throws BusinessException {
+		var id = ofNullable(productFetchDTO.getProductId()).orElse(-1L);
+		var allowAll = !ofNullable(productFetchDTO.getOnlyYeshteryProducts()).orElse(false);
+		ProductEntity product = productRepository.findByProductId(id, allowAll)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
+
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, productFetchDTO.isCheckVariants());
+
+		return createNEWProductDetailsDTO(product, productFetchDTO.getShopId(), productVariants,
+				productFetchDTO.isIncludeOutOfStock());
+	}
+
+
+
+	private ProductDetailsDTO createNEWProductDetailsDTO(ProductEntity product, Long shopId,
+			List<ProductVariantsEntity> productVariants, boolean includeOutOfStock) {
+		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, productVariants);
+		List<VariantDTO> variantsDTOList = createNEWVariantDTOS(shopId, productVariants, productsAndVariantsImages);
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
+		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
+
+		ProductDetailsDTO productDTO = toProductDetailsDTO(product, includeOutOfStock);
+		productDTO.setShops(product360Shops);
+		productDTO.setImages(getProductImages(productsAndVariantsImages));
+		productDTO.setVariants(variantsDTOList);
+		productDTO.setMultipleVariants(hasMultipleVariants(variantsDTOList));
+		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
+		productDTO.setBundleItems(getBundleItems(product));
+		productDTO.setTags(tagsDTOList);
+		productDTO.setKeywords(getSeoKeywords(product.getId(), SeoEntityType.PRODUCT, product.getOrganizationId()));
+		
+
+		return productDTO;
+	}
+	
+	private List<VariantDTO> createNEWVariantDTOS(Long shopId, List<ProductVariantsEntity> productVariants,
+			List<ProductImageDTO> productsAndVariantsImages) {
+		List<VariantDTO> variantsDTOList = new ArrayList<>();
+		if (!isNullOrEmpty(productVariants)) {
+			variantsDTOList = getNewVariantsList(productVariants, shopId, productsAndVariantsImages);
+		}
+		return variantsDTOList;
+	}
+	
+	private List<VariantDTO> getNewVariantsList(List<ProductVariantsEntity> productVariants, Long shopId,
+			List<ProductImageDTO> variantsImages) {
+
+		return productVariants.stream().map(variant -> createVariantDto(shopId, variant, variantsImages))
+
+				.collect(toList());
+	}
+	
+	List<SeoKeywordsDTO> getSeoKeywords(Long entityId, SeoEntityType type, Long orgId) {
+		return seoService.getSeoKeywords(orgId, entityId, type);
+	}
+
 }
 
 

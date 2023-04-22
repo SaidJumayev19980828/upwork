@@ -140,4 +140,10 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	List<ProductImageDTO> getProductsAndVariantsImagesOrderedByVariantImgsFirst(@Param("productsIds") List<Long> productsIds,
 													   @Param("variantsIds") List<Long> variantsIds);
 
+
+
+	@Query("select image.uri from ProductImagesEntity image " +
+			"left join image.productVariantsEntity var " +
+			"where var.id = :variantId")
+	List<String> findUrlsByVariantIdAndOrganizationId(@Param("variantId") Long variantId);
 }

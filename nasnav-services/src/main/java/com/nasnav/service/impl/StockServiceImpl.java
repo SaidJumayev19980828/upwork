@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.dao.*;
+import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
@@ -28,6 +29,7 @@ import javax.transaction.Transactional;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -730,8 +732,23 @@ public class StockServiceImpl implements StockService {
 		.executeUpdate();
 	}
 
-
-
+	@Override
+	public Long updateStocks(ProductStocksDTO productStocksDTO) throws BusinessException {
+		for(StockUpdateDTO dto:productStocksDTO.getStocks()) {
+			dto.setShopId(productStocksDTO.getShopId());
+			updateStock(dto);
+		}
+		return productStocksDTO.getShopId();
+	}
+	
+	@Override
+	public Map<Long, List<StocksEntity>>  getProductStocks(Long productId) {
+		List<StocksEntity> stocks  = stockRepo.findByProductIdIn(asList(productId));
+		Map<Long, List<StocksEntity>> stocksPerShop = stocks.stream()
+				 .collect(Collectors.groupingBy(e -> e.getShopsEntity().getId()));
+		
+        return stocksPerShop;
+	}
 	
 
 }
