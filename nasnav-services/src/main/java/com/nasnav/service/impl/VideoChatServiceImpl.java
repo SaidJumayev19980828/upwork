@@ -111,6 +111,17 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     }
 
+    @Override
+    public VideoChatResponse createOrJoinSessionForUser(String sessionName, Boolean force, Long orgId, Long shopId, UserEntity user) {
+        OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
+        orgId = organization.getId();
+
+        if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
+        }
+        return getOrCreateUserVideoSession(user, force, sessionName, orgId, shopId);
+    }
+
     private ConnectionProperties getConnectionProperties() {
         return new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).role(OpenViduRole.PUBLISHER).build();
     }
