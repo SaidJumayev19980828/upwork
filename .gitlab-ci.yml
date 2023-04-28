@@ -10,6 +10,8 @@ build:compile:
   stage: compile
   image: docker:20.10.16
   script:
+    - cp ./deploy/properties/*.properties ./nasnav/src/main/resources/
+    - cp ./deploy/properties/*.properties ./yeshtery/src/main/resources/
     - sh ./deploy/docker_build.sh
   artifacts:
     reports:
@@ -45,5 +47,5 @@ deploy:
     UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
   only:
     - develop
-    - uat
-    - prod
+    # - uat
+    # - prod
