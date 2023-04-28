@@ -18,11 +18,9 @@ WORKDIR /app
 
 COPY . .
 
-RUN mkdir build \
-    && touch nasnav/src/main/resources/database.properties \
-    && touch yeshtery/src/main/resources/database.properties
+RUN mkdir build
 
-RUN mvn -Dmaven.test.skip clean package \
+RUN mvn -B --no-transfer-progress -Dmaven.test.skip clean package \
     && mv nasnav/target/*.jar build/ \
     && mv yeshtery/target/*.jar build/ \
     && mv nasnav-services/target/*.jar build/
