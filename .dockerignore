@@ -49,15 +49,8 @@ transaction-logs
 secrets.yml
 .gradletasknamecache
 .sts4-cache
-/src/main/resources/test.database.properties
-/src/main/resources/application.properties
-/src/main/resources/database.properties
 
 /nasnav/src/test/resources/test_imgs_save_dir
-/nasnav/src/main/resources/*.properties
-/yeshtery/src/main/resources/*.properties
-/nasnav/src/test/resources/test.database.properties
-/yeshtery/src/test/resources/test.database.properties
 *.trc
 /nasnav/javacore.*.txt
 /nasnav/heapdump.*.phd
