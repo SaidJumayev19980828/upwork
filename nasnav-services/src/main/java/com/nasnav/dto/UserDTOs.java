@@ -88,6 +88,7 @@ public class UserDTOs {
         private String notificationToken;
     }
 
+    @Setter
     @Getter
     @Schema(name = "Employee User Creation Data")
 	public static class EmployeeUserCreationObject {
