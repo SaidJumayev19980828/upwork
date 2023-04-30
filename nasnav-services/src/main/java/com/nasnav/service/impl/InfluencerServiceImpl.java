@@ -130,6 +130,15 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
+    public void cancelEventHostingRequestByInfluencer(Long requestId) {
+        EventRequestsEntity eventRequest = eventRequestsRepository.findById(requestId).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$REQUEST$0005,requestId));
+        if(eventRequest.getStatus() != EventRequestStatus.PENDING.getValue()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$MODIFICATION$0003);
+        }
+        eventRequestsRepository.delete(eventRequest);
+    }
+
+    @Override
     public EventRequestsDTO getEventRequestById(Long requestId) {
         EventRequestsEntity entity = eventRequestsRepository.findById(requestId)
                 .orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND,EVENT$REQUEST$0005,requestId));
@@ -264,6 +273,17 @@ public class InfluencerServiceImpl implements InfluencerService {
     public void joinEvent() {
     }
 
+    @Override
+    public void userIsGuided() {
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        InfluencerEntity influencer = influencerRepository.getByUser_IdOrEmployeeUser_Id(loggedInUser.getId(), loggedInUser.getId());
+        if(influencer == null){
+            throw new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,loggedInUser.getId());
+        }
+        influencer.setIsGuided(true);
+        influencerRepository.save(influencer);
+    }
+
     private EventRequestsDTO eventRequestToDto(EventRequestsEntity entity){
         EventRequestsDTO dto = new EventRequestsDTO();
         dto.setId(entity.getId());
@@ -319,17 +339,20 @@ public class InfluencerServiceImpl implements InfluencerService {
             dto.setPhoneNumber(entity.getEmployeeUser().getPhoneNumber());
             dto.setImage(entity.getEmployeeUser().getImage());
             dto.setEmployeeId(entity.getEmployeeUser().getId());
+            dto.setUserRepresentationObject(entity.getEmployeeUser().getRepresentation());
         }
         else {
             dto.setName(entity.getUser().getName());
             dto.setEmail(entity.getUser().getEmail());
             dto.setImage(entity.getUser().getImage());
             dto.setUserId(entity.getUser().getId());
+            dto.setUserRepresentationObject(entity.getUser().getRepresentation());
         }
         dto.setCategories(entity.getCategories().stream().map(this::toCategoryDTO).collect(Collectors.toList()));
         dto.setHostedEvents(eventRepository.countAllByInfluencer_Id(entity.getId()));
         dto.setInterests(eventLogsRepository.countByEvent_Influencer_Id(entity.getId()));
         dto.setAttends(eventLogsRepository.countByEvent_Influencer_IdAndAttendAtNotNull(entity.getId()));
+        dto.setIsGuided(entity.getIsGuided());
         return dto;
     }
 

@@ -61,6 +61,12 @@ public class InfluencerController {
         influencerService.requestEventHosting(dto);
     }
 
+    @DeleteMapping("/host")
+    public void deleteEventHostingByInfluencer(@RequestHeader(name = "User-Token", required = false) String token,
+                                               @RequestParam Long requestId) {
+        influencerService.cancelEventHostingRequestByInfluencer(requestId);
+    }
+
     @GetMapping("/request/{requestId}")
     public EventRequestsDTO getEventRequestById(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @PathVariable Long requestId) {
@@ -109,6 +115,11 @@ public class InfluencerController {
                                                            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                            @RequestParam(required = false) EventRequestStatus status){
         return influencerService.getEventsRequestByOrgForEmployee(start, count, status);
+    }
+
+    @PutMapping("/guided")
+    public void influencerIsGuided(@RequestHeader(name = "User-Token", required = false) String token){
+        influencerService.userIsGuided();
     }
 
 }
