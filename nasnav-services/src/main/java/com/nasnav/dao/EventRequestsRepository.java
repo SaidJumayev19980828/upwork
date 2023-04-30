@@ -19,4 +19,5 @@ public interface EventRequestsRepository extends CrudRepository<EventRequestsEnt
     @Query("select request from EventRequestsEntity request where request.influencer.id =:id and (:status IS null or request.status =:status)")
     PageImpl<EventRequestsEntity> getAllByInfluencerIdPageable(Long id, Integer status, Pageable page);
     boolean existsByEvent_IdAndStatusEquals(Long eventId, int status);
+    List<EventRequestsEntity> getAllByInfluencer_Id(Long influencerId);
 }

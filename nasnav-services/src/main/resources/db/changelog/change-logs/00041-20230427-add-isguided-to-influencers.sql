@@ -1,0 +1,1 @@
+ALTER TABLE influencers add column is_guided BOOLEAN DEFAULT FALSE;

@@ -8,10 +8,12 @@ import com.nasnav.enumerations.EventStatus;
 import com.nasnav.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -32,6 +34,15 @@ public class EventController {
     public List<EventResponseDto> getEventsByOrgIdForUser(@RequestHeader(name = "User-Token", required = false) String token,
                                                           @PathVariable Long orgId,@RequestParam(required = false) EventStatus status){
         return eventService.getEventsByOrgIdForUsers(orgId,status);
+    }
+    
+
+    @GetMapping("/listForUser")
+    public PageImpl<EventResponseDto> getEventsForUser(@RequestHeader(name = "User-Token", required = false) String token,
+                                                       @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                       @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+                                                       @RequestParam(required = false) @DateTimeFormat(pattern="yyyy-MM-dd") Date date){
+        return eventService.getAllEventsForUser(start, count, date);
     }
 
     @GetMapping("/list")
