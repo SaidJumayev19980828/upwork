@@ -3,6 +3,7 @@ package com.nasnav.dto;
 import com.nasnav.dto.response.EventResponseDto;
 import lombok.Data;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -18,4 +19,6 @@ public class InfluencerDTO {
     private Integer hostedEvents;
     private Integer interests;
     private Integer attends;
+    private Boolean isGuided;
+    private UserRepresentationObject userRepresentationObject;
 }

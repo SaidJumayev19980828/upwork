@@ -14,6 +14,10 @@ public interface AvailabilityRepository extends JpaRepository<AvailabilityEntity
     boolean existsByEndsAtIsGreaterThanAndStartsAtIsLessThanAndEmployeeUserAndIdNotIn(LocalDateTime start, LocalDateTime end, EmployeeUserEntity employee,List<Long> ids);
     @Query("SELECT c from AvailabilityEntity c where c.organization =:organizationEntity and c.startsAt > CURRENT_DATE and c.user is null group by c.id,c.organization,c.startsAt order by c.startsAt")
     List<AvailabilityEntity> getAllFreeAvailabilitiesByOrganization(OrganizationEntity organizationEntity);
+
+    @Query("SELECT c from AvailabilityEntity c where c.organization =:organizationEntity and c.employeeUser =:employeeUserEntity and c.startsAt > CURRENT_DATE and c.user is null group by c.id,c.organization,c.startsAt order by c.startsAt")
+    List<AvailabilityEntity> getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(OrganizationEntity organizationEntity, EmployeeUserEntity employeeUserEntity);
+
     @Query("SELECT c from AvailabilityEntity c where c.shop =:shopsEntity and c.startsAt > CURRENT_DATE and c.user is null group by c.id,c.shop,c.startsAt order by c.startsAt")
     List<AvailabilityEntity> getAllFreeAvailabilitiesByShop(ShopsEntity shopsEntity);
 

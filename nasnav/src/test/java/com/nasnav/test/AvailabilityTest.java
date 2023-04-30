@@ -4,9 +4,13 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.AvailabilityRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SchedulerTaskRepository;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.AvailabilityEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SchedulerTaskEntity;
+import com.nasnav.service.AvailabilityService;
+import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -43,6 +48,8 @@ public class AvailabilityTest {
     private SchedulerTaskRepository schedulerTaskRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
+    @Autowired
+    private AvailabilityService availabilityService;
     @Test
     public void createAvailabilitiesTest(){
         LocalDateTime now = LocalDateTime.now();
@@ -73,7 +80,7 @@ public class AvailabilityTest {
         assertEquals(200, response2.getStatusCode().value());
         OrganizationEntity org = organizationRepository.findOneById(99001L);
         List<AvailabilityEntity> entities = availabilityRepository.getAllFreeAvailabilitiesByOrganization(org);
-        assertEquals(3,entities.size());
+        assertEquals(6,entities.size());
     }
 
 
@@ -89,12 +96,12 @@ public class AvailabilityTest {
         assertEquals(200, response.getStatusCode().value());
         Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
         if(entity.isPresent()){
-            LocalDateTime result = LocalDateTime.of(2023,01,13, 17,20);
+            LocalDateTime result = LocalDateTime.of(2033,01,13, 17,20);
             assertEquals(result,entity.get().getStartsAt());
         }
         Optional<SchedulerTaskEntity> entity2 = schedulerTaskRepository.findById(1L);
         if(entity2.isPresent()){
-            LocalDateTime result = LocalDateTime.of(2023,01,13, 17,20);
+            LocalDateTime result = LocalDateTime.of(2033,01,13, 17,20);
             assertEquals(result,entity.get().getStartsAt());
         }
     }
@@ -107,6 +114,15 @@ public class AvailabilityTest {
         Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
         long result = entity.get().getUser().getId();
         assertEquals(88,result);
+    }
+
+    @Test
+    public void getAllEmployeesWithOrWithoutSlotsByOrg(){
+        Set<UserRepresentationObject> emps = availabilityService.getAllEmployeesWithOrWithoutSlotsByOrg(99001L,true);
+        assertEquals(1, emps.size());
+        Set<UserRepresentationObject> empsWithoutSlots = availabilityService.getAllEmployeesWithOrWithoutSlotsByOrg(99001L,true);
+        assertEquals(1,empsWithoutSlots.size());
+
     }
 
 

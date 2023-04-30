@@ -25,6 +25,7 @@ public interface InfluencerService {
      */
     void becomeInfluencerResponse(Long influencerId, boolean action);
     void requestEventHosting(EventOrganiseRequestDTO dto);
+    void cancelEventHostingRequestByInfluencer(Long requestId);
     EventRequestsDTO getEventRequestById(Long requestId);
     void approveOrCancelEventHostingRequest(Long requestId, boolean action);
     void rejectTheRestIfEventHostingRequestApproved(Long requestId);
@@ -34,4 +35,5 @@ public interface InfluencerService {
     PageImpl<EventRequestsDTO> getMyEventRequests(Integer start, Integer count, EventRequestStatus status);
     PageImpl<EventRequestsDTO> getEventsRequestByOrgForEmployee(Integer start, Integer count, EventRequestStatus status);
     void joinEvent();
+    void userIsGuided();
 }

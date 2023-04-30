@@ -78,7 +78,8 @@ public class EventServiceImpl implements EventService{
         );
         List<EventEntity> relatedEvents = new ArrayList<>();
         List<Long> categoryIds = entity.getProducts().stream().map(o -> o.getCategoryId()).collect(Collectors.toList());
-        if(!categoryIds.isEmpty() && !categoryIds.stream().anyMatch(o -> o == null)){
+        categoryIds.removeAll(Collections.singletonList(null));
+        if(!categoryIds.isEmpty()){
             relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
         }
         EventResponseDto dto = toDto(entity);
@@ -100,6 +101,14 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
+    public PageImpl<EventResponseDto> getAllEventsForUser(Integer start, Integer count, Date dateFilter) {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventEntity> source = eventRepository.getAllEventFilterByDatePageable(dateFilter, page);
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
     public PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status) {
         PageRequest page = getQueryPage(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
@@ -118,7 +127,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
-        return eventRepository.getAllByInfluencerNull().stream().map(this::toDto).collect(Collectors.toList());
+        return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Override
@@ -128,7 +137,11 @@ public class EventServiceImpl implements EventService{
         if(influencerEntity != null){
             List<OrganizationEntity> orgs = organizationRepository.findYeshteryOrganizationsFilterByCategory(influencerEntity.getCategories().stream()
                     .map(o->o.getId()).collect(Collectors.toList()));
-            return eventRepository.getAllByOrganizationInAndInfluencerNull(orgs).stream().map(this::toDto).collect(Collectors.toList());
+            List<EventEntity> eventEntities = eventRepository.getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(orgs, LocalDateTime.now());
+            List<EventEntity> requestsEntities = eventRequestsRepository.getAllByInfluencer_Id(influencerEntity.getId())
+                    .stream().map(o -> o.getEvent()).collect(Collectors.toList());
+            eventEntities.removeAll(requestsEntities);
+            return eventEntities.stream().map(this::toDto).collect(Collectors.toList());
         }
         return null;
     }
@@ -203,15 +216,19 @@ public class EventServiceImpl implements EventService{
         entity.setVisible(dto.getVisible());
         entity.setAttachments(dto.getAttachments());
 
-        dto.getProductsIds().forEach(i -> {
-            Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
-            if(product.isPresent()){
-                products.add(product.get());
-            }
-        });
-        dto.getAttachments().forEach(o -> {
-            o.setEvent(entity);
-        });
+        if (dto.getProductsIds()!= null && dto.getProductsIds().size() > 0) {
+            dto.getProductsIds().forEach(i -> {
+                Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
+                if (product.isPresent()) {
+                    products.add(product.get());
+                }
+            });
+        }
+        if (dto.getAttachments() != null && dto.getAttachments().size() > 0) {
+            dto.getAttachments().forEach(o -> {
+                o.setEvent(entity);
+            });
+        }
         if(id == null){
             entity.setStatus(EventStatus.PENDING.getValue());
         }

@@ -1,8 +1,10 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.dao.AvailabilityRepository;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.AvailabilityDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -21,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -41,6 +44,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private SchedulerTaskService schedulerTaskService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private EmployeeUserRepository employeeUserRepository;
 
     private List<AvailabilityEntity> createAvailabilities(AvailabilityDTO dto) {
         if(overlappingValidator(dto.getStartsAt(), dto.getEndsAt())){
@@ -138,6 +143,31 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                     .stream().map(this::toDTO).collect(Collectors.toList());
         }
         return null;
+    }
+
+    @Override
+    public List<AvailabilityDTO> getAllFreeAvailabilitiesByOrgAndEmployee(Long orgId, Long employeeId) {
+        Optional<OrganizationEntity> org = organizationRepository.findById(orgId);
+        if(org.isPresent()){
+            return availabilityRepository.getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(org.get(), getEmployee())
+                    .stream().map(this::toDTO).collect(Collectors.toList());
+        }
+        return null;
+    }
+
+    @Override
+    public Set<UserRepresentationObject> getAllEmployeesWithOrWithoutSlotsByOrg(Long orgId, boolean availableSlots) {
+        OrganizationEntity org = organizationRepository.findById(orgId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,ORG$NOTFOUND,orgId));
+        List<AvailabilityEntity> freeSlots = availabilityRepository.getAllFreeAvailabilitiesByOrganization(org);
+        if(availableSlots){
+            return freeSlots.stream().map(o -> o.getEmployeeUser().getRepresentation()).collect(Collectors.toSet());
+        }
+        else {
+            List<EmployeeUserEntity> orgEmployees = employeeUserRepository.findByOrganizationId(orgId);
+            List<EmployeeUserEntity> availableEmployees = freeSlots.stream().map(o -> o.getEmployeeUser()).collect(Collectors.toList());
+            orgEmployees.removeAll(availableEmployees);
+            return orgEmployees.stream().map(o -> o.getRepresentation()).collect(Collectors.toSet());
+        }
     }
 
     @Override

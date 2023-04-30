@@ -37,6 +37,9 @@ public class InfluencerEntity {
     @Column(name = "approved")
     private Boolean approved;
 
+    @Column(name = "is_guided")
+    private Boolean isGuided;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
