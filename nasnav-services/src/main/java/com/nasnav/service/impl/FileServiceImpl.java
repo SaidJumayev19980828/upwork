@@ -407,7 +407,7 @@ public class FileServiceImpl implements FileService {
 		String modUrl = reformUrl(url);
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
 		if(fileInfo == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0011, url);
+			throw new RuntimeBusinessException(NOT_FOUND, GEN$0011, url);
 		}
 		return STATIC_FILES_URL + "/" + fileInfo.getLocation();
 	}
