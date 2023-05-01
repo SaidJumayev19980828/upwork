@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
 @PropertySource("classpath:test.database.properties")
-@TestPropertySource("/sample.test.application.properties")
+@TestPropertySource("classpath:test.application.properties")
 public abstract class AbstractTestWithTempBaseDir {
     @Autowired
     protected FileService fileService;
