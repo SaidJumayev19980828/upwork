@@ -19,7 +19,6 @@ import com.querydsl.core.types.Path;
 import com.querydsl.core.types.PathMetadata;
 import com.querydsl.core.types.dsl.PathInits;
 
-@SpringBootTest
 public class QueryTypesTest {
   private static String SAMPLE_STRING = "sampleString";
 
