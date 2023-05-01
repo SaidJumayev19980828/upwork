@@ -126,13 +126,17 @@ public class TestCommons {
 
 
 
-    public static String readResource(Resource resource){
+    public static String readResource(Resource resource, String encoding){
         try {
-            return new String( Files.readAllBytes(resource.getFile().toPath()) );
+            return new String( Files.readAllBytes(resource.getFile().toPath()), encoding);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException();
         }
+    }
+
+    public static String readResource(Resource resource) {
+        return readResource(resource, "UTF-8");
     }
 
 
