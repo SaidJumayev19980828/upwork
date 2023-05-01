@@ -27,12 +27,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -50,6 +54,7 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -218,7 +223,35 @@ public class ProductApiTest {
 
 
 
+	@Test
+	public void NewProductFlowTest() {
+		JSONObject product = createNewDummyProduct();
+		LinkedMultiValueMap<String, Object> parameters = new LinkedMultiValueMap<String, Object>();
+	    parameters.add("cover", new org.springframework.core.io.ClassPathResource("imgs_save_dir_for_testing/aa.png"));
+	    parameters.add("productJson", product);
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+	    headers.add("tag_ids", "1001");
+        headers.add("keywords", "test");
+        headers.add("User-Token", USER_TOKEN);
+        
+	    HttpEntity<LinkedMultiValueMap<String, Object>> entity = new HttpEntity<LinkedMultiValueMap<String, Object>>(parameters, headers);
 
+	    ResponseEntity<String> response = template.exchange("/product/v2/add", HttpMethod.POST, entity, String.class, "");
+
+	
+	    assertNotNull(response.getStatusCode());
+	}
+	   @Test
+	    public void GetNewProductFlowTest(){
+	    
+	    	  HttpEntity<?> json = getHttpEntity("123");
+	          ResponseEntity<String> response = template.exchange("/product/v2/productdata?product_id=1001", GET, json, String.class);
+	   
+	          assertEquals(200, response.getStatusCodeValue());
+	          assertNotNull(response.getBody());
+	    } 
+	
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
 		TestCase.assertEquals(id , saved.getId());
 		TestCase.assertEquals(product.get("name"), saved.getName());

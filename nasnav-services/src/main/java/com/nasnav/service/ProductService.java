@@ -106,14 +106,10 @@ public interface ProductService {
 
   List<Long> getVariantsWithFeature(ProductFeaturesEntity feature);
 
-ProductUpdateResponse createProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile img1,
-		@Valid MultipartFile img2, List<Long> tagsIds, List<String> keywords) throws BusinessException;
 
-ProductUpdateResponse updateProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile img1,
-		@Valid MultipartFile img2, List<Long> tagsIds, List<String> keywords) throws BusinessException;
+ProductUpdateResponse updateProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile []img, List<Long> tagsIds, List<String> keywords) throws BusinessException;
 
-VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid MultipartFile img1,
-		@Valid MultipartFile img2, @Valid MultipartFile img3) throws BusinessException;
+VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid MultipartFile [] imgs) throws BusinessException;
 
 ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 

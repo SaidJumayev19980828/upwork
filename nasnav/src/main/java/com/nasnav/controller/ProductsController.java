@@ -274,35 +274,25 @@ public class ProductsController {
     @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
     public ProductUpdateResponse createProductV2(@RequestHeader(name = "User-Token", required = false) String token,
     		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
-    		@RequestPart(value = "img1", required = false) @Valid MultipartFile img1,	@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,
+    		@RequestPart(value = "imgs", required = false) @Valid MultipartFile [] imgs,
     		@RequestHeader(name = "tags_ids",required = false) List<Long> tagsIds,
     		@RequestHeader(name = "keywords",required = false)List<String> keywords ) throws BusinessException {
-		return productService.createProductV2(productJson,cover,img1,img2,tagsIds,keywords);
+		return productService.updateProductV2(productJson,cover,imgs,tagsIds,keywords);
     }
-    @PostMapping(value = "v2/update", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
-    public ProductUpdateResponse updateProductV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
-    		@RequestPart(value = "img1", required = false) @Valid MultipartFile img1,	@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,
-    		@RequestHeader(name = "tags_ids",required = false) List<Long> tagsIds,
-    		@RequestHeader(name = "keywords",required = false)List<String> keywords ) throws BusinessException {
-		return productService.updateProductV2(productJson,cover,img1,img2,tagsIds,keywords);
-    }
+   
     
     
 	@PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
     public VariantUpdateResponse updateProductVariantV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "img1", required = false) @Valid MultipartFile img1, 
-                                              		@RequestPart(value = "img2", required = false) @Valid MultipartFile img2,	
-                                              		@RequestPart(value = "img3", required = false) @Valid MultipartFile img3) throws BusinessException {
-		return  productService.updateVariantV2(variant, img1, img2, img3);
+    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "img1", required = false) @Valid MultipartFile []imgs) throws BusinessException {
+		return  productService.updateVariantV2(variant, imgs);
     }
 	
 	   @GetMapping(value = "v2/productdata",produces=APPLICATION_JSON_VALUE)
 	    public ProductDetailsDTO getProductData(@RequestHeader(name = "User-Token", required = false) String token,
-	                                        @RequestParam(name = "product_id") Long productId,
-	                                        @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
+	                                        @RequestParam(name = "product_id") Long productId) throws BusinessException {
 	        var params = new ProductFetchDTO(productId);
-	        params.setShopId(shopId);
+	       
 	        params.setCheckVariants(false);
 	        params.setIncludeOutOfStock(true);
 	        params.setOnlyYeshteryProducts(false);
