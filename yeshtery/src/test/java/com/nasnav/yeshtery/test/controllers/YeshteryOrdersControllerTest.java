@@ -450,10 +450,10 @@ public class YeshteryOrdersControllerTest {
 
         //-------------------------------------------------------------------
         // by shop_id only
-        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12Z&updated_after=2017-12-01:12:12:12Z", "101112");
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12&updated_after=2017-12-01:12:12:12", "101112");
 
-        assertTrue(200 == response.getStatusCode().value());
-        Assert.assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));
+        assertEquals(OK, response.getStatusCode());
+        assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));
     }
 
     private void modifyOrderUpdateTime(Long orderId, LocalDateTime newUpdateTime) {
@@ -728,7 +728,7 @@ public class YeshteryOrdersControllerTest {
         assertEquals(3, countOrdersFromResponse(response));
     }
 
-    private ResponseEntity sendOrdersListRequestWithParamsAndToken(String params, String token){
+    private ResponseEntity<OrdersListResponse> sendOrdersListRequestWithParamsAndToken(String params, String token){
         HttpEntity<?> httpEntity = getHttpEntity(token);
 
         return template.exchange(YESHTERY_ORDER_LIST_API_PATH + "?" + params,
