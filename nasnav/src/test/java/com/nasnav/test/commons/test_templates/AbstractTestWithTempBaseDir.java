@@ -12,7 +12,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
@@ -30,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
 @PropertySource("classpath:test.database.properties")
-@TestPropertySource("classpath:test.application.properties")
 public abstract class AbstractTestWithTempBaseDir {
     @Autowired
     protected FileService fileService;
