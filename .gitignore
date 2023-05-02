@@ -56,4 +56,5 @@ secrets.yml
 /nasnav/heapdump.*.phd
 /nasnav/src/test/resources/test_files_base_dir
 /yeshtery/src/test/resources/test_imgs_save_dir
-nasnav/src/test/resources/test.application.properties
+/nasnav/src/test/resources/application.properties
+/yeshtery/src/test/resources/application.properties
