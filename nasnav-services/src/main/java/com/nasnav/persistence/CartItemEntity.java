@@ -28,7 +28,7 @@ public class CartItemEntity extends AbstractCartItemEntity{
     @CreationTimestamp
     private LocalDateTime createdAt;
     
-    @OneToMany(mappedBy = "cartItemEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "cartItemEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
