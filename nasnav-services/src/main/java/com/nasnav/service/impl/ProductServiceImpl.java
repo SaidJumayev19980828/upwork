@@ -3548,9 +3548,10 @@ public class ProductServiceImpl implements ProductService {
 		public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
 		return variantFeatureValuesRepo.findByFeature(feature.getId(), feature.getOrganization().getId());
     }
-    @Override
-    public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg,
-    		MultipartFile []imgs, List<Long> tagsId, List<String> keywords) throws BusinessException {
+
+	@Override
+	public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg, MultipartFile[] imgs,
+			List<Long> tagsId, List<String> keywords) throws BusinessException {
 		Long id = updateProductBatch(asList(productJson), false, false).stream().findFirst().orElse(null);
 		if (id != null) {
 			imgService.deleteImage(null, id, null);
@@ -3564,16 +3565,16 @@ public class ProductServiceImpl implements ProductService {
 			}
 
 			if (imgs != null) {
-				for(int i=0;i<imgs.length;i++) {
-				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
-				img.setOperation(Operation.CREATE);
-				img.setProductId(id);
-				img.setPriority(i+1);
-				img.setType(7);
-				imgService.updateProductImage(imgs[i], img);
+				for (int i = 0; i < imgs.length; i++) {
+					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+					img.setOperation(Operation.CREATE);
+					img.setProductId(id);
+					img.setPriority(i + 1);
+					img.setType(7);
+					imgService.updateProductImage(imgs[i], img);
 				}
 			}
-			
+
 			if (!tagsId.isEmpty() && tagsId != null) {
 				ProductTagDTO tags = new ProductTagDTO();
 				tags.setTagIds(tagsId);
@@ -3590,7 +3591,8 @@ public class ProductServiceImpl implements ProductService {
 		return new ProductUpdateResponse(id);
 	}
    
-	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile[] imgs) throws BusinessException {
+	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile[] imgs)
+			throws BusinessException {
 		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
 		if (id != null) {
 
@@ -3601,17 +3603,17 @@ public class ProductServiceImpl implements ProductService {
 
 			}
 			if (imgs != null) {
-				for(int i=0;i<imgs.length;i++) {
-				ProductImageUpdateDTO img = new ProductImageUpdateDTO();
-				img.setOperation(Operation.CREATE);
-				img.setVariantId(id);
-				img.setPriority(i);
-				img.setType(7);
-				img.setProductId(variant.getProductId());
-				imgService.updateProductImage(imgs[i], img);
+				for (int i = 0; i < imgs.length; i++) {
+					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+					img.setOperation(Operation.CREATE);
+					img.setVariantId(id);
+					img.setPriority(i);
+					img.setType(7);
+					img.setProductId(variant.getProductId());
+					imgService.updateProductImage(imgs[i], img);
 				}
 			}
-			
+
 		}
 
 		return new VariantUpdateResponse(id);
