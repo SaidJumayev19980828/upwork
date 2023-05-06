@@ -39,6 +39,8 @@ public class AppConfig {
     public int otpLength;
     @Value("${otp.max-retries:3}")
     public int otpMaxRetries;
+    @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
+    public String rocketChatUrl;
 
 
     @Value("${files.basepath}")
