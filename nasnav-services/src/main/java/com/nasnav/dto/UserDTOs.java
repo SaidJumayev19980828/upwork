@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 
+import javax.persistence.Transient;
+
 public class UserDTOs {
 
     @Getter
@@ -111,6 +113,9 @@ public class UserDTOs {
 
         @Schema(example = "99001/avatar.jpg")
         private String avatar;
+
+        @Transient
+        private boolean activated;
     }
 
     @Getter

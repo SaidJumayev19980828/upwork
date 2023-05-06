@@ -3,14 +3,13 @@ package com.nasnav.controller;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
+import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
+import com.nasnav.dto.response.RegisterResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ApiLogsSearchParam;
-import com.nasnav.response.CategoryResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ThemeClassResponse;
-import com.nasnav.response.ThemeResponse;
+import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +44,9 @@ public class AdminController {
 	private BrandService brandService;
 	@Autowired
 	private ApiLogsService apiLogsService;
+
+	@Autowired
+	private EmployeeUserService employeeUserService;
 
     @PostMapping(value = "organization", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public OrganizationResponse createOrganization(@RequestHeader(TOKEN_HEADER) String userToken,
@@ -121,6 +123,22 @@ public class AdminController {
 	@PostMapping(value = "country/bulk", consumes = APPLICATION_JSON_VALUE)
 	public void addCountries(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody List<CountryDTO> dto) {
 		addressService.addCountries(dto);
+	}
+
+	@PostMapping(value = "register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+	public RegisterResponse register(@RequestHeader(TOKEN_HEADER) String userToken,
+									 @RequestBody RegisterDto registerDto)  throws BusinessException {
+
+		OrganizationResponse organizationResponse = organizationService.createOrganization(registerDto.getOrganizationCreationDTO());
+
+		registerDto.getEmployeeUserJson().setOrgId(organizationResponse.getOrganizationId());
+
+		registerDto.getEmployeeUserJson().setActivated(Boolean.TRUE);
+
+		UserApiResponse userApiResponse = employeeUserService.createEmployeeUser(registerDto.getEmployeeUserJson());
+
+		return RegisterResponse.builder().organizationResponse(organizationResponse).userApiResponse(userApiResponse).build();
+
 	}
 
 	@DeleteMapping(value = "country")
