@@ -11,5 +11,5 @@ public class CartItemAddonDetailsDTO {
 	private Long addonItemId;
 	private String addoneName;
 	private BigDecimal price;
-
+	private Integer type;
 }
