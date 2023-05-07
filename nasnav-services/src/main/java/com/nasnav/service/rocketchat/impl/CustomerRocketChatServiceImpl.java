@@ -2,11 +2,15 @@ package com.nasnav.service.rocketchat.impl;
 
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.nasnav.dao.RocketChatCustomerTokenRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.RocketChatCustomerTokenEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
@@ -34,7 +38,13 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 		return rocketChatClient
 				.liveChatInit(token, user.getOrganizationId().toString())
 				.filter(visitor -> areVisitorDataValid(visitor, user))
-				.switchIfEmpty(Mono.defer(() -> registerNewVisitor(user, token)));
+				.switchIfEmpty(Mono.defer(() -> registerNewVisitor(user, token)))
+				.onErrorResume(WebClientResponseException.class,
+						e -> Mono.error(new RuntimeBusinessException(
+								HttpStatus.NOT_ACCEPTABLE, 
+								ErrorCodes.CHAT$CUSTOMER$EXTERNAL,
+								e.getStatusCode().value()
+						)));
 	}
 
 	private Mono<RocketChatVisitorDTO> registerNewVisitor(UserEntity user, String token) {

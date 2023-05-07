@@ -34,7 +34,8 @@ public class RocketChatClient {
 							.queryParam("token", token)
 							.queryParam("department", department)
 							.build()
-				).exchangeToMono(wrapper -> wrapper.bodyToMono(typeRef))
+				).retrieve()
+				.bodyToMono(typeRef)
 				.map(RocketChatResponseWrapper::getData)
 				.map(RocketChatConfigDTO::getGuest);
 	}
@@ -47,7 +48,8 @@ public class RocketChatClient {
 		return webClient.post()
 				.uri("livechat/config")
 				.body(wrappedRequest, wrappedRequest.getClass())
-				.exchangeToMono(wrapper -> wrapper.bodyToMono(typeRef))
+				.retrieve()
+				.bodyToMono(typeRef)
 				.map(RocketChatResponseWrapper::getData);
 	}
 }
