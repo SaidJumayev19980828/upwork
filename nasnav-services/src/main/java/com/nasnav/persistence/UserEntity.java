@@ -88,6 +88,11 @@ public class UserEntity extends BaseUserEntity{
     @Column(name = "yeshtery_user_id")
     private Long yeshteryUserId;
 
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    @JsonIgnore
+    RocketChatCustomerTokenEntity rocketChatTokenEntity;
 
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 

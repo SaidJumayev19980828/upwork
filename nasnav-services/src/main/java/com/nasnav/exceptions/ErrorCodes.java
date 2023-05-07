@@ -434,6 +434,7 @@ public enum ErrorCodes {
 	,POST$LIKE$0003("user already liked this post before!")
 	,POST$REVIEW$ATTACHMENT("No attachments found fot review you should upload images")
 
+	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
 
 
 	;
