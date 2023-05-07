@@ -159,6 +159,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
 						patternOf( "/videochat/**"                   , POST    			, getAllRoles()),
 						patternOf( "/videochat/**"                   , GET    				, getNonCustomersRoles()),
+						patternOf("/chat/visitor_data"								, GET						, setOf(CUSTOMER)),
 						patternOf( "/availability/org/**"                       				, setOf(CUSTOMER)),
 						patternOf( "/availability/shop/**"                       				, setOf(CUSTOMER)),
 						patternOf( "/availability/user"                       					, setOf(CUSTOMER)),
