@@ -588,8 +588,10 @@ public class CartServiceImpl implements CartService{
         	
         	Optional<AddonEntity> addonEntity=addonsRepository.findById(addonStock.getAddonEntity().getId());
         	addonEntity.ifPresent(addonItem -> dto.setAddoneName(addonItem.getName()));
+        	addonEntity.ifPresent(addonItem -> dto.setType(addonItem.getType()));
         	dto.setPrice(addonStock.getPrice());
         	dto.setAddonItemId(addon.getId());
+        	
         	addonList.add(dto);
         	
         }
