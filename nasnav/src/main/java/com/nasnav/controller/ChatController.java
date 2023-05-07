@@ -10,16 +10,18 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
 
 @RestController
 @RequestMapping("/chat")
 @RequiredArgsConstructor
 public class ChatController {
-	CustomerRocketChatService customerRocketChatService;
+	private final CustomerRocketChatService customerRocketChatService;
 
 	@GetMapping(value="visitor_data")
-	public Mono<RocketChatVisitorDTO> getInitialVisitorData() {
+	public Mono<RocketChatVisitorDTO> getInitialVisitorData(@RequestHeader(TOKEN_HEADER) String userToken) {
 		return customerRocketChatService.getRocketChatVisitorData();
 	}
 }

@@ -1,9 +1,7 @@
 package com.nasnav.service.rocketchat.impl;
 
-import java.util.concurrent.CompletableFuture;
-
-import org.elasticsearch.cluster.metadata.AliasAction.NewAliasValidator;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -13,7 +11,6 @@ import com.nasnav.dto.rocketchat.RocketChatDTOWrapper;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
 import com.nasnav.dto.rocketchat.RocketChatResponseWrapper;
 
-import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -30,14 +27,15 @@ public class RocketChatClient {
 		return webClient.get()
 				.uri(
 					uriBuilder -> uriBuilder
-							.path("livechat/config")
+							.path("/livechat/config")
 							.queryParam("token", token)
 							.queryParam("department", department)
 							.build()
-				).retrieve()
+				).accept(MediaType.APPLICATION_JSON)
+				.retrieve()
 				.bodyToMono(typeRef)
 				.map(RocketChatResponseWrapper::getData)
-				.map(RocketChatConfigDTO::getGuest);
+				.mapNotNull(RocketChatConfigDTO::getGuest);
 	}
 
 	public Mono<RocketChatVisitorDTO> liveChatRegisterVisitor(RocketChatVisitorDTO visitor) {
@@ -46,8 +44,9 @@ public class RocketChatClient {
 		RocketChatDTOWrapper<RocketChatVisitorDTO> wrappedRequest = new RocketChatDTOWrapper<>();
 		wrappedRequest.setData(visitor);
 		return webClient.post()
-				.uri("livechat/config")
-				.body(wrappedRequest, wrappedRequest.getClass())
+				.uri("/livechat/visitor")
+				.accept(MediaType.APPLICATION_JSON)
+				.bodyValue(wrappedRequest)
 				.retrieve()
 				.bodyToMono(typeRef)
 				.map(RocketChatResponseWrapper::getData);
