@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @Entity
-@Table(name = "rocket_chat_user_token")
+@Table(name = "rocket_chat_customer_tokens")
 @EqualsAndHashCode(callSuper=false)
 public class RocketChatCustomerTokenEntity extends DefaultBusinessEntity<Integer> {
 	@OneToOne(optional = false)
