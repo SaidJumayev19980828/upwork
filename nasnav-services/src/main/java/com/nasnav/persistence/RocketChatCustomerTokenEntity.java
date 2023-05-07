@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "rocket_chat_customer_tokens")
 @EqualsAndHashCode(callSuper=false)
-public class RocketChatCustomerTokenEntity extends DefaultBusinessEntity<Integer> {
+public class RocketChatCustomerTokenEntity extends DefaultBusinessEntity<Long> {
 	@OneToOne(optional = false)
 	@JoinColumn(name = "user_id", referencedColumnName = "id")
 	private UserEntity user;
