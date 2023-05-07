@@ -1,17 +1,13 @@
 package com.nasnav.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
 
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,7 +55,7 @@ public class CustomerRocketChatServiceTest {
 		RocketChatCustomerTokenEntity tokenEntity = createRocketChatToken(user);
 		RocketChatVisitorDTO visitor = createRocketChatVisitorDTO(user);
 		Mockito.when(securityService.getCurrentUser()).thenReturn(user);
-		Mockito.when(tokenRepository.findByUserEntity(user)).thenReturn(Optional.of(tokenEntity));
+		Mockito.when(tokenRepository.findByUser(user)).thenReturn(Optional.of(tokenEntity));
 		Mockito.when(rocketChatClient.liveChatInit(TOKEN, user.getOrganizationId().toString())).thenReturn(Mono.just(visitor));
 		RocketChatVisitorDTO returnedVisitor = customerRocketChatService.getRocketChatVisitorData().block();
 		assertEquals("returned visitor from api is changed", visitor, returnedVisitor);
@@ -72,7 +68,7 @@ public class CustomerRocketChatServiceTest {
 		RocketChatCustomerTokenEntity tokenEntity = createRocketChatToken(user);
 		RocketChatVisitorDTO visitor = createRocketChatVisitorDTO(user);
 		Mockito.when(securityService.getCurrentUser()).thenReturn(user);
-		Mockito.when(tokenRepository.findByUserEntity(user)).thenReturn(Optional.empty());
+		Mockito.when(tokenRepository.findByUser(user)).thenReturn(Optional.empty());
 		Mockito.when(tokenRepository.save(any(RocketChatCustomerTokenEntity.class))).thenReturn(tokenEntity);
 		Mockito.when(userRepository.save(user)).thenReturn(user);
 		Mockito.when(rocketChatClient.liveChatInit(TOKEN, user.getOrganizationId().toString())).thenReturn(Mono.empty());
@@ -92,7 +88,7 @@ public class CustomerRocketChatServiceTest {
 		newUser.setName("new name");
 		newUser.setEmail("new@email.co");
 		Mockito.when(securityService.getCurrentUser()).thenReturn(newUser);
-		Mockito.when(tokenRepository.findByUserEntity(newUser)).thenReturn(Optional.of(tokenEntity));
+		Mockito.when(tokenRepository.findByUser(newUser)).thenReturn(Optional.of(tokenEntity));
 		Mockito.when(rocketChatClient.liveChatInit(TOKEN, newUser.getOrganizationId().toString())).thenReturn(Mono.just(visitor));
 		RocketChatVisitorDTO newVisitor = createRocketChatVisitorDTO(newUser);
 		Mockito.when(rocketChatClient.liveChatRegisterVisitor(newVisitor)).thenReturn(Mono.just(newVisitor));

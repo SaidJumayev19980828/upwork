@@ -60,7 +60,7 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 	private RocketChatCustomerTokenEntity getOrCreateTokenEntity() {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		RocketChatCustomerTokenEntity tokenEntity = rocketChatUserTokenRepository
-				.findByUserEntity(user)
+				.findByUser(user)
 				.orElseGet(() -> new RocketChatCustomerTokenEntity(UUID.randomUUID().toString()));
 
 		if (tokenEntity.getUser() == null) {

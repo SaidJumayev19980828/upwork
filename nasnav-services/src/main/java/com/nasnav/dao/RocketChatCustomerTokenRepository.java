@@ -7,5 +7,5 @@ import com.nasnav.persistence.UserEntity;
 import java.util.Optional;
 
 public interface RocketChatCustomerTokenRepository extends JpaRepository<RocketChatCustomerTokenEntity, Long> {
-	public Optional<RocketChatCustomerTokenEntity> findByUserEntity(UserEntity user);
+	public Optional<RocketChatCustomerTokenEntity> findByUser(UserEntity user);
 }
