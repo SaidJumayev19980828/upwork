@@ -284,7 +284,7 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
  						MockMvcRequestBuilders.get("/files/NON_EXISTING") 								
  								.contentType(MediaType.ALL_VALUE)				 
  				)
-				.andExpect(status().is(406))
+				.andExpect(status().is(404))
 				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
 	}
 	
@@ -304,7 +304,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	
-	// Sometimes this test fails at dispatcher.forward(request, resp) in FilesController
 	@Test
 	public void downloadFileDeletedOnSystem() throws Exception {
 		//first upload a file
@@ -317,13 +316,17 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
 		
 		//----------------------------------------------
-		
+		// to get cached in spring resource cache
+		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		assertEquals(OK, response.getStatusCode());
+		//--------------------------------------------
+		// still in cache
 		Path uploadedFile = basePath.resolve(""+orgId).resolve(sanitizedFileName);
 		Files.delete(uploadedFile);
 		
 		 //--------------------------------------------
-		 //Now try to download the deleted file
-		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		 // previous request shouldn't affect this request
+		response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
 		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
 

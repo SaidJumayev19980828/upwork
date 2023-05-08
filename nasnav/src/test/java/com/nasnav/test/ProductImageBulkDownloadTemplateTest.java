@@ -89,7 +89,9 @@ public class ProductImageBulkDownloadTemplateTest {
 		List<String> headers = 
 				asList(response
 						.getBody()
-						.replace("\n", "")
+						.lines()
+						.findFirst()
+						.get()
 						.split(","));
 		assertEquals(IMG_CSV_BASE_HEADERS, headers);
 	}

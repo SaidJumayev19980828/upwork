@@ -390,11 +390,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         ordersRepo.save(order);
 
-        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP, order.getTotal());
+        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP, order.getTotal(), true);
         loyaltyPinsRepository.delete(pinEntity);
+        activateReferralPoints(order);
     }
 
-    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount) {
+    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount, Boolean valid) {
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE)
                 .orElse(null);
         if (config == null || user.getTier() == null) {
@@ -408,7 +409,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 constraint.getAmount(),
                 constraint.getExpiry());
         transaction.setType(type.getValue());
-        transaction.setIsValid(true);
+        transaction.setIsValid(valid);
         loyaltyPointTransRepo.save(transaction);
     }
 
@@ -654,7 +655,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
         OrganizationEntity org = organizationRepository.findById(orgId).get();
-        prepareLoyaltyPointTransaction(user, org, REFERRAL, null);
+        prepareLoyaltyPointTransaction(user, org, REFERRAL, null, false);
     }
 
     @Override

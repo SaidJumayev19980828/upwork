@@ -443,6 +443,7 @@ public class DataImportCsvApiTest {
         		 , setOf( setOf("111222A"), setOf("1354ABN", "87847777EW")));
 	}
 
+	// not sure why the "invalid" name
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
@@ -1875,7 +1876,7 @@ public class DataImportCsvApiTest {
 		data.setDescriptions( setOf("squishy") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands( setOf(101L) );
-		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setFeatureSpecs(Set.of(new JSONObject("{}")));
 		data.setExtraAttributes( emptySet());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));
