@@ -36,6 +36,7 @@ public class CartItem {
 	private String unit;
 	private Long orgId;
 	List<CartItemAddonDetailsDTO> addonList;
+	private String specialOrder;
 	
 	
 	public CartItem(Long stockId, Integer quantity, Map<String,Object> additionalData) {

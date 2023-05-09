@@ -45,6 +45,9 @@ public class BasketsEntity implements BaseEntity{
     @Column(name = "addon_price")
     private BigDecimal addonsPrice;
     
+    @Column(name="special_order")
+   	private String specialOrder;
+    
     
     @OneToMany(mappedBy = "basketEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AddonBasketEntity> addons = Set.of();
