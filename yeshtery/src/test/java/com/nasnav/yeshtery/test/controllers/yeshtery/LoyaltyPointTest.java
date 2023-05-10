@@ -2,7 +2,6 @@ package com.nasnav.yeshtery.test.controllers.yeshtery;
 
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.yeshtery.Yeshtery;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.yeshtery.test.commons.TestCommons.json;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.GET;
@@ -36,7 +34,19 @@ import static org.springframework.http.HttpStatus.OK;
 class LoyaltyPointTest {
     @Autowired
     private TestRestTemplate template;
-    
+    @Test
+    void getUserSpendablePoints() {
+        HttpEntity<?> request = getHttpEntity("123");
+        long orgId = 99001;
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        assertEquals(1, spendablePoints.size());
+        assertEquals(2, spendablePoints.get(0).getId());
+
+    }
     @Test
     void SharePoint() {
         HttpEntity<?> request = getHttpEntity("123");
@@ -45,5 +55,40 @@ class LoyaltyPointTest {
                 POST,
                 request,Void.class);
         Assert.assertEquals(OK, response.getStatusCode());
+
     }
+
+    @Test
+    void getSpendablePointsAndSharePoint() {
+        HttpEntity<?> request = getHttpEntity("456");
+        long orgId = 99002;
+
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(BigDecimal.valueOf(30), response.getBody().get(0).getPoints());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        Long point_id = spendablePoints.get(0).getId();
+        String email = "test4@nasnav.com";
+        BigDecimal points = BigDecimal.valueOf(5);
+        ResponseEntity<Void> res = template.exchange(
+                "/v1/loyalty/share_points?point_id="+point_id+"&email="+email+"&points="+points,
+                POST,
+                request,Void.class);
+        Assert.assertEquals(OK, res.getStatusCode());
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
+
+
+        HttpEntity<?> request2 = getHttpEntity("258");
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
+
+        assertEquals(4, spendablePoints.get(0).getId());
+        assertEquals(1, spendablePoints.size());
+    }
+
 }

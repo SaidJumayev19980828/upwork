@@ -151,6 +151,7 @@ public class CategoryManagmentTest {
                 .toString();
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        assertEquals(OK, response.getStatusCode());
         CategoriesEntity entity = categoryRepository.findById(response.getBody().getCategoryId()).get();
         assertEquals("Perfumes", entity.getName());
         assertEquals("categories/logos/564961451_56541.jpg", entity.getLogo());
@@ -158,7 +159,6 @@ public class CategoryManagmentTest {
         assertEquals("cover_small", entity.getCoverSmall());
 
         categoryRepository.deleteById(response.getBody().getCategoryId());
-        assertTrue(200 == response.getStatusCode().value());
     }
 
     

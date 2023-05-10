@@ -35,6 +35,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -116,6 +118,18 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 		logException(requestInfo, request, e);
 
 		return new ResponseEntity<>(e.getStatusResponse(), HttpStatus.NOT_ACCEPTABLE);
+	}
+
+	@ExceptionHandler(FileNotFoundException.class)
+	@ResponseBody
+	public ResponseEntity<ErrorResponseDTO> handleFileNotFound(FileNotFoundException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request, e);
+		ErrorCodes errorCode = ErrorCodes.GEN$0011;
+		// I don't like the following hardcoding but no easy way around it
+		String uri = request.getRequestURI().replaceFirst("/?(v1)?/files", "");
+		String errorMessage = String.format(errorCode.getValue(), uri);
+		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(errorMessage, errorCode.name());
+		return new ResponseEntity<>(errorResponseDTO, HttpStatus.NOT_FOUND);
 	}
 	
 	

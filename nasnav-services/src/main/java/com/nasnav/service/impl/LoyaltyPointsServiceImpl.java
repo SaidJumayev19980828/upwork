@@ -12,6 +12,7 @@ import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.OrganizationPoints;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
@@ -390,11 +391,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         ordersRepo.save(order);
 
-        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP, order.getTotal());
+        prepareLoyaltyPointTransaction(user, org, PICKUP_FROM_SHOP, order.getTotal(), true);
         loyaltyPinsRepository.delete(pinEntity);
+        activateReferralPoints(order);
     }
 
-    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount) {
+    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount, Boolean valid) {
         LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE)
                 .orElse(null);
         if (config == null || user.getTier() == null) {
@@ -408,7 +410,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 constraint.getAmount(),
                 constraint.getExpiry());
         transaction.setType(type.getValue());
-        transaction.setIsValid(true);
+        transaction.setIsValid(valid);
         loyaltyPointTransRepo.save(transaction);
     }
 
@@ -651,10 +653,24 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 .collect(toList());
     }
 
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(Long orgId) {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if (!(baseUser instanceof UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity) baseUser;
+        return loyaltyPointTransRepo.getSpendablePointsByUserIdAndOrgId(currentUser.getYeshteryUserId(), orgId).stream().map(t -> {
+            BigDecimal spentPoints = t.getSpentTransactions().stream().filter(Objects::nonNull).map(LoyaltySpentTransactionEntity::getReverseTransaction).map(LoyaltyPointTransactionEntity::getPoints).reduce(ZERO, BigDecimal::add);
+            t.setPoints(t.getPoints().subtract(spentPoints));
+            return t;
+        }).map(LoyaltyPointTransactionEntity::getRepresentation).collect(toList());
+    }
+
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
         OrganizationEntity org = organizationRepository.findById(orgId).get();
-        prepareLoyaltyPointTransaction(user, org, REFERRAL, null);
+        prepareLoyaltyPointTransaction(user, org, REFERRAL, null, false);
     }
 
     @Override
@@ -690,20 +706,20 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
 
         Optional<LoyaltyPointTransactionEntity> loyaltyPointTrans=  loyaltyPointTransRepo.findById(pointId);
 
-        if (loyaltyPointTrans.get().getPoints().intValue() < points.intValue()){
+        if (points.compareTo(loyaltyPointTrans.get().getPoints()) >= 0){
             throw new RuntimeBusinessException(METHOD_NOT_ALLOWED, ORG$LOY$0025);
         }
 
+        long orgId = loyaltyPointTrans.get().getOrganization().getId();
         UserEntity user = userRepo
-                .findByEmail(email)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0002, email));
+                .getByEmailAndOrganizationId(email, orgId);
 
+        if(!(user instanceof UserEntity)){
+             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0010, email);
+        }
         LoyaltyPointType type = LoyaltyPointType.getLoyaltyPointType(5);
 
-        LoyaltyPointTransactionEntity spendPoint = createLoyaltyPointTransaction(loyaltyPointTrans.get().getOrganization(),
-                user,
-                points,
-                loyaltyPointTrans.get().getEndDate());
+        LoyaltyPointTransactionEntity spendPoint = createLoyaltyPointTransaction(loyaltyPointTrans.get().getOrganization(), user, points, loyaltyPointTrans.get().getEndDate());
         spendPoint.setType(type.getValue());
         spendPoint.setIsValid(true);
         loyaltyPointTransRepo.save(spendPoint);

@@ -495,7 +495,7 @@ public class DataImportApiTest {
 	
 	
 	
-	
+	// not sure why the "invalid" name
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
 		var importProperties = createDataImportProperties();
@@ -917,7 +917,7 @@ public class DataImportApiTest {
 		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);         
 
-		//assertDataSavedWithoutUpdatingProductFeatures();
+		assertDataSavedWithoutUpdatingProductFeatures();
 
 		var report = readImportReport(result);
         assertEquals(1, report.getUpdatedProducts().size());
@@ -2083,7 +2083,7 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("squishy") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands( setOf(101L) );
-		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setFeatureSpecs(Set.of(new JSONObject("{}")));
 		data.setExtraAttributes( emptySet());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));

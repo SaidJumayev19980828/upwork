@@ -23,6 +23,7 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
+	, U$LOG$0010("No user found with ID [%email]!")
 
 
 	, U$STATUS$0001("Account is already suspended!")

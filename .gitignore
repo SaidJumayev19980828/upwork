@@ -55,8 +55,6 @@ secrets.yml
 /nasnav/javacore.*.txt
 /nasnav/heapdump.*.phd
 /nasnav/src/test/resources/test_files_base_dir
-/nasnav/src/test/resources/sample.test.application.properties
-/nasnav/nasnav/src/main/resources/
-/nasnav/src/main/resources/
-/yeshtery/nasnav/src/main/resources/
-/yeshtery/src/main/resources/
+/yeshtery/src/test/resources/test_imgs_save_dir
+/nasnav/src/test/resources/application.properties
+/yeshtery/src/test/resources/application.properties

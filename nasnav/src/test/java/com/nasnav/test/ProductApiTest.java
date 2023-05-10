@@ -1058,6 +1058,20 @@ public class ProductApiTest {
     }
 
 
+		@Test
+		public void getFilterTagsOfSpecificOrg() {
+			ProductSearchParam param = new ProductSearchParam();
+			Set<Long> tagsList = new HashSet<>();
+			tagsList.add(5001L);
+			param.org_id = 99001L;
+			param.tag_ids = tagsList;
+
+			ResponseEntity<ProductsFiltersResponse> response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
+
+			assertEquals(200, response.getStatusCodeValue());
+			assertEquals(2, response.getBody().getBrands().size());
+		}
+
 
 	@Test
 	public void testGetProductsFilters() {

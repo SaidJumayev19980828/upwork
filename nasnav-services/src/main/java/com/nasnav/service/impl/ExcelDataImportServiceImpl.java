@@ -7,6 +7,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,8 @@ import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -80,13 +82,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 
 	private List<CsvRow> parseExcelFile(MultipartFile file, ImportProductContext initialContext) throws ImportProductException {
 		List<CsvRow> lines;
-		try {
-			Workbook wb = WorkbookFactory.create(file.getInputStream());
+		try (Workbook wb = WorkbookFactory.create(file.getInputStream())) {
 			Sheet sheet = wb.getSheetAt(0);
 			validateFileHeader(sheet.getRow(0));
-			lines = readImpDataLines(sheet);
+			lines = readImpDataLines(sheet, initialContext);
 
-			wb.close();
 		} catch (ImportProductException ex){
 			logger.error(ex);
 			throw new ImportProductException(ex, ex.getContext());
@@ -103,7 +103,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		for (Cell cell: row) {
 			headers.add( cell.getStringCellValue());
 		}
-		List<String> originalHeaders = getProductImportTemplateHeaders();
+		Collection<String> originalHeaders = PRODUCT_DATA_TO_COLUMN_MAPPING.values();
 		String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
 		if(!headerNotFound.isEmpty()){
 			ImportProductContext context = new ImportProductContext();
@@ -112,7 +112,10 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 		}
 	}
 
-	public List<CsvRow> readImpDataLines(Sheet sheet) throws InvocationTargetException, IllegalAccessException {
+	public List<CsvRow> readImpDataLines(Sheet sheet, ImportProductContext context)
+			throws InvocationTargetException, IllegalAccessException, ImportProductException {
+		BeanUtilsBean localBeanUtils = new BeanUtilsBean();
+		localBeanUtils.getConvertUtils().register(true, false, 0);
 		List<CsvRow> lines = new ArrayList<>();
 		List<String> featuresNames = featureRepo.findByOrganizationId(security.getCurrentUserOrganizationId())
 				.stream().map(ProductFeaturesEntity::getName)
@@ -121,7 +124,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				.stream().map(ExtraAttributesEntity::getName)
 				.collect(toList());
 
-		for (Row row: sheet) {
+		for (Row row : sheet) {
 			CsvRow line = new CsvRow();
 			Map<String, String> features = new HashMap<>();
 			Map<String, String> extraAttributes = new HashMap<>();
@@ -133,7 +136,11 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 				var propertyName = getColumnHeaderMapping(headerName);
 				Object value = getCellValue(cell);
 				if (value != null) {
-					BeanUtils.setProperty(line, propertyName, value);
+					try {
+						localBeanUtils.setProperty(line, propertyName, value);
+					} catch (ConversionException ex) {
+						context.logNewError(ex, row.toString(), row.getRowNum());
+					}
 					if (featuresNames.contains(propertyName)) {
 						features.put(propertyName, value.toString());
 					}
@@ -146,8 +153,12 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 			line.setExtraAttributes(extraAttributes);
 			lines.add(line);
 		}
+		if (!context.getErrors().isEmpty())
+			throw new ImportProductException(context);
 		return lines;
 	}
+
+	
 
 
 

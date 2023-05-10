@@ -29,5 +29,7 @@ public class CartCheckoutData {
     private BigDecimal weight;
     private BigDecimal addonsPrice;
     List<AddonDetailsDTO> addons;
+    private String specialOrder;
+    
     
 }

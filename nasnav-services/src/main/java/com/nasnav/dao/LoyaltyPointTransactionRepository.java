@@ -96,4 +96,14 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("update LoyaltyPointTransactionEntity t set t.isValid = true " +
             "where t.type = 0 and t.user.id = :userId and now() > t.startDate and (t.endDate is null or now() < t.endDate)")
     void setTransactionAsValidByUserId(@Param("userId") Long userId);
+
+    @Query("select t from LoyaltyPointTransactionEntity t " +
+            " left join LoyaltySpentTransactionEntity s on s.transaction = t" +
+            " left join s.reverseTransaction r" +
+            " where t.isValid = true and t.user.yeshteryUserId = :yeshteryUserId and t.organization.id = :orgId and t.type < 100" +
+            " and (r.id is null or t.points > r.points)" +
+            " and t.startDate <= now()" +
+            " and (t.endDate is null or t.endDate >= now())" +
+            " order by t.endDate desc")
+    List<LoyaltyPointTransactionEntity> getSpendablePointsByUserIdAndOrgId(@Param("yeshteryUserId") Long yeshteryUserId, @Param("orgId") Long orgId);
 }

@@ -50,6 +50,8 @@ public interface LoyaltyPointsService {
     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart);
     List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
 
+    List<LoyaltyPointTransactionDTO> getUserSpendablePoints(Long orgId);
+
     void givePointsToReferrer(UserEntity user, Long orgId);
     void activateReferralPoints(OrdersEntity suborder);
 }

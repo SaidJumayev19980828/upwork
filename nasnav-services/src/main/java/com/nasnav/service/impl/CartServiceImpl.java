@@ -224,14 +224,15 @@ public class CartServiceImpl implements CartService{
             }
         }
         createCartItemEntity(cartItem, (UserEntity) user, stock, item);
-        cartItemRepo.save(cartItem);
-        
+       
         if(item.getAddonList() !=null &&!item.getAddonList().isEmpty()) {
 
         	Set<CartItemAddonDetailsEntity> addonList=addCartItemAddons(cartItem, item,(UserEntity) user);
         	cartItem.setAddons(addonList);
         	
         }
+        cartItemRepo.save(cartItem);
+        
         return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
@@ -300,6 +301,7 @@ public class CartServiceImpl implements CartService{
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
         cartItem.setAdditionalData(additionalDataJson);
+        cartItem.setSpecialOrder(item.getSpecialOrder());
         
     }
 
@@ -598,6 +600,7 @@ public class CartServiceImpl implements CartService{
         
         itemDto.setAddonList(addonList);
         }
+        itemDto.setSpecialOrder(itemData.getSpecialOrder());
         return itemDto;
     }
 
@@ -850,8 +853,10 @@ public class CartServiceImpl implements CartService{
 		if (!item.getAddonList().isEmpty()) {
 
 			for (CartItemAddonDetailsDTO dto : item.getAddonList()) {
-				CartItemAddonDetailsEntity addon = new CartItemAddonDetailsEntity();
-				
+				CartItemAddonDetailsEntity addon = cartItemAddonDetailsRepository.findByCartItemEntity_IdAndAddonStockEntity_Id(cartItem.getId(), dto.getAddonStockId());
+				if(addon==null) {
+					addon=new CartItemAddonDetailsEntity();
+				}
 				AddonStocksEntity addonstock = ofNullable(dto.getAddonStockId())
 						.map(id -> addonStockRepository.getOne(dto.getAddonStockId()))
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$ADDON$0002,

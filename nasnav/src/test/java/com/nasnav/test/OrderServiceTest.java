@@ -62,6 +62,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.times;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
 
@@ -959,8 +960,7 @@ public class OrderServiceTest {
 	
 
 
-	
-	
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_5.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -1058,16 +1058,16 @@ public class OrderServiceTest {
 
 	private void assertEmailMethodsCalled() throws MessagingException, IOException {
 		Mockito
-		.verify(mailService)
+		.verify(mailService, times(1))
 		.sendThymeleafTemplateMail(
 			Mockito.eq("organization_1")
 			, Mockito.eq("user1@nasnav.com")
-			, Mockito.eq(BILL_EMAIL_SUBJECT)
+			, Mockito.eq(String.format(BILL_EMAIL_SUBJECT, "organization_1"))
 			, Mockito.anyString()
 			, Mockito.anyMap());
 		
 		Mockito
-		.verify(mailService)
+		.verify(mailService, times(1))
 		.sendThymeleafTemplateMail(
 			Mockito.eq("organization_1")
 			, Mockito.eq(asList("testuser6@nasnav.com"))
@@ -1077,7 +1077,7 @@ public class OrderServiceTest {
 			, Mockito.anyMap());
 		
 		Mockito
-		.verify(mailService)
+		.verify(mailService, times(1))
 		.sendThymeleafTemplateMail(
 			Mockito.eq("organization_1")
 			, Mockito.eq(asList("testuser7@nasnav.com"))
@@ -1085,6 +1085,8 @@ public class OrderServiceTest {
 			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.anyMap());
+
+			Mockito.verifyNoMoreInteractions(mailService);
 	}
 
 
