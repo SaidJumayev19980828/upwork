@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.Column;
+
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class BasketItem {
@@ -47,4 +49,6 @@ public class BasketItem {
     @JsonIgnore
     private Integer availableStock;
     private List<AddonDetailsDTO> addons;
+ 
+   	private String specialOrder;
 }

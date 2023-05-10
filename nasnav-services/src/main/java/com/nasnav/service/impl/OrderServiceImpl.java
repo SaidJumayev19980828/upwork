@@ -911,6 +911,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setProductCode(variant.getProductCode());
 		item.setAddonTotal(entity.getAddonsPrice());
 		item.setAddons(addonService.listItemAddonsPreSave(entity));;
+		item.setSpecialOrder(entity.getSpecialOrder());;
 
 		return item;
 	}
@@ -955,6 +956,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setCurrencyValue(currencyValue);
 		item.setAddonTotal(entity.getAddonsPrice());
 		item.setAddons(addonsBasketRepository.listItemAddons(entity.getId()));
+		item.setSpecialOrder(entity.getSpecialOrder());
 
 		if(entity.getStocksEntity().getQuantity() < quantityLimit) {
 			item.setAvailableStock(entity.getStocksEntity().getQuantity());
@@ -1540,6 +1542,7 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setWeight(item.getWeight());
 		checkoutData.setAddonsPrice(calculateAddonsTotal(item));
 		checkoutData.setAddons(addonService.listItemAddons(item.getId()));
+		checkoutData.setSpecialOrder(item.getSpecialOrder());
 		return checkoutData;
 	}
 
@@ -2348,6 +2351,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setOrdersEntity(subOrder);
 		
 		basket.setAddonsPrice(data.getAddonsPrice());
+		basket.setSpecialOrder(data.getSpecialOrder());
 		if (data.getAddons() != null && !data.getAddons().isEmpty()) {
 			Set<AddonBasketEntity> addonsBaskets = new HashSet<>();
 			for (AddonDetailsDTO dto : data.getAddons()) {

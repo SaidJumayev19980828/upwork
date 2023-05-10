@@ -33,4 +33,8 @@ public class CartItemEntity extends AbstractCartItemEntity{
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<CartItemAddonDetailsEntity> addons;
+    
+    @Column(name="special_order")
+	private String specialOrder;
+
 }

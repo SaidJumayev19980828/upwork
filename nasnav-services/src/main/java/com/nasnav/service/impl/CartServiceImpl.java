@@ -301,6 +301,7 @@ public class CartServiceImpl implements CartService{
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
         cartItem.setAdditionalData(additionalDataJson);
+        cartItem.setSpecialOrder(item.getSpecialOrder());
         
     }
 
@@ -599,6 +600,7 @@ public class CartServiceImpl implements CartService{
         
         itemDto.setAddonList(addonList);
         }
+        itemDto.setSpecialOrder(itemData.getSpecialOrder());
         return itemDto;
     }
 
