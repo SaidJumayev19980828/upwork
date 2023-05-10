@@ -181,6 +181,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf("/v1/loyalty/points/list"				, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points_per_org"			, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/spendable_points"			, GET	, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/spendable_points/{orgId}"			, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/user_tier"							, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

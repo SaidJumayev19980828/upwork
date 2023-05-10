@@ -53,6 +53,12 @@ public class LoyaltyPointController {
         return loyaltyPointsService.getUserSpendablePoints();
     }
 
+    @GetMapping(value ="spendable_points/{orgId}")
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(@RequestHeader(name = "User-Token", required = false) String token ,
+                                                                   @PathVariable long orgId){
+        return loyaltyPointsService.getUserSpendablePoints(orgId);
+    }
+
     @GetMapping(value ="points_per_org")
     public List<OrganizationPoints> getUserPointsPerOrg(@RequestHeader(name = "User-Token", required = false) String token){
         return loyaltyPointsService.getUserPointsPerOrg();

@@ -652,6 +652,20 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService{
                 .collect(toList());
     }
 
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(Long orgId) {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+
+        if (!(baseUser instanceof UserEntity)) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity currentUser = (UserEntity) baseUser;
+        return loyaltyPointTransRepo.getSpendablePointsByUserIdAndOrgId(currentUser.getYeshteryUserId(), orgId).stream().map(t -> {
+            BigDecimal spentPoints = t.getSpentTransactions().stream().filter(Objects::nonNull).map(LoyaltySpentTransactionEntity::getReverseTransaction).map(LoyaltyPointTransactionEntity::getPoints).reduce(ZERO, BigDecimal::add);
+            t.setPoints(t.getPoints().subtract(spentPoints));
+            return t;
+        }).map(LoyaltyPointTransactionEntity::getRepresentation).collect(toList());
+    }
+
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
         OrganizationEntity org = organizationRepository.findById(orgId).get();
