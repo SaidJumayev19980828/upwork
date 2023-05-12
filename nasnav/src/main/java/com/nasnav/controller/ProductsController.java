@@ -12,6 +12,8 @@ import java.util.Map;
 
 import javax.validation.Valid;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
@@ -274,10 +276,9 @@ public class ProductsController {
     @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
     public ProductUpdateResponse createProductV2(@RequestHeader(name = "User-Token", required = false) String token,
     		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
-    		@RequestPart(value = "imgs", required = false) @Valid MultipartFile [] imgs,
-    		@RequestHeader(name = "tags_ids",required = false) List<Long> tagsIds,
-    		@RequestHeader(name = "keywords",required = false)List<String> keywords ) throws BusinessException {
-		return productService.updateProductV2(productJson,cover,imgs,tagsIds,keywords);
+    		@RequestPart(value = "imgs", required = false) @Valid MultipartFile [] imgs ) throws BusinessException, JsonMappingException, JsonProcessingException {
+		
+    	return productService.updateProductV2(productJson,cover,imgs);
     }
    
     

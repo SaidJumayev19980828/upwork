@@ -1,7 +1,11 @@
 package com.nasnav.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
@@ -3550,8 +3554,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
 	@Override
-	public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg, MultipartFile[] imgs,
-			List<Long> tagsId, List<String> keywords) throws BusinessException {
+	public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
+		
+		 JSONObject jsonObject = new JSONObject(productJson);
+		
+		// List<Long> tagsId=(List<Long>) jsonObject.get("tags");
+		 //List<String> keywords=(List<String>) jsonObject.get("keywords");
+		 
+		 ObjectMapper mapper = new ObjectMapper();
+		 List<Long> tagsId = mapper.readValue(jsonObject.get("tags").toString(), new TypeReference<List<Long>>(){});
+		 List<String> keywords = mapper.readValue(jsonObject.get("keywords").toString(), new TypeReference<List<String>>(){});
+System.out.println("tags"+tagsId+""+keywords);
 		Long id = updateProductBatch(asList(productJson), false, false).stream().findFirst().orElse(null);
 		if (id != null) {
 			imgService.deleteImage(null, id, null);

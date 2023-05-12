@@ -9,6 +9,8 @@ import javax.validation.Valid;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
@@ -107,7 +109,7 @@ public interface ProductService {
   List<Long> getVariantsWithFeature(ProductFeaturesEntity feature);
 
 
-ProductUpdateResponse updateProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile []img, List<Long> tagsIds, List<String> keywords) throws BusinessException;
+ProductUpdateResponse updateProductV2(String productJson, @Valid MultipartFile cover, @Valid MultipartFile []img) throws BusinessException, JsonMappingException, JsonProcessingException;
 
 VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid MultipartFile [] imgs) throws BusinessException;
 
