@@ -115,7 +115,7 @@ public class UserDTOs {
         private String avatar;
 
         @Transient
-        private boolean activated;
+        private boolean byPassValidation;
     }
 
     @Getter

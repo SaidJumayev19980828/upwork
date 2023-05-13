@@ -4,10 +4,14 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
 import com.nasnav.dto.response.RegisterResponse;
+import com.nasnav.dto.response.RestApiResponse;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ServiceRegisteredByUser;
 import com.nasnav.request.ApiLogsSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
@@ -126,20 +130,27 @@ public class AdminController {
 	}
 
 	@PostMapping(value = "register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-	public RegisterResponse register(@RequestHeader(TOKEN_HEADER) String userToken,
-									 @RequestBody RegisterDto registerDto)  throws BusinessException {
+	public RegisterResponse register(@RequestBody RegisterDto registerDto)  throws BusinessException {
 
 		OrganizationResponse organizationResponse = organizationService.createOrganization(registerDto.getOrganizationCreationDTO());
 
 		registerDto.getEmployeeUserJson().setOrgId(organizationResponse.getOrganizationId());
 
-		registerDto.getEmployeeUserJson().setActivated(Boolean.TRUE);
+		registerDto.getEmployeeUserJson().setByPassValidation(Boolean.TRUE);
 
 		UserApiResponse userApiResponse = employeeUserService.createEmployeeUser(registerDto.getEmployeeUserJson());
 
 		return RegisterResponse.builder().organizationResponse(organizationResponse).userApiResponse(userApiResponse).build();
 
 	}
+
+	@PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+	public RestApiResponse<ServiceRegisteredByUser> register(@RequestBody ServiceRegisteredByUserDTO serviceRegisteredByUserDTO)  throws BusinessException {
+		return RestApiResponse.ok(adminService.completeProfile(serviceRegisteredByUserDTO));
+
+	}
+
+
 
 	@DeleteMapping(value = "country")
 	public void removeCountry(@RequestHeader(TOKEN_HEADER) String userToken,

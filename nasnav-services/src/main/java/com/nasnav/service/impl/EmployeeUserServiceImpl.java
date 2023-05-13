@@ -74,7 +74,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		empUserSvcHelper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId);
 		empUserSvcHelper.isValidRolesList(rolesList);
 		validateEmpEmailAlreadyExists(employeeUserJson);
-		if(!employeeUserJson.getActivated()) {
+		if(!employeeUserJson.isByPassValidation()) {
 			validateCurrentUserCanManageEmpAccount(employeeUserJson.orgId, employeeUserJson.storeId, rolesList);
 		}
 		validateStoreForEmployeeCreation(employeeUserJson, rolesList);
