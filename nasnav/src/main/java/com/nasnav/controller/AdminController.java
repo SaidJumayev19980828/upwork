@@ -150,8 +150,6 @@ public class AdminController {
 
 	}
 
-
-
 	@DeleteMapping(value = "country")
 	public void removeCountry(@RequestHeader(TOKEN_HEADER) String userToken,
 						      @RequestParam Long id,
