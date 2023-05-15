@@ -285,7 +285,7 @@ public class ProductsController {
     
 	@PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
     public VariantUpdateResponse updateProductVariantV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "img1", required = false) @Valid MultipartFile []imgs) throws BusinessException {
+    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "imgs", required = false) @Valid MultipartFile []imgs) throws BusinessException {
 		return  productService.updateVariantV2(variant, imgs);
     }
 	
