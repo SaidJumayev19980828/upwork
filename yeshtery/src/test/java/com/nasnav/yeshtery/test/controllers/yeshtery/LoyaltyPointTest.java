@@ -1,16 +1,7 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
-import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
-import com.nasnav.dto.response.PromotionDTO;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.LoyaltyPointTransactionEntity;
-import com.nasnav.persistence.LoyaltySpentTransactionEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.yeshtery.Yeshtery;
-import junit.framework.TestCase;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,22 +11,18 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
 import javax.annotation.concurrent.NotThreadSafe;
-
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
-import static java.math.BigDecimal.ZERO;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
 @SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -47,12 +34,10 @@ import static org.springframework.http.HttpStatus.OK;
 class LoyaltyPointTest {
     @Autowired
     private TestRestTemplate template;
-
     @Test
     void getUserSpendablePoints() {
         HttpEntity<?> request = getHttpEntity("123");
         long orgId = 99001;
-
         ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(OK, response.getStatusCode());
@@ -62,4 +47,48 @@ class LoyaltyPointTest {
         assertEquals(2, spendablePoints.get(0).getId());
 
     }
+    @Test
+    void SharePoint() {
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<Void> response = template.exchange("/v1/loyalty/share_points?point_id=2&email=test2@nasnav.com&points=9",
+                POST,
+                request,Void.class);
+        Assert.assertEquals(OK, response.getStatusCode());
+
+    }
+
+    @Test
+    void getSpendablePointsAndSharePoint() {
+        HttpEntity<?> request = getHttpEntity("456");
+        long orgId = 99002;
+
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(BigDecimal.valueOf(30), response.getBody().get(0).getPoints());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        Long point_id = spendablePoints.get(0).getId();
+        String email = "test4@nasnav.com";
+        BigDecimal points = BigDecimal.valueOf(5);
+        ResponseEntity<Void> res = template.exchange(
+                "/v1/loyalty/share_points?point_id="+point_id+"&email="+email+"&points="+points,
+                POST,
+                request,Void.class);
+        Assert.assertEquals(OK, res.getStatusCode());
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
+
+
+        HttpEntity<?> request2 = getHttpEntity("258");
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
+
+        assertEquals(4, spendablePoints.get(0).getId());
+        assertEquals(1, spendablePoints.size());
+    }
+
 }

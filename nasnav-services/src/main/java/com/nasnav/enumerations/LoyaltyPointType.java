@@ -14,10 +14,9 @@ public enum LoyaltyPointType {
     REFERRAL(0),
     ORDER_ONLINE(2),
     PICKUP_FROM_SHOP(3),
-    SHARE(3),
+    SHARE(5),
     REVIEW_PRODUCT(4),
-    SPEND_IN_ORDER(110),
-    SPEND_IN_SHARE(111);
+    SPEND_IN_ORDER(110);
 
     @Getter
     private final Integer value;

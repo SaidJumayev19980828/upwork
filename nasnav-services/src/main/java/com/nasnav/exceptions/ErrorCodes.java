@@ -23,6 +23,7 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
+	, U$LOG$0010("No user found with ID [%email]!")
 
 
 	, U$STATUS$0001("Account is already suspended!")
@@ -203,6 +204,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
 	,ORG$LOY$0024("No active config for org with id [%d] !")
+	,ORG$LOY$0025("the available points are not enough !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

@@ -100,7 +100,7 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("select t from LoyaltyPointTransactionEntity t " +
             " left join LoyaltySpentTransactionEntity s on s.transaction = t" +
             " left join s.reverseTransaction r" +
-            " where t.isValid = true and t.user.yeshteryUserId = :yeshteryUserId and t.organization.id in :orgId and t.type < 100" +
+            " where t.isValid = true and t.user.yeshteryUserId = :yeshteryUserId and t.organization.id = :orgId and t.type < 100" +
             " and (r.id is null or t.points > r.points)" +
             " and t.startDate <= now()" +
             " and (t.endDate is null or t.endDate >= now())" +
