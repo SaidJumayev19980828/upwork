@@ -1916,6 +1916,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Integer variantImgFirst(ProductImageDTO img) {
 		return nonNull(img.getVariantId()) ? 0 : 1; 
 	}
+	
+	
+	@Override
+	@Transactional
+	public void deleteVarientImages(Long varId) {
+		List<String> images =  productImagesRepository.findUrlsByVariantIdAndOrganizationId(varId);
+		productImagesRepository.deleteByVariantIdIn(Arrays.asList(varId));
+		for(String img : images) {
+			fileService.deleteFileByUrl(img);
+		}
+	}
 }
 
 

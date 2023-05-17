@@ -23,23 +23,40 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static com.nasnav.commons.enums.SortOrder.ASC;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.dto.ProductSortOptions.ID;
 import static com.nasnav.dto.ProductSortOptions.NAME;
 import static com.nasnav.enumerations.OrderStatus.NEW;
@@ -50,12 +67,17 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
+
+@AutoConfigureMockMvc
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
@@ -65,8 +87,8 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 public class ProductApiTest {
 	
 	private static String USER_TOKEN = "123";
-	
-	
+	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
+	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 	@Autowired
 	private TestRestTemplate template;
 
@@ -108,7 +130,8 @@ public class ProductApiTest {
 
 	@Autowired
 	private TagsRepository tagsRepo;
-
+    @Autowired
+    private WebApplicationContext webApplicationContext;
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -215,10 +238,45 @@ public class ProductApiTest {
 						, ProductUpdateResponse.class);
 		return response;
 	}
+	@Autowired
+	private  MockMvc mockMvc;
+	
 
+    @Test
+	public void NewProductFlowTest() throws Exception {
+    	BaseUserEntity user = empUserRepo.getById(69L);
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
+		byte[] imgData = Files.readAllBytes(img);
+		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
 
+		JSONObject product = createNewDummyProduct();
+		product.put("tags", Arrays.asList(5002L));
+		product.put("keywords", Arrays.asList("test"));
 
+		MockPart jsonFile = new MockPart("productJson", "productJson", product.toString().getBytes());
+
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
+				.part(jsonFile).header(TOKEN_HEADER, user.getAuthenticationToken()));
+
+		result.andExpect(status().is(200));
+
+	}
+	
+	   @Test
+	    public void GetNewProductFlowTest(){
+	    	BaseUserEntity user = empUserRepo.getById(69L);
+	    	  HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
+	          ResponseEntity<String> response = template.exchange("/product/v2/productdata?product_id=1001", GET, json, String.class);
+	   
+	          assertEquals(200, response.getStatusCodeValue());
+	          JSONObject res = new JSONObject(response.getBody());
+
+	          assertNotNull(response.getBody());
+	          assertEquals(res.get("name"), "product_1");
+	    } 
+	
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
 		TestCase.assertEquals(id , saved.getId());
 		TestCase.assertEquals(product.get("name"), saved.getName());
@@ -243,7 +301,6 @@ public class ProductApiTest {
 
 		return product;
 	}
-
 
 
 
