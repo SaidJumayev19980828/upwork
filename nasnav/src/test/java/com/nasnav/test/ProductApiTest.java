@@ -244,6 +244,7 @@ public class ProductApiTest {
 
     @Test
 	public void NewProductFlowTest() throws Exception {
+    	BaseUserEntity user = empUserRepo.getById(69L);
 		String testImgDir = TEST_IMG_DIR;
 		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
@@ -257,7 +258,7 @@ public class ProductApiTest {
 		MockPart jsonFile = new MockPart("productJson", "productJson", product.toString().getBytes());
 
 		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
-				.part(jsonFile).header(TOKEN_HEADER, USER_TOKEN));
+				.part(jsonFile).header(TOKEN_HEADER, user.getAuthenticationToken()));
 
 		result.andExpect(status().is(200));
 
@@ -265,8 +266,8 @@ public class ProductApiTest {
 	
 	   @Test
 	    public void GetNewProductFlowTest(){
-	    
-	    	  HttpEntity<?> json = getHttpEntity("123");
+	    	BaseUserEntity user = empUserRepo.getById(69L);
+	    	  HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
 	          ResponseEntity<String> response = template.exchange("/product/v2/productdata?product_id=1001", GET, json, String.class);
 	   
 	          assertEquals(200, response.getStatusCodeValue());
