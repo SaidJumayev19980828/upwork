@@ -44,7 +44,9 @@ class LoyaltyPointTest {
 
         List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
         assertEquals(1, spendablePoints.size());
-        assertEquals(2, spendablePoints.get(0).getId());
+        assertEquals(3, spendablePoints.get(0).getId());
+        Assert.assertEquals(BigDecimal.valueOf(20) ,spendablePoints.get(0).getPoints());
+
 
     }
     @Test
