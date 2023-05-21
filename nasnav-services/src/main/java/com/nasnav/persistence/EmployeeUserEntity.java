@@ -7,18 +7,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.Where;
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 @Data
@@ -51,15 +46,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
             ,joinColumns = {@JoinColumn(name="employee_user_id")}
             ,inverseJoinColumns = {@JoinColumn(name="role_id")})
     private Set<Role> roles;
-
-    @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JoinTable(name = "topic_employee_users"
-            ,joinColumns = {@JoinColumn(name="employee_user_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="topic_id")})
-    private Set<NotificationTopicEntity> notificationTopics;
 
     @Override
     public UserRepresentationObject getRepresentation() {

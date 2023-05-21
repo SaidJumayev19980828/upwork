@@ -40,7 +40,7 @@ public class AppConfig {
     public int otpMaxRetries;
     @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
     public String rocketChatUrl;
-    @Value("${firebase-config}")        public String firebaseConfig;
+    @Value("${firebase-config:}")        public String firebaseConfig;
 
     @Value("${files.basepath}")
     @Getter

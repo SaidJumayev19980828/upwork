@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class SubscriptionRequestDto {
-    private String topicName;
     private String token;
 }
+

@@ -4,7 +4,6 @@ package com.nasnav.test;
 import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.NotificationTopicEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserTokensEntity;
@@ -29,7 +28,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -61,8 +59,6 @@ public class NotificationTest {
     private OrganizationRepository organizationRepository;
     @Autowired
     private ShopsRepository shopsRepository;
-    @Autowired
-    private NotificationTopicsRepository notificationTopicsRepository;
 
 
     @Test
@@ -80,26 +76,6 @@ public class NotificationTest {
 
         notificationService.createOrUpdateCustomerToken(token,"123");
         assertEquals(token,userTokenRepository.getUserEntityByToken("123").getNotificationToken());
-    }
-
-    @Test
-    public void refreshNotificationTopics(){
-
-        HttpEntity<?> json = getHttpEntity("abcdefg");
-        ResponseEntity<Void> response = template.postForEntity("/notification/refreshTopics", json, Void.class);
-        assertEquals(200,response.getStatusCodeValue());
-
-        List<OrganizationEntity> organizationEntities = organizationRepository.findAll();
-        for(OrganizationEntity org : organizationEntities){
-            assertTrue(notificationTopicsRepository.existsByTopic(org.getNotificationTopic().getTopic()));
-        }
-
-        Iterable<ShopsEntity> shopsEntities = shopsRepository.findAll();
-        for (ShopsEntity shop : shopsEntities){
-            assertTrue(notificationTopicsRepository.existsByTopic(shop.getNotificationTopic().getTopic()));
-        }
-
-        assertEquals(organizationEntities.size()+shopsRepository.count(),notificationTopicsRepository.count());
     }
 
     @Test
@@ -122,7 +98,6 @@ public class NotificationTest {
         assertEquals(200, response.getStatusCode().value());
 
         EmployeeUserEntity employeeUserEntity = employeeUserRepository.getById(71L);
-        assertEquals(1,employeeUserEntity.getNotificationTopics().size());
     }
 
     @Test

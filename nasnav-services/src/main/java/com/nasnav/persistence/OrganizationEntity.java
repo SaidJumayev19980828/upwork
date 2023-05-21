@@ -92,11 +92,6 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "enable_video_chat")
     private Integer enableVideoChat;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "notification_topic")
-    private NotificationTopicEntity notificationTopic;
-
-
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;

@@ -3,21 +3,12 @@
 INSERT INTO public.countries(id,name,iso_code,currency) values (100001, 'Egypt', 818, 'EGP');
 INSERT INTO public.countries(id,name,iso_code,currency) values (100002, 'UK', 820, 'EGP');
 
---inserting into notificationTopics
-insert into public.notification_topics(id,topic) values(1,'ORG99001');
-insert into public.notification_topics(id,topic) values(2,'ORG99002');
-insert into public.notification_topics(id,topic) values(3,'SHOP100001');
-insert into public.notification_topics(id,topic) values(4,'SHOP100002');
 
 
-INSERT INTO public.organizations(id, name,  p_name, notification_topic) VALUES (99001, 'organization_1', 'org-number-one',1);
-INSERT INTO public.organizations(id, name,  p_name, extra_info, matomo,notification_topic) VALUES (99002, 'organization_2', 'org-number-two', '{"ALLOWED_COUNTRIES":[]}', 10,2);
 INSERT INTO public.organizations(id, name,  p_name, extra_info) VALUES (99003, 'organization_3', 'org-number-three', '{"ALLOWED_COUNTRIES":[100002]}');
 
 
 -- dummy shop
-INSERT INTO public.shops (id,"name",  organization_id,notification_topic) VALUES(100001 , 'Bundle Shop'  , 99001,3);
-INSERT INTO public.shops (id,"name",  organization_id,notification_topic) VALUES(100002 , 'another Shop'  , 99002,4);
 INSERT INTO public.shops (id,"name",  organization_id, is_warehouse) values(100003 , 'warehouse', 99001, 1);
 
 
@@ -56,9 +47,6 @@ insert into public.roles(id, name,  organization_id) values(3, 'STORE_MANAGER', 
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 1);
 
---inserting topics to user
-INSERT INTO public.topic_employee_users(employee_user_id,topic_id) VALUES(70,1);
-INSERT INTO public.topic_employee_users(employee_user_id,topic_id) VALUES(70,2);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
