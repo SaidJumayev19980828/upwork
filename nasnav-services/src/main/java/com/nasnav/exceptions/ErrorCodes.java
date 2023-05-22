@@ -24,6 +24,7 @@ public enum ErrorCodes {
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
 	, U$LOG$0010("No user found with ID [%email]!")
+	, U$LOG$0011("Need activation method !")
 
 
 	, U$STATUS$0001("Account is already suspended!")
@@ -47,6 +48,7 @@ public enum ErrorCodes {
 	,U$EMP$0012("Invalid store_id [%d]!")
 	,U$EMP$0013("Employee can't view other employees with requested roles!")
 	,U$EMP$0014("Employee can't view customers!")
+	,U$EMP$0015("Registration not confirmed by user!")
 
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")

@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,8 +45,8 @@ import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
-import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
@@ -121,10 +122,13 @@ public class UserServiceImpl implements UserService {
 
 
 
-	
+
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
-		if (!userJson.confirmationFlag) {
-			throw new EntityValidationException("Registration not confirmed by user!", null, NOT_ACCEPTABLE);
+		if (isBlankOrNull(userJson.confirmationFlag)) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
+		}
+		if (isBlankOrNull(userJson.getActivationMethod())) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$LOG$0011, userJson.getActivationMethod());
 		}
 
 		userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
