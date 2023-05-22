@@ -1,6 +1,5 @@
 package com.nasnav.persistence;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,16 +7,15 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "services_registered_by_user")
+@Table(name = "services_registered")
 @Entity
 @Builder
-public class ServiceRegisteredByUser implements Serializable {
+public class ServiceRegisteredEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

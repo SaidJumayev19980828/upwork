@@ -4,6 +4,8 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
@@ -22,16 +24,8 @@ import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.request.SitemapParams;
-import com.nasnav.response.DomainOrgIdResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.FileService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.ShopService;
+import com.nasnav.response.*;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -135,8 +129,16 @@ public class OrganizationServiceImpl implements OrganizationService {
     private AppConfig config;
     @Autowired
     private PaymobSourceRepository paymobSourceRepository;
+    @Autowired
+    private EmployeeUserService employeeUserService;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
+
+    @Autowired
+    ServiceRegisteredByUserRepository serviceRegisteredByUserRepository ;
+
+    @Autowired
+    ServiceRepository serviceRepository ;
 
     @Override
     public List<OrganizationRepresentationObject> listOrganizations() {
@@ -324,6 +326,38 @@ public class OrganizationServiceImpl implements OrganizationService {
         return new OrganizationResponse(organization.getId(), 0);
     }
 
+    @Override
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    public OrganizationResponse registerOrganization(RegisterDto json) throws Exception {
+        OrganizationEntity organization;
+        OrganizationCreationDTO organizationDTO = json.getOrganizationCreationDTO();
+        if (organizationDTO.getId() != null) {
+            organization = orgRepo.findById(organizationDTO.getId())
+                    .orElseThrow(() ->  new BusinessException(format("Provided id (%d) doesn't match any existing org!", organizationDTO.getId()),
+                        "INVALID_PARAM: id", NOT_ACCEPTABLE));
+            if (organizationDTO.getName() != null) {
+                validateOrganizationName(organizationDTO);
+                organization.setName(organizationDTO.getName());
+
+            }
+            if (organizationDTO.getPname() != null) {
+                validateOrganizationPname(organizationDTO);
+                organization.setPname(organizationDTO.getPname());
+            }
+        } else {
+            organization = createNewOrganization(organizationDTO);
+        }
+
+        updateAdditionalOrganizationData(organizationDTO, organization);
+
+	    organizationRepository.save(organization);
+
+        json.getEmployeeUserJson().setOrgId(organization.getId());
+        employeeUserService.createEmployeeUser(json.getEmployeeUserJson());
+
+        return new OrganizationResponse(organization.getId(), 0);
+    }
+
 
     private OrganizationEntity createNewOrganization(OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationNameForCreate(json);
@@ -341,7 +375,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setPriority(0);
         return organization;
     }
-
 
     private void updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
         if (json.getId() == null) {

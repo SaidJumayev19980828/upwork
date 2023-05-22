@@ -5,6 +5,7 @@ DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.role_employee_users WHERE employee_user_id IN (295);
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shipment where id IN (
@@ -130,9 +131,13 @@ DELETE FROM public.categories WHERE id between 200 AND 240;
 
 DELETE FROM public.addons
 	WHERE id > 0;
-
+DELETE FROM public.organizations
+	WHERE id > 0;
 DELETE FROM public.addon_stocks
 	WHERE id > 0;
 DELETE FROM public.cart_item_addon_details
 	WHERE id=1006;
+
+DELETE FROM public.services;
+
 delete from public.loyalty_point_types where id between  31001 and 31999;

@@ -3,7 +3,7 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.ServiceRegisteredByUserRepository;
 import com.nasnav.dao.ServiceRepository;
 import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
-import com.nasnav.persistence.ServiceRegisteredByUser;
+import com.nasnav.persistence.ServiceRegisteredEntity;
 import com.nasnav.persistence.Services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -33,13 +33,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ServiceRegisteredByUser completeProfile(ServiceRegisteredByUserDTO serviceRegisteredByUserDTO) {
+    public ServiceRegisteredEntity completeProfile(ServiceRegisteredByUserDTO serviceRegisteredByUserDTO) {
 
          Services services = serviceRepository.findById(serviceRegisteredByUserDTO.getServiceId()).get();
 
-         ServiceRegisteredByUser serviceRegisteredByUser= ServiceRegisteredByUser.builder().services(services).userId(serviceRegisteredByUserDTO.getUserId()).registeredDate(new Date()).build();
+         ServiceRegisteredEntity serviceRegisteredEntity = ServiceRegisteredEntity.builder().services(services).userId(serviceRegisteredByUserDTO.getUserId()).registeredDate(new Date()).build();
 
-        return serviceRegisteredByUserRepository.save(serviceRegisteredByUser);
+        return serviceRegisteredByUserRepository.save(serviceRegisteredEntity);
     }
 
 

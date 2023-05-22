@@ -10,6 +10,7 @@ import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
@@ -46,6 +47,7 @@ import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -370,6 +372,18 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 		
 		Assert.assertTrue(response.getBody().contains("U$LOG$0005"));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+	}
+
+	@Test
+	public void testCompleteRegister() {
+		ServiceRegisteredByUserDTO serviceRegisteredByUserDTO = new ServiceRegisteredByUserDTO();
+		serviceRegisteredByUserDTO.setUserId(11l);
+		serviceRegisteredByUserDTO.setRegisteredDate(new Date());
+		serviceRegisteredByUserDTO.setServiceId(1l);
+
+		ResponseEntity<ServiceRegisteredByUserDTO> response = template.postForEntity("/organization/complete-profile", serviceRegisteredByUserDTO, ServiceRegisteredByUserDTO.class);
+//		Assert.assertTrue(response.getBody().getRegisteredDate().compareTo(new Date())>0);
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 

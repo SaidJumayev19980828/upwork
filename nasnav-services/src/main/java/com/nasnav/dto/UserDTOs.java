@@ -114,8 +114,6 @@ public class UserDTOs {
         @Schema(example = "99001/avatar.jpg")
         private String avatar;
 
-        @Transient
-        private boolean byPassValidation;
     }
 
     @Getter

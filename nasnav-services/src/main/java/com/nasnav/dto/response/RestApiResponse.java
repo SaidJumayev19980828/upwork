@@ -1,6 +1,5 @@
 package com.nasnav.dto.response;
 
-import com.nasnav.persistence.ServiceRegisteredByUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

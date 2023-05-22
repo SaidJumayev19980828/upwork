@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
-import com.nasnav.dto.ExtraAttributeDTO;
-import com.nasnav.dto.ExtraAttributeDefinitionDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
+import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
@@ -15,6 +15,7 @@ import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -173,7 +175,6 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
                 .put("p_name", "solad-pant-trello")
                 .toString();
     }
-
     @Test
     public void createOrganizationSuccessTest() {
         String body = createOrgJson();
@@ -184,6 +185,26 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, response.getStatusCode().value());
     }
 
+    @Test
+    public void createOrganizationWithoutAuthSuccessTest() {
+        RegisterDto registerDto = registerOrg();
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    private RegisterDto registerOrg() {
+        OrganizationCreationDTO organizationCreationDTO = new OrganizationCreationDTO();
+        organizationCreationDTO.setName("Solad Pant1");
+        organizationCreationDTO.setPname("solad-pant1-trello");
+        UserDTOs.EmployeeUserCreationObject employeeUserJson = new UserDTOs.EmployeeUserCreationObject();
+        employeeUserJson.setName("test test test ");
+        employeeUserJson.setEmail(TestUserEmail);
+        employeeUserJson.setRole("NASNAV_ADMIN");
+        RegisterDto registerDto = new RegisterDto();
+        registerDto.setOrganizationCreationDTO(organizationCreationDTO);
+        registerDto.setEmployeeUserJson(employeeUserJson);
+        return  registerDto;
+    }
 
     @Test
     public void createOrganizationMissingValuesTest() {
