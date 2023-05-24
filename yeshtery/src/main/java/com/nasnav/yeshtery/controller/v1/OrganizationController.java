@@ -18,6 +18,9 @@ import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
 import com.nasnav.service.*;
+
+import lombok.RequiredArgsConstructor;
+
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -44,8 +47,11 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @RequestMapping(OrganizationController.API_PATH)
 @CrossOrigin("*") // allow all origins
+@RequiredArgsConstructor
 public class OrganizationController {
     static final String API_PATH = YeshteryConstants.API_PATH +"/organization";
+
+    private final FeaturesService featuresService;
 
     @Autowired
     private OrganizationService orgService;
@@ -105,30 +111,30 @@ public class OrganizationController {
 
     @GetMapping(value = "products_features", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) {
-        return orgService.getProductFeatures(orgId);
+        return featuresService.getProductFeatures(orgId);
     }
 
     @GetMapping(value = "products_features/types", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureType> getOrganizationFeaturesTypes(@RequestHeader(name = "User-Token", required = false) String token) {
-        return orgService.getProductFeatureTypes();
+        return featuresService.getProductFeatureTypes();
     }
 
     @PostMapping(value = "products_feature", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                                              @RequestBody ProductFeatureUpdateDTO featureDto) {
-        return orgService.updateProductFeature(featureDto);
+        return featuresService.updateProductFeature(featureDto);
     }
 
     @DeleteMapping(value = "products_feature")
     public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("id") Integer featureId) {
-        orgService.removeProductFeature(featureId);
+        featuresService.removeProductFeature(featureId);
     }
 
     @DeleteMapping(value = "extra_attribute")
     public void deleteExtraAttribute(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("attr_id") Integer attrId) {
-        orgService.deleteExtraAttribute(attrId);
+        featuresService.deleteExtraAttribute(attrId);
     }
 
     @PostMapping(value = "image", produces = APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -220,7 +226,7 @@ public class OrganizationController {
 
     @GetMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken) {
-        return orgService.getExtraAttributes();
+        return featuresService.getExtraAttributes();
     }
 
     @GetMapping(value = "promotions", produces = APPLICATION_JSON_VALUE)

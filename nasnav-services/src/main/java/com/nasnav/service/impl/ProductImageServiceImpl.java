@@ -10,6 +10,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.service.FeaturesService;
 import com.nasnav.service.FileService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductImageService;
@@ -24,6 +25,8 @@ import com.univocity.parsers.csv.CsvParserSettings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -88,9 +91,12 @@ import static org.springframework.http.HttpStatus.*;
 
 
 @Service
+@RequiredArgsConstructor
 public class ProductImageServiceImpl implements ProductImageService {
 
 	private static final int IMG_DOWNLOAD_TIMEOUT_SEC = 90;
+
+	private final FeaturesService featuresService;
 
 	private Logger logger = Logger.getLogger(ProductServiceImpl.class);
 	
@@ -1808,7 +1814,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private Optional<Integer> getExtraAttrId(SwatchImageBulkUpdateDTO metaData) {
 		ProductFeaturesEntity feature = getProductFeaturesEntity(metaData);
-		return orgService.getAdditionalDataExtraAttrId(feature);
+		return featuresService.getAdditionalDataExtraAttrId(feature);
 	}
 
 

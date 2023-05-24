@@ -18,6 +18,8 @@ import com.nasnav.service.PromotionsService;
 import com.nasnav.service.ReviewService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +37,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/navbox")
+@RequiredArgsConstructor
 public class NavboxController {
+	private final FeaturesService featuresService;
 
 	@Autowired
 	private BrandService brandService;
@@ -43,8 +47,6 @@ public class NavboxController {
 	private ShopService shopService;
 	@Autowired
 	private OrganizationService organizationService;
-	@Autowired
-	private FileService fileService;
 	@Autowired
 	private ProductService productService;
 	@Autowired
@@ -123,7 +125,7 @@ public class NavboxController {
 
 	@GetMapping(value="/attributes", produces = APPLICATION_JSON_VALUE)
 	public List<ExtraAttributesRepresentationObject> getOrganizationAttributes(@RequestParam(name = "org_id", required = false) Long organizationId) {
-		return organizationService.getOrganizationExtraAttributesById(organizationId);
+		return featuresService.getOrganizationExtraAttributesById(organizationId);
 	}
 
 	@GetMapping(value="/categories", produces = APPLICATION_JSON_VALUE)
