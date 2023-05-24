@@ -15,13 +15,11 @@ import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.security.UserAuthenticationData;
-import com.nasnav.service.notification.NotificationService;
 import com.nasnav.service.yeshtery.YeshteryUserService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -89,9 +87,9 @@ public class SecurityServiceImpl implements SecurityService {
 	@Autowired
 	private UserServicesHelper helper;
 
-	@Autowired
-	private NotificationService notificationService;
 
+	@Autowired
+	private UserTokenRepository userTokenRepository;
 
 
 	@Override
@@ -150,7 +148,10 @@ public class SecurityServiceImpl implements SecurityService {
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
 	public UserApiResponse logout(String headerToken, String cookieToken) {
 		String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
-		notificationService.logoutNotificationTokenCleaner(token);
+		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token);
+		String notificationToken =null;
+		userTokensEntity.setNotificationToken(notificationToken);
+		userTokenRepository.save(userTokensEntity);
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
@@ -325,25 +326,20 @@ public class SecurityServiceImpl implements SecurityService {
 	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity, String notificationToken) {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 
-		String authToken = generateUserToken(userEntity);
+		String authToken = generateUserToken(userEntity,notificationToken);
 		
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
 		userEntity.setAuthenticationToken(authToken);
 		BaseUserEntity savedUserData = userRepo.saveAndFlush(userEntity);
-		if(userEntity instanceof EmployeeUserEntity){
-			notificationService.createOrUpdateEmployeeToken(notificationToken,authToken);
-		}
-		else {
-			notificationService.createOrUpdateCustomerToken(notificationToken,authToken);
-		}
+
 		return new UserPostLoginData(savedUserData, authToken);
 	}
 
 
 	
 	
-	private String generateUserToken(BaseUserEntity user) {
+	private String generateUserToken(BaseUserEntity user,String notificationToken) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
         if (user instanceof EmployeeUserEntity) {
@@ -352,6 +348,9 @@ public class SecurityServiceImpl implements SecurityService {
             token.setUserEntity((UserEntity) user);
         }
 		userTokenRepo.save(token);
+		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token.getToken());
+		userTokensEntity.setNotificationToken(notificationToken);
+		userTokenRepository.save(userTokensEntity);
 
 		return token.getToken();
 	}

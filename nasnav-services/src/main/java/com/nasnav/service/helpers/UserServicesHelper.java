@@ -15,11 +15,11 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
-import com.nasnav.service.notification.NotificationService;
+
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.context.annotation.Lazy;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -50,7 +50,6 @@ public class UserServicesHelper {
 	private final RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private final RoleService roleService;
 	private final MailService mailService;
-	private final NotificationService notificationService;
 	private final OrganizationRepository organizationRepo;
 	private final AppConfig appConfig;
 
@@ -184,7 +183,6 @@ public class UserServicesHelper {
 		employeeUser.setImage(employeeUserJson.getAvatar());
 		employeeUser.setUserStatus(NOT_ACTIVATED.getValue());
 		employeeUser = employeeUserRepository.save(employeeUser);
-		notificationService.updateEmployeeTopics(employeeUser);
 
 		return employeeUser;
 	}
@@ -219,7 +217,6 @@ public class UserServicesHelper {
 
 		employeeUserEntity = employeeUserRepository.save(employeeUserEntity);
 
-		notificationService.updateEmployeeTopics(employeeUserEntity);
 
 		if (successResponseStatusList.isEmpty())
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);

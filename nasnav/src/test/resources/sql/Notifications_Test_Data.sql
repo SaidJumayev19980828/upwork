@@ -5,7 +5,7 @@ INSERT INTO public.countries(id,name,iso_code,currency) values (100002, 'UK', 82
 
 
 
-INSERT INTO public.organizations(id, name,  p_name, extra_info) VALUES (99003, 'organization_3', 'org-number-three', '{"ALLOWED_COUNTRIES":[100002]}');
+INSERT INTO public.organizations(id, name,  p_name, extra_info) VALUES (99001, 'organization_3', 'org-number-three', '{"ALLOWED_COUNTRIES":[100002]}');
 
 
 -- dummy shop

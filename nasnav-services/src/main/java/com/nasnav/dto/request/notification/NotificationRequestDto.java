@@ -9,7 +9,6 @@ public class NotificationRequestDto {
     private String target;
     private String title;
     private String body;
-
     public NotificationRequestDto(String target, String title, String body) {
         this.target = target;
         this.title = title;

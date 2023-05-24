@@ -61,10 +61,6 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Autowired
     @Qualifier("videoChatQueryBuilder")
     private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
-
-    @Autowired
-    private NotificationService notificationService;
-
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
@@ -99,18 +95,12 @@ public class VideoChatServiceImpl implements VideoChatService {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
         orgId = organization.getId();
-        String topic = TopicType.ORG.getValue()+orgId;
-        if(shopId != null){
-            topic = TopicType.SHOP.getValue()+shopId;
-        }
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
         }
         if (loggedInUser instanceof UserEntity) {
-            VideoChatResponse response = getOrCreateUserVideoSession((UserEntity) loggedInUser, force, sessionName, orgId, shopId);
-            notificationService.sendPnsToTopic(notificationService.getTopicByTopicName(topic));
-            return response;
+            return getOrCreateUserVideoSession((UserEntity) loggedInUser, force, sessionName, orgId, shopId);
         } else if (loggedInUser instanceof EmployeeUserEntity) {
             return addEmployeeIntoSession((EmployeeUserEntity) loggedInUser, sessionName, orgId);
         } else {

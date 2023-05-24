@@ -36,11 +36,7 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	
 	@Column(name = "organization_id")
 	private Long organizationId;
-	
-	/**
-	 * 
-	 * @deprecated use {@link UserTokenRepository} instead
-	 */
+
 	@Deprecated
 	@Column(name = "authentication_token")
 	private String authenticationToken;
