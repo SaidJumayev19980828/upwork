@@ -2,8 +2,12 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.*;
+import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
+
+import lombok.RequiredArgsConstructor;
+
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -18,7 +22,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(YeshteryCartController.API_PATH)
 @CrossOrigin("*")
 @EnableJpaRepositories
+@RequiredArgsConstructor
 public class YeshteryCartController {
+	private final CartCheckoutService cartCheckoutService;
 
     static final String API_PATH = YeshteryConstants.API_PATH +"/cart";
 
@@ -61,7 +67,7 @@ public class YeshteryCartController {
     @PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String token,
                               @RequestBody CartCheckoutDTO dto) {
-        return cartService.checkoutYeshteryCart(dto);
+        return cartCheckoutService.checkoutYeshteryCart(dto);
     }
 
     @PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

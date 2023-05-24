@@ -20,7 +20,6 @@ public interface PromotionsService {
 
 	Long updatePromotion(PromotionDTO promotion);
 
-	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode);
 	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart);
 
 	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);

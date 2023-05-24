@@ -1,11 +1,10 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
@@ -14,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface CartService {
+    AppliedPromotionsResponse getCartPromotions(String promoCode);
     Cart getCart(String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart getUserCart(Long userId);
     Cart getUserCart(Long userId, String promoCode, Set<Long>points, boolean yeshteryCart);
@@ -22,8 +22,6 @@ public interface CartService {
     Cart addYeshteryCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart deleteCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart);
-    Order checkoutCart(CartCheckoutDTO dto);
-    Order checkoutYeshteryCart(CartCheckoutDTO dto);
     BigDecimal calculateCartTotal(Cart cart);
     List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops);
     List<ShopFulfillingCart> getShopsThatCanProvideCartItems();

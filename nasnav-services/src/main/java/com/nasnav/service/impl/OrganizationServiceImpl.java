@@ -84,8 +84,6 @@ import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
-    public static final String EXTRA_ATTRIBUTE_ID = "extra_attribute_id";
-    public static final Set<Integer> FEATURE_TYPE_WITH_EXTRA_DATA = setOf(IMG_SWATCH.getValue(), COLOR.getValue());
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -97,8 +95,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private BrandsRepository brandsRepository;
     @Autowired
-    private ExtraAttributesRepository extraAttributesRepository;
-    @Autowired
     private OrganizationServiceHelper helper;
     @Autowired
     private FileService fileService;
@@ -106,10 +102,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private OrganizationImagesRepository organizationImagesRepository;
     @Autowired
     private ShopsRepository shopsRepository;
-    @Autowired
-	private ProductFeaturesRepository featureRepo;
-    @Autowired
-    private EmployeeUserRepository empRepo;
     @Autowired
     private OrganizationDomainsRepository orgDomainsRep;
 	@Autowired
@@ -120,8 +112,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private OrganizationThemeSettingsRepository orgThemesSettingsRepo;
     @Autowired
     private ThemesRepository themesRepo;
-    @Autowired
-    private ProductExtraAttributesEntityRepository productExtraAttrRepo;
     @Autowired
     private ProductRepository productRepo;
     @Autowired
@@ -135,8 +125,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
-    private VariantFeatureValuesRepository variantFeatureValuesRepo;
-    @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
     @Autowired UserTokenRepository userTokenRepo;
     @Autowired
@@ -145,8 +133,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private DomainService domainService;
     @Autowired
     private AppConfig config;
-    @Autowired
-    private ProductService productService;
     @Autowired
     private PaymobSourceRepository paymobSourceRepository;
 
@@ -311,28 +297,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         return themeRepObj;
     }
 
-
-
-
-    @Override
-    @CacheResult(cacheName = ORGANIZATIONS_EXTRA_ATTRIBUTES)
-    public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
-        List<ExtraAttributesEntity> extraAttributes;
-        if (organizationId == null) {
-            extraAttributes = extraAttributesRepository.findAll();
-        } else {
-            extraAttributes = extraAttributesRepository.findByOrganizationId(organizationId);
-        }
-
-        return extraAttributes.stream()
-                .map(extraAttribute -> (ExtraAttributesRepresentationObject) extraAttribute.getRepresentation())
-                .collect(toList());
-    }
-    
-    
-    
-    
-    
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException {
@@ -566,70 +530,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         return modifyBrandAdditionalData(brand, json, logo, banner, cover);
     }
-    
-    
-    
-    
-    
-
-	@Override
-    public List<ProductFeatureDTO> getProductFeatures(Long orgId) {
-		return featureRepo
-                .findByOrganizationId(orgId)
-                .stream()
-                .map(this::toProductFeatureDTO)
-                .collect(toList());
-	}
-
-
-    private ProductFeatureDTO toProductFeatureDTO(ProductFeaturesEntity entity) {
-        ProductFeatureType type =
-                ProductFeatureType
-                .getProductFeatureType(entity.getType())
-                .orElse(STRING);
-        Map<String, ?> extraData =
-                ofNullable(entity.getExtraData())
-                .map(JSONObject::new)
-                .map(JSONObject::toMap)
-                .orElse(emptyMap());
-        ProductFeatureDTO dto = new ProductFeatureDTO();
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setPname(entity.getPname());
-        dto.setDescription(entity.getDescription());
-        dto.setLevel(entity.getLevel());
-        dto.setType(type);
-        dto.setExtraData(extraData);
-        return dto;
-    }
-
-
-
-    @Override
-    @Transactional
-    public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) {
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
-		Long orgId = org.getId();
-
-		validateProductFeature(featureDto, orgId);
-		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, org);
-
-		return new ProductFeatureUpdateResponse(entity.getId());
-	}
-
-
-
-
-    @Override
-    @Transactional(rollbackFor = Throwable.class)
-    public void removeProductFeature(Integer  featureId){
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        featureRepo
-            .findByIdAndOrganization_Id(featureId, orgId)
-            .map(this::validateProductFeatureToDelete)
-            .map(this::doRemoveProductFeature)
-            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0001, featureId));
-    }
 
     @Override
     public List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds) {
@@ -650,71 +550,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     public List<OrganizationEntity> getYeshteryOrgs() {
         return organizationRepository.findByYeshteryState(1);
     }
-
-    @Override
-    public Integer createUpdateExtraAttributes(ExtraAttributeDTO extraAttrDTO, String operation){
-
-        if(operation.equalsIgnoreCase("create"))
-            return createExtraAttribute(extraAttrDTO);
-        else if (operation.equalsIgnoreCase("update"))
-            return updateExtraAttributes(extraAttrDTO);
-        else
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
-    }
-
-    private Integer createExtraAttribute(ExtraAttributeDTO extraAttrDTO) {
-        validateDTORequiredFields(extraAttrDTO);
-
-        Long orgId = securityService.getCurrentUserOrganizationId();
-
-        ExtraAttributesEntity extraAttrEntity = new ExtraAttributesEntity();
-        extraAttrEntity.setOrganizationId(orgId);
-        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
-
-        return extraAttributesRepository.save(extraAttrEntity).getId();
-    }
-
-    private void validateDTORequiredFields(ExtraAttributeDTO extraAttrDTO){
-        ExtraAttributeType defaultType = ExtraAttributeType.STRING;
-
-        if(extraAttrDTO.getType() == null)
-            extraAttrDTO.setType(defaultType);
-
-        ofNullable(extraAttrDTO.getName())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$008));
-
-    }
-
-    private Integer updateExtraAttributes(ExtraAttributeDTO extraAttrDTO){
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        Integer attrId = extraAttrDTO.getId();
-
-        ExtraAttributesEntity extraAttrEntity =
-                extraAttributesRepository
-                .findByIdAndOrganizationId(attrId, orgId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId));
-
-        setExtraAttributesEntityFromDTO(extraAttrEntity, extraAttrDTO);
-
-        return extraAttributesRepository.save(extraAttrEntity).getId();
-    }
-
-    private void setExtraAttributesEntityFromDTO(ExtraAttributesEntity extraAttrEntity, ExtraAttributeDTO extraAttrDTO){
-        String attrName = extraAttrDTO.getName();
-        String attrIconUrl = extraAttrDTO.getIconUrl();
-        ExtraAttributeType attrType = extraAttrDTO.getType();
-
-        ofNullable(attrName)
-                .ifPresent(extraAttrEntity::setName);
-
-        ofNullable(attrIconUrl)
-                .ifPresent(extraAttrEntity::setIconUrl);
-
-        ofNullable(attrType)
-                .map(ExtraAttributeType::getValue)
-                .ifPresent(extraAttrEntity::setType);
-    }
-
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());
@@ -733,205 +568,6 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .map(s -> (ShopRepresentationObject) s.getRepresentation())
                 .collect(toList());
     }
-
-    private ProductFeaturesEntity doRemoveProductFeature(ProductFeaturesEntity feature) {
-        variantFeatureValuesRepo.deleteByFeature_Id(feature.getId());
-        featureRepo.delete(feature);
-        return feature;
-    }
-
-
-
-    private ProductFeaturesEntity validateProductFeatureToDelete(ProductFeaturesEntity feature) {
-        if(variantsHasTheFeature(feature)){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$FTR$0002, feature.getId());
-        }
-        return feature;
-    }
-
-
-
-    private boolean variantsHasTheFeature(ProductFeaturesEntity feature) {
-        return productService.getVariantsWithFeature(feature).size() > 0;
-    }
-
-
-
-    private Optional<ExtraAttributesEntity> createExtraAttributesIfNeeded(ProductFeaturesEntity entity) {
-        Integer type = entity.getType();
-       if(nonNull(type) && FEATURE_TYPE_WITH_EXTRA_DATA.contains(type)){
-           return getSavedExtraAttrInFeatureConfig(entity)
-                    .or(() -> findExistingExtraAttrInDb(entity))
-                    .or(() -> doCreateExtraAttribute(entity));
-       }
-       return Optional.empty();
-    }
-
-
-
-    private Optional<ExtraAttributesEntity> findExistingExtraAttrInDb(ProductFeaturesEntity entity) {
-        var orgId = securityService.getCurrentUserOrganizationId();
-        String name = getAdditionalDataExtraAttrName(entity);
-        return extraAttributesRepository.findByNameAndOrganizationId(name, orgId);
-    }
-
-
-    private Optional<ExtraAttributesEntity> getSavedExtraAttrInFeatureConfig(ProductFeaturesEntity entity) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return getAdditionalDataExtraAttrId(entity)
-                .flatMap(id -> extraAttributesRepository.findByIdAndOrganizationId(id, orgId));
-    }
-
-
-
-    private Optional<ExtraAttributesEntity> doCreateExtraAttribute(ProductFeaturesEntity entity) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        String name = getAdditionalDataExtraAttrName(entity);
-
-        ExtraAttributesEntity attr = new ExtraAttributesEntity();
-        attr.setType(INVISIBLE.getValue());
-        attr.setName(name);
-        attr.setOrganizationId(orgId);
-        return Optional.of(extraAttributesRepository.save(attr));
-    }
-
-
-
-    private void addExtraAttrToFeatureExtraData(ProductFeaturesEntity entity, ExtraAttributesEntity attr) {
-        String featureExtraDataBefore = ofNullable(entity.getExtraData()).orElse("{}");
-        String featureExtraDataAfter =
-                new JSONObject(featureExtraDataBefore)
-                        .put(EXTRA_ATTRIBUTE_ID, attr.getId())
-                        .toString();
-        entity.setExtraData(featureExtraDataAfter);
-    }
-
-
-
-    @Override
-    public String getAdditionalDataExtraAttrName(ProductFeaturesEntity feature) {
-        String typeName =
-                ofNullable(feature.getType())
-                .flatMap(ProductFeatureType::getProductFeatureType)
-                .map(ProductFeatureType::name)
-                .orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$FTR$0001, feature.getType()));
-        return format("$%s$%s", feature.getPname(), typeName);
-    }
-
-
-
-    @Override
-    public Optional<Integer> getAdditionalDataExtraAttrId(ProductFeaturesEntity feature){
-        return ofNullable(feature.getExtraData())
-                .map(JSONObject::new)
-                .filter(json -> json.has(EXTRA_ATTRIBUTE_ID))
-                .map(json -> json.getInt(EXTRA_ATTRIBUTE_ID));
-    }
-
-
-
-    private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, OrganizationEntity org) {
-		ProductFeaturesEntity entity = new ProductFeaturesEntity();
-		entity.setOrganization( org );
-		
-		Operation opr = featureDto.getOperation();
-		
-		if( opr.equals( Operation.UPDATE)) {			
-			entity = featureRepo.findByIdAndOrganization_Id( featureDto.getFeatureId(), org.getId() )
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0003, featureDto.getFeatureId()));
-		}
-		if(featureDto.isUpdated("name")){
-			entity.setName( featureDto.getName()); 
-		}
-		
-		setPnameOrGenerateDefault(featureDto, entity, opr);
-		
-		if(featureDto.isUpdated("description")) {
-			entity.setDescription( featureDto.getDescription() );
-		}
-        if(featureDto.isUpdated("level")) {
-            if (opr.equals( Operation.CREATE) && featureDto.getLevel() == 0) {
-                entity.setLevel(0);
-            } else {
-                entity.setLevel( featureDto.getLevel() );
-            }
-        }
-        if(featureDto.isUpdated("type")) {
-            var type = ofNullable(featureDto.getType()).orElse(STRING).getValue();
-            entity.setType(type);
-            var attr = createExtraAttributesIfNeeded(entity);
-            if(attr.isPresent()){
-                addExtraAttrToFeatureExtraData(entity, attr.get());
-            }
-        }
-
-		return featureRepo.save(entity);
-	}
-	
-	
-
-	private void setPnameOrGenerateDefault(ProductFeatureUpdateDTO featureDto, ProductFeaturesEntity entity,
-			Operation opr) {
-		
-		if(featureDto.isUpdated("pname") && !isBlankOrNull( featureDto.getPname()) ) {
-			entity.setPname(featureDto.getPname() );
-		}else if(opr.equals( Operation.CREATE )){
-			String defaultPname = encodeUrl(featureDto.getName());
-			entity.setPname(defaultPname);
-		}
-		
-	}
-	
-	
-	
-	
-
-	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) {
-		if(!featureDto.areRequiredAlwaysPropertiesPresent()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
-		}
-
-		Operation opr = featureDto.getOperation();
-		validateOperation(featureDto.getOperation());
-		
-		if(opr.equals(Operation.CREATE)) {
-			validateProductFeatureForCreate(featureDto, orgId);
-		}else if(opr.equals(Operation.UPDATE)) {
-			validateProductFeatureForUpdate(featureDto);
-		}
-	}
-
-	private void validateOperation(Operation opr) {
-		if(opr == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, "operation");
-		}
-		if(!opr.equals(Operation.CREATE) && !opr.equals(Operation.UPDATE)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0007);
-		}
-	}
-
-	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto) {
-		if(!featureDto.areRequiredForUpdatePropertiesProvided()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
-		}
-		if(featureDto.isUpdated("name") && isBlankOrNull(featureDto.getName())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
-		}		
-	}
-
-	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId){
-		if(!featureDto.areRequiredForCreatePropertiesProvided()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0022);
-		}
-		if(isBlankOrNull(featureDto.getName())) {
-		    throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0001);
-		}
-        if(featureRepo.existsByNameAndOrganizationId(featureDto.getName(), orgId)) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$FTR$0002);
-        }
-	}
-
-
 
 	@Override
     @Transactional
@@ -1130,53 +766,6 @@ public class OrganizationServiceImpl implements OrganizationService {
 		return (orgDom == null) ? new DomainOrgIdResponse(0L, 0L) : new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
 
-
-    @Override
-    public void deleteExtraAttribute(Integer attrId) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        if (!extraAttributesRepository.existsByIdAndOrganizationId(attrId, orgId))
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId);
-
-        productExtraAttrRepo.deleteByIdAndOrganizationId(attrId, orgId);
-
-        extraAttributesRepository.deleteByIdAndOrganizationId(attrId, orgId);
-    }
-
-
-
-    
-    
-	@Override
-    public List<ExtraAttributeDefinitionDTO> getExtraAttributes() {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttributesRepository
-				.findByOrganizationId(orgId)
-				.stream()
-				.map(this::createExtraAttributeDTO)
-				.collect(toList());
-	}
-	
-	
-	
-	
-	
-	private ExtraAttributeDefinitionDTO createExtraAttributeDTO(ExtraAttributesEntity entity) {
-        ExtraAttributeType type =
-                getExtraAttributeType(entity.getType())
-                .orElse(ExtraAttributeType.STRING);
-        Boolean invisible = Objects.equals(type, INVISIBLE);
-		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
-		dto.setIconUrl(entity.getIconUrl());
-		dto.setId(entity.getId());
-		dto.setName(entity.getName());
-		dto.setType(type);
-		dto.setInvisible(invisible);
-		return dto;
-	}
-
-
-
-
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
 	public void deleteSetting(String settingName) {
@@ -1291,7 +880,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     @Override
-    public ResponseEntity<?> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
+    public ResponseEntity<String> getOrgSiteMap(String userToken, SitemapParams params) throws IOException {
         DomainOrgIdResponse domain = getOrganizationAndSubdirsByUrl(params.getUrl(), 0);
         Long orgId = domain.getId();
         if (orgId.intValue() == 0) {
@@ -1306,7 +895,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         return createSiteMapResponse(orgId, params);
     }
 
-    private ResponseEntity<?> createSiteMapResponse(Long orgId, SitemapParams params) throws IOException {
+    private ResponseEntity<String> createSiteMapResponse(Long orgId, SitemapParams params) throws IOException {
         List<String> allUrls = createSiteMap(orgId, params);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Writer outputWriter = new OutputStreamWriter(outStream);
@@ -1436,10 +1025,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         return sourceMap;
     }
 
-    @Override
-    public List<ProductFeatureType> getProductFeatureTypes() {
-        return asList(ProductFeatureType.values());
-    }
 
     @Override
     public OrganizationRepresentationObject getOrganizationByNameOrUrlOrId(String name, String url, Long id, Integer yeshteryState)
