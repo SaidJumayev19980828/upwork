@@ -77,6 +77,6 @@ public class CartController {
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)
 	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(TOKEN_HEADER) String userToken,
 													   @RequestParam(value = "promo", required = false) String promoCode) {
-		return cartService.getCart(promoCode, null, false).getPromos();
+		return cartService.getCartPromotions(promoCode);
 	}
 }

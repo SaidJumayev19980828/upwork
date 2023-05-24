@@ -65,6 +65,7 @@ import com.nasnav.dao.PromotionRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.WishlistItemRepository;
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.CartItemAddonDetailsDTO;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductImageDTO;
@@ -134,6 +135,16 @@ public class CartServiceImpl implements CartService {
     private final  AddonStockRepository addonStockRepository;
   
     private final  AddonsRepository addonsRepository;
+
+    @Override
+    public AppliedPromotionsResponse getCartPromotions(String promoCode) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        Cart cart = getUserCart(user.getId());
+        return promoService.calcPromoDiscountForCart(promoCode, cart);
+    }
 
     @Override
     public Cart getCart(String promoCode, Set<Long> points, boolean yeshteryCart) {
