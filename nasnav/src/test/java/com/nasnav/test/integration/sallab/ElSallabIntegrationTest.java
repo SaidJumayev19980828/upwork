@@ -35,7 +35,7 @@ import java.util.Optional;
 import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
 import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.*;
-import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
+import static com.nasnav.service.helpers.ProductImagesImportHelper.PRODUCT_IMAGE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.*;

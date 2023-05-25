@@ -10,9 +10,13 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.CsvExcelDataExportService;
+import com.nasnav.service.ImagesBulkService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewService;
+
+import lombok.RequiredArgsConstructor;
+
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,9 +40,10 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping(ProductsController.API_PATH)
+@RequiredArgsConstructor
 public class ProductsController {
-
     static final String API_PATH = YeshteryConstants.API_PATH +"/product";
+    private final ImagesBulkService imagesBulkService;
 	@Autowired
 	private ProductService productService;
 	@Autowired
@@ -150,7 +155,7 @@ public class ProductsController {
             @RequestPart("imgs_zip") @Valid MultipartFile zip,
             @RequestPart(name = "imgs_barcode_csv", required = false) MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-        return productImgService.updateImagesBulk(zip, csv, metaData);
+        return imagesBulkService.updateImagesBulk(zip, csv, metaData);
     }
 
 	@PostMapping(value = "image/bulk/url", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
