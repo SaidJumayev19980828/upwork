@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
+import static com.nasnav.service.helpers.ProductImagesImportHelper.PRODUCT_IMAGE;
 
 @Data
 @EqualsAndHashCode(callSuper=false)

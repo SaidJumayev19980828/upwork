@@ -29,6 +29,8 @@ import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.StockService;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -47,10 +49,13 @@ import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.AddonService;
 import com.nasnav.service.CsvExcelDataExportService;
+import com.nasnav.service.ImagesBulkService;
 
 @RestController
 @RequestMapping("/product")
+@RequiredArgsConstructor
 public class ProductsController {
+    private final ImagesBulkService imagesBulkService;
     
 	@Autowired
 	private ProductService productService;
@@ -166,7 +171,7 @@ public class ProductsController {
             @RequestPart("imgs_zip") @Valid MultipartFile zip,
             @RequestPart(name = "imgs_barcode_csv", required = false) MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-        return productImgService.updateImagesBulk(zip, csv, metaData);
+        return imagesBulkService.updateImagesBulk(zip, csv, metaData);
     }
 
 	@PostMapping(value = "image/bulk/url", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
