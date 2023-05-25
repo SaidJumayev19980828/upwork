@@ -150,9 +150,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/logout_all"						, getAllRoles() )
             , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
             , patternOf( "/v1/cart/**"								, setOf(CUSTOMER))
-            , patternOf( "/v1/pickup/**"							    , setOf(CUSTOMER))
+            , patternOf( "/v1/cart/{userId}"		,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/pickup/**"							    , setOf(CUSTOMER))
             , patternOf( "/v1/wishlist/**"							, setOf(CUSTOMER))
-            , patternOf( "/v1/shipping/**"							, setOf(CUSTOMER))
+            , patternOf( "/wishlist/{userId}"		,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/shipping/**"							, setOf(CUSTOMER))
             , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
             , patternOf("/v1/user/review"					    , GET   , setOf(CUSTOMER))
 			, patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST   , setOf(NASNAV_ADMIN)),

@@ -155,7 +155,13 @@ public class WishlistServiceImpl implements WishlistService{
     }
 
 
-
+    @Override
+    public Wishlist getWishlist(Long userId) {
+        Wishlist wishlist = new Wishlist(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUser_Id(userId)));
+        wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        wishlist.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
+        return wishlist;
+    }
 
     @Override
     @Transactional

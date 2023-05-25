@@ -88,7 +88,11 @@ public class CartTest {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
+	@Autowired
+	private UserRepository userRepository;
+
+
 	@Test
 	public void getCartNoAuthz() {
         HttpEntity<?> request =  getHttpEntity("NOT FOUND");
@@ -112,6 +116,19 @@ public class CartTest {
         HttpEntity<?> request =  getHttpEntity("123");
         ResponseEntity<Cart> response = 
         		template.exchange("/cart", GET, request, Cart.class);
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
+	}
+	@Test
+	public void getCartWithUserIdSuccess() {
+		UserEntity user = userRepository.findById(88L).get();
+		String authtoken = user.getAuthenticationToken();
+
+		HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
 
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getItems().size());

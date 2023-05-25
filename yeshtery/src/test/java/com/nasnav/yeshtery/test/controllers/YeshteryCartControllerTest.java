@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.OrderService;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.commons.YeshteryConstants;
@@ -80,6 +82,8 @@ public class YeshteryCartControllerTest {
 
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private UserRepository userRepository;
 
 
     @Test
@@ -109,6 +113,21 @@ public class YeshteryCartControllerTest {
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getCartSuccess() {
         HttpEntity<?> request = getHttpEntity("123");
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH, GET, request, Cart.class);
+
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
+    }
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getCartWithUserIdSuccess() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+
+        HttpEntity<?> request = getHttpEntity(authtoken);
         ResponseEntity<Cart> response =
                 template.exchange(YESHTERY_CART_API_PATH, GET, request, Cart.class);
 

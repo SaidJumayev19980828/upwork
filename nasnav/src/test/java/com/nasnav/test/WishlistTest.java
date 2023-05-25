@@ -2,12 +2,14 @@ package com.nasnav.test;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Wishlist;
 import com.nasnav.dto.response.navbox.WishlistItem;
 import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.UserEntity;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -55,6 +57,8 @@ public class WishlistTest {
 
     @Autowired
     private WishlistItemRepository wishlistRepo;
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     public void getWishlistNoAuthz() {
@@ -154,6 +158,21 @@ public class WishlistTest {
         HttpEntity<?> request =  getHttpEntity("123");
         ResponseEntity<Wishlist> response =
                 template.exchange("/wishlist", GET, request, Wishlist.class);
+
+        Wishlist wishlist = response.getBody();
+        Set<Long> ids = getIds(wishlist);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, wishlist.getItems().size());
+        assertTrue(setOf(111602L, 111604L).stream().allMatch(ids::contains));
+    }
+
+    @Test
+    public void getWishlistWithUserId() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+        HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
 
         Wishlist wishlist = response.getBody();
         Set<Long> ids = getIds(wishlist);
