@@ -2399,16 +2399,12 @@ public class ProductServiceImpl implements ProductService {
 	
 	private void validatProductDTO(NewProductFlowDTO dto) throws BusinessException {
 		
-		if(dto.getOperation().equals(UPDATE)){
-		if(dto.getProductId()==null) {
+		if (dto.getOperation().equals(UPDATE) && dto.getProductId() == null) {
 			throw new BusinessException(
 					"Missing required parameters !"
 					, "MISSING PARAM"
 					, NOT_ACCEPTABLE);
 		}
-		
-		}
-		
 	}
 
 	private void validateVariantForUpdate(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {

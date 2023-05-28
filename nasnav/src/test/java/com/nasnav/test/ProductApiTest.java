@@ -244,7 +244,7 @@ public class ProductApiTest {
 	private  MockMvc mockMvc;
 	
 
-   @Test
+	@Test
 	public void NewProductFlowTest() throws Exception {
     	BaseUserEntity user = empUserRepo.getById(69L);
 		String testImgDir = TEST_IMG_DIR;
@@ -916,7 +916,7 @@ public class ProductApiTest {
 	//the production database.
 	//The SQL script for re-creating HIBERNATE_SEQUENCE will be commented as well.
 	
-	@Test
+	//@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void testIdGeneration() {
@@ -1026,7 +1026,7 @@ public class ProductApiTest {
 		assertEquals(1L, res.getProducts().get(0).getQuantity().longValue());
 	}
 
-   @Test
+    @Test
     public void testGetProductsSortingFilters() {
         ProductSearchParam param = new ProductSearchParam();
         param.shop_id = 502L;
@@ -1116,7 +1116,7 @@ public class ProductApiTest {
     
     
     
-   @Test
+    @Test
     public void updateTagsTest() {
     	//assign two tags to two products
     	BaseUserEntity user = empUserRepo.getById(69L);
