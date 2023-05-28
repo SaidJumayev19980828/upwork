@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
+import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsFiltersResponse;
@@ -49,6 +50,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -242,29 +244,33 @@ public class ProductApiTest {
 	private  MockMvc mockMvc;
 	
 
-    @Test
+	@Test
 	public void NewProductFlowTest() throws Exception {
     	BaseUserEntity user = empUserRepo.getById(69L);
 		String testImgDir = TEST_IMG_DIR;
 		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
 		byte[] imgData = Files.readAllBytes(img);
+		
 		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
 
-		JSONObject product = createNewDummyProduct();
-		product.put("tags", Arrays.asList(5002L));
-		product.put("keywords", Arrays.asList("test"));
-
-		MockPart jsonFile = new MockPart("productJson", "productJson", product.toString().getBytes());
+		NewProductFlowDTO product = createNewProductFlowDummyProduct();
+		ObjectMapper objectMapper = new ObjectMapper();
+		  MockMultipartFile productJson =
+	                new MockMultipartFile(
+	                        "product",
+	                        "product",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
 
 		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
-				.part(jsonFile).header(TOKEN_HEADER, user.getAuthenticationToken()));
+				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
 
 		result.andExpect(status().is(200));
 
 	}
 	
-	   @Test
+	    @Test
 	    public void GetNewProductFlowTest(){
 	    	BaseUserEntity user = empUserRepo.getById(69L);
 	    	  HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
@@ -299,6 +305,21 @@ public class ProductApiTest {
 		product.put("barcode", "BAR12345CODE");
 		product.put("brand_id", 101L);
 
+		return product;
+	}
+	private NewProductFlowDTO createNewProductFlowDummyProduct() {
+		NewProductFlowDTO product = new NewProductFlowDTO();
+		product.setOperation(Operation.CREATE);
+		product.setName("test Product");
+		product.setDescription("Testing creating/updating product");
+		product.setBrandId(101L);
+		product.setPriority("2");
+	    ArrayList<Long> tags= new ArrayList<>();
+	    tags.add(5002L);
+		product.setTags(tags);
+	    ArrayList<String> keywords= new ArrayList<>();
+	    keywords.add("test");
+		product.setKeywords(keywords);
 		return product;
 	}
 
