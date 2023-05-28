@@ -438,6 +438,11 @@ public enum ErrorCodes {
 
 	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
 
+	,BANK$ACC$0001("No user or org is provided")
+	,BANK$ACC$0002("an account already exist for this user or org")
+	,BANK$ACC$0003("no account found with id: [%d]")
+	,BANK$ACC$0004("the Deposit/Withdrawal not valid from BC point of view")
+
 
 	;
 
