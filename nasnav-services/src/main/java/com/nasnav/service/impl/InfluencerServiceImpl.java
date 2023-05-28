@@ -13,17 +13,16 @@ import com.nasnav.service.InfluencerService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -284,6 +283,31 @@ public class InfluencerServiceImpl implements InfluencerService {
         influencerRepository.save(influencer);
     }
 
+    @Override
+    public List<InfluencerStatsDTO> getInfluencerStats(long influecerId, LocalDate start, LocalDate end, Long orgId) {
+        influencerRepository.findById(influecerId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,influecerId));
+        List<InfluencerStatsDTO> list = new ArrayList<>();
+        for (LocalDate date = start; date.isBefore(end) || date.isEqual(end) ; date = date.plusDays(1)) {
+            InfluencerStatsDTO dto = new InfluencerStatsDTO(date
+                    ,eventLogsRepository.countInterests(influecerId,
+                    Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                    orgId)
+                    ,eventLogsRepository.countAttends(influecerId,
+                    Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                    orgId)
+            );
+            list.add(dto);
+        }
+        return list;
+    }
+
+    @Override
+    public List<OrganizationRepresentationObject> getInfluencerOrgs(Long influencerId) {
+        List<OrganizationEntity> list = eventRepository.getOrgsThatInfluencerHostFor(influencerId);
+        return list.stream().map(o -> organizationService.getOrganizationById(o.getId(),0)).collect(Collectors.toList());
+    }
+
     private EventRequestsDTO eventRequestToDto(EventRequestsEntity entity){
         EventRequestsDTO dto = new EventRequestsDTO();
         dto.setId(entity.getId());
@@ -353,6 +377,7 @@ public class InfluencerServiceImpl implements InfluencerService {
         dto.setInterests(eventLogsRepository.countByEvent_Influencer_Id(entity.getId()));
         dto.setAttends(eventLogsRepository.countByEvent_Influencer_IdAndAttendAtNotNull(entity.getId()));
         dto.setIsGuided(entity.getIsGuided());
+        dto.setDate(entity.getCreatedAt());
         return dto;
     }
 

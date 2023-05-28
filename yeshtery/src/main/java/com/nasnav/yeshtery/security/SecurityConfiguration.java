@@ -161,6 +161,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf("/v1/availability/org/**"                       				, setOf(CUSTOMER)),
             patternOf("/v1/availability/shop/**"                       				, setOf(CUSTOMER)),
             patternOf("/v1/availability/user"                       					, setOf(CUSTOMER)),
+            patternOf( "/availability/employee/**"                      			, getAllRoles()),
             patternOf("/v1/availability/**"                       				, getNonCustomersRoles()),
             patternOf("/v1/appointment/**"											, setOf(CUSTOMER)),
             patternOf( "/v1/follow/**"					,POST						, setOf(CUSTOMER)),
