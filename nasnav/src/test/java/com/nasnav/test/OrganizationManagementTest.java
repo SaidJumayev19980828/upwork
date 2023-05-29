@@ -6,7 +6,6 @@ import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.*;
@@ -15,7 +14,6 @@ import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +29,6 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 

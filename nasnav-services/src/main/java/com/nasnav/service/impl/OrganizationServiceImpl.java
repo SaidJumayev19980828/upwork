@@ -5,14 +5,11 @@ import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
-import com.nasnav.enumerations.ExtraAttributeType;
-import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
@@ -55,9 +52,6 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
-import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
-import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
-import static com.nasnav.enumerations.ProductFeatureType.*;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -66,7 +60,6 @@ import static com.nasnav.payments.misc.Gateway.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -137,8 +130,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     ServiceRegisteredByUserRepository serviceRegisteredByUserRepository ;
 
-    @Autowired
-    ServiceRepository serviceRepository ;
 
     @Override
     public List<OrganizationRepresentationObject> listOrganizations() {

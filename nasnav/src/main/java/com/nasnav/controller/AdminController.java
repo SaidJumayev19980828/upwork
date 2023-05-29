@@ -3,14 +3,12 @@ package com.nasnav.controller;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
-import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
+import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
-import com.nasnav.dto.response.RegisterResponse;
 import com.nasnav.dto.response.RestApiResponse;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.ServiceRegisteredEntity;
+import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.request.ApiLogsSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
@@ -123,11 +121,6 @@ public class AdminController {
 	@PostMapping(value = "country/bulk", consumes = APPLICATION_JSON_VALUE)
 	public void addCountries(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody List<CountryDTO> dto) {
 		addressService.addCountries(dto);
-	}
-	@PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-	public RestApiResponse<ServiceRegisteredEntity> register(@RequestBody ServiceRegisteredByUserDTO serviceRegisteredByUserDTO)  throws BusinessException {
-		return RestApiResponse.ok(adminService.completeProfile(serviceRegisteredByUserDTO));
-
 	}
 	@DeleteMapping(value = "country")
 	public void removeCountry(@RequestHeader(TOKEN_HEADER) String userToken,

@@ -1,3 +1,6 @@
+DELETE FROM public.role_employee_users;
+DELETE FROM public.user_tokens;
+DELETE FROM public.employee_users;
 DELETE FROM public.integration_mapping where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;
@@ -138,6 +141,6 @@ DELETE FROM public.addon_stocks
 DELETE FROM public.cart_item_addon_details
 	WHERE id=1006;
 
-DELETE FROM public.services;
+DELETE FROM public.package WHERE id > 0;
 
 delete from public.loyalty_point_types where id between  31001 and 31999;

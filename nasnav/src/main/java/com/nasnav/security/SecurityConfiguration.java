@@ -121,6 +121,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files"							,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/files/**"),
+						patternOf( "/package/create"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf( "/package/{packageId}"					,HttpMethod.PUT	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf( "/package/{packageId}"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf( "/package/complete-profile"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/brand"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/image"				,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
@@ -214,12 +218,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf( "/user/subscribe/activate")
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
+                        , patternOf("/package"					    , HttpMethod.GET)
                         , patternOf("/product/info"					, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
 		                , patternOf("/organization/payments"			, HttpMethod.GET)
 						,patternOf( "/organization/register"		    ,HttpMethod.POST)
-						,patternOf( "/admin/complete-profile"		    ,HttpMethod.POST)
                         , patternOf("/organization/brands"				, HttpMethod.GET)
                         , patternOf("/organization/products_features"	, HttpMethod.GET)
                         , patternOf("/swagger**/**")		//for development only

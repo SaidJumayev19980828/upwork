@@ -12,10 +12,10 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "services_registered")
+@Table(name = "package_registered")
 @Entity
 @Builder
-public class ServiceRegisteredEntity implements Serializable {
+public class PackageRegisteredEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,8 +25,8 @@ public class ServiceRegisteredEntity implements Serializable {
     private Long userId;
 
     @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "service_id", referencedColumnName = "id")
-    private Services  services;
+    @JoinColumn(name = "package_id", referencedColumnName = "id")
+    private PackageEntity packageEntity;
 
     @Column(name = "registered_date")
     private Date registeredDate;

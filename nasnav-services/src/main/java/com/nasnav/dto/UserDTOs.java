@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
 
-import javax.persistence.Transient;
-
 public class UserDTOs {
 
     @Getter
@@ -90,8 +88,8 @@ public class UserDTOs {
         private String notificationToken;
     }
 
-    @Setter
     @Getter
+    @Setter
     @Schema(name = "Employee User Creation Data")
 	public static class EmployeeUserCreationObject {
         @Schema(example = "testuser@nasnav.com", required = true)

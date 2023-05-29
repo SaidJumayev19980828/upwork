@@ -2,7 +2,6 @@ package com.nasnav.service;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
@@ -10,7 +9,6 @@ import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ServiceRegisteredEntity;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
@@ -33,8 +31,6 @@ public interface OrganizationService {
     OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException;
 
     OrganizationResponse registerOrganization(RegisterDto json) throws Exception;
-
-    ServiceRegisteredEntity completeProfile(ServiceRegisteredByUserDTO serviceRegisteredByUserDTO);
 
     OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException;
 

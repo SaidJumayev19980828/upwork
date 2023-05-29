@@ -16,9 +16,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
-import com.nasnav.dto.request.ServiceRegisteredByUserDTO;
 import com.nasnav.dto.response.*;
-import com.nasnav.persistence.ServiceRegisteredEntity;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;

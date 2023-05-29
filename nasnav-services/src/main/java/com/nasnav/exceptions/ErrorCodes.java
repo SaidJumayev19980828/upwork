@@ -224,6 +224,10 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0007("Can't delete %s linked to address")
 	,ADDR$ADDR$0008("No Country name was provided!")
 
+	,PA$USR$0001("Package not deleted because related user!")
+
+
+
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
