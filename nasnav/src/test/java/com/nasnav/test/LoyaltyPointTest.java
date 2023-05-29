@@ -49,8 +49,8 @@ import static org.json.JSONObject.NULL;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -61,7 +61,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @NotThreadSafe
 @PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data.sql"})
-@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup_loyalty_points.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class LoyaltyPointTest {
 
     @Autowired
@@ -528,7 +528,7 @@ public class LoyaltyPointTest {
         loyaltyGiftRepository.deleteById(response.getBody().getGiftId());
     }
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup_loyalty_points.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     @Test
     public void getUserSpendablePoints() {
         HttpEntity<?> request = getHttpEntity("123");
@@ -540,7 +540,55 @@ public class LoyaltyPointTest {
 
         List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
         assertEquals(1, spendablePoints.size());
-        assertEquals(2, spendablePoints.get(0).getId());
+        assertEquals(3, spendablePoints.get(0).getId());
 
     }
+
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    @Test
+    public void SharePoint() {
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<Void> response = template.exchange("/v1/loyalty/share_points?point_id=2&email=test2@nasnav.com&points=9",
+                POST,
+                request,Void.class);
+        Assert.assertEquals(OK, response.getStatusCode());
+
+    }
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    @Test
+    public void getSpendablePointsAndSharePoint() {
+        HttpEntity<?> request = getHttpEntity("456");
+        long orgId = 99002;
+
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(BigDecimal.valueOf(30), response.getBody().get(0).getPoints());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        Long point_id = spendablePoints.get(0).getId();
+        String email = "test4@nasnav.com";
+        BigDecimal points = BigDecimal.valueOf(5);
+        ResponseEntity<Void> res = template.exchange(
+                "/v1/loyalty/share_points?point_id="+point_id+"&email="+email+"&points="+points,
+                POST,
+                request,Void.class);
+        Assert.assertEquals(OK, res.getStatusCode());
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
+
+
+        HttpEntity<?> request2 = getHttpEntity("258");
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
+
+        assertEquals(4, spendablePoints.get(0).getId());
+        assertEquals(1, spendablePoints.size());
+    }
+
 }
