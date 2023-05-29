@@ -24,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -91,6 +92,8 @@ public class CartTest {
 
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private EmployeeUserRepository empRepo;
 
 
 	@Test
@@ -123,7 +126,7 @@ public class CartTest {
 	}
 	@Test
 	public void getCartWithUserIdSuccess() {
-		UserEntity user = userRepository.findById(88L).get();
+		EmployeeUserEntity user = empRepo.findById(68L).get();
 		String authtoken = user.getAuthenticationToken();
 
 		HttpEntity<?> request =  getHttpEntity(authtoken);
@@ -133,6 +136,17 @@ public class CartTest {
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
+	}
+	@Test
+	public void checkRoleUserToGetCartWithUserIdSuccess() {
+		UserEntity user = userRepository.findById(88L).get();
+		String authtoken = user.getAuthenticationToken();
+
+		HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
+
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 	}
 
 	private void assertProductNamesReturned(ResponseEntity<Cart> response) {

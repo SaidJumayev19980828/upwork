@@ -31,7 +31,7 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUE
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
 
@@ -40,9 +40,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'test2@nasnav.com','user2','456', 99001);
+VALUES (89, 'test2@nasnav.com','user2','456', 99001);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
@@ -55,12 +55,13 @@ insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'ORGANIZATION_MANAGER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 68, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 69, 4);
 
 --insert units
 INSERT INTO PUBLIC.units(id, name)values(18999, 'pcs');
@@ -118,9 +119,9 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 -- insert cart
 INSERT INTO public.cart_items (id, stock_id, cover_image, variant_features, quantity, user_id, is_wishlist)
- VALUES(111602, 602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88, 1);
+VALUES(111602, 602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88, 1);
 INSERT INTO public.cart_items (id, stock_id, cover_image, variant_features, quantity, user_id, is_wishlist)
- VALUES(111604, 604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88, 1);
+VALUES(111604, 604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88, 1);
 
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 

@@ -2,6 +2,7 @@ package com.nasnav.test;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.response.navbox.Cart;
@@ -9,6 +10,7 @@ import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Wishlist;
 import com.nasnav.dto.response.navbox.WishlistItem;
 import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.UserEntity;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -20,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -59,6 +62,8 @@ public class WishlistTest {
     private WishlistItemRepository wishlistRepo;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private EmployeeUserRepository empRepo;
 
     @Test
     public void getWishlistNoAuthz() {
@@ -168,7 +173,7 @@ public class WishlistTest {
 
     @Test
     public void getWishlistWithUserId() {
-        UserEntity user = userRepository.findById(88L).get();
+        EmployeeUserEntity user = empRepo.findById(68L).get();
         String authtoken = user.getAuthenticationToken();
         HttpEntity<?> request =  getHttpEntity(authtoken);
         ResponseEntity<Wishlist> response =
@@ -181,7 +186,16 @@ public class WishlistTest {
         assertTrue(setOf(111602L, 111604L).stream().allMatch(ids::contains));
     }
 
+    @Test
+    public void checkRoleUserToGetWishlistWithUserId() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+        HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
 
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
 
 
     private Set<Long> getIds(Wishlist wishlist) {

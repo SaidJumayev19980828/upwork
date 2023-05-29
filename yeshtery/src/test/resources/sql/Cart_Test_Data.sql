@@ -3,8 +3,8 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818
 INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 --inserting organizations
-INSERT INTO public.organizations(id, name, p_name, currency_iso, yeshtery_state) VALUES (99001, 'yeshtery', 'yeshtery', 818, 1);
-INSERT INTO public.organizations(id, name, p_name, currency_iso, yeshtery_state) VALUES (99002, 'organization_2', 'organization-2', 818, 1);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -38,17 +38,11 @@ VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
 
---inserting yeshtery users
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (808, 'user1@nasnav.com','user1','123', 99001);
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (809, 'test2@nasnav.com','user2','456', 99001);
-
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001, 808);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
-    VALUES (89, 'test2@nasnav.com','user2','456', 99001, 809);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+VALUES (89, 'test2@nasnav.com','user2','456', 99001);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
@@ -61,12 +55,13 @@ insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'ORGANIZATION_MANAGER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 68, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 69, 4);
 
 
 --insert units

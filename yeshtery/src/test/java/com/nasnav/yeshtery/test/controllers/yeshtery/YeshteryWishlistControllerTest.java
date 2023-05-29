@@ -1,9 +1,11 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.navbox.Wishlist;
 import com.nasnav.dto.response.navbox.WishlistItem;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.yeshtery.Yeshtery;
 import org.junit.Assert;
@@ -15,6 +17,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -42,6 +45,8 @@ class YeshteryWishlistControllerTest {
     @Autowired
     private TestRestTemplate template;
     @Autowired
+    private EmployeeUserRepository empRepo;
+    @Autowired
     private UserRepository userRepository;
 
     @Test
@@ -59,7 +64,7 @@ class YeshteryWishlistControllerTest {
 
     @Test
     public void getWishlistWithUserId() {
-        UserEntity user = userRepository.findById(88L).get();
+        EmployeeUserEntity user = empRepo.findById(68L).get();
         String authtoken = user.getAuthenticationToken();
         HttpEntity<?> request =  getHttpEntity(authtoken);
         ResponseEntity<Wishlist> response =
@@ -70,6 +75,17 @@ class YeshteryWishlistControllerTest {
         Assert.assertEquals(OK, response.getStatusCode());
         Assert.assertEquals(2, wishlist.getItems().size());
         assertTrue(setOf(111602L, 111604L).stream().allMatch(ids::contains));
+    }
+
+    @Test
+    public void checkRoleUserToGetWishlistWithUserId() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+        HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
+
+        Assert.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     private Set<Long> getIds(Wishlist wishlist) {
