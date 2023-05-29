@@ -3,6 +3,8 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.Value;
 
 public class UserDTOs {
 
@@ -26,6 +28,7 @@ public class UserDTOs {
     }
 
     @Getter
+    @Setter
     @Schema(name = "User Registration Data")
     public static class UserRegistrationObjectV2 {
         public String name;
@@ -40,7 +43,7 @@ public class UserDTOs {
         private String avatar;
         @JsonProperty("phone_number")
         private String phoneNumber;
-        @JsonProperty("activation_method")
+        @JsonProperty(value = "activation_method",defaultValue = "VERIFICATION_LINK")
         private ActivationMethod activationMethod;
     }
 

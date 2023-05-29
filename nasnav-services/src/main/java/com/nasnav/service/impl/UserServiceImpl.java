@@ -103,6 +103,9 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+		if(userJson.getActivationMethod() == null){
+			userJson.setActivationMethod(ActivationMethod.VERIFICATION_LINK);
+		}
 		validateNewUserRegistration(userJson);
 
 		UserEntity user = createNewUserEntity(userJson);		
@@ -124,13 +127,9 @@ public class UserServiceImpl implements UserService {
 
 
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
-		if (isBlankOrNull(userJson.confirmationFlag)) {
+		if (!Boolean.TRUE.equals(userJson.confirmationFlag)) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
 		}
-		if (isBlankOrNull(userJson.getActivationMethod())) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$LOG$0011, userJson.getActivationMethod());
-		}
-
 		userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
 		userServicesHelper.validateNewPassword(userJson.password);
 

@@ -704,7 +704,7 @@ public class UserRegisterTest {
 		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
-		Assert.assertEquals( 406, response.getStatusCodeValue());
+		Assert.assertEquals( 201, response.getStatusCodeValue());
 	}
 
 	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
