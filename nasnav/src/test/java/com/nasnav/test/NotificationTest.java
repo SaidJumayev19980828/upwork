@@ -2,45 +2,20 @@ package com.nasnav.test;
 
 import com.google.firebase.FirebaseApp;
 import com.nasnav.NavBox;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.Wishlist;
-import com.nasnav.dto.response.navbox.WishlistItem;
-import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.service.notification.NotificationServiceImpl;
 import net.jcip.annotations.NotThreadSafe;
-import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.Mock;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
-import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
-import static java.util.stream.Collectors.toSet;
-import static org.json.JSONObject.NULL;
-import static org.junit.Assert.*;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpStatus.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -53,10 +28,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class NotificationTest {
 
-    @Autowired
-    private TestRestTemplate template;
-
-    @Autowired
+    @Mock
     private NotificationServiceImpl notificationService;
 
 
