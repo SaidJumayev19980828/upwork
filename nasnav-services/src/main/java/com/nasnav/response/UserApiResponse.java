@@ -26,6 +26,7 @@ public class UserApiResponse {
     private List<String> roles;
     private String name;
     private String email;
+    private String imageURL;
     @JsonProperty(value = "organization_id")
     private Long organizationId;
     @JsonProperty(value = "shop_id")
@@ -74,5 +75,11 @@ public class UserApiResponse {
 
     public UserApiResponse(Cookie cookie) {
         this.cookie = cookie;
+    }
+
+    public UserApiResponse(Long entityId, String imageURL, List<ResponseStatus> statuses){
+        this.entityId = entityId;
+        this.imageURL = imageURL;
+        this.status = statuses;
     }
 }

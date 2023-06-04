@@ -1,3 +1,7 @@
+DELETE FROM public.api_logs;
+DELETE FROM public.files;
+DELETE FROM public.user_tokens;
+DELETE FROM public.users;
 DELETE FROM public.integration_mapping where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;

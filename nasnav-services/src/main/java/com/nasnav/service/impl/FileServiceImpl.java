@@ -30,7 +30,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,10 +44,8 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.nio.file.attribute.*;
+import java.util.*;
 
 import static com.google.common.io.Files.getNameWithoutExtension;
 import static com.nasnav.cache.Caches.FILES;
@@ -72,6 +69,7 @@ import static org.springframework.http.HttpStatus.*;
 @Service
 public class FileServiceImpl implements FileService {
 
+
 	private static Logger logger = Logger.getLogger(FileServiceImpl.class);
 
 	@Autowired
@@ -81,6 +79,9 @@ public class FileServiceImpl implements FileService {
 
 	@Autowired
 	private OrganizationRepository orgRepo;
+
+	@Autowired
+	private UserRepository userRepo;
 	@Autowired
 	private FilesResizedRepository filesResizedRepo;
 	@Autowired
@@ -158,6 +159,56 @@ public class FileServiceImpl implements FileService {
 		return fileUrl;
 	}
 
+	@Override
+	public String saveFileForUser(MultipartFile file, Long userId) {
+
+		validateImageMimetype(file);
+
+		if(userId != null && !userRepo.existsById(userId)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId);
+		}
+		if(isBlankOrNull(file.getOriginalFilename()) ) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0008);
+		}
+
+		String originalFileName = file.getOriginalFilename();
+		String uniqueFileName = getUniqueNameForUser(originalFileName, userId);
+		String fileUrl = getUrlForUser(uniqueFileName, userId);
+		Path fileRelativeLocation = getRelativeLocationForUser(uniqueFileName, userId);
+
+		saveFileForUser(file, uniqueFileName, userId );
+
+		saveToDatabaseForUser(originalFileName, fileRelativeLocation , fileUrl, userId);
+
+		return fileUrl;
+	}
+
+
+	@Override
+	public void deleteOldFileForUserIfExists(String originalName, Long userId, String oldImageUrl){
+
+		//get path relative save dir /customers/userId/oldImageUrl if old photo exists then delete
+		Path existingFilePath = basePath.resolve("customers").resolve(userId.toString()).resolve(oldImageUrl);
+
+		// Check if a file with the same name already exists
+		if (Files.exists(existingFilePath)) {
+			try {
+				Files.deleteIfExists(existingFilePath);
+				deleteFileByUrl(existingFilePath.toString());
+			}catch (IOException e){
+				logger.error(e,e);
+				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0023, oldImageUrl, existingFilePath.toString());
+			}
+		}
+	}
+
+
+	private void validateImageMimetype(MultipartFile image) {
+		String mimeType = image.getContentType();
+		if (!mimeType.startsWith("image"))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0018, mimeType);
+	}
+
 	private void validateMimeType(String mimeType) {
 		String fileType = mimeType.substring(0, mimeType.indexOf('/'));
 
@@ -180,7 +231,22 @@ public class FileServiceImpl implements FileService {
 
 		fileEntity = filesRepo.save(fileEntity);
 	}
+	private void saveToDatabaseForUser(String origName, Path location, String url, Long userId){
 
+		UserEntity user = userRepo.findById(userId).orElseThrow(()
+				-> new RuntimeBusinessException(NOT_FOUND, U$0001));
+
+		String mimeType = getMimeType(basePath.resolve(location));
+
+		FileEntity fileEntity = new FileEntity();
+		fileEntity.setLocation( location.toString().replace("\\", "/") );
+		fileEntity.setOriginalFileName(origName);
+		fileEntity.setUrl(url);
+		fileEntity.setMimetype(mimeType);
+		fileEntity.setUserId(user);
+
+		fileEntity = filesRepo.save(fileEntity);
+	}
 
 
 
@@ -218,7 +284,13 @@ public class FileServiceImpl implements FileService {
 				.orElse(basePath);
 	}
 
-
+	private Path getSaveDirForUser(Long userId) {
+		return ofNullable(userId)
+				.map(Object::toString)
+				.map(s -> "customers/" + s) // add customers/ prefix
+				.map(basePath::resolve)
+				.orElse(basePath);
+	}
 
 
 	private String getUniqueName(String origName, Long orgId) {
@@ -234,6 +306,18 @@ public class FileServiceImpl implements FileService {
 				.get();
 	}
 
+	private String getUniqueNameForUser(String originalName, Long userId) {
+		Optional<String> opt = Optional.of(originalName)
+				.map(this::sanitize)
+				.filter(name -> notUniqueFileNameForUser(name, userId))
+				.map(this::getUniqueRandomName);
+		if (opt.isPresent()) {
+			return opt.get();
+		}
+		return Optional.of(originalName)
+				.map(this::sanitize)
+				.get();
+	}
 
 
 	private String sanitize(String name) {
@@ -250,7 +334,14 @@ public class FileServiceImpl implements FileService {
 				|| Files.exists(location) ;
 	}
 
+	private boolean notUniqueFileNameForUser(String origName, Long userId) {
+		String url = getUrlForUser(origName, userId);
+		Path location = getRelativeLocationForUser(origName, userId);
 
+		return  filesRepo.existsByUrl(url)
+				|| filesRepo.existsByLocation(location.toString())
+				|| Files.exists(location) ;
+	}
 
 
 	private Path getRelativeLocation(String origName, Long orgId) {
@@ -259,7 +350,11 @@ public class FileServiceImpl implements FileService {
 				.resolve(origName);
 	}
 
-
+	private Path getRelativeLocationForUser(String originalName, Long userId) {
+		return basePath
+				.relativize( getSaveDirForUser(userId) )
+				.resolve(originalName);
+	}
 
 	private String getUrl(String originalName, Long orgId) {
 		return ofNullable(orgId)
@@ -267,7 +362,11 @@ public class FileServiceImpl implements FileService {
 				.orElse(originalName);
 	}
 
-
+	private String getUrlForUser(String originalName, Long userId) {
+		return ofNullable(userId)
+				.map(id -> String.format("customers/%d/%s", id, originalName))
+				.orElse("customers/"+originalName);
+	}
 
 	private String getUniqueRandomName(String origName) {
 		String ext = com.google.common.io.Files.getFileExtension(origName);
@@ -290,13 +389,37 @@ public class FileServiceImpl implements FileService {
 		}
 	}
 
+	private void saveFileForUser(MultipartFile file, String uniqeFileName, Long userId) {
+		if (file == null || file.isEmpty())
+			throw new IllegalArgumentException("Invalid file");
 
+		Path saveDir = getSaveDirForUser(userId);
+		createDirIfNotExists(saveDir);
+		Path targetLocation = saveDir.resolve(uniqeFileName);
+
+		try {
+			file.transferTo(targetLocation);
+		} catch (IOException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0009, saveDir);
+		}
+	}
 
 
 	private void createDirIfNotExists(Path saveDir) {
 		if(!Files.exists(saveDir)) {
 			try {
 				Files.createDirectories(saveDir);
+				/** It gives the required permissions for WINDOWS OS to make dirs **/
+				AclFileAttributeView aclView = Files.getFileAttributeView(saveDir, AclFileAttributeView.class);
+				if (aclView != null) {
+					AclEntry entry = AclEntry.newBuilder()
+							.setType(AclEntryType.ALLOW)
+							.setPrincipal(aclView.getOwner())
+							.setPermissions(AclEntryPermission.READ_DATA, AclEntryPermission.WRITE_DATA, AclEntryPermission.APPEND_DATA, AclEntryPermission.READ_ATTRIBUTES, AclEntryPermission.WRITE_ATTRIBUTES, AclEntryPermission.READ_NAMED_ATTRS, AclEntryPermission.WRITE_NAMED_ATTRS, AclEntryPermission.READ_ACL, AclEntryPermission.WRITE_ACL, AclEntryPermission.SYNCHRONIZE)
+							.build();
+					aclView.setAcl(Collections.singletonList(entry));
+				}
 			} catch (IOException e) {
 				logger.error(e,e);
 				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0010, saveDir);
@@ -390,6 +513,7 @@ public class FileServiceImpl implements FileService {
 		String url = "/" + orgId + addSlash(orgSpeificUrl);
 		return getResourceInternalUrl(url, width, height, type);
 	}
+
 
 	@Override
 	public String getResourceInternalUrl(String url, Integer width, Integer height, ConvertedImageTypes type) {

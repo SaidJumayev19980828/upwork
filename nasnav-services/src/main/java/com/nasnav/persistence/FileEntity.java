@@ -25,4 +25,7 @@ public class FileEntity {
 	@ManyToOne
 	@JoinColumn(name= "organization_id")
 	private OrganizationEntity organization;
+	@ManyToOne
+	@JoinColumn(name= "user_id")
+	private UserEntity userId;
 }

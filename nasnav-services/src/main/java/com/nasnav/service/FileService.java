@@ -21,6 +21,8 @@ public interface FileService {
   FileUrlResource getFileAsResource(String url) throws BusinessException;
 
   void deleteFileByUrl(String url);
+  String saveFileForUser(MultipartFile file, Long userId);
+  void deleteOldFileForUserIfExists(String origName, Long userId, String oldImageUrl);
 
   void deleteFile(FileEntity file);
 

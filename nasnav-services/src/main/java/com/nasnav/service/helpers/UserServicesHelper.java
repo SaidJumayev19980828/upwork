@@ -245,8 +245,6 @@ public class UserServicesHelper {
 
 
 	private EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		if (employeeUserJson.getAvatar() != null)
-			employeeUserEntity.setImage(employeeUserJson.getAvatar());
 
 		if (employeeUserJson.getPhoneNumber() != null)
 			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());
