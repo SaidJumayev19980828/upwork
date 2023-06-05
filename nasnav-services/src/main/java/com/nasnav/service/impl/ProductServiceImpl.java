@@ -3602,7 +3602,7 @@ public class ProductServiceImpl implements ProductService {
 				}
 			}
 
-			if (!tagsId.isEmpty() && tagsId != null) {
+			if (tagsId != null && !tagsId.isEmpty()) {
 				ProductTagDTO tags = new ProductTagDTO();
 				tags.setTagIds(tagsId);
 				tags.setProductIds(Arrays.asList(id));
@@ -3610,7 +3610,7 @@ public class ProductServiceImpl implements ProductService {
 
 			}
 
-			if (!keywords.isEmpty() && keywords != null) {
+			if (keywords != null && !keywords.isEmpty()) {
 				SeoKeywordsDTO seo = new SeoKeywordsDTO(SeoEntityType.PRODUCT, id, keywords);
 				seoService.addSeoKeywords(seo);
 			}
