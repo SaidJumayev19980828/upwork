@@ -14,10 +14,7 @@ DELETE FROM public.shipment where id IN (
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.shipping_service;
-DELETE FROM public.loyalty_point_transactions where shop_id in (SELECT id FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.loyalty_point_config where organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.loyalty_points where organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.loyalty_point_types where id = 31001;
+
 DELETE FROM meta_orders_promotions;
 DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
@@ -49,6 +46,8 @@ DELETE FROM public.post_products;
 DELETE FROM public.posts;
 DELETE FROM public.user_followers;
 DELETE FROM public.return_shipment where shipping_service_id = 'TEST';
+DELETE FROM public.loyalty_spent_transactions WHERE transaction_id in (select id from loyalty_point_transactions WHERE org_id between 99000 and 99999);
+DELETE FROM public.loyalty_point_transactions WHERE org_id between 99000 and 99999;
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);
@@ -89,6 +88,8 @@ DELETE FROM public.scenes WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.loyalty_point_config WHERE  organization_id between 99000 and 99999;
+DELETE FROM public.loyalty_pins WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 in ('630f3256-59bb-4b87-9600-60e64d028d68', 'Sesame street');
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
@@ -110,9 +111,10 @@ DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.seo_keywords where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.sub_areas where organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.loyalty_tier where id <> 1;
 DELETE FROM public.loyalty_family;
 DELETE FROM public.loyalty_booster;
+DELETE FROM public.loyalty_points  where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.loyalty_tier  where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
@@ -130,3 +132,4 @@ DELETE FROM public.addon_stocks
 	WHERE id > 0;
 DELETE FROM public.cart_item_addon_details
 	WHERE id=1006;
+delete from public.loyalty_point_types where id between  31001 and 31999;
