@@ -269,6 +269,34 @@ public class ProductApiTest {
 		result.andExpect(status().is(200));
 
 	}
+
+	@Test
+	public void NewProductUpdateWithoutTagsOrKeyWords() throws Exception {
+    	BaseUserEntity user = empUserRepo.getById(69L);
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
+
+		byte[] imgData = Files.readAllBytes(img);
+		
+		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+
+		NewProductFlowDTO product = createNewProductFlowDummyProduct();
+		product.setTags(null);
+		product.setKeywords(null);
+		ObjectMapper objectMapper = new ObjectMapper();
+		  MockMultipartFile productJson =
+	                new MockMultipartFile(
+	                        "product",
+	                        "product",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
+
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
+				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
+
+		result.andExpect(status().is(200));
+
+	}
 	
 	    @Test
 	    public void GetNewProductFlowTest(){
