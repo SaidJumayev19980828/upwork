@@ -697,6 +697,15 @@ public class UserRegisterTest {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
+@Test
+	public void newUserRegisterWithoutActivationMethodTest() throws MessagingException, IOException {
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2RequestWithoutActivationMethod(redirectUrl).toString();
+		HttpEntity<Object> userJson = getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+	}
 
 	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
 		JSONObject jsonBody = createUserRegisterV2Request(null).put("activation_method", "OTP");
@@ -1516,6 +1525,16 @@ public class UserRegisterTest {
 
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
+		return json()
+				.put("activation_method", "VERIFICATION_LINK")
+				.put("name", "Ahmad")
+				.put("email", "test@nasnav.com")
+				.put("password", "password")
+				.put("org_id", 99001)
+				.put("confirmation_flag", true)
+				.put("redirect_url", redirectUrl);
+	}
+	private JSONObject createUserRegisterV2RequestWithoutActivationMethod(String redirectUrl) {
 		return json()
 				.put("name", "Ahmad")
 				.put("email", "test@nasnav.com")

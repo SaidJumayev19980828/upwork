@@ -34,6 +34,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,8 +49,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
@@ -241,7 +241,11 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Throwable.class)
     public YeshteryUserApiResponse registerYeshteryUserV2(Long referrer, UserDTOs.UserRegistrationObjectV2 userJson) {
+        if(userJson.getActivationMethod() == null){
+            userJson.setActivationMethod(ActivationMethod.VERIFICATION_LINK);
+        }
             validateNewUserRegistration(userJson);
 
             YeshteryUserEntity user = createNewUserEntity(userJson);
@@ -484,10 +488,9 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     }
 
     private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
-        if (!userJson.confirmationFlag) {
-            throw new EntityValidationException("Registration not confirmed by user!", null, NOT_ACCEPTABLE);
+        if (!Boolean.TRUE.equals(userJson.confirmationFlag)) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
         }
-
         userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
         userServicesHelper.validateNewPassword(userJson.password);
 

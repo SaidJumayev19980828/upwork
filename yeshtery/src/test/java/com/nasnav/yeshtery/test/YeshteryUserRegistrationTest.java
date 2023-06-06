@@ -172,7 +172,7 @@ public class YeshteryUserRegistrationTest {
     @Test
     public void testRegisterSuccess() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                "{\"activation_method\":\"OTP\",\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
                         + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
                 null);
         ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
@@ -192,6 +192,29 @@ public class YeshteryUserRegistrationTest {
                 .map(UserEntity::getOrganizationId)
                 .collect(Collectors.toSet());
         assertEquals(yeshteryOrgIds, userOrgIds);
+    }
+
+    @Test
+    public void testRegisterWithoutActivationMethod() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+    @Test
+    public void testRegisterWithoutConfirmationFlag() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"activation_method\":\"OTP\",\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
     }
 
     private JSONObject createUserRegisterRequest(String redirectUrl) {
