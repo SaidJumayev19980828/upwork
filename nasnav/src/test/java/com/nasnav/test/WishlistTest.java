@@ -100,7 +100,11 @@ public class WishlistTest {
 
     @Test
     public void postWishlistItemNoAuthN() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        JSONObject requestBody =
+                json()
+                        .put("stock_id", 605L)
+                        .put("cover_image", "36/good_img.jpg");
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(), "101112");
         ResponseEntity<Wishlist> response =
                 template.exchange("/wishlist/item", POST, request, Wishlist.class);
 
@@ -147,8 +151,11 @@ public class WishlistTest {
 
     @Test
     public void moveWishlistItemToCartNoAuthN() {
-        Long id = 111602L;
-        HttpEntity<?> request =  getHttpEntity("101112");
+        JSONObject requestBody =
+                json()
+                        .put("stock_id", 605L)
+                        .put("cover_image", "36/good_img.jpg");
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(), "101112");
         ResponseEntity<Cart> response =
                 template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
 

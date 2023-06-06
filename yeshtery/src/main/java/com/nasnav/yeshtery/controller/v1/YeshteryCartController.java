@@ -41,8 +41,8 @@ public class YeshteryCartController {
     }
 
     @GetMapping(value = "/{userId}",produces= APPLICATION_JSON_VALUE)
-    public Cart getYeshteryCartWithUserId(@PathVariable Long userId) {
-        return cartService.getUserCart(userId);
+    public Cart getYeshteryCartWithUserId(@PathVariable Long userId,@RequestParam(value = "isYeshtery",defaultValue = "true", required = false) Boolean isYeshtery) {
+        return cartService.getUserCart(userId,isYeshtery);
     }
 
     @PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)

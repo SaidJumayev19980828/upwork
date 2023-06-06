@@ -758,7 +758,9 @@ public class CartTest {
 
 	@Test
 	public void checkoutCartNoAuthN() {
-		HttpEntity<?> request =  getHttpEntity("101112");
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
@@ -1098,8 +1100,9 @@ public class CartTest {
 
 	@Test
 	public void optimizeCartNoAuthN() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<Cart> response = 
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+		ResponseEntity<Cart> response =
         		template.exchange("/cart/optimize", POST, request, Cart.class);
 
         assertEquals(FORBIDDEN, response.getStatusCode());
