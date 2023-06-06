@@ -203,8 +203,25 @@ public class YeshteryUserRegistrationTest {
         ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
                 UserApiResponse.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertEquals(CREATED, response.getStatusCode());
+        UserEntity createdUser = userRepository.getByEmailAndOrganizationId("new_email@nasnav.com", organization.getId());
+        assertNotNull(createdUser);
     }
+
+    @Test
+    public void testRegisterWithoutActivationMethodAndNoRedirectUrl() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + "}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+        UserEntity createdUser = userRepository.getByEmailAndOrganizationId("new_email@nasnav.com", organization.getId());
+        assertNull(createdUser);
+    }
+
     @Test
     public void testRegisterWithoutConfirmationFlag() {
         HttpEntity<Object> userJson = getHttpEntity(
