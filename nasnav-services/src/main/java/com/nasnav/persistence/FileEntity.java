@@ -27,5 +27,5 @@ public class FileEntity {
 	private OrganizationEntity organization;
 	@ManyToOne
 	@JoinColumn(name= "user_id")
-	private UserEntity userId;
+	private UserEntity user;
 }

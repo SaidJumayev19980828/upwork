@@ -243,7 +243,7 @@ public class FileServiceImpl implements FileService {
 		fileEntity.setOriginalFileName(origName);
 		fileEntity.setUrl(url);
 		fileEntity.setMimetype(mimeType);
-		fileEntity.setUserId(user);
+		fileEntity.setUser(user);
 
 		fileEntity = filesRepo.save(fileEntity);
 	}
