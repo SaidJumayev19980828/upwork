@@ -78,6 +78,7 @@ DELETE FROM public.yeshtery_user_tokens WHERE yeshtery_user_id in (SELECT id FRO
 DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.api_logs WHERE organization_id between 99000 AND 99999;
 DELETE FROM public.rocket_chat_customer_tokens WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.files  where user_id in (SELECT id from public.users where organization_id between 99000 and 99999);
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;

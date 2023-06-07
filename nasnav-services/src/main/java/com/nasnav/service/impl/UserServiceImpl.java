@@ -16,16 +16,9 @@ import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.*;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyCoinsDropService;
-import com.nasnav.service.LoyaltyTierService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.RoleService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.UserService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
@@ -38,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -99,6 +93,7 @@ public class UserServiceImpl implements UserService {
 
 	private final OtpService otpService;
 
+	private final FileService fileService;
 
 
 	@Override
@@ -948,4 +943,36 @@ public class UserServiceImpl implements UserService {
 		activateUserInDB(user);
 		return securityService.login(user, false);
 	}
+
+	@Transactional
+	@Override
+	public UserApiResponse updateUserAvatar(MultipartFile file) {
+
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
+
+		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
+
+		String imageUrl = fileService.saveFileForUser(file, userEntity.getId());
+
+		if (isNotBlankOrNull(imageUrl)) {
+
+			String oldImageUrl = userEntity.getImage();
+
+			//First, set the new image url
+			userEntity.setImage(imageUrl);
+
+			userEntity = userRepository.save(userEntity);
+
+			fileService.deleteFileByUrl(oldImageUrl);
+
+		}
+
+		if (successResponseStatusList.isEmpty()) {
+			successResponseStatusList.add(ResponseStatus.ACTIVATED);
+		}
+		//display  user Id, url of image
+		return new UserApiResponse(userEntity.getId(), imageUrl, successResponseStatusList);
+	}
+
+
 }

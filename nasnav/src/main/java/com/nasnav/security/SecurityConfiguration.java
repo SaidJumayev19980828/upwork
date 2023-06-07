@@ -94,6 +94,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/shop/**"												, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
 						patternOf( "/shop/stock"	 					, DELETE			, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/user/list"),
+						patternOf( "/user/uploadAvatar"											, setOf(CUSTOMER)),
 						patternOf( "/user/list/customer"				,HttpMethod.GET		, getNonCustomersRoles()),
 						patternOf( "/user/address"						,PUT                , setOf(CUSTOMER)),
 						patternOf( "/user/address"						,HttpMethod.DELETE  , setOf(CUSTOMER)),

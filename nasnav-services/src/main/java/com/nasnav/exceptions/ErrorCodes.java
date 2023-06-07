@@ -23,9 +23,12 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
-	, U$LOG$0010("No user found with ID [%email]!")
+	, U$LOG$0010("No user found with email [%email]!")
 	, U$LOG$0011("Need activation method !")
 
+	,U$IMG$0001("File with the same content already exists!")
+	,U$IMG$0002("Failed to delete image due to errors!\nerrors:[%s]")
+	,U$IMG$0003("Unable to read uploaded file")
 
 	, U$STATUS$0001("Account is already suspended!")
 	, U$STATUS$0002("User can't suspend/activates himself!")
