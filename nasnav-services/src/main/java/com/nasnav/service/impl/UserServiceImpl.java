@@ -941,6 +941,7 @@ public class UserServiceImpl implements UserService {
 		return securityService.login(user, false);
 	}
 
+	@Transactional
 	@Override
 	public UserApiResponse updateUserAvatar(MultipartFile file) {
 
@@ -952,22 +953,22 @@ public class UserServiceImpl implements UserService {
 
 		if (isNotBlankOrNull(imageUrl)) {
 
+			String oldImageUrl = userEntity.getImage();
+
 			//First, set the new image url
 			userEntity.setImage(imageUrl);
 
-			// call file service to delete the old image url if exists at the user's relative path
-			if (userEntity.getImage().equals(imageUrl)) {
-				fileService.deleteOldFileForUserIfExists(file.getOriginalFilename(), userEntity.getId(), userEntity.getImage());
-			}
+			userEntity = userRepository.save(userEntity);
+
+			fileService.deleteFileByUrl(oldImageUrl);
 
 		}
-		Long userId = userRepository.save(userEntity).getId();
 
 		if (successResponseStatusList.isEmpty()) {
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
 		}
 		//display  user Id, url of image
-		return new UserApiResponse(userId, imageUrl, successResponseStatusList);
+		return new UserApiResponse(userEntity.getId(), imageUrl, successResponseStatusList);
 	}
 
 

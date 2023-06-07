@@ -184,25 +184,6 @@ public class FileServiceImpl implements FileService {
 	}
 
 
-	@Override
-	public void deleteOldFileForUserIfExists(String originalName, Long userId, String oldImageUrl){
-
-		//get path relative save dir /customers/userId/oldImageUrl if old photo exists then delete
-		Path existingFilePath = basePath.resolve("customers").resolve(userId.toString()).resolve(oldImageUrl);
-
-		// Check if a file with the same name already exists
-		if (Files.exists(existingFilePath)) {
-			try {
-				Files.deleteIfExists(existingFilePath);
-				deleteFileByUrl(existingFilePath.toString());
-			}catch (IOException e){
-				logger.error(e,e);
-				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0023, oldImageUrl, existingFilePath.toString());
-			}
-		}
-	}
-
-
 	private void validateImageMimetype(MultipartFile image) {
 		String mimeType = image.getContentType();
 		if (!mimeType.startsWith("image"))
