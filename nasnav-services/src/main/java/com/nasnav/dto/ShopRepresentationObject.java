@@ -35,6 +35,9 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("p_name")
     private String pname;
 
+    @JsonProperty("org_id")
+    private Long orgId;
+
     private AddressRepObj address;
 
     private String logo;
