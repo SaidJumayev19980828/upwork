@@ -410,16 +410,6 @@ public class FileServiceImpl implements FileService {
 		if(!Files.exists(saveDir)) {
 			try {
 				Files.createDirectories(saveDir);
-				/** It gives the required permissions for WINDOWS OS to make dirs **/
-				AclFileAttributeView aclView = Files.getFileAttributeView(saveDir, AclFileAttributeView.class);
-				if (aclView != null) {
-					AclEntry entry = AclEntry.newBuilder()
-							.setType(AclEntryType.ALLOW)
-							.setPrincipal(aclView.getOwner())
-							.setPermissions(AclEntryPermission.READ_DATA, AclEntryPermission.WRITE_DATA, AclEntryPermission.APPEND_DATA, AclEntryPermission.READ_ATTRIBUTES, AclEntryPermission.WRITE_ATTRIBUTES, AclEntryPermission.READ_NAMED_ATTRS, AclEntryPermission.WRITE_NAMED_ATTRS, AclEntryPermission.READ_ACL, AclEntryPermission.WRITE_ACL, AclEntryPermission.SYNCHRONIZE)
-							.build();
-					aclView.setAcl(Collections.singletonList(entry));
-				}
 			} catch (IOException e) {
 				logger.error(e,e);
 				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0010, saveDir);
