@@ -88,6 +88,8 @@ public class ShopsEntity implements BaseEntity{
         ShopRepresentationObject obj = new ShopRepresentationObject();
         BeanUtils.copyProperties(this, obj);
 
+        obj.setOrgId(organizationEntity.getId());
+
         obj.setIsWarehouse(getIsWarehouse() > 0);
         obj.setHas360(!(shop360s == null || shop360s.isEmpty()));
         if (getAddressesEntity() != null) {
