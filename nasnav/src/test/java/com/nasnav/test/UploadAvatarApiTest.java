@@ -1,15 +1,14 @@
 package com.nasnav.test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +24,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.http.Cookie;
 import java.io.IOException;
@@ -38,8 +34,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,34 +48,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @NotThreadSafe
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/UploadAvatar.sql"})
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class UploadAvatarApiTest {
+public class UploadAvatarApiTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private MockMvc mockMvc;
+    private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
-    private static final String TEST_PHOTO = "Test.png";
+	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
 
-    private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_save_dir/customers/88";
+	private static Path img = Paths.get(TEST_IMG_DIR).resolve(TEST_PHOTO).toAbsolutePath();
 
-    @Autowired
-    private FilesRepository filesRepo;
-
-    @Autowired
-    private AppConfig appConfig;
-
-    @Autowired
-    private UserRepository userRespo;
+    private static byte[] imgBytes;
 
     @Autowired
     private TestRestTemplate template;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+    @BeforeClass
+    public static void init() throws IOException {
+        imgBytes = Files.readAllBytes(img);
+    }
 
     @Test
     public void uploadUserAvatar() throws IOException, Exception {
 
-        MockMultipartFile file = new MockMultipartFile("file", "test.png", "image/png", "test".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "test.png", "image/png", imgBytes);
 
         var result = uploadAvatar("/user/uploadAvatar", "12388", file);
         var res = result.andReturn().getResponse().getContentAsString();
@@ -96,9 +88,8 @@ public class UploadAvatarApiTest {
 
     @Test
     public void theUserAvatarUploadToDownloadTestProcess() throws Exception {
-        String fileName = TEST_PHOTO;
 
-        MockMultipartFile file = new MockMultipartFile("file", "Test.png", "image/png", "test".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "Test.png", "image/png", imgBytes);
 
         var result = uploadAvatar("/user/uploadAvatar", "12388", file);
         var res = result.andReturn().getResponse().getContentAsString();
@@ -108,13 +99,10 @@ public class UploadAvatarApiTest {
 
         String expectedUrl = responseDto.getImageURL();
 
-        Path originalFile = Paths.get(TEST_IMG_DIR).resolve(fileName).toAbsolutePath();
-
         ResponseEntity<byte[]> response = template.exchange("/files/"+ expectedUrl, HttpMethod.GET, TestCommons.getHttpEntity(""), byte[].class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(Files.size(originalFile), response.getBody().length);
+        assertArrayEquals(imgBytes, response.getBody());
         assertEquals("image/png", response.getHeaders().getContentType().toString());
-
     }
 
 }
