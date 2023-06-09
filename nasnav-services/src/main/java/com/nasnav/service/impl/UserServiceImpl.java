@@ -11,6 +11,7 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.service.FileService;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -93,10 +95,12 @@ public class UserServiceImpl implements UserService {
 
 	private final OtpService otpService;
 
-	private final FileService fileService;
+	@Autowired
+	protected FileService fileService;
 
+	@Autowired
+	private LoyaltyPointsService loyaltyPointsService;
 
-	@Override
 	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if(userJson.getActivationMethod() == null){
 			userJson.setActivationMethod(ActivationMethod.VERIFICATION_LINK);
@@ -117,14 +121,25 @@ public class UserServiceImpl implements UserService {
 
 		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
+	@Override
+	public UserApiResponse registerUserReferral(Long referrer,UserDTOs.UserRegistrationObjectV2 userJson) {
+		if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
+		return  registerUserV2(userJson);
+	}
 
 
-
-
+	private void givePointsToReferrer(Long referrer, Long orgId) {
+		UserEntity referrerEntity = userRepository.findById(referrer)
+				.orElse(null);
+		if (referrerEntity != null)
+			loyaltyPointsService.givePointsToReferrer(referrerEntity, orgId);
+	}
+	
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if (!Boolean.TRUE.equals(userJson.confirmationFlag)) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
 		}
+
 		userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
 		userServicesHelper.validateNewPassword(userJson.password);
 

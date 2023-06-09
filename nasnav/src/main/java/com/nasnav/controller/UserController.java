@@ -150,11 +150,10 @@ public class UserController {
     public UserApiResponse oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
         return securityService.socialLogin(socialLoginToken, false);
     }
-
     @PostMapping(value = "v2/register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
-    public UserApiResponse registerUserV2(@RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
-        return this.userService.registerUserV2(userJson);
+    public UserApiResponse registerUserV2(@RequestParam(required = false) Long referrer,@RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
+        return this.userService.registerUserReferral(referrer,userJson);
     }
 
     @GetMapping(value = "v2/register/activate", produces = APPLICATION_JSON_VALUE)
