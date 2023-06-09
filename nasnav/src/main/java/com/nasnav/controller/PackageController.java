@@ -2,8 +2,6 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.request.PackageDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
-import com.nasnav.dto.response.RestApiResponse;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.service.PackageService;
@@ -46,7 +44,7 @@ public class PackageController {
     }
 
     @PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE)
-    public PackageRegisteredEntity register(@RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception{
+    public PackageRegisteredEntity register(@RequestHeader(name = "User-Token", required = false) String token,@RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception{
         return packageService.completeProfile(packageRegisteredByUserDTO);
     }
 }

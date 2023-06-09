@@ -21,7 +21,9 @@ import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.request.SitemapParams;
-import com.nasnav.response.*;
+import com.nasnav.response.DomainOrgIdResponse;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
@@ -47,8 +49,7 @@ import java.util.*;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
@@ -66,7 +67,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.*;
-import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 
 
 @Service
@@ -126,10 +126,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     private EmployeeUserService employeeUserService;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
-
-    @Autowired
-    ServiceRegisteredByUserRepository serviceRegisteredByUserRepository ;
-
 
     @Override
     public List<OrganizationRepresentationObject> listOrganizations() {

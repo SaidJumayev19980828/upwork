@@ -11,7 +11,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public enum Services {
 
-    TECHNOLOGY_360(1),
+    THREE_SIXTY(1),
     MET_AVERSE(2),
     CHAT_SERVICES(3),
     VIRTUAL_LANDS(4);

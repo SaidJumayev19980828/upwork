@@ -1,28 +1,22 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.dao.PackageRepository;
-import com.nasnav.dao.ServiceRegisteredByUserRepository;
-import com.nasnav.dto.request.EventForRequestDTO;
+import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dto.request.PackageDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.PackageRegisteredEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.service.PackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
@@ -32,7 +26,7 @@ public class PackageServiceImpl implements PackageService {
     private PackageRepository packageRepository;
 
     @Autowired
-    private ServiceRegisteredByUserRepository serviceRegisteredByUserRepository;
+    private PackageRegisteredRepository packageRegisteredRepository;
 
     public List<PackageEntity> getPackage() {
         List<PackageEntity> packages = packageRepository.findAll();
@@ -64,7 +58,7 @@ public class PackageServiceImpl implements PackageService {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,packageId)
         );
-        List<PackageRegisteredEntity> packagesRegistered= serviceRegisteredByUserRepository.findByPackageId(packageId);
+        List<PackageRegisteredEntity> packagesRegistered= packageRegisteredRepository.findByPackageId(packageId);
         if(!packagesRegistered.isEmpty()){
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, PA$USR$0001, packageId);
         }
@@ -78,6 +72,6 @@ public class PackageServiceImpl implements PackageService {
 
         PackageRegisteredEntity packageRegisteredEntity = PackageRegisteredEntity.builder().packageEntity(packageEntity).userId(packageRegisteredByUserDTO.getUserId()).registeredDate(new Date()).build();
 
-        return serviceRegisteredByUserRepository.save(packageRegisteredEntity);
+        return packageRegisteredRepository.save(packageRegisteredEntity);
     }
 }

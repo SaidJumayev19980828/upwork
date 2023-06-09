@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ServiceRegisteredByUserRepository extends JpaRepository<PackageRegisteredEntity, Long> {
+public interface PackageRegisteredRepository extends JpaRepository<PackageRegisteredEntity, Long> {
 
     @Query("SELECT p FROM PackageRegisteredEntity p  WHERE p.packageEntity.id = :package_id ")
     List<PackageRegisteredEntity> findByPackageId(Long package_id);

@@ -70,7 +70,7 @@ ALTER TABLE ONLY public.package_registered ALTER COLUMN id SET DEFAULT nextval('
 --comment: create services_registered_in_package
 CREATE TABLE public.services_registered_in_package (
                                                        id bigint NOT NULL,
-                                                       services_num bigint NOT NULL,
+                                                       service_id bigint NOT NULL,
                                                        package_id bigint NOT NULL
 );
 

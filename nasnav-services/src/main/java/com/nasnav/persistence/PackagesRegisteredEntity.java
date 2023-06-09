@@ -1,6 +1,5 @@
 package com.nasnav.persistence;
 
-import com.nasnav.enumerations.Services;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,14 +14,14 @@ import java.io.Serializable;
 @Table(name = "services_registered_in_package")
 @Entity
 @Builder
-public class ServicesRegisteredInPackagesEntity implements Serializable {
+public class PackagesRegisteredEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "services_num")
-    private Long services;
+    @Column(name = "service_id")
+    private Long serviceId;
 
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "package_id", referencedColumnName = "id")
