@@ -90,7 +90,7 @@ public class ShopsEntity implements BaseEntity{
     }
 
     @Override
-    public BaseRepresentationObject getRepresentation() {
+    public ShopRepresentationObject getRepresentation() {
         ShopRepresentationObject obj = new ShopRepresentationObject();
         BeanUtils.copyProperties(this, obj);
 
