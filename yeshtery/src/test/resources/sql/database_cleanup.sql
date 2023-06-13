@@ -80,6 +80,8 @@ DELETE FROM public.yeshtery_user_otp WHERE user_id in (SELECT id FROM public.yes
 DELETE FROM public.user_otp WHERE user_id in (SELECT id FROM public.users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_user_tokens WHERE yeshtery_user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.room_sessions where template_id in (SELECT id FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999));
+DELETE FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
