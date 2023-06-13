@@ -15,6 +15,7 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.SchedulerTaskRepository;
 import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.service.scheduler.ScheduleTaskHelper;
@@ -43,6 +44,11 @@ public class Yeshtery{
         for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
             this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
         }
+    }
+
+    @Bean
+    public AppConfig initAppConfig() {
+        return new AppConfig(true);
     }
 
     public static void main(String[] args) throws IOException

@@ -5,6 +5,7 @@ import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.service.scheduler.ScheduleTaskHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.IOException;
@@ -38,6 +40,12 @@ public class NavBox
             this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
         }
     }
+
+    @Bean
+    public AppConfig initAppConfig() {
+        return new AppConfig(false);
+    }
+
     public static void main(String[] args) throws IOException
     {
         Resource resource = new ClassPathResource("application.properties");
