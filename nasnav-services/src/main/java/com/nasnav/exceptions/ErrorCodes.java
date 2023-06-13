@@ -443,6 +443,8 @@ public enum ErrorCodes {
 
 	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
 
+	,ROOMS$ROOM$NotFound("No Room Template found with shop id [%d]")
+	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
 	;
 
