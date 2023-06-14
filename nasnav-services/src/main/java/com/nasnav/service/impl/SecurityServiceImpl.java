@@ -45,6 +45,7 @@ import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.lang.Boolean.TRUE;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
@@ -543,7 +544,26 @@ public class SecurityServiceImpl implements SecurityService {
 				.filter(liveTime -> liveTime.getSeconds() >= (long)(0.7*AUTH_TOKEN_VALIDITY))
 				.isPresent();			
 	}
-	
+
+	@Override
+	public Boolean isShopAccessibleToCurrentUser(Long shopId) {
+		Optional<OrganizationEntity> shopOrganization = shopsRepo.findById(shopId)
+				.map(ShopsEntity::getOrganizationEntity);
+		if (config.isYeshteryInstance && TRUE.equals(currentUserIsCustomer())) {
+			Integer currentUserYeshteryState = getYeshteryState();
+			return YeshteryState.ACTIVE.getValue().equals(currentUserYeshteryState)
+					&& shopOrganization
+							.map(OrganizationEntity::getYeshteryState)
+							.filter(YeshteryState.ACTIVE.getValue()::equals).isPresent();
+		}
+
+		if (TRUE.equals(currentUserIsCustomer()) || TRUE.equals(currentUserHasRole(Roles.ORGANIZATION_ADMIN))
+				|| TRUE.equals(currentUserHasRole(Roles.ORGANIZATION_MANAGER))) {
+			return shopOrganization.filter(getCurrentUserOrganization()::equals).isPresent();
+		}
+
+		return currentUserHasRole(Roles.STORE_MANAGER) && getCurrentUserShopId().equals(shopId);
+	}
 }
 
 
