@@ -25,7 +25,6 @@ public class ActivateOtpDto {
     @NotNull
     private String otp;
 
-    @NotEmpty
     @NotNull
     private Long orgId;
 }

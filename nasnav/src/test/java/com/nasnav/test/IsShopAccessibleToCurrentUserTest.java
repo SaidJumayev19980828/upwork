@@ -19,6 +19,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.nasnav.AppConfig;
 import com.nasnav.dao.CommonUserRepository;
@@ -74,63 +75,63 @@ public class IsShopAccessibleToCurrentUserTest {
 
 	@Test
 	void sameOrgShopIsAccessibleNonYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(false);
+		injectAppConfigIfNeeded(false);
 		Boolean result = sameOrgShop(YeshteryState.DISABLED);
 		assertTrue(result);
 	}
 
 	@Test
 	void differentOrgShopIsNotAccessibleNonYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(false);
+		injectAppConfigIfNeeded(false);
 		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.DISABLED);
 		assertFalse(result);
 	}
 
 	@Test
 	void onlyShopOrgIsYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = differentOrgShop(YeshteryState.ACTIVE, YeshteryState.DISABLED);
 		assertFalse(result);
 	}
 
 	@Test
 	void bothOrgsYeshteryStateActive() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = differentOrgShop(YeshteryState.ACTIVE, YeshteryState.ACTIVE);
 		assertTrue(result);
 	}
 
 	@Test
 	void bothOrgsYeshteryStateDisabled() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.DISABLED);
 		assertFalse(result);
 	}
 
 	@Test
 	void onlyUserOrgIsYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.ACTIVE);
 		assertFalse(result);
 	}
 
 	@Test
 	void SameOrgYeshteryStateActiveYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = sameOrgShop(YeshteryState.ACTIVE);
 		assertTrue(result);
 	}
 
 	@Test
 	void SameOrgYeshteryStateDisabledYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		boolean result = sameOrgShop(YeshteryState.DISABLED);
 		assertFalse(result);
 	}
 
 	@Test
 	void SameOrgYeshteryStateActiveEmployeeYeshtery() {
-		Mockito.when(config.isYeshteryInstance).thenReturn(true);
+		injectAppConfigIfNeeded(true);
 		OrganizationEntity shopOrg = createMockOrg(99001L, YeshteryState.ACTIVE);
 		OrganizationEntity userOrg = createMockOrg(99002L, YeshteryState.ACTIVE);
 		Mockito.when(orgRepo.findById(userOrg.getId())).thenReturn(Optional.of(userOrg));
@@ -139,12 +140,12 @@ public class IsShopAccessibleToCurrentUserTest {
 		EmployeeUserEntity employee = creaEmployeeUser(userOrg);
 		Mockito.when(authentication.getDetails()).thenReturn(employee);
 
-		Collection<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(Roles.ORGANIZATION_MANAGER.getValue()));
+		Collection<SimpleGrantedAuthority> authorities = List
+				.of(new SimpleGrantedAuthority(Roles.ORGANIZATION_MANAGER.getValue()));
 		Mockito.doReturn(authorities).when(authentication).getAuthorities();
 
 		boolean result = securityService.isShopAccessibleToCurrentUser(99901L);
 		assertFalse("an employee shouldn't be allowed to access another org", result);
-		
 
 		employee.setOrganizationId(shopOrg.getId());
 		result = securityService.isShopAccessibleToCurrentUser(99901L);
@@ -201,11 +202,16 @@ public class IsShopAccessibleToCurrentUserTest {
 		shop.setOrganizationEntity(org);
 		Mockito.when(shopsRepo.findById(shopId)).thenReturn(Optional.of(shop));
 	}
-	
-		private OrganizationEntity createMockOrg(Long orgId, YeshteryState yeshteryState) {
-			OrganizationEntity org = new OrganizationEntity();
-			org.setId(orgId);
-			org.setYeshteryState(yeshteryState.getValue());
-			return org;
-		}
+
+	private OrganizationEntity createMockOrg(Long orgId, YeshteryState yeshteryState) {
+		OrganizationEntity org = new OrganizationEntity();
+		org.setId(orgId);
+		org.setYeshteryState(yeshteryState.getValue());
+		return org;
+	}
+
+	private void injectAppConfigIfNeeded(boolean yeshteryInstance) {
+		AppConfig config = new AppConfig(yeshteryInstance);
+		ReflectionTestUtils.setField(securityService, "config", config);
+	}
 }
