@@ -17,7 +17,7 @@ import java.util.List;
 
 public interface UserService extends CommonUserServiceInterface {
 
-    UserApiResponse registerUserReferral(Long referrer,UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
+    UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) throws BusinessException;
 
     RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 

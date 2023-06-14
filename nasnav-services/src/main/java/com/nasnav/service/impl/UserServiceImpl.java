@@ -95,13 +95,11 @@ public class UserServiceImpl implements UserService {
 
 	private final OtpService otpService;
 
-	@Autowired
-	protected FileService fileService;
+	private final FileService fileService;
 
-	@Autowired
 	private LoyaltyPointsService loyaltyPointsService;
 
-	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if(userJson.getActivationMethod() == null){
 			userJson.setActivationMethod(ActivationMethod.VERIFICATION_LINK);
 		}
@@ -122,7 +120,7 @@ public class UserServiceImpl implements UserService {
 		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 	@Override
-	public UserApiResponse registerUserReferral(Long referrer,UserDTOs.UserRegistrationObjectV2 userJson) {
+	public UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) {
 		if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
 		return  registerUserV2(userJson);
 	}

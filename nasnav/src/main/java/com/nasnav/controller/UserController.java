@@ -152,8 +152,9 @@ public class UserController {
     }
     @PostMapping(value = "v2/register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
-    public UserApiResponse registerUserV2(@RequestParam(required = false) Long referrer,@RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
-        return this.userService.registerUserReferral(referrer,userJson);
+    public UserApiResponse registerUserV2(@RequestBody UserDTOs.UserRegistrationObjectV2 userJson,
+            @RequestParam(required = false) Long referrer) throws BusinessException {
+        return this.userService.registerUserReferral(userJson, referrer);
     }
 
     @GetMapping(value = "v2/register/activate", produces = APPLICATION_JSON_VALUE)
