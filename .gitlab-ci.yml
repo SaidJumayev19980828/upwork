@@ -1,10 +1,41 @@
 variables:
   VERSION: "1.0"
+  POSTGRES_DB: nasnav-tests
+  POSTGRES_USER: nasnav
+  POSTGRES_PASSWORD: nasnav
+  POSTGRES_HOST_AUTH_METHOD: trust
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
+
+cache:
+  key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
+  paths:
+    - .m2/
 
 stages:
+  - test
   - compile
   - build
   - deploy
+
+test:maven:
+  stage: test
+  services:
+    - postgres:15.2-alpine
+  image: maven:3.8.6-openjdk-11
+  script:
+    - mvn --version
+    - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
+    - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
+    - mvn -B --no-transfer-progress test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - nasnav/target/surefire-reports/TEST-*.xml
+        - yeshtery/target/surefire-reports/TEST-*.xml
+  tags:
+    - meetusvr
+    - docker
 
 build:compile:
   stage: compile
@@ -16,6 +47,10 @@ build:compile:
   artifacts:
     reports:
       dotenv: build/env
+  only:
+    - develop
+    - uat
+    - prod
   tags:
     - meetusvr
     - docker
