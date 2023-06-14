@@ -1,14 +1,5 @@
-FROM debian:bullseye AS base_jdk
+FROM maven:3.8.6-openjdk-11 AS base_jdk
 
-ENV BUILD_PACKAGES="openjdk-11-jdk maven"
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends $BUILD_PACKAGES \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* /var/tmp/*
-
-SHELL ["/bin/bash", "-c"]
 ENV MAVEN_OPTS="-XX:MaxDirectMemorySize=256M"
 
 # build ....................................................................
