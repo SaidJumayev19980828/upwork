@@ -19,7 +19,6 @@ import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
-import com.nasnav.service.notification.NotificationService;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;

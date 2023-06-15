@@ -1,45 +1,25 @@
 package com.nasnav.service.notification;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-import com.nasnav.AppConfig;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-
-@Slf4j
 @Service
+@Slf4j
 public class NotificationServiceImpl implements NotificationService {
+    private final FirebaseMessaging firebaseMessaging;
 
-    private FirebaseApp firebaseApp;
-    @Autowired
-    private AppConfig appConfig;
-
-    @PostConstruct
-    public void initialize() {
-        try {
-            FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(appConfig.firebaseConfig).getInputStream())).build();
-
-            if (FirebaseApp.getApps().isEmpty()) {
-                this.firebaseApp = FirebaseApp.initializeApp(options);
-            } else {
-                this.firebaseApp = FirebaseApp.getInstance();
-            }
-        } catch (IOException e) {
-            log.error("Create FirebaseApp Error", e);
-        }
+    public NotificationServiceImpl(Optional<FirebaseMessaging> optionalFirebaseMessaging) {
+        firebaseMessaging = optionalFirebaseMessaging.orElse(null);
     }
+
     @Override
     public void sendMessage(NotificationRequestDto notifications) {
 
@@ -51,7 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         try {
-            FirebaseMessaging.getInstance().send(message);
+            firebaseMessaging.send(message);
         } catch (FirebaseMessagingException e) {
             log.error("Fail to send firebase notification", e);
         }
