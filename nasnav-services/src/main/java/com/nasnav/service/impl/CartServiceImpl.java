@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.nasnav.dao.*;
-import com.nasnav.dto.response.navbox.Wishlist;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -151,8 +150,8 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getUserCart(Long userId,Boolean isYeshtery) {
         Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
-        Long organizationId  = userRepo.findById(userId).get().getOrganizationId();
-        if(Boolean.FALSE && !orgIdToUserAuth.equals(organizationId)){
+        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
+        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
         }
         Cart cart = new Cart();

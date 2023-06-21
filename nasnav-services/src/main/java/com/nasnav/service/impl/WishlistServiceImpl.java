@@ -27,9 +27,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.RESTOCKED_WISHLIST_TEMPLATE;
 import static com.nasnav.enumerations.Settings.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -159,8 +157,8 @@ public class WishlistServiceImpl implements WishlistService{
     @Override
     public Wishlist getWishlist(Long userId,Boolean isYeshtery) {
         Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
-        Long organizationId  = userRepo.findById(userId).get().getOrganizationId();
-        if(Boolean.FALSE && !orgIdToUserAuth.equals(organizationId)){
+        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
+        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
         }
         Wishlist wishlist = new Wishlist();
