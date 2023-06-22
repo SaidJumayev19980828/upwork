@@ -1,6 +1,6 @@
 package com.nasnav.yeshtery.test;
 
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import com.nasnav.dao.AvailabilityRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SchedulerTaskRepository;
@@ -10,10 +10,7 @@ import com.nasnav.persistence.SchedulerTaskEntity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -29,12 +26,9 @@ import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Appointment_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class AvailabilityTest {
+public class AvailabilityTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
     @Autowired

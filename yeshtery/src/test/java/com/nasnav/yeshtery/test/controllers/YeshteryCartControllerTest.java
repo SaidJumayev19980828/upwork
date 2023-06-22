@@ -9,7 +9,7 @@ import com.nasnav.dto.response.navbox.*;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import com.nasnav.commons.YeshteryConstants;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -18,10 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -50,14 +47,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 
-public class YeshteryCartControllerTest {
+public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
 
     private final String YESHTERY_CART_API_PATH = YeshteryConstants.API_PATH + "/cart";
     private final String YESHTERY_CART_ITEM_API_PATH = YeshteryConstants.API_PATH + "/cart/item";

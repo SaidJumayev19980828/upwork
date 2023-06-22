@@ -1,39 +1,30 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostClicksRepository;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.dao.PostRepository;
-import com.nasnav.persistence.AvailabilityEntity;
-import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Posts_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class PostTest {
+public class PostTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
     @Autowired

@@ -1,8 +1,8 @@
-package com.nasnav.test.commons.test_templates;
+package com.nasnav.yeshtery.test.templates;
 
 import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
 import com.nasnav.service.AdminService;
+import com.nasnav.yeshtery.Yeshtery;
 
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.junit.After;
@@ -34,7 +34,7 @@ import javax.sql.DataSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
 @PropertySource("classpath:test.database.properties")

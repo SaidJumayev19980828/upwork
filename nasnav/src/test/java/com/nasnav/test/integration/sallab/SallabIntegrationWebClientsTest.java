@@ -1,9 +1,9 @@
 package com.nasnav.test.integration.sallab;
 
-import com.nasnav.NavBox;
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
-import com.nasnav.integration.sallab.webclient.dto.Record;
 import com.nasnav.integration.sallab.webclient.dto.*;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jodah.concurrentunit.Waiter;
 import org.json.JSONArray;
 import org.junit.Before;
@@ -14,9 +14,6 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -37,11 +34,8 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@PropertySource("classpath:test.database.properties")
-@AutoConfigureWebTestClient
-@DirtiesContext
-public class SallabIntegrationWebClientsTest {
+// @DirtiesContext
+public class SallabIntegrationWebClientsTest extends AbstractTestWithTempBaseDir {
 
     private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";

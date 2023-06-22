@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.*;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jodah.concurrentunit.Waiter;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,9 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.annotation.DirtiesContext;
@@ -36,13 +35,9 @@ import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-@DirtiesContext
-public class MicrosoftDynamicsIntegrationWebClientsTest {
+// @DirtiesContext
+public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWithTempBaseDir {
 
 	private static final String msServerUrl = "http://41.39.128.74";
 	private static final String mockServerUrl = "http://127.0.0.1";

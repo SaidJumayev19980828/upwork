@@ -8,7 +8,6 @@ import com.nasnav.dao.yeshtery.YeshteryUserRepository;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
-import com.nasnav.persistence.yeshtery.YeshteryUserOtpEntity;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -16,8 +15,9 @@ import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
 import com.nasnav.service.otp.OtpType;
-import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.yeshtery.test.commons.TestCommons;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -28,11 +28,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -63,13 +60,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"}) //FIXME temporarly
-public class YeshteryUserRegistrationTest {
+public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 
     private static final String YESHTERY_SUSPEND_API_PATH = API_PATH + "/user/suspend";
     private final String YESHTERY_LOGIN_API_PATH = API_PATH + "/user/login";

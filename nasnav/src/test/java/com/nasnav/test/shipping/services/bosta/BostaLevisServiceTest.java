@@ -1,23 +1,18 @@
 package com.nasnav.test.shipping.services.bosta;
 
-import com.nasnav.NavBox;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
-import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
-import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,11 +24,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-@DirtiesContext
-public class BostaLevisServiceTest {
+// @DirtiesContext
+public class BostaLevisServiceTest extends AbstractTestWithTempBaseDir {
 
 	private final String trackingUrl = "https://bosta.co/tracking-shipment/?lang=en&track_num=";
 	private final String token = "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357";

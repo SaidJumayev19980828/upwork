@@ -34,6 +34,8 @@ import com.nasnav.shipping.services.FixedFeeStrictSameCityShippingService;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.yeshtery.controller.v1.YeshteryUserController;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -91,13 +93,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class YeshteryOrdersControllerTest {
+public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
     private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
     private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";

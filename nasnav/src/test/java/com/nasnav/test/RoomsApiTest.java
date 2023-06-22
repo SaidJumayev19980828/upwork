@@ -6,15 +6,13 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.response.RoomResponse;
 import com.nasnav.mappers.RoomMapper;
 import com.nasnav.persistence.RoomTemplateEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -35,13 +33,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Room_Api_Test_Data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/database_cleanup.sql")
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-class RoomsApiTest {
+class RoomsApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TestRestTemplate template;

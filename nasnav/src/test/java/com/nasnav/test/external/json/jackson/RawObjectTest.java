@@ -1,22 +1,16 @@
 package com.nasnav.test.external.json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.commons.json.jackson.RawObject;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class RawObjectTest {
+public class RawObjectTest  extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private ObjectMapper mapper;

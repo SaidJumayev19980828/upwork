@@ -1,7 +1,5 @@
 package com.nasnav.test.integration;
 
-import com.nasnav.NavBox;
-import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -13,6 +11,7 @@ import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.integration.event.*;
 import com.nasnav.test.integration.event.handler.HandlingInfoSaver;
 import com.nasnav.test.integration.event.handler.TestEvent2Handler;
@@ -25,9 +24,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.util.Pair;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -51,13 +47,10 @@ import static com.nasnav.test.integration.event.handler.TestEventHandler.EXPECTE
 import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class IntegrationServiceTest {
+public class IntegrationServiceTest extends AbstractTestWithTempBaseDir {
 	
 	private static final String MAPPING_REMOTE_VAL = "REMOTE_VAL";
 	private static final String MAPPING_LOCAL_VAL = "LOCAL_VAL";
