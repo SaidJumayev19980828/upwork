@@ -142,6 +142,13 @@ class RoomsApiTest {
 		assertTemplateRequest("161718", requestBody, 51L, HttpStatus.NOT_FOUND);
 		assertTemplateRequest("192021", requestBody, 52L, HttpStatus.OK);
 		assertTemplateRequest("222324", requestBody, 51L, HttpStatus.FORBIDDEN);
+		assertTemplateRequest("161718", requestBody, 53L, HttpStatus.OK);
+	}
+
+	@Test
+	void postTemplateOtherOrg() {
+		String requestBody = "{\"scene_id\": \"someId\", \"data\": \"some data\"}";
+		assertTemplateRequest("131415", requestBody, 53L, HttpStatus.NOT_FOUND);
 	}
 
 	@Test
