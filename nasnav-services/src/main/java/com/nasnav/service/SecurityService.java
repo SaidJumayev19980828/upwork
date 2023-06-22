@@ -13,7 +13,6 @@ import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.security.UserAuthenticationData;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -68,4 +67,6 @@ public interface SecurityService {
     Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee);
 
     Set<String> getInvalidUserNotificationTokens(UserEntity user);
+
+    Set<String> getValidNotificationTokens(BaseUserEntity user);
 }

@@ -598,6 +598,17 @@ public class SecurityServiceImpl implements SecurityService {
 		return tokenEntities.stream().filter(predicate)
 				.map(UserTokensEntity::getNotificationToken).collect(toSet());
 	}
+
+	@Override
+	public Set<String> getValidNotificationTokens(BaseUserEntity user) {
+		if (user instanceof UserEntity) {
+			return getValidUserNotificationTokens((UserEntity) user);
+		} else if (user instanceof EmployeeUserEntity) {
+			return getValidEmployeeNotificationTokens((EmployeeUserEntity) user);
+		} else {
+			throw new UnsupportedOperationException("user type not supported");
+		}
+	}
 }
 
 
