@@ -40,6 +40,11 @@ public class CartController {
 		return cartService.getCart(promoCode, points, false);
 	}
 
+	@GetMapping(value = "/{userId}",produces=APPLICATION_JSON_VALUE)
+	public Cart getCartWithUserId(@PathVariable Long userId,@RequestParam(value = "isYeshtery",defaultValue = "false", required = false) Boolean isYeshtery) {
+		return cartService.getUserCart(userId,isYeshtery);
+	}
+
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
 	public Cart addCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
 							@RequestBody CartItem item,

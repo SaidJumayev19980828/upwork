@@ -16,6 +16,7 @@ public interface CartService {
     AppliedPromotionsResponse getCartPromotions(String promoCode);
     Cart getCart(String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart getUserCart(Long userId);
+    Cart getUserCart(Long userId,Boolean isYeshtery);
     Cart getUserCart(Long userId, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart addCartItem(CartItem item, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart addNasnavCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);

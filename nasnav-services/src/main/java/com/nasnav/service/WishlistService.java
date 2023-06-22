@@ -13,6 +13,8 @@ public interface WishlistService {
 
     Wishlist getWishlist();
 
+    Wishlist getWishlist(Long userId,Boolean isYeshtery);
+
     Cart moveWishlistItemsToCart(WishlistItemQuantity items);
 
     void sendRestockedWishlistEmails();

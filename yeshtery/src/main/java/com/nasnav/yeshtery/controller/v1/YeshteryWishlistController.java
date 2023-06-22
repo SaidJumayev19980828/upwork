@@ -28,6 +28,11 @@ public class YeshteryWishlistController {
         return wishlistService.getWishlist();
     }
 
+    @GetMapping(value = "/{userId}",produces= APPLICATION_JSON_VALUE)
+    public Wishlist getWishlistWithUserId(@PathVariable Long userId ,@RequestParam(value = "isYeshtery",defaultValue = "true", required = false) Boolean isYeshtery) {
+        return wishlistService.getWishlist(userId,isYeshtery);
+    }
+
     @PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Wishlist addWishlistItem(@RequestHeader(name = "User-Token", required = false) String token,
                                     @RequestBody WishlistItem item) {

@@ -22,6 +22,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -83,12 +84,26 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private EmployeeUserRepository empRepo;
+
+
 	@Test
 	public void getCartNoAuthz() {
         HttpEntity<?> request =  getHttpEntity("NOT FOUND");
         ResponseEntity<Cart> response =
         		template.exchange("/cart", GET, request, Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
+	public void getCartNoToken() {
+        ResponseEntity<Cart> response =
+        		template.getForEntity("/cart", Cart.class);
 
         assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
@@ -111,6 +126,30 @@ public class CartTest extends AbstractTestWithTempBaseDir {
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
+	}
+	@Test
+	public void getCartWithUserIdSuccess() {
+		EmployeeUserEntity user = empRepo.findById(68L).get();
+		String authtoken = user.getAuthenticationToken();
+
+		HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
+	}
+	@Test
+	public void checkRoleUserToGetCartWithUserIdSuccess() {
+		UserEntity user = userRepository.findById(88L).get();
+		String authtoken = user.getAuthenticationToken();
+
+		HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
+
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 	}
 
 	private void assertProductNamesReturned(ResponseEntity<Cart> response) {
@@ -722,7 +761,9 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void checkoutCartNoAuthN() {
-		HttpEntity<?> request =  getHttpEntity("101112");
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
@@ -1062,8 +1103,9 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void optimizeCartNoAuthN() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<Cart> response = 
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+		ResponseEntity<Cart> response =
         		template.exchange("/cart/optimize", POST, request, Cart.class);
 
         assertEquals(FORBIDDEN, response.getStatusCode());

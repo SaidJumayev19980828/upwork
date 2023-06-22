@@ -4,18 +4,8 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.enumerations.Settings.ORG_EMAIL;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0003;
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0002;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$JSON$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
 import static java.lang.String.format;
@@ -46,9 +36,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,15 +48,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.AddonStockRepository;
-import com.nasnav.dao.AddonsRepository;
-import com.nasnav.dao.CartItemAddonDetailsRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.CartItemAddonDetailsDTO;
 import com.nasnav.dto.Pair;
@@ -135,7 +118,8 @@ public class CartServiceImpl implements CartService {
     private final  AddonStockRepository addonStockRepository;
   
     private final  AddonsRepository addonsRepository;
-
+    @Autowired
+    private UserRepository userRepo;
     @Override
     public AppliedPromotionsResponse getCartPromotions(String promoCode) {
         BaseUserEntity user = securityService.getCurrentUser();
@@ -158,6 +142,20 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getUserCart(Long userId) {
         Cart cart = new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
+        cart.setSubtotal(calculateCartTotal(cart));
+        return cart;
+    }
+    @Override
+    public Cart getUserCart(Long userId,Boolean isYeshtery) {
+        Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
+        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
+        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
+        }
+        Cart cart = new Cart();
+        cart.setItems(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUserIdAndOrgId(userId,orgIdToUserAuth)));
         cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         cart.setSubtotal(calculateCartTotal(cart));

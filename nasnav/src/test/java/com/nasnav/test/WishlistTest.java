@@ -1,6 +1,8 @@
 package com.nasnav.test;
 
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dao.WishlistItemRepository;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -9,6 +11,8 @@ import com.nasnav.dto.response.navbox.WishlistItem;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.UserEntity;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -16,6 +20,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -50,6 +55,10 @@ public class WishlistTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private WishlistItemRepository wishlistRepo;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EmployeeUserRepository empRepo;
 
     @Test
     public void getWishlistNoAuthz() {
@@ -86,7 +95,11 @@ public class WishlistTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void postWishlistItemNoAuthN() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        JSONObject requestBody =
+                json()
+                        .put("stock_id", 605L)
+                        .put("cover_image", "36/good_img.jpg");
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(), "101112");
         ResponseEntity<Wishlist> response =
                 template.exchange("/wishlist/item", POST, request, Wishlist.class);
 
@@ -133,8 +146,11 @@ public class WishlistTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void moveWishlistItemToCartNoAuthN() {
-        Long id = 111602L;
-        HttpEntity<?> request =  getHttpEntity("101112");
+        JSONObject requestBody =
+                json()
+                        .put("stock_id", 605L)
+                        .put("cover_image", "36/good_img.jpg");
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(), "101112");
         ResponseEntity<Cart> response =
                 template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
 
@@ -157,7 +173,31 @@ public class WishlistTest extends AbstractTestWithTempBaseDir {
         assertTrue(setOf(111602L, 111604L).stream().allMatch(ids::contains));
     }
 
+    @Test
+    public void getWishlistWithUserId() {
+        EmployeeUserEntity user = empRepo.findById(68L).get();
+        String authtoken = user.getAuthenticationToken();
+        HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
 
+        Wishlist wishlist = response.getBody();
+        Set<Long> ids = getIds(wishlist);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, wishlist.getItems().size());
+        assertTrue(setOf(111602L, 111604L).stream().allMatch(ids::contains));
+    }
+
+    @Test
+    public void checkRoleUserToGetWishlistWithUserId() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+        HttpEntity<?> request =  getHttpEntity(authtoken);
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
 
 
     private Set<Long> getIds(Wishlist wishlist) {
