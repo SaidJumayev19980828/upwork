@@ -1,6 +1,5 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.dao.RoomTemplateRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.response.RoomResponse;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,6 +129,31 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	void setRoomSessionWithoutBody() {
+		HttpEntity<Object> request = getHttpEntity("user81");
+		LocalDateTime before = LocalDateTime.now();
+		ResponseEntity<RoomResponse> res = template
+				.postForEntity("/room/session?shop_id=52", request,
+						RoomResponse.class);
+		LocalDateTime after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		RoomResponse body = res.getBody();
+		String externalId = body.getSessionExternalId();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
+
+		before = LocalDateTime.now();
+		res = template
+				.postForEntity("/room/session?shop_id=52", request,
+						RoomResponse.class);
+		after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		body = res.getBody();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
+	}
+
+	@Test
 	void postTemplate() {
 		String requestBody = "{\"scene_id\": \"someId\", \"data\": \"some data\"}";
 		assertTemplateRequest("user81", requestBody, 51L, HttpStatus.FORBIDDEN);
@@ -137,6 +162,13 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 		assertTemplateRequest("161718", requestBody, 51L, HttpStatus.NOT_FOUND);
 		assertTemplateRequest("192021", requestBody, 52L, HttpStatus.OK);
 		assertTemplateRequest("222324", requestBody, 51L, HttpStatus.FORBIDDEN);
+		assertTemplateRequest("161718", requestBody, 53L, HttpStatus.OK);
+	}
+
+	@Test
+	void postTemplateOtherOrg() {
+		String requestBody = "{\"scene_id\": \"someId\", \"data\": \"some data\"}";
+		assertTemplateRequest("131415", requestBody, 53L, HttpStatus.NOT_FOUND);
 	}
 
 	@Test

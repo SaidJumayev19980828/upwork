@@ -28,6 +28,7 @@ public class RoomSessionEntity extends DefaultBusinessEntity<Long> {
 	@JoinColumn(name =  "template_id", referencedColumnName = "id")
 	private RoomTemplateEntity template;
 
+	// unique?
 	@Column(name = "external_id", nullable = false)
 	private String externalId;
 
