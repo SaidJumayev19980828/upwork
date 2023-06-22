@@ -41,7 +41,8 @@ public class MetaverseRoomController {
 
 	@PostMapping("/session")
 	public RoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
-			@RequestParam(name = "shop_id") Long shopId, @RequestBody @Valid RoomSessionDTO roomSession) {
+			@RequestParam(name = "shop_id") Long shopId,
+			@RequestBody(required = false) @Valid RoomSessionDTO roomSession) {
 		return metaverseRoomService.createNewSession(shopId, roomSession);
 	}
 

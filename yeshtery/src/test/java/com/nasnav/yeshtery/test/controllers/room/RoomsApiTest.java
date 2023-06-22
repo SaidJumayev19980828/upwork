@@ -2,6 +2,7 @@ package com.nasnav.yeshtery.test.controllers.room;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -155,6 +157,31 @@ class RoomsApiTest {
 				.postForEntity("/v1/room/session?shop_id=54", request,
 						RoomResponse.class);
 		assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+	}
+
+	@Test
+	void setRoomSessionWithoutBody() {
+		HttpEntity<Object> request = getHttpEntity("user81");
+		LocalDateTime before = LocalDateTime.now();
+		ResponseEntity<RoomResponse> res = template
+				.postForEntity("/v1/room/session?shop_id=52", request,
+						RoomResponse.class);
+		LocalDateTime after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		RoomResponse body = res.getBody();
+		String externalId = body.getSessionExternalId();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
+
+		before = LocalDateTime.now();
+		res = template
+				.postForEntity("/v1/room/session?shop_id=52", request,
+						RoomResponse.class);
+		after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		body = res.getBody();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
 	}
 
 	@Test

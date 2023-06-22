@@ -5,6 +5,7 @@ import static java.lang.Boolean.FALSE;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.RoomTemplateRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -51,13 +53,12 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 
 	@Transactional
 	@Override
-	public RoomResponse createNewSession(Long shopId, RoomSessionDTO roomSession) {
+	public RoomResponse createNewSession(Long shopId, RoomSessionDTO roomSessionDto) {
 		RoomTemplateEntity template = getRoomTemplateForUpdate(shopId)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								shopId));
-		RoomSessionEntity session = new RoomSessionEntity();
-		session.setExternalId(roomSession.getSessionExternalId());
+		RoomSessionEntity session = getNewRoomSession(roomSessionDto, template.getSession());
 		session.setTemplate(template);
 		template.setSession(session);
 		template = roomTemplateRepository.save(template);
@@ -132,5 +133,18 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 		RoomTemplateEntity template = new RoomTemplateEntity();
 		template.setShop(requestedShop);
 		return template;
+	}
+
+	private RoomSessionEntity getNewRoomSession(RoomSessionDTO sessionDto, RoomSessionEntity oldSession) {
+		RoomSessionEntity session = new RoomSessionEntity();
+		if (sessionDto != null && StringUtils.isNotBlankOrNull(sessionDto.getSessionExternalId())) {
+			session.setExternalId(sessionDto.getSessionExternalId());
+		} else {
+			String externalId = oldSession != null && StringUtils.isNotBlankOrNull(oldSession.getExternalId())
+					? oldSession.getExternalId()
+					: UUID.randomUUID().toString();
+			session.setExternalId(externalId);
+		}
+		return session;
 	}
 }

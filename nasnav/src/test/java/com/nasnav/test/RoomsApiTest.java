@@ -1,6 +1,5 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.dao.RoomTemplateRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.response.RoomResponse;
@@ -27,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -131,6 +131,31 @@ class RoomsApiTest {
 				.postForEntity("/room/session?shop_id=53", request,
 						String.class);
 		assertEquals(HttpStatus.NOT_FOUND, res2.getStatusCode());
+	}
+
+	@Test
+	void setRoomSessionWithoutBody() {
+		HttpEntity<Object> request = getHttpEntity("user81");
+		LocalDateTime before = LocalDateTime.now();
+		ResponseEntity<RoomResponse> res = template
+				.postForEntity("/room/session?shop_id=52", request,
+						RoomResponse.class);
+		LocalDateTime after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		RoomResponse body = res.getBody();
+		String externalId = body.getSessionExternalId();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
+
+		before = LocalDateTime.now();
+		res = template
+				.postForEntity("/room/session?shop_id=52", request,
+						RoomResponse.class);
+		after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		body = res.getBody();
+		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertDoesNotThrow(() -> UUID.fromString(externalId));
 	}
 
 	@Test
