@@ -100,6 +100,15 @@ public class YeshteryCartControllerTest {
     }
 
     @Test
+	public void getCartNoToken() {
+        ResponseEntity<Cart> response =
+        		template.getForEntity("/cart", Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+
+    @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void getCartNoAuthN() {

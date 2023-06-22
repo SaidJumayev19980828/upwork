@@ -106,6 +106,14 @@ public class CartTest {
 	}
 
 	@Test
+	public void getCartNoToken() {
+        ResponseEntity<Cart> response =
+        		template.getForEntity("/cart", Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
 	public void getCartNoAuthN() {
         HttpEntity<?> request =  getHttpEntity("101112");
         ResponseEntity<Cart> response = 

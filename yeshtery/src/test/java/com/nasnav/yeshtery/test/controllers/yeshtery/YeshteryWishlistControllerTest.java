@@ -83,7 +83,7 @@ class YeshteryWishlistControllerTest {
         String authtoken = user.getAuthenticationToken();
         HttpEntity<?> request =  getHttpEntity(authtoken);
         ResponseEntity<Wishlist> response =
-                template.exchange("/wishlist/"+88L, GET, request, Wishlist.class);
+                template.exchange("/v1/wishlist/"+88L, GET, request, Wishlist.class);
 
         Assert.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
