@@ -28,8 +28,6 @@ public class AppConfig {
     
     @Value("${openvidu_url}") public String openViduUrl = "";
     @Value("${openvidu_secret}") public String openViduSecret = "";
-    
-    
     @Value("${otp.valid-duration-in-seconds:600}")
     public int otpValidDurationInSeconds;
     @Value("${otp.length:6}")
@@ -38,8 +36,8 @@ public class AppConfig {
     public int otpMaxRetries;
     @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
     public String rocketChatUrl;
-    
-    
+    @Value("${firebase-config:}")        public String firebaseConfig;
+
     @Value("${files.basepath}")
     @Getter
     @Setter

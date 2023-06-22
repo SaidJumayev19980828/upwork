@@ -15,7 +15,11 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
+
+
 import lombok.RequiredArgsConstructor;
+
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -178,8 +182,9 @@ public class UserServicesHelper {
 		employeeUser.setShopId(employeeUserJson.storeId);
 		employeeUser.setImage(employeeUserJson.getAvatar());
 		employeeUser.setUserStatus(NOT_ACTIVATED.getValue());
+		employeeUser = employeeUserRepository.save(employeeUser);
 
-		return employeeUserRepository.save(employeeUser);
+		return employeeUser;
 	}
 
 
@@ -210,12 +215,13 @@ public class UserServicesHelper {
 
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
 
-		Long empId = employeeUserRepository.save(employeeUserEntity).getId();
+		employeeUserEntity = employeeUserRepository.save(employeeUserEntity);
+
 
 		if (successResponseStatusList.isEmpty())
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
 
-		return new UserApiResponse(empId, successResponseStatusList);
+		return new UserApiResponse(employeeUserEntity.getId(), successResponseStatusList);
 	}
 
 

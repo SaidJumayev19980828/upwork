@@ -92,7 +92,6 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "enable_video_chat")
     private Integer enableVideoChat;
 
-
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;

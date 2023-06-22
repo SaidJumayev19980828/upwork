@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -87,6 +88,9 @@ public class SecurityServiceImpl implements SecurityService {
 	@Autowired
 	private UserServicesHelper helper;
 
+
+	@Autowired
+	private UserTokenRepository userTokenRepository;
 
 
 	@Override
@@ -145,6 +149,10 @@ public class SecurityServiceImpl implements SecurityService {
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
 	public UserApiResponse logout(String headerToken, String cookieToken) {
 		String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
+		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token);
+		String notificationToken =null;
+		userTokensEntity.setNotificationToken(notificationToken);
+		userTokenRepository.save(userTokensEntity);
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
@@ -201,7 +209,7 @@ public class SecurityServiceImpl implements SecurityService {
 		validateLoginUser(userEntity);
 		validateUserPassword(loginData, userEntity);
 
-		return login(userEntity, loginData.rememberMe);
+		return login(userEntity, loginData.rememberMe, loginData.getNotificationToken());
 	}
 
 
@@ -226,7 +234,12 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) {
-		UserPostLoginData userData = updatePostLogin(userEntity);
+		return login(userEntity,rememberMe,null);
+	}
+
+	@Override
+	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe, String notificationToken) {
+		UserPostLoginData userData = updatePostLogin(userEntity, notificationToken);
 
 		Cookie cookie = createCookie(userData.getToken(), rememberMe);
 
@@ -234,10 +247,6 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
-	
-	
-	
-	
 	private Cookie createCookie(String token, boolean rememberMe) {
 		Cookie cookie = new Cookie("User-Token", token);
 
@@ -315,10 +324,10 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity) {
+	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity, String notificationToken) {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 
-		String authToken = generateUserToken(userEntity);
+		String authToken = generateUserToken(userEntity,notificationToken);
 		
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
@@ -331,7 +340,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 	
 	
-	private String generateUserToken(BaseUserEntity user) {
+	private String generateUserToken(BaseUserEntity user,String notificationToken) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
         if (user instanceof EmployeeUserEntity) {
@@ -340,6 +349,9 @@ public class SecurityServiceImpl implements SecurityService {
             token.setUserEntity((UserEntity) user);
         }
 		userTokenRepo.save(token);
+		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token.getToken());
+		userTokensEntity.setNotificationToken(notificationToken);
+		userTokenRepository.save(userTokensEntity);
 
 		return token.getToken();
 	}
@@ -564,6 +576,59 @@ public class SecurityServiceImpl implements SecurityService {
 
 		return currentUserHasRole(Roles.STORE_MANAGER) && getCurrentUserShopId().equals(shopId);
 	}
+
+	public Set<String> getValidEmployeeNotificationTokens(EmployeeUserEntity employee) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidEmployeeNotificationTokens(Set<EmployeeUserEntity> employees) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntities(employees);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidUserNotificationTokens(UserEntity user) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getValidUserNotificationTokens(Set<UserEntity> users) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntities(users);
+		return getFilteredNotificationTokens(tokenEntities, true);
+	}
+
+	@Override
+	public Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		return getFilteredNotificationTokens(tokenEntities, false);
+	}
+
+	@Override
+	public Set<String> getInvalidUserNotificationTokens(UserEntity user) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		return getFilteredNotificationTokens(tokenEntities, false);
+	}
+
+
+	private Set<String> getFilteredNotificationTokens(Set<UserTokensEntity> tokenEntities, boolean valid) {
+		Predicate<UserTokensEntity> predicate = valid ? Predicate.not(this::isExpired) : this::isExpired;
+		return tokenEntities.stream().filter(predicate)
+				.map(UserTokensEntity::getNotificationToken).collect(toSet());
+	}
+
+	@Override
+	public Set<String> getValidNotificationTokens(BaseUserEntity user) {
+		if (user instanceof UserEntity) {
+			return getValidUserNotificationTokens((UserEntity) user);
+		} else if (user instanceof EmployeeUserEntity) {
+			return getValidEmployeeNotificationTokens((EmployeeUserEntity) user);
+		} else {
+			throw new UnsupportedOperationException("user type not supported");
+		}
+	}
 }
 
 
@@ -577,3 +642,4 @@ class UserPostLoginData{
 	private String token;
 }
 
+ 

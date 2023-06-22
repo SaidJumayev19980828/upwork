@@ -58,3 +58,5 @@ secrets.yml
 /yeshtery/src/test/resources/test_imgs_save_dir
 /nasnav/src/test/resources/application.properties
 /yeshtery/src/test/resources/application.properties
+
+/nasnav/src/main/resources/firebase.json

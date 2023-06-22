@@ -82,6 +82,10 @@ public class UserDTOs {
 
         @JsonProperty("remember_me")
         public boolean rememberMe;
+
+        @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX")
+        @JsonProperty("notification_token")
+        private String notificationToken;
     }
 
     @Getter

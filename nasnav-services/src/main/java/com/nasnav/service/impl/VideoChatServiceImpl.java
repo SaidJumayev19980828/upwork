@@ -12,7 +12,6 @@ import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
-import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.request.VideoChatSearchParam;
@@ -24,7 +23,6 @@ import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import net.bytebuddy.utility.RandomString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +60,6 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Autowired
     @Qualifier("videoChatQueryBuilder")
     private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
-
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
