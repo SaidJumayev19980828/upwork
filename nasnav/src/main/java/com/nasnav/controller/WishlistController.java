@@ -35,8 +35,8 @@ public class WishlistController {
         return wishlistService.getWishlist();
     }
     @GetMapping( value = "/{userId}",produces = APPLICATION_JSON_VALUE)
-    public Wishlist getWishlistWithUserId(@PathVariable Long userId ,@RequestParam(value = "isYeshtery",defaultValue = "false", required = false) Boolean isYeshtery) {
-        return wishlistService.getWishlist(userId,isYeshtery);
+    public Wishlist getWishlistWithUserId(@PathVariable Long userId) {
+        return wishlistService.getWishlist(userId, false);
     }
 
     @PostMapping(value = "/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)

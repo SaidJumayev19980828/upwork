@@ -29,8 +29,8 @@ public class YeshteryWishlistController {
     }
 
     @GetMapping(value = "/{userId}",produces= APPLICATION_JSON_VALUE)
-    public Wishlist getWishlistWithUserId(@PathVariable Long userId ,@RequestParam(value = "isYeshtery",defaultValue = "true", required = false) Boolean isYeshtery) {
-        return wishlistService.getWishlist(userId,isYeshtery);
+    public Wishlist getWishlistWithUserId(@PathVariable Long userId) {
+        return wishlistService.getWishlist(userId, true);
     }
 
     @PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
