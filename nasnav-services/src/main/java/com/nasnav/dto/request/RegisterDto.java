@@ -1,13 +1,14 @@
 package com.nasnav.dto.request;
 
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.dto.request.organization.OrganizationCreationDTO;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class RegisterDto {
-
-    private UserDTOs.EmployeeUserCreationObject employeeUserJson;
-
-    private OrganizationCreationDTO organizationCreationDTO ;
+	private String name;
+	private String email;
+	private String organizationName;
+	private Integer currencyIso;
 }

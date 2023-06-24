@@ -4,12 +4,14 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
@@ -317,30 +319,24 @@ public class OrganizationServiceImpl implements OrganizationService {
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse registerOrganization(RegisterDto json) throws Exception {
         OrganizationEntity organization;
-        OrganizationCreationDTO organizationDTO = json.getOrganizationCreationDTO();
-        if (organizationDTO.getId() != null) {
-            organization = orgRepo.findById(organizationDTO.getId())
-                    .orElseThrow(() ->  new BusinessException(format("Provided id (%d) doesn't match any existing org!", organizationDTO.getId()),
-                        "INVALID_PARAM: id", NOT_ACCEPTABLE));
-            if (organizationDTO.getName() != null) {
-                validateOrganizationName(organizationDTO);
-                organization.setName(organizationDTO.getName());
-
-            }
-            if (organizationDTO.getPname() != null) {
-                validateOrganizationPname(organizationDTO);
-                organization.setPname(organizationDTO.getPname());
-            }
-        } else {
-            organization = createNewOrganization(organizationDTO);
-        }
+        OrganizationCreationDTO organizationDTO = new OrganizationCreationDTO();
+        organizationDTO.setName(json.getOrganizationName());
+        String pname = encodeUrl(organizationDTO.getName());
+        organizationDTO.setPname(pname);
+        organizationDTO.setCurrencyIso(json.getCurrencyIso());
+        organizationDTO.setEcommerce(1);
+        organization = createNewOrganization(organizationDTO);
 
         updateAdditionalOrganizationData(organizationDTO, organization);
 
 	    organizationRepository.save(organization);
 
-        json.getEmployeeUserJson().setOrgId(organization.getId());
-        employeeUserService.createEmployeeUser(json.getEmployeeUserJson());
+        EmployeeUserCreationObject employeeDTO = new EmployeeUserCreationObject();
+        employeeDTO.setName(json.getName());
+        employeeDTO.setEmail(json.getEmail());
+        employeeDTO.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
+        employeeDTO.setOrgId(organization.getId());
+        employeeUserService.createEmployeeUser(employeeDTO);
 
         return new OrganizationResponse(organization.getId(), 0);
     }

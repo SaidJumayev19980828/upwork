@@ -8,6 +8,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.shipping.services.DummyShippingService;
@@ -21,8 +22,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -31,6 +34,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.STRING;
@@ -58,7 +62,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
     @Autowired
-    private UserRepository userRepository;
+    private EmployeeUserRepository employeeRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -183,24 +187,34 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    public void createOrganizationWithoutAuthSuccessTest() {
+    @Transactional
+    @Rollback
+    public void organizationRegistrationTest() {
         RegisterDto registerDto = registerOrg();
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(OK, response.getStatusCode());
+        final Long orgId = response.getBody().getOrganizationId();
+        final OrganizationEntity org = organizationRepository.getOne(orgId);
+        assertEquals(registerDto.getOrganizationName(), org.getName());
+        final EmployeeUserEntity employee = employeeRepository.findByOrganizationId(orgId).stream().reduce((a, b) -> {
+            throw new IllegalStateException("there should be only 1 employee");
+        }).orElseThrow(() -> new IllegalStateException("there should be 1 employee"));
+        assertEquals(registerDto.getName(), employee.getName());
+        assertEquals(registerDto.getEmail(), employee.getEmail());
+        final Set<String> expectedRoles = Set.of(Roles.ORGANIZATION_ADMIN.getValue(), Roles.ORGANIZATION_MANAGER.getValue());
+        final Set<String> foundRoles = employee.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
+        assertEquals(expectedRoles, foundRoles);
     }
 
     private RegisterDto registerOrg() {
-        OrganizationCreationDTO organizationCreationDTO = new OrganizationCreationDTO();
-        organizationCreationDTO.setName("Solad Pant1");
-        organizationCreationDTO.setPname("solad-pant1-trello");
-        UserDTOs.EmployeeUserCreationObject employeeUserJson = new UserDTOs.EmployeeUserCreationObject();
-        employeeUserJson.setName("test test test ");
-        employeeUserJson.setEmail(TestUserEmail);
-        employeeUserJson.setRole("NASNAV_ADMIN");
-        RegisterDto registerDto = new RegisterDto();
-        registerDto.setOrganizationCreationDTO(organizationCreationDTO);
-        registerDto.setEmployeeUserJson(employeeUserJson);
-        return  registerDto;
+        RegisterDto registerDTO = new RegisterDto();
+        registerDTO.setOrganizationName("Solad Pant1");
+        registerDTO.setCurrencyIso(818);
+
+        registerDTO.setName("test test test ");
+        registerDTO.setEmail(TestUserEmail);
+        
+        return  registerDTO;
     }
 
     @Test
