@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 import com.nasnav.dao.PackageRegisteredRepository;
+import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
@@ -13,11 +14,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -34,9 +37,13 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getListPackageSuccess() {
-        ResponseEntity<Object[]> response = template.exchange("/package", GET, null, Object[].class);
+        ResponseEntity<PackageResponse[]> response = template.exchange("/package", GET, null, PackageResponse[].class);
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().length);
+        PackageResponse[] body = (PackageResponse[]) response.getBody();
+        for (PackageResponse pack : body) {
+            assertTrue(pack.getId() > 0);
+        }
     }
 
     @Test
