@@ -2,30 +2,27 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.request.PackageDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
-import com.nasnav.persistence.PackageEntity;
-import com.nasnav.persistence.PackageRegisteredEntity;
+import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.service.PackageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import javax.validation.Valid;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/package")
 @CrossOrigin("*") // allow all origins
-@EnableJpaRepositories
 @RequiredArgsConstructor
 public class PackageController {
-    @Autowired
-    private PackageService packageService;
+    private final PackageService packageService;
 
     @GetMapping(produces=APPLICATION_JSON_VALUE)
-    public List<PackageEntity> getListPackage() {
-        return packageService.getPackage();
+    public List<PackageResponse> getListPackage() {
+        return packageService.getPackages();
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE)
@@ -44,7 +41,8 @@ public class PackageController {
     }
 
     @PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE)
-    public PackageRegisteredEntity register(@RequestHeader(name = "User-Token", required = false) String token,@RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception{
+    public Long completeProfile(@RequestHeader(name = "User-Token", required = false) String token,
+            @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
         return packageService.completeProfile(packageRegisteredByUserDTO);
     }
 }

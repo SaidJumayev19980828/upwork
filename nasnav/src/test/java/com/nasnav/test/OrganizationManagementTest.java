@@ -187,14 +187,12 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    @Transactional
-    @Rollback
     public void organizationRegistrationTest() {
         RegisterDto registerDto = registerOrg();
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
         assertEquals(OK, response.getStatusCode());
         final Long orgId = response.getBody().getOrganizationId();
-        final OrganizationEntity org = organizationRepository.getOne(orgId);
+        final OrganizationEntity org = organizationRepository.findOneById(orgId);
         assertEquals(registerDto.getOrganizationName(), org.getName());
         final EmployeeUserEntity employee = employeeRepository.findByOrganizationId(orgId).stream().reduce((a, b) -> {
             throw new IllegalStateException("there should be only 1 employee");

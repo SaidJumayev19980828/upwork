@@ -223,7 +223,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/product/variant"				    , GET)
                         , patternOf("/v1/organization/payments"			, GET)
                         , patternOf("/v1/organization/brands"			    , GET)
-                        ,patternOf( "/organization/register"		    ,HttpMethod.POST)
                         , patternOf("/v1/organization/products_features"	, GET)
                         , patternOf("/v1/files/**"					    , GET)
                         , patternOf("/error/**"							, GET)

@@ -225,6 +225,7 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0008("No Country name was provided!")
 
 	,PA$USR$0001("Package not deleted because related user!")
+	,PA$USR$0002("No Package found with ID:[%d]")
 
 
 

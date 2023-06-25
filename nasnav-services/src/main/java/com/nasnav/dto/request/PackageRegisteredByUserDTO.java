@@ -3,14 +3,12 @@ package com.nasnav.dto.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.Date;
+import javax.validation.constraints.Positive;
 
 
 @Data
 public class PackageRegisteredByUserDTO {
-    @JsonProperty("user_id")
-    private Long userId;
+    @Positive(message = "package_id can't be null or 0")
     @JsonProperty("package_id")
     private Long packageId;
-    private Date registeredDate;
 }

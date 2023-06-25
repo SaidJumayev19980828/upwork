@@ -46,6 +46,7 @@ insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 70, 2);
 
 --inserting product features
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001);
@@ -60,8 +61,8 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 --inserting package
-INSERT INTO public.package(id,name,description,price) values (100,'test 1','test description',1.5);
-INSERT INTO public.package(id,name,description,price) values (101,'test 2','test2 description',1.9);
+INSERT INTO public.package(id,name,description,price) values (99001,'test 1','test description',1.5);
+INSERT INTO public.package(id,name,description,price) values (99002,'test 2','test2 description',1.9);
 --inserting package
-INSERT INTO public.package_registered(id,user_id,package_id,registered_date) values (200,88,100,now());
+INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 68, 99001, 100, now());
 

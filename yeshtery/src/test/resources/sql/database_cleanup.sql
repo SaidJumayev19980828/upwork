@@ -14,6 +14,7 @@ delete from public.influencers;
 DELETE FROM public.api_logs WHERE organization_id between 99000 AND 99999;
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.package_registered WHERE org_id > 99000;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shipment where id IN (
@@ -127,4 +128,7 @@ DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
+
+DELETE FROM public.services_registered_in_package;
+DELETE FROM public.package WHERE id > 99000;
 delete from public.loyalty_point_types where id between  31001 and 31999;

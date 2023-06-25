@@ -2,14 +2,13 @@ package com.nasnav.service;
 
 import com.nasnav.dto.request.PackageDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
-import com.nasnav.persistence.PackageEntity;
-import com.nasnav.persistence.PackageRegisteredEntity;
+import com.nasnav.dto.response.PackageResponse;
 
 import java.util.List;
 
 public interface PackageService {
 
-    List<PackageEntity> getPackage();
+    List<PackageResponse> getPackages();
 
     void createPackage(PackageDto json) throws Exception;
 
@@ -17,6 +16,6 @@ public interface PackageService {
 
     void removePackage(Long packageId);
 
-    PackageRegisteredEntity completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO);
+    Long completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO);
 
 }

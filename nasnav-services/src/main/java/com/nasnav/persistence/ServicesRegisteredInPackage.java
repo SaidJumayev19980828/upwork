@@ -14,7 +14,7 @@ import java.io.Serializable;
 @Table(name = "services_registered_in_package")
 @Entity
 @Builder
-public class PackagesRegisteredEntity implements Serializable {
+public class ServicesRegisteredInPackage implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

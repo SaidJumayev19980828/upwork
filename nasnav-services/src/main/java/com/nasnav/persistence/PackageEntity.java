@@ -5,19 +5,15 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Set;
 
 @Table(name = "package")
+@EqualsAndHashCode(callSuper=false)
 @Entity
 @Data
-public class PackageEntity implements Serializable {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+public class PackageEntity extends DefaultBusinessEntity<Long> {
     @Column(name="name")
     private String name;
 
@@ -31,12 +27,11 @@ public class PackageEntity implements Serializable {
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private Set<PackagesRegisteredEntity> packagesRegistered;
+    private Set<ServicesRegisteredInPackage> servicesIncluded = new HashSet<>();
 
-    @OneToMany(mappedBy = "packageEntity")
+    @OneToMany(mappedBy = "packageEntity", fetch = FetchType.LAZY)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private Set<PackageRegisteredEntity> packageRegistered;
-
+    private Set<PackageRegisteredEntity> packageRegistered = new HashSet<>();
 }

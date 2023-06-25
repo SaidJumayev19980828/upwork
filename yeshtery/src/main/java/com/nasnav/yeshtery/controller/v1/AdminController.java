@@ -3,10 +3,8 @@ package com.nasnav.yeshtery.controller.v1;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.BrandIdAndPriority;
 import com.nasnav.dto.request.DomainUpdateDTO;
-import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
-import com.nasnav.dto.response.RegisterResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ApiLogsSearchParam;
 import com.nasnav.response.*;
@@ -48,29 +46,11 @@ public class AdminController {
 	@Autowired
 	private ApiLogsService apiLogsService;
 
-	@Autowired
-	private EmployeeUserService employeeUserService;
-
     @PostMapping(value = "organization", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public OrganizationResponse createOrganization(@RequestHeader(TOKEN_HEADER) String userToken,
 												   @RequestBody OrganizationCreationDTO json)  throws BusinessException {
 	    return organizationService.createOrganization(json);
     }
-
-	@PostMapping(value = "register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-	public RegisterResponse register(@RequestHeader(TOKEN_HEADER) String userToken,
-									 @RequestBody RegisterDto registerDto)  throws BusinessException {
-
-	 OrganizationResponse organizationResponse = organizationService.createOrganization(registerDto.getOrganizationCreationDTO());
-
-	 registerDto.getEmployeeUserJson().setOrgId(organizationResponse.getOrganizationId());
-
-	 UserApiResponse userApiResponse = employeeUserService.createEmployeeUser(registerDto.getEmployeeUserJson());
-
-	 return RegisterResponse.builder().organizationResponse(organizationResponse).userApiResponse(userApiResponse).build();
-
-	}
-
 
 	@PostMapping(value = "category", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
 	public CategoryResponse createCategory(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CategoryDTO categoryJson) {

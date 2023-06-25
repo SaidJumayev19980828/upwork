@@ -4,33 +4,40 @@ import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dto.request.PackageDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.mappers.PackageMapper;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.service.PackageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.nasnav.service.SecurityService;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
 @Service
+@RequiredArgsConstructor
 public class PackageServiceImpl implements PackageService {
-    @Autowired
-    private PackageRepository packageRepository;
+    private final SecurityService securityService;
+    private final PackageRepository packageRepository;
+    private final PackageRegisteredRepository packageRegisteredRepository;
+    private final PackageMapper packageMapper;
 
-    @Autowired
-    private PackageRegisteredRepository packageRegisteredRepository;
-
-    public List<PackageEntity> getPackage() {
-        List<PackageEntity> packages = packageRepository.findAll();
-        return packages;
+    @Override
+    public List<PackageResponse> getPackages() {
+        return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -65,13 +72,24 @@ public class PackageServiceImpl implements PackageService {
         packageRepository.delete(entity);
     }
 
+    @Transactional
     @Override
-    public PackageRegisteredEntity completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
+    public Long completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
 
-        PackageEntity packageEntity = packageRepository.findById(packageRegisteredByUserDTO.getPackageId()).get();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
 
-        PackageRegisteredEntity packageRegisteredEntity = PackageRegisteredEntity.builder().packageEntity(packageEntity).userId(packageRegisteredByUserDTO.getUserId()).registeredDate(new Date()).build();
+        EmployeeUserEntity employee = securityService.getCurrentUserOptional().map(EmployeeUserEntity.class::cast).orElse(null);
+        
 
-        return packageRegisteredRepository.save(packageRegisteredEntity);
+        PackageEntity packageEntity = packageRepository.findById(packageRegisteredByUserDTO.getPackageId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, packageRegisteredByUserDTO.getPackageId()));
+
+        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(org).orElseGet(() -> new PackageRegisteredEntity(org));
+        packageRegisteredEntity.setPackageEntity(packageEntity);
+
+        packageRegisteredEntity.setCreatorEmployee(employee);
+
+        packageRepository.save(packageEntity);
+        return packageRegisteredRepository.save(packageRegisteredEntity).getId();
     }
 }
