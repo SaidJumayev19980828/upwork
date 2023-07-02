@@ -238,6 +238,9 @@ public enum ErrorCodes {
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
+	,E$USR$0002("User not found!")
+	,E$USR$0003("Invalid current password!")
+	,E$USR$0004("Password and Confirm Password do not match!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")

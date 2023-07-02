@@ -113,6 +113,22 @@ public class UserDTOs {
         private String avatar;
 
     }
+    @Getter
+    @Schema(name = "User Change Password ")
+	public static class ChangePasswordUserObject {
+        @Schema(example = "PaSSworD", required = true)
+        @JsonProperty("current_password")
+        public String currentPassword;
+
+        @Schema(example = "NewPaSSworD", required = true)
+        @JsonProperty("new_password")
+        public String newPassword;
+
+        @Schema(example = "CNewPaSSworD", required = true)
+        @JsonProperty("confirm_password")
+        public String confirmPassword;
+
+    }
 
     @Getter
     @Schema(name = "User Updating Data")

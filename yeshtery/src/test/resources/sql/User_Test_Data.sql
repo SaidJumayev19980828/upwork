@@ -20,7 +20,7 @@ INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(5
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
-VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$GCt2zqWPJr9QbDGZUWWF1eIPlfSi0yVH4mfIy4WECDi.04hjuNmja', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
 VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password, user_status)

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
@@ -54,11 +55,17 @@ public class UserController {
     private SecurityService securityService;
     @Autowired
     private ReviewService reviewService;
-    
+    @Autowired
+    private  CommonUserRepository commonUserRepo;
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         return employeeUserService.createEmployeeUser(employeeUserJson);
+    }
+
+    @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
+        return commonUserRepo.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)

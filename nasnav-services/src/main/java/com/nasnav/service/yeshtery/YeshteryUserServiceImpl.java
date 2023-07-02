@@ -1,6 +1,7 @@
 package com.nasnav.service.yeshtery;
 
 import com.nasnav.AppConfig;
+import com.nasnav.PasswordEncoderConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
@@ -81,6 +82,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private YeshteryUserRepository userRepository;
     @Autowired
+    private  UserRepository userRep;
+    @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
     private DomainService domainService;
@@ -120,6 +123,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     AppConfig appConfig;
     @Autowired
     private InfluencerRepository influencerRepository;
+    @Autowired
+    private PasswordEncoderConfig passwordEncoderConfig;
 
 
     @Override
@@ -370,7 +375,6 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
             activateOrgUser(user);
             return login(user, false);
     }
-
     @Override
     public UserRepresentationObject getYeshteryUserData(Long userId, Boolean isEmployee) {
         BaseUserEntity currentUser = securityService.getCurrentUser();

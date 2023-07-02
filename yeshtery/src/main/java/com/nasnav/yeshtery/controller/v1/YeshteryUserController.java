@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
@@ -54,13 +55,19 @@ public class YeshteryUserController {
     private SecurityService securityService;
     @Autowired
     private EmployeeUserService employeeUserService;
-
+    @Autowired
+    private CommonUserRepository commonUserRepo;
 
     @GetMapping(value = "info")
     public UserRepresentationObject getUserData(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestParam(value = "id", required = false) Long id,
                                                 @RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException {
         return userService.getYeshteryUserData(id, isEmployee);
+    }
+
+    @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
+        return commonUserRepo.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)

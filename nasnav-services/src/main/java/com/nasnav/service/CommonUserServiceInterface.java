@@ -36,7 +36,5 @@ public interface CommonUserServiceInterface {
      * @return UserApiResponse object holding the status
      */
     UserApiResponse recoverUser(UserDTOs.PasswordResetObject  body);
-
-
 	Boolean isUserDeactivated(BaseUserEntity user);
 }

@@ -231,10 +231,24 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
-	
-	
-	
+	@Test
+	public void testChangePassword() {
+		String body =
+				json()
+						.put("current_password", "PaSSworD")
+						.put("new_password", "newPassword")
+						.put("confirm_password", "newPassword")
+						.toString();
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/change/password", userJson, String.class);
+		assertEquals(200, response.getStatusCode().value());
+
+	}
+
+
+
+
+
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
