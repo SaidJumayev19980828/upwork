@@ -491,8 +491,23 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals("Ahmad", user.getName());
 		assertEquals("ahmad.user@nasnav.com", user.getEmail());
 	}
-
-
+	@Test
+	public void updateSelfEmployeeUserWithAvatarSuccess() {
+		// update self data test success
+		String body = json()
+				.put("employee",true)
+				.put("name","Ahmad")
+				.put("email","ahmad.user@nasnav.com")
+				.put("avatar","test.png")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		assertEquals(200, response.getStatusCode().value());
+		EmployeeUserEntity user = empRepository.findById(68L).get();
+		assertEquals("Ahmad", user.getName());
+		assertEquals("test.png", user.getImage());
+		assertEquals("ahmad.user@nasnav.com", user.getEmail());
+	}
 
 	@Test
 	public void updateOtherEmployeeUserAuthByNasNavAdminTestSuccess() {

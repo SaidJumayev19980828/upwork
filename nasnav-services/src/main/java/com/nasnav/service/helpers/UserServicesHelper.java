@@ -204,6 +204,9 @@ public class UserServicesHelper {
 			validateStoreIdUpdate(currentUserId, employeeUserJson);
 			employeeUserEntity.setShopId(employeeUserJson.getStoreId());
 		}
+		if(isNotBlankOrNull(employeeUserJson.getAvatar())){
+			employeeUserEntity.setImage(employeeUserJson.getAvatar());
+		}
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
 			validateEmail(employeeUserJson.getEmail());
 			employeeUserEntity.setEmail(employeeUserJson.getEmail());
