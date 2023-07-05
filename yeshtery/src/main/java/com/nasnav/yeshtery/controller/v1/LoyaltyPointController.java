@@ -44,9 +44,8 @@ public class LoyaltyPointController {
 
 
     @GetMapping(value ="points")
-    public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                   @RequestParam("org_id") Long orgId){
-        return loyaltyPointsService.getUserPoints(orgId);
+    public LoyaltyUserPointsResponse getPointsToUser(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyPointsService.getUserPoints();
     }
 
     @GetMapping(value ="spendable_points")

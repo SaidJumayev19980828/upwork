@@ -341,15 +341,20 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getUserPointsNoUserInOrg() {
-        var request = getHttpEntity("123");
-        var response = template.exchange("/v1/loyalty/points?org_id=99001", GET, request, String.class);
+        var request = getHttpEntity("456");
+        var response = template.exchange("/v1/loyalty/points", GET, request, String.class);
         assertEquals(404, response.getStatusCodeValue());
         assertTrue(response.getBody().contains(ORG$LOY$0014.name()));
     }
-
+    @Test
+    public void getUserPoints() {
+        var request = getHttpEntity("123");
+        var response = template.exchange("/v1/loyalty/points", GET, request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue(response.getBody().contains("points"));
+    }
 
     // family
-
     @Test
     @Ignore("api is hidden for now")
     public void createFamily(){

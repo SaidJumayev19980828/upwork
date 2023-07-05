@@ -37,7 +37,7 @@ public interface LoyaltyPointsService {
     LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
     LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
-    LoyaltyUserPointsResponse getUserPoints(Long orgId);
+    LoyaltyUserPointsResponse getUserPoints();
 
     List<OrganizationPoints> getUserPointsPerOrg();
     LoyaltyTierDTO getUserOrgTier(Long orgId);
