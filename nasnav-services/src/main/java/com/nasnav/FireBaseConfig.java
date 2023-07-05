@@ -32,13 +32,25 @@ public class FireBaseConfig {
 	@Bean
 	@ConditionalOnBean(GoogleCredentials.class)
 	FirebaseApp firebaseApp(GoogleCredentials googleCredentials) {
-			FirebaseOptions options = FirebaseOptions.builder().setCredentials(googleCredentials).build();
-			return FirebaseApp.initializeApp(options);
+		FirebaseOptions options = FirebaseOptions.builder().setCredentials(googleCredentials).build();
+		deleteDefaultInstanceIfExists();
+		return FirebaseApp.initializeApp(options);
 	}
 
 	@Bean
 	@ConditionalOnBean(FirebaseApp.class)
 	FirebaseMessaging firebaseMessaging(FirebaseApp firebaseApp) {
 			return FirebaseMessaging.getInstance(firebaseApp);
+	}
+
+	private void deleteDefaultInstanceIfExists() {
+		try {
+			FirebaseApp existingInstance = FirebaseApp.getInstance();
+			if (existingInstance != null) {
+				existingInstance.delete();
+			}
+		} catch(IllegalStateException ex) {
+			// the try is only to handle the exception if instance doesn't exist
+		}
 	}
 }
