@@ -276,7 +276,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
     public void testChangePassword() throws MessagingException, IOException{
         String body =
                 json()
-                        .put("current_password", "PaSSworD")
+                        .put("current_password", "12345678")
                         .put("new_password", "newPassword")
                         .put("confirm_password", "newPassword")
                         .toString();

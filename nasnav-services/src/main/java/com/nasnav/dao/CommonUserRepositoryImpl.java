@@ -1,7 +1,5 @@
 package com.nasnav.dao;
 
-import com.nasnav.PasswordEncoderConfig;
-import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -9,21 +7,18 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.enumerations.YeshteryState.ACTIVE;
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static com.nasnav.exceptions.ErrorCodes.E$USR$0003;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0002;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 
 @Repository
@@ -34,12 +29,6 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 	
 	@Autowired
 	private UserRepository userRepo;
-
-	@Autowired
-	private SecurityService securityService;
-	@Autowired
-	private PasswordEncoderConfig passwordEncoderConfig;
-
 	/*
 	TODO should fix dependency circulation issue and fetch YeshteryUserEntity using yeshteryUserRepo
 	@Autowired
@@ -141,24 +130,6 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 			return userRepo.findById(id)
 						.map(BaseUserEntity.class::cast);
 		}
-	}
-
-	@Override
-	@Transactional
-	public UserApiResponse changePasswordUser(UserDTOs.ChangePasswordUserObject userJson) {
-		BaseUserEntity userAuthed = securityService.getCurrentUser();
-		if (!userJson.getNewPassword().equals(userJson.getConfirmPassword())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE,E$USR$0004,"ConfirmPassword");
-		}
-		if (!passwordEncoderConfig.passwordEncoder().matches(userJson.currentPassword, userAuthed.getEncryptedPassword())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE,E$USR$0003,"oldPassword");
-		}
-		Long userId = userAuthed.getId();
-		UserEntity userEntity = userRepo.findById(userId).orElseThrow();
-		userEntity.setEncryptedPassword(passwordEncoderConfig.passwordEncoder().encode(userJson.newPassword));
-		userRepo.save(userEntity);
-
-		return new UserApiResponse(userAuthed.getId() );
 	}
 
 }

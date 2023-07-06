@@ -1,6 +1,5 @@
 package com.nasnav.controller;
 
-import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
@@ -13,6 +12,7 @@ import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
+import com.nasnav.service.CommonUserService;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
@@ -20,6 +20,8 @@ import com.nasnav.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -44,9 +46,10 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @RequestMapping("/user")
 @CrossOrigin("*") // allow all origins
+@RequiredArgsConstructor
 public class UserController {
-
     private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+    private final CommonUserService commonUserService;
     @Autowired
 	private UserService userService;
     @Autowired
@@ -55,8 +58,7 @@ public class UserController {
     private SecurityService securityService;
     @Autowired
     private ReviewService reviewService;
-    @Autowired
-    private  CommonUserRepository commonUserRepo;
+
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
@@ -65,7 +67,7 @@ public class UserController {
 
     @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
-        return commonUserRepo.changePasswordUser(userJson);
+        return commonUserService.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
