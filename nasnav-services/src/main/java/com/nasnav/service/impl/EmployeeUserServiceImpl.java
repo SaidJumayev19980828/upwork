@@ -1,12 +1,10 @@
 package com.nasnav.service.impl;
 
 import com.google.common.base.Enums;
-import com.nasnav.PasswordEncoderConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
@@ -16,7 +14,6 @@ import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.request.UsersSearchParam;
 import com.nasnav.response.UserApiResponse;
@@ -26,7 +23,6 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,10 +63,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private UserTokenRepository userTokenRepo;
 
 	@Autowired
-	private UserRepository userRepo;
-	private PasswordEncoderConfig passwordEncoderConfig;
-
-	@Autowired
 	@Qualifier("userListQueryBuilder")
 	private AbstractCriteriaQueryBuilder<EmployeeUserEntity> criteriaQueryBuilder;
 
@@ -91,6 +83,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		EmployeeUserEntity employeeUserEntity = doCreateNewEmpAccount(employeeUserJson, rolesList);
 		return new UserApiResponse(employeeUserEntity.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
+
+
 
 
 	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> roles) {

@@ -2,7 +2,6 @@ package com.nasnav.service.impl;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.PasswordEncoderConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
@@ -99,9 +98,6 @@ public class UserServiceImpl implements UserService {
 	private final FileService fileService;
 
 	private LoyaltyPointsService loyaltyPointsService;
-
-	@Autowired
-	private PasswordEncoderConfig passwordEncoderConfig;
 
 	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if(userJson.getActivationMethod() == null){
@@ -504,6 +500,7 @@ public class UserServiceImpl implements UserService {
 		}
 		return generatedToken;
 	}
+
 	@Override
 	@Transactional
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {

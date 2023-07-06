@@ -9,6 +9,7 @@ import java.util.List;
 public interface EmployeeUserService extends CommonUserServiceInterface {
 
 	UserApiResponse createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson);
+
 	UserApiResponse updateEmployeeUser(UserDTOs.EmployeeUserUpdatingObject employeeUserJson);
 
 	List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role);
