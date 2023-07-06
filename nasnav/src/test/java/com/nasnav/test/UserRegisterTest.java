@@ -231,10 +231,65 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
-	
-	
-	
+	@Test
+	public void testChangePassword() {
+		String body =
+				json()
+						.put("current_password", "12345678")
+						.put("new_password", "newPassword")
+						.put("confirm_password", "newPassword")
+						.toString();
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/change/password", userJson, String.class);
+		assertEquals(200, response.getStatusCode().value());
+
+		ResponseEntity<UserApiResponse> loginResponse = performLogin("user1@nasnav.com", "12345678", 99001L);
+
+		assertEquals(HttpStatus.UNAUTHORIZED, loginResponse.getStatusCode());
+
+		loginResponse = performLogin("user1@nasnav.com", "newPassword", 99001L);
+
+		assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
+
+	}
+
+
+	@Test
+	public void testChangePasswordInvalidOldPassword() {
+		String body =
+				json()
+						.put("current_password", "invalid_password")
+						.put("new_password", "newPassword")
+						.put("confirm_password", "newPassword")
+						.toString();
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/change/password", userJson, String.class);
+		assertEquals(406, response.getStatusCode().value());
+
+		ResponseEntity<UserApiResponse> loginResponse = performLogin("user1@nasnav.com", "12345678", 99001L);
+
+		assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
+
+		loginResponse = performLogin("user1@nasnav.com", "newPassword", 99001L);
+
+		assertEquals(HttpStatus.UNAUTHORIZED, loginResponse.getStatusCode());
+	}
+
+	private ResponseEntity<UserApiResponse> performLogin(String email, String password, Long orgId) {
+
+		String request = json()
+				.put("email", email)
+				.put("password", password)
+				.put("org_id", orgId)
+				.toString();
+		HttpEntity<Object> userJson = getHttpEntity(request, null);
+
+		// ---------------------------------------------------------------------
+		return template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+	}
+
+
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +

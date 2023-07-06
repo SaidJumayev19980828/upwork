@@ -272,6 +272,19 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 		Assert.assertEquals(400, response.getStatusCodeValue());
 	}
 
+    @Test
+    public void testChangePassword() throws MessagingException, IOException{
+        String body =
+                json()
+                        .put("current_password", "12345678")
+                        .put("new_password", "newPassword")
+                        .put("confirm_password", "newPassword")
+                        .toString();
+        HttpEntity<Object> userJson = getHttpEntity(body, "123");
+        ResponseEntity<String> response = template.postForEntity(API_PATH +"/user/change/password", userJson, String.class);
+        assertEquals(200, response.getStatusCode().value());
+
+    }
 	@Test
 	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
 		JSONObject userJson = registerWithOtpAndAssert();
