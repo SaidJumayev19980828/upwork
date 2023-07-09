@@ -33,3 +33,5 @@ test:maven:
   tags:
     - meetusvr
     - docker
+  only:
+    - merge_requests
