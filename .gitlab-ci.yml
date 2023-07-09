@@ -13,6 +13,7 @@ cache:
 
 stages:
   - test
+  - visualize-coverage
 
 test:maven:
   stage: test
@@ -26,10 +27,34 @@ test:maven:
     - mvn -B --no-transfer-progress test
   artifacts:
     when: always
+    paths:
+      - target/site/jacoco-aggregate/jacoco.xml
     reports:
       junit:
         - nasnav/target/surefire-reports/TEST-*.xml
         - yeshtery/target/surefire-reports/TEST-*.xml
+  tags:
+    - meetusvr
+    - docker
+  only:
+    - merge_requests
+
+coverage:
+  stage: visualize-coverage
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
+  script:
+    # convert report from jacoco to cobertura, using relative project path
+    - 'python /opt/cover2cover.py target/site/jacoco-aggregate/jacoco.xml
+        $CI_PROJECT_DIR/nasnav-services/src/main/java/
+        $CI_PROJECT_DIR/nasnav/src/main/java/
+        $CI_PROJECT_DIR/yeshtery/src/main/java/
+        > target/site/cobertura.xml'
+  needs: ["test:maven"]
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/cobertura.xml
   tags:
     - meetusvr
     - docker
