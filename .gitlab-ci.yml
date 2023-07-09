@@ -1,0 +1,62 @@
+variables:
+  VERSION: "1.0"
+  POSTGRES_DB: nasnav-tests
+  POSTGRES_USER: nasnav
+  POSTGRES_PASSWORD: nasnav
+  POSTGRES_HOST_AUTH_METHOD: trust
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
+
+cache:
+  key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
+  paths:
+    - .m2/
+
+stages:
+  - test
+  - visualize-coverage
+
+test:maven:
+  stage: test
+  services:
+    - postgres:15.2-alpine
+  image: maven:3.8.6-openjdk-11
+  script:
+    - mvn --version
+    - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
+    - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
+    - mvn -B --no-transfer-progress test
+  artifacts:
+    when: always
+    paths:
+      - target/site/jacoco-aggregate/jacoco.xml
+    reports:
+      junit:
+        - nasnav/target/surefire-reports/TEST-*.xml
+        - yeshtery/target/surefire-reports/TEST-*.xml
+  tags:
+    - meetusvr
+    - docker
+  only:
+    - merge_requests
+
+coverage:
+  stage: visualize-coverage
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
+  script:
+    # convert report from jacoco to cobertura, using relative project path
+    - 'python /opt/cover2cover.py target/site/jacoco-aggregate/jacoco.xml
+        $CI_PROJECT_DIR/nasnav-services/src/main/java/
+        $CI_PROJECT_DIR/nasnav/src/main/java/
+        $CI_PROJECT_DIR/yeshtery/src/main/java/
+        > target/site/cobertura.xml'
+  needs: ["test:maven"]
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/cobertura.xml
+  tags:
+    - meetusvr
+    - docker
+  only:
+    - merge_requests
