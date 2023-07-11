@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -757,33 +758,19 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    String subDir = null;
 	    if (url.getPath() != null && url.getPath().length() > 1) {
 		    String[] subdirectories = url.getPath().split("/");
+            subDir = Arrays.stream(subdirectories).findFirst().filter(Predicate.not(String::isEmpty)).orElse(null);
 		    if (subdirectories.length > 1 && subdirectories[1].length() > 0) {
 		    	subDir = subdirectories[1];
 		    }
 	    }
 	    
-	    OrganizationDomainsEntity orgDom = null;
-	    if (domain.endsWith(NASNAV_DOMAIN) || domain.endsWith(NASORG_DOMAIN)) {
-	    	// try to check if we have full domain matching first without subdomain
-		    orgDom = orgDomainsRep.findByDomainAndSubdir(domain,null);
-		    if (orgDom == null) {
-			    orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
-		    } else {
-		    	// the check succeeded with subdir = null
-			   subDir = null;
-		    }
-	    } else {
-	    	orgDom = orgDomainsRep.findByDomain(domain);
-	    	subDir = null;
-	    }
-	    if (orgDom != null)
-            if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
-                return new DomainOrgIdResponse(0L, 0L);
-            }
+	    OrganizationDomainsEntity orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
+
+        if (orgDom == null || (yeshteryState == 1 && orgDom.getOrganizationEntity().getYeshteryState() == 0)) {
+            return new DomainOrgIdResponse(0L, 0L);
+        }
 	    
-//	    log.debug("## domain: {}, subDir: {}, orgDom: {}", domain, subDir, orgDom);
-	    
-		return (orgDom == null) ? new DomainOrgIdResponse(0L, 0L) : new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
+        return new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
 
     @Override
