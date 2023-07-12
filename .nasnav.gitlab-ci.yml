@@ -37,10 +37,10 @@ test:maven:
         - nasnav/target/surefire-reports/TEST-*.xml
         - yeshtery/target/surefire-reports/TEST-*.xml
   tags:
-    - meetusvr
-    - docker
+    - test
   only:
     - merge_requests
+    - develop
 
 coverage:
   stage: visualize-coverage
@@ -60,7 +60,6 @@ coverage:
         coverage_format: cobertura
         path: target/site/cobertura.xml
   tags:
-    - meetusvr
-    - docker
+    - test
   only:
     - merge_requests
