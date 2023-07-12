@@ -17,6 +17,7 @@ stages:
 
 test:maven:
   stage: test
+  interruptible: true
   services:
     - postgres:15.2-alpine
   image: maven:3.8.6-openjdk-11
@@ -41,6 +42,7 @@ test:maven:
 
 coverage:
   stage: visualize-coverage
+  interruptible: true
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
   script:
     # convert report from jacoco to cobertura, using relative project path
