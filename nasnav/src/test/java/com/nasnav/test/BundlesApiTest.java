@@ -19,6 +19,8 @@ import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -48,6 +50,7 @@ import static org.springframework.http.HttpStatus.OK;
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+@Slf4j
 public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long VALID_ORG_AMDIN = 69L;
@@ -106,7 +109,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
 		String body = response.getBody();
-		System.out.println("response >>>" + body);
+		log.debug("response >>>{}", body);
 		
 		ObjectMapper mapper = new ObjectMapper();
 		BundleResponse bundleRes = mapper.readValue(body, BundleResponse.class);
@@ -146,7 +149,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
 		String body = response.getBody();
-		System.out.println("response >>>" + body);
+		log.debug("response >>>{}", body);
 		
 		ObjectMapper mapper = new ObjectMapper();
 		BundleResponse bundleRes = mapper.readValue(body, BundleResponse.class);
@@ -178,7 +181,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 			
 		
 		assertEquals( HttpStatus.NOT_ACCEPTABLE,response.getStatusCode());
-		System.out.println("response >>>" + response);
+		log.debug("response >>>{}", response);
 	}
 
 
@@ -210,7 +213,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
 		String body = response.getBody();
-		System.out.println("response >>>" + body);
+		log.debug(("response >>>{}", body);
 		
 		ObjectMapper mapper = new ObjectMapper();
 		BundleResponse bundleRes = mapper.readValue(body, BundleResponse.class);

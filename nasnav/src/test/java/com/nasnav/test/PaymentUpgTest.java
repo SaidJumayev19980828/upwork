@@ -15,6 +15,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.payments.upg.UpgLightbox;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+@Slf4j
 public class PaymentUpgTest extends AbstractTestWithTempBaseDir {
 
 	@Mock
@@ -93,7 +95,7 @@ public class PaymentUpgTest extends AbstractTestWithTempBaseDir {
 
 		CookieManager cookieMan = webClient.getCookieManager();
 		cookieMan.setCookiesEnabled(false);
-		System.out.println("Order: " + orderId);
+		log.debug("Order: {}", orderId);
 		HtmlPage page = webClient
 				.getPage("http://localhost:" + randomServerPort + "/payment/misr/test/upglightbox?order_id=5&" + orderId);
 		assertTrue(page.asText().contains("PAY NOW"));
@@ -109,7 +111,7 @@ public class PaymentUpgTest extends AbstractTestWithTempBaseDir {
 		((HtmlInput)page.getElementById("NameOnCard")).setValueAttribute("Test Owner");
 		page = (page.getElementById("pay")).click();
 
-		System.out.println(page.getWebResponse().getContentAsString());
+		log.debug(page.getWebResponse().getContentAsString());
 
 		webClient.close();
 	}
@@ -126,7 +128,7 @@ public class PaymentUpgTest extends AbstractTestWithTempBaseDir {
 //		result.put("SecureHash", calculateHash(result, account.getUpgSecureKey()));
 		String hash = UpgLightbox.calculateHash(result, "66623430313531632D663137362D346664332D616634392D396531633665336337376230");
 		assertEquals("55d537dbcd8c6cf390cc11e1c2e3452a8f73a7a15462a531fa71baa443254677".toUpperCase(), hash.toUpperCase());
-//		System.out.println(hash);
+//		log.debug(hash);
 
 		JSONObject response = new JSONObject();
 		response.put("TxnDate", "191030143939");

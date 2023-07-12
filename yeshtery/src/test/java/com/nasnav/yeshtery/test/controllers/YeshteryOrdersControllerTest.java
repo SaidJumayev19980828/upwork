@@ -36,6 +36,7 @@ import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.yeshtery.controller.v1.YeshteryUserController;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -96,6 +97,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+@Slf4j
 public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
     private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
@@ -252,7 +254,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         assertTrue(!tags.getBody().isEmpty());
         Assert.assertEquals(2, tags.getBody().size());
-        System.out.println(tags.getBody().toString());
+        log.debug("{}", tags.getBody());
     }
 
     @SuppressWarnings("rawtypes")

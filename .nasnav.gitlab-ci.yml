@@ -4,12 +4,12 @@ variables:
   POSTGRES_USER: nasnav
   POSTGRES_PASSWORD: nasnav
   POSTGRES_HOST_AUTH_METHOD: trust
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
+  MAVEN_OPTS: -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
 
 cache:
   key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
   paths:
-    - .m2/
+    - .m2/repository
 
 stages:
   - test
@@ -17,6 +17,7 @@ stages:
 
 test:maven:
   stage: test
+  interruptible: true
   services:
     - postgres:15.2-alpine
   image: maven:3.8.6-openjdk-11
@@ -24,7 +25,9 @@ test:maven:
     - mvn --version
     - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
     - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
-    - mvn -B --no-transfer-progress test
+    - mvn -B test
+    - ./coverage.sh target/site/jacoco-aggregate/jacoco.csv
+  coverage: '/Code coverage: \d+\.\d+/'
   artifacts:
     when: always
     paths:
@@ -34,13 +37,14 @@ test:maven:
         - nasnav/target/surefire-reports/TEST-*.xml
         - yeshtery/target/surefire-reports/TEST-*.xml
   tags:
-    - meetusvr
-    - docker
+    - test
   only:
     - merge_requests
+    - develop
 
 coverage:
   stage: visualize-coverage
+  interruptible: true
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
   script:
     # convert report from jacoco to cobertura, using relative project path
@@ -56,7 +60,6 @@ coverage:
         coverage_format: cobertura
         path: target/site/cobertura.xml
   tags:
-    - meetusvr
-    - docker
+    - test
   only:
     - merge_requests

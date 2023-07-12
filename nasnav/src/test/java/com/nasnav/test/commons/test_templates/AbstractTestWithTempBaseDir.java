@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.PropertySource;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(print = MockMvcPrint.LOG_DEBUG)
 @PropertySource("classpath:test.database.properties")
 @ContextConfiguration(classes = BaseTestConfiguration.class)
 public abstract class AbstractTestWithTempBaseDir {

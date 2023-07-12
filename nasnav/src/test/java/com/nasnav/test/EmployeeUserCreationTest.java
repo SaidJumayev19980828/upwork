@@ -16,6 +16,7 @@ import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -46,6 +47,7 @@ import static org.springframework.http.HttpStatus.*;
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Mock
@@ -788,7 +790,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<Object> header = getHttpEntity("yuhjhu");
 		ResponseEntity<UserRepresentationObject> response = 
 				template.exchange("/user/info", GET, header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
@@ -807,7 +809,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<Object> header = getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", GET,
 				header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals(200, response.getStatusCodeValue());
 
 		//-------------------------------------------------------------------
@@ -816,7 +818,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		response = template.exchange("/user/info?id=88", GET,
 									header, UserRepresentationObject.class);
 		
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
 		assertEquals( 88, response.getBody().getId().longValue());
@@ -833,7 +835,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<Object> header = getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=526523", GET,
 				header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals( 406, response.getStatusCodeValue());
 	}
 	
@@ -921,21 +923,21 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<Object> header = getHttpEntity("hijkllm");
 		ResponseEntity<List> response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(6, response.getBody().size());
 
 		// trying to filter with different org_id
 		response = template.exchange("/user/list?org_id=99002", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(response.getBody().size(), 6);
 
 		// trying to filter with store_id not exits in the organization
 		response = template.exchange("/user/list?shop_id=501", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(0, response.getBody().size());
 
@@ -943,7 +945,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		header = getHttpEntity("123");
 		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_MANAGER
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(5, response.getBody().size());
 
@@ -951,7 +953,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		header = getHttpEntity("hhhkkk");
 		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_EMPLOYEE
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(1, response.getBody().size());
 

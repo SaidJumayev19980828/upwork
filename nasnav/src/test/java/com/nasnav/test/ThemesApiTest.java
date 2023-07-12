@@ -10,6 +10,7 @@ import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Themes_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+@Slf4j
 public class ThemesApiTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
@@ -210,7 +212,7 @@ public class ThemesApiTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
                 POST, request, ThemeResponse.class);
 
-        System.out.println(response.getBody());
+        log.debug("{}", response.getBody());
         assertEquals(200,response.getStatusCodeValue());
         assertTrue(themesRepo.existsByUid(response.getBody().getThemeId()));
         ThemeEntity theme = themesRepo.findByUid(response.getBody().getThemeId()).get();
@@ -586,7 +588,7 @@ public class ThemesApiTest extends AbstractTestWithTempBaseDir {
 
         assertEquals(200, response.getStatusCodeValue());
         assertFalse(response.getBody().isEmpty());
-        System.out.println(response.getBody().toString());
+        log.debug("{}", response.getBody());
         assertEquals(1, response.getBody().size());
     }
 
@@ -600,7 +602,7 @@ public class ThemesApiTest extends AbstractTestWithTempBaseDir {
 
         assertEquals(200, response.getStatusCodeValue());
         assertFalse(response.getBody().isEmpty());
-        System.out.println(response.getBody().toString());
+        log.debug("{}", response.getBody());
         assertEquals(3, response.getBody().size());
     }
 }

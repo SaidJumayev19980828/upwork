@@ -1,7 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="org/springframework/boot/logging/logback/base.xml" />
-    <logger name="com.nasnav" level="error" />
-    <logger name="org.springframework" level="error" />
-    <logger name="org.hibernate" level="error" />
-</configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+        <pattern>%msg%n</pattern>
+      </encoder>
+    </appender>
+    <root level="OFF">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+    <logger name="org.springframework.test" level="ERROR"/>
+    <logger name="org.springframework.boot.test" level="ERROR"/>
+    <logger name="org.nasnav.test" level="ERROR"/>
+    <logger name="org.nasnav.yeshtery.test" level="ERROR"/>
+  </configuration>
