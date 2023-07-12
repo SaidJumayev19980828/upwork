@@ -16,6 +16,8 @@ import com.nasnav.service.CategoryService;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -52,6 +54,7 @@ import static org.springframework.http.HttpStatus.*;
 @RunWith(SpringRunner.class)
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
 
     @SuppressWarnings("unused")
@@ -329,7 +332,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
 
         assertTrue(!tags.getBody().isEmpty());
         assertEquals(7, tags.getBody().size());
-        System.out.println(tags.getBody().toString());
+        log.debug("{}", tags.getBody());
     }
 
     
@@ -385,7 +388,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
     public void getTagsWithCategory() {
         List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, "category_1");
         assertTrue(tags.size() == 1);
-        System.out.println(tags.toString());
+        log.debug("{}", tags);
     }
 
     

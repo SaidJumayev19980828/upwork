@@ -55,9 +55,12 @@ import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RunWith(SpringRunner.class)
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class PromotionsTest extends AbstractTestWithTempBaseDir {
 	@Autowired
     private TestRestTemplate template;
@@ -452,7 +455,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<AppliedPromotionsResponse> res =
 				template.exchange(url, GET, req, AppliedPromotionsResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
-		System.out.println(res.getBody().toString());
+		log.debug("{}", res.getBody());
 		return res.getBody().getTotalDiscount();
 	}
 

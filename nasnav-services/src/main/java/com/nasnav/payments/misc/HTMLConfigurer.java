@@ -2,12 +2,15 @@ package com.nasnav.payments.misc;
 
 import org.json.JSONObject;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class HTMLConfigurer {
 
 	// For testing purposes only!
@@ -26,19 +29,19 @@ public class HTMLConfigurer {
 			JSONObject data = new JSONObject(jsonResult);
 			for (String key: data.keySet()) {
 				if (data.get(key)instanceof String) {
-//					System.out.println(key + " #->  " + data.getString(key));
+//					log.debug(key + " #->  {}", data.getString(key));
 					modified = modified.replace("$" + key, data.getString(key));
 				} else if (data.get(key)instanceof BigDecimal) {
-						System.out.println(key + " !->  " + data.getBigDecimal(key).toString());
+						log.debug(key + " !->  {}", data.getBigDecimal(key).toString());
 						modified = modified.replace("$" + key, data.getBigDecimal(key).toString());
 				} else if (data.get(key)instanceof Double) {
-					System.out.println(key + " !!->  " + data.getDouble(key));
+					log.debug(key + " !!->  {}", data.getDouble(key));
 					modified = modified.replace("$" + key, Double.toString(data.getDouble(key)));
 				} else if (data.get(key)instanceof Integer) {
-					System.out.println(key + " !->  " + data.getInt(key));
+					log.debug(key + " !->  {}", data.getInt(key));
 					modified = modified.replace("$" + key, Integer.toString(data.getInt(key)));
 				} else {
-					System.out.println(key + " ?->  " + data.get(key).getClass());
+					log.debug(key + " ?->  {}", data.get(key).getClass());
 				}
 			}
 //			modified = modified

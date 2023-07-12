@@ -9,6 +9,9 @@ import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
+
+// import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +38,7 @@ import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.*;
 
-
+// @Slf4j
 public class UpgLightbox {
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -102,7 +105,7 @@ public class UpgLightbox {
 	}
 
 	public static PaymentEntity verifyPayment(JSONObject json, MetaOrderEntity metaOrderEntity, Logger upgLogger, UpgAccount account, OrderService orderService) {
-//System.out.println("Received: " + json.toString(2));
+//log.debug("Received: {}", json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
 			verifier.put(param, json.getString(param));
@@ -157,7 +160,7 @@ public class UpgLightbox {
 			args.append('&');
 		}
 		String concat = args.toString().substring(0, args.length() - 1);
-//		System.out.println("CONCAT: " + concat);
+//		log.debug("CONCAT: {}", concat);
 		try {
 			byte[] keyBytes = Hex.decodeHex(hashKey);
 			Mac sha256_HMAC = Mac.getInstance("HmacSHA256");

@@ -18,6 +18,7 @@ import com.nasnav.service.otp.OtpType;
 import com.nasnav.yeshtery.test.commons.TestCommons;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -63,6 +64,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"}) //FIXME temporarly
+@Slf4j
 public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 
     private static final String YESHTERY_SUSPEND_API_PATH = API_PATH + "/user/suspend";
@@ -156,7 +158,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         response = template.postForEntity(API_PATH + "/user/register", userJson, UserApiResponse.class);
 
         // response status should contain EMAIL_EXISTS
-        System.out.println(response.getBody());
+        log.debug("{}", response.getBody());
         Assert.assertTrue(response.getBody().getStatus().contains(EMAIL_EXISTS));
         Assert.assertEquals(406, response.getStatusCode().value());
         // Delete this user
@@ -174,7 +176,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         // get userId for deletion after test
         Long userId = response.getBody().getEntityId();
 
-        System.out.println(response.getBody());
+        log.debug("{}", response.getBody());
         Assert.assertEquals(201, response.getStatusCode().value());
 
         Set<Long> yeshteryOrgIds = organizationRepository.findByYeshteryState(1)
@@ -375,7 +377,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
     public void testSendResetPasswordTokenForInvalidMail() {
         ResponseEntity<String> response = getResponseFromGet(API_PATH + "/user/recover?email=foo&org_id=" +
                 organization.getId() + "&employee=false", String.class);
-        System.out.println("###############" + response.getBody());
+        log.debug("###############{}", response.getBody());
         Assert.assertTrue(response.getBody().contains("U$EMP$0004"));
 
         Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -546,7 +548,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         Assert.assertEquals(200, response.getStatusCode().value());
         assertFalse(userTokenRepo.existsByToken(token));
         assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
-        System.out.println(response.getHeaders().get("Set-Cookie").get(0));
+        log.debug(response.getHeaders().get("Set-Cookie").get(0));
     }
 
     @Ignore("Yeshtery module doesn't has product controller")
@@ -579,7 +581,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> userJson = getHttpEntity(
                 "{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"New_Password\",\n" +
                         "\"employee\": false" + "}", null);
-        System.out.println(userJson);
+        log.debug("{}", userJson);
         template.postForEntity(API_PATH + "/user/recover", userJson, UserApiResponse.class);
 
         // login using the new password
@@ -720,7 +722,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> userJson = getHttpEntity(body, "123");
         ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/update", userJson, String.class);
 
-        System.out.println(response.toString());
+        log.debug("{}", response);
         Assert.assertEquals(406, response.getStatusCodeValue());
     }
 

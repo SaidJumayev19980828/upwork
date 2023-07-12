@@ -7,6 +7,8 @@ import com.nasnav.dao.SettingRepository;
 import com.nasnav.dto.CountriesRepObj;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +40,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @RunWith(SpringRunner.class)
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_3.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class SettingsServiceTest extends AbstractTestWithTempBaseDir {
 	
 	@Autowired
@@ -220,7 +223,7 @@ public class SettingsServiceTest extends AbstractTestWithTempBaseDir {
 		setOrganizationSetting(SHOW_FREE_PRODUCTS.name(), true);
 
 		var response = template.getForEntity("/navbox/products?org_id=99001", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		var json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		var total = json.getLong("total");
 		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero price",4L , total);
@@ -236,7 +239,7 @@ public class SettingsServiceTest extends AbstractTestWithTempBaseDir {
 		setOrganizationSetting(HIDE_EMPTY_STOCKS.name(), true);
 
 		var response = template.getForEntity("/navbox/products?org_id=99001", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		var json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		var total = json.getLong("total");
 		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero stock, which should be ignored"

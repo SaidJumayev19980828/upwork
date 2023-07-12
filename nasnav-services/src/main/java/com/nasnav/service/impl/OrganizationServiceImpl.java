@@ -29,6 +29,9 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,6 +75,7 @@ import static org.springframework.http.HttpStatus.*;
 
 
 @Service
+@Slf4j
 public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -777,7 +781,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 return new DomainOrgIdResponse(0L, 0L);
             }
 	    
-//	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
+//	    log.debug("## domain: {}, subDir: {}, orgDom: {}", domain, subDir, orgDom);
 	    
 		return (orgDom == null) ? new DomainOrgIdResponse(0L, 0L) : new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }

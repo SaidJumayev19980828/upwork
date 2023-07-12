@@ -21,6 +21,7 @@ import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -67,6 +68,7 @@ import static org.springframework.http.HttpStatus.*;
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	
 	//TODO: test adding bundle product as basket item, test the quantity calculation will work
@@ -529,7 +531,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 														, new HttpEntity<>(getHeaders("789"))
 														, String.class);
 		
-		System.out.println("Order >>>> " + response.getBody());	
+		log.debug("Order >>>> {}", response.getBody());	
 		
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 	}
@@ -550,7 +552,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 														, new HttpEntity<>(getHeaders("011"))
 														, String.class);
 		
-		System.out.println("Order >>>> " + response.getBody());	
+		log.debug("Order >>>> {}", response.getBody());	
 		
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 	}
@@ -655,7 +657,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 				template.postForEntity("/order/status/update"
 										, getHttpEntity(updateRequest.toString(), userToken)
 										, String.class);
-		System.out.println("----------response-----------------\n" + updateResponse);
+		log.debug("----------response-----------------\n{}", updateResponse);
 		
 		//---------------------------------------------------------------
 		assertEquals(NOT_ACCEPTABLE, updateResponse.getStatusCode());
@@ -677,7 +679,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 				template.postForEntity("/order/status/update"
 										, getHttpEntity(updateRequest.toString(), userToken)
 										, String.class);
-		System.out.println("----------response-----------------\n" + updateResponse);
+		log.debug("----------response-----------------\n{}", updateResponse);
 		
 		//---------------------------------------------------------------
 		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
@@ -701,7 +703,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 				template.postForEntity("/order/status/update"
 										, getHttpEntity(updateRequest.toString(), userToken)
 										, String.class);
-		System.out.println("----------response-----------------\n" + updateResponse);
+		log.debug("----------response-----------------\n{}", updateResponse);
 		
 		//---------------------------------------------------------------
 		assertEquals(NOT_ACCEPTABLE, updateResponse.getStatusCode());

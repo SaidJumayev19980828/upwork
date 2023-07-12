@@ -2,11 +2,11 @@ package com.nasnav.test.integration.msdynamics;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.*;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,7 +18,6 @@ import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
@@ -37,6 +36,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 @RunWith(SpringRunner.class)
 // @DirtiesContext
+@Slf4j
 public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWithTempBaseDir {
 
 	private static final String msServerUrl = "http://41.39.128.74";
@@ -271,11 +271,11 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
     	
         Consumer<Customer> printCustomers = customer -> {
             for(CustomerRepObj i : customer.getObj())
-                System.out.println(i.toString());
+                log.debug("{}", i);
         };
 
         Consumer<ClientResponse> response = res -> {
-            System.out.println(res.statusCode());
+            log.debug("{}", res.statusCode());
             waiter.assertEquals(HttpStatus.OK, res.statusCode());
             res.bodyToFlux(Customer.class).subscribe(printCustomers);
             waiter.resume();
@@ -301,7 +301,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> res = 
         		response -> { 
         			waiter.assertEquals(HttpStatus.OK, response.statusCode()); 
-        			response.bodyToMono(String.class).subscribe(id -> System.out.println("Customer-id: " + id));
+        			response.bodyToMono(String.class).subscribe(id -> log.debug("Customer-id: {}", id));
         			waiter.resume();
         		};        		
 
@@ -322,7 +322,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> res = 
         		response -> { 
         			waiter.assertEquals(HttpStatus.OK, response.statusCode()); 
-        			response.bodyToMono(String.class).subscribe(id -> System.out.println("Customer-id: " + id));
+        			response.bodyToMono(String.class).subscribe(id -> log.debug("Customer-id: {}", id));
         			waiter.resume();
         		};
         		
@@ -404,8 +404,12 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
 			throw new RuntimeException();
 		}
 		
-        stores.forEach(System.out::println);
+        stores.forEach(this::logObjectToDebug);
     }
+
+	private void logObjectToDebug(Object o) {
+		log.debug("{}", o);
+	}
     
     
     
@@ -417,7 +421,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-		            res.bodyToMono(ProductsResponse.class).subscribe(System.out::println);		            
+		            res.bodyToMono(ProductsResponse.class).subscribe(this::logObjectToDebug);		            
 		            waiter.resume();	
 		        };
 
@@ -441,7 +445,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-        			res.bodyToMono(String.class).subscribe(id -> System.out.println("order id : " + id));		            
+        			res.bodyToMono(String.class).subscribe(id -> log.debug("order id : {}", id));		            
 		            waiter.resume();	
 		        };
 
@@ -466,13 +470,13 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
 		    											.put("SalesId", "UNT18-008133")
 		        										.put("Item", "011APF-74202")
 		        										.put("Qty", 1) ));
-        System.out.println("JSON order : " + jsonOrder.toString());
+        log.debug("JSON order : {}", jsonOrder.toString());
         ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder.toString(), ReturnSalesOrder.class);
         
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-        			res.bodyToMono(String.class).subscribe(id -> System.out.println("return order id : " + id));		            
+        			res.bodyToMono(String.class).subscribe(id -> log.debug("return order id : {}", id));		            
 		            waiter.resume();	
 		        };
 
@@ -494,7 +498,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-        			res.bodyToMono(String.class).subscribe(id -> System.out.println("cancelled order id : " + id));		            
+        			res.bodyToMono(String.class).subscribe(id -> log.debug("cancelled order id : {}", id));		            
 		            waiter.resume();	
 		        };
 
@@ -517,13 +521,13 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         													.put(json().put("SalesId","UNT18-008133")
         																.put("Amount", 2)
         																.put("PaymentMethod", "Credit_CHE")));
-        System.out.println("Payment JSON: " + jsonPayment.toString());
+        log.debug("Payment JSON: {}", jsonPayment.toString());
         Payment payment = new ObjectMapper().readValue(jsonPayment.toString(), Payment.class);
         
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-        			res.bodyToMono(String.class).subscribe(id -> System.out.println("payment id : " + id));		            
+        			res.bodyToMono(String.class).subscribe(id -> log.debug("payment id : {}", id));		            
 		            waiter.resume();	
 		        };
 
@@ -548,7 +552,7 @@ public class MicrosoftDynamicsIntegrationWebClientsTest extends AbstractTestWith
         Consumer<ClientResponse> response = 
         		res -> {
         			waiter.assertEquals(HttpStatus.OK, res.statusCode());
-        			res.bodyToMono(String.class).subscribe(id -> System.out.println("reverse payment id : " + id));		            
+        			res.bodyToMono(String.class).subscribe(id -> log.debug("reverse payment id : {}", id));		            
 		            waiter.resume();	
 		        };
 

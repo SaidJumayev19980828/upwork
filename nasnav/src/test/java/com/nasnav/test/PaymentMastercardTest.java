@@ -7,6 +7,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import static org.springframework.test.context.jdbc.SqlConfig.TransactionMode.IS
 @Transactional
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, config = @SqlConfig(transactionMode = ISOLATED), scripts={"/sql/database_cleanup.sql"})
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, config = @SqlConfig(transactionMode = ISOLATED),  scripts={"/sql/Order_Info_Test.sql"})
+@Slf4j
 public class PaymentMastercardTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
@@ -66,7 +68,7 @@ public class PaymentMastercardTest extends AbstractTestWithTempBaseDir {
         assertTrue(page.asXml().contains("\"order_amount\":10500.0000"));
         HtmlButtonInput payButton = (HtmlButtonInput)(page.getByXPath("//input[@type='button']").get(0));
         page = payButton.click();
-        System.out.println(page.asXml());
+        log.debug(page.asXml());
 
     }
 

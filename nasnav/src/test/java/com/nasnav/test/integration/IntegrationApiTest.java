@@ -17,6 +17,8 @@ import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.event.handler.TestEventHandler;
 import com.nasnav.test.integration.modules.TestIntegrationModule;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -52,6 +54,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 // @DirtiesContext
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Api_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+@Slf4j
 public class IntegrationApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final int MAX_REQ_RATE_VAL = 2;
@@ -278,7 +281,7 @@ public class IntegrationApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void testRegisterModule() throws InvalidIntegrationEventException{
-		System.out.println("####>>>>");
+		log.debug("####>>>>");
 		registerIntegrationModule();
 	}
 

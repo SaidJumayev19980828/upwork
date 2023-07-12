@@ -5,6 +5,9 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.test.bulkimport.img.ImageBulkUrlUploadTestCommon;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -42,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Slf4j
 public class ProductImageBulkUrlUploadTest extends AbstractTestWithTempBaseDir {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk/url";
 
@@ -291,7 +295,7 @@ public class ProductImageBulkUrlUploadTest extends AbstractTestWithTempBaseDir {
 		 .exchange()
 		 .doOnNext(res -> assertEquals(OK, res.statusCode()))
 		 .flatMapMany(res -> res.bodyToMono(byte[].class))
-		 .subscribe(body -> System.out.println(">>>" + body.length));
+		 .subscribe(body -> log.debug(">>>{}", body.length));
 		
 		Thread.sleep(1000);
 	}
