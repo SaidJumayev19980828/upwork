@@ -4,12 +4,7 @@ variables:
   POSTGRES_USER: nasnav
   POSTGRES_PASSWORD: nasnav
   POSTGRES_HOST_AUTH_METHOD: trust
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2"
-
-cache:
-  key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
-  paths:
-    - .m2/
+  MAVEN_REPO_PATH: $CI_PROJECT_DIR/.m2
 
 stages:
   - test
@@ -25,7 +20,7 @@ test:maven:
     - mvn --version
     - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
     - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
-    - mvn -B --no-transfer-progress test
+    - mvn -B test
   artifacts:
     when: always
     paths:
@@ -34,6 +29,7 @@ test:maven:
       junit:
         - nasnav/target/surefire-reports/TEST-*.xml
         - yeshtery/target/surefire-reports/TEST-*.xml
+  coverage: /Total.*?([0-9]{1,3})%/
   tags:
     - meetusvr
     - docker
