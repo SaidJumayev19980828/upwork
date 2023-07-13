@@ -15,14 +15,9 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id, code, allow_other_points) VALUES (502, 'shop_2', 101, 99001, 0, 12300001, 'code2', false);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id, code, allow_other_points) VALUES (503, 'shop_3', 101, 99001, 0, 12300001, 'code3', false);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id, code, allow_other_points) VALUES (504, 'shop_4', 101, 99002, 0, 12300001, 'code4', false);
---inserting yeshtery users
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-VALUES (808, 'user1@nasnav.com','user1','123', 99001);
-INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
-VALUES (809, 'test2@nasnav.com','user2','456', 99001);
 
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, yeshtery_user_id)
-VALUES (88, 'user1@nasnav.com','user1','123', 99001,808);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
 VALUES (89, 'user2@nasnav.com','user2','456', 99001);
 

@@ -206,7 +206,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     @Override
     public LoyaltyUserPointsResponse getUserPoints() {
-        Long orgId = securityService.getCurrentUser().getOrganizationId();
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getUserPoints(orgId);
+    }
+
+    @Override
+    public LoyaltyUserPointsResponse getUserPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
         Integer points = loyaltyPointTransRepo.findOrgRedeemablePoints(user.getId(), orgId);
         return new LoyaltyUserPointsResponse(points);

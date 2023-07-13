@@ -39,6 +39,8 @@ public interface LoyaltyPointsService {
 
     LoyaltyUserPointsResponse getUserPoints();
 
+    LoyaltyUserPointsResponse getUserPoints(Long orgId);
+
     List<OrganizationPoints> getUserPointsPerOrg();
     LoyaltyTierDTO getUserOrgTier(Long orgId);
 
