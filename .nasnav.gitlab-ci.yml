@@ -41,6 +41,10 @@ test:maven:
   only:
     - merge_requests
     - develop
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
 
 coverage:
   stage: visualize-coverage
@@ -63,3 +67,8 @@ coverage:
     - test
   only:
     - merge_requests
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
+
