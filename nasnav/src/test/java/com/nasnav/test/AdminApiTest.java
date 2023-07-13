@@ -393,6 +393,15 @@ public class AdminApiTest extends AbstractTestWithTempBaseDir {
                 template.getForEntity("/navbox/organization?url=fortune.nasnav.com", OrganizationRepresentationObject.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(Objects.equals(99001L, response.getBody().getId()));
+
+        response = template.getForEntity("/navbox/organization?url=www.fortune.com/org2", OrganizationRepresentationObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(99002L, response.getBody().getId().longValue());
+
+        response =
+                template.getForEntity("/navbox/organization?url=fortune.nasnav.com/org2", OrganizationRepresentationObject.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(99002L, response.getBody().getId().longValue());
     }
 
     @Test
