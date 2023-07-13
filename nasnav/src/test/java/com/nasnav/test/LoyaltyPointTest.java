@@ -531,9 +531,8 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Test
     public void getUserSpendablePoints() {
         HttpEntity<?> request = getHttpEntity("123");
-        long orgId = 99001;
 
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points", GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(OK, response.getStatusCode());
 
@@ -560,9 +559,8 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Test
     public void getSpendablePointsAndSharePoint() {
         HttpEntity<?> request = getHttpEntity("456");
-        long orgId = 99002;
 
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points", GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(OK, response.getStatusCode());
         Assert.assertEquals(BigDecimal.valueOf(30), response.getBody().get(0).getPoints());
@@ -576,13 +574,13 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 POST,
                 request,Void.class);
         Assert.assertEquals(OK, res.getStatusCode());
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/loyalty/spendable_points", GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
 
 
         HttpEntity<?> request2 = getHttpEntity("258");
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/loyalty/spendable_points", GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
 

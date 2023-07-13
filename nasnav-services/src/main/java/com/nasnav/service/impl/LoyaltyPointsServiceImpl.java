@@ -625,7 +625,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     @Override
-    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints() {
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePointsForCartOrganizations() {
         BaseUserEntity baseUser = securityService.getCurrentUser();
 
         if (!(baseUser instanceof UserEntity)) {
@@ -657,7 +657,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
                 .collect(toList());
     }
 
-    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(Long orgId) {
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePointsForOrganization(Long orgId) {
         BaseUserEntity baseUser = securityService.getCurrentUser();
 
         if (!(baseUser instanceof UserEntity)) {
@@ -746,6 +746,24 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         entity.setStartDate(calculateTransactionStartDate(org));
         entity.setEndDate(expiry);
         return entity;
+    }
+
+    @Override
+    public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return listOrganizationLoyaltyPoints(orgId);
+    }
+
+    @Override
+    public LoyaltyTierDTO getUserOrgTier() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getUserOrgTier(orgId);
+    }
+
+    @Override
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePointsForAuthUserOrganization() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getUserSpendablePointsForOrganization(orgId);
     }
 
 }

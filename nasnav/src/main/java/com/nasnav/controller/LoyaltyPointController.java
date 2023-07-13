@@ -50,33 +50,23 @@ public class LoyaltyPointController {
         return loyaltyPointsService.getUserPoints();
     }
 
-    @GetMapping(value ="spendable_points")
-    public List<LoyaltyPointTransactionDTO> getUserPoints(@RequestHeader(name = "User-Token", required = false) String token){
-        return loyaltyPointsService.getUserSpendablePoints();
-    }
     @PostMapping(value ="share_points")
     public void sharePoints(@RequestHeader(name = "User-Token", required = false) String token , @RequestParam("point_id")  Long pointId , @RequestParam("email")  String email ,@RequestParam("points") BigDecimal points){
          loyaltyPointsService.sharePoints(pointId ,email,points);
     }
-    @GetMapping(value ="spendable_points/{orgId}")
-    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(@RequestHeader(name = "User-Token", required = false) String token , @PathVariable long orgId){
-        return loyaltyPointsService.getUserSpendablePoints(orgId);
-    }
-
-    @GetMapping(value ="points_per_org")
-    public List<OrganizationPoints> getUserPointsPerOrg(@RequestHeader(name = "User-Token", required = false) String token){
-        return loyaltyPointsService.getUserPointsPerOrg();
+    @GetMapping(value ="spendable_points")
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyPointsService.getUserSpendablePointsForAuthUserOrganization();
     }
 
     @GetMapping(value = "points/list", produces = APPLICATION_JSON_VALUE)
-    public List<LoyaltyPointTransactionDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id")  Long orgId ) {
-        return loyaltyPointsService.listOrganizationLoyaltyPoints(orgId);
+    public List<LoyaltyPointTransactionDTO> getLoyaltyPoints(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyPointsService.listOrganizationLoyaltyPoints();
     }
 
     @GetMapping(value ="user_tier")
-    public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token,
-                                      @RequestParam("org_id") Long orgId){
-        return loyaltyPointsService.getUserOrgTier(orgId);
+    public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyPointsService.getUserOrgTier();
     }
 
     // CRUD Ops
@@ -183,9 +173,8 @@ public class LoyaltyPointController {
     }
 
     //@GetMapping(value = "family/list")
-    public List<LoyaltyFamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                                               @RequestParam(value = "org_id", required = false, defaultValue = INVALID_ID) Long orgId) {
-        return loyaltyFamilyService.listFamily(orgId);
+    public List<LoyaltyFamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyFamilyService.listFamily();
     }
 
     //@PostMapping(value = "family/new_member")
@@ -215,9 +204,8 @@ public class LoyaltyPointController {
     }
 
     //@GetMapping(value = "coins_drop/all")
-    public List<LoyaltyCoinsDropEntity> getCoinByOrgId(@RequestHeader(name = "User-Token", required = false) String token,
-                                                       @RequestParam(value = "org_id") Long orgId) {
-        return loyaltyCoinsDropService.getByOrganizationId(orgId);
+    public List<LoyaltyCoinsDropEntity> getCoin(@RequestHeader(name = "User-Token", required = false) String token) {
+        return loyaltyCoinsDropService.getForAuthenticatedUserOrg();
     }
 
 
@@ -238,10 +226,9 @@ public class LoyaltyPointController {
     }
 
     //@GetMapping(value = "booster/list")
-    public List<LoyaltyBoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                                              @RequestParam(value = "org_id", required = false, defaultValue = INVALID_ID) Long orgId) {
+    public List<LoyaltyBoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token) {
         
-        return loyaltyBoosterService.getBoosters(orgId);
+        return loyaltyBoosterService.getBoosters();
     }
 
     //@DeleteMapping(value = "booster/delete")
@@ -309,8 +296,8 @@ public class LoyaltyPointController {
      */
 
     //@GetMapping("event")
-    public List<LoyaltyEventDTO> getAllEvents(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("org_id") Long orgId){
-        return loyaltyEventService.getAllEvents(orgId);
+    public List<LoyaltyEventDTO> getAllEvents(@RequestHeader(name = "User-Token", required = false) String token){
+        return loyaltyEventService.getAllEvents();
     }
     //@PostMapping("event")
     public  LoyaltyEventUpdateResponse createUpdateEvent(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody LoyaltyEventDTO request){

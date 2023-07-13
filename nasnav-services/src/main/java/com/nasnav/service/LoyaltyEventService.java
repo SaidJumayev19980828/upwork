@@ -11,4 +11,6 @@ public interface LoyaltyEventService {
     void deleteById(Long id);
 
     List<LoyaltyEventDTO> getAllEvents(Long orgId);
+
+	List<LoyaltyEventDTO> getAllEvents();
 }
