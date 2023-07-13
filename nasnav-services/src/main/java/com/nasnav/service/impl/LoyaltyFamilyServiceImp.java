@@ -100,4 +100,10 @@ public class LoyaltyFamilyServiceImp implements LoyaltyFamilyService {
         }
     }
 
+    @Override
+    public List<LoyaltyFamilyEntity> listFamily() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return listFamily(orgId);
+    }
+
 }

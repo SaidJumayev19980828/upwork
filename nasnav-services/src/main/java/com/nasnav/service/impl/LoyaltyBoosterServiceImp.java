@@ -157,4 +157,10 @@ public class LoyaltyBoosterServiceImp implements LoyaltyBoosterService {
             }
         }
     }
+
+    @Override
+    public List<LoyaltyBoosterDTO> getBoosters() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getBoosters(orgId);
+    }
 }

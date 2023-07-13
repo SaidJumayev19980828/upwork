@@ -227,4 +227,10 @@ public class LoyaltyCoinsDropServiceImp implements LoyaltyCoinsDropService {
         return false;
     }
 
+    @Override
+    public List<LoyaltyCoinsDropEntity> getForAuthenticatedUserOrg() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getByOrganizationId(orgId);
+    }
+
 }

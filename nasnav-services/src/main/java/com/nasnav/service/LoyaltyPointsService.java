@@ -37,6 +37,8 @@ public interface LoyaltyPointsService {
     LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
     LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
+    LoyaltyUserPointsResponse getUserPoints();
+
     LoyaltyUserPointsResponse getUserPoints(Long orgId);
 
     List<OrganizationPoints> getUserPointsPerOrg();
@@ -48,10 +50,14 @@ public interface LoyaltyPointsService {
                                         Long userId, OrganizationEntity org);
 
     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart);
-    List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForCartOrganizations();
 
-    List<LoyaltyPointTransactionDTO> getUserSpendablePoints(Long orgId);
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForOrganization(Long orgId);
+
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForAuthUserOrganization();
 
     void givePointsToReferrer(UserEntity user, Long orgId);
     void activateReferralPoints(OrdersEntity suborder);
+	List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints();
+    LoyaltyTierDTO getUserOrgTier();
 }
