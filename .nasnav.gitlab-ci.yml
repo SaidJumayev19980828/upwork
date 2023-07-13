@@ -4,12 +4,13 @@ variables:
   POSTGRES_USER: nasnav
   POSTGRES_PASSWORD: nasnav
   POSTGRES_HOST_AUTH_METHOD: trust
-  MAVEN_OPTS: -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+  MAVEN_OPTS: -Dmaven.repo.local=/cache/.m2/repository
 
-cache:
-  key: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_NAME"
-  paths:
-    - .m2/repository
+# not working used volume instead
+# cache:
+#   key: m2cache
+#   paths:
+#     - .m2/repository
 
 stages:
   - test
@@ -41,6 +42,10 @@ test:maven:
   only:
     - merge_requests
     - develop
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
 
 coverage:
   stage: visualize-coverage
@@ -63,3 +68,8 @@ coverage:
     - test
   only:
     - merge_requests
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
+
