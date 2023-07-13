@@ -766,6 +766,11 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    
 	    OrganizationDomainsEntity orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
 
+        if (orgDom == null) {
+            orgDom = orgDomainsRep.findByDomainAndSubdir(domain, null);
+            subDir = null;
+        }
+
         if (orgDom == null || (yeshteryState == 1 && orgDom.getOrganizationEntity().getYeshteryState() == 0)) {
             return new DomainOrgIdResponse(0L, 0L);
         }
