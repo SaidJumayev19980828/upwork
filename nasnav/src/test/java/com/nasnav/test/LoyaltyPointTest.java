@@ -93,12 +93,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .put("constraints", NULL)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(406, response.getStatusCodeValue());
 
         request = getHttpEntity(body, "abcdefg");
 
-        ResponseEntity<List> responseList = template.exchange("/v1/loyalty/config/list?org_id=99001", GET, request, List.class);
+        ResponseEntity<List> responseList = template.exchange("/loyalty/config/list?org_id=99001", GET, request, List.class);
 
         assertEquals(200, responseList.getStatusCodeValue());
         assertEquals(1, responseList.getBody().size());
@@ -110,7 +110,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         var body = createConfigJson()
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
 
         Long id1 = response.getBody().getLoyaltyPointId();
@@ -119,7 +119,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         request = getHttpEntity("abcdefg");
 
-        ResponseEntity<LoyaltyPointDeleteResponse> deleteResponse = template.exchange("/v1/loyalty/config/delete?id="+id1, DELETE, request, LoyaltyPointDeleteResponse.class);
+        ResponseEntity<LoyaltyPointDeleteResponse> deleteResponse = template.exchange("/loyalty/config/delete?id="+id1, DELETE, request, LoyaltyPointDeleteResponse.class);
 
         assertEquals(200,deleteResponse.getStatusCodeValue());
         assertEquals(id1 , deleteResponse.getBody().getLoyaltyId());
@@ -127,7 +127,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         request = getHttpEntity(body, "abcdefg");
 
-        ResponseEntity<LoyaltyPointConfigDTO> emptyResponse = template.exchange("/v1/loyalty/config", GET, request, LoyaltyPointConfigDTO.class);
+        ResponseEntity<LoyaltyPointConfigDTO> emptyResponse = template.exchange("/loyalty/config", GET, request, LoyaltyPointConfigDTO.class);
 
         assertEquals(404, emptyResponse.getStatusCodeValue()); // no active config found
     }
@@ -143,7 +143,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Test
     public void createLoyaltyPointConfigInvalidAuthN() {
         var request = getHttpEntity("invalid");
-        var response = template.postForEntity("/v1/loyalty/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -169,7 +169,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void createTier(){
         String body = getTierJsonString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
         tierRepository.deleteByTierName("tier test");
@@ -180,7 +180,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         String body = getTierJsonString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -189,12 +189,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         String body = getTierJsonString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/v1/loyalty/tier/list?org_id=99001", GET, request, String.class);
+        response = template.exchange("/loyalty/tier/list?org_id=99001", GET, request, String.class);
         List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         assertEquals(2, resBody.size());
 
@@ -226,13 +226,13 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void changeUserTierTest() {
         String body = getTierJsonString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/tier/update", request, LoyaltyTierUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/tier/update", request, LoyaltyTierUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(tierRepository.findByTierName("tier test").isPresent());
 
         Long id = response.getBody().getTierId();
         var changeRequest = getHttpEntity("abcdefg");
-        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
+        var changeResponse = template.postForEntity("/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
 
         assertEquals(200, changeResponse.getStatusCodeValue());
         UserEntity user = userRepository.getOne(88L);
@@ -251,7 +251,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void createLoyaltyPointType() {
         String body = json().put("name", "test type").toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getLoyaltyPointId() > 0L);
         typeRepository.deleteByName("test type");
@@ -261,7 +261,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void createLoyaltyPointTypeInvalidAuthZ() {
         String body = json().put("name", "test type").toString();
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/v1/loyalty/type/update", request, String.class);
+        var response = template.postForEntity("/loyalty/type/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
         typeRepository.deleteByName("test type");
 
@@ -275,7 +275,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .put("name", "test type")
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getLoyaltyPointId() > 0L);
      }
@@ -284,7 +284,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Ignore("api is hidden for now")
     public void getLoyaltyPointType() throws JsonProcessingException {
         var request = getHttpEntity("abcdefg");
-        var response = template.exchange("/v1/loyalty/type/list", GET, request, String.class);
+        var response = template.exchange("/loyalty/type/list", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<LoyaltyPointTypeDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointTypeDTO>>() {});
         assertEquals(1, body.size());
@@ -299,7 +299,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .put("id", 31002)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/config/update", request, String.class);
+        var response = template.postForEntity("/loyalty/config/update", request, String.class);
         assertEquals(404, response.getStatusCodeValue());
     }
 
@@ -320,12 +320,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void testUserObtainPoints() throws JsonProcessingException {
         // confirming order
         var request = getHttpEntity("abcdefg");
-        var response = template.postForEntity("/v1/order/confirm?order_id=33001", request, String.class);
+        var response = template.postForEntity("/order/confirm?order_id=33001", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
         //fetch available points
         request = getHttpEntity("123");
-        response = template.exchange("/v1/loyalty/points/check?code=code1", GET, request, String.class);
+        response = template.exchange("/loyalty/points/check?code=code1", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         List<RedeemPointsOfferDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         assertFalse(resBody.isEmpty());
@@ -334,7 +334,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         //obtain user points
         request = getHttpEntity("192021");
-        response = template.postForEntity("/v1/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
+        response = template.postForEntity("/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 99001L));
     }
@@ -342,14 +342,14 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Test
     public void getUserPointsNoUserInOrg() {
         var request = getHttpEntity("456");
-        var response = template.exchange("/v1/loyalty/points", GET, request, String.class);
+        var response = template.exchange("/loyalty/points", GET, request, String.class);
         assertEquals(404, response.getStatusCodeValue());
         assertTrue(response.getBody().contains(ORG$LOY$0014.name()));
     }
     @Test
     public void getUserPoints() {
         var request = getHttpEntity("123");
-        var response = template.exchange("/v1/loyalty/points", GET, request, String.class);
+        var response = template.exchange("/loyalty/points", GET, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().contains("points"));
     }
@@ -365,7 +365,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .put("is_active", true)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
         loyaltyFamilyRepository.deleteByFamilyName("family 1");
@@ -382,7 +382,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -397,12 +397,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/family/update", request, String.class);
+        var response = template.postForEntity("/loyalty/family/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/v1/loyalty/family/list", GET, request, String.class);
+        response = template.exchange("/loyalty/family/list", GET, request, String.class);
         List<LoyaltyFamilyEntity> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         LoyaltyFamilyEntity loyaltyFamilyEntity = resBody.get(0);
         assertEquals(1, resBody.size());
@@ -430,7 +430,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
         loyaltyBoosterRepository.deleteByBoosterName("booster 1");
@@ -452,7 +452,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
@@ -473,13 +473,13 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/v1/loyalty/booster/update", request, String.class);
+        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
 
 
         request = getHttpEntity("abcdefg");
-        response = template.exchange("/v1/loyalty/booster/list", GET, request, String.class);
+        response = template.exchange("/loyalty/booster/list", GET, request, String.class);
         List<LoyaltyBoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
         LoyaltyBoosterDTO booster = resBody.get(1);
         assertEquals(2, resBody.size());
@@ -498,7 +498,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "123");
-        var response = template.postForEntity("/v1/loyalty/charity/user/update", request, LoyaltyCharityUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/charity/user/update", request, LoyaltyCharityUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(userCharityRepository.findById(response.getBody().getCharityId()).isPresent());
         userCharityRepository.deleteById( response.getBody().getCharityId());
@@ -521,7 +521,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .toString();
 
         var request = getHttpEntity(body, "456");
-        var response = template.postForEntity("/v1/loyalty/gift/send", request, LoyaltyGiftUpdateResponse.class);
+        var response = template.postForEntity("/loyalty/gift/send", request, LoyaltyGiftUpdateResponse.class);
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getBody().getGiftId() > 0L);
         loyaltyGiftRepository.deleteById(response.getBody().getGiftId());
@@ -533,7 +533,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         HttpEntity<?> request = getHttpEntity("123");
         long orgId = 99001;
 
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(OK, response.getStatusCode());
 
@@ -549,7 +549,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void SharePoint() {
         HttpEntity<?> request = getHttpEntity("123");
 
-        ResponseEntity<Void> response = template.exchange("/v1/loyalty/share_points?point_id=2&email=test2@nasnav.com&points=9",
+        ResponseEntity<Void> response = template.exchange("/loyalty/share_points?point_id=2&email=test2@nasnav.com&points=9",
                 POST,
                 request,Void.class);
         Assert.assertEquals(OK, response.getStatusCode());
@@ -562,7 +562,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         HttpEntity<?> request = getHttpEntity("456");
         long orgId = 99002;
 
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(OK, response.getStatusCode());
         Assert.assertEquals(BigDecimal.valueOf(30), response.getBody().get(0).getPoints());
@@ -572,17 +572,17 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         String email = "test4@nasnav.com";
         BigDecimal points = BigDecimal.valueOf(5);
         ResponseEntity<Void> res = template.exchange(
-                "/v1/loyalty/share_points?point_id="+point_id+"&email="+email+"&points="+points,
+                "/loyalty/share_points?point_id="+point_id+"&email="+email+"&points="+points,
                 POST,
                 request,Void.class);
         Assert.assertEquals(OK, res.getStatusCode());
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
 
 
         HttpEntity<?> request2 = getHttpEntity("258");
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
         Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
 

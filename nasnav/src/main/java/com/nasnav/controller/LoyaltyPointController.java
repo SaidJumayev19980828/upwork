@@ -23,10 +23,9 @@ import static com.nasnav.constatnts.DefaultValueStrings.INVALID_ID;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping(LoyaltyPointController.API_PATH)
+@RequestMapping("/loyalty")
 @CrossOrigin("*")
 public class LoyaltyPointController {
-    static final String API_PATH = YeshteryConstants.API_PATH +"/loyalty";
 
     @Autowired
     private LoyaltyPointsService loyaltyPointsService;
