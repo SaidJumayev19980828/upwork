@@ -46,6 +46,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -201,7 +202,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned", 4, variants.length());
         assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
-        assertTrue(variantFeatures.similar(expectedVariantFeatures));
+        JSONAssert.assertEquals(expectedVariantFeatures, variantFeatures, false);
     }
 
 
