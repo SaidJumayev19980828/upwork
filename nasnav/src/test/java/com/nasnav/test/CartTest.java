@@ -129,23 +129,22 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 	@Test
 	public void getCartWithUserIdSuccess() {
-		EmployeeUserEntity user = empRepo.findById(68L).get();
-		String authtoken = user.getAuthenticationToken();
-
-		HttpEntity<?> request =  getHttpEntity(authtoken);
+		HttpEntity<?> request =  getHttpEntity("101112");
         ResponseEntity<Cart> response =
         		template.exchange("/cart/"+88L, GET, request, Cart.class);
 
+		Cart cart = response.getBody();
+
         assertEquals(OK, response.getStatusCode());
-        assertEquals(2, response.getBody().getItems().size());
+        assertEquals(2, cart.getItems().size());
         assertProductNamesReturned(response);
+		assertEquals(cartService.calculateCartTotal(cart), cart.getSubtotal());
+		assertEquals(cart.getSubtotal().subtract(cart.getDiscount()), cart.getTotal());
 	}
+
 	@Test
 	public void checkRoleUserToGetCartWithUserIdSuccess() {
-		UserEntity user = userRepository.findById(88L).get();
-		String authtoken = user.getAuthenticationToken();
-
-		HttpEntity<?> request =  getHttpEntity(authtoken);
+		HttpEntity<?> request =  getHttpEntity("123");
         ResponseEntity<Cart> response =
         		template.exchange("/cart/"+88L, GET, request, Cart.class);
 

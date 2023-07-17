@@ -499,6 +499,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     @Override
     public AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart) {
+        if (points == null || points.isEmpty()) {
+            return new AppliedPointsResponse(ZERO, Collections.emptyList());
+        }
         List<AppliedPoints> appliedPoints = new ArrayList<>();
         Map<Long, BigDecimal> orgWithTotalPriceMap = new HashMap<>();
         BigDecimal totalPrice = ZERO;

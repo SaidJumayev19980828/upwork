@@ -149,17 +149,12 @@ public class CartServiceImpl implements CartService {
     }
     @Override
     public Cart getUserCart(Long userId,Boolean isYeshtery) {
-        Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
+        Long authUserOrgId = securityService.getCurrentUserOrganizationId();
         Long organizationId  = userRepo.getOne(userId).getOrganizationId();
-        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
+        if(!authUserOrgId.equals(organizationId)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
         }
-        Cart cart = new Cart();
-        cart.setItems(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUserIdAndOrgId(userId,orgIdToUserAuth)));
-        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
-        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
-        cart.setSubtotal(calculateCartTotal(cart));
-        return cart;
+        return getUserCart(userId, null, authUserOrgId, emptySet(), false);
     }
 
     @Override
@@ -180,8 +175,12 @@ public class CartServiceImpl implements CartService {
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
         }
-
-        cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        if (points != null && points.size() > 0) {
+            cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        } else {
+            
+        }
+        
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
