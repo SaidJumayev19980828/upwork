@@ -13,6 +13,7 @@ import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.security.UserAuthenticationData;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -71,4 +72,6 @@ public interface SecurityService {
     Set<String> getInvalidUserNotificationTokens(UserEntity user);
 
     Set<String> getValidNotificationTokens(BaseUserEntity user);
+
+    LocalDateTime getLastLoginForUser(BaseUserEntity user);
 }

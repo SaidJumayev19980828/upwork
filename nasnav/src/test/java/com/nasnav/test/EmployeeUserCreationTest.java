@@ -795,8 +795,8 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
 		assertEquals( 88L, user.getId().longValue());
-		assertNotNull(user.roles);
-		assertFalse(user.roles.isEmpty());
+		assertNotNull(user.getRoles());
+		assertFalse(user.getRoles().isEmpty());
 	}
 
 	
@@ -822,8 +822,9 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
 		assertEquals( 88, response.getBody().getId().longValue());
-		assertNotNull(user.roles);
-		assertFalse(user.roles.isEmpty());
+		assertNotNull(user.getRoles());
+		assertFalse(user.getRoles().isEmpty());
+		assertNotNull(user.getLastLogin());
 	}
 	
 	

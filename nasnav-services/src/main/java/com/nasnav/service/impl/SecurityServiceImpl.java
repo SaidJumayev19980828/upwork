@@ -89,10 +89,6 @@ public class SecurityServiceImpl implements SecurityService {
 	private UserServicesHelper helper;
 
 
-	@Autowired
-	private UserTokenRepository userTokenRepository;
-
-
 	@Override
 	@CacheResult(cacheName = USERS_BY_TOKENS)
 	public Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token){
@@ -149,10 +145,10 @@ public class SecurityServiceImpl implements SecurityService {
 	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
 	public UserApiResponse logout(String headerToken, String cookieToken) {
 		String token = headerToken == null || headerToken.isEmpty() ? cookieToken : headerToken;
-		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token);
+		UserTokensEntity userTokensEntity = userTokenRepo.getUserEntityByToken(token);
 		String notificationToken =null;
 		userTokensEntity.setNotificationToken(notificationToken);
-		userTokenRepository.save(userTokensEntity);
+		userTokenRepo.save(userTokensEntity);
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
@@ -349,9 +345,9 @@ public class SecurityServiceImpl implements SecurityService {
             token.setUserEntity((UserEntity) user);
         }
 		userTokenRepo.save(token);
-		UserTokensEntity userTokensEntity = userTokenRepository.getUserEntityByToken(token.getToken());
+		UserTokensEntity userTokensEntity = userTokenRepo.getUserEntityByToken(token.getToken());
 		userTokensEntity.setNotificationToken(notificationToken);
-		userTokenRepository.save(userTokensEntity);
+		userTokenRepo.save(userTokensEntity);
 
 		return token.getToken();
 	}
@@ -628,6 +624,16 @@ public class SecurityServiceImpl implements SecurityService {
 		} else {
 			throw new UnsupportedOperationException("user type not supported");
 		}
+	}
+
+	@Override
+	public LocalDateTime getLastLoginForUser(BaseUserEntity user) {
+		Set<UserTokensEntity> tokens = user instanceof UserEntity ? userTokenRepo.getByUserEntity((UserEntity) user)
+				: userTokenRepo.getByEmployeeUserEntity((EmployeeUserEntity) user);
+		return tokens.stream()
+		.map(UserTokensEntity::getUpdateTime)
+		.max(LocalDateTime::compareTo)
+		.orElse(null);
 	}
 }
 

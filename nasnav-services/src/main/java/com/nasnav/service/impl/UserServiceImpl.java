@@ -622,6 +622,7 @@ public class UserServiceImpl implements UserService {
 		UserRepresentationObject userRepObj = user.getRepresentation();
 		userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
 		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+		userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
 		return userRepObj;
 	}
 	

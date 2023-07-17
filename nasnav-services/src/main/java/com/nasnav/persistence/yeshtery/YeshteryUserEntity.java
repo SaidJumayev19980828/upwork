@@ -72,12 +72,12 @@ public class YeshteryUserEntity extends BaseYeshteryUserEntity {
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
-        obj.id = this.getId();
-        obj.name = this.getName();
-        obj.email = this.getEmail();
-        obj.phoneNumber = this.getPhoneNumber();
-        obj.image = this.getImage();
-        obj.mobile = this.getMobile();
+        obj.setId(this.getId());
+        obj.setName(this.getName());
+        obj.setEmail(this.getEmail());
+        obj.setPhoneNumber(this.getPhoneNumber());
+        obj.setImage(this.getImage());
+        obj.setMobile(this.getMobile());
         obj.setCreationDate(creationTime);
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
 
