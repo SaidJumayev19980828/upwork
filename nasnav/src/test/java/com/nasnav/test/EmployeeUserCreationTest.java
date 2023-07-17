@@ -8,6 +8,7 @@ import com.nasnav.controller.UserController;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.Gender;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.UserApiResponse;
@@ -484,6 +485,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				.put("employee",true)
 				.put("name","Ahmad")
 				.put("email","ahmad.user@nasnav.com")
+				.put("gender", Gender.MALE)
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
@@ -492,6 +494,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		EmployeeUserEntity user = empRepository.findById(68L).get();
 		assertEquals("Ahmad", user.getName());
 		assertEquals("ahmad.user@nasnav.com", user.getEmail());
+		assertEquals(Gender.MALE, user.getGender());
 	}
 	@Test
 	public void updateSelfEmployeeUserWithAvatarSuccess() {
@@ -825,6 +828,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertNotNull(user.getRoles());
 		assertFalse(user.getRoles().isEmpty());
 		assertNotNull(user.getLastLogin());
+		assertEquals(Gender.MALE, user.getGender());
 	}
 	
 	

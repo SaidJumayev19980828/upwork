@@ -80,6 +80,7 @@ public class YeshteryUserEntity extends BaseYeshteryUserEntity {
         obj.setMobile(this.getMobile());
         obj.setCreationDate(creationTime);
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
+        obj.setGender(getGender());
 
         return obj;
     }

@@ -216,6 +216,10 @@ public class UserServicesHelper {
 			successResponseStatusList.addAll( asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT) );
 		}
 
+		if(isNotBlankOrNull(employeeUserJson.getGender())){
+			employeeUserEntity.setGender(employeeUserJson.getGender());
+		}
+
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
 
 		employeeUserEntity = employeeUserRepository.save(employeeUserEntity);

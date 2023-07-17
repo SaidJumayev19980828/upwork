@@ -1,6 +1,8 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.enumerations.Gender;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -161,7 +163,7 @@ public class UserDTOs {
         private String avatar;
 
         @Schema(example = "Male")
-        private String gender;
+        private Gender gender;
 
         @Schema(example = "08/08/2010")
         @JsonProperty("birth_date")

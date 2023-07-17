@@ -3,6 +3,8 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.enumerations.Gender;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -37,6 +39,7 @@ public class UserRepresentationObject {
     private String referral;
     private Boolean isInfluencer;
     private LocalDateTime lastLogin;
+    private Gender gender;
 
     public String getReferral() {
         return id + "";
