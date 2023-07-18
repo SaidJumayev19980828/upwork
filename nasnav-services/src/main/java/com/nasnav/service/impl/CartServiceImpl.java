@@ -18,9 +18,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -148,18 +146,13 @@ public class CartServiceImpl implements CartService {
         return cart;
     }
     @Override
-    public Cart getUserCart(Long userId,Boolean isYeshtery) {
-        Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
-        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
-        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
+    public Cart getUserCart(Long userId, Boolean isYeshtery) {
+        Long authUserOrgId = securityService.getCurrentUserOrganizationId();
+        boolean userExists = userRepo.existsByIdAndOrganizationId(userId, authUserOrgId);
+        if(!userExists){
+            throw new RuntimeBusinessException(NOT_FOUND, E$USR$0002);
         }
-        Cart cart = new Cart();
-        cart.setItems(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUserIdAndOrgId(userId,orgIdToUserAuth)));
-        cart.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
-        cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
-        cart.setSubtotal(calculateCartTotal(cart));
-        return cart;
+        return getUserCart(userId, null, authUserOrgId, emptySet(), false);
     }
 
     @Override
@@ -180,8 +173,12 @@ public class CartServiceImpl implements CartService {
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
         }
-
-        cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        if (points != null && points.size() > 0) {
+            cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        } else {
+            
+        }
+        
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
