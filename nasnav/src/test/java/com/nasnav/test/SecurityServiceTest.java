@@ -1,15 +1,25 @@
 package com.nasnav.test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -29,6 +39,7 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.YeshteryState;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
@@ -39,7 +50,7 @@ import com.nasnav.service.impl.SecurityServiceImpl;
 import com.nasnav.service.yeshtery.YeshteryUserService;
 
 @ExtendWith(MockitoExtension.class)
-public class IsShopAccessibleToCurrentUserTest {
+public class SecurityServiceTest {
 	@Mock
 	private CommonUserRepository userRepo;
 	@Mock
@@ -73,60 +84,37 @@ public class IsShopAccessibleToCurrentUserTest {
 		SecurityContextHolder.setContext(securityContext);
 	}
 
-	@Test
-	void sameOrgShopIsAccessibleNonYeshtery() {
-		injectAppConfigIfNeeded(false);
-		Boolean result = sameOrgShop(YeshteryState.DISABLED);
-		assertTrue(result);
+	private static Stream<Arguments> sameOrgGenerator() {
+		return Stream.of(
+				Arguments.of(false, YeshteryState.DISABLED, true),
+				Arguments.of(false, YeshteryState.ACTIVE, true),
+				Arguments.of(true, YeshteryState.DISABLED, false),
+				Arguments.of(true, YeshteryState.ACTIVE, true));
 	}
 
-	@Test
-	void differentOrgShopIsNotAccessibleNonYeshtery() {
-		injectAppConfigIfNeeded(false);
-		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.DISABLED);
-		assertFalse(result);
+	@ParameterizedTest
+	@MethodSource("sameOrgGenerator")
+	void shopOfSameOrgAccessability(boolean isYeshteryInstance, YeshteryState expectedResult,
+			boolean shouldBeAccessible) {
+		injectAppConfigIfNeeded(isYeshteryInstance);
+		boolean result = sameOrgShop(expectedResult);
+		assertEquals(shouldBeAccessible, result);
 	}
 
-	@Test
-	void onlyShopOrgIsYeshtery() {
-		injectAppConfigIfNeeded(true);
-		boolean result = differentOrgShop(YeshteryState.ACTIVE, YeshteryState.DISABLED);
-		assertFalse(result);
+	private static Stream<Arguments> differentOrgGenerator() {
+		return IntStream.of(8).boxed()
+				.map(i -> Arguments.of((i & 4) == 4, toYeshteryState((i & 2) == 2), toYeshteryState((i & 1) == 1),
+						i == 7));
 	}
 
-	@Test
-	void bothOrgsYeshteryStateActive() {
-		injectAppConfigIfNeeded(true);
-		boolean result = differentOrgShop(YeshteryState.ACTIVE, YeshteryState.ACTIVE);
-		assertTrue(result);
-	}
-
-	@Test
-	void bothOrgsYeshteryStateDisabled() {
-		injectAppConfigIfNeeded(true);
-		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.DISABLED);
-		assertFalse(result);
-	}
-
-	@Test
-	void onlyUserOrgIsYeshtery() {
-		injectAppConfigIfNeeded(true);
-		boolean result = differentOrgShop(YeshteryState.DISABLED, YeshteryState.ACTIVE);
-		assertFalse(result);
-	}
-
-	@Test
-	void SameOrgYeshteryStateActiveYeshtery() {
-		injectAppConfigIfNeeded(true);
-		boolean result = sameOrgShop(YeshteryState.ACTIVE);
-		assertTrue(result);
-	}
-
-	@Test
-	void SameOrgYeshteryStateDisabledYeshtery() {
-		injectAppConfigIfNeeded(true);
-		boolean result = sameOrgShop(YeshteryState.DISABLED);
-		assertFalse(result);
+	@ParameterizedTest
+	@MethodSource("differentOrgGenerator")
+	void shopOfDifferentOrgAccessiblity(boolean isYeshteryInstance, YeshteryState shopOrgYeshteryState,
+			YeshteryState userOrgYeshteryState,
+			boolean expectedResult) {
+		injectAppConfigIfNeeded(isYeshteryInstance);
+		boolean result = differentOrgShop(shopOrgYeshteryState, userOrgYeshteryState);
+		assertEquals(expectedResult, result);
 	}
 
 	@Test
@@ -161,6 +149,53 @@ public class IsShopAccessibleToCurrentUserTest {
 		employee.setShopId(99902L);
 		result = securityService.isShopAccessibleToCurrentUser(99901L);
 		assertFalse(result);
+	}
+
+	private static Stream<Arguments> generator() {
+		UserEntity authUser = new UserEntity();
+		authUser.setOrganizationId(99001L);
+		authUser.setYeshteryUserId(5L);
+
+		UserEntity userFromYeshteryService = new UserEntity();
+		userFromYeshteryService.setOrganizationId(99002L);
+		userFromYeshteryService.setYeshteryUserId(5L);
+
+		return Stream.of(
+				Arguments.of(false, 99001L, authUser, false, null, false, authUser),
+				Arguments.of(false, 99002L, authUser, false, null, true, null),
+				Arguments.of(true, 99001L, authUser, false, null, false, authUser),
+				Arguments.of(true, 99002L, authUser, true, userFromYeshteryService, false, userFromYeshteryService),
+				Arguments.of(true, 99003L, authUser, true, null, true, null));
+	}
+
+	@ParameterizedTest
+	@MethodSource("generator")
+	void getUserForOrg(boolean isYeshteryInstance, Long requiredOrg, UserEntity authUser, boolean expectYeshteryCall,
+			UserEntity userFromYeshteryService, boolean shouldThrow, UserEntity expectedValue) {
+		injectAppConfigIfNeeded(isYeshteryInstance);
+
+		Mockito.when(authentication.getDetails()).thenReturn(authUser);
+
+		if (expectYeshteryCall) {
+			Mockito.when(yeshteryUserService.getUserForOrg(authUser, requiredOrg)).thenReturn(userFromYeshteryService);
+		}
+
+		AtomicReference<BaseUserEntity> returnedUser = new AtomicReference<>(null);
+		Executable getUserForOrg = () -> {
+			returnedUser.set(securityService.getCurrentUserForOrg(requiredOrg));
+		};
+
+		if (shouldThrow) {
+			assertThrows(IllegalStateException.class, getUserForOrg);
+		} else {
+			assertDoesNotThrow(getUserForOrg);
+			assertEquals(expectedValue, returnedUser.get());
+		}
+		Mockito.verifyNoMoreInteractions(yeshteryUserService);
+	}
+
+	private static YeshteryState toYeshteryState(boolean isActve) {
+		return isActve ? YeshteryState.ACTIVE : YeshteryState.DISABLED;
 	}
 
 	private boolean differentOrgShop(YeshteryState shopOrgYeshteryState, YeshteryState userOrgYeshteryState) {

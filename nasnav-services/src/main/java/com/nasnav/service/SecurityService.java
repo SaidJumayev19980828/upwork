@@ -25,7 +25,9 @@ public interface SecurityService {
     UserApiResponse logout(String token, String cookieToken);
 
     BaseUserEntity getCurrentUser();
-    
+
+    BaseUserEntity getCurrentUserForOrg(Long orgId);
+
     Long getCurrentUserOrganizationId();
     Long getCurrentUserShopId();
     ShopsEntity getCurrentUserShop();
