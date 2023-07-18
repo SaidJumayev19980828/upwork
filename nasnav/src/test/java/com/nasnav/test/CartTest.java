@@ -6,6 +6,8 @@ import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
@@ -127,6 +129,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
         assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
 	}
+
 	@Test
 	public void getCartWithUserIdSuccess() {
 		HttpEntity<?> request =  getHttpEntity("101112");
@@ -140,6 +143,18 @@ public class CartTest extends AbstractTestWithTempBaseDir {
         assertProductNamesReturned(response);
 		assertEquals(cartService.calculateCartTotal(cart), cart.getSubtotal());
 		assertEquals(cart.getSubtotal().subtract(cart.getDiscount()), cart.getTotal());
+	}
+
+	@Test
+	public void getCartWithUserIdFromOtherOrg() {
+		HttpEntity<?> request =  getHttpEntity("5289361");
+		ResponseEntity<ErrorResponseDTO> response =
+				template.exchange("/cart/"+88L, GET, request, ErrorResponseDTO.class);
+
+		ErrorResponseDTO error = response.getBody();
+
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(ErrorCodes.E$USR$0002.name(), error.getError());
 	}
 
 	@Test

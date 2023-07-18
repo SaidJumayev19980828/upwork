@@ -148,11 +148,11 @@ public class CartServiceImpl implements CartService {
         return cart;
     }
     @Override
-    public Cart getUserCart(Long userId,Boolean isYeshtery) {
+    public Cart getUserCart(Long userId, Boolean isYeshtery) {
         Long authUserOrgId = securityService.getCurrentUserOrganizationId();
-        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
-        if(!authUserOrgId.equals(organizationId)){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
+        boolean userExists = userRepo.existsByIdAndOrganizationId(userId, authUserOrgId);
+        if(!userExists){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0002);
         }
         return getUserCart(userId, null, authUserOrgId, emptySet(), false);
     }
