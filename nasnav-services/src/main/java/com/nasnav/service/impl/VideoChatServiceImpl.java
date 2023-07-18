@@ -91,9 +91,9 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Override
     public VideoChatResponse createOrJoinSession(String sessionName, Boolean force, Long orgId, Long shopId) {
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
         orgId = organization.getId();
+        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
