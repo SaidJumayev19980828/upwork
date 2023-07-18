@@ -153,7 +153,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 		ErrorResponseDTO error = response.getBody();
 
-		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_FOUND, response.getStatusCode());
 		assertEquals(ErrorCodes.E$USR$0002.name(), error.getError());
 	}
 

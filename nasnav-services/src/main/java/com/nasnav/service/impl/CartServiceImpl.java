@@ -18,9 +18,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -152,7 +150,7 @@ public class CartServiceImpl implements CartService {
         Long authUserOrgId = securityService.getCurrentUserOrganizationId();
         boolean userExists = userRepo.existsByIdAndOrganizationId(userId, authUserOrgId);
         if(!userExists){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0002);
+            throw new RuntimeBusinessException(NOT_FOUND, E$USR$0002);
         }
         return getUserCart(userId, null, authUserOrgId, emptySet(), false);
     }
