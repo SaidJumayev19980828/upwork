@@ -874,6 +874,16 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         activateOrgUser(user);
         return login(user, false);
     }
+
+    @Override
+    public UserEntity getUserForOrg(UserEntity user, Long orgId) {
+        if (user.getOrganizationId().equals(orgId)) {
+            return user;
+        }
+
+        return nasNavUserRepository.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), orgId)
+                .orElse(null);
+    }
 }
 
 @Data

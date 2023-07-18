@@ -381,8 +381,21 @@ public class SecurityServiceImpl implements SecurityService {
 		return getCurrentUserOptional()
 					.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
 	}
-	
-	
+
+	@Override
+	public BaseUserEntity getCurrentUserForOrg(Long orgId) {
+
+		return getCurrentUserOptional()
+				.map(user -> mapUserToOrgUser(user, orgId))
+				.orElseThrow(() -> new IllegalStateException("Could not retrieve current user!"));
+	}
+
+	private BaseUserEntity mapUserToOrgUser(BaseUserEntity user, Long orgId) {
+		if (config.isYeshteryInstance && !user.getOrganizationId().equals(orgId) && user instanceof UserEntity) {
+			return yeshteryUserService.getUserForOrg((UserEntity) user, orgId);
+		}
+		return user.getOrganizationId().equals(orgId) ? user : null;
+	}
 	
 	@Override
 	public Optional<BaseUserEntity> getCurrentUserOptional() {
