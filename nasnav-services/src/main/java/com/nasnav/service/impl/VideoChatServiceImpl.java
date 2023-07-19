@@ -303,8 +303,11 @@ public class VideoChatServiceImpl implements VideoChatService {
                     break;
                 case participantLeft: handelParticipantLeft(dto);
                     break;
+                default:
             }
-        } catch (JsonProcessingException e) {}
+        } catch (JsonProcessingException e) {
+            // empty
+        }
     }
 
     private void handleSessionDestroyed(OpenViduCallbackDTO dto) {
@@ -358,7 +361,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             Session session = getSession(videoEntity.getName());
             session.close();
         } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
-            logger.error("couldn't close session! , "+ ex.getMessage());
+            logger.error("couldn't close session! , {}", ex.getMessage());
             videoEntity.setStatus(FAILED.getValue());
         }
         sessionsMap.remove(videoEntity.getName());

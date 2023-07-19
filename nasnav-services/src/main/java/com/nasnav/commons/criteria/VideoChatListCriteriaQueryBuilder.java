@@ -17,6 +17,15 @@ import static javax.persistence.criteria.JoinType.LEFT;
 
 public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<VideoChatLogEntity>{
 
+    private static final String ID = "id";
+    private static final String USER = "user";
+    private static final String ASSIGNED_TO = "assignedTo";
+    private static final String ORGANIZATION = "organization";
+    private static final String SHOP = "shop";
+    private static final String CREATED_AT = "createdAt";
+    private static final String ENDED_AT = "endedAt";
+    private static final String STATUS = "status";
+    private static final String IS_ACTIVE = "isActive";
     private Root<VideoChatLogEntity> root;
 
     public VideoChatListCriteriaQueryBuilder(EntityManager entityManager) {
@@ -26,10 +35,10 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
     @Override
     void setRoot() {
         root = query.distinct(true).from(VideoChatLogEntity.class);
-        root.fetch("user", LEFT);
-        root.fetch("assignedTo", LEFT);
-        root.fetch("organization", LEFT);
-        root.fetch("shop", LEFT);
+        root.fetch(USER, LEFT);
+        root.fetch(ASSIGNED_TO, LEFT);
+        root.fetch(ORGANIZATION, LEFT);
+        root.fetch(SHOP, LEFT);
     }
 
     @Override
@@ -38,23 +47,39 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
         List<Predicate> predicatesList = new ArrayList<>();
 
         if (searchParam.getOrgId() != null) {
-            predicatesList.add( builder.equal( root.get("organization").get("id"), searchParam.getOrgId()));
+            predicatesList.add( builder.equal( root.get(ORGANIZATION).get(ID), searchParam.getOrgId()));
         }
         if (searchParam.getShopId() != null) {
-            predicatesList.add( builder.equal( root.get("shop").get("id"), searchParam.getShopId()));
+            predicatesList.add( builder.equal( root.get(SHOP).get(ID), searchParam.getShopId()));
         }
         if (searchParam.getHasShop() != null) {
-            predicatesList.add( builder.isNotNull( root.get("shop")));
+            predicatesList.add( builder.isNotNull( root.get(SHOP)));
         }
         if (searchParam.getIsActive() != null) {
-            predicatesList.add( builder.isTrue( root.get("isActive")));
+            predicatesList.add( builder.isTrue( root.get(IS_ACTIVE)));
         }
         if (searchParam.getIsAssigned() != null) {
-            predicatesList.add( builder.isNotNull( root.get("assignedTo")));
+            predicatesList.add( builder.isNotNull( root.get(ASSIGNED_TO)));
+        }
+        if (searchParam.getEmployeeId() != null) {
+            predicatesList.add( builder.equal( root.get(ASSIGNED_TO).get(ID), searchParam.getEmployeeId()));
+        }
+        if (searchParam.getUserId() != null) {
+            predicatesList.add( builder.equal( root.get(USER).get(ID), searchParam.getUserId()));
         }
         if (searchParam.getStatus() != null) {
             Integer status = searchParam.getStatus().getValue();
-            predicatesList.add( builder.equal( root.get("status"), status));
+            predicatesList.add( builder.equal( root.get(STATUS), status));
+        }
+        if (searchParam.getFrom() != null) {
+            Predicate nullEndedAt = builder.isNull(root.get(ENDED_AT));
+            Predicate endedLater = builder.greaterThan(root.get(ENDED_AT), searchParam.getFrom());
+            predicatesList.add( builder.or(nullEndedAt, endedLater));
+        }
+        if (searchParam.getTo() != null) {
+            Predicate nullCreatedAt = builder.isNull(root.get(CREATED_AT));
+            Predicate startedEarlier = builder.lessThan(root.get(CREATED_AT), searchParam.getTo());
+            predicatesList.add( builder.or(nullCreatedAt, startedEarlier));
         }
 
         this.predicates = predicatesList.stream().toArray(Predicate[]::new);
@@ -62,7 +87,7 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
 
     @Override
     void setOrderBy() {
-        this.orderBy = "id";
+        this.orderBy = ID;
     }
 
     @Override
