@@ -37,19 +37,19 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
         VideoChatSearchParam searchParam = (VideoChatSearchParam) this.searchParams;
         List<Predicate> predicatesList = new ArrayList<>();
 
-        if (searchParam.getOrg_id() != null) {
-            predicatesList.add( builder.equal( root.get("organization").get("id"), searchParam.getOrg_id()));
+        if (searchParam.getOrgId() != null) {
+            predicatesList.add( builder.equal( root.get("organization").get("id"), searchParam.getOrgId()));
         }
-        if (searchParam.getShop_id() != null) {
-            predicatesList.add( builder.equal( root.get("shop").get("id"), searchParam.getShop_id()));
+        if (searchParam.getShopId() != null) {
+            predicatesList.add( builder.equal( root.get("shop").get("id"), searchParam.getShopId()));
         }
-        if (searchParam.getHas_shop() != null) {
+        if (searchParam.getHasShop() != null) {
             predicatesList.add( builder.isNotNull( root.get("shop")));
         }
-        if (searchParam.getIs_active() != null) {
+        if (searchParam.getIsActive() != null) {
             predicatesList.add( builder.isTrue( root.get("isActive")));
         }
-        if (searchParam.getIs_assigned() != null) {
+        if (searchParam.getIsAssigned() != null) {
             predicatesList.add( builder.isNotNull( root.get("assignedTo")));
         }
         if (searchParam.getStatus() != null) {
