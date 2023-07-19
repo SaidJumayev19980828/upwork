@@ -28,4 +28,5 @@ public class VideoChatLogRepresentationObject  extends BaseRepresentationObject 
     private VideoChatStatus status;
     private Boolean isActive;
     private LocalDateTime createdAt;
+    private LocalDateTime endedAt;
 }
