@@ -1,8 +1,6 @@
 package com.nasnav.persistence;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -10,6 +8,7 @@ import java.time.LocalDateTime;
 @Table(name = "bank_reservations")
 @Entity
 @Data
+@NoArgsConstructor
 public class BankReservationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

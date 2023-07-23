@@ -40,6 +40,12 @@ public class BankAccountEntity {
     @Column(name = "opening_balance")
     private Long openingBalance;
 
+    @OneToOne
+    @JoinColumn(name = "opening_balance_activity_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private BankAccountActivityEntity openingBalanceActivity;
+
     @Column(name = "opening_balance_date")
     private LocalDateTime openingBalanceDate;
 

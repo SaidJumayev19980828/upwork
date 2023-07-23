@@ -50,3 +50,6 @@ CREATE TABLE public.bank_reservations(
                              fulfilled BOOLEAN not null default false,
                              fulfilled_date timestamp without time zone default now()
 );
+
+ALTER TABLE public.bank_accounts
+    ADD COLUMN opening_balance_activity_id bigint REFERENCES bank_account_activities(id);

@@ -1,6 +1,5 @@
 package com.nasnav.service;
 
 public interface BankInsideTransactionService {
-    //transfer
-    //get history
+    public void transfer(long receiverAccountId, long amount);
 }

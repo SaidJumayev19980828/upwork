@@ -440,8 +440,10 @@ public enum ErrorCodes {
 
 	,BANK$ACC$0001("No user or org is provided")
 	,BANK$ACC$0002("an account already exist for this user or org")
-	,BANK$ACC$0003("no account found with id: [%d]")
+	,BANK$ACC$0003("no account found for the user")
 	,BANK$ACC$0004("the Deposit/Withdrawal not valid from BC point of view")
+	,BANK$ACC$0005("the account have not enough balance")
+	,BANK$ACC$0006("No reservation with id: [%d]")
 
 
 	;
