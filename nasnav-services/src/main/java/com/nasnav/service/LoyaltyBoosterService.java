@@ -18,4 +18,6 @@ public interface LoyaltyBoosterService {
     void deleteBooster(Long boosterId);
 
     void upgradeUserBooster(Long boosterId, Long userId);
+
+	List<LoyaltyBoosterDTO> getBoosters();
 }

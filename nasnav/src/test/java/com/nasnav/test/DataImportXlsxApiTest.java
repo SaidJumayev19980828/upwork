@@ -1,26 +1,21 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -62,15 +57,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 //@Ignore
-public class DataImportXlsxApiTest {
+public class DataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
 

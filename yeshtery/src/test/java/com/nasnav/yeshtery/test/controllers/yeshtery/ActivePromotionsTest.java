@@ -9,29 +9,20 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.ErrorResponseDTO;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.yeshtery.Yeshtery;
-
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert.sql" })
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
-class ActivePromotionsTest {
+class ActivePromotionsTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private TestRestTemplate template;
 

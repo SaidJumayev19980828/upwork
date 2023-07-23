@@ -280,7 +280,7 @@ public class ProductsController {
     
     @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
     public ProductUpdateResponse createProductV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		@RequestPart String productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
+    		 @RequestPart("product") @Valid NewProductFlowDTO productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
     		@RequestPart(value = "imgs", required = false) @Valid MultipartFile [] imgs ) throws BusinessException, JsonMappingException, JsonProcessingException {
 		
     	return productService.updateProductV2(productJson,cover,imgs);

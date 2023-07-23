@@ -2,16 +2,15 @@ package com.nasnav.test.shipping.services.clicknship;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.OrganizationShippingServiceEntity;
-import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
 import com.nasnav.shipping.services.clicknship.webclient.ClickNshipWebClient;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -19,13 +18,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -33,7 +29,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.nasnav.shipping.services.clicknship.ClickNShipShippingService.AWB_MIME;
@@ -52,13 +47,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-@DirtiesContext
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_10.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class ClicknshipServiceTest {
+public class ClicknshipServiceTest extends AbstractTestWithTempBaseDir {
 
 
 
@@ -212,14 +204,14 @@ public class ClicknshipServiceTest {
     }
 
 
-
+    // not sure why this required a new context
     @Test
     public void testGetMinimumOffer() throws IOException {
         HttpEntity<?> request =  getHttpEntity("123");
         var response =
                 template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
 
-        assertEquals(OK, response.getStatusCode());
+        assertEquals(response.getBody(), OK, response.getStatusCode());
 
         var offers =
                 objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});

@@ -8,9 +8,11 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
+import com.nasnav.service.CommonUserService;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
@@ -18,12 +20,15 @@ import com.nasnav.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.servlet.http.Cookie;
@@ -36,13 +41,15 @@ import java.util.Set;
 import static com.nasnav.enumerations.YeshteryState.DISABLED;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping("/user")
 @CrossOrigin("*") // allow all origins
+@RequiredArgsConstructor
 public class UserController {
-
     private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+    private final CommonUserService commonUserService;
     @Autowired
 	private UserService userService;
     @Autowired
@@ -51,11 +58,16 @@ public class UserController {
     private SecurityService securityService;
     @Autowired
     private ReviewService reviewService;
-    
+
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         return employeeUserService.createEmployeeUser(employeeUserJson);
+    }
+
+    @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
+        return commonUserService.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
@@ -147,11 +159,11 @@ public class UserController {
     public UserApiResponse oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
         return securityService.socialLogin(socialLoginToken, false);
     }
-
     @PostMapping(value = "v2/register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
-    public UserApiResponse registerUserV2(@RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
-        return this.userService.registerUserV2(userJson);
+    public UserApiResponse registerUserV2(@RequestBody UserDTOs.UserRegistrationObjectV2 userJson,
+            @RequestParam(required = false) Long referrer) throws BusinessException {
+        return this.userService.registerUserReferral(userJson, referrer);
     }
 
     @GetMapping(value = "v2/register/activate", produces = APPLICATION_JSON_VALUE)
@@ -223,5 +235,10 @@ public class UserController {
     @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<RecoveryUserResponse> verifyOtp(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
         return ResponseEntity.ok(userService.activateRecoveryOtp(activateOtp));
+    }
+    @PostMapping(value = "uploadAvatar", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    public UserApiResponse uploadUserAvatar(@RequestHeader(name = "User-Token", required = false) String token, @RequestPart("file") @Valid MultipartFile file)
+            throws BusinessException, ImportProductException {
+        return this.userService.updateUserAvatar(file);
     }
 }

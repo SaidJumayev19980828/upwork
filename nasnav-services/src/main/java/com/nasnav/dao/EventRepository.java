@@ -31,4 +31,6 @@ public interface EventRepository extends CrudRepository<EventEntity, Long> {
             " and e.status=0 and e.influencer_id is not null" +
             " and e.id != :sourceEventId", nativeQuery = true)
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
+    @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
+    List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
 }

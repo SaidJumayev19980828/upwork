@@ -4,13 +4,14 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
+import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
-import com.nasnav.enumerations.ExtraAttributeType;
-import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
@@ -24,16 +25,13 @@ import com.nasnav.persistence.*;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.FileService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.ShopService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,17 +51,14 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
-import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
-import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
-import static com.nasnav.enumerations.ProductFeatureType.*;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -72,17 +67,16 @@ import static com.nasnav.payments.misc.Gateway.*;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.*;
-import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 
 
 @Service
+@Slf4j
 public class OrganizationServiceImpl implements OrganizationService {
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -135,6 +129,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     private AppConfig config;
     @Autowired
     private PaymobSourceRepository paymobSourceRepository;
+    @Autowired
+    private EmployeeUserService employeeUserService;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -324,6 +320,32 @@ public class OrganizationServiceImpl implements OrganizationService {
         return new OrganizationResponse(organization.getId(), 0);
     }
 
+    @Override
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    public OrganizationResponse registerOrganization(RegisterDto json) throws Exception {
+        OrganizationEntity organization;
+        OrganizationCreationDTO organizationDTO = new OrganizationCreationDTO();
+        organizationDTO.setName(json.getOrganizationName());
+        String pname = encodeUrl(organizationDTO.getName());
+        organizationDTO.setPname(pname);
+        organizationDTO.setCurrencyIso(json.getCurrencyIso());
+        organizationDTO.setEcommerce(1);
+        organization = createNewOrganization(organizationDTO);
+
+        updateAdditionalOrganizationData(organizationDTO, organization);
+
+	    organizationRepository.save(organization);
+
+        EmployeeUserCreationObject employeeDTO = new EmployeeUserCreationObject();
+        employeeDTO.setName(json.getName());
+        employeeDTO.setEmail(json.getEmail());
+        employeeDTO.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
+        employeeDTO.setOrgId(organization.getId());
+        employeeUserService.createEmployeeUser(employeeDTO);
+
+        return new OrganizationResponse(organization.getId(), 0);
+    }
+
 
     private OrganizationEntity createNewOrganization(OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationNameForCreate(json);
@@ -341,7 +363,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setPriority(0);
         return organization;
     }
-
 
     private void updateAdditionalOrganizationData(OrganizationCreationDTO json, OrganizationEntity organization) {
         if (json.getId() == null) {
@@ -737,33 +758,24 @@ public class OrganizationServiceImpl implements OrganizationService {
 	    String subDir = null;
 	    if (url.getPath() != null && url.getPath().length() > 1) {
 		    String[] subdirectories = url.getPath().split("/");
+            subDir = Arrays.stream(subdirectories).findFirst().filter(Predicate.not(String::isEmpty)).orElse(null);
 		    if (subdirectories.length > 1 && subdirectories[1].length() > 0) {
 		    	subDir = subdirectories[1];
 		    }
 	    }
 	    
-	    OrganizationDomainsEntity orgDom = null;
-	    if (domain.endsWith(NASNAV_DOMAIN) || domain.endsWith(NASORG_DOMAIN)) {
-	    	// try to check if we have full domain matching first without subdomain
-		    orgDom = orgDomainsRep.findByDomainAndSubdir(domain,null);
-		    if (orgDom == null) {
-			    orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
-		    } else {
-		    	// the check succeeded with subdir = null
-			   subDir = null;
-		    }
-	    } else {
-	    	orgDom = orgDomainsRep.findByDomain(domain);
-	    	subDir = null;
-	    }
-	    if (orgDom != null)
-            if (orgDom.getOrganizationEntity().getYeshteryState() == 0 && yeshteryState == 1) {
-                return new DomainOrgIdResponse(0L, 0L);
-            }
+	    OrganizationDomainsEntity orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
+
+        if (orgDom == null) {
+            orgDom = orgDomainsRep.findByDomainAndSubdir(domain, null);
+            subDir = null;
+        }
+
+        if (orgDom == null || (yeshteryState == 1 && orgDom.getOrganizationEntity().getYeshteryState() == 0)) {
+            return new DomainOrgIdResponse(0L, 0L);
+        }
 	    
-//	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
-	    
-		return (orgDom == null) ? new DomainOrgIdResponse(0L, 0L) : new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
+        return new DomainOrgIdResponse(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
 
     @Override

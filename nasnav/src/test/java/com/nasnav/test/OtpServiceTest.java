@@ -5,9 +5,9 @@ import com.nasnav.dao.UserOtpRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserOtpEntity;
-import com.nasnav.persistence.UserOtpEntity;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.util.RandomGenerator;
 
 import org.junit.jupiter.api.Test;
@@ -20,10 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.PropertySource;
 
 import java.util.Date;
 import java.util.Optional;
@@ -34,10 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@SpringBootTest
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-class OtpServiceTest {
+class OtpServiceTest extends AbstractTestWithTempBaseDir {
     @MockBean
     private UserOtpRepository userOtpRepository;
 

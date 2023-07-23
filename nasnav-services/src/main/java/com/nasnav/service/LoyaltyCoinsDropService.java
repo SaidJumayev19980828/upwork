@@ -31,4 +31,6 @@ public interface LoyaltyCoinsDropService {
 
     void giveUserCoinsNewFamilyPurchase(UserEntity user);
 
+	List<LoyaltyCoinsDropEntity> getForAuthenticatedUserOrg();
+
 }

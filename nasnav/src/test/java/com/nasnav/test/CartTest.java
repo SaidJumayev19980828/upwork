@@ -1,15 +1,18 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
@@ -19,11 +22,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -50,13 +51,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class CartTest {
+public class CartTest extends AbstractTestWithTempBaseDir {
 
 	public static final String USELESS_NOTE = "come after dinner";
 	@Autowired
@@ -88,12 +86,26 @@ public class CartTest {
 
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private EmployeeUserRepository empRepo;
+
+
 	@Test
 	public void getCartNoAuthz() {
         HttpEntity<?> request =  getHttpEntity("NOT FOUND");
         ResponseEntity<Cart> response =
         		template.exchange("/cart", GET, request, Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
+	public void getCartNoToken() {
+        ResponseEntity<Cart> response =
+        		template.getForEntity("/cart", Cart.class);
 
         assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
@@ -116,6 +128,42 @@ public class CartTest {
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
+	}
+
+	@Test
+	public void getCartWithUserIdSuccess() {
+		HttpEntity<?> request =  getHttpEntity("101112");
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
+
+		Cart cart = response.getBody();
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(2, cart.getItems().size());
+        assertProductNamesReturned(response);
+		assertEquals(cartService.calculateCartTotal(cart), cart.getSubtotal());
+		assertEquals(cart.getSubtotal().subtract(cart.getDiscount()), cart.getTotal());
+	}
+
+	@Test
+	public void getCartWithUserIdFromOtherOrg() {
+		HttpEntity<?> request =  getHttpEntity("5289361");
+		ResponseEntity<ErrorResponseDTO> response =
+				template.exchange("/cart/"+88L, GET, request, ErrorResponseDTO.class);
+
+		ErrorResponseDTO error = response.getBody();
+
+		assertEquals(NOT_FOUND, response.getStatusCode());
+		assertEquals(ErrorCodes.E$USR$0002.name(), error.getError());
+	}
+
+	@Test
+	public void checkRoleUserToGetCartWithUserIdSuccess() {
+		HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/"+88L, GET, request, Cart.class);
+
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 	}
 
 	private void assertProductNamesReturned(ResponseEntity<Cart> response) {
@@ -727,7 +775,9 @@ public class CartTest {
 
 	@Test
 	public void checkoutCartNoAuthN() {
-		HttpEntity<?> request =  getHttpEntity("101112");
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
@@ -1067,8 +1117,9 @@ public class CartTest {
 
 	@Test
 	public void optimizeCartNoAuthN() {
-        HttpEntity<?> request =  getHttpEntity("101112");
-        ResponseEntity<Cart> response = 
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+		ResponseEntity<Cart> response =
         		template.exchange("/cart/optimize", POST, request, Cart.class);
 
         assertEquals(FORBIDDEN, response.getStatusCode());

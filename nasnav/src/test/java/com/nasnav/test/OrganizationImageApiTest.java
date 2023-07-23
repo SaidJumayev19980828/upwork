@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -18,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -29,6 +31,7 @@ import java.util.List;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
+@RunWith(SpringRunner.class)
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Organizations_image_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class OrganizationImageApiTest extends AbstractTestWithTempBaseDir {
@@ -42,22 +45,12 @@ public class OrganizationImageApiTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
 
-    @Autowired
-    private AdminService adminService;
-    
     void performSqlScript(Resource resource) {
         try (Connection con = datasource.getConnection()) {
             ScriptUtils.executeSqlScript(con, resource);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-
-
-    @Before
-    public void clearCache(){
-        adminService.invalidateCaches();
     }
     
 

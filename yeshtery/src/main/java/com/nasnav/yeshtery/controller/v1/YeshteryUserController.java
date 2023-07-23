@@ -10,6 +10,7 @@ import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.CommonUserService;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
@@ -17,6 +18,9 @@ import com.nasnav.service.UserService;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import com.nasnav.service.yeshtery.YeshteryUserService;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,12 +42,10 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(YeshteryUserController.API_PATH)
+@RequiredArgsConstructor
 public class YeshteryUserController {
-
     static final String API_PATH = YeshteryConstants.API_PATH +"/user/";
-
-
-
+    private final CommonUserService commonUserService;
     @Autowired
     private YeshteryUserService userService;
     @Autowired
@@ -55,12 +57,16 @@ public class YeshteryUserController {
     @Autowired
     private EmployeeUserService employeeUserService;
 
-
     @GetMapping(value = "info")
     public UserRepresentationObject getUserData(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestParam(value = "id", required = false) Long id,
                                                 @RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException {
         return userService.getYeshteryUserData(id, isEmployee);
+    }
+
+    @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
+        return commonUserService.changePasswordUser(userJson);
     }
 
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)

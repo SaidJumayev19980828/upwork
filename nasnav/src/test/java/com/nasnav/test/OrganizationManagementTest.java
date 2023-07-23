@@ -3,29 +3,29 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
-import com.nasnav.dto.ExtraAttributeDTO;
-import com.nasnav.dto.ExtraAttributeDefinitionDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.shipping.services.DummyShippingService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -33,8 +33,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.STRING;
@@ -49,12 +49,9 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql","/sql/Extra_Features_Data_Insert.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class OrganizationManagementTest {
+public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private final String NASNAV_EXTRA_ATTRIBUTES_API_PATH = "/organization/extra_attribute";
 
 
@@ -65,7 +62,7 @@ public class OrganizationManagementTest {
     @Autowired
     private TestRestTemplate template;
     @Autowired
-    private UserRepository userRepository;
+    private EmployeeUserRepository employeeRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -179,7 +176,6 @@ public class OrganizationManagementTest {
                 .put("p_name", "solad-pant-trello")
                 .toString();
     }
-
     @Test
     public void createOrganizationSuccessTest() {
         String body = createOrgJson();
@@ -190,6 +186,34 @@ public class OrganizationManagementTest {
         assertEquals(200, response.getStatusCode().value());
     }
 
+    @Test
+    public void organizationRegistrationTest() {
+        RegisterDto registerDto = registerOrg();
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
+        assertEquals(OK, response.getStatusCode());
+        final Long orgId = response.getBody().getOrganizationId();
+        final OrganizationEntity org = organizationRepository.findOneById(orgId);
+        assertEquals(registerDto.getOrganizationName(), org.getName());
+        final EmployeeUserEntity employee = employeeRepository.findByOrganizationId(orgId).stream().reduce((a, b) -> {
+            throw new IllegalStateException("there should be only 1 employee");
+        }).orElseThrow(() -> new IllegalStateException("there should be 1 employee"));
+        assertEquals(registerDto.getName(), employee.getName());
+        assertEquals(registerDto.getEmail(), employee.getEmail());
+        final Set<String> expectedRoles = Set.of(Roles.ORGANIZATION_ADMIN.getValue(), Roles.ORGANIZATION_MANAGER.getValue());
+        final Set<String> foundRoles = employee.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
+        assertEquals(expectedRoles, foundRoles);
+    }
+
+    private RegisterDto registerOrg() {
+        RegisterDto registerDTO = new RegisterDto();
+        registerDTO.setOrganizationName("Solad Pant1");
+        registerDTO.setCurrencyIso(818);
+
+        registerDTO.setName("test test test ");
+        registerDTO.setEmail(TestUserEmail);
+        
+        return  registerDTO;
+    }
 
     @Test
     public void createOrganizationMissingValuesTest() {

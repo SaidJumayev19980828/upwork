@@ -1,14 +1,12 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -23,11 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.GET;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-public class StatisticsTest {
+public class StatisticsTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private TestRestTemplate template;

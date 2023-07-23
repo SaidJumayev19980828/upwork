@@ -1,14 +1,12 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +23,10 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-class LoyaltyPointTest {
+class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
     @Test

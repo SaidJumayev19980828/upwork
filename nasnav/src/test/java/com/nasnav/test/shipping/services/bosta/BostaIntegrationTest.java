@@ -2,6 +2,8 @@ package com.nasnav.test.shipping.services.bosta;
 
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
 import com.nasnav.shipping.services.bosta.webclient.dto.*;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.junit.Assert;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -19,6 +21,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 //@AutoConfigureWebTestClient
 //@PropertySource("classpath:database.properties")
 //@DirtiesContext
+@Slf4j
 public class BostaIntegrationTest {
 
     private static final String BOSTA_SERVER_URL = "https://stg-app.bosta.co/api/v0";
@@ -172,7 +175,7 @@ public class BostaIntegrationTest {
     public void createDeliveryTest() throws InterruptedException, Exception {
     	 Waiter waiter = new Waiter();
     	 Consumer<CreateDeliveryResponse> onResponse = body -> {
-         	System.out.println(">>>>>>> " + body.toString());
+            log.debug(">>>>>>> {}", body);
          	waiter.resume();
          };
          
@@ -182,7 +185,7 @@ public class BostaIntegrationTest {
         		.cache();
         
         cachedReponse
-        .doOnEach(res -> System.out.println(">>>>>>> " + res.get().rawStatusCode()))
+        .doOnEach(res -> log.debug(">>>>>>> {}", res.get().rawStatusCode()))
         .doOnEach(res -> waiter.assertEquals(201, res.get().rawStatusCode()))
         .subscribe(res -> waiter.resume());
         

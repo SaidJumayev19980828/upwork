@@ -2,7 +2,6 @@ package com.nasnav.test.integration.msdynamics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
@@ -13,6 +12,8 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -24,10 +25,7 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -56,12 +54,9 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class MicrosoftDynamicsIntegrationOrderTest {
+public class MicrosoftDynamicsIntegrationOrderTest extends AbstractTestWithTempBaseDir {
 
     @SuppressWarnings("unused")
     private static final String NASNAV_ADMIN_TOKEN = "abcdefg";

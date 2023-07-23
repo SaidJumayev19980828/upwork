@@ -2,8 +2,6 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.enumerations.VideoChatOrgState;
-import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -92,6 +90,11 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "enable_video_chat")
     private Integer enableVideoChat;
 
+    @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private PackageRegisteredEntity packageRegistration;
 
     public OrganizationEntity() {
         id = null;

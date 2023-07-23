@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.gson.Gson;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
@@ -2390,7 +2391,21 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 
-
+	private void validateProductNewFlow(NewProductFlowDTO dto ) throws BusinessException {
+		
+		validateOperation(dto.getOperation());
+		validatProductDTO(dto);
+	}
+	
+	private void validatProductDTO(NewProductFlowDTO dto) throws BusinessException {
+		
+		if (dto.getOperation().equals(UPDATE) && dto.getProductId() == null) {
+			throw new BusinessException(
+					"Missing required parameters !"
+					, "MISSING PARAM"
+					, NOT_ACCEPTABLE);
+		}
+	}
 
 	private void validateVariantForUpdate(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		if(!variant.areRequiredForUpdatePropertiesProvided()) {
@@ -3554,18 +3569,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
 	@Override
-	public ProductUpdateResponse updateProductV2(String productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
+	public ProductUpdateResponse updateProductV2(NewProductFlowDTO productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
 		
-		 JSONObject jsonObject = new JSONObject(productJson);
-		
-		// List<Long> tagsId=(List<Long>) jsonObject.get("tags");
-		 //List<String> keywords=(List<String>) jsonObject.get("keywords");
+		validateProductNewFlow(productJson);
+		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+		String json = ow.writeValueAsString(productJson);
+
+
 		 
-		 ObjectMapper mapper = new ObjectMapper();
-		 List<Long> tagsId = mapper.readValue(jsonObject.get("tags").toString(), new TypeReference<List<Long>>(){});
-		 List<String> keywords = mapper.readValue(jsonObject.get("keywords").toString(), new TypeReference<List<String>>(){});
-System.out.println("tags"+tagsId+""+keywords);
-		Long id = updateProductBatch(asList(productJson), false, false).stream().findFirst().orElse(null);
+		 List<Long> tagsId = productJson.getTags();
+		 List<String> keywords = productJson.getKeywords();
+		Long id = updateProductBatch(asList(json), false, false).stream().findFirst().orElse(null);
 		if (id != null) {
 			imgService.deleteImage(null, id, null);
 			if (coverImg != null) {
@@ -3588,7 +3602,7 @@ System.out.println("tags"+tagsId+""+keywords);
 				}
 			}
 
-			if (!tagsId.isEmpty() && tagsId != null) {
+			if (tagsId != null && !tagsId.isEmpty()) {
 				ProductTagDTO tags = new ProductTagDTO();
 				tags.setTagIds(tagsId);
 				tags.setProductIds(Arrays.asList(id));
@@ -3596,7 +3610,7 @@ System.out.println("tags"+tagsId+""+keywords);
 
 			}
 
-			if (!keywords.isEmpty() && keywords != null) {
+			if (keywords != null && !keywords.isEmpty()) {
 				SeoKeywordsDTO seo = new SeoKeywordsDTO(SeoEntityType.PRODUCT, id, keywords);
 				seoService.addSeoKeywords(seo);
 			}

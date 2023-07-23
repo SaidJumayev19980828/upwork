@@ -10,13 +10,14 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
 public interface UserService extends CommonUserServiceInterface {
 
-    UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
+    UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) throws BusinessException;
 
     RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 
@@ -55,5 +56,8 @@ public interface UserService extends CommonUserServiceInterface {
     void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod);
 
     RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
+
+    UserApiResponse updateUserAvatar(MultipartFile file);
+
 
 }

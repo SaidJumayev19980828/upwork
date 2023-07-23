@@ -2,7 +2,6 @@ package com.nasnav.test.shipping.services.tiered_percentage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -11,6 +10,8 @@ import com.nasnav.service.ShippingManagementService;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,10 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -48,13 +46,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_8.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class SallabShippingServiceTest {
+public class SallabShippingServiceTest extends AbstractTestWithTempBaseDir {
 
     public static final String ETA_FROM = "1";
     public static final String ETA_TO = "1";

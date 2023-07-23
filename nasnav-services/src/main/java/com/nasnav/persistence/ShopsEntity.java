@@ -2,11 +2,11 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
+
 import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
@@ -69,11 +69,17 @@ public class ShopsEntity implements BaseEntity{
 
     private Integer priority;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "shopsEntity")
+    @OneToMany(mappedBy = "shopsEntity", fetch = FetchType.EAGER)
     @JsonIgnore
     @Exclude
     @lombok.ToString.Exclude
     private Set<ShopThreeSixtyEntity> shop360s;
+
+    @OneToOne(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
+    private RoomTemplateEntity roomTemplate;
 
 
     @Column(name = "yeshtery_state")
@@ -84,9 +90,11 @@ public class ShopsEntity implements BaseEntity{
     }
 
     @Override
-    public BaseRepresentationObject getRepresentation() {
+    public ShopRepresentationObject getRepresentation() {
         ShopRepresentationObject obj = new ShopRepresentationObject();
         BeanUtils.copyProperties(this, obj);
+
+        obj.setOrgId(organizationEntity.getId());
 
         obj.setIsWarehouse(getIsWarehouse() > 0);
         obj.setHas360(!(shop360s == null || shop360s.isEmpty()));

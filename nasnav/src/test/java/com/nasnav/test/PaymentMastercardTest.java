@@ -4,22 +4,21 @@ import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.nasnav.NavBox;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
-import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.jdbc.SqlConfig;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
@@ -28,16 +27,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.context.jdbc.SqlConfig.TransactionMode.ISOLATED;
 
-
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Transactional
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, config = @SqlConfig(transactionMode = ISOLATED), scripts={"/sql/database_cleanup.sql"})
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, config = @SqlConfig(transactionMode = ISOLATED),  scripts={"/sql/Order_Info_Test.sql"})
-public class PaymentMastercardTest {
+@Slf4j
+public class PaymentMastercardTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private OrdersRepository ordersRepository;
@@ -72,7 +68,7 @@ public class PaymentMastercardTest {
         assertTrue(page.asXml().contains("\"order_amount\":10500.0000"));
         HtmlButtonInput payButton = (HtmlButtonInput)(page.getByXPath("//input[@type='button']").get(0));
         page = payButton.click();
-        System.out.println(page.asXml());
+        log.debug(page.asXml());
 
     }
 

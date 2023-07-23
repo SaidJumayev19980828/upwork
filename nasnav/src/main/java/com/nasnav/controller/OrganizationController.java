@@ -16,6 +16,9 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.response.*;
+import com.nasnav.response.*;
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.AddonsDTO;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.ExtraAttributeDefinitionDTO;
@@ -56,38 +58,12 @@ import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
-import com.nasnav.dto.response.CartOptimizationStrategyDTO;
-import com.nasnav.dto.response.OrderConfirmResponseDTO;
-import com.nasnav.dto.response.OrgThemeRepObj;
-import com.nasnav.dto.response.PromotionDTO;
-import com.nasnav.dto.response.PromotionResponse;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddonEntity;
-import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.AddonResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
-import com.nasnav.service.AddonService;
-import com.nasnav.service.AddressService;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.CartOptimizationService;
-import com.nasnav.service.CategoryService;
-import com.nasnav.service.FeaturesService;
-import com.nasnav.service.FileService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SearchService;
-import com.nasnav.service.SeoService;
-import com.nasnav.service.ShippingManagementService;
-import com.nasnav.service.ThemeService;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-
+import com.nasnav.dto.request.RegisterDto;
 @RestController
 @RequestMapping("/organization")
 @CrossOrigin("*") // allow all origins
@@ -116,8 +92,14 @@ public class OrganizationController {
     private SeoService seoService;
     @Autowired
     private AddressService addressService;
-  
+    @Autowired
+    private OrganizationService organizationService;
 
+
+    @PostMapping(value = "register", produces = APPLICATION_JSON_VALUE)
+    public OrganizationResponse registerOrganization(@RequestBody RegisterDto registerDto) throws Exception {
+        return organizationService.registerOrganization(registerDto);
+    }
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                        @RequestPart("properties") String jsonString,

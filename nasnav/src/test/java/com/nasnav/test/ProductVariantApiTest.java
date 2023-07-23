@@ -1,6 +1,5 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductVariantsRepository;
@@ -9,17 +8,14 @@ import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.VariantFeatureValueEntity;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -32,7 +28,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
@@ -48,14 +43,10 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc 
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Product_Variants_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class ProductVariantApiTest {
+public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final Long TEST_VARIANT_ID = 80001L;
 

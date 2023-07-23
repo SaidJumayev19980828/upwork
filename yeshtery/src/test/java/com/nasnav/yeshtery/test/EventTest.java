@@ -8,16 +8,15 @@ import com.nasnav.persistence.EventAttachmentsEntity;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.EventRequestsEntity;
 import com.nasnav.persistence.InfluencerEntity;
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -33,13 +32,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @NotThreadSafe
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Event_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class EventTest {
+public class EventTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
     @Autowired

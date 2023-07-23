@@ -61,12 +61,13 @@ insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'ORGANIZATION_MANAGER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 4);
 
 
 --insert units
