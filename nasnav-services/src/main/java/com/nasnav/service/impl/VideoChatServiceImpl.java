@@ -23,6 +23,7 @@ import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -268,6 +269,19 @@ public class VideoChatServiceImpl implements VideoChatService {
             searchParams.setCount(10);
         } else if (searchParams.getCount() > 1000) {
             searchParams.setCount(1000);
+        }
+
+        EmployeeUserEntity currentEmployee = (EmployeeUserEntity) securityService.getCurrentUser();
+        if (!securityService.currentEmployeeHasNasnavRoles()) {
+            searchParams.setOrgId(currentEmployee.getOrganizationId());
+        }
+
+        if (!securityService.currentEmployeeHasOrgRolesOrHigher()) {
+            if (securityService.currentEmployeeUserHasShopRolesOrHigher()) {
+                searchParams.setShopId(currentEmployee.getShopId());
+            } else {
+                throw new IllegalStateException("current user has no roles");
+            }
         }
     }
 

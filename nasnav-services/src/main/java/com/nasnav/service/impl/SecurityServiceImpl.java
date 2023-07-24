@@ -648,6 +648,21 @@ public class SecurityServiceImpl implements SecurityService {
 		.max(LocalDateTime::compareTo)
 		.orElse(null);
 	}
+
+	@Override
+	public boolean currentEmployeeUserHasShopRolesOrHigher() {
+		return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.STORE_EMPLOYEE);
+	}
+
+	@Override
+	public boolean currentEmployeeHasOrgRolesOrHigher() {
+		return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.ORGANIZATION_EMPLOYEE);
+	}
+
+	@Override
+	public boolean currentEmployeeHasNasnavRoles() {
+		return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
+	}
 }
 
 

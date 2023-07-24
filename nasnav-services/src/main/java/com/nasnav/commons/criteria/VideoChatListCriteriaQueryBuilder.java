@@ -5,11 +5,13 @@ import com.nasnav.request.VideoChatSearchParam;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import static javax.persistence.criteria.JoinType.LEFT;
 
@@ -53,7 +55,11 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
             predicatesList.add( builder.equal( root.get(SHOP).get(ID), searchParam.getShopId()));
         }
         if (searchParam.getHasShop() != null) {
-            predicatesList.add( builder.isNotNull( root.get(SHOP)));
+            Function<Expression<?>, Predicate> validation = Boolean.TRUE.equals(searchParam.getHasShop())
+                    ? builder::isNotNull
+                    : builder::isNull;
+
+            predicatesList.add( validation.apply( root.get(SHOP)));
         }
         if (searchParam.getIsActive() != null) {
             predicatesList.add( builder.isTrue( root.get(IS_ACTIVE)));

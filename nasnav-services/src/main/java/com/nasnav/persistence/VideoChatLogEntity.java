@@ -72,8 +72,10 @@ public class VideoChatLogEntity implements BaseEntity {
         var obj = new VideoChatLogRepresentationObject();
         obj.setId(getId());
         obj.setName(name);
+        obj.setOrganizationId(organization.getId());
         obj.setOrganizationName(organization.getName());
         if(assignedTo != null) {
+            obj.setAssignedToId(assignedTo.getId());
             obj.setAssignedToName(assignedTo.getName());
         }
         if(getShop() != null) {
@@ -82,7 +84,7 @@ public class VideoChatLogEntity implements BaseEntity {
         }
         obj.setUserId(user.getId());
         obj.setUserName(user.getName());
-        obj.setUserName(user.getEmail());
+        obj.setUserEmail(user.getEmail());
         obj.setIsActive(isActive);
         obj.setDescription(description);
         obj.setCreatedAt(getCreatedAt());

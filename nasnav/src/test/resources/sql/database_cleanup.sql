@@ -82,6 +82,7 @@ DELETE FROM public.rocket_chat_customer_tokens WHERE user_id in (select id from 
 DELETE FROM public.files  where user_id in (SELECT id from public.users where organization_id between 99000 and 99999);
 DELETE FROM public.room_sessions where template_id in (SELECT id FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999));
 DELETE FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.video_chat_logs WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.package_registered WHERE org_id > 99000;
 DELETE FROM public.employee_users WHERE organization_id > 99000;
