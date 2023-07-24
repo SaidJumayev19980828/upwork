@@ -76,4 +76,10 @@ public interface SecurityService {
     Set<String> getValidNotificationTokens(BaseUserEntity user);
 
     LocalDateTime getLastLoginForUser(BaseUserEntity user);
+
+    boolean currentEmployeeUserHasShopRolesOrHigher();
+
+    boolean currentEmployeeHasOrgRolesOrHigher();
+
+    boolean currentEmployeeHasNasnavRoles();
 }
