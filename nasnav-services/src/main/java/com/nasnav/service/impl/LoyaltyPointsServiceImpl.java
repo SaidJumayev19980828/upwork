@@ -229,19 +229,17 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private UserEntity getCurrentUserWithOrg(Long orgId) {
-        BaseUserEntity baseUser = securityService.getCurrentUser();
+        BaseUserEntity baseUser = securityService.getCurrentUserForOrg(orgId);
+
+        if (baseUser == null) {
+            throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0014, orgId);
+        } 
 
         if (!(baseUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
         }
-        UserEntity currentUser = (UserEntity) baseUser;
 
-        return getUserEntity(orgId, currentUser.getYeshteryUserId())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0014, orgId));
-    }
-
-    private Optional<UserEntity> getUserEntity(Long orgId, Long yeshteryId) {
-        return userRepo.findByYeshteryUserIdAndOrganizationId(yeshteryId, orgId);
+        return (UserEntity) baseUser;
     }
 
     @Override

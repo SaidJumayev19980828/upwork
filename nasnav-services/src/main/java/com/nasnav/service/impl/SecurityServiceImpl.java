@@ -391,7 +391,7 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 	private BaseUserEntity mapUserToOrgUser(BaseUserEntity user, Long orgId) {
-		if (config.isYeshteryInstance && !user.getOrganizationId().equals(orgId) && user instanceof UserEntity) {
+		if (config.isYeshteryInstance && user instanceof UserEntity) {
 			return yeshteryUserService.getUserForOrg((UserEntity) user, orgId);
 		}
 		return user.getOrganizationId().equals(orgId) ? user : null;
