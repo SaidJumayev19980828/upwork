@@ -877,8 +877,19 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public UserEntity getUserForOrg(UserEntity user, Long orgId) {
-        if (user.getOrganizationId().equals(orgId)) {
-            return user;
+        Long userOrgId = user.getOrganizationId();
+
+        if (!orgRepo.existsByIdAndYeshteryState(userOrgId, 1) ) {
+            return null;
+        }
+
+        if (userOrgId.equals(orgId)) {
+            return user.getYeshteryUserId() != null ? user : null;
+        }
+
+        // we check required org as it's different from user org
+        if (!orgRepo.existsByIdAndYeshteryState(orgId, 1)) {
+            return null;
         }
 
         return nasNavUserRepository.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), orgId)
