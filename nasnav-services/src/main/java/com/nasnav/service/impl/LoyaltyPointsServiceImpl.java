@@ -229,11 +229,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private UserEntity getCurrentUserWithOrg(Long orgId) {
-        BaseUserEntity baseUser = securityService.getCurrentUserForOrg(orgId);
-
-        if (baseUser == null) {
+        BaseUserEntity baseUser = null;
+        
+        try {
+            baseUser = securityService.getCurrentUserForOrg(orgId);
+        } catch (IllegalStateException e) {
             throw new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0014, orgId);
-        } 
+        }
 
         if (!(baseUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, E$USR$0001);
