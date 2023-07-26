@@ -14,4 +14,4 @@ create table if not exists public.advertisements
     product_id bigint not null constraint fkr9piq7lhox1d2ha3jn316dtux references public.products
 );
 alter table public.posts
-    add column if not exists advertisement_id bigint constraint fka8rolgxvgid0mv3bu3aijlfgu references public.advertisements;
+    add column if not exists advertisement_id bigint constraint posts_advertisements_fk references public.advertisements;

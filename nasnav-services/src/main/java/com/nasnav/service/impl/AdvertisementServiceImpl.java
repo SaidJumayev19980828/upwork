@@ -8,7 +8,7 @@ import com.nasnav.persistence.AdvertisementEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.AdvertisementService;
 import com.nasnav.service.ProductImageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -21,13 +21,11 @@ import java.util.stream.Collectors;
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 
 @Service
+@RequiredArgsConstructor
 public class AdvertisementServiceImpl implements AdvertisementService {
-    @Autowired
-    private AdvertisementRepository advertisementRepository;
-    @Autowired
-    private ProductImageService imageService;
-    @Autowired
-    private ProductRepository productRepository;
+    private final AdvertisementRepository advertisementRepository;
+    private final ProductImageService imageService;
+    private final ProductRepository productRepository;
 
     @Transactional
     @Override
