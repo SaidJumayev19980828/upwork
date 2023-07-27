@@ -81,6 +81,7 @@ build:compile:
     reports:
       dotenv: build/env
   only:
+    - review
     - develop
     - uat
     - prod
@@ -96,6 +97,7 @@ build:publish:
   script:
     - sh ./deploy/docker_publish.sh
   only:
+    - review
     - develop
     - uat
     - prod
@@ -114,6 +116,7 @@ deploy:
     MEETUSVR_BACKEND_IMAGE_TAG_FQN: $IMAGE_TAG_FQN
     UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
   only:
+    - review
     - develop
     # - uat
     # - prod
