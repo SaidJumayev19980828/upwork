@@ -74,6 +74,8 @@ build:compile:
   stage: compile
   image: docker:20.10.16
   script:
+    - rm -rf ./nasnav/src/main/resources/sample.*
+    - rm -rf ./yeshtery/src/main/resources/sample.*
     - cp ./deploy/properties/*.properties ./nasnav/src/main/resources/
     - cp ./deploy/properties/*.properties ./yeshtery/src/main/resources/
     - sh ./deploy/docker_build.sh
