@@ -48,7 +48,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
         entity.setCoins(advertisementDTO.getCoins());
         entity.setLikes(advertisementDTO.getLikes());
-        entity.setMaxCoins(advertisementDTO.getMaxCoins());
+        entity.setFromDate(advertisementDTO.getFromDate());
+        entity.setToDate(advertisementDTO.getToDate());
 
         ProductEntity byId = productRepository.getById(advertisementDTO.getProduct().getId());
         entity.setProduct(byId);
@@ -62,7 +63,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         dto.setId(entity.getId());
         dto.setLikes(entity.getLikes());
         dto.setCoins(entity.getCoins());
-        dto.setMaxCoins(entity.getMaxCoins());
+        dto.setFromDate(entity.getFromDate());
+        dto.setToDate(entity.getToDate());
 
         dto.setProduct(toDto(entity.getProduct()));
 

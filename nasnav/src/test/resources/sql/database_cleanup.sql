@@ -45,6 +45,7 @@ DELETE FROM public.post_likes;
 DELETE FROM public.post_clicks;
 DELETE FROM public.post_products;
 DELETE FROM public.posts;
+DELETE FROM public.advertisements;
 DELETE FROM public.user_followers;
 DELETE FROM public.return_shipment where shipping_service_id = 'TEST';
 DELETE FROM public.loyalty_spent_transactions WHERE transaction_id in (select id from loyalty_point_transactions WHERE org_id between 99000 and 99999);

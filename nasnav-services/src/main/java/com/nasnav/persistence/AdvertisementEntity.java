@@ -22,7 +22,7 @@ public class AdvertisementEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "product_id",nullable = false)
+    @JoinColumn(name = "product_id", nullable = false)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private ProductEntity product;
@@ -33,8 +33,11 @@ public class AdvertisementEntity {
     @Column(name = "likes")
     private Integer likes;
 
-    @Column(name = "max_coins")
-    private Integer maxCoins;
+    @Column(name = "from_date")
+    private LocalDateTime fromDate;
+
+    @Column(name = "to_date")
+    private LocalDateTime toDate;
 
     @Column(name = "created_at")
     @CreationTimestamp
