@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -8,6 +9,7 @@ import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.model.VariantCache;
 
 import java.util.List;
+import java.util.Map;
 
 public interface StockService {
     List<StocksEntity> getProductStockForShop(Long productId, Long shopId) ;
@@ -44,4 +46,8 @@ public interface StockService {
 	void incrementStockBy(StocksEntity stocksEntity, Integer quantity);
 
 	void updateStockQuantity(StockUpdateDTO updateDto);
+
+	Long updateStocks(ProductStocksDTO productStocksDTO) throws BusinessException;
+
+	Map<Long, List<StocksEntity>> getProductStocks(Long productId);
 }

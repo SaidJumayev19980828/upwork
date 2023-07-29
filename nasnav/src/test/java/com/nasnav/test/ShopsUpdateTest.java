@@ -1,6 +1,5 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
@@ -9,18 +8,17 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.ShopService;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -32,14 +30,12 @@ import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shop_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-public class ShopsUpdateTest {
+public class ShopsUpdateTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private TestRestTemplate template;
@@ -158,6 +154,7 @@ public class ShopsUpdateTest {
 
         HttpEntity<Object> request = TestCommons.getHttpEntity(body.toString(),"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
+        assertEquals(response.getBody(), HttpStatus.OK, response.getStatusCode());
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         
 

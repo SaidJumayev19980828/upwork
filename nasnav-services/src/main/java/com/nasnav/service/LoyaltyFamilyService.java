@@ -18,4 +18,5 @@ public interface LoyaltyFamilyService {
     Optional<LoyaltyFamilyEntity> getFamilyById(Long familyId);
 
     List<UserEntity> getFamilyMembers(Long familyId);
+    List<LoyaltyFamilyEntity> listFamily();
 }

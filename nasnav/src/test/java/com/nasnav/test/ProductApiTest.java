@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
+import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsFiltersResponse;
@@ -16,30 +16,40 @@ import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import junit.framework.TestCase;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static com.nasnav.commons.enums.SortOrder.ASC;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.dto.ProductSortOptions.ID;
 import static com.nasnav.dto.ProductSortOptions.NAME;
 import static com.nasnav.enumerations.OrderStatus.NEW;
@@ -50,23 +60,22 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class ProductApiTest {
+public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static String USER_TOKEN = "123";
-	
-	
+	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
+	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 	@Autowired
 	private TestRestTemplate template;
 
@@ -108,7 +117,8 @@ public class ProductApiTest {
 
 	@Autowired
 	private TagsRepository tagsRepo;
-
+    @Autowired
+    private WebApplicationContext webApplicationContext;
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -215,10 +225,77 @@ public class ProductApiTest {
 						, ProductUpdateResponse.class);
 		return response;
 	}
+	@Autowired
+	private  MockMvc mockMvc;
+	
 
+	@Test
+	public void NewProductFlowTest() throws Exception {
+    	BaseUserEntity user = empUserRepo.getById(69L);
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
+		byte[] imgData = Files.readAllBytes(img);
+		
+		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
 
+		NewProductFlowDTO product = createNewProductFlowDummyProduct();
+		ObjectMapper objectMapper = new ObjectMapper();
+		  MockMultipartFile productJson =
+	                new MockMultipartFile(
+	                        "product",
+	                        "product",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
 
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
+				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
+
+		result.andExpect(status().is(200));
+
+	}
+
+	@Test
+	public void NewProductUpdateWithoutTagsOrKeyWords() throws Exception {
+    	BaseUserEntity user = empUserRepo.getById(69L);
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
+
+		byte[] imgData = Files.readAllBytes(img);
+		
+		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+
+		NewProductFlowDTO product = createNewProductFlowDummyProduct();
+		product.setTags(null);
+		product.setKeywords(null);
+		ObjectMapper objectMapper = new ObjectMapper();
+		  MockMultipartFile productJson =
+	                new MockMultipartFile(
+	                        "product",
+	                        "product",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
+
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
+				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
+
+		result.andExpect(status().is(200));
+
+	}
+	
+	    @Test
+	    public void GetNewProductFlowTest(){
+	    	BaseUserEntity user = empUserRepo.getById(69L);
+	    	  HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
+	          ResponseEntity<String> response = template.exchange("/product/v2/productdata?product_id=1001", GET, json, String.class);
+	   
+	          assertEquals(200, response.getStatusCodeValue());
+	          JSONObject res = new JSONObject(response.getBody());
+
+	          assertNotNull(response.getBody());
+	          assertEquals(res.get("name"), "product_1");
+	    } 
+	
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
 		TestCase.assertEquals(id , saved.getId());
 		TestCase.assertEquals(product.get("name"), saved.getName());
@@ -243,7 +320,21 @@ public class ProductApiTest {
 
 		return product;
 	}
-
+	private NewProductFlowDTO createNewProductFlowDummyProduct() {
+		NewProductFlowDTO product = new NewProductFlowDTO();
+		product.setOperation(Operation.CREATE);
+		product.setName("test Product");
+		product.setDescription("Testing creating/updating product");
+		product.setBrandId(101L);
+		product.setPriority("2");
+	    ArrayList<Long> tags= new ArrayList<>();
+	    tags.add(5002L);
+		product.setTags(tags);
+	    ArrayList<String> keywords= new ArrayList<>();
+	    keywords.add("test");
+		product.setKeywords(keywords);
+		return product;
+	}
 
 
 
@@ -1057,6 +1148,20 @@ public class ProductApiTest {
 		assertTrue("each product should have the 2 tags", allProductsHaveTags(productIds, tags) );
     }
 
+
+		@Test
+		public void getFilterTagsOfSpecificOrg() {
+			ProductSearchParam param = new ProductSearchParam();
+			Set<Long> tagsList = new HashSet<>();
+			tagsList.add(5001L);
+			param.org_id = 99001L;
+			param.tag_ids = tagsList;
+
+			ResponseEntity<ProductsFiltersResponse> response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
+
+			assertEquals(200, response.getStatusCodeValue());
+			assertEquals(2, response.getBody().getBrands().size());
+		}
 
 
 	@Test

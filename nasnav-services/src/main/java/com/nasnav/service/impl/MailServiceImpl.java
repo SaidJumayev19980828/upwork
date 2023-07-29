@@ -3,6 +3,9 @@ package com.nasnav.service.impl;
 import com.nasnav.AppConfig;
 import com.nasnav.service.MailService;
 import com.nasnav.service.model.mail.MailAttachment;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -31,6 +34,7 @@ import static java.util.stream.Collectors.joining;
 import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
 
 @Service
+@Slf4j
 public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
@@ -88,7 +92,7 @@ public class MailServiceImpl implements MailService {
             }
         }
         if (config.mailDryRun) {
-            System.out.println("Sending email to: " + to + "\n-------\n" + body);
+            log.debug("Sending email to: {}\n-------\n{}", to, body);
         } else {
             mailSender.send(mimeMessage);
         }

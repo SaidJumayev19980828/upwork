@@ -13,16 +13,13 @@ import static org.springframework.http.HttpStatus.OK;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.nasnav.NavBox;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -30,14 +27,10 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Product_Imgs_Custom_Repo_Test_Data.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class ProductImageBulkDownloadTemplateTest {
+public class ProductImageBulkDownloadTemplateTest extends AbstractTestWithTempBaseDir {
 	private static final String PRODUCT_IMG_TEMPLATE_URL = "/product/image/bulk/template";
 	
 	private static final String ADMIN_TOKEN = "101112";
@@ -89,7 +82,9 @@ public class ProductImageBulkDownloadTemplateTest {
 		List<String> headers = 
 				asList(response
 						.getBody()
-						.replace("\n", "")
+						.lines()
+						.findFirst()
+						.get()
 						.split(","));
 		assertEquals(IMG_CSV_BASE_HEADERS, headers);
 	}

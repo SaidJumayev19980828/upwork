@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 import javax.servlet.http.Cookie;
 
 import com.nasnav.dao.*;
-import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -47,11 +46,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -68,24 +64,21 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
 @AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class DataImportCsvApiTest {
+public class DataImportCsvApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
 
@@ -443,6 +436,7 @@ public class DataImportCsvApiTest {
         		 , setOf( setOf("111222A"), setOf("1354ABN", "87847777EW")));
 	}
 
+	// not sure why the "invalid" name
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
@@ -1875,7 +1869,7 @@ public class DataImportCsvApiTest {
 		data.setDescriptions( setOf("squishy") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands( setOf(101L) );
-		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setFeatureSpecs(Set.of(new JSONObject("{}")));
 		data.setExtraAttributes( emptySet());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));

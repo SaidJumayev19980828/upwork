@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.*;
 import com.nasnav.dto.TagsRepresentationObject;
@@ -15,6 +14,10 @@ import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -22,10 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -52,12 +52,10 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class CategoryManagmentTest {
+@Slf4j
+public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
 
     @SuppressWarnings("unused")
 	private MockMvc mockMvc;
@@ -151,6 +149,7 @@ public class CategoryManagmentTest {
                 .toString();
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        assertEquals(OK, response.getStatusCode());
         CategoriesEntity entity = categoryRepository.findById(response.getBody().getCategoryId()).get();
         assertEquals("Perfumes", entity.getName());
         assertEquals("categories/logos/564961451_56541.jpg", entity.getLogo());
@@ -158,7 +157,6 @@ public class CategoryManagmentTest {
         assertEquals("cover_small", entity.getCoverSmall());
 
         categoryRepository.deleteById(response.getBody().getCategoryId());
-        assertTrue(200 == response.getStatusCode().value());
     }
 
     
@@ -334,7 +332,7 @@ public class CategoryManagmentTest {
 
         assertTrue(!tags.getBody().isEmpty());
         assertEquals(7, tags.getBody().size());
-        System.out.println(tags.getBody().toString());
+        log.debug("{}", tags.getBody());
     }
 
     
@@ -390,7 +388,7 @@ public class CategoryManagmentTest {
     public void getTagsWithCategory() {
         List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, "category_1");
         assertTrue(tags.size() == 1);
-        System.out.println(tags.toString());
+        log.debug("{}", tags);
     }
 
     

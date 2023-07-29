@@ -88,8 +88,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Autowired
 	private SecurityService securityService;
 	@Autowired
-	private CartService cartService;
-	@Autowired
 	private PromotionsCodesUsedRepository usedPromoRepo;
 	@Autowired
 	private ProductRepository productRepo;
@@ -144,20 +142,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart) {
-		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
 		var promoItems = toPromoItems(cart.getItems());
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode, orgId);
-	}
-
-	@Override
-	public AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode) {
-		Long userId = securityService.getCurrentUser().getId();
-		var cart = cartService.getUserCart(userId);
-		BigDecimal cartTotal = cartService.calculateCartTotal(cart);
-		var promoItems = toPromoItems(cart.getItems());
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return calculateAllApplicablePromos(promoItems,cartTotal, promoCode, orgId);
+		return calculateAllApplicablePromos(promoItems, cart.getSubtotal(), promoCode, orgId);
 	}
 
 	private List<PromoItemDto> toPromoItems(List<CartItem> cartItems) {

@@ -11,21 +11,15 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.service.FileService;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.*;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyCoinsDropService;
-import com.nasnav.service.LoyaltyTierService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.RoleService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.UserService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
@@ -34,9 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -44,8 +41,8 @@ import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
-import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
@@ -98,10 +95,14 @@ public class UserServiceImpl implements UserService {
 
 	private final OtpService otpService;
 
+	private final FileService fileService;
 
+	private LoyaltyPointsService loyaltyPointsService;
 
-	@Override
-	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+		if(userJson.getActivationMethod() == null){
+			userJson.setActivationMethod(ActivationMethod.VERIFICATION_LINK);
+		}
 		validateNewUserRegistration(userJson);
 
 		UserEntity user = createNewUserEntity(userJson);		
@@ -118,13 +119,23 @@ public class UserServiceImpl implements UserService {
 
 		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
+	@Override
+	public UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) {
+		if(referrer != null) givePointsToReferrer(referrer, userJson.getOrgId());
+		return  registerUserV2(userJson);
+	}
 
 
-
+	private void givePointsToReferrer(Long referrer, Long orgId) {
+		UserEntity referrerEntity = userRepository.findById(referrer)
+				.orElse(null);
+		if (referrerEntity != null)
+			loyaltyPointsService.givePointsToReferrer(referrerEntity, orgId);
+	}
 	
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
-		if (!userJson.confirmationFlag) {
-			throw new EntityValidationException("Registration not confirmed by user!", null, NOT_ACCEPTABLE);
+		if (!Boolean.TRUE.equals(userJson.confirmationFlag)) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
 		}
 
 		userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
@@ -611,6 +622,8 @@ public class UserServiceImpl implements UserService {
 		UserRepresentationObject userRepObj = user.getRepresentation();
 		userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
 		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+		userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
+		userRepObj.setGender(user.getGender());
 		return userRepObj;
 	}
 	
@@ -945,4 +958,36 @@ public class UserServiceImpl implements UserService {
 		activateUserInDB(user);
 		return securityService.login(user, false);
 	}
+
+	@Transactional
+	@Override
+	public UserApiResponse updateUserAvatar(MultipartFile file) {
+
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
+
+		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
+
+		String imageUrl = fileService.saveFileForUser(file, userEntity.getId());
+
+		if (isNotBlankOrNull(imageUrl)) {
+
+			String oldImageUrl = userEntity.getImage();
+
+			//First, set the new image url
+			userEntity.setImage(imageUrl);
+
+			userEntity = userRepository.save(userEntity);
+
+			fileService.deleteFileByUrl(oldImageUrl);
+
+		}
+
+		if (successResponseStatusList.isEmpty()) {
+			successResponseStatusList.add(ResponseStatus.ACTIVATED);
+		}
+		//display  user Id, url of image
+		return new UserApiResponse(userEntity.getId(), imageUrl, successResponseStatusList);
+	}
+
+
 }

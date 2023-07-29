@@ -4,11 +4,14 @@ import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.test.integration.event.TestEvent2;
+
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
+@Slf4j
 public class TestEvent2Handler extends IntegrationEventListener<TestEvent2, Long, String> {
 	
 	public static final Long EXPECTED_DATA = 1234L;
@@ -28,7 +31,7 @@ public class TestEvent2Handler extends IntegrationEventListener<TestEvent2, Long
 
 	@Override
 	protected Mono<String> handleEventAsync(EventInfo<Long> event) {
-		System.out.println("Hanlding Test Event! @ "+ LocalDateTime.now() );	
+		log.debug("Hanlding Test Event! @ {}", LocalDateTime.now() );	
 		onHandle.accept(event);	
 		return Mono.just(EXPECTED_RESULT);
 	}

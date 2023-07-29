@@ -1,11 +1,19 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.Gender;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
 
@@ -31,7 +39,12 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	
 	@Column(name = "organization_id")
 	private Long organizationId;
-	
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "gender")
+	private Gender gender;
+
+	@Deprecated
 	@Column(name = "authentication_token")
 	private String authenticationToken;
 
@@ -54,9 +67,9 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	@CreationTimestamp
 	private LocalDateTime creationTime;
 
-	abstract public String getName();
-	abstract public void setName(String name);
+	public abstract String getName();
+	public abstract void setName(String name);
 
-	abstract public UserRepresentationObject getRepresentation();
+	public abstract UserRepresentationObject getRepresentation();
 	
 }

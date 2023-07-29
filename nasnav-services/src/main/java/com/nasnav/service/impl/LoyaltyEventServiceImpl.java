@@ -11,8 +11,10 @@ import com.nasnav.persistence.LoyaltyPointTypeEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.LoyaltyEventUpdateResponse;
 import com.nasnav.service.LoyaltyEventService;
+import com.nasnav.service.SecurityService;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +23,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class LoyaltyEventServiceImpl implements LoyaltyEventService {
-    @Autowired
-    LoyaltyEventRepository loyaltyEventRepository;
-    @Autowired
-    OrganizationRepository organizationRepository;
-    @Autowired
-    LoyaltyPointTypeRepository loyaltyPointTypeRepository;
+    private final LoyaltyEventRepository loyaltyEventRepository;
+    private final OrganizationRepository organizationRepository;
+    private final LoyaltyPointTypeRepository loyaltyPointTypeRepository;
+    private final SecurityService securityService;
 
     @Override
     public LoyaltyEventUpdateResponse createUpdateEvent(LoyaltyEventDTO loyaltyEventDTO) {
@@ -81,5 +82,11 @@ public class LoyaltyEventServiceImpl implements LoyaltyEventService {
     public List<LoyaltyEventDTO> getAllEvents(Long orgId) {
         List<LoyaltyEventEntity> events = loyaltyEventRepository.findByOrganization_Id(orgId);
         return events.stream().map(LoyaltyEventEntity::getRepresentation).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LoyaltyEventDTO> getAllEvents() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getAllEvents(orgId);
     }
 }

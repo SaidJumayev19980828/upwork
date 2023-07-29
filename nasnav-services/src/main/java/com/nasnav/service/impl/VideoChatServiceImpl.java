@@ -12,7 +12,6 @@ import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
-import com.nasnav.enumerations.YeshteryState;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.request.VideoChatSearchParam;
@@ -24,7 +23,7 @@ import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import net.bytebuddy.utility.RandomString;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +61,6 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Autowired
     @Qualifier("videoChatQueryBuilder")
     private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
-
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
@@ -94,9 +92,9 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Override
     public VideoChatResponse createOrJoinSession(String sessionName, Boolean force, Long orgId, Long shopId) {
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
         OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
         orgId = organization.getId();
+        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
@@ -283,6 +281,19 @@ public class VideoChatServiceImpl implements VideoChatService {
         } else if (searchParams.getCount() > 1000) {
             searchParams.setCount(1000);
         }
+
+        EmployeeUserEntity currentEmployee = (EmployeeUserEntity) securityService.getCurrentUser();
+        if (!securityService.currentEmployeeHasNasnavRoles()) {
+            searchParams.setOrgId(currentEmployee.getOrganizationId());
+        }
+
+        if (!securityService.currentEmployeeHasOrgRolesOrHigher()) {
+            if (securityService.currentEmployeeUserHasShopRolesOrHigher()) {
+                searchParams.setShopId(currentEmployee.getShopId());
+            } else {
+                throw new IllegalStateException("current user has no roles");
+            }
+        }
     }
 
     @Override
@@ -317,8 +328,11 @@ public class VideoChatServiceImpl implements VideoChatService {
                     break;
                 case participantLeft: handelParticipantLeft(dto);
                     break;
+                default:
             }
-        } catch (JsonProcessingException e) {}
+        } catch (JsonProcessingException e) {
+            // empty
+        }
     }
 
     private void handleSessionDestroyed(OpenViduCallbackDTO dto) {
@@ -372,7 +386,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             Session session = getSession(videoEntity.getName());
             session.close();
         } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
-            logger.error("couldn't close session! , "+ ex.getMessage());
+            logger.error("couldn't close session! , {}", ex.getMessage());
             videoEntity.setStatus(FAILED.getValue());
         }
         sessionsMap.remove(videoEntity.getName());

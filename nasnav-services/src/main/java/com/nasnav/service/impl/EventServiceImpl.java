@@ -15,6 +15,7 @@ import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
 
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,25 +32,18 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
+@AllArgsConstructor
 public class EventServiceImpl implements EventService{
-    @Autowired
-    private EventRepository eventRepository;
-    @Autowired
-    private OrganizationRepository organizationRepository;
-    @Autowired
-    private InfluencerRepository influencerRepository;
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private EventLogsRepository eventLogsRepository;
-    @Autowired
-    private OrganizationService organizationService;
-    @Autowired
-    private ProductService productService;
-    @Autowired
-    private EventRequestsRepository eventRequestsRepository;
+    private final EventRepository eventRepository;
+    private final OrganizationRepository organizationRepository;
+    private final InfluencerRepository influencerRepository;
+    private final ProductRepository productRepository;
+    private final SecurityService securityService;
+    private final EventLogsRepository eventLogsRepository;
+    private final OrganizationService organizationService;
+    private final ProductService productService;
+    private final EventRequestsRepository eventRequestsRepository;
+    private final EventAttachmentsRepository eventAttachmentsRepository;
 
     @Override
     public EventResponseDto createEvent(EventForRequestDTO dto) {
@@ -155,6 +149,7 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
+    @Transactional
     public void updateEvent(EventForRequestDTO dto, Long eventId) {
         EventEntity entity = eventRepository.findById(eventId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId)
@@ -163,6 +158,7 @@ public class EventServiceImpl implements EventService{
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$NOT$EDITABLE$0002,eventId);
         }
 
+        eventAttachmentsRepository.deleteAllByEvent_Id(eventId);
         entity = toEntity(dto, entity.getOrganization(), entity.getInfluencer(), entity.getId());
         eventRepository.save(entity);
     }

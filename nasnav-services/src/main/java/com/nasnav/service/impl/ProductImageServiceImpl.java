@@ -10,11 +10,13 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.service.FeaturesService;
 import com.nasnav.service.FileService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.helpers.ProductImagesImportHelper;
 import com.nasnav.service.model.*;
 import com.querydsl.sql.SQLQueryFactory;
 import com.sun.istack.logging.Logger;
@@ -24,6 +26,8 @@ import com.univocity.parsers.csv.CsvParserSettings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -60,23 +64,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.*;
-import static com.nasnav.enumerations.ProductFeatureType.IMG_SWATCH;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.querydsl.sql.QProductImages.productImages;
 import static com.nasnav.querydsl.sql.QProductVariants.productVariants;
 import static com.nasnav.querydsl.sql.QProducts.products;
-import static com.nasnav.service.CsvExcelDataImportService.*;
+import static com.nasnav.util.FileUtils.validateImgBulkZip;
 import static com.querydsl.core.types.dsl.Expressions.cases;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
@@ -88,9 +86,12 @@ import static org.springframework.http.HttpStatus.*;
 
 
 @Service
+@RequiredArgsConstructor
 public class ProductImageServiceImpl implements ProductImageService {
 
 	private static final int IMG_DOWNLOAD_TIMEOUT_SEC = 90;
+
+	private final ProductImagesImportHelper helper;
 
 	private Logger logger = Logger.getLogger(ProductServiceImpl.class);
 	
@@ -124,18 +125,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Autowired
 	private SQLQueryFactory queryFactory;
-
-	@Autowired
-	private ProductFeaturesRepository featureRepo;
-
-	@Autowired
-	private OrganizationService orgService;
-
-	@Autowired
-	private ProductExtraAttributesEntityRepository attrValuesRepo;
-
-	@Autowired
-	private ExtraAttributesRepository attrRepo;
 
 	@Override
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
@@ -585,17 +574,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public List<ProductImageUpdateResponse> updateImagesBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		if (nonNull(metaData.getFeatureId())) {
-			SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
-			updateSwatchImagesBulk(zip, csv, swatchMetaData);
-			return emptyList();
-		}
-		return updateProductImageBulk(zip, csv, metaData);
-	}
 
 
 
@@ -604,7 +582,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		validateUpdateImageBulkRequest(zip, csv, metaData);
-		Set<ImportedImage> importedImgs = new HashSet<>(extractImgsToImport(zip, csv, metaData));
+		Set<ImportedImage> importedImgs = new HashSet<>(helper.extractImgsToImport(zip, csv, metaData));
 		return saveImgsBulk(importedImgs, metaData.isDeleteOldImages());
 	}
 
@@ -702,14 +680,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) {
 				
-		Map<String,List<VariantIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
+		Map<String,List<VariantIdentifier>> fileIdentifiersMap = helper.createFileToVariantIdsMap(csv);
 		
 		return readImgsFromUrls(fileIdentifiersMap, metaData);
 	}
-
-
-
-
 
 	private Set<ImportedImage> readImgsFromUrls(
 			Map<String, List<VariantIdentifier>> fileIdentifiersMap
@@ -750,10 +724,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 					fetchImportedImagesInBatches(imgToProductsMapping, metaData, client, variantCache)
 				);
 	}
-	
-	
-	
-	
+
 	/**
 	 * Pre-fetch The product variants of the images from the database and cache them.
 	 * @return a cache of ProductVariantsEntity
@@ -858,10 +829,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Flux<ProductImageUpdateDTO> createImgsMetaData(ProductImageBulkUpdateDTO metaData,
 			VariantCache variantCache, List<VariantIdentifier> variantIdentifiers) {
 		return Flux.fromIterable(variantIdentifiers)
-					.map(identifier -> getProductVariant(identifier, variantCache, metaData))
+					.map(identifier -> helper.getProductVariant(identifier, variantCache, metaData))
 					.filter(Optional::isPresent)
 					.map(Optional::get)
-					.map(variant -> createImgMetaData(metaData, variant));
+					.map(variant -> helper.createImgMetaData(metaData, variant));
 	}
 
 
@@ -894,75 +865,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 			logger.log(SEVERE, message);
 		}
 	}
-	
-	
-	
-	
-	
-	private ProductImageUpdateDTO createImgMetaData(ProductImageBulkUpdateDTO metaData, VariantBasicData variant) {
-		Long variantId = variant.getVariantId();
-		Long productId = variant.getProductId();
-		
-		ProductImageUpdateDTO imgMetaData = new ProductImageUpdateDTO();
-		imgMetaData.setOperation(CREATE);
-		imgMetaData.setPriority(metaData.getPriority());
-		imgMetaData.setType(metaData.getType());	
-		imgMetaData.setProductId(productId);
-		
-		if(!Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
-			imgMetaData.setVariantId(variantId);
-		}
-
-		return imgMetaData;		
-	}
-	
-	
-	
-	
-	private Optional<VariantBasicData> getProductVariant(VariantIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
-		Optional<VariantBasicData> variant = getVariantFromCache(identifier, cache);
-		
-		Boolean isIgnoreErrors = ofNullable(metaData.isIgnoreErrors()).orElse(false);
-		if(!isIgnoreErrors && !variant.isPresent()) {
-			throw new RuntimeBusinessException(
-					format(ERR_NO_VARIANT_FOUND, identifier.getVariantId(), identifier.getExternalId(), identifier.getBarcode())
-					, "INVALID PARAM: csv"
-					, NOT_ACCEPTABLE);
-		}
-		return variant;
-	}
-
-
-
-
-
-
-	private Optional<VariantBasicData> getVariantFromCache(VariantIdentifier identifier, VariantCache cache) {
-		String variantId = identifier.getVariantId();
-		String externalId = identifier.getExternalId();
-		String barcode = identifier.getBarcode();
-		return firstExistingValueOf(
-				cache.getIdToVariantMap().get(variantId)
-				, cache.getExternalIdToVariantMap().get(externalId)
-				, cache.getBarcodeToVariantMap().get(barcode));
-	}
-	
-	
-
-
-
-
 
 	private Map<String, List<ImportedImage>> groupImagesByPath( Set<ImportedImage> allImportedImgs) throws BusinessException {
 		return allImportedImgs
 				.stream()
 				.collect(groupingBy(ImportedImage::getPath));
 	}
-
-
-
-
-
 
 	private void saveSingleImgToAllItsVariants(String fileName, Map<String, List<ImportedImage>> imgMetadataMap,
 			List<String> errors, List<ProductImageUpdateResponse> responses) {
@@ -1038,209 +946,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return msgString;
 	}
 
-
-
-	
-	
-	
-
-	private List<ImportedImage> extractImgsToImport(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) {
-		List<ImportedImage> imgs = new ArrayList<>();
-		List<String> errors = new ArrayList<>();		
-		Map<String,List<VariantIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
-		
-		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){
-			imgs = readZipStream(stream, metaData, fileIdentifiersMap, errors);
-		}catch(Exception e) {
-			logger.log(SEVERE, e.getMessage(), e);
-			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$IMG$0005);
-		}
-		
-		
-		if(!errors.isEmpty()) {
-			String errorsJson = getErrorMsgAsJson(errors);
-			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$IMG$0007, errorsJson );
-		}
-		
-		return imgs;
-	}
-
-
-
-	
-	
-
-	private List<ImportedImage> readZipStream(ZipInputStream stream, ProductImageBulkUpdateDTO metaData,
-			Map<String, List<VariantIdentifier>> fileIdentifiersMap, List<String> errors) throws IOException {
-		
-		List<ImportedImage> imgs = new ArrayList<>();
-		
-		ZipEntry zipEntry = stream.getNextEntry();
-		
-		while (zipEntry != null) {						
-			readImgsFromZipEntry(zipEntry, stream, metaData, fileIdentifiersMap, errors)
-					.forEach(imgs::add);
-			
-		    zipEntry = stream.getNextEntry();
-		}
-		
-		stream.closeEntry();
-		
-		return imgs;
-	}
-
-
-	
-	
-	
-
-	
-	/**
-	 * read a single image in the zip file, and return one or more "ImportedImage" based on the barcode,
-	 * as a single barcode can belong to both a product and a product variant.
-	 * */
-	private List<ImportedImage> readImgsFromZipEntry(ZipEntry zipEntry, ZipInputStream stream,
-			ProductImageBulkUpdateDTO metaData, Map<String, List<VariantIdentifier>> fileIdentifiersMap, List<String> errors) {
-		List<ImportedImage> imgsFromEntry = new ArrayList<>();
-		
-		if(zipEntry.isDirectory() ) {
-			return new ArrayList<>();
-		} 
-		
-		try {
-			MultipartFile imgMultipartFile = readZipEntryAsMultipartFile(stream, zipEntry);				
-			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(zipEntry, fileIdentifiersMap, metaData);
-			
-			imgsFromEntry = imgsMetaData
-								.stream()
-								.map( meta -> new ImportedImage(imgMultipartFile, meta, zipEntry.getName()))
-								.collect(toList());
-									
-		}catch(Exception e) {
-			logger.log(SEVERE, e.getMessage(), e);
-			errors.add( createZipEntryErrorMsg(zipEntry, e) );
-		}
-		return imgsFromEntry;
-	}
-	
-	
-	
-	
-	
-	
-	private String createZipEntryErrorMsg(ZipEntry zipEntry, Exception e) {
-		return String.format(ERR_IMPORTING_IMG_FILE, zipEntry.getName(), e.getMessage());
-	}
-
-
-	
-	
-	
-	private String getErrorMsgAsJson(List<String> errors) {
-		JSONArray errorsJson = new JSONArray(errors);
-		
-		JSONObject main = new JSONObject();
-		main.put("msg", ERR_CSV_PARSE_FAILURE);
-		main.put("errors", errorsJson);
-		
-		return errorsJson.toString();
-	}
-	
-	
-
-	
-	
-	
-
-	/**
-	 * a single imported image is identified by barcode, which can be for a product record ,or a
-	 * product variant record.
-	 * So, we return metadata considering all cases:
-	 * - barcode exists for product only
-	 * - barcode exists for variant only
-	 * - barcode exists for both a product and a variant
-	 * */
-	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,
-																	 Map<String,List<VariantIdentifier>> fileIdentifiersMap,
-																	 ProductImageBulkUpdateDTO metaData) throws BusinessException{
-		
-		List<VariantIdentifier> identifiers = getVariantIdentifiersForCompressedFile(zipEntry, fileIdentifiersMap);
-		VariantCache cache = cachingHelper.createVariantCache(identifiers);
-		
-		List<List<ProductImageUpdateDTO>> metaDataLists = new ArrayList<>();
-		for(VariantIdentifier identifier: identifiers) {
-			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(metaData, identifier, cache); 
-			metaDataLists.add(imgsMetaData);
-		}
-		
-		return metaDataLists
-				.stream()
-				.flatMap(List::stream)
-				.collect(toList());
-	}
-	
-	
-	
-
-	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData
-			, VariantIdentifier identifier
-			, VariantCache cache)
-			throws BusinessException {
-		Optional<VariantBasicData> variant = getProductVariant(identifier, cache, metaData);
-		
-		return variant
-				.map(var -> createImgMetaData(metaData, var))
-				.map(Arrays::asList)
-				.orElse(emptyList());
-	}
-
-	
-	
-	
 	void validateVariantExistance(Optional<ProductVariantsEntity> variantsEntity, String variantId) throws BusinessException {
 		if (!variantsEntity.isPresent())
 			throw new BusinessException("Provided variant_id("+variantId+") doesn't match any existing variant!", "INVALID_PARAM: variant_id", NOT_ACCEPTABLE);
 	}
-	
 
-	
-	
-
-	private List<VariantIdentifier> getVariantIdentifiersForCompressedFile(ZipEntry zipEntry, Map<String,
-																List<VariantIdentifier>> fileToIdentifiersMap) {
-		String fileName = zipEntry.getName();
-		List<VariantIdentifier> identifiers = fileToIdentifiersMap.get(fileName);
-		
-		if(identifiers == null) {
-			String barcode =  getBarcodeFromImgName(fileName);
-			identifiers = new ArrayList<>();
-			identifiers.add(new VariantIdentifier(barcode));
-		}
-		return identifiers;
-	}
-	
-	
-	
-	
-	
-	private MultipartFile readZipEntryAsMultipartFile(ZipInputStream stream, ZipEntry zipEntry) throws Exception {
-		String fileName = zipEntry.getName();
-		FileItem fileItem = createFileItem(fileName);		
-		readIntoFileItem(stream, fileItem);
-		
-		return new CommonsMultipartFile(fileItem);
-	}
-	
-	
-	
-	
-	
 	private MultipartFile readUrlAsMultipartFile(String httpUrl, byte[] bytes){
 		try {
 			String extension = getFileExtension(bytes);
 			String fileName = createImageFileNameFromUrl(httpUrl, extension);
-			FileItem fileItem = createFileItem(fileName);
+			FileItem fileItem = helper.createFileItem(fileName);
 			readIntoFileItem(bytes, fileItem);			
 			return new CommonsMultipartFile(fileItem);
 		} catch (IOException e) {
@@ -1248,11 +963,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 			throw new RuntimeException(e);
 		}		
 	}
-
-
-
-
-
 
 	private String getFileExtension(byte[] bytes) {		
 		try {
@@ -1267,11 +977,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}		
 	}
 
-
-
-
-
-
 	private String createImageFileNameFromUrl(String httpUrl, String extension) {
 		String[] parts = httpUrl.split("/");
 		String lastPart = parts[parts.length - 1];
@@ -1279,11 +984,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return urlPartHasExtension(lastPart) ? 
 				lastPart: "img" + extension;
 	}
-
-
-
-
-
 
 	private boolean urlPartHasExtension(String lastPart) {
 		String patternStr = "([^\\s]+(\\.(?i)(.+))$)";
@@ -1293,115 +993,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return hasExtension;
 	}
 
-
-
-
-	private void readIntoFileItem(ZipInputStream stream, FileItem fileItem) throws IOException {
-		byte[] buffer = new byte[1024*100];
-		OutputStream fos = fileItem.getOutputStream();
-		int len;
-		while ((len = stream.read(buffer)) > 0) {
-            fos.write(buffer, 0, len);
-        }
-	}
-	
-	
-	
-	
-	private void readIntoFileItem(byte[] bytes, FileItem fileItem) throws IOException {		
+	private void readIntoFileItem(byte[] bytes, FileItem fileItem) throws IOException {
 		OutputStream fos = fileItem.getOutputStream();
 		fos.write(bytes);
 	}
-
-
-
-
-	private FileItem createFileItem(String fileName) {				
-		DiskFileItemFactory factory = new DiskFileItemFactory();
-		factory.setSizeThreshold(1024*1024);
-		FileItem fileItem = factory.createItem("image", "image/jpeg", false, fileName);
-		return fileItem;
-	}
-
-
-	
-	
-
-
-	private String getBarcodeFromImgName(String fileName) {
-		return com.google.common.io.Files.getNameWithoutExtension(fileName);
-	}
-
-
-
-	
-
-	private Map<String, List<VariantIdentifier>> createFileToVariantIdsMap(MultipartFile csv){
-		if(csv == null ||csv.isEmpty())
-			return new HashMap<>();		
-
-		List<Record> csvRecords = getCsvRecords(csv);
-		Map<String, List<VariantIdentifier>> identifiersMap = new HashMap<>();
-		String path;
-		VariantIdentifier identifier;
-		for(Record record:csvRecords) {
-			path = normalizeZipPath(record.getString(IMG_CSV_HEADER_IMAGE_FILE));
-			identifier = new VariantIdentifier(
-								record.getString(IMG_CSV_HEADER_VARIANT_ID)
-								, record.getString(IMG_CSV_HEADER_EXTERNAL_ID)
-								, record.getString(IMG_CSV_HEADER_BARCODE));
-
-			if (identifiersMap.get(path) == null)
-				identifiersMap.put(path, new ArrayList<>());
-
-			identifiersMap.get(path).add(identifier);
-		}
-		return identifiersMap;
-	}
-
-
-
-
-	private String normalizeZipPath(String path) {
-		return ofNullable(path)
-				.map(p -> p.startsWith("/")? p.replaceFirst("/", "") : p)
-				.orElse("") ;
-	}
-
-
-
-	private List<Record> getCsvRecords(MultipartFile csv){
-		List<Record> allRecords = new ArrayList<>();
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setLineSeparatorDetectionEnabled(true);
-		settings.setHeaderExtractionEnabled(true);
-		CsvParser parser = new CsvParser(settings );		
-		
-		try{
-			allRecords = parser.parseAllRecords(csv.getInputStream());
-		}catch(Exception e) {
-			logger.log(SEVERE, e.getMessage(), e);
-			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$IMG$0006);
-		}
-		
-		return allRecords;
-	}
-
-
-	
-
-
 	private void validateUpdateImageBulkRequest(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		validateImageBulkMetadata(metaData);
 		validateImgBulkZip(zip);
 	}
-
-
-
-
-
 
 	private void validateImageBulkMetadata(ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		if(metaData.getPriority() == null || metaData.getType() == null) {
@@ -1412,27 +1012,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 	}
 
-
-
-
-	private void validateImgBulkZip(MultipartFile zip){
-		if(zip.isEmpty()) {
-			throw new RuntimeBusinessException(
-					NOT_ACCEPTABLE
-					, P$IMG$0001);
-		}
-		String ext = com.google.common.io.Files.getFileExtension(zip.getOriginalFilename());
-		if(!ext.equalsIgnoreCase("zip")) {
-			throw new RuntimeBusinessException(
-					NOT_ACCEPTABLE
-					, P$IMG$0002);
-		}
-	}
-
-	
-	
-	
-	
 	@Override
 	public String getProductCoverImage(Long productId) {
 		return productImagesRepository
@@ -1662,157 +1241,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	@Override
-	public void saveSwatchImagesBulk(Set<ImportedSwatchImage> importedImgs, SwatchImageBulkUpdateDTO metaData) {
-		if(metaData.isDeleteOldImages()){
-			deleteFeatureSwatchImages(metaData);
-		}
-		doSaveSwatchImagesBulk(importedImgs, metaData);
-	}
-
-
-
-	@Override
-	public void updateSwatchImagesBulk(
-			@Valid MultipartFile zip
-			, @Valid MultipartFile csv
-			, @Valid SwatchImageBulkUpdateDTO metaData) {
-		validateSwatchImageBulkRequest(zip, csv, metaData);
-		Set<ImportedSwatchImage> importedImgs = extractSwatchImgsToImport(zip, csv, metaData);
-		saveSwatchImagesBulk(importedImgs, metaData);
-	}
-
-
-
-	private Set<ImportedSwatchImage> extractSwatchImgsToImport(MultipartFile zip, MultipartFile csv, SwatchImageBulkUpdateDTO metaData) {
-		return extractImgsToImport(zip, csv, new ProductImageBulkUpdateDTO(metaData.isIgnoreErrors()))
-				.stream()
-				.map(img -> new ImportedSwatchImage(img, metaData.getFeatureId()))
-				.collect(toSet());
-	}
-
-
-	private void validateSwatchImageBulkRequest(MultipartFile zip, MultipartFile csv, SwatchImageBulkUpdateDTO metaData) {
-		validateSwatchBulkMetaData(metaData);
-		validateImgBulkZip(zip);
-	}
-
-
-
-	private void validateSwatchBulkMetaData(SwatchImageBulkUpdateDTO metaData) {
-
-		if(anyIsNull(metaData, metaData.getFeatureId())){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0003);
-		}
-		ProductFeaturesEntity feature = getProductFeaturesEntity(metaData);
-		if(!Objects.equals(IMG_SWATCH.getValue(), feature.getType())){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0008, IMG_SWATCH.name());
-		}
-	}
-
-
-
-	private ProductFeaturesEntity getProductFeaturesEntity(SwatchImageBulkUpdateDTO metaData) {
-		Long featureId = metaData.getFeatureId();
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return featureRepo
-				.findByIdAndOrganization_Id(featureId.intValue(), orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$IMG$0004, featureId));
-	}
-
-
-
-	private void doSaveSwatchImagesBulk(Set<ImportedSwatchImage> importedImgs, SwatchImageBulkUpdateDTO metaData){
-		SwatchDataCache cache = createSwatchDataCache(importedImgs, metaData);
-		importedImgs
-				.stream()
-				.map(e -> saveSwatchFile(e, metaData.isCrop()))
-				.map(saved -> createExtraAttrValueEntity(saved, cache))
-				.collect(collectingAndThen(toList(), attrValuesRepo::saveAll));
-	}
-
-
-
-	private SwatchDataCache createSwatchDataCache(Set<ImportedSwatchImage> importedImgs, SwatchImageBulkUpdateDTO metaData) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		ExtraAttributesEntity attrEntity = getExtraAttributesEntity(metaData);
-		Map<Long, ProductExtraAttributesEntity> existingAttrValues = createAttrValuesCache(attrEntity);
-		Map<Long, ProductVariantsEntity> variants = createVariantsCache(importedImgs, orgId);
-		return new SwatchDataCache(existingAttrValues, variants, attrEntity);
-	}
-
-
-
-	private Map<Long, ProductExtraAttributesEntity> createAttrValuesCache(ExtraAttributesEntity attrEntity) {
-		return attrValuesRepo
-				.findByExtraAttribute(attrEntity)
-				.stream()
-				.collect(toMap(val -> val.getVariant().getId(), val -> val, FunctionalUtils::getFirst));
-	}
-
-
-
-	private Map<Long, ProductVariantsEntity> createVariantsCache(Set<ImportedSwatchImage> importedImgs, Long orgId) {
-		return importedImgs
-				.stream()
-				.map(ImportedSwatchImage::getVariantId)
-				.collect(
-						collectingAndThen( toList()
-								, ids -> productVariantsRepository.findByIdInAndProductEntity_OrganizationId(ids, orgId)))
-				.stream()
-				.collect(toMap(ProductVariantsEntity::getId, FunctionalUtils::self, FunctionalUtils::getFirst));
-	}
-
-
-	private ProductExtraAttributesEntity createExtraAttrValueEntity(
-			SavedImportedSwatchImage saved, SwatchDataCache cache) {
-		Long variantId = saved.getVariantId();
-		ProductVariantsEntity variant =
-				ofNullable(cache.getVariants().get(saved.getVariantId()))
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, variantId));
-		ProductExtraAttributesEntity valueEntity =
-				ofNullable(cache.getExistingAttrValues().get(saved.getVariantId()))
-				.orElseGet(ProductExtraAttributesEntity::new);
-		valueEntity.setExtraAttribute(cache.getAttrEntity());
-		valueEntity.setValue(saved.getUrl());
-		valueEntity.setVariant(variant);
-		return valueEntity;
-	}
-
-
-
-	private ExtraAttributesEntity getExtraAttributesEntity(SwatchImageBulkUpdateDTO metaData) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return getExtraAttrId(metaData)
-				.flatMap(id -> attrRepo.findByIdAndOrganizationId(id, orgId))
-				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$IMG$0009, metaData.getFeatureId()));
-	}
-
-
-
-	private SavedImportedSwatchImage saveSwatchFile(ImportedSwatchImage swatch, boolean crop) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		String url = fileService.saveFile(swatch.getImage(), orgId, crop);
-		return new SavedImportedSwatchImage(swatch, url);
-	}
-
-
-
-	private void deleteFeatureSwatchImages(SwatchImageBulkUpdateDTO metaData){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		Integer id = getExtraAttrId(metaData).orElse(-1);
-		attrValuesRepo.deleteByIdAndOrganizationId(id, orgId);
-	}
-
-
-
-	private Optional<Integer> getExtraAttrId(SwatchImageBulkUpdateDTO metaData) {
-		ProductFeaturesEntity feature = getProductFeaturesEntity(metaData);
-		return orgService.getAdditionalDataExtraAttrId(feature);
-	}
-
-
-
 	private List<ProductImageDTO> getAllImgsFor(List<Long> variantsIds
 							, List<ProductVariantPair> productVariantIdPairs) {
 		List<Long> productsIds = 
@@ -1915,6 +1343,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	private Integer variantImgFirst(ProductImageDTO img) {
 		return nonNull(img.getVariantId()) ? 0 : 1; 
+	}
+	
+	
+	@Override
+	@Transactional
+	public void deleteVarientImages(Long varId) {
+		List<String> images =  productImagesRepository.findUrlsByVariantIdAndOrganizationId(varId);
+		productImagesRepository.deleteByVariantIdIn(Arrays.asList(varId));
+		for(String img : images) {
+			fileService.deleteFileByUrl(img);
+		}
 	}
 }
 

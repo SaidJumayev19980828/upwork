@@ -1,10 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.WishlistItemRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -31,17 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.RESTOCKED_WISHLIST_TEMPLATE;
 import static com.nasnav.enumerations.Settings.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class WishlistServiceImpl implements WishlistService{
@@ -74,7 +68,8 @@ public class WishlistServiceImpl implements WishlistService{
     private OrderEmailServiceHelper orderEmailHelper;
     @Autowired
     private CartServiceHelper cartServiceHelper;
-
+    @Autowired
+    private UserRepository userRepo;
     @Override
     @Transactional
     public Wishlist addWishlistItem(WishlistItem item) {
@@ -147,7 +142,11 @@ public class WishlistServiceImpl implements WishlistService{
 
     @Override
     public Wishlist getWishlist() {
-        Long userId = securityService.getCurrentUser().getId();
+        BaseUserEntity userAuthed = securityService.getCurrentUser();
+        if(userAuthed instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        Long userId = userAuthed.getId();
         Wishlist wishlist = new Wishlist(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUser_Id(userId)));
         wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
         wishlist.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
@@ -155,7 +154,19 @@ public class WishlistServiceImpl implements WishlistService{
     }
 
 
-
+    @Override
+    public Wishlist getWishlist(Long userId,Boolean isYeshtery) {
+        Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
+        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
+        if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
+        }
+        Wishlist wishlist = new Wishlist();
+        wishlist.setItems(toCartItemsDto(wishlistRepo.findCurrentCartItemsByUserIdAndOrgId(userId,orgIdToUserAuth)));
+        wishlist.getItems().forEach(cartServiceHelper::replaceProductIdWithGivenProductId);
+        wishlist.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
+        return wishlist;
+    }
 
     @Override
     @Transactional

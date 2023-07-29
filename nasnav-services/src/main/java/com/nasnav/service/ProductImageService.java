@@ -18,17 +18,11 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface ProductImageService {
-	
-	static final int PRODUCT_IMAGE = 7;
 	public String NO_IMG_FOUND_URL = "no_img_found.jpg";
-
 	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	
 	ProductImageDeleteResponse deleteImage(Long imgId, Long productId, Long brandId) throws BusinessException;
 
-	List<ProductImageUpdateResponse> updateImagesBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException;
-	
 	List<ProductImageUpdateResponse> updateProductImageBulk(
 			@Valid MultipartFile zip
 			,@Valid MultipartFile csv
@@ -62,9 +56,5 @@ public interface ProductImageService {
 	
 	Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantIds);
 
-	void saveSwatchImagesBulk(Set<ImportedSwatchImage> importedImgs, SwatchImageBulkUpdateDTO metaData);
-
-	void updateSwatchImagesBulk(@Valid MultipartFile zip
-			,@Valid MultipartFile csv
-			,@Valid SwatchImageBulkUpdateDTO metaData);
+	void deleteVarientImages(Long varId);
 }

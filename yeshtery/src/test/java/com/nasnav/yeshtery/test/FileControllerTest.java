@@ -1,12 +1,14 @@
 package com.nasnav.yeshtery.test;
 
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.AppConfig;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
@@ -16,23 +18,46 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class FileControllerTest {
+@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+public class FileControllerTest extends AbstractTestWithTempBaseDir {
+    @Autowired
+    private AppConfig appConfig;
+
+    Path basePath;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Before
+    public void setBasePath() {
+        basePath = Paths.get(appConfig.getBasePathStr());
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        clearBaseDirectoryContent();
+    }
+
+    private void clearBaseDirectoryContent() throws IOException {
+        File file = new File(basePath.toString());
+
+        if(Files.exists(basePath))
+            FileUtils.cleanDirectory(file);
+    }
+
     @Test
-    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void uploadFileTestWithInvalidMimes() throws Exception {
         List<MockMultipartFile> invalidFiles = getInvalidFiles();
 
@@ -60,8 +85,6 @@ public class FileControllerTest {
     }
 
     @Test
-    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     public void uploadFileTestWithValidMimes() throws Exception {
         List<MockMultipartFile> validFiles = getValidFiles();
 

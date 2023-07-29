@@ -7,10 +7,7 @@ import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ApiLogsSearchParam;
-import com.nasnav.response.CategoryResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ThemeClassResponse;
-import com.nasnav.response.ThemeResponse;
+import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -122,7 +119,6 @@ public class AdminController {
 	public void addCountries(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody List<CountryDTO> dto) {
 		addressService.addCountries(dto);
 	}
-
 	@DeleteMapping(value = "country")
 	public void removeCountry(@RequestHeader(TOKEN_HEADER) String userToken,
 						      @RequestParam Long id,

@@ -16,6 +16,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.nasnav.service.sendpulse.pherialize.*;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class Sendpulse implements SendpulseInterface{
 	 private String apiUrl = "https://api.sendpulse.com";
      private String userId = null;
@@ -25,7 +29,7 @@ public class Sendpulse implements SendpulseInterface{
 
      public Sendpulse(String _userId, String _secret ) {
          if( _userId ==null || _secret==null)  {
-        	 System.out.println( "Empty ID or SECRET" );
+        	 log.debug( "Empty ID or SECRET" );
          }
          this.userId = _userId;
          this.secret = _secret;
@@ -35,7 +39,7 @@ public class Sendpulse implements SendpulseInterface{
 		 } catch (UnsupportedEncodingException e) {}
          if( this.tokenName!=null) {
              if( !this.getToken() ) {
-            	 System.out.println( "Could not connect to api, check your ID and SECRET" );
+            	 log.error("Could not connect to api, check your ID and SECRET");
              }
          }
      }

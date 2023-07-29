@@ -3,7 +3,6 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.*;
@@ -11,6 +10,7 @@ import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
+import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
@@ -20,6 +20,9 @@ import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
 import com.nasnav.service.otp.OtpType;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -30,11 +33,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
@@ -48,6 +48,7 @@ import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,13 +67,11 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class UserRegisterTest {
+@Slf4j
+public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 	@SuppressWarnings("unused")
 	private MockMvc mockMvc;
@@ -216,7 +215,7 @@ public class UserRegisterTest {
 		response = template.postForEntity("/user/register", userJson, UserApiResponse.class);
 
 		// response status should contain EMAIL_EXISTS
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		Assert.assertTrue(response.getBody().getStatus().contains(EMAIL_EXISTS));
 		Assert.assertEquals(406, response.getStatusCode().value());
 		// Delete this user
@@ -228,16 +227,71 @@ public class UserRegisterTest {
 	public void testSendResetPasswordTokenForInvalidMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo&org_id=" +
 				organization.getId() + "&employee=false", String.class);
-        System.out.println("###############" + response.getBody());
+        log.debug("###############{}", response.getBody());
 		Assert.assertTrue(response.getBody().contains("U$EMP$0004"));
 		
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
-	
-	
-	
+	@Test
+	public void testChangePassword() {
+		String body =
+				json()
+						.put("current_password", "12345678")
+						.put("new_password", "newPassword")
+						.put("confirm_password", "newPassword")
+						.toString();
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/change/password", userJson, String.class);
+		assertEquals(200, response.getStatusCode().value());
+
+		ResponseEntity<UserApiResponse> loginResponse = performLogin("user1@nasnav.com", "12345678", 99001L);
+
+		assertEquals(HttpStatus.UNAUTHORIZED, loginResponse.getStatusCode());
+
+		loginResponse = performLogin("user1@nasnav.com", "newPassword", 99001L);
+
+		assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
+
+	}
+
+
+	@Test
+	public void testChangePasswordInvalidOldPassword() {
+		String body =
+				json()
+						.put("current_password", "invalid_password")
+						.put("new_password", "newPassword")
+						.put("confirm_password", "newPassword")
+						.toString();
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/change/password", userJson, String.class);
+		assertEquals(406, response.getStatusCode().value());
+
+		ResponseEntity<UserApiResponse> loginResponse = performLogin("user1@nasnav.com", "12345678", 99001L);
+
+		assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
+
+		loginResponse = performLogin("user1@nasnav.com", "newPassword", 99001L);
+
+		assertEquals(HttpStatus.UNAUTHORIZED, loginResponse.getStatusCode());
+	}
+
+	private ResponseEntity<UserApiResponse> performLogin(String email, String password, Long orgId) {
+
+		String request = json()
+				.put("email", email)
+				.put("password", password)
+				.put("org_id", orgId)
+				.toString();
+		HttpEntity<Object> userJson = getHttpEntity(request, null);
+
+		// ---------------------------------------------------------------------
+		return template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+	}
+
+
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
@@ -377,10 +431,6 @@ public class UserRegisterTest {
 		Assert.assertTrue(response.getBody().contains("U$LOG$0005"));
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
-
-	
-	
-	
 	@Test
 	public void testExpiredToken() throws IOException {
 		persistentUser.setResetPasswordSentAt(LocalDateTime.now().minusHours(EntityConstants.TOKEN_VALIDITY + 1));
@@ -473,7 +523,7 @@ public class UserRegisterTest {
 		Assert.assertEquals(200, response.getStatusCode().value());
 		assertFalse(userTokenRepo.existsByToken(token));		
 		assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
-		System.out.println(response.getHeaders().get("Set-Cookie").get(0));
+		log.debug(response.getHeaders().get("Set-Cookie").get(0));
 	}
 	
 	
@@ -513,7 +563,7 @@ public class UserRegisterTest {
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"New_Password\",\n" +
 						"\"employee\": false" +"}", null);
-		System.out.println(userJson);
+		log.debug("{}", userJson);
 		template.postForEntity("/user/recover", userJson, UserApiResponse.class);
 
 		// login using the new password
@@ -675,7 +725,7 @@ public class UserRegisterTest {
 		HttpEntity<Object> userJson = getHttpEntity(body, "123");
 		ResponseEntity<String> response = template.postForEntity("/user/update", userJson, String.class);
 
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
 
@@ -696,6 +746,15 @@ public class UserRegisterTest {
 				, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());
+	}
+@Test
+	public void newUserRegisterWithoutActivationMethodTest() throws MessagingException, IOException {
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2RequestWithoutActivationMethod(redirectUrl).toString();
+		HttpEntity<Object> userJson = getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 201, response.getStatusCodeValue());
 	}
 
 	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
@@ -1516,6 +1575,16 @@ public class UserRegisterTest {
 
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
+		return json()
+				.put("activation_method", "VERIFICATION_LINK")
+				.put("name", "Ahmad")
+				.put("email", "test@nasnav.com")
+				.put("password", "password")
+				.put("org_id", 99001)
+				.put("confirmation_flag", true)
+				.put("redirect_url", redirectUrl);
+	}
+	private JSONObject createUserRegisterV2RequestWithoutActivationMethod(String redirectUrl) {
 		return json()
 				.put("name", "Ahmad")
 				.put("email", "test@nasnav.com")

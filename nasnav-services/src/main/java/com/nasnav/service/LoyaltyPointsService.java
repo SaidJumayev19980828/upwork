@@ -3,12 +3,9 @@ package com.nasnav.service;
 import com.nasnav.dto.AppliedPointsResponse;
 import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
-import com.nasnav.dto.request.LoyaltyPointDTO;
 import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
-import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
-import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.persistence.*;
@@ -30,6 +27,7 @@ public interface LoyaltyPointsService {
     void createLoyaltyPointTransaction(OrdersEntity order, LoyaltyPointType type, BigDecimal pointsAmount);
     void createYeshteryLoyaltyPointTransaction(MetaOrderEntity yeshteryMetaOrder, LoyaltyPointType type, BigDecimal pointsAmount);
     void redeemPoints(Long orderId, String code);
+    void sharePoints(Long pointId, String email , BigDecimal points);
     List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
     List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
@@ -38,6 +36,8 @@ public interface LoyaltyPointsService {
     void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
     LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
     LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
+
+    LoyaltyUserPointsResponse getUserPoints();
 
     LoyaltyUserPointsResponse getUserPoints(Long orgId);
 
@@ -50,8 +50,14 @@ public interface LoyaltyPointsService {
                                         Long userId, OrganizationEntity org);
 
     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, Set<Long> points, boolean yeshteryCart);
-    List<LoyaltyPointTransactionDTO> getUserSpendablePoints();
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForCartOrganizations();
+
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForOrganization(Long orgId);
+
+    List<LoyaltyPointTransactionDTO> getUserSpendablePointsForAuthUserOrganization();
 
     void givePointsToReferrer(UserEntity user, Long orgId);
     void activateReferralPoints(OrdersEntity suborder);
+	List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints();
+    LoyaltyTierDTO getUserOrgTier();
 }

@@ -1,19 +1,17 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
@@ -22,14 +20,11 @@ import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Export_Test_Data.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-public class DataExportTest {
+@Slf4j
+public class DataExportTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Autowired
@@ -40,7 +35,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("192021"), String.class);
 		
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 		
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -51,7 +46,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -62,7 +57,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=501&type=CSV", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -72,7 +67,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?type=CSV", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -83,7 +78,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=502&type=CSV", GET, getHttpEntity("101112"), String.class);
 		
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 		
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
@@ -93,7 +88,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("101112"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
@@ -103,7 +98,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -132,7 +127,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=501&type=XLSX", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -142,7 +137,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?type=XLSX", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -153,7 +148,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products?shop_id=502&type=XLSX", GET, getHttpEntity("101112"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
@@ -163,7 +158,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("101112"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
@@ -173,7 +168,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/xlsx?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -184,7 +179,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/xlsx?shop_id=501", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -194,7 +189,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/xlsx", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -205,7 +200,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -216,7 +211,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=501", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -226,7 +221,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv", GET, getHttpEntity("192021"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
@@ -238,7 +233,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv", GET, getHttpEntity("TTTRRR"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -249,7 +244,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=503", GET, getHttpEntity("TTTRRR"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -260,7 +255,7 @@ public class DataExportTest {
 		var response =
 				template.exchange("/export/products/csv?shop_id=502", GET, getHttpEntity("TTTRRR"), String.class);
 
-		System.out.println(">>>>>>>\n" + response.getBody());
+		log.debug(">>>>>>>\n{}", response.getBody());
 
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());

@@ -7,8 +7,8 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -41,6 +42,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@RunWith(SpringRunner.class)
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Files_API_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class FilesApiTest extends AbstractTestWithTempBaseDir {
@@ -52,9 +54,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private FilesRepository filesRepo;
 
-	@Autowired
-	private AppConfig appConfig;
-	
 	@Autowired
 	private OrganizationRepository orgRepo;
 	
@@ -284,7 +283,7 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
  						MockMvcRequestBuilders.get("/files/NON_EXISTING") 								
  								.contentType(MediaType.ALL_VALUE)				 
  				)
-				.andExpect(status().is(406))
+				.andExpect(status().is(404))
 				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
 	}
 	
@@ -304,7 +303,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	
-	// Sometimes this test fails at dispatcher.forward(request, resp) in FilesController
 	@Test
 	public void downloadFileDeletedOnSystem() throws Exception {
 		//first upload a file
@@ -317,13 +315,17 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
 		
 		//----------------------------------------------
-		
+		// to get cached in spring resource cache
+		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		assertEquals(OK, response.getStatusCode());
+		//--------------------------------------------
+		// still in cache
 		Path uploadedFile = basePath.resolve(""+orgId).resolve(sanitizedFileName);
 		Files.delete(uploadedFile);
 		
 		 //--------------------------------------------
-		 //Now try to download the deleted file
-		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		 // previous request shouldn't affect this request
+		response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
 		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
 

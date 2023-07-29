@@ -2,7 +2,6 @@ package com.nasnav.test.integration.msdynamics;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
@@ -13,6 +12,8 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.OrderService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -23,15 +24,14 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -55,13 +55,11 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class MicrosoftDynamicsIntegrationTest {
+public class MicrosoftDynamicsIntegrationTest extends AbstractTestWithTempBaseDir {
 	
 	@SuppressWarnings("unused")
 	private static final String NASNAV_ADMIN_TOKEN = "abcdefg";
@@ -160,7 +158,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	
-	
+	// not sure why this required a new context
 	@Test
 	public void createCustomerIntegrationTest() throws InterruptedException {
 		//---------------------------------------------------------------

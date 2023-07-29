@@ -4,6 +4,7 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99001, 'organization_1', 818, 1);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99003, 'organization_3', 818, 1);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -92,6 +93,8 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99001);
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22003, 201, 'squishy things org 3', 'squishy things', 'squishy_things', '{}', 0, 99003);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22004, 202, 'mountain equipment org 3', 'mountain equipment', 'mountain_equipment', '{}', 0, 99003);
 
 INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50011,22001);
 INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50012,22002);

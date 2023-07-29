@@ -1,7 +1,12 @@
 package com.nasnav.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.Gson;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
@@ -32,6 +37,7 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ProductServiceTransactions;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.SeoService;
 import com.nasnav.service.StockService;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
@@ -67,6 +73,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
+import javax.validation.Valid;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -74,7 +82,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
+import com.nasnav.enumerations.SeoEntityType;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.*;
 import static com.nasnav.commons.utils.EntityUtils.*;
@@ -205,6 +213,9 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ProductCollectionItemRepository collectionItemRepo;
 
+	@Autowired
+	private SeoService seoService;
+	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
@@ -2380,7 +2391,21 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 
-
+	private void validateProductNewFlow(NewProductFlowDTO dto ) throws BusinessException {
+		
+		validateOperation(dto.getOperation());
+		validatProductDTO(dto);
+	}
+	
+	private void validatProductDTO(NewProductFlowDTO dto) throws BusinessException {
+		
+		if (dto.getOperation().equals(UPDATE) && dto.getProductId() == null) {
+			throw new BusinessException(
+					"Missing required parameters !"
+					, "MISSING PARAM"
+					, NOT_ACCEPTABLE);
+		}
+	}
 
 	private void validateVariantForUpdate(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		if(!variant.areRequiredForUpdatePropertiesProvided()) {
@@ -3542,6 +3567,143 @@ public class ProductServiceImpl implements ProductService {
 		public List<Long> getVariantsWithFeature(ProductFeaturesEntity feature) {
 		return variantFeatureValuesRepo.findByFeature(feature.getId(), feature.getOrganization().getId());
     }
+
+	@Override
+	public ProductUpdateResponse updateProductV2(NewProductFlowDTO productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
+		
+		validateProductNewFlow(productJson);
+		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+		String json = ow.writeValueAsString(productJson);
+
+
+		 
+		 List<Long> tagsId = productJson.getTags();
+		 List<String> keywords = productJson.getKeywords();
+		Long id = updateProductBatch(asList(json), false, false).stream().findFirst().orElse(null);
+		if (id != null) {
+			imgService.deleteImage(null, id, null);
+			if (coverImg != null) {
+				ProductImageUpdateDTO coverMetaData = new ProductImageUpdateDTO();
+				coverMetaData.setOperation(Operation.CREATE);
+				coverMetaData.setProductId(id);
+				coverMetaData.setPriority(0);
+				coverMetaData.setType(7);
+				imgService.updateProductImage(coverImg, coverMetaData);
+			}
+
+			if (imgs != null) {
+				for (int i = 0; i < imgs.length; i++) {
+					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+					img.setOperation(Operation.CREATE);
+					img.setProductId(id);
+					img.setPriority(i + 1);
+					img.setType(7);
+					imgService.updateProductImage(imgs[i], img);
+				}
+			}
+
+			if (tagsId != null && !tagsId.isEmpty()) {
+				ProductTagDTO tags = new ProductTagDTO();
+				tags.setTagIds(tagsId);
+				tags.setProductIds(Arrays.asList(id));
+				updateProductTags(tags);
+
+			}
+
+			if (keywords != null && !keywords.isEmpty()) {
+				SeoKeywordsDTO seo = new SeoKeywordsDTO(SeoEntityType.PRODUCT, id, keywords);
+				seoService.addSeoKeywords(seo);
+			}
+		}
+		return new ProductUpdateResponse(id);
+	}
+   
+	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile[] imgs)
+			throws BusinessException {
+		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
+		if (id != null) {
+
+			Operation operation = variant.getOperation();
+
+			if (operation.equals(UPDATE)) {
+				imgService.deleteVarientImages(id);
+
+			}
+			if (imgs != null) {
+				for (int i = 0; i < imgs.length; i++) {
+					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
+					img.setOperation(Operation.CREATE);
+					img.setVariantId(id);
+					img.setPriority(i);
+					img.setType(7);
+					img.setProductId(variant.getProductId());
+					imgService.updateProductImage(imgs[i], img);
+				}
+			}
+
+		}
+
+		return new VariantUpdateResponse(id);
+	}
+
+	@Transactional
+	@Override
+	public ProductDetailsDTO getProductData(ProductFetchDTO productFetchDTO) throws BusinessException {
+		var id = ofNullable(productFetchDTO.getProductId()).orElse(-1L);
+		var allowAll = !ofNullable(productFetchDTO.getOnlyYeshteryProducts()).orElse(false);
+		ProductEntity product = productRepository.findByProductId(id, allowAll)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$PRO$0002, productFetchDTO.getProductId()));
+
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, productFetchDTO.isCheckVariants());
+
+		return createNEWProductDetailsDTO(product, productFetchDTO.getShopId(), productVariants,
+				productFetchDTO.isIncludeOutOfStock());
+	}
+
+
+
+	private ProductDetailsDTO createNEWProductDetailsDTO(ProductEntity product, Long shopId,
+			List<ProductVariantsEntity> productVariants, boolean includeOutOfStock) {
+		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, productVariants);
+		List<VariantDTO> variantsDTOList = createNEWVariantDTOS(shopId, productVariants, productsAndVariantsImages);
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
+		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
+
+		ProductDetailsDTO productDTO = toProductDetailsDTO(product, includeOutOfStock);
+		productDTO.setShops(product360Shops);
+		productDTO.setImages(getProductImages(productsAndVariantsImages));
+		productDTO.setVariants(variantsDTOList);
+		productDTO.setMultipleVariants(hasMultipleVariants(variantsDTOList));
+		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
+		productDTO.setBundleItems(getBundleItems(product));
+		productDTO.setTags(tagsDTOList);
+		productDTO.setKeywords(getSeoKeywords(product.getId(), SeoEntityType.PRODUCT, product.getOrganizationId()));
+		
+
+		return productDTO;
+	}
+	
+	private List<VariantDTO> createNEWVariantDTOS(Long shopId, List<ProductVariantsEntity> productVariants,
+			List<ProductImageDTO> productsAndVariantsImages) {
+		List<VariantDTO> variantsDTOList = new ArrayList<>();
+		if (!isNullOrEmpty(productVariants)) {
+			variantsDTOList = getNewVariantsList(productVariants, shopId, productsAndVariantsImages);
+		}
+		return variantsDTOList;
+	}
+	
+	private List<VariantDTO> getNewVariantsList(List<ProductVariantsEntity> productVariants, Long shopId,
+			List<ProductImageDTO> variantsImages) {
+
+		return productVariants.stream().map(variant -> createVariantDto(shopId, variant, variantsImages))
+
+				.collect(toList());
+	}
+	
+	List<SeoKeywordsDTO> getSeoKeywords(Long entityId, SeoEntityType type, Long orgId) {
+		return seoService.getSeoKeywords(orgId, entityId, type);
+	}
+
 }
 
 

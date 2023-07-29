@@ -36,4 +36,6 @@ public interface YeshteryUserService  extends CommonYeshteryUserServiceInterface
     UserApiResponse activateUserAccount(ActivateOtpDto activateOtp);
 
     RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
+
+    UserEntity getUserForOrg(UserEntity user, Long orgId);
 }

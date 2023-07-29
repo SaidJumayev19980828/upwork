@@ -1,21 +1,19 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.ReturnRequestItemRepository;
 import com.nasnav.dao.ReturnRequestRepository;
 import com.nasnav.dao.ReturnShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.*;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -34,12 +32,8 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpStatus.OK;
 
-
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class OrderReturnNoEmailMockTest {
+public class OrderReturnNoEmailMockTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private TestRestTemplate template;

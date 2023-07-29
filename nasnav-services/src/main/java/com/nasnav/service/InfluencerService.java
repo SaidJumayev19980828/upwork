@@ -2,11 +2,14 @@ package com.nasnav.service;
 
 import com.nasnav.dto.EventRequestsDTO;
 import com.nasnav.dto.InfluencerDTO;
+import com.nasnav.dto.InfluencerStatsDTO;
+import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventRequestStatus;
 import org.springframework.data.domain.PageImpl;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface InfluencerService {
@@ -36,4 +39,6 @@ public interface InfluencerService {
     PageImpl<EventRequestsDTO> getEventsRequestByOrgForEmployee(Integer start, Integer count, EventRequestStatus status);
     void joinEvent();
     void userIsGuided();
+    List<InfluencerStatsDTO> getInfluencerStats(long influecerId, LocalDate start, LocalDate end, Long orgId);
+    List<OrganizationRepresentationObject> getInfluencerOrgs(Long influencerId);
 }

@@ -12,6 +12,7 @@ import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,7 +51,17 @@ public class LoyaltyPointController {
 
     @GetMapping(value ="spendable_points")
     public List<LoyaltyPointTransactionDTO> getUserPoints(@RequestHeader(name = "User-Token", required = false) String token){
-        return loyaltyPointsService.getUserSpendablePoints();
+        return loyaltyPointsService.getUserSpendablePointsForCartOrganizations();
+    }
+    @PostMapping(value ="share_points")
+    public void sharePoints(@RequestHeader(name = "User-Token", required = false) String token , @RequestParam("point_id")  Long pointId , @RequestParam("email")  String email ,@RequestParam("points") BigDecimal points){
+         loyaltyPointsService.sharePoints(pointId ,email,points);
+    }
+
+
+    @GetMapping(value ="spendable_points/{orgId}")
+    public List<LoyaltyPointTransactionDTO> getUserSpendablePoints(@RequestHeader(name = "User-Token", required = false) String token , @PathVariable long orgId){
+        return loyaltyPointsService.getUserSpendablePointsForOrganization(orgId);
     }
 
     @GetMapping(value ="points_per_org")

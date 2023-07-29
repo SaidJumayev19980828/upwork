@@ -13,6 +13,9 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
+
+// import lombok.extern.slf4j.Slf4j;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -36,6 +39,7 @@ import java.util.Optional;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
+// @Slf4j
 public class RaveService {
 	private Logger classLogger = LogManager.getLogger("Payment:RAVE");
 
@@ -101,7 +105,7 @@ public class RaveService {
 		payment.setExecuted(new Date());
 		payment.setUserId(orders.get(0).getUserId());
 		payment.setMetaOrderId(metaOrderId);
-//System.out.println("####### " + payment.getOperator() + " : " + account.getAccountId());
+//log.debug("####### {} : {}", payment.getOperator(), account.getAccountId());
 		paymentsRepository.saveAndFlush(payment);
 		return payment;
 
@@ -136,11 +140,11 @@ public class RaveService {
 			HttpPost request = new HttpPost(account.getApiUrl() + "/verify");
 			StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
 			request.setEntity(requestEntity);
-			//System.out.println(request.getURI());
+			//log.debug(request.getURI());
 			HttpResponse response = client.execute(request);
 //            int httpStatus = response.getStatusLine().getStatusCode();
 			responseObject = new JSONObject(paymentCommons.readInputStream(response.getEntity().getContent()));
-//System.out.println("RESPONSE: " + responseObject.toString());
+//log.debug("RESPONSE: {}", responseObject.toString());
 		} catch (IOException e) {
 			classLogger.error("Empty response for flwRef ({})", flwRef);
 			throw new BusinessException("Unable to retrieve confirmation from the gateway", "PAYMENT_UNRECOGNIZED_RESPONSE", HttpStatus.BAD_GATEWAY);
@@ -178,7 +182,7 @@ public class RaveService {
 			paymentsRepository.saveAndFlush(payment);
 			throw new BusinessException("Invalid state for the payment ", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
-//System.out.println(" Actual: " +  actualAmount + " payment: " + payment.getAmount());
+//log.debug(" Actual: {} payment: {}",  actualAmount, payment.getAmount());
 		if(payment.getAmount() == null || actualAmount == null || actualAmount.compareTo(payment.getAmount()) != 0) {
 //                actualAmount.movePointRight(2).intValue() != payment.getAmount().movePointRight(2).intValue()) {
 			classLogger.error("Payment amount doesn't match order {}", orderUid);

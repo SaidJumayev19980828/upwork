@@ -23,7 +23,12 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
+	, U$LOG$0010("No user found with email [%email]!")
+	, U$LOG$0011("Need activation method !")
 
+	,U$IMG$0001("File with the same content already exists!")
+	,U$IMG$0002("Failed to delete image due to errors!\nerrors:[%s]")
+	,U$IMG$0003("Unable to read uploaded file")
 
 	, U$STATUS$0001("Account is already suspended!")
 	, U$STATUS$0002("User can't suspend/activates himself!")
@@ -46,6 +51,7 @@ public enum ErrorCodes {
 	,U$EMP$0012("Invalid store_id [%d]!")
 	,U$EMP$0013("Employee can't view other employees with requested roles!")
 	,U$EMP$0014("Employee can't view customers!")
+	,U$EMP$0015("Registration not confirmed by user!")
 
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")
@@ -203,6 +209,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
 	,ORG$LOY$0024("No active config for org with id [%d] !")
+	,ORG$LOY$0025("the available points are not enough !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -217,6 +224,11 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0007("Can't delete %s linked to address")
 	,ADDR$ADDR$0008("No Country name was provided!")
 
+	,PA$USR$0001("Package not deleted because related user!")
+	,PA$USR$0002("No Package found with ID:[%d]")
+
+
+
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
@@ -226,7 +238,9 @@ public enum ErrorCodes {
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
-	,E$USR$0002("User is not an employee!")
+	,E$USR$0002("User not found!")
+	,E$USR$0003("Invalid current password!")
+	,E$USR$0004("Password and Confirm Password do not match!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
@@ -437,7 +451,10 @@ public enum ErrorCodes {
 
 	,G$QUEUE$0001("no queue entity found")
 
+	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
 
+	,ROOMS$ROOM$NotFound("No Room Template found with shop id [%d]")
+	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
 	;
 

@@ -34,6 +34,9 @@ import com.nasnav.shipping.services.FixedFeeStrictSameCityShippingService;
 import com.nasnav.yeshtery.Yeshtery;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.yeshtery.controller.v1.YeshteryUserController;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,6 +46,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -91,13 +95,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class YeshteryOrdersControllerTest {
+@Slf4j
+public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
     private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
     private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
     private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";
@@ -200,7 +202,7 @@ public class YeshteryOrdersControllerTest {
 
         assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned", 4, variants.length());
         assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
-        assertTrue(variantFeatures.similar(expectedVariantFeatures));
+        JSONAssert.assertEquals(expectedVariantFeatures, variantFeatures, false);
     }
 
 
@@ -253,7 +255,7 @@ public class YeshteryOrdersControllerTest {
 
         assertTrue(!tags.getBody().isEmpty());
         Assert.assertEquals(2, tags.getBody().size());
-        System.out.println(tags.getBody().toString());
+        log.debug("{}", tags.getBody());
     }
 
     @SuppressWarnings("rawtypes")
@@ -450,10 +452,10 @@ public class YeshteryOrdersControllerTest {
 
         //-------------------------------------------------------------------
         // by shop_id only
-        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12Z&updated_after=2017-12-01:12:12:12Z", "101112");
+        ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("updated_before=2017-12-23:12:12:12&updated_after=2017-12-01:12:12:12", "101112");
 
-        assertTrue(200 == response.getStatusCode().value());
-        Assert.assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));
+        assertEquals(OK, response.getStatusCode());
+        assertEquals("expected 2 orders to be within this given time range ", 2, countOrdersFromResponse(response));
     }
 
     private void modifyOrderUpdateTime(Long orderId, LocalDateTime newUpdateTime) {
@@ -728,7 +730,7 @@ public class YeshteryOrdersControllerTest {
         assertEquals(3, countOrdersFromResponse(response));
     }
 
-    private ResponseEntity sendOrdersListRequestWithParamsAndToken(String params, String token){
+    private ResponseEntity<OrdersListResponse> sendOrdersListRequestWithParamsAndToken(String params, String token){
         HttpEntity<?> httpEntity = getHttpEntity(token);
 
         return template.exchange(YESHTERY_ORDER_LIST_API_PATH + "?" + params,

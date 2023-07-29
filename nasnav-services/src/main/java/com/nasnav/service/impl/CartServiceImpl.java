@@ -4,18 +4,8 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.MathUtils.nullableBigDecimal;
 import static com.nasnav.constatnts.EmailConstants.ABANDONED_CART_TEMPLATE;
 import static com.nasnav.enumerations.Settings.ORG_EMAIL;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0003;
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$ADDON$0002;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$JSON$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
 import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
 import static java.lang.String.format;
@@ -28,9 +18,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -46,9 +34,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,28 +46,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.AddonStockRepository;
-import com.nasnav.dao.AddonsRepository;
-import com.nasnav.dao.CartItemAddonDetailsRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.LoyaltyBoosterRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dao.WishlistItemRepository;
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.CartItemAddonDetailsDTO;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.UserCartInfo;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.mail.AbandonedCartsMail;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddonEntity;
 import com.nasnav.persistence.AddonStocksEntity;
@@ -86,8 +63,6 @@ import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CartItemAddonDetailsEntity;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.LoyaltyBoosterEntity;
-import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -99,11 +74,9 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.service.CartService;
 import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyCoinsDropService;
 import com.nasnav.service.LoyaltyPointsService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.OrderEmailServiceHelper;
-import com.nasnav.service.OrderService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.PromotionsService;
@@ -117,7 +90,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class CartServiceImpl implements CartService{
+public class CartServiceImpl implements CartService {
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -131,7 +104,6 @@ public class CartServiceImpl implements CartService{
     private final StockRepository stockRepository;
     private final ProductImageService imgService;
     private final DomainService domainService;
-    private final OrderService orderService;
     private final StatisticsService statisticsService;
     private final MailService mailService;
     private final OrderEmailServiceHelper orderEmailHelper;
@@ -139,16 +111,22 @@ public class CartServiceImpl implements CartService{
     private final ObjectMapper objectMapper;
     private final SettingRepository settingRepo;
     private final AppConfig config;
-    private final LoyaltyTierServiceImp tierServiceImp;
-    private final UserRepository userRepository;
-    private final LoyaltyCoinsDropService loyaltyCoinsDropService;
-    private final MetaOrderRepository metaOrderRepository;
-    private final LoyaltyBoosterRepository loyaltyBoosterRepository;
     private final LoyaltyPointsService loyaltyPointsService;
     private final  CartItemAddonDetailsRepository cartItemAddonDetailsRepository;
     private final  AddonStockRepository addonStockRepository;
   
     private final  AddonsRepository addonsRepository;
+    @Autowired
+    private UserRepository userRepo;
+    @Override
+    public AppliedPromotionsResponse getCartPromotions(String promoCode) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        Cart cart = getUserCart(user.getId());
+        return promoService.calcPromoDiscountForCart(promoCode, cart);
+    }
 
     @Override
     public Cart getCart(String promoCode, Set<Long> points, boolean yeshteryCart) {
@@ -166,6 +144,15 @@ public class CartServiceImpl implements CartService{
         cart.getItems().forEach(cartServiceHelper::addProductTypeFromAdditionalData);
         cart.setSubtotal(calculateCartTotal(cart));
         return cart;
+    }
+    @Override
+    public Cart getUserCart(Long userId, Boolean isYeshtery) {
+        Long authUserOrgId = securityService.getCurrentUserOrganizationId();
+        boolean userExists = userRepo.existsByIdAndOrganizationId(userId, authUserOrgId);
+        if(!userExists){
+            throw new RuntimeBusinessException(NOT_FOUND, E$USR$0002);
+        }
+        return getUserCart(userId, null, authUserOrgId, emptySet(), false);
     }
 
     @Override
@@ -186,8 +173,12 @@ public class CartServiceImpl implements CartService{
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
         }
-
-        cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        if (points != null && points.size() > 0) {
+            cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        } else {
+            
+        }
+        
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
@@ -224,14 +215,15 @@ public class CartServiceImpl implements CartService{
             }
         }
         createCartItemEntity(cartItem, (UserEntity) user, stock, item);
-        cartItemRepo.save(cartItem);
-        
+       
         if(item.getAddonList() !=null &&!item.getAddonList().isEmpty()) {
 
         	Set<CartItemAddonDetailsEntity> addonList=addCartItemAddons(cartItem, item,(UserEntity) user);
         	cartItem.setAddons(addonList);
         	
         }
+        cartItemRepo.save(cartItem);
+        
         return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
 
@@ -300,6 +292,7 @@ public class CartServiceImpl implements CartService{
         cartItem.setQuantity(item.getQuantity());
         cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
         cartItem.setAdditionalData(additionalDataJson);
+        cartItem.setSpecialOrder(item.getSpecialOrder());
         
     }
 
@@ -345,31 +338,6 @@ public class CartServiceImpl implements CartService{
 
         return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
-
-
-
-    @Override
-    public Order checkoutCart(CartCheckoutDTO dto) {
-        Long userId = securityService.getCurrentUser().getId();
-        LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmount(orderService.countOrdersByUserId(userId));
-        UserEntity userEntity = userRepository.findById(userId).get();
-        userEntity.setTier(loyaltyTierEntity);
-        userRepository.save(userEntity);
-        if (userEntity.getFamily() != null) {
-            Long familyId = userEntity.getFamily().getId();
-            Long orgId = securityService.getCurrentUserOrganizationId();
-            List<UserEntity> users = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
-            for (UserEntity user : users) {
-                loyaltyCoinsDropService.giveUserCoinsNewFamilyPurchase(user);
-            }
-        }
-        //
-        updateUserBoosterByPurchaseSize();
-        //
-        return orderService.createOrder(dto);
-    }
-
-
 
     @Override
     public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
@@ -588,14 +556,17 @@ public class CartServiceImpl implements CartService{
         	
         	Optional<AddonEntity> addonEntity=addonsRepository.findById(addonStock.getAddonEntity().getId());
         	addonEntity.ifPresent(addonItem -> dto.setAddoneName(addonItem.getName()));
+        	addonEntity.ifPresent(addonItem -> dto.setType(addonItem.getType()));
         	dto.setPrice(addonStock.getPrice());
         	dto.setAddonItemId(addon.getId());
+        	
         	addonList.add(dto);
         	
         }
         
         itemDto.setAddonList(addonList);
         }
+        itemDto.setSpecialOrder(itemData.getSpecialOrder());
         return itemDto;
     }
 
@@ -730,29 +701,6 @@ public class CartServiceImpl implements CartService{
                 .map(statisticsService::toUserCartInfo)
                 .collect(toList());
     }
-    private void updateUserBoosterByPurchaseSize() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
-        Integer purchaseCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userEntity.getId(), orgId);
-        LoyaltyBoosterEntity loyaltyBoosterEntity = null;
-        LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
-        List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
-        if (userEntity.getBooster() != null) {
-            userLoyaltyBoosterEntity = userEntity.getBooster();
-        }
-        boosterList = loyaltyBoosterRepository.getAllByPurchaseSize(purchaseCount);
-        int boosterSize = boosterList.size();
-        if (boosterSize > 0) {
-            loyaltyBoosterEntity = boosterList.get(boosterSize - 1);
-            if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
-                if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
-                    return;
-                }
-            }
-            userEntity.setBooster(loyaltyBoosterEntity);
-        }
-        userRepository.save(userEntity);
-    }
 
     @Override
     public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
@@ -762,11 +710,6 @@ public class CartServiceImpl implements CartService{
             }
             cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
             return getUserCart(user.getId(), promoCode, points, yeshteryCart);
-    }
-
-    @Override
-    public Order checkoutYeshteryCart(CartCheckoutDTO dto) {
-        return orderService.createYeshteryOrder(dto);
     }
 
     @Scheduled(fixedRate = 864000000)
@@ -848,8 +791,10 @@ public class CartServiceImpl implements CartService{
 		if (!item.getAddonList().isEmpty()) {
 
 			for (CartItemAddonDetailsDTO dto : item.getAddonList()) {
-				CartItemAddonDetailsEntity addon = new CartItemAddonDetailsEntity();
-				
+				CartItemAddonDetailsEntity addon = cartItemAddonDetailsRepository.findByCartItemEntity_IdAndAddonStockEntity_Id(cartItem.getId(), dto.getAddonStockId());
+				if(addon==null) {
+					addon=new CartItemAddonDetailsEntity();
+				}
 				AddonStocksEntity addonstock = ofNullable(dto.getAddonStockId())
 						.map(id -> addonStockRepository.getOne(dto.getAddonStockId()))
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$ADDON$0002,
