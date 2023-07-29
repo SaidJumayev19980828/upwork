@@ -449,6 +449,8 @@ public enum ErrorCodes {
 	,POST$LIKE$0003("user already liked this post before!")
 	,POST$REVIEW$ATTACHMENT("No attachments found fot review you should upload images")
 
+	,G$QUEUE$0001("no queue entity found")
+
 	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
 
 	,ROOMS$ROOM$NotFound("No Room Template found with shop id [%d]")
