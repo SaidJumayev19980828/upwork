@@ -1,7 +1,9 @@
 package com.nasnav.service.impl;
 
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.request.notification.NotificationRequestDto;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
@@ -12,6 +14,8 @@ import com.nasnav.service.CallQueueService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
+import com.nasnav.service.notification.NotificationService;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -39,9 +43,11 @@ public class CallQueueServiceImpl implements CallQueueService {
     private SecurityService securityService;
     @Autowired
     private VideoChatService videoChatService;
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
-    public CallQueueStatusDTO enterQueue(Long orgId) {
+    public CallQueueStatusDTO enterQueue(Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
@@ -67,7 +73,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     }
 
     @Override
-    public void quitQueue() {
+    public void quitQueue() throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(getUser().getId(),CallQueueStatus.OPEN.getValue());
         if(entity == null) {
             throw new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001);
@@ -82,11 +88,12 @@ public class CallQueueServiceImpl implements CallQueueService {
 
     @Override
     @Transactional
-    public VideoChatResponse acceptCall(Long queueId, Boolean force) {
+    public VideoChatResponse acceptCall(Long queueId, Boolean force) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
-        //TODO send to user the user response
+        String userResponseSTR = userResponse.toString();
+        notificationService.sendMessage(entity.getUser(), new NotificationRequestDto("call queue started", userResponseSTR));
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
@@ -99,7 +106,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     }
 
     @Override
-    public List<CallQueueDTO> rejectCall(Long queueId) {
+    public List<CallQueueDTO> rejectCall(Long queueId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
         entity.setEmployee(getEmployee());
         entity.setStatus(CallQueueStatus.REJECTED.getValue());
@@ -133,14 +140,15 @@ public class CallQueueServiceImpl implements CallQueueService {
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
-    private void notifyQueue(Long orgId) {
+    private void notifyQueue(Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         List<CallQueueEntity> queue = callQueueRepository.getAllByOrganization_IdAndStatus(orgId, CallQueueStatus.OPEN.getValue());
         queue = queue.stream().sorted(Comparator.comparing(CallQueueEntity::getJoinsAt)).collect(Collectors.toList());
         CallQueueEntity entity;
         for(int i = 0; i < queue.size(); i++) {
             entity = queue.get(i);
-            //TODO send the following DTO to user by token as notification
-            new CallQueueStatusDTO(entity.getId(), entity.getJoinsAt(), i+1, queue.size());
+            notificationService.sendMessage(entity.getUser(),
+                    new NotificationRequestDto("queue summary",
+                            new CallQueueStatusDTO(entity.getId(), entity.getJoinsAt(), i+1, queue.size()).toString()));
         }
     }
 

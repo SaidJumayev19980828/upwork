@@ -1,10 +1,12 @@
 package com.nasnav.controller;
 
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.CallQueueService;
+import com.nasnav.service.notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ public class CallQueueController {
 
     @PostMapping
     public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
-                                         @RequestParam Long orgId) {
+                                         @RequestParam Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         return callQueueService.enterQueue(orgId);
     }
 
@@ -48,19 +50,19 @@ public class CallQueueController {
 
     @PutMapping("/reject")
     public List<CallQueueDTO> rejectCallByEmployee(@RequestHeader(TOKEN_HEADER) String userToken,
-                                                   @RequestParam Long queueId) {
+                                                   @RequestParam Long queueId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         return callQueueService.rejectCall(queueId);
     }
 
     @PutMapping("/cancel")
-    public void cancelCallByUser(@RequestHeader(TOKEN_HEADER) String userToken) {
+    public void cancelCallByUser(@RequestHeader(TOKEN_HEADER) String userToken) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         callQueueService.quitQueue();
     }
 
     @PutMapping("/accept")
     public VideoChatResponse acceptCallByEmployee(@RequestHeader(TOKEN_HEADER) String userToken,
                                                   @RequestParam Long queueId,
-                                                  @RequestParam(required = false, defaultValue = "true") Boolean force) {
+                                                  @RequestParam(required = false, defaultValue = "true") Boolean force) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
         return callQueueService.acceptCall(queueId, force);
     }
 
