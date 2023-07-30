@@ -31,7 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class OtpServiceTest extends AbstractTestWithTempBaseDir {
+Test extends AbstractTestWithTempBaseDir {
     @MockBean
     private YeshteryUserOtpRepository yeshteryUserOtpRepository;
 

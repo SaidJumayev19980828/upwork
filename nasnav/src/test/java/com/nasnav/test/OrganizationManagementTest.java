@@ -3,6 +3,7 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.nasnav.constatnts.EntityConstants.*;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.STRING;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -43,6 +46,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
@@ -80,6 +84,9 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private AddressRepository addressRepo;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -189,6 +196,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     @Test
     public void organizationRegistrationTest() {
         RegisterDto registerDto = registerOrg();
+        assertTrue(registerDto.getPassword().length() < PASSWORD_MAX_LENGTH);
+        assertTrue(registerDto.getPassword().length() > PASSWORD_MIN_LENGTH);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
         assertEquals(OK, response.getStatusCode());
         final Long orgId = response.getBody().getOrganizationId();
@@ -198,6 +207,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
             throw new IllegalStateException("there should be only 1 employee");
         }).orElseThrow(() -> new IllegalStateException("there should be 1 employee"));
         assertEquals(registerDto.getName(), employee.getName());
+        assertTrue(passwordEncoder.matches(registerDto.getPassword(), employee.getEncryptedPassword()));
         assertEquals(registerDto.getEmail(), employee.getEmail());
         final Set<String> expectedRoles = Set.of(Roles.ORGANIZATION_ADMIN.getValue(), Roles.ORGANIZATION_MANAGER.getValue());
         final Set<String> foundRoles = employee.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
@@ -208,7 +218,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         RegisterDto registerDTO = new RegisterDto();
         registerDTO.setOrganizationName("Solad Pant1");
         registerDTO.setCurrencyIso(818);
-
+        // $2a$10$G6O7R9J3k1WRTZWCnfLJV.IFlqVuwxEg/ITkPfqNzA9uL6yurKX2O
+        registerDTO.setPassword("D@ner$2010");
         registerDTO.setName("test test test ");
         registerDTO.setEmail(TestUserEmail);
         
