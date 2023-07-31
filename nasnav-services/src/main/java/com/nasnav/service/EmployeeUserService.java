@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.response.UserApiResponse;
 
 import java.util.List;
@@ -21,4 +22,6 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	List<UserRepresentationObject> getAvailableEmployeesByOrgId(Long orgId);
 
 	void sendEmailRecovery(String email);
+
+	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto);
 }

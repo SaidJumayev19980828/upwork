@@ -12,12 +12,14 @@ import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EmployeeUserOtpEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.request.UsersSearchParam;
 import com.nasnav.response.UserApiResponse;
@@ -57,6 +59,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
@@ -453,6 +456,21 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (Objects.equals(user.getId(), currentUser.getId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0002);
 		}
+	}
+
+	@Override
+	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto) {
+		EmployeeUserEntity user = employeeUserRepository.findByEmailIgnoreCaseAndOrganizationId(activateOtpDto.getEmail(), activateOtpDto.getOrgId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
+		employeeOtpService.validateOtp(activateOtpDto.getOtp(), user, OtpType.REGISTER);
+		activateUserInDB(user);
+		return securityService.login(user, false);
+	}
+
+	private void activateUserInDB(EmployeeUserEntity user) {
+		user.setResetPasswordToken(null);
+		user.setUserStatus(ACTIVATED.getValue());
+		employeeUserRepository.save(user);
 	}
 
 }

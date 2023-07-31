@@ -6,16 +6,19 @@ import com.jayway.jsonpath.JsonPath;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +78,9 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
     @Autowired
     private SocialRepository socialRepository;
-    
+    @Autowired
+    private EmployeeUserOtpRepository employeeUserOtpRepository;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -198,7 +203,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         RegisterDto registerDto = registerOrg();
         assertTrue(registerDto.getPassword().length() < PASSWORD_MAX_LENGTH);
         assertTrue(registerDto.getPassword().length() > PASSWORD_MIN_LENGTH);
-        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
+        ResponseEntity<OrganizationResponse> response = template
+                .postForEntity("/organization/register", registerDto, OrganizationResponse.class);
         assertEquals(OK, response.getStatusCode());
         final Long orgId = response.getBody().getOrganizationId();
         final OrganizationEntity org = organizationRepository.findOneById(orgId);
@@ -209,6 +215,16 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(registerDto.getName(), employee.getName());
         assertTrue(passwordEncoder.matches(registerDto.getPassword(), employee.getEncryptedPassword()));
         assertEquals(registerDto.getEmail(), employee.getEmail());
+
+        final EmployeeUserOtpEntity employeeUserOtpEntity = employeeUserOtpRepository.findByUser(employee)
+                .orElseThrow(
+                        () -> new IllegalStateException("it should return only 1 otp")
+                );
+        ActivateOtpDto activateOtpDto = activateOtp(employeeUserOtpEntity.getOtp(), registerDto.getEmail(), orgId);
+        ResponseEntity<UserApiResponse> verifyOtpResponse = template
+                .postForEntity("/user/v2/employee/otp/activate", activateOtpDto, UserApiResponse.class);
+        assertEquals(200, verifyOtpResponse.getStatusCodeValue());
+
         final Set<String> expectedRoles = Set.of(Roles.ORGANIZATION_ADMIN.getValue(), Roles.ORGANIZATION_MANAGER.getValue());
         final Set<String> foundRoles = employee.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
         assertEquals(expectedRoles, foundRoles);
@@ -224,6 +240,15 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         registerDTO.setEmail(TestUserEmail);
         
         return  registerDTO;
+    }
+
+    private ActivateOtpDto activateOtp(String otp, String email, Long orgId) {
+        ActivateOtpDto activateOtpDto = new ActivateOtpDto();
+        activateOtpDto.setOtp(otp);
+        activateOtpDto.setEmail(email);
+        activateOtpDto.setOrgId(orgId);
+
+        return activateOtpDto;
     }
 
     @Test

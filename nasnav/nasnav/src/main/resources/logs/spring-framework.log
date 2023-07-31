@@ -6794,3 +6794,627 @@ You may wish to exclude one of them to ensure predictable runtime behavior
 2023-07-30T12:42:10.855+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
 2023-07-30T12:42:10.925+0200 INFO Shutting down ExecutorService 'taskScheduler'
 2023-07-30T12:42:10.926+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T09:54:15.164+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T09:54:15.517+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T09:54:15.554+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T09:54:16.484+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T09:54:18.507+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T09:54:19.247+0200 INFO Finished Spring Data repository scanning in 732 ms. Found 119 JPA repository interfaces.
+2023-07-31T09:54:20.328+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$c0414a34] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:54:20.491+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$4faf13e8] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:54:20.666+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@1f7fcec2' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:54:20.687+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:54:21.132+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T09:54:21.305+0200 INFO Root WebApplicationContext: initialization completed in 4773 ms
+2023-07-31T09:54:29.443+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T09:54:29.938+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T09:54:35.273+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T09:54:36.446+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T09:54:36.832+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T09:54:38.319+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T09:54:38.356+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@11824c3, org.springframework.security.web.context.SecurityContextPersistenceFilter@8f337c4, org.springframework.security.web.header.HeaderWriterFilter@5450054f, org.springframework.web.filter.CorsFilter@6d7f475d, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@16810696, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@1bd0b260, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@7afd1a21, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@77f9da7b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@121476da, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@79ef14d2, com.nasnav.security.AuthenticationFilter@1fb91d89, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@5fc71c81, org.springframework.security.web.session.SessionManagementFilter@c76d874, org.springframework.security.web.access.ExceptionTranslationFilter@27830e89, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@5e789bd6]
+2023-07-31T09:54:38.702+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T09:54:39.478+0200 INFO Initializing Servlet ''
+2023-07-31T09:54:39.481+0200 INFO Completed initialization in 3 ms
+2023-07-31T09:54:40.271+0200 INFO Tomcat started on port(s): 35985 (http) with context path ''
+2023-07-31T09:54:40.272+0200 INFO Starting Quartz Scheduler now
+2023-07-31T09:54:40.845+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T09:54:40.848+0200 INFO Completed initialization in 3 ms
+2023-07-31T09:54:41.734+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T09:54:41.737+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T09:54:41.825+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T09:54:41.826+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T09:56:14.624+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T09:56:14.979+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T09:56:15.004+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T09:56:15.946+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T09:56:17.520+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T09:56:18.252+0200 INFO Finished Spring Data repository scanning in 719 ms. Found 119 JPA repository interfaces.
+2023-07-31T09:56:19.579+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$5663f02f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:56:19.769+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$e5d1b9e3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:56:19.992+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@403cff1c' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:56:20.015+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T09:56:20.505+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T09:56:20.637+0200 INFO Root WebApplicationContext: initialization completed in 4634 ms
+2023-07-31T09:56:28.754+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T09:56:29.272+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T09:56:34.977+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T09:56:36.222+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T09:56:36.685+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T09:56:38.610+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T09:56:38.657+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@52af888, org.springframework.security.web.context.SecurityContextPersistenceFilter@593707c6, org.springframework.security.web.header.HeaderWriterFilter@9352f58, org.springframework.web.filter.CorsFilter@621d50d7, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@5b9461d0, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@1c45c654, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@a70b31, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@2592f798, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@1b9527a2, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@394ffb8, com.nasnav.security.AuthenticationFilter@ab0f11a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@588cb67c, org.springframework.security.web.session.SessionManagementFilter@701a0c4d, org.springframework.security.web.access.ExceptionTranslationFilter@32fcec97, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@2503f9b]
+2023-07-31T09:56:39.054+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T09:56:39.833+0200 INFO Initializing Servlet ''
+2023-07-31T09:56:39.836+0200 INFO Completed initialization in 3 ms
+2023-07-31T09:56:40.560+0200 INFO Tomcat started on port(s): 37923 (http) with context path ''
+2023-07-31T09:56:40.561+0200 INFO Starting Quartz Scheduler now
+2023-07-31T09:56:41.089+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T09:56:41.093+0200 INFO Completed initialization in 3 ms
+2023-07-31T09:56:42.107+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T09:56:42.109+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T09:56:42.216+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T09:56:42.217+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:07:59.639+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:07:59.925+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:07:59.950+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T10:08:00.918+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:08:02.613+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:08:03.309+0200 INFO Finished Spring Data repository scanning in 686 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:08:04.576+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$81b65f2f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:08:04.762+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$112428e3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:08:04.986+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@16890f00' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:08:05.014+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:08:05.470+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:08:05.628+0200 INFO Root WebApplicationContext: initialization completed in 4659 ms
+2023-07-31T10:08:14.763+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:08:15.349+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:08:21.783+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T10:08:23.358+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T10:08:23.806+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T10:08:25.777+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T10:08:25.820+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@420ee923, org.springframework.security.web.context.SecurityContextPersistenceFilter@11f66205, org.springframework.security.web.header.HeaderWriterFilter@23e7672c, org.springframework.web.filter.CorsFilter@2264d9a1, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@2bf0355f, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@44d6213c, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@3c83e4b, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@2e6387f4, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@47702908, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4bbbe012, com.nasnav.security.AuthenticationFilter@1b5e0d5c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2e2cb8e5, org.springframework.security.web.session.SessionManagementFilter@5229b3aa, org.springframework.security.web.access.ExceptionTranslationFilter@e63a7, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@329b7ed7]
+2023-07-31T10:08:26.166+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:08:27.028+0200 INFO Initializing Servlet ''
+2023-07-31T10:08:27.031+0200 INFO Completed initialization in 3 ms
+2023-07-31T10:08:27.783+0200 INFO Tomcat started on port(s): 43505 (http) with context path ''
+2023-07-31T10:08:27.784+0200 INFO Starting Quartz Scheduler now
+2023-07-31T10:08:28.298+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T10:08:28.302+0200 INFO Completed initialization in 3 ms
+2023-07-31T10:08:29.141+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T10:08:29.143+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:08:29.224+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:08:29.224+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:08:59.911+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:09:00.220+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:09:00.254+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@183e8023, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@45efc20d, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@3e5499cc, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@67ab1c47, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@b78a709, org.springframework.test.context.support.DirtiesContextTestExecutionListener@30bcf3c1, org.springframework.test.context.transaction.TransactionalTestExecutionListener@2a3c96e3, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@15cafec7, org.springframework.test.context.event.EventPublishingTestExecutionListener@5b444398, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@cb191ca, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@42f48531, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@a776e, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@792bbc74, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@79145d5a, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@1f2f9244]
+2023-07-31T10:09:01.611+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:09:03.003+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:09:03.662+0200 INFO Finished Spring Data repository scanning in 651 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:09:04.899+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$8931f89d] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:09:05.051+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$189fc251] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:09:05.217+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@24e79a4d' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:09:05.235+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:09:05.615+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:09:05.771+0200 INFO Root WebApplicationContext: initialization completed in 4113 ms
+2023-07-31T10:09:13.118+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:09:13.572+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:09:18.378+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T10:09:19.439+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T10:09:19.812+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T10:09:21.374+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T10:09:21.421+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@21814915, org.springframework.security.web.context.SecurityContextPersistenceFilter@4e825977, org.springframework.security.web.header.HeaderWriterFilter@32983de8, org.springframework.web.filter.CorsFilter@3ddfe20d, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@6959f42a, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@5f22d8ea, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@1b692647, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@10af5c2, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3cc70958, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@7fb44edb, com.nasnav.security.AuthenticationFilter@731167fc, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@58f3416a, org.springframework.security.web.session.SessionManagementFilter@2da427e6, org.springframework.security.web.access.ExceptionTranslationFilter@763a71ff, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@18204075]
+2023-07-31T10:09:21.768+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:09:22.521+0200 INFO Initializing Servlet ''
+2023-07-31T10:09:22.525+0200 INFO Completed initialization in 4 ms
+2023-07-31T10:09:23.187+0200 INFO Tomcat started on port(s): 45697 (http) with context path ''
+2023-07-31T10:09:23.188+0200 INFO Starting Quartz Scheduler now
+2023-07-31T10:09:23.569+0200 INFO Initializing Spring TestDispatcherServlet ''
+2023-07-31T10:09:23.569+0200 INFO Initializing Servlet ''
+2023-07-31T10:09:23.569+0200 INFO Completed initialization in 0 ms
+2023-07-31T10:09:23.684+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T10:09:23.687+0200 INFO Completed initialization in 2 ms
+2023-07-31T10:09:24.819+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T10:09:24.822+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:09:24.929+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:09:24.930+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:14:37.270+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:14:37.558+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:14:37.581+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T10:14:38.477+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:14:39.872+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:14:40.511+0200 INFO Finished Spring Data repository scanning in 631 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:14:41.622+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$1faf81bd] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:14:41.830+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$af1d4b71] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:14:42.001+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@19677add' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:14:42.023+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:14:42.429+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:14:42.567+0200 INFO Root WebApplicationContext: initialization completed in 4040 ms
+2023-07-31T10:14:51.465+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:14:51.936+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:14:56.883+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T10:14:57.954+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T10:14:58.362+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T10:15:00.650+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T10:15:00.692+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@b3c31cb, org.springframework.security.web.context.SecurityContextPersistenceFilter@4e92da5, org.springframework.security.web.header.HeaderWriterFilter@4df258e3, org.springframework.web.filter.CorsFilter@2da11074, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@701695cb, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@5d24b9fd, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@436fc2b9, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@273b170e, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@39e9a37b, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@344e665a, com.nasnav.security.AuthenticationFilter@7da02d36, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1778e920, org.springframework.security.web.session.SessionManagementFilter@4f67115d, org.springframework.security.web.access.ExceptionTranslationFilter@2d5dbebc, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@5d1f10a9]
+2023-07-31T10:15:01.003+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:15:01.657+0200 INFO Initializing Servlet ''
+2023-07-31T10:15:01.660+0200 INFO Completed initialization in 3 ms
+2023-07-31T10:15:02.278+0200 INFO Tomcat started on port(s): 37953 (http) with context path ''
+2023-07-31T10:15:02.279+0200 INFO Starting Quartz Scheduler now
+2023-07-31T10:15:02.754+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T10:15:02.758+0200 INFO Completed initialization in 3 ms
+2023-07-31T10:15:03.600+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T10:15:03.603+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:15:03.693+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:15:03.694+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:24:53.184+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:24:53.472+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:24:53.495+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T10:24:54.418+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:24:56.040+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:24:56.681+0200 INFO Finished Spring Data repository scanning in 631 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:24:57.900+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$5663f02f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:24:58.081+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$e5d1b9e3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:24:58.416+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@144dc2f7' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:24:58.503+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:24:59.267+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:24:59.444+0200 INFO Root WebApplicationContext: initialization completed in 4968 ms
+2023-07-31T10:25:07.343+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:25:07.791+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:25:12.701+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T10:25:13.813+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T10:25:14.238+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/employee/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T10:25:15.614+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T10:25:15.655+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4815fd8b, org.springframework.security.web.context.SecurityContextPersistenceFilter@50f5a2f9, org.springframework.security.web.header.HeaderWriterFilter@47d9a2e2, org.springframework.web.filter.CorsFilter@7186ccf0, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@63bbd5b1, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@5b9461d0, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@4dd97f97, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@2604c21c, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@593707c6, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4fd7b798, com.nasnav.security.AuthenticationFilter@4140e149, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@26dea54f, org.springframework.security.web.session.SessionManagementFilter@9352f58, org.springframework.security.web.access.ExceptionTranslationFilter@c76d874, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@347a3c36]
+2023-07-31T10:25:16.053+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:25:16.743+0200 INFO Initializing Servlet ''
+2023-07-31T10:25:16.746+0200 INFO Completed initialization in 3 ms
+2023-07-31T10:25:17.429+0200 INFO Tomcat started on port(s): 35523 (http) with context path ''
+2023-07-31T10:25:17.430+0200 INFO Starting Quartz Scheduler now
+2023-07-31T10:25:17.942+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T10:25:17.945+0200 INFO Completed initialization in 2 ms
+2023-07-31T10:25:18.961+0200 WARN Caught exception while invoking 'afterTestMethod' callback on TestExecutionListener [org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d] for test method [public void com.nasnav.test.OrganizationManagementTest.organizationRegistrationTest()] and test instance [com.nasnav.test.OrganizationManagementTest@34fa891d]
+org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:622)
+	at org.springframework.jdbc.datasource.init.ResourceDatabasePopulator.populate(ResourceDatabasePopulator.java:254)
+	at org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute(DatabasePopulatorUtils.java:49)
+	at org.springframework.jdbc.datasource.init.ResourceDatabasePopulator.execute(ResourceDatabasePopulator.java:269)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.lambda$executeSqlScripts$4(SqlScriptsTestExecutionListener.java:279)
+	at org.springframework.transaction.support.TransactionOperations.lambda$executeWithoutResult$0(TransactionOperations.java:68)
+	at org.springframework.transaction.support.TransactionTemplate.execute(TransactionTemplate.java:140)
+	at org.springframework.transaction.support.TransactionOperations.executeWithoutResult(TransactionOperations.java:67)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.executeSqlScripts(SqlScriptsTestExecutionListener.java:279)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.lambda$executeSqlScripts$0(SqlScriptsTestExecutionListener.java:201)
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.executeSqlScripts(SqlScriptsTestExecutionListener.java:201)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.executeSqlScripts(SqlScriptsTestExecutionListener.java:148)
+	at org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener.afterTestMethod(SqlScriptsTestExecutionListener.java:127)
+	at org.springframework.test.context.TestContextManager.afterTestMethod(TestContextManager.java:441)
+	at org.springframework.test.context.junit4.statements.RunAfterTestMethodCallbacks.evaluate(RunAfterTestMethodCallbacks.java:94)
+	at org.springframework.test.context.junit4.statements.SpringRepeat.evaluate(SpringRepeat.java:84)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:251)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:97)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:70)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:190)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+Caused by: org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2553)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2285)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:323)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:481)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:401)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:322)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:308)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:284)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:279)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:95)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:601)
+	... 36 common frames omitted
+2023-07-31T10:25:19.001+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T10:25:19.004+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:25:19.133+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:25:19.135+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:26:08.273+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:26:08.579+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:26:08.612+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T10:26:09.536+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:26:11.010+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:26:11.682+0200 INFO Finished Spring Data repository scanning in 664 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:26:12.818+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$150a93f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:12.998+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$90be72f3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:13.241+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@16890f00' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:13.265+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:13.724+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:26:13.851+0200 INFO Root WebApplicationContext: initialization completed in 4265 ms
+2023-07-31T10:26:21.238+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:26:21.671+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:26:21.906+0200 WARN Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'baseTestConfiguration': Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+2023-07-31T10:26:21.907+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:26:21.907+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:26:21.947+0200 INFO 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2023-07-31T10:26:21.966+0200 ERROR Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'baseTestConfiguration': Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:160)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1778)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:524)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:944)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:918)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:583)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:144)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:769)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:761)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:426)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:326)
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:123)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:99)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:124)
+	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:124)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.injectDependencies(DependencyInjectionTestExecutionListener.java:118)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.prepareTestInstance(DependencyInjectionTestExecutionListener.java:83)
+	at org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener.prepareTestInstance(SpringBootDependencyInjectionTestExecutionListener.java:43)
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:244)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:227)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:289)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:291)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:246)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:97)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:70)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:190)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+Caused by: org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:622)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:530)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:492)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:468)
+	at com.nasnav.test.commons.test_templates.BaseTestConfiguration.initDB(AbstractTestWithTempBaseDir.java:98)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:389)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:333)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:157)
+	... 47 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2553)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2285)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:323)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:481)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:401)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:322)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:308)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:284)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:279)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:95)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:601)
+	... 58 common frames omitted
+2023-07-31T10:26:22.138+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:26:22.539+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:26:22.752+0200 INFO Finished Spring Data repository scanning in 212 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:26:23.017+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$150a93f] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:23.073+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$90be72f3] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:23.143+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@985b9f6' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:23.155+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:26:23.311+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:26:23.339+0200 INFO Root WebApplicationContext: initialization completed in 1189 ms
+2023-07-31T10:26:27.648+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:26:27.826+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:26:28.013+0200 WARN Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'baseTestConfiguration': Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+2023-07-31T10:26:28.014+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:26:28.014+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:26:28.030+0200 INFO 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2023-07-31T10:26:28.031+0200 ERROR Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'baseTestConfiguration': Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:160)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1778)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:524)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:944)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:918)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:583)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:144)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:769)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:761)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:426)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:326)
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:123)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:99)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:124)
+	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:124)
+	at org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener.outputConditionEvaluationReport(SpringBootDependencyInjectionTestExecutionListener.java:53)
+	at org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener.prepareTestInstance(SpringBootDependencyInjectionTestExecutionListener.java:46)
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:244)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:227)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:289)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:291)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:246)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:97)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:70)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:190)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+Caused by: org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:622)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:530)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:492)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:468)
+	at com.nasnav.test.commons.test_templates.BaseTestConfiguration.initDB(AbstractTestWithTempBaseDir.java:98)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:389)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:333)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:157)
+	... 46 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2553)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2285)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:323)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:481)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:401)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:322)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:308)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:284)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:279)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:95)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:601)
+	... 57 common frames omitted
+2023-07-31T10:26:28.032+0200 ERROR Caught exception while allowing TestExecutionListener [org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9] to prepare test instance [com.nasnav.test.OrganizationManagementTest@6ea653f]
+java.lang.IllegalStateException: Failed to load ApplicationContext
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:132)
+	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:124)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.injectDependencies(DependencyInjectionTestExecutionListener.java:118)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.prepareTestInstance(DependencyInjectionTestExecutionListener.java:83)
+	at org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener.prepareTestInstance(SpringBootDependencyInjectionTestExecutionListener.java:43)
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:244)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:227)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:289)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:291)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:246)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:97)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:70)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:190)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'baseTestConfiguration': Invocation of init method failed; nested exception is org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:160)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1778)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:524)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:944)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:918)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:583)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:144)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:769)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:761)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:426)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:326)
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:123)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:99)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:124)
+	... 28 common frames omitted
+Caused by: org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed to execute SQL script statement #64 of class path resource [sql/database_cleanup.sql]: DELETE FROM public.employee_users WHERE organization_id > 99000; nested exception is org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:622)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:530)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:492)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:468)
+	at com.nasnav.test.commons.test_templates.BaseTestConfiguration.initDB(AbstractTestWithTempBaseDir.java:98)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleElement.invoke(InitDestroyAnnotationBeanPostProcessor.java:389)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:333)
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:157)
+	... 47 common frames omitted
+Caused by: org.postgresql.util.PSQLException: ERROR: update or delete on table "employee_users" violates foreign key constraint "user_tokens_employee_user_id_fkey" on table "user_tokens"
+  Detail: Key (id)=(10000001) is still referenced from table "user_tokens".
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2553)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2285)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:323)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:481)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:401)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:322)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:308)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:284)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:279)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:95)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(ScriptUtils.java:601)
+	... 58 common frames omitted
+2023-07-31T10:31:31.259+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-07-31T10:31:31.576+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-07-31T10:31:31.602+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@78fbff54, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@3e10dc6, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7e22550a, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@45e37a7e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@62452cc9, org.springframework.test.context.support.DirtiesContextTestExecutionListener@6941827a, org.springframework.test.context.transaction.TransactionalTestExecutionListener@5a7005d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@5bc9ba1d, org.springframework.test.context.event.EventPublishingTestExecutionListener@1021f6c9, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@7516e4e5, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@488eb7f2, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@5e81e5ac, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@4189d70b, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@3fa2213, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@3e7634b9]
+2023-07-31T10:31:32.424+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/home/ahmed-eid/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/home/ahmed-eid/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-07-31T10:31:33.881+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-07-31T10:31:34.585+0200 INFO Finished Spring Data repository scanning in 696 ms. Found 119 JPA repository interfaces.
+2023-07-31T10:31:35.779+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$ad25ed83] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:31:35.945+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$3c93b737] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:31:36.113+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@5b0575d0' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:31:36.130+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-07-31T10:31:36.533+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-07-31T10:31:36.661+0200 INFO Root WebApplicationContext: initialization completed in 4187 ms
+2023-07-31T10:31:44.138+0200 INFO Initialized JPA EntityManagerFactory for persistence unit 'default'
+2023-07-31T10:31:44.597+0200 INFO Initializing ExecutorService 'taskScheduler'
+2023-07-31T10:31:49.648+0200 INFO Autowired annotation should only be used on methods with parameters: public void com.nasnav.service.impl.VideoChatServiceImpl.initController()
+2023-07-31T10:31:50.719+0200 WARN spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2023-07-31T10:31:51.122+0200 INFO Will secure Or [Ant [pattern='/callbacks/**'], Ant [pattern='/360view/**', GET], Ant [pattern='/room', GET], Ant [pattern='/room/list', GET], Ant [pattern='/navbox/**'], Ant [pattern='/user/recover'], Ant [pattern='/user/recovery/otp-verify'], Ant [pattern='/user/login/**'], Ant [pattern='/user/register'], Ant [pattern='/user/v2/register'], Ant [pattern='/user/v2/register/activate'], Ant [pattern='/user/v2/register/otp/activate'], Ant [pattern='/user/v2/employee/otp/activate'], Ant [pattern='/user/v2/register/activate/resend'], Ant [pattern='/user/subscribe'], Ant [pattern='/user/subscribe/activate'], Ant [pattern='/payment/**'], Ant [pattern='/product/bundles', GET], Ant [pattern='/package', GET], Ant [pattern='/product/info', GET], Ant [pattern='/product/image', GET], Ant [pattern='/product/variant', GET], Ant [pattern='/organization/payments', GET], Ant [pattern='/organization/register', POST], Ant [pattern='/organization/brands', GET], Ant [pattern='/organization/products_features', GET], Ant [pattern='/swagger**/**'], Ant [pattern='/webjars/**'], Ant [pattern='/v3/api-docs/**'], Ant [pattern='/csrf/**'], Ant [pattern='/favicon.ico'], Ant [pattern='/static/**'], Ant [pattern='/icons/**'], Ant [pattern='/js/**'], Ant [pattern='/css/**'], Ant [pattern='/files/**', GET], Ant [pattern='/error/**', GET]] with []
+2023-07-31T10:31:52.902+0200 INFO Exposing 2 endpoint(s) beneath base path '/actuator'
+2023-07-31T10:31:52.949+0200 INFO Will secure any request with [org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@54f7ab9f, org.springframework.security.web.context.SecurityContextPersistenceFilter@407e71d5, org.springframework.security.web.header.HeaderWriterFilter@4dfdfa3d, org.springframework.web.filter.CorsFilter@407b21bf, org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter@7d70bea8, org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter@3f342e93, org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter@4f67115d, org.springframework.security.web.authentication.ui.DefaultLogoutPageGeneratingFilter@330bbae4, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@a4529a4, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@5c4c89fe, com.nasnav.security.AuthenticationFilter@16a9e6b, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6828768a, org.springframework.security.web.session.SessionManagementFilter@f3c022f, org.springframework.security.web.access.ExceptionTranslationFilter@179ed8b1, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@3e5943d4]
+2023-07-31T10:31:53.294+0200 INFO Initializing ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:31:53.972+0200 INFO Initializing Servlet ''
+2023-07-31T10:31:53.976+0200 INFO Completed initialization in 4 ms
+2023-07-31T10:31:54.721+0200 INFO Tomcat started on port(s): 40439 (http) with context path ''
+2023-07-31T10:31:54.722+0200 INFO Starting Quartz Scheduler now
+2023-07-31T10:31:55.281+0200 INFO Initializing Servlet 'dispatcherServlet'
+2023-07-31T10:31:55.284+0200 INFO Completed initialization in 2 ms
+2023-07-31T10:31:56.339+0200 INFO Shutting down Quartz Scheduler
+2023-07-31T10:31:56.343+0200 INFO Shutting down ExecutorService 'applicationTaskExecutor'
+2023-07-31T10:31:56.416+0200 INFO Shutting down ExecutorService 'taskScheduler'
+2023-07-31T10:31:56.416+0200 INFO Closing JPA EntityManagerFactory for persistence unit 'default'
