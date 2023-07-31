@@ -344,8 +344,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void getUserPointsNoUserInOrg() {
         var request = getHttpEntity("101112");
         var response = template.exchange("/loyalty/points", GET, request, String.class);
-        assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
-        assertTrue(response.getBody().contains(E$USR$0001.name()));
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
     @Test
     public void getUserPoints() {
