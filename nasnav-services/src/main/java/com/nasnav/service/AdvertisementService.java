@@ -7,4 +7,6 @@ public interface AdvertisementService {
     PageImpl<AdvertisementDTO> findAllAdvertisements(Integer start, Integer count);
 
     AdvertisementDTO create(AdvertisementDTO advertisementDTO);
+
+    AdvertisementDTO findOneByPostId(Long postId);
 }

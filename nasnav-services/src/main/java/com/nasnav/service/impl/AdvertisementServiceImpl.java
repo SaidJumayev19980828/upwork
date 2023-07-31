@@ -43,6 +43,12 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         return toDto(savedEntity);
     }
 
+    @Override
+    public AdvertisementDTO findOneByPostId(Long postId) {
+        AdvertisementEntity entity = advertisementRepository.findAdvertisementEntitiesByPostId(postId);
+        return toDto(entity);
+    }
+
     private AdvertisementEntity toEntity(AdvertisementDTO advertisementDTO) {
         AdvertisementEntity entity = new AdvertisementEntity();
 

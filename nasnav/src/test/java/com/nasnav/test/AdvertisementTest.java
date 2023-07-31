@@ -18,7 +18,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -55,9 +54,9 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
                 json()
                         .put("coins", 100)
                         .put("likes", 3)
-                        .put("fromDate", LocalDateTime.now().plusMonths(1).toString())
-                        .put("toDate", LocalDateTime.now().plusMonths(4).toString())
-                        .put("product", json().put("id",1001))
+                        .put("fromDate", LocalDateTime.now().minusYears(10).toString())
+                        .put("toDate", LocalDateTime.now().plusYears(20).toString())
+                        .put("product", json().put("id", 1001))
                         .toString();
 
         ParameterizedTypeReference<AdvertisementDTO> responseType = new ParameterizedTypeReference<>() {
@@ -68,10 +67,10 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         assertThat(body, is(notNullValue()));
         long newCount = advertisementRepository.count();
         assertThat(prevCount, equalTo(newCount - 1));
-        assertThat(body,is(notNullValue()));
-        assertThat(body.getId(),is(notNullValue()));
+        assertThat(body, is(notNullValue()));
+        assertThat(body.getId(), is(notNullValue()));
         AdvertisementEntity advertisement = advertisementRepository.getOne(body.getId());
-        assertThat(advertisement,is(notNullValue()));
+        assertThat(advertisement, is(notNullValue()));
 
     }
 }
