@@ -830,15 +830,15 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public List<UserRepresentationObject> getUserList(){
-        List<YeshteryUserEntity> customers;
+        Set<UserEntity> customers;
         if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
-            customers = userRepository.findAll();
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUser();
         } else {
-            customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUserByOrgId(securityService.getCurrentUserOrganizationId());
         }
         return customers
                 .stream()
-                .map(YeshteryUserEntity::getRepresentation)
+                .map(UserEntity::getRepresentation)
                 .collect(toList());
     }
 

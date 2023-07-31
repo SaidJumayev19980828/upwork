@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
@@ -34,6 +35,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
 	List<UserEntity> findByOrganizationId(Long orgId);
+
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id where u.organizationId = :orgId")
+	Set<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId);
+
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id")
+	Set<UserEntity> findAllLinkedToYeshteryUser();
 
 	@Query("select count (u.id) from UserEntity u " +
 			" where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth and u.creationTime is not null ")
