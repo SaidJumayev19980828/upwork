@@ -2,7 +2,7 @@ package com.nasnav.test;
 
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.dto.response.AdvertisementDTO;
-import com.nasnav.jobs.AdvertisementJob;
+import com.nasnav.service.jobs.AdvertisementJob;
 import com.nasnav.persistence.PostEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.AdvertisementService;

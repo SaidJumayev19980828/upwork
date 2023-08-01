@@ -1,4 +1,4 @@
-package com.nasnav.jobs;
+package com.nasnav.service.jobs;
 
 import com.nasnav.constatnts.CronExpression;
 import com.nasnav.dao.PostLikesRepository;
