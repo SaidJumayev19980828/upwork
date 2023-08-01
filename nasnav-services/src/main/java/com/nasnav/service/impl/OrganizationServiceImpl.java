@@ -57,8 +57,6 @@ import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;

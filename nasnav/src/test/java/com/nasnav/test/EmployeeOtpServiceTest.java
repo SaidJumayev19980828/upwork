@@ -37,7 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class EmployeeOtpServiceTest {
+public class EmployeeOtpServiceTest {
     @Mock
     private EmployeeUserOtpRepository employeeUserOtpRepository;
 

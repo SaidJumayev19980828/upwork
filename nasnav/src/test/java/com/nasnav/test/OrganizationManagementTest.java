@@ -3,12 +3,10 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
@@ -18,7 +16,6 @@ import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +24,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -80,7 +75,6 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private SocialRepository socialRepository;
     @Autowired
     private EmployeeUserOtpRepository employeeUserOtpRepository;
-
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -203,8 +197,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         RegisterDto registerDto = registerOrg();
         assertTrue(registerDto.getPassword().length() < PASSWORD_MAX_LENGTH);
         assertTrue(registerDto.getPassword().length() > PASSWORD_MIN_LENGTH);
-        ResponseEntity<OrganizationResponse> response = template
-                .postForEntity("/organization/register", registerDto, OrganizationResponse.class);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
         assertEquals(OK, response.getStatusCode());
         final Long orgId = response.getBody().getOrganizationId();
         final OrganizationEntity org = organizationRepository.findOneById(orgId);
@@ -216,8 +209,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertTrue(passwordEncoder.matches(registerDto.getPassword(), employee.getEncryptedPassword()));
         assertEquals(registerDto.getEmail(), employee.getEmail());
 
-        final EmployeeUserOtpEntity employeeUserOtpEntity = employeeUserOtpRepository.findByUser(employee)
-                .orElseThrow(
+        final EmployeeUserOtpEntity employeeUserOtpEntity = employeeUserOtpRepository.findByUser(employee).orElseThrow(
                         () -> new IllegalStateException("it should return only 1 otp")
                 );
         ActivateOtpDto activateOtpDto = activateOtp(employeeUserOtpEntity.getOtp(), registerDto.getEmail(), orgId);
@@ -234,7 +226,6 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         RegisterDto registerDTO = new RegisterDto();
         registerDTO.setOrganizationName("Solad Pant1");
         registerDTO.setCurrencyIso(818);
-        // $2a$10$G6O7R9J3k1WRTZWCnfLJV.IFlqVuwxEg/ITkPfqNzA9uL6yurKX2O
         registerDTO.setPassword("D@ner$2010");
         registerDTO.setName("test test test ");
         registerDTO.setEmail(TestUserEmail);
