@@ -423,7 +423,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
     @Transactional
-    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile logo, MultipartFile cover) throws BusinessException {
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
         if (json.getDescription() != null) {
             organization.setDescription(json.getDescription());
@@ -435,19 +435,23 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setThemeId(json.getThemeId());
         }
 
-        if (file != null) {
+        if (logo != null || cover != null) {
             OrganizationThemeEntity orgTheme =
                     organizationThemeRepository
                     .findOneByOrganizationEntity_Id(organization.getId())
                     .orElseGet(OrganizationThemeEntity::new);
 
             orgTheme.setOrganizationEntity(organization);
-            String mimeType = file.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM:image",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            if (logo != null) {
+                failOnInvalidImage(logo);
+                orgTheme.setLogo(fileService.saveFile(logo, organization.getId()));
+            }
 
-            orgTheme.setLogo(fileService.saveFile(file, organization.getId()));
+            if (cover != null){
+                failOnInvalidImage(cover);
+                orgTheme.setCover(fileService.saveFile(cover, organization.getId()));
+            }
+
             organizationThemeRepository.save(orgTheme);
         }
 
@@ -458,6 +462,13 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization = organizationRepository.save(organization);
 
         return new OrganizationResponse(organization.getId(), 0);
+    }
+
+    private void failOnInvalidImage(MultipartFile file) throws BusinessException {
+        String mimeType = file.getContentType();
+        if (mimeType == null || !mimeType.startsWith("image"))
+            throw new BusinessException("INVALID PARAM:image",
+                    "Invalid file type[" + mimeType + "]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
     }
 
 
