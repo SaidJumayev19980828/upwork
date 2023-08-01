@@ -4,7 +4,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
+import com.nasnav.dto.UserDTOs.*;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
@@ -57,8 +57,6 @@ import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -336,12 +334,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	    organizationRepository.save(organization);
 
-        EmployeeUserCreationObject employeeDTO = new EmployeeUserCreationObject();
-        employeeDTO.setName(json.getName());
-        employeeDTO.setEmail(json.getEmail());
-        employeeDTO.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
-        employeeDTO.setOrgId(organization.getId());
-        employeeUserService.createEmployeeUser(employeeDTO);
+        EmployeeUserWithPassword employeeUserWithPassword = new EmployeeUserWithPassword();
+        employeeUserWithPassword.setName(json.getName());
+        employeeUserWithPassword.setEmail(json.getEmail());
+        employeeUserWithPassword.setPassword(json.getPassword());
+        employeeUserWithPassword.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
+        employeeUserWithPassword.setOrgId(organization.getId());
+        employeeUserService.createEmployeeUserWithPassword(employeeUserWithPassword);
 
         return new OrganizationResponse(organization.getId(), 0);
     }

@@ -232,6 +232,11 @@ public class UserController {
         return ResponseEntity.ok(userService.activateUserAccount(activateOtp));
     }
 
+    @PostMapping(value = "v2/employee/otp/activate", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserApiResponse> activateEmployeeUser(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
+        return ResponseEntity.ok(employeeUserService.activateUserAccount(activateOtp));
+    }
+
     @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<RecoveryUserResponse> verifyOtp(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
         return ResponseEntity.ok(userService.activateRecoveryOtp(activateOtp));
