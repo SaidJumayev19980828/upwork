@@ -71,4 +71,3 @@ secrets.yml
 !/yeshtery/src/test/resources/sample.*.properties
 
 /nasnav/src/main/resources/logs
-/nasnav/nasnav/src/main/resources/logs
