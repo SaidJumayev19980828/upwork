@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
@@ -79,10 +80,12 @@ public class OrganizationController {
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                        @RequestPart("properties") String jsonString,
-                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
+                                                       @RequestPart(value = "cover", required = false) @Valid MultipartFile cover)
+                                                            throws BusinessException, JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationModificationDTO.class);
-        return orgService.updateOrganizationData(json, file);
+        return orgService.updateOrganizationData(json, logo, cover);
     }
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
