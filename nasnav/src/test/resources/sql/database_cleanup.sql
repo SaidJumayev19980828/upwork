@@ -44,6 +44,7 @@ DELETE FROM public.post_attachments;
 DELETE FROM public.post_likes;
 DELETE FROM public.post_clicks;
 DELETE FROM public.post_products;
+DELETE FROM public.post_transactions;
 DELETE FROM public.posts;
 DELETE FROM public.advertisements;
 DELETE FROM public.user_followers;

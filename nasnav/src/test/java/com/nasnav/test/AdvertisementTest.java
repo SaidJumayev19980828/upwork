@@ -2,9 +2,11 @@ package com.nasnav.test;
 
 
 import com.nasnav.dao.AdvertisementRepository;
+import com.nasnav.dao.PostTransactionsRepository;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.jobs.AdvertisementJob;
 import com.nasnav.persistence.AdvertisementEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,10 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
     private TestRestTemplate template;
     @Autowired
     private AdvertisementRepository advertisementRepository;
+    @Autowired
+    private PostTransactionsRepository postTransactionsRepository;
+    @Autowired
+    private AdvertisementJob advertisementJob;
 
     @Test
     void testFindAllAdvertisement() {
@@ -72,5 +78,12 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         AdvertisementEntity advertisement = advertisementRepository.getOne(body.getId());
         assertThat(advertisement, is(notNullValue()));
 
+    }
+
+    @Test
+    void testInsertPostTransactions() {
+        long count = postTransactionsRepository.count();
+        advertisementJob.calculateLikes();
+        assertThat(postTransactionsRepository.count(), is(greaterThan(count)));
     }
 }
