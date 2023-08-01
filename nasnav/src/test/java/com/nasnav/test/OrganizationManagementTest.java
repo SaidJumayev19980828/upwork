@@ -32,6 +32,7 @@ import org.springframework.util.MultiValueMap;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,6 +60,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
     private Resource file;
+    @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo_UPDATED.png")
+    private Resource otherFile;
     @Autowired
     private TestRestTemplate template;
     @Autowired
@@ -80,6 +83,9 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private AddressRepository addressRepo;
+
+    @Autowired
+    private FilesRepository filesRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -103,6 +109,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
+        map.add("cover", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         assertEquals(200, response.getStatusCode().value());
@@ -115,6 +122,46 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(pinterestUrl, socialEntity.getPinterest());
         assertEquals(whatsappUrl, socialEntity.getWhatsapp());
     }
+
+    @Test
+    public void updateOrganizationCover() {
+        String body = json().toString();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        map.add("properties", body);
+        map.add("logo", file);
+        map.add("cover", otherFile);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        assertEquals(OK, response.getStatusCode());
+
+        ResponseEntity<OrganizationRepresentationObject> navboxRsponse = template
+                .getForEntity("/navbox/organization?org_id=99001", OrganizationRepresentationObject.class);
+
+        assertEquals(OK, navboxRsponse.getStatusCode());
+
+        OrganizationThemesRepresentationObject theme = navboxRsponse.getBody().getThemes();
+
+        String logoUrl = theme.getLogoUrl();
+
+        String coverUrl = theme.getCoverUrl();
+
+        String orgPrefix = "99001/";
+
+        assertEquals("99001/nasnav-test-photo.png", logoUrl);
+
+        assertEquals("99001/nasnav-test-photo-updated.png", coverUrl);
+    }
+
+    private void assertFileSaved(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
+		FileEntity file = filesRepo.findByUrl(expectedUrl);
+		OrganizationEntity org = organizationRepository.findOneById(orgId);
+		 
+		 assertNotNull("File meta-data was saved to database", file);
+		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
+		 assertEquals("image/png", file.getMimetype());
+		 assertEquals(org, file.getOrganization());
+		 assertEquals(fileName, file.getOriginalFileName());
+	}
 
 
 
