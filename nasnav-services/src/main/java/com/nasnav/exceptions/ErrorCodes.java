@@ -456,6 +456,9 @@ public enum ErrorCodes {
 	,ROOMS$ROOM$NotFound("No Room Template found with shop id [%d]")
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
+	,NOTIF$0001("Firebase not initialized")
+	,NOTIF$0002("Firebase error occurred with error code [%s]")
+
 	;
 
 	@Getter
