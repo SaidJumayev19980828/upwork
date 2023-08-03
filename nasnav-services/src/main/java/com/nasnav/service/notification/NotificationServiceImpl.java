@@ -3,6 +3,7 @@ package com.nasnav.service.notification;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -10,6 +11,8 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.Notification;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.service.SecurityService;
 
@@ -24,10 +27,9 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendMessage(BaseUserEntity user, NotificationRequestDto notifications)
-            throws FirebaseMessagingException, FirebaseNotInitializedException {
+    public void sendMessage(BaseUserEntity user, NotificationRequestDto notifications) {
         if (firebaseMessaging == null) {
-            throw new FirebaseNotInitializedException();
+            throw new RuntimeBusinessException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCodes.NOTIF$0001);
         }
         Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
         MulticastMessage message = MulticastMessage.builder()
@@ -36,7 +38,11 @@ public class NotificationServiceImpl implements NotificationService {
                 .putData("content", notifications.getTitle())
                 .putData("body", notifications.getBody())
                 .build();
-        firebaseMessaging.sendMulticast(message);
+        try {
+            firebaseMessaging.sendMulticast(message);
+        } catch (FirebaseMessagingException e) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0002, e.getErrorCode());
+        }
 
     }
 }

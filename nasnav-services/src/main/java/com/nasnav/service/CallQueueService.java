@@ -1,11 +1,9 @@
 package com.nasnav.service;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
 import com.nasnav.response.VideoChatResponse;
-import com.nasnav.service.notification.NotificationService;
 import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
@@ -16,12 +14,12 @@ public interface CallQueueService {
      * @param orgId
      * @return
      */
-    public CallQueueStatusDTO enterQueue(Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException;
+    public CallQueueStatusDTO enterQueue(Long orgId);
 
     /**
      * user decided to kick himself out of the queue upon his will
      */
-    public void quitQueue() throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException;
+    public void quitQueue();
 
     /**
      * employee decided to start call with a specific user
@@ -29,14 +27,14 @@ public interface CallQueueService {
      * @param force
      * @return
      */
-    public VideoChatResponse acceptCall(Long queueId, Boolean force) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException;
+    public VideoChatResponse acceptCall(Long queueId, Boolean force);
 
     /**
      * employee decided to kick user out of the queue
      * @param queueId
      * @return
      */
-    public List<CallQueueDTO> rejectCall(Long queueId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException;
+    public List<CallQueueDTO> rejectCall(Long queueId);
 
     /**
      * get a full details of queue for employee inside an org

@@ -47,7 +47,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     private NotificationService notificationService;
 
     @Override
-    public CallQueueStatusDTO enterQueue(Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
+    public CallQueueStatusDTO enterQueue(Long orgId) {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
@@ -73,7 +73,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     }
 
     @Override
-    public void quitQueue() throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
+    public void quitQueue() {
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(getUser().getId(),CallQueueStatus.OPEN.getValue());
         if(entity == null) {
             throw new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001);
@@ -88,7 +88,7 @@ public class CallQueueServiceImpl implements CallQueueService {
 
     @Override
     @Transactional
-    public VideoChatResponse acceptCall(Long queueId, Boolean force) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
+    public VideoChatResponse acceptCall(Long queueId, Boolean force) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
@@ -106,7 +106,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     }
 
     @Override
-    public List<CallQueueDTO> rejectCall(Long queueId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
+    public List<CallQueueDTO> rejectCall(Long queueId) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
         entity.setEmployee(getEmployee());
         entity.setStatus(CallQueueStatus.REJECTED.getValue());
@@ -140,7 +140,7 @@ public class CallQueueServiceImpl implements CallQueueService {
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
-    private void notifyQueue(Long orgId) throws NotificationService.FirebaseNotInitializedException, FirebaseMessagingException {
+    private void notifyQueue(Long orgId) {
         List<CallQueueEntity> queue = callQueueRepository.getAllByOrganization_IdAndStatus(orgId, CallQueueStatus.OPEN.getValue());
         queue = queue.stream().sorted(Comparator.comparing(CallQueueEntity::getJoinsAt)).collect(Collectors.toList());
         CallQueueEntity entity;
