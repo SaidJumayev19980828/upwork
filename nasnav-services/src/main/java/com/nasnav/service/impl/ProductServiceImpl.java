@@ -45,8 +45,10 @@ import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.SubQueryExpression;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
 import com.querydsl.sql.SQLQuery;
@@ -3660,6 +3662,49 @@ public class ProductServiceImpl implements ProductService {
 				productFetchDTO.isIncludeOutOfStock());
 	}
 
+	@Transactional
+	@Override
+	public ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException {
+		ProductSearchParam params = getProductSearchParams(requestParams);
+
+		QProducts products = QProducts.products;
+		QProductVariants productVariants = QProductVariants.productVariants;
+		QStocks stocks = QStocks.stocks;
+		QOrganizations organizations = QOrganizations.organizations;
+		QShops shops = QShops.shops;
+
+		BooleanBuilder predicate = getQueryPredicate(params, products, stocks, shops, productVariants, organizations);
+
+		BooleanExpression outOfStockExpression = stocks.quantity.sum().eq(0).or(stocks.quantity.sum().isNull());
+
+		SQLQuery<Long> countQuery = queryFactory.select(products.id.countDistinct()).from(products)
+				.leftJoin(products._productVariantsProductIdFkey, productVariants)
+				.leftJoin(productVariants._stocksVariantIdFkey, stocks)
+				.leftJoin(products.productsOrganizationIdFkey, organizations)
+				.leftJoin(shops).on(shops.id.eq(stocks.shopId))
+				.groupBy(products.id)
+				.where(predicate)
+				.having(outOfStockExpression);
+		long productsCount = countQuery.fetchCount();
+
+		SQLQuery<Long> productsQuery = queryFactory.selectDistinct(products.id).from(products)
+				.leftJoin(products._productVariantsProductIdFkey, productVariants)
+				.leftJoin(productVariants._stocksVariantIdFkey, stocks)
+				.leftJoin(products.productsOrganizationIdFkey, organizations)
+				.leftJoin(shops).on(shops.id.eq(stocks.shopId))
+				.groupBy(products.id)
+				.where(predicate)
+				.having(outOfStockExpression)
+				.offset(params.start)
+				.limit(params.count);
+
+		Long[] productIds = productsQuery.fetch().toArray(Long[]::new);
+		SQLQuery<Tuple> allProductQuery = queryFactory.select(products.all()).from(products).where(products.id.in(productIds));
+
+		List<ProductRepresentationObject> result = template.query(allProductQuery.getSQL().getSQL(),
+				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
+		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock);
+	}
 
 
 	private ProductDetailsDTO createNEWProductDetailsDTO(ProductEntity product, Long shopId,

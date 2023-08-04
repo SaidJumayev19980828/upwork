@@ -24,6 +24,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.AddonStocksEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewService;
@@ -314,6 +315,10 @@ public class ProductsController {
 	    		  @RequestParam(name = "product_id") Long productId) throws BusinessException {
 	        return stockService.getProductStocks(productId);
 	    }
-	   
-   
+
+    @GetMapping(value = "/out-of-stock-products", produces = APPLICATION_JSON_VALUE)
+    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
+        return productService.getOutOfStockProducts(productSearchParam);
+    }
+
 }
