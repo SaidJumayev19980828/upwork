@@ -4,7 +4,7 @@ import com.nasnav.dao.BankAccountRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.response.BankAccountDTO;
 import com.nasnav.dto.response.BankAccountDetailsDTO;
-import com.nasnav.dto.response.BankBalanceSummary;
+import com.nasnav.dto.response.BankBalanceSummaryDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BankAccountEntity;
 import com.nasnav.persistence.BaseUserEntity;
@@ -110,7 +110,7 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public BankAccountDetailsDTO toDto(BankAccountEntity entity) {
         BankAccountDetailsDTO dto = new BankAccountDetailsDTO();
-        BankBalanceSummary summary = new BankBalanceSummary();
+        BankBalanceSummaryDTO summary = new BankBalanceSummaryDTO();
         dto.setId(entity.getId());
         if (entity.getUser() != null){
             dto.setUser(entity.getUser().getRepresentation());

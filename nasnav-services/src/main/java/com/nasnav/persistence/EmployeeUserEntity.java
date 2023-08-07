@@ -54,6 +54,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
         obj.setId(getId());
         obj.setCreationDate(getCreationTime());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
+        obj.setImage(getImage());
         obj.setRoles(
                 ofNullable(roles)
                 .orElse(emptySet())

@@ -1,11 +1,9 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.response.BankAccountDTO;
-import com.nasnav.dto.response.BankAccountDetailsDTO;
-import com.nasnav.dto.response.BankActivityDTO;
-import com.nasnav.dto.response.BankReservationDTO;
+import com.nasnav.dto.response.*;
 import com.nasnav.service.*;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,7 +46,7 @@ public class BankController {
     public void outsideTransaction(@RequestHeader(name = "User-Token", required = false) String token,
                                    @RequestParam long amount,
                                    @RequestParam boolean isDeposit,
-                                   @RequestParam long blockChainKey) {
+                                   @RequestParam String blockChainKey) {
         bankOutsideTransactionService.depositOrWithdrawal(amount, isDeposit, blockChainKey);
     }
 
@@ -77,10 +75,16 @@ public class BankController {
         bankReservationService.fulfilReservation(reservationId);
     }
 
-    @GetMapping("/account/history")
-    public BankActivityDTO getAccountHistory(@RequestHeader(name = "User-Token", required = false) String token,
-                                             @RequestParam long accountId) {
-        return bankAccountActivityService.getHistory(accountId);
+    @GetMapping("/account/history") //any user
+    public PageImpl<BankActivityDetailsDTO> getAccountHistory(@RequestHeader(name = "User-Token", required = false) String token,
+                                                              @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                              @RequestParam(required = false, defaultValue = "10") Integer count) {
+        return bankAccountActivityService.getHistory(start, count);
+    }
+
+    @GetMapping("/account/summary") //any user
+    public BankBalanceSummaryDTO getAccountSummary(@RequestHeader(name = "User-Token", required = false) String token) {
+        return bankAccountActivityService.getAccountSummary();
     }
 
 }
