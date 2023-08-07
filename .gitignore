@@ -69,3 +69,5 @@ secrets.yml
 /yeshtery/src/test/resources/logback*.xml
 /yeshtery/src/test/resources/*.properties
 !/yeshtery/src/test/resources/sample.*.properties
+
+/nasnav/src/main/resources/logs

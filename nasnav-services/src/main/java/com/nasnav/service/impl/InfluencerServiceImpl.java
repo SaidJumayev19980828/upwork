@@ -265,7 +265,7 @@ public class InfluencerServiceImpl implements InfluencerService {
             List<EventRequestsDTO> dtos = source.getContent().stream().map(this::eventRequestToDto).collect(Collectors.toList());
             return new PageImpl<>(dtos);
         }
-        return null;
+        throw new RuntimeBusinessException(NOT_ACCEPTABLE,E$USR$0002);
     }
 
     @Override

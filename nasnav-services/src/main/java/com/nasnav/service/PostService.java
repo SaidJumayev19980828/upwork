@@ -20,4 +20,7 @@ public interface PostService {
     public PageImpl<PostResponseDTO> getUserPendingPosts(Integer start, Integer count);
     public PageImpl<PostResponseDTO> getOrgReviews(PostStatus postStatus, Integer start, Integer count);
     public PageImpl<PostResponseDTO> getOrgSharedProducts(Integer start, Integer count);
-}
+
+    PageImpl<PostEntity>  getAllPostsWithinAdvertisement(Integer start, Integer count);
+
+    }

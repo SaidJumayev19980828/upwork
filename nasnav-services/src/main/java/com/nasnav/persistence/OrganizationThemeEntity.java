@@ -36,6 +36,8 @@ public class OrganizationThemeEntity implements BaseEntity {
     private String firstSectionImage;
     
     private String logo;
+
+    private String cover;
     
     @Column(name = "second_section")
     private Boolean secondSection;
@@ -78,6 +80,7 @@ public class OrganizationThemeEntity implements BaseEntity {
         organizationThemesRepresentationObject.setFirstSection(getFirstSection());
         organizationThemesRepresentationObject.setFirstSectionImageUrl(getFirstSectionImage());
         organizationThemesRepresentationObject.setLogoUrl(getLogo());
+        organizationThemesRepresentationObject.setCoverUrl(getCover());
         organizationThemesRepresentationObject.setFirstSectionProduct(getFirstSectionProduct());
         organizationThemesRepresentationObject.setSecondColor(getSecondColor());
         organizationThemesRepresentationObject.setSecondSection(getSecondSection());

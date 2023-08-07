@@ -32,7 +32,7 @@ public interface OrganizationService {
 
     OrganizationResponse registerOrganization(RegisterDto json) throws Exception;
 
-    OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException;
+    OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile logo, MultipartFile cover) throws BusinessException;
 
     OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover);
 

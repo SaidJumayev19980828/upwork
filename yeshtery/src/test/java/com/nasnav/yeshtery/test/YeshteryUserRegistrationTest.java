@@ -5,6 +5,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
 import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
 import com.nasnav.dao.yeshtery.YeshteryUserRepository;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
@@ -25,12 +26,17 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -42,10 +48,12 @@ import javax.mail.MessagingException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
@@ -60,7 +68,7 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 
-@RunWith(SpringRunner.class)
+// @RunWith(SpringRunner.class)
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"}) //FIXME temporarly
@@ -104,13 +112,8 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private AppConfig config;
 
-    @Before
-    public void clearCache() {
-        adminService.invalidateCaches();
-    }
 
-
-    @Before
+    @BeforeEach
     public void setupLoginUser() {
         if (organization == null) {
             organization = organizationRepository.findOneById(99001L);
@@ -560,7 +563,7 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         LocalDateTime tokenUpdateTimeBefore = tokenEntityBefore.getUpdateTime();
 
         ResponseEntity<String> response = template.exchange(API_PATH + "/product/images" + "?product_id=1234", GET, getHttpEntity("", token), String.class);
-        Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCodeValue());
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 
         UserTokensEntity tokenEntityAfter = userTokenRepo.findByToken(token);
         assertNotNull(tokenEntityAfter);
@@ -819,9 +822,9 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         HttpEntity req = getHttpEntity("101112");
         ResponseEntity<String> res = template.postForEntity(YESHTERY_SUSPEND_API_PATH + "?user_id=88004&suspend=false", req, String.class);
 
-        assertEquals(NOT_ACCEPTABLE, res.getStatusCodeValue());
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
         UserEntity user = userRepository.findById(88004L).get();
-        assertEquals(OK, user.getUserStatus().intValue());
+        assertEquals(OK.value(), user.getUserStatus().intValue());
     }
 
 
@@ -877,5 +880,23 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, res.getStatusCodeValue());
         user = employeeUserRepo.findById(userId).get();
         assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+    }
+
+    private static Stream<Arguments> generator() {
+		return Stream.of(
+				Arguments.of("101112", 1),
+				Arguments.of("nasnav-admin-token", 2));
+	}
+
+    @ParameterizedTest
+    @MethodSource("generator")
+    public void testListYeshteryUser(String employeeToken, int expectedNumberOfUsers) {
+        HttpEntity<Object> req = getHttpEntity(employeeToken);
+        ResponseEntity<List<UserRepresentationObject>> response = template.exchange(API_PATH + "/user/list/customer", GET, req, new ParameterizedTypeReference<List<UserRepresentationObject>>() {
+            
+        });
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(expectedNumberOfUsers, response.getBody().size());
     }
 }

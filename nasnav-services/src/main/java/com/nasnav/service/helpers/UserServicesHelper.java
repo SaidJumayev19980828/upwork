@@ -121,7 +121,11 @@ public class UserServicesHelper {
 				.noneMatch(Roles::isCanCreateUsers);
 	}
 
-
+	public boolean employeeHasRoleOrHigher(EmployeeUserEntity employee, Roles requiredRole) {
+		return employee.getRoles().stream()
+				.map(role -> Roles.valueOf(role.getName()))
+				.anyMatch(role -> role.getLevel() <= requiredRole.getLevel());
+	}
 
 	public boolean hasInsufficientLevel(Long currentUserId, List<String> otherUserRolesNames) {
 		Set<Roles> currentUserRoles = getUserRoles(currentUserId);

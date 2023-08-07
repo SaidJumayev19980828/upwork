@@ -115,6 +115,15 @@ public class UserDTOs {
         private String avatar;
 
     }
+
+    @Getter
+    @Setter
+    @Schema(name = "Employee User Creation Data With Password")
+    public static class EmployeeUserWithPassword extends EmployeeUserCreationObject {
+        @Schema(example = "pass1234")
+        public String password;
+    }
+
     @Getter
     @Schema(name = "User Change Password ")
 	public static class ChangePasswordUserObject {

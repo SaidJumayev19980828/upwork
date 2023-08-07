@@ -4,12 +4,12 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.MulticastMessage;
 import com.nasnav.dto.request.notification.NotificationRequestDto;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.notification.NotificationService;
 import com.nasnav.service.notification.NotificationServiceImpl;
-import com.nasnav.service.notification.NotificationService.FirebaseNotInitializedException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,13 +42,13 @@ class NotificationTest {
     void tryToSendUnInitialized() {
         final BaseUserEntity user = new UserEntity();
         final NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
-        assertThrows(NotificationService.FirebaseNotInitializedException.class, () -> {
+        assertThrows(RuntimeBusinessException.class, () -> {
             unInitializedNotificationService.sendMessage(user, notificationRequestDto);
         });
     }
 
     @Test
-    void sendMessage() throws FirebaseMessagingException, FirebaseNotInitializedException {
+    void sendMessage() throws FirebaseMessagingException {
         BaseUserEntity user = new UserEntity();
         Set<String> tokens = Set.of("token1", "token2");
         NotificationRequestDto notificationRequestDto = new NotificationRequestDto();

@@ -23,6 +23,7 @@ import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,6 +107,17 @@ public class VideoChatServiceImpl implements VideoChatService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0002, orgId);
         }
 
+    }
+
+    @Override
+    public VideoChatResponse createOrJoinSessionForUser(String sessionName, Boolean force, Long orgId, Long shopId, UserEntity user) {
+        OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
+        orgId = organization.getId();
+
+        if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
+        }
+        return getOrCreateUserVideoSession(user, force, sessionName, orgId, shopId);
     }
 
     private ConnectionProperties getConnectionProperties() {
@@ -269,6 +281,19 @@ public class VideoChatServiceImpl implements VideoChatService {
         } else if (searchParams.getCount() > 1000) {
             searchParams.setCount(1000);
         }
+
+        EmployeeUserEntity currentEmployee = (EmployeeUserEntity) securityService.getCurrentUser();
+        if (!securityService.currentEmployeeHasNasnavRoles()) {
+            searchParams.setOrgId(currentEmployee.getOrganizationId());
+        }
+
+        if (!securityService.currentEmployeeHasOrgRolesOrHigher()) {
+            if (securityService.currentEmployeeUserHasShopRolesOrHigher()) {
+                searchParams.setShopId(currentEmployee.getShopId());
+            } else {
+                throw new IllegalStateException("current user has no roles");
+            }
+        }
     }
 
     @Override
@@ -303,8 +328,11 @@ public class VideoChatServiceImpl implements VideoChatService {
                     break;
                 case participantLeft: handelParticipantLeft(dto);
                     break;
+                default:
             }
-        } catch (JsonProcessingException e) {}
+        } catch (JsonProcessingException e) {
+            // empty
+        }
     }
 
     private void handleSessionDestroyed(OpenViduCallbackDTO dto) {
@@ -358,7 +386,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             Session session = getSession(videoEntity.getName());
             session.close();
         } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
-            logger.error("couldn't close session! , "+ ex.getMessage());
+            logger.error("couldn't close session! , {}", ex.getMessage());
             videoEntity.setStatus(FAILED.getValue());
         }
         sessionsMap.remove(videoEntity.getName());

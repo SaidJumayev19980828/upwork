@@ -1,6 +1,8 @@
 package com.nasnav.yeshtery.test.services;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -15,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.yeshtery.YeshteryUserService;
@@ -24,6 +27,9 @@ import com.nasnav.service.yeshtery.YeshteryUserServiceImpl;
 class YeshteryUserServiceTest {
 	@Mock
 	private UserRepository nasnavUserRepository;
+
+	@Mock
+	private OrganizationRepository organizationRepository;
 
 	@InjectMocks
 	private YeshteryUserService yeshteryUserService = new YeshteryUserServiceImpl();
@@ -49,9 +55,12 @@ class YeshteryUserServiceTest {
 				99002L))
 				.thenReturn(Optional.ofNullable(repoUser));
 
+		Mockito.when(organizationRepository.existsByIdAndYeshteryState(99002L, 1)).thenReturn(true);
+		Mockito.when(organizationRepository.existsByIdAndYeshteryState(99001L, 1)).thenReturn(true);
+
 		UserEntity returnedUser = yeshteryUserService.getUserForOrg(user, 99002L);
 		assertEquals(repoUser, returnedUser);
 
-		Mockito.verifyNoMoreInteractions(nasnavUserRepository);
+		Mockito.verifyNoMoreInteractions(nasnavUserRepository, organizationRepository);
 	}
 }

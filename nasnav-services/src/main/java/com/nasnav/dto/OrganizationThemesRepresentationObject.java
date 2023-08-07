@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "logo_url",
+        "covor_url",
         "first_color",
         "second_color",
         "first_section",
@@ -27,6 +28,8 @@ public class OrganizationThemesRepresentationObject extends BaseRepresentationOb
 
     @JsonProperty("logo_url")
     private String logoUrl;
+    @JsonProperty("cover_url")
+    private String coverUrl;
     @JsonProperty("first_color")
     private String firstColor;
     @JsonProperty("second_color")

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -40,7 +41,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$LOY$0014;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.stream.Collectors.toList;
 import static org.json.JSONObject.NULL;
@@ -341,10 +342,9 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getUserPointsNoUserInOrg() {
-        var request = getHttpEntity("456");
+        var request = getHttpEntity("101112");
         var response = template.exchange("/loyalty/points", GET, request, String.class);
-        assertEquals(404, response.getStatusCodeValue());
-        assertTrue(response.getBody().contains(ORG$LOY$0014.name()));
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
     @Test
     public void getUserPoints() {

@@ -74,15 +74,18 @@ DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
-                                  or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
+                                  or employee_user_id in (select id from employee_users WHERE organization_id > 99000);
 DELETE FROM public.loyalty_gift WHERE user_from_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_charity WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_user_otp WHERE user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_otp WHERE user_id in (SELECT id FROM public.users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.employee_user_otp WHERE user_id in
+        (SELECT id FROM public.employee_users WHERE organization_id > 99000);
 DELETE FROM public.yeshtery_user_tokens WHERE yeshtery_user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.room_sessions where template_id in (SELECT id FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999));
 DELETE FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.video_chat_logs WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;

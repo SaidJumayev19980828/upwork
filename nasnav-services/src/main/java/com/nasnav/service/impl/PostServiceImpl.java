@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -194,6 +195,12 @@ public class PostServiceImpl implements PostService {
         List<PostResponseDTO> dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
 
+    }
+
+    @Override
+    public PageImpl<PostEntity> getAllPostsWithinAdvertisement(Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
+        return postRepository.findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime.now(), LocalDateTime.now(), page);
     }
 
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
