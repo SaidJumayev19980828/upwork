@@ -458,6 +458,7 @@ public enum ErrorCodes {
 
 	,NOTIF$0001("Firebase not initialized")
 	,NOTIF$0002("Firebase error occurred with error code [%s]")
+	,NOTIF$0003("No notification tokens found for user with id [%d]")
 
 	;
 
