@@ -13,6 +13,7 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
@@ -70,6 +71,8 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 	EmployeeUserRepository empRepository;
 	@Autowired
 	private UserTokenRepository tokenRepo;
+	@Autowired
+	private SecurityService securityService;
 
 
 	@Before
@@ -997,6 +1000,32 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
 	}
 
+	@Test
+	public void listUserNotificationTokens() {
+		final String notificationToken = "SomeNotificationToken";
+		String email = "user1@nasnav.com";
+		String password = "12345678"; 
+		
+		String request = new JSONObject()
+								.put("password", password)
+								.put("email", email)
+								.put("org_id", 99001L)
+								.put("employee", true)
+								.put("notification_token", notificationToken)
+								.toString();
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<Void> response = 
+				template.postForEntity("/user/login", userJson,	Void.class);
+		assertEquals(OK, response.getStatusCode());
+
+		EmployeeUserEntity user = empRepository.findByEmailIgnoreCaseAndOrganizationId("user1@nasnav.com", 99001L).orElse(null);
+		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
+		Set<String> notificationTokensByUsers = securityService.getValidEmployeeNotificationTokens(Set.of(user));
+
+		Set<String> expectedTokens = Set.of(notificationToken);
+		assertEquals(expectedTokens, notificationTokens);
+		assertEquals(expectedTokens, notificationTokensByUsers);
+	}
 
 	@Test
 	public void testEmployeeLoginWithoutOrgId() {

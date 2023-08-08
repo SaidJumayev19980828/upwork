@@ -58,4 +58,17 @@ class NotificationTest {
         notificationService.sendMessage(user, notificationRequestDto);
         Mockito.verify(firebaseMessaging).sendMulticast(any(MulticastMessage.class));
     }
+
+    @Test
+    void sendMessageFailsNoToken() {
+        BaseUserEntity user = new UserEntity();
+        Set<String> tokens = Set.of();
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto();
+        notificationRequestDto.setTitle("some-title");
+        notificationRequestDto.setBody("some-body");
+        Mockito.when(securityService.getValidNotificationTokens(user)).thenReturn(tokens);
+        assertThrows(RuntimeBusinessException.class, () -> {
+            notificationService.sendMessage(user, notificationRequestDto);
+        });
+    }
 }

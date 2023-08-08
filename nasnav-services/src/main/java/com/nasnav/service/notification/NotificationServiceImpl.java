@@ -32,6 +32,9 @@ public class NotificationServiceImpl implements NotificationService {
             throw new RuntimeBusinessException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCodes.NOTIF$0001);
         }
         Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
+        if (notificationTokens.isEmpty()) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, user.getId());
+        }
         MulticastMessage message = MulticastMessage.builder()
                 .addAllTokens(notificationTokens)
                 .setNotification(new Notification(notifications.getTitle(), notifications.getBody()))
