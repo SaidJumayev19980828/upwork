@@ -17,6 +17,7 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
 import com.nasnav.service.MailService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import com.nasnav.service.otp.OtpType;
 import com.nasnav.test.commons.TestCommons;
@@ -52,6 +53,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
@@ -118,6 +120,9 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private AdminService adminService;
+
+	@Autowired
+	private SecurityService securityService;
 
 	private String uniqueAddress = "630f3256-59bb-4b87-9600-60e64d028d68";
 
@@ -278,11 +283,16 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	private ResponseEntity<UserApiResponse> performLogin(String email, String password, Long orgId) {
+		return performLogin(email, password, orgId, false, null);
+	}
 
+	private ResponseEntity<UserApiResponse> performLogin(String email, String password, Long orgId, boolean isEmployee, String notificationToken) {
 		String request = json()
 				.put("email", email)
 				.put("password", password)
 				.put("org_id", orgId)
+				.put("employee", isEmployee)
+				.put("notification_token", notificationToken)
 				.toString();
 		HttpEntity<Object> userJson = getHttpEntity(request, null);
 
@@ -290,7 +300,6 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		return template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 	}
-
 
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
@@ -1573,6 +1582,20 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertEquals(ACTIVATED.getValue(), user.getUserStatus());
 	}
 
+	@Test
+	public void listUserNotificationTokens() {
+		final String notificationToken = "SomeNotificationToken";
+		var response = performLogin("user1@nasnav.com", "12345678", 99001L, false, notificationToken);
+		assertEquals(OK, response.getStatusCode());
+
+		UserEntity user = userRepository.findByEmailAndOrganizationId("user1@nasnav.com", 99001L).orElse(persistentUser);
+		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
+		Set<String> notificationTokensByUsers = securityService.getValidUserNotificationTokens(Set.of(user));
+
+		Set<String> expectedTokens = Set.of(notificationToken);
+		assertEquals(expectedTokens, notificationTokens);
+		assertEquals(expectedTokens, notificationTokensByUsers);
+	}
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()
