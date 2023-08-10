@@ -627,6 +627,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
         userRepObj.setIsInfluencer(influencerRepository.existsByUser_IdOrEmployeeUser_Id(user.getId(),user.getId()));
+        userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
         return userRepObj;
     }
 

@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.enumerations.Gender;
 
@@ -26,6 +28,7 @@ public class UserDTOs {
         @JsonProperty("phone_number")
         private String phoneNumber;
         @JsonProperty("date_of_birth")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         private String dateOfBirth;
     }
 
