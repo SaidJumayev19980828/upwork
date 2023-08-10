@@ -35,9 +35,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "organization_manager_id")
     private Long organizationManagerId;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
     @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
     @JsonIgnore
     @ToString.Exclude
@@ -61,7 +58,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
                 .map(Role::getName)
                 .collect(toSet())
         );
-        obj.setImage(this.getImage());
         return obj;
     }
 }
