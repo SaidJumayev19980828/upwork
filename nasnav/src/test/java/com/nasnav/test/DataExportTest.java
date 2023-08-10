@@ -186,6 +186,7 @@ public class DataExportTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Export_Test_Data.sql", "/sql/Products_Export_Test_Extra_Data.sql", "/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void testProductExportXLSXForWholeOrganization(){
 		var response =
 				template.exchange("/export/products/xlsx", GET, getHttpEntity("192021"), String.class);
