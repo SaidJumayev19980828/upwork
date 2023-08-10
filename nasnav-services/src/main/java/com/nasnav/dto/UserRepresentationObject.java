@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -33,7 +35,9 @@ public class UserRepresentationObject {
     private Long familyId;
     private Long tierId;
     private Boolean allowReward;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime dateOfBirth;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime tierCreatedAt;
     private Long boosterId;
     private String referral;
