@@ -42,7 +42,7 @@ test:maven:
     - meetusvr
     - docker
   only:
-    - develop
+    - review
     - merge_requests
 
 test:coverage:
@@ -66,7 +66,7 @@ test:coverage:
     - meetusvr
     - docker
   only:
-    - develop
+    - review
     - merge_requests
 
 
@@ -107,18 +107,34 @@ build:publish:
     - meetusvr
     - docker
 
-deploy:
+deploy:develop:
+  image: curlimages/curl:8.00.1
   stage: deploy
-  trigger:
-    project: meetusvr/devops
-    branch: main
-    strategy: depend
-  variables:
-    MEETUSVR_BACKEND_ENV: $CI_COMMIT_BRANCH
-    MEETUSVR_BACKEND_IMAGE_TAG_FQN: $IMAGE_TAG_FQN
-    UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
+  script:
+    - |
+      curl -X POST --fail -F ref=main \
+      -F "token=$VAR_DEVELOP_DEPLOY_TOKEN" \
+      -F "variables[MEETUSVR_BACKEND_ENV]=$CI_COMMIT_BRANCH" \
+      -F "variables[MEETUSVR_BACKEND_IMAGE_TAG_FQN]=$IMAGE_TAG_FQN" \
+      -F "variables[UPSTREAM_PROJECT_PATH]=$CI_PROJECT_PATH" \
+      "https://gitlab.com/api/v4/projects/42584610/trigger/pipeline"
   only:
-    - review
     - develop
-    # - uat
-    # - prod
+    - review
+  tags:
+    - meetusvr
+    - docker
+
+# deploy:
+#   stage: deploy
+#   trigger:
+#     project: meetusvr/devops
+#     branch: main
+#     strategy: depend
+#   variables:
+#     MEETUSVR_BACKEND_ENV: $CI_COMMIT_BRANCH
+#     MEETUSVR_BACKEND_IMAGE_TAG_FQN: $IMAGE_TAG_FQN
+#     UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
+#   only:
+#     - uat
+#     - prod
