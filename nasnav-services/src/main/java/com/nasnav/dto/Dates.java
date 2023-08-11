@@ -17,7 +17,7 @@ public class Dates {
     public String maxCreatedDate;
 
     public Dates(LocalDateTime minCreatedDate, LocalDateTime maxCreatedDate) {
-        this.minCreatedDate = minCreatedDate.toString();
-        this.maxCreatedDate = maxCreatedDate.toString();
+        this.minCreatedDate = minCreatedDate.toLocalDate().toString();
+        this.maxCreatedDate = maxCreatedDate.toLocalDate().toString();
     }
 }
