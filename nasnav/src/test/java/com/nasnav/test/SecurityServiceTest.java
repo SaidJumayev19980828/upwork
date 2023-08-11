@@ -163,7 +163,7 @@ public class SecurityServiceTest {
 		return Stream.of(
 				Arguments.of(false, 99001L, authUser, false, null, false, authUser),
 				Arguments.of(false, 99002L, authUser, false, null, true, null),
-				Arguments.of(true, 99001L, authUser, false, null, false, authUser),
+				Arguments.of(true, 99001L, authUser, true, authUser, false, authUser),
 				Arguments.of(true, 99002L, authUser, true, userFromYeshteryService, false, userFromYeshteryService),
 				Arguments.of(true, 99003L, authUser, true, null, true, null));
 	}

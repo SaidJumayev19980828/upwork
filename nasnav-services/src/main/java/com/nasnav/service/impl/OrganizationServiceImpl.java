@@ -4,7 +4,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
-import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
+import com.nasnav.dto.UserDTOs.*;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
@@ -57,8 +57,6 @@ import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -336,12 +334,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 	    organizationRepository.save(organization);
 
-        EmployeeUserCreationObject employeeDTO = new EmployeeUserCreationObject();
-        employeeDTO.setName(json.getName());
-        employeeDTO.setEmail(json.getEmail());
-        employeeDTO.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
-        employeeDTO.setOrgId(organization.getId());
-        employeeUserService.createEmployeeUser(employeeDTO);
+        EmployeeUserWithPassword employeeUserWithPassword = new EmployeeUserWithPassword();
+        employeeUserWithPassword.setName(json.getName());
+        employeeUserWithPassword.setEmail(json.getEmail());
+        employeeUserWithPassword.setPassword(json.getPassword());
+        employeeUserWithPassword.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
+        employeeUserWithPassword.setOrgId(organization.getId());
+        employeeUserService.createEmployeeUserWithPassword(employeeUserWithPassword);
 
         return new OrganizationResponse(organization.getId(), 0);
     }
@@ -424,7 +423,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, COUNTRIES})
     @Transactional
-    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+    public OrganizationResponse updateOrganizationData(OrganizationModificationDTO json, MultipartFile logo, MultipartFile cover) throws BusinessException {
         OrganizationEntity organization = securityService.getCurrentUserOrganization();
         if (json.getDescription() != null) {
             organization.setDescription(json.getDescription());
@@ -436,19 +435,23 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setThemeId(json.getThemeId());
         }
 
-        if (file != null) {
+        if (logo != null || cover != null) {
             OrganizationThemeEntity orgTheme =
                     organizationThemeRepository
                     .findOneByOrganizationEntity_Id(organization.getId())
                     .orElseGet(OrganizationThemeEntity::new);
 
             orgTheme.setOrganizationEntity(organization);
-            String mimeType = file.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM:image",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            if (logo != null) {
+                failOnInvalidImage(logo);
+                orgTheme.setLogo(fileService.saveFile(logo, organization.getId()));
+            }
 
-            orgTheme.setLogo(fileService.saveFile(file, organization.getId()));
+            if (cover != null){
+                failOnInvalidImage(cover);
+                orgTheme.setCover(fileService.saveFile(cover, organization.getId()));
+            }
+
             organizationThemeRepository.save(orgTheme);
         }
 
@@ -459,6 +462,13 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization = organizationRepository.save(organization);
 
         return new OrganizationResponse(organization.getId(), 0);
+    }
+
+    private void failOnInvalidImage(MultipartFile file) throws BusinessException {
+        String mimeType = file.getContentType();
+        if (mimeType == null || !mimeType.startsWith("image"))
+            throw new BusinessException("INVALID PARAM:image",
+                    "Invalid file type[" + mimeType + "]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
     }
 
 

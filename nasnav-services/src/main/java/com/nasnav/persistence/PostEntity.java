@@ -62,4 +62,10 @@ public class PostEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<PostLikesEntity> likes;
+
+    @ManyToOne
+    @JoinColumn(name = "advertisement_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private AdvertisementEntity advertisement;
 }

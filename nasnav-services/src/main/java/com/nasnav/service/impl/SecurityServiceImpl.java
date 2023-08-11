@@ -391,7 +391,7 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 	private BaseUserEntity mapUserToOrgUser(BaseUserEntity user, Long orgId) {
-		if (config.isYeshteryInstance && !user.getOrganizationId().equals(orgId) && user instanceof UserEntity) {
+		if (config.isYeshteryInstance && user instanceof UserEntity) {
 			return yeshteryUserService.getUserForOrg((UserEntity) user, orgId);
 		}
 		return user.getOrganizationId().equals(orgId) ? user : null;
@@ -587,37 +587,37 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 	public Set<String> getValidEmployeeNotificationTokens(EmployeeUserEntity employee) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityAndNotificationTokenNotNull(employee);
 		return getFilteredNotificationTokens(tokenEntities, true);
 	}
 
 	@Override
 	public Set<String> getValidEmployeeNotificationTokens(Set<EmployeeUserEntity> employees) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntities(employees);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityInAndNotificationTokenNotNull(employees);
 		return getFilteredNotificationTokens(tokenEntities, true);
 	}
 
 	@Override
 	public Set<String> getValidUserNotificationTokens(UserEntity user) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityAndNotificationTokenNotNull(user);
 		return getFilteredNotificationTokens(tokenEntities, true);
 	}
 
 	@Override
 	public Set<String> getValidUserNotificationTokens(Set<UserEntity> users) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntities(users);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityInAndNotificationTokenNotNull(users);
 		return getFilteredNotificationTokens(tokenEntities, true);
 	}
 
 	@Override
 	public Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntity(employee);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityAndNotificationTokenNotNull(employee);
 		return getFilteredNotificationTokens(tokenEntities, false);
 	}
 
 	@Override
 	public Set<String> getInvalidUserNotificationTokens(UserEntity user) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntity(user);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityAndNotificationTokenNotNull(user);
 		return getFilteredNotificationTokens(tokenEntities, false);
 	}
 

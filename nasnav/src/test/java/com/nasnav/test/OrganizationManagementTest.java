@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
@@ -22,20 +23,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.test.annotation.Rollback;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.nasnav.constatnts.EntityConstants.*;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.STRING;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -43,6 +45,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
@@ -59,6 +62,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
     private Resource file;
+    @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo_UPDATED.png")
+    private Resource otherFile;
     @Autowired
     private TestRestTemplate template;
     @Autowired
@@ -71,7 +76,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
     @Autowired
     private SocialRepository socialRepository;
-    
+    @Autowired
+    private EmployeeUserOtpRepository employeeUserOtpRepository;
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -80,6 +86,12 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private AddressRepository addressRepo;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FilesRepository filesRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -103,6 +115,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", file);
+        map.add("cover", file);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         assertEquals(200, response.getStatusCode().value());
@@ -115,6 +128,46 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(pinterestUrl, socialEntity.getPinterest());
         assertEquals(whatsappUrl, socialEntity.getWhatsapp());
     }
+
+    @Test
+    public void updateOrganizationCover() {
+        String body = json().toString();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        map.add("properties", body);
+        map.add("logo", file);
+        map.add("cover", otherFile);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        assertEquals(OK, response.getStatusCode());
+
+        ResponseEntity<OrganizationRepresentationObject> navboxRsponse = template
+                .getForEntity("/navbox/organization?org_id=99001", OrganizationRepresentationObject.class);
+
+        assertEquals(OK, navboxRsponse.getStatusCode());
+
+        OrganizationThemesRepresentationObject theme = navboxRsponse.getBody().getThemes();
+
+        String logoUrl = theme.getLogoUrl();
+
+        String coverUrl = theme.getCoverUrl();
+
+        String orgPrefix = "99001/";
+
+        assertEquals("99001/nasnav-test-photo.png", logoUrl);
+
+        assertEquals("99001/nasnav-test-photo-updated.png", coverUrl);
+    }
+
+    private void assertFileSaved(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
+		FileEntity file = filesRepo.findByUrl(expectedUrl);
+		OrganizationEntity org = organizationRepository.findOneById(orgId);
+		 
+		 assertNotNull("File meta-data was saved to database", file);
+		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
+		 assertEquals("image/png", file.getMimetype());
+		 assertEquals(org, file.getOrganization());
+		 assertEquals(fileName, file.getOriginalFileName());
+	}
 
 
 
@@ -189,6 +242,8 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     @Test
     public void organizationRegistrationTest() {
         RegisterDto registerDto = registerOrg();
+        assertTrue(registerDto.getPassword().length() < PASSWORD_MAX_LENGTH);
+        assertTrue(registerDto.getPassword().length() > PASSWORD_MIN_LENGTH);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/register", registerDto, OrganizationResponse.class);
         assertEquals(OK, response.getStatusCode());
         final Long orgId = response.getBody().getOrganizationId();
@@ -198,7 +253,17 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
             throw new IllegalStateException("there should be only 1 employee");
         }).orElseThrow(() -> new IllegalStateException("there should be 1 employee"));
         assertEquals(registerDto.getName(), employee.getName());
+        assertTrue(passwordEncoder.matches(registerDto.getPassword(), employee.getEncryptedPassword()));
         assertEquals(registerDto.getEmail(), employee.getEmail());
+
+        final EmployeeUserOtpEntity employeeUserOtpEntity = employeeUserOtpRepository.findByUser(employee).orElseThrow(
+                        () -> new IllegalStateException("it should return only 1 otp")
+                );
+        ActivateOtpDto activateOtpDto = activateOtp(employeeUserOtpEntity.getOtp(), registerDto.getEmail(), orgId);
+        ResponseEntity<UserApiResponse> verifyOtpResponse = template
+                .postForEntity("/user/v2/employee/otp/activate", activateOtpDto, UserApiResponse.class);
+        assertEquals(200, verifyOtpResponse.getStatusCodeValue());
+
         final Set<String> expectedRoles = Set.of(Roles.ORGANIZATION_ADMIN.getValue(), Roles.ORGANIZATION_MANAGER.getValue());
         final Set<String> foundRoles = employee.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
         assertEquals(expectedRoles, foundRoles);
@@ -208,11 +273,20 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         RegisterDto registerDTO = new RegisterDto();
         registerDTO.setOrganizationName("Solad Pant1");
         registerDTO.setCurrencyIso(818);
-
+        registerDTO.setPassword("D@ner$2010");
         registerDTO.setName("test test test ");
         registerDTO.setEmail(TestUserEmail);
         
         return  registerDTO;
+    }
+
+    private ActivateOtpDto activateOtp(String otp, String email, Long orgId) {
+        ActivateOtpDto activateOtpDto = new ActivateOtpDto();
+        activateOtpDto.setOtp(otp);
+        activateOtpDto.setEmail(email);
+        activateOtpDto.setOrgId(orgId);
+
+        return activateOtpDto;
     }
 
     @Test

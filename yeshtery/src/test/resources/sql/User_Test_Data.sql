@@ -16,13 +16,19 @@ INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) 
 INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) VALUES(55002, 'nasnav.com', 'organization_2', 99002);
 INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(55003, 'tooawsome.com', 99001);
 
+--inserting yeshtery users
+INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (808, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.yeshtery_users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (809, 'user1@nasnav.com','user1','456', 99002);
+
 
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
-VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
-VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, yeshtery_user_id)
+VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201, 808);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, yeshtery_user_id)
+VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201, 809);
 INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password, user_status)
 VALUES (88003, 'user2@nasnav.com','user2','789', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
@@ -55,6 +61,8 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
                                   reset_password_token, reset_password_sent_at)
 VALUES (162, 'Walid 4', 'emp.user4@nasnav.com', 99001, 'ttt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru',
         200, 'd67438ac-f3a5-4939-9686-a1fc096f3f4e', now());
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token)
+VALUES (163, 'nasnav admin', 'nasnav.admin@nasnav.com', 99001, 'nasnav-admin-token');
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700009, '875488', NOW() - INTERVAL '29 DAY', 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700010, '101112', now(), 159, null);
@@ -62,14 +70,17 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700012, '161718', now(), 159, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700013, '192021', now(), 160, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700014, '222324', now(), 161, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700015, 'nasnav-admin-token', now(), 163, null);
 
 
 insert into roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_MANAGER', 99001);
 insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(4, 'NASNAV_ADMIN', 99001);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 159, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 160, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 161, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 163, 4);
 
 
 INSERT INTO public.user_subscriptions VALUES (10001, 'sub@g.com', 99001, null);

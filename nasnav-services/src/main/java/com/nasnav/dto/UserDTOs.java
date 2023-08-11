@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.enumerations.Gender;
 
@@ -26,6 +28,7 @@ public class UserDTOs {
         @JsonProperty("phone_number")
         private String phoneNumber;
         @JsonProperty("date_of_birth")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         private String dateOfBirth;
     }
 
@@ -115,6 +118,15 @@ public class UserDTOs {
         private String avatar;
 
     }
+
+    @Getter
+    @Setter
+    @Schema(name = "Employee User Creation Data With Password")
+    public static class EmployeeUserWithPassword extends EmployeeUserCreationObject {
+        @Schema(example = "pass1234")
+        public String password;
+    }
+
     @Getter
     @Schema(name = "User Change Password ")
 	public static class ChangePasswordUserObject {

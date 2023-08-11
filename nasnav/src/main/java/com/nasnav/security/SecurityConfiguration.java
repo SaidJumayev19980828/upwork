@@ -37,7 +37,6 @@ import static com.nasnav.enumerations.Roles.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpMethod.GET;
 
 @Configuration
 @EnableWebSecurity
@@ -185,8 +184,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/post/**"						,GET						,  setOf(CUSTOMER)),
 						patternOf( "/post/**"						,POST						,  setOf(CUSTOMER)),
 						patternOf( "/post/**"						,PUT						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/queue"						,POST						,  setOf(CUSTOMER)),
+						patternOf( "/queue"						,GET						,  getNonCustomersRoles()),
+						patternOf( "/queue/cancel"					,PUT						,  setOf(CUSTOMER)),
+						patternOf( "/queue/accept"					,PUT						,  getNonCustomersRoles()),
+						patternOf( "/queue/reject"					,PUT						,  getNonCustomersRoles()),
+						patternOf( "/queue/logs"					,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf("/loyalty/points/list"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf("/loyalty/points"					, GET						, setOf(CUSTOMER)),
+						patternOf("/loyalty/points/list"				, GET						, setOf(CUSTOMER)),
+						patternOf("/loyalty/spendable_points"		, GET						, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/type/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/family/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -214,6 +221,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register")
 						, patternOf("/user/v2/register/activate")
 						, patternOf("/user/v2/register/otp/activate")
+						, patternOf("/user/v2/employee/otp/activate")
 						, patternOf("/user/v2/register/activate/resend")
 						, patternOf( "/user/subscribe")
 						, patternOf( "/user/subscribe/activate")

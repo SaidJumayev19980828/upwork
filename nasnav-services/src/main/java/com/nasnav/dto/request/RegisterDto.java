@@ -9,6 +9,7 @@ import lombok.Data;
 public class RegisterDto {
 	private String name;
 	private String email;
+	private String password;
 	private String organizationName;
 	private Integer currencyIso;
 }

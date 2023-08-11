@@ -1,26 +1,38 @@
 package com.nasnav.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.google.common.base.Enums;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.EmployeeUserOtpEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.request.UsersSearchParam;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.service.otp.EmployeeOtpService;
+import com.nasnav.service.otp.OtpType;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,21 +44,29 @@ import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EmailConstants.OTP_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.OTP_TEMPLATE;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
+import static com.nasnav.service.otp.OtpType.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
+@Slf4j
 public class EmployeeUserServiceImpl implements EmployeeUserService {
 
+	private Logger logger = LogManager.getLogger();
 	@Autowired
 	private EmployeeUserRepository employeeUserRepository;
 	@Autowired
@@ -61,6 +81,12 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private ShopsRepository shopRepo;
 	@Autowired
 	private UserTokenRepository userTokenRepo;
+	@Autowired
+	private EmployeeOtpService employeeOtpService;
+	@Autowired
+	private OrganizationRepository organizationRepository;
+	@Autowired
+	private MailService mailService;
 
 	@Autowired
 	@Qualifier("userListQueryBuilder")
@@ -85,7 +111,63 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 
+	@Override
+	@Transactional
+	public UserApiResponse createEmployeeUserWithPassword(UserDTOs.EmployeeUserWithPassword employeeUserWithPassword) {
+		List<String> rolesList = extractRoles(employeeUserWithPassword);
 
+		empUserSvcHelper.validateBusinessRules(employeeUserWithPassword.name, employeeUserWithPassword.email, employeeUserWithPassword.orgId);
+		empUserSvcHelper.isValidRolesList(rolesList);
+		validateEmpEmailAlreadyExists(employeeUserWithPassword);
+		List<EmployeeUserEntity> orgEmployees = employeeUserRepository.findByOrganizationId(employeeUserWithPassword.orgId);
+		if (!orgEmployees.isEmpty()) {
+			validateCurrentUserCanManageEmpAccount(employeeUserWithPassword.orgId, employeeUserWithPassword.storeId, rolesList);
+		}
+		validateStoreForEmployeeCreation(employeeUserWithPassword, rolesList);
+
+		EmployeeUserEntity employeeUserEntity = doCreateNewEmpAccountWithPassword(employeeUserWithPassword, rolesList);
+
+		updateEmployeeUserWithPassword(employeeUserEntity, employeeUserWithPassword);
+
+		return new UserApiResponse(employeeUserEntity.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
+	}
+
+	private void updateEmployeeUserWithPassword(EmployeeUserEntity employeeUserEntity,
+												UserDTOs.EmployeeUserWithPassword employeeUserWithPassword) {
+
+		empUserSvcHelper.validateNewPassword(employeeUserWithPassword.getPassword());
+		if (employeeUserEntity.getEncryptedPassword() == null
+				|| employeeUserEntity.getEncryptedPassword().isEmpty()) {
+			employeeUserEntity.setEncryptedPassword(passwordEncoder.encode(employeeUserWithPassword.getPassword()));
+
+			employeeUserEntity = employeeUserRepository.save(employeeUserEntity);
+
+			if (employeeUserEntity.getEncryptedPassword() != null
+				&& !employeeUserEntity.getEncryptedPassword().isEmpty()) {
+				EmployeeUserOtpEntity employeeUserOtpEntity = employeeOtpService
+						.createUserOtp(employeeUserEntity, REGISTER);
+				sendEmployeeOtp(employeeUserEntity, employeeUserOtpEntity.getOtp());
+			}
+		}
+
+	}
+
+	private void sendEmployeeOtp(EmployeeUserEntity employeeUserEntity, String otp) {
+		try {
+			String orgName = organizationRepository.findById(employeeUserEntity.getOrganizationId())
+					.orElseThrow()
+					.getName();
+			Map<String, String> parameterMap = new HashMap<>();
+			parameterMap.put(OTP_PARAMETER, otp);
+			if (employeeUserEntity.getEmail() != null && !employeeUserEntity.getEmail().isEmpty())
+				mailService.send(orgName, employeeUserEntity.getEmail(),
+						orgName + ACTIVATION_ACCOUNT_EMAIL_SUBJECT, OTP_TEMPLATE,
+						parameterMap);
+		} catch (Exception e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
+		}
+	}
 
 	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> roles) {
 		Long orgId = employeeUserJson.orgId;
@@ -114,6 +196,15 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		empUserSvcHelper.createRoles(rolesList, employeeUserEntity, employeeUserJson.orgId);
 		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
 		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
+		return employeeUserEntity;
+	}
+
+	private EmployeeUserEntity doCreateNewEmpAccountWithPassword(UserDTOs.EmployeeUserWithPassword employeeUserWithPassword,
+																 List<String> rolesList) {
+		EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserWithPassword);
+		empUserSvcHelper.createRoles(rolesList, employeeUserEntity, employeeUserWithPassword.orgId);
+//		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
+//		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 		return employeeUserEntity;
 	}
 
@@ -365,6 +456,21 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (Objects.equals(user.getId(), currentUser.getId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0002);
 		}
+	}
+
+	@Override
+	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto) {
+		EmployeeUserEntity user = employeeUserRepository.findByEmailIgnoreCaseAndOrganizationId(activateOtpDto.getEmail(), activateOtpDto.getOrgId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
+		employeeOtpService.validateOtp(activateOtpDto.getOtp(), user, OtpType.REGISTER);
+		activateUserInDB(user);
+		return securityService.login(user, false);
+	}
+
+	private void activateUserInDB(EmployeeUserEntity user) {
+		user.setResetPasswordToken(null);
+		user.setUserStatus(ACTIVATED.getValue());
+		employeeUserRepository.save(user);
 	}
 
 }

@@ -627,6 +627,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
         userRepObj.setIsInfluencer(influencerRepository.existsByUser_IdOrEmployeeUser_Id(user.getId(),user.getId()));
+        userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
         return userRepObj;
     }
 
@@ -830,15 +831,15 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public List<UserRepresentationObject> getUserList(){
-        List<YeshteryUserEntity> customers;
+        Set<UserEntity> customers;
         if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
-            customers = userRepository.findAll();
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUser();
         } else {
-            customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+            customers = nasNavUserRepository.findAllLinkedToYeshteryUserByOrgId(securityService.getCurrentUserOrganizationId());
         }
         return customers
                 .stream()
-                .map(YeshteryUserEntity::getRepresentation)
+                .map(UserEntity::getRepresentation)
                 .collect(toList());
     }
 
@@ -877,8 +878,19 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
 
     @Override
     public UserEntity getUserForOrg(UserEntity user, Long orgId) {
-        if (user.getOrganizationId().equals(orgId)) {
-            return user;
+        Long userOrgId = user.getOrganizationId();
+
+        if (!orgRepo.existsByIdAndYeshteryState(userOrgId, 1) ) {
+            return null;
+        }
+
+        if (userOrgId.equals(orgId)) {
+            return user.getYeshteryUserId() != null ? user : null;
+        }
+
+        // we check required org as it's different from user org
+        if (!orgRepo.existsByIdAndYeshteryState(orgId, 1)) {
+            return null;
         }
 
         return nasNavUserRepository.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), orgId)
