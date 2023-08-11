@@ -39,6 +39,7 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShippingManagementService;
 import com.nasnav.service.StockService;
 import com.nasnav.service.UserService;
+import com.nasnav.service.OrderStatisticService;
 import com.nasnav.service.OrderService.OrderValue;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
@@ -52,7 +53,6 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,7 +92,8 @@ import static java.math.RoundingMode.FLOOR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Objects.isNull;
-import static java.util.Optional.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 @Service
@@ -189,6 +190,9 @@ public class OrderServiceImpl implements OrderService {
 	AddonStockRepository addonStockRepository;
 	@Autowired
 	AddonsBasketRepository addonsBasketRepository;
+	@Autowired
+	private OrderStatisticService orderStatisticService;
+
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
 							StockRepository stockRepository , StockService stockService,
@@ -1546,16 +1550,16 @@ public class OrderServiceImpl implements OrderService {
 		return checkoutData;
 	}
 
-	
+
 	 public BigDecimal calculateAddonsTotal(CartItem cartItem) {
-	    	
-	    	
+
+
          if (cartItem.getAddonList()!=null &&!cartItem.getAddonList().isEmpty()) {
         return	 cartItem.getAddonList()
                 .stream()
                 .map(item ->
                         item.getPrice()
-                                
+
                                 .multiply(new BigDecimal(cartItem.getQuantity())))
                 .reduce(ZERO, BigDecimal::add);
          }
@@ -1608,7 +1612,14 @@ public class OrderServiceImpl implements OrderService {
 
 		ordersFiltersHelper = new OrdersFiltersHelper(filteredOrders);
 
-		return ordersFiltersHelper.getFiltersResponse();
+        OrdersFiltersResponse filtersResponse = ordersFiltersHelper.getFiltersResponse();
+		OrderSearchParam finalParams = getFinalOrderSearchParams(orderSearchParam);
+
+		filtersResponse.setQuantities(orderStatisticService.getOrderQuantitiesStatistic(finalParams));
+		filtersResponse.setPrices(orderStatisticService.getOrderPricesStatistic(finalParams));
+        filtersResponse.setDates(orderStatisticService.getOrderDatesStatistic(finalParams));
+
+		return filtersResponse;
 	}
 
 	@Override
@@ -2349,7 +2360,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
-		
+
 		basket.setAddonsPrice(data.getAddonsPrice());
 		basket.setSpecialOrder(data.getSpecialOrder());
 		if (data.getAddons() != null && !data.getAddons().isEmpty()) {
@@ -2361,7 +2372,7 @@ public class OrderServiceImpl implements OrderService {
 				en.setStocksEntity(addonStock);
 				en.setPrice(addonStock.getPrice());
 				addonsBaskets.add(en);
-				
+
 			}
 			basket.setAddons(addonsBaskets);
 		}

@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,4 +15,9 @@ import lombok.NoArgsConstructor;
 public class Dates {
     public String minCreatedDate;
     public String maxCreatedDate;
+
+    public Dates(LocalDateTime minCreatedDate, LocalDateTime maxCreatedDate) {
+        this.minCreatedDate = minCreatedDate.toString();
+        this.maxCreatedDate = maxCreatedDate.toString();
+    }
 }
