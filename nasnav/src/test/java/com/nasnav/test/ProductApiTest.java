@@ -25,10 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
@@ -1431,4 +1428,17 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(1001, res.getProducts().get(0).getId().intValue());
 		assertEquals(1005, res.getProducts().get(1).getId().intValue());
 	}
+
+	@Test
+	public void testGetOutOfStockProducts() {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99003L;
+		HttpEntity<Object> request = getHttpEntity(user.getAuthenticationToken());
+		ResponseEntity<ProductsResponse> response = template.exchange("/product/out-of-stock-products?"+param.toString(), GET,request, ProductsResponse.class);
+		assertEquals(response.getStatusCode().is2xxSuccessful(),true);
+		ProductsResponse body = response.getBody();
+		assertEquals(1, body.getTotal().intValue());
+	}
+
 }

@@ -116,4 +116,7 @@ VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid Mu
 
 ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
+   ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
+
+
 }

@@ -116,6 +116,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/product/images"					,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/image/bulk/template"							, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/empty_collections"		,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, NASNAV_ADMIN)),
+		             	patternOf("/product/out-of-stock-products", HttpMethod.GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/admin/organization/domain"	   	,HttpMethod.GET		, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
 						patternOf( "/admin/organization/domains"	   	,HttpMethod.GET		, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN) ),
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
@@ -202,6 +203,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf("/loyalty/config/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/check"									, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/redeem"									, setOf(STORE_MANAGER)),
+			            patternOf("/advertisement",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/**")
 						);
 
@@ -246,6 +248,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/css/**")
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
+						, patternOf("/advertisement", HttpMethod.GET)
                  );
 
     AuthenticationProvider provider;
