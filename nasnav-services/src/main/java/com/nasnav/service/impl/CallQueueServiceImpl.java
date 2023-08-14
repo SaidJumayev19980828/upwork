@@ -146,9 +146,14 @@ public class CallQueueServiceImpl implements CallQueueService {
         CallQueueEntity entity;
         for(int i = 0; i < queue.size(); i++) {
             entity = queue.get(i);
+            String response = new JSONObject()
+                    .put("id",entity.getId())
+                    .put("joinsAt",entity.getJoinsAt())
+                    .put("position",i+1)
+                    .put("total",queue.size())
+                            .toString();
             notificationService.sendMessage(entity.getUser(),
-                    new NotificationRequestDto("queue summary",
-                            new CallQueueStatusDTO(entity.getId(), entity.getJoinsAt(), i+1, queue.size()).toString()));
+                    new NotificationRequestDto("queue summary",response));
         }
     }
 
