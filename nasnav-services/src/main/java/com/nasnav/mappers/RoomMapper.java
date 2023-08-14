@@ -6,8 +6,8 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
 import com.nasnav.dto.request.RoomTemplateDTO;
-import com.nasnav.dto.response.RoomResponse;
-import com.nasnav.persistence.RoomTemplateEntity;
+import com.nasnav.dto.response.ShopRoomResponse;
+import com.nasnav.persistence.ShopRoomTemplateEntity;
 
 @Mapper(componentModel = "spring")
 public interface RoomMapper {
@@ -16,15 +16,15 @@ public interface RoomMapper {
 	@Mapping(target = "shop", source = "shop.representation")
 	@Mapping(target =  "sessionExternalId", source = "session.externalId")
 	@Mapping(target = "sessionCreatedAt", source = "session.createdAt")
-	RoomResponse toRoomResponse(RoomTemplateEntity entity);
+	ShopRoomResponse toShopRoomResponse(ShopRoomTemplateEntity entity);
 
 	@Mapping(target = "shop", ignore = true)
 	@Mapping(target = "session", ignore = true)
 	@Mapping(target = "id", ignore = true)
-	RoomTemplateEntity toRoomTemplateEntity(RoomTemplateDTO dto);
+	ShopRoomTemplateEntity toRoomTemplateEntity(RoomTemplateDTO dto);
 
 	@Mapping(target = "shop", ignore = true)
 	@Mapping(target = "session", ignore = true)
 	@Mapping(target = "id", ignore = true)
-	void updateTemplateEntityfromDTO(RoomTemplateDTO dto, @MappingTarget RoomTemplateEntity entity);
+	void updateTemplateEntityfromDTO(RoomTemplateDTO dto, @MappingTarget ShopRoomTemplateEntity entity);
 }

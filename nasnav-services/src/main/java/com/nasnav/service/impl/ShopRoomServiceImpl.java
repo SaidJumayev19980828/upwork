@@ -15,27 +15,27 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.RoomTemplateRepository;
+import com.nasnav.dao.ShopRoomTemplateRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.request.RoomSessionDTO;
 import com.nasnav.dto.request.RoomTemplateDTO;
-import com.nasnav.dto.response.RoomResponse;
+import com.nasnav.dto.response.ShopRoomResponse;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.RoomMapper;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.RoomSessionEntity;
-import com.nasnav.persistence.RoomTemplateEntity;
+import com.nasnav.persistence.ShopRoomTemplateEntity;
 import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.service.MetaverseRoomService;
+import com.nasnav.service.ShopRoomService;
 import com.nasnav.service.SecurityService;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class MetaverseRoomServiceImpl implements MetaverseRoomService {
-	private final RoomTemplateRepository roomTemplateRepository;
+public class ShopRoomServiceImpl implements ShopRoomService {
+	private final ShopRoomTemplateRepository roomTemplateRepository;
 	private final OrganizationRepository organizationRepository;
 	private final ShopsRepository shopsRepository;
 	private final SecurityService securityService;
@@ -44,17 +44,17 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 
 	@Transactional
 	@Override
-	public RoomResponse createOrUpdateTemplate(Long shopId, RoomTemplateDTO dto) {
-		RoomTemplateEntity entity = getRoomTemplateForUpdate(shopId).orElseGet(() -> getNewRoomTemplate(shopId));
+	public ShopRoomResponse createOrUpdateTemplate(Long shopId, RoomTemplateDTO dto) {
+		ShopRoomTemplateEntity entity = getRoomTemplateForUpdate(shopId).orElseGet(() -> getNewRoomTemplate(shopId));
 		mapper.updateTemplateEntityfromDTO(dto, entity);
 		entity = roomTemplateRepository.save(entity);
-		return mapper.toRoomResponse(entity);
+		return mapper.toShopRoomResponse(entity);
 	}
 
 	@Transactional
 	@Override
-	public RoomResponse createNewSession(Long shopId, RoomSessionDTO roomSessionDto) {
-		RoomTemplateEntity template = getRoomTemplateForUpdate(shopId)
+	public ShopRoomResponse createNewSession(Long shopId, RoomSessionDTO roomSessionDto) {
+		ShopRoomTemplateEntity template = getRoomTemplateForUpdate(shopId)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								shopId));
@@ -62,7 +62,7 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 		session.setTemplate(template);
 		template.setSession(session);
 		template = roomTemplateRepository.save(template);
-		return mapper.toRoomResponse(template);
+		return mapper.toShopRoomResponse(template);
 	}
 
 	@Transactional
@@ -76,17 +76,17 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 	}
 
 	@Override
-	public RoomResponse getRoombyShopId(Long shopId) {
+	public ShopRoomResponse getRoombyShopId(Long shopId) {
 		return getRoomTemplate(shopId)
-				.map(mapper::toRoomResponse)
+				.map(mapper::toShopRoomResponse)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								shopId));
 	}
 
 	@Override
-	public Set<RoomResponse> getOrgRooms(Long orgId) {
-		Set<RoomTemplateEntity> rooms;
+	public Set<ShopRoomResponse> getOrgRooms(Long orgId) {
+		Set<ShopRoomTemplateEntity> rooms;
 
 		OrganizationEntity requestedOrg = organizationRepository.findById(orgId)
 				.orElseThrow(
@@ -97,12 +97,12 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 		} else {
 			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
 		}
-		return rooms.stream().map(mapper::toRoomResponse).collect(Collectors.toSet());
+		return rooms.stream().map(mapper::toShopRoomResponse).collect(Collectors.toSet());
 	}
 
 	@Override
-	public Set<RoomResponse> getRooms() {
-		Set<RoomTemplateEntity> rooms = Collections.emptySet();
+	public Set<ShopRoomResponse> getRooms() {
+		Set<ShopRoomTemplateEntity> rooms = Collections.emptySet();
 		OrganizationEntity userOrg = securityService.getCurrentUserOrganization();
 		if (config.isYeshteryInstance) {
 			if (userOrg.getYeshteryState() == 1) {
@@ -111,26 +111,26 @@ public class MetaverseRoomServiceImpl implements MetaverseRoomService {
 		} else {
 			rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(userOrg.getId());
 		}
-		return rooms.stream().map(mapper::toRoomResponse).collect(Collectors.toSet());
+		return rooms.stream().map(mapper::toShopRoomResponse).collect(Collectors.toSet());
 	}
 
-	private Optional<RoomTemplateEntity> getRoomTemplateForUpdate(Long shopId) {
+	private Optional<ShopRoomTemplateEntity> getRoomTemplateForUpdate(Long shopId) {
 		if (FALSE.equals(securityService.isShopAccessibleToCurrentUser(shopId))) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, shopId);
 		}
 		return getRoomTemplate(shopId);
 	}
 
-	private Optional<RoomTemplateEntity> getRoomTemplate(Long shopId) {
+	private Optional<ShopRoomTemplateEntity> getRoomTemplate(Long shopId) {
 		return roomTemplateRepository.findByShopId(shopId).filter(room -> !config.isYeshteryInstance || room.getShop().getOrganizationEntity().getYeshteryState() == 1);
 	}
 
-	private RoomTemplateEntity getNewRoomTemplate(Long shopId) {
+	private ShopRoomTemplateEntity getNewRoomTemplate(Long shopId) {
 		OrganizationEntity userOrg = securityService.getCurrentUserOrganization();
 		ShopsEntity requestedShop = shopsRepository.findById(shopId).filter(shop -> shop.getOrganizationEntity().equals(userOrg))
 				.orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.S$0002, shopId));
 
-		RoomTemplateEntity template = new RoomTemplateEntity();
+		ShopRoomTemplateEntity template = new ShopRoomTemplateEntity();
 		template.setShop(requestedShop);
 		return template;
 	}

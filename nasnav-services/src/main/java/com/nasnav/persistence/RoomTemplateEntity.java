@@ -4,10 +4,12 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.OneToOne;
-import javax.persistence.PreRemove;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.DiscriminatorFormula;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -19,19 +21,9 @@ import lombok.EqualsAndHashCode.Exclude;
 @Entity
 @Table(name = "room_templates")
 @EqualsAndHashCode(callSuper = false)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorFormula("case when shop_id is not null then 'SHOP' else null end")
 public class RoomTemplateEntity extends DefaultBusinessEntity<Long> {
-
-	@PreRemove
-	private void preRemove() {
-		shop.setRoomTemplate(null);
-	}
-
-	@OneToOne(fetch = FetchType.EAGER, optional = false)
-	@JoinColumn(name = "shop_id", referencedColumnName = "id")
-	@JsonIgnore
-	@Exclude
-	@lombok.ToString.Exclude
-	ShopsEntity shop;
 
 	@Column(name = "scene_id", nullable = false)
 	String sceneId;

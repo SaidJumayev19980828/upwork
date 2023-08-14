@@ -17,7 +17,6 @@ import lombok.EqualsAndHashCode;
 @JsonNaming(SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper = false)
 public class RoomResponse extends RoomTemplateDTO {
-	private ShopRepresentationObject shop;
 	private String sessionExternalId;
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private LocalDateTime sessionCreatedAt;

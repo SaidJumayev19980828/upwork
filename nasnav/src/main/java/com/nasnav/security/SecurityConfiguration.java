@@ -74,10 +74,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	private  List<AuthPattern> permissions = asList(
 						// //url pattern	-------------------------	Method	------------	Roles
 						patternOf( "/360view/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/room/list_for_user"				,GET				, getAllRoles()),
-						patternOf( "/room/session"					,POST				, setOf(CUSTOMER)),
-						patternOf( "/room/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
-						patternOf( "/room"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/shop/list_for_user"				,GET				, getAllRoles()),
+						patternOf( "/room/shop/session"					,POST				, setOf(CUSTOMER)),
+						patternOf( "/room/shop/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/order/confirm"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -213,8 +213,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             	asList(
 						patternOf("/callbacks/**")
 					    , patternOf("/360view/**"						, HttpMethod.GET)
-						, patternOf("/room"								, GET)
-						, patternOf("/room/list"							, GET)
+						, patternOf("/room/shop"								, GET)
+						, patternOf("/room/shop/list"							, GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/recovery/otp-verify")
