@@ -15,7 +15,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -39,6 +41,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Override
     public AdvertisementDTO create(AdvertisementDTO advertisementDTO) {
         AdvertisementEntity entity = toEntity(advertisementDTO);
+        if (Objects.isNull(entity.getId())) entity.setCreationDate(LocalDateTime.now());
         AdvertisementEntity savedEntity = advertisementRepository.save(entity);
         return toDto(savedEntity);
     }
@@ -56,6 +59,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         entity.setLikes(advertisementDTO.getLikes());
         entity.setFromDate(advertisementDTO.getFromDate());
         entity.setToDate(advertisementDTO.getToDate());
+        entity.setCreationDate(advertisementDTO.getCreationDate());
 
         ProductEntity byId = productRepository.getById(advertisementDTO.getProduct().getId());
         entity.setProduct(byId);
@@ -71,6 +75,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         dto.setCoins(entity.getCoins());
         dto.setFromDate(entity.getFromDate());
         dto.setToDate(entity.getToDate());
+        dto.setCreationDate(entity.getCreationDate());
 
         dto.setProduct(toDto(entity.getProduct()));
 
