@@ -121,6 +121,7 @@ deploy:develop:
   only:
     - develop
     - review
+    - uat
   tags:
     - meetusvr
     - docker
@@ -136,5 +137,4 @@ deploy:develop:
 #     MEETUSVR_BACKEND_IMAGE_TAG_FQN: $IMAGE_TAG_FQN
 #     UPSTREAM_PROJECT_PATH: $CI_PROJECT_PATH
 #   only:
-#     - uat
 #     - prod
