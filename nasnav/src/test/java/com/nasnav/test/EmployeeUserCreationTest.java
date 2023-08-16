@@ -15,11 +15,13 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
+
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
+import org.hamcrest.MatcherAssert;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +44,7 @@ import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
@@ -1325,6 +1329,16 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertNotNull(apiResponse);
 		boolean exists = empRepository.existsById(apiResponse.getEntityId());
 		assertTrue(exists);
+	}
+
+	@Test
+	public void testGetAllActiveEmployee() {
+		ResponseEntity<List<UserRepresentationObject>> response = template.exchange("/user/list-active-employee?org_id=99001", GET, null, new ParameterizedTypeReference<>() {
+        });
+		assertEquals(200, response.getStatusCode().value());
+		List<UserRepresentationObject> body = response.getBody();
+		MatcherAssert.assertThat(body, notNullValue());
+		MatcherAssert.assertThat(body.size(), equalTo(3));
 	}
 
 }
