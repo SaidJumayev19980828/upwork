@@ -32,37 +32,37 @@ public class BankAccountActivityServiceImpl implements BankAccountActivityServic
 
 
     @Override
-    public Long getAvailableBalance(long accountId) {
+    public Float getAvailableBalance(long accountId) {
         BankAccountEntity bankAccountEntity = bankAccountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0003,accountId));
 
-        long totalBalance = this.getTotalBalance(bankAccountEntity.getId());
-        long reservedBalance = this.getReservedBalance(bankAccountEntity.getId());
+        float totalBalance = this.getTotalBalance(bankAccountEntity.getId());
+        float reservedBalance = this.getReservedBalance(bankAccountEntity.getId());
 
         return totalBalance + bankAccountEntity.getOpeningBalance() - reservedBalance;
     }
 
     @Override
-    public Long getTotalBalance(long accountId) {
+    public Float getTotalBalance(long accountId) {
         BankAccountEntity bankAccountEntity = bankAccountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0003,accountId));
 
         long openingBalanceId = bankAccountEntity.getOpeningBalanceActivity() == null ? 0 : bankAccountEntity.getOpeningBalanceActivity().getId();
-        Long sum = bankAccountActivityRepository.getBalance(openingBalanceId, bankAccountEntity.getId());
-        return sum == null ? 0 : sum;
+        Float sum = bankAccountActivityRepository.getBalance(openingBalanceId, bankAccountEntity.getId());
+        return sum == null ? 0F : sum;
     }
 
     @Override
-    public Long getReservedBalance(long accountId) {
+    public Float getReservedBalance(long accountId) {
         BankAccountEntity bankAccountEntity = bankAccountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0003,accountId));
 
-        Long sum = bankReservationRepository.getReservedBalance(bankAccountEntity.getId());
-        return sum == null ? 0 : sum;
+        Float sum = bankReservationRepository.getReservedBalance(bankAccountEntity.getId());
+        return sum == null ? 0F : sum;
     }
 
     @Override
-    public Boolean checkAvailableBalance(long accountId, long amount) {
+    public Boolean checkAvailableBalance(long accountId, float amount) {
         return getAvailableBalance(accountId) > amount;
     }
 
@@ -91,14 +91,14 @@ public class BankAccountActivityServiceImpl implements BankAccountActivityServic
     }
 
     @Override
-    public void addActivity(BankAccountEntity accountEntity, long amount, boolean isDeposit, BankInsideTransactionEntity insideTransactionEntity, BankOutsideTransactionEntity outsideTransactionEntity) {
+    public void addActivity(BankAccountEntity accountEntity, float amount, boolean isDeposit, BankInsideTransactionEntity insideTransactionEntity, BankOutsideTransactionEntity outsideTransactionEntity) {
         BankAccountActivityEntity activity;
         if (isDeposit) {
             activity = BankAccountActivityEntity.builder()
                     .account(accountEntity)
                     .activityDate(LocalDateTime.now())
                     .amountIn(amount)
-                    .amountOut(0L)
+                    .amountOut(0F)
                     .bankInsideTransaction(insideTransactionEntity)
                     .bankOutsideTransaction(outsideTransactionEntity)
                     .build();
@@ -107,7 +107,7 @@ public class BankAccountActivityServiceImpl implements BankAccountActivityServic
             activity = BankAccountActivityEntity.builder()
                     .account(accountEntity)
                     .activityDate(LocalDateTime.now())
-                    .amountIn(0L)
+                    .amountIn(0F)
                     .amountOut(amount)
                     .bankInsideTransaction(insideTransactionEntity)
                     .bankOutsideTransaction(outsideTransactionEntity)

@@ -21,7 +21,7 @@ public class BankReservationEntity {
     private BankAccountEntity account;
 
     @Column(name = "amount")
-    private Long amount;
+    private Float amount;
 
     @Column(name = "activity_date")
     private LocalDateTime activityDate;

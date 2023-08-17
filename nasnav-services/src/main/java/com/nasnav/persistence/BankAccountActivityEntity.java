@@ -24,10 +24,10 @@ public class BankAccountActivityEntity {
     private BankAccountEntity account;
 
     @Column(name = "amount_in")
-    private Long amountIn;
+    private Float amountIn;
 
     @Column(name = "amount_out")
-    private Long amountOut;
+    private Float amountOut;
 
     @Column(name = "activity_date")
     private LocalDateTime activityDate;

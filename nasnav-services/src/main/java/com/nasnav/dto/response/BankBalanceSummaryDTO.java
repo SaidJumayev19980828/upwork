@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class BankBalanceSummaryDTO {
-    private Long totalBalance;
-    private Long reservedBalance;
-    private Long availableBalance;
+    private Float totalBalance;
+    private Float reservedBalance;
+    private Float availableBalance;
 }

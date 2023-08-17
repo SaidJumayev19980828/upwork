@@ -38,7 +38,7 @@ public class BankAccountEntity {
     private String walletAddress;
 
     @Column(name = "opening_balance")
-    private Long openingBalance;
+    private Float openingBalance;
 
     @OneToOne
     @JoinColumn(name = "opening_balance_activity_id")

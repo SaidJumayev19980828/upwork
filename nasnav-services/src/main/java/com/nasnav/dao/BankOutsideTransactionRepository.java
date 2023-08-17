@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BankOutsideTransactionRepository extends JpaRepository<BankOutsideTransactionEntity, Long> {
+    boolean existsByBcKey(String bcKey);
 }

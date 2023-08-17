@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 public class BankActivityDetailsDTO {
-    private Long amountIn;
-    private Long amountOut;
+    private Float amountIn;
+    private Float amountOut;
     private LocalDateTime activityDate;
 }

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class BankReservationDTO {
     private Long id;
     private BankAccountDTO account;
-    private Long amount;
+    private Float amount;
     private LocalDateTime activityDate;
     private Boolean fulfilled;
     private LocalDateTime fulfilledDate;

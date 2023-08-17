@@ -29,7 +29,7 @@ public class BankInsideTransactionImpl implements BankInsideTransactionService {
 
     @Override
     @Transactional
-    public void transfer(long receiverAccountId, long amount) {
+    public void transfer(long receiverAccountId, float amount) {
         //insert record into inside transaction
         BankAccountEntity sender = bankAccountService.getLoggedAccount();
         BankAccountEntity receiver = bankAccountRepository.findById(receiverAccountId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));

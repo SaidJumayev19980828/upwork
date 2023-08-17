@@ -29,7 +29,7 @@ public class BankInsideTransactionEntity {
     private BankAccountEntity receiver;
 
     @Column(name = "amount")
-    private Long amount;
+    private Float amount;
 
     @Column(name = "activity_date")
     private LocalDateTime activityDate;

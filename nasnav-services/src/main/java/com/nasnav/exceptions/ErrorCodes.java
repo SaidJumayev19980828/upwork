@@ -459,6 +459,7 @@ public enum ErrorCodes {
 	,BANK$ACC$0004("the Deposit/Withdrawal not valid from BC point of view")
 	,BANK$ACC$0005("the account have not enough balance")
 	,BANK$ACC$0006("No reservation with id: [%d]")
+	,BANK$ACC$0007("this transaction is done before")
 
 	,ROOMS$ROOM$NotFound("No Room Template found with shop id [%d]")
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")

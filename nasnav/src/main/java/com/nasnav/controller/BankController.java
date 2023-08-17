@@ -18,33 +18,33 @@ public class BankController {
     private final BankInsideTransactionService bankInsideTransactionService;
     private final BankReservationService bankReservationService;
 
-    @PostMapping("/account") // org admin
+    @PostMapping("/account")
     public BankAccountDetailsDTO createAccount(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @RequestBody BankAccountDetailsDTO dto) {
         return bankAccountService.createAccount(dto);
     }
 
-    @GetMapping("/account") // org admin / customer
+    @GetMapping("/account")
     public BankAccountDTO getAccountById(@RequestHeader(name = "User-Token", required = false) String token) {
         return bankAccountService.getAccount();
     }
 
-    @PutMapping("/account") // nasnav admin
+    @PutMapping("/account")
     public void lockOrUnlockAccount(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam long accountId,
                                      @RequestParam boolean isLocked) {
         bankAccountService.lockOrUnlockAccount(accountId, isLocked);
     }
 
-    @PostMapping("/account/setOpeningBalance") //nasnav admin
+    @PostMapping("/account/setOpeningBalance")
     public void setOpeningBalanceForSpecificAccount(@RequestHeader(name = "User-Token", required = false) String token,
                                                     @RequestParam long accountId) {
         bankAccountService.setOpeningBalance(accountId);
     }
 
-    @PostMapping("/transaction/out") //any user
+    @PostMapping("/transaction/out")
     public void outsideTransaction(@RequestHeader(name = "User-Token", required = false) String token,
-                                   @RequestParam long amount,
+                                   @RequestParam float amount,
                                    @RequestParam boolean isDeposit,
                                    @RequestParam String blockChainKey) {
         bankOutsideTransactionService.depositOrWithdrawal(amount, isDeposit, blockChainKey);
@@ -75,14 +75,14 @@ public class BankController {
         bankReservationService.fulfilReservation(reservationId);
     }
 
-    @GetMapping("/account/history") //any user
+    @GetMapping("/account/history")
     public PageImpl<BankActivityDetailsDTO> getAccountHistory(@RequestHeader(name = "User-Token", required = false) String token,
                                                               @RequestParam(required = false, defaultValue = "0") Integer start,
                                                               @RequestParam(required = false, defaultValue = "10") Integer count) {
         return bankAccountActivityService.getHistory(start, count);
     }
 
-    @GetMapping("/account/summary") //any user
+    @GetMapping("/account/summary")
     public BankBalanceSummaryDTO getAccountSummary(@RequestHeader(name = "User-Token", required = false) String token) {
         return bankAccountActivityService.getAccountSummary();
     }

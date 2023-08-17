@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0005;
+import static com.nasnav.exceptions.ErrorCodes.BANK$ACC$0007;
 
 @Service
 @AllArgsConstructor
@@ -33,9 +34,11 @@ public class BankOutsideTransactionServiceImpl implements BankOutsideTransaction
 
     @Override
     @Transactional
-    public void depositOrWithdrawal(long amount, boolean isDeposit, String transactionIdOfBC) {
+    public void depositOrWithdrawal(float amount, boolean isDeposit, String transactionIdOfBC) {
         BankAccountEntity bankAccountEntity = bankAccountService.getLoggedAccount();
-
+        if(outsideTransactionRepository.existsByBcKey(transactionIdOfBC)){
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,BANK$ACC$0007);
+        }
         if(!validateDepositOrWithdrawalIsDone(transactionIdOfBC, amount)){
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,BANK$ACC$0005);
         }
@@ -43,11 +46,12 @@ public class BankOutsideTransactionServiceImpl implements BankOutsideTransaction
         BankOutsideTransactionEntity entity = new BankOutsideTransactionEntity();
         entity.setAccount(bankAccountEntity);
         entity.setActivityDate(LocalDateTime.now());
+        entity.setBcKey(transactionIdOfBC);
         if (isDeposit) {
             entity.setAmountIn(amount);
-            entity.setAmountOut(0L);
+            entity.setAmountOut(0F);
         } else {
-            entity.setAmountIn(0L);
+            entity.setAmountIn(0F);
             entity.setAmountOut(amount);
         }
         outsideTransactionRepository.save(entity);
@@ -56,8 +60,8 @@ public class BankOutsideTransactionServiceImpl implements BankOutsideTransaction
     }
 
     @Override
-    public Boolean validateDepositOrWithdrawalIsDone(String hashBC, long amount) {
-        OutsideTransactionValidatorDTO dto = new OutsideTransactionValidatorDTO(hashBC, amount);
+    public Boolean validateDepositOrWithdrawalIsDone(String hashBC, float amount) {
+        OutsideTransactionValidatorDTO dto = new OutsideTransactionValidatorDTO(hashBC, String.valueOf(amount));
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<OutsideTransactionValidatorDTO> entity = new HttpEntity<>(dto, headers);

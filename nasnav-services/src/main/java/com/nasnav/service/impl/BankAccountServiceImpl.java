@@ -43,7 +43,7 @@ public class BankAccountServiceImpl implements BankAccountService {
     }
 
     @Override
-    public Long getOpeningBalance(long accountId) {
+    public Float getOpeningBalance(long accountId) {
         BankAccountEntity entity = bankAccountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0003, accountId));
         return entity.getOpeningBalance();
@@ -56,7 +56,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         //lock account
         this.lockOrUnlockAccount(entity.getId(), true);
         //accumulate from the begin of opening balance date to the last activity
-        Long balance = bankAccountActivityService.getAvailableBalance(accountId);
+        Float balance = bankAccountActivityService.getAvailableBalance(accountId);
         //set opening balance
         entity.setOpeningBalance(balance);
         entity.setOpeningBalanceDate(LocalDateTime.now());
@@ -91,7 +91,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         BankAccountEntity entity = new BankAccountEntity();
         entity.setCreatedAt(LocalDateTime.now());
         entity.setLocked(false);
-        entity.setOpeningBalance(0L);
+        entity.setOpeningBalance(0F);
         entity.setOpeningBalanceDate(LocalDateTime.now());
         entity.setWalletAddress(dto.getWallerAddress());
 

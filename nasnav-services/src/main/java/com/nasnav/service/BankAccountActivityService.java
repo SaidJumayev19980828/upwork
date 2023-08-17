@@ -9,12 +9,12 @@ import com.nasnav.persistence.BankOutsideTransactionEntity;
 import org.springframework.data.domain.PageImpl;
 
 public interface BankAccountActivityService {
-    public Long getAvailableBalance(long accountId);
-    public Long getTotalBalance(long accountId);
-    public Long getReservedBalance(long accountId);
-    public Boolean checkAvailableBalance(long accountId, long amount);
+    public Float getAvailableBalance(long accountId);
+    public Float getTotalBalance(long accountId);
+    public Float getReservedBalance(long accountId);
+    public Boolean checkAvailableBalance(long accountId, float amount);
     public BankAccountActivityEntity getLastActivity(long accountId);
     public PageImpl<BankActivityDetailsDTO> getHistory(Integer start, Integer count);
     public BankBalanceSummaryDTO getAccountSummary();
-    public void addActivity(BankAccountEntity accountEntity, long amount, boolean isDeposit, BankInsideTransactionEntity insideTransactionEntity, BankOutsideTransactionEntity outsideTransactionEntity);
+    public void addActivity(BankAccountEntity accountEntity, float amount, boolean isDeposit, BankInsideTransactionEntity insideTransactionEntity, BankOutsideTransactionEntity outsideTransactionEntity);
 }

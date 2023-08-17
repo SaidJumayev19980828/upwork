@@ -27,7 +27,7 @@ public class BankReservationServiceImpl implements BankReservationService {
     private final BankAccountService bankAccountService;
 
     @Override
-    public BankReservationDTO createReservation(long accountId, long amount) {
+    public BankReservationDTO createReservation(long accountId, float amount) {
         BankAccountEntity accountEntity = bankAccountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0003, accountId));
         BankReservationEntity entity = new BankReservationEntity();

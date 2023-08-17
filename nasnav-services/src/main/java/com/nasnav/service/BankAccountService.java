@@ -7,7 +7,7 @@ import com.nasnav.persistence.BankAccountEntity;
 public interface BankAccountService {
     public BankAccountDetailsDTO createAccount(BankAccountDTO dto);
     public BankAccountDTO getAccount();
-    public Long getOpeningBalance(long accountId);
+    public Float getOpeningBalance(long accountId);
     public void setOpeningBalance(long accountId);
     public void setAllAccountsOpeningBalance();
     public void lockOrUnlockAccount(long accountId, boolean isLocked);

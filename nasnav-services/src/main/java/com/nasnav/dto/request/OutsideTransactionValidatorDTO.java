@@ -7,5 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class OutsideTransactionValidatorDTO {
     private String txhash;
-    private Long tokenAmount;
+    private String tokenAmount;
 }
