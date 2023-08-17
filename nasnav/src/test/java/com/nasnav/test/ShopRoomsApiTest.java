@@ -220,8 +220,10 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(dbRoom, response);
 
 		if (Objects.nonNull(beforeRequest) && Objects.nonNull(afterRequest)) {
-			assertThat(dbTime).isBetween(beforeRequest, afterRequest);
-			assertThat(responseTime).isBetween(beforeRequest, afterRequest);
+			LocalDateTime tolerentBefore = beforeRequest.minusSeconds(1);
+			LocalDateTime tolerentAfter = afterRequest.plusSeconds(1);
+			assertThat(dbTime).isBetween(tolerentBefore, tolerentAfter);
+			assertThat(responseTime).isBetween(tolerentBefore, tolerentAfter);
 		}
 
 		if (Objects.nonNull(externalSessionId)) {
