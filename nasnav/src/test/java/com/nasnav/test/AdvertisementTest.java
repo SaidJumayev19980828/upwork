@@ -68,7 +68,7 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         ParameterizedTypeReference<AdvertisementDTO> responseType = new ParameterizedTypeReference<>() {
         };
         ResponseEntity<AdvertisementDTO> exchange = template.exchange("/advertisement", HttpMethod.POST, getHttpEntity(requestBody, "1"), responseType);
-        assertThat(exchange.getStatusCode().is2xxSuccessful(), equalTo(true));
+        assertThat(exchange.getStatusCode().value(), equalTo(200));
         AdvertisementDTO body = exchange.getBody();
         assertThat(body, is(notNullValue()));
         long newCount = advertisementRepository.count();

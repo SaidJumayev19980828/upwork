@@ -54,6 +54,15 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
     @Query(value = "select t from UserTokensEntity t where t.userEntity = :user")
 	Set<UserTokensEntity> getByUserEntity(@Param("user") UserEntity user);
 
+    Set<UserTokensEntity> getByUserEntityAndNotificationTokenNotNull(UserEntity user);
+
+    Set<UserTokensEntity> getByUserEntityInAndNotificationTokenNotNull(Set<UserEntity> users);
+
+    Set<UserTokensEntity> getByEmployeeUserEntityAndNotificationTokenNotNull(EmployeeUserEntity employee);
+
+    Set<UserTokensEntity> getByEmployeeUserEntityInAndNotificationTokenNotNull(Set<EmployeeUserEntity> employees);
+
+
     @Query(value = "select t from UserTokensEntity t where t.userEntity in :users")
 	Set<UserTokensEntity> getByUserEntities(@Param("users") Set<UserEntity> user);
 

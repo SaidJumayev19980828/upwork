@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
@@ -81,9 +82,9 @@ public class DataExportServiceImpl implements DataExportService{
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductExportedData.class));
 
-		List<Long> variantsIds = result.stream()
+		Set<Long> variantsIds = result.stream()
 				.map(ProductExportedData::getVariantId)
-				.collect(toList());
+				.collect(toSet());
 		Map<Long, Map<String, String>> variantsFeaturesMap = mapInBatches(variantsIds, 1000, variantsRepo::findByIdIn)
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> productService.parseVariantFeatures(variant, 0)));
