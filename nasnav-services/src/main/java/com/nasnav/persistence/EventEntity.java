@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -67,4 +68,10 @@ public class EventEntity {
             ,inverseJoinColumns = {@JoinColumn(name="product_id")})
     private List<ProductEntity> products;
 
+    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
+    private EventRoomTemplateEntity roomTemplate;
+    
 }

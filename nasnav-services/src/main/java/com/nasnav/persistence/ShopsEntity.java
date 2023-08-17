@@ -79,7 +79,7 @@ public class ShopsEntity implements BaseEntity{
     @JsonIgnore
     @Exclude
     @lombok.ToString.Exclude
-    private RoomTemplateEntity roomTemplate;
+    private ShopRoomTemplateEntity roomTemplate;
 
 
     @Column(name = "yeshtery_state")

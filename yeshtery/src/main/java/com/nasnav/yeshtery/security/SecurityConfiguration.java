@@ -74,10 +74,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
             patternOf( "/v1/360view/**"						, POST  , setOf(ORGANIZATION_ADMIN)),
-            patternOf( "/v1/room/list_for_user"				, GET	, getAllRoles()),
-            patternOf( "/v1/room/session"					, POST	, setOf(CUSTOMER)),
-            patternOf( "/v1/room/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
-            patternOf( "/v1/room"					, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/shop/list_for_user"				, GET	, getAllRoles()),
+            patternOf( "/v1/room/shop/session"					, POST	, setOf(CUSTOMER)),
+            patternOf( "/v1/room/shop/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/shop"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/event/list_for_user"			, GET	, getAllRoles()),
+            patternOf( "/v1/room/event/session"					, POST	, getAllRoles()),
+            patternOf( "/v1/room/event/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/event"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/order"							, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/order/confirm"					, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/order/reject"						, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -229,8 +233,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/error/**"							, GET)
                         , patternOf("/v1/yeshtery/**"						, GET)
                         , patternOf("/v1/360view/**"						, GET)
-						, patternOf("/v1/room"								, GET)
-						, patternOf("/v1/room/list"							, GET)
+						, patternOf("/v1/room/shop"								, GET)
+						, patternOf("/v1/room/shop/list"							, GET)
+						, patternOf("/v1/room/event"								, GET)
+						, patternOf("/v1/room/event/list"							, GET)
                         , patternOf("/v1/payment/**")
                         , patternOf("/v1/user/recover")
                         , patternOf("/v1/user/recovery/otp-verify")

@@ -20,6 +20,6 @@ public class AdvertisementDTO {
     private LocalDateTime fromDate;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime toDate;
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime creationDate;
 }
