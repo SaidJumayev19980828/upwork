@@ -4,6 +4,9 @@ import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventStatus;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EventEntity;
+
 import org.springframework.data.domain.PageImpl;
 
 import java.util.Date;
@@ -21,4 +24,6 @@ public interface EventService {
     void updateEvent(EventForRequestDTO dto, Long eventId);
     void deleteEvent(Long eventId, Boolean force);
     void intersetEventForUser(Long eventId);
+
+    boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId); 
 }

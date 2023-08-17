@@ -78,6 +78,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/room/shop/session"					,POST				, setOf(CUSTOMER)),
 						patternOf( "/room/shop/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/event/list_for_user"			,GET			, getAllRoles()),
+						patternOf( "/room/event/session"					,POST				, getAllRoles()),
+						patternOf( "/room/event/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/event"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/order/confirm"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -214,7 +218,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf("/callbacks/**")
 					    , patternOf("/360view/**"						, HttpMethod.GET)
 						, patternOf("/room/shop"								, GET)
-						, patternOf("/room/shop/list"							, GET)
+						, patternOf("/room/shop/list"						, GET)
+						, patternOf("/room/event"								, GET)
+						, patternOf("/room/event/list"						, GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/recovery/otp-verify")

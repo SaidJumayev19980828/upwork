@@ -1,10 +1,12 @@
 package com.nasnav.test;
 
-import com.nasnav.dao.ShopRoomTemplateRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nasnav.dao.EventRoomTemplateRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.response.ShopRoomResponse;
-import com.nasnav.mappers.ShopRoomMapper;
-import com.nasnav.persistence.ShopRoomTemplateEntity;
+import com.nasnav.dto.response.EventRoomResponse;
+import com.nasnav.mappers.EventRoomMapper;
+import com.nasnav.persistence.EventRoomTemplateEntity;
+import com.nasnav.test.commons.TestCommons.ParseablePage;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -23,9 +27,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -33,63 +36,64 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Shop_Room_Api_Test_Data.sql")
+@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Event_Room_Api_Test_Data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/database_cleanup.sql")
 @NotThreadSafe
-class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
+class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TestRestTemplate template;
 	@Autowired
-	private ShopRoomMapper mapper;
+	private EventRoomMapper mapper;
 	@Autowired
-	private ShopRoomTemplateRepository roomTemplateRepository;
+	private EventRoomTemplateRepository roomTemplateRepository;
 	@Autowired
 	private UserRepository userRepository;
 
 	@Test
-	void getRoomsByUserToken() {
+	void getRoomsByUserToken() throws JsonProcessingException {
 		userRepository.findAll().forEach(user -> {
-			Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(user.getOrganizationId())
-					.stream()
-					.map(mapper::toResponse).collect(Collectors.toSet());
+			Page<EventRoomResponse> rooms = roomTemplateRepository
+					.findAllByEventOrganizationIdAndSessionNullEquals(user.getOrganizationId(), true, PageRequest.of(0, 10))
+					.map(mapper::toResponse);
 			HttpEntity<Object> request = getHttpEntity(user.getAuthenticationToken());
-			ResponseEntity<Set<ShopRoomResponse>> res = template
-					.exchange("/room/shop/list_for_user", HttpMethod.GET, request,
-							new ParameterizedTypeReference<Set<ShopRoomResponse>>() {
+			ResponseEntity<ParseablePage<EventRoomResponse>> res = template
+					.exchange("/room/event/list_for_user?started=true", HttpMethod.GET, request,
+							new ParameterizedTypeReference<ParseablePage<EventRoomResponse>>() {
 							});
 			assertEquals(HttpStatus.OK, res.getStatusCode());
-			Set<ShopRoomResponse> body = res.getBody();
-			assertEquals(rooms, body);
+			ParseablePage<EventRoomResponse> body = res.getBody();
+			assertEquals(rooms.getContent(), body.getContent());
+			assertTrue(body.getContent().stream().allMatch(EventRoomResponse::isStarted));
 		});
 	}
 
 	@Test
 	void getRoomsByOrgId() {
 		List.of(99001L, 99002L).forEach(orgId -> {
-			Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(orgId)
-					.stream()
-					.map(mapper::toResponse).collect(Collectors.toSet());
+			Page<EventRoomResponse> rooms = roomTemplateRepository.findAllByEventOrganizationIdAndSessionNullEquals(orgId, false, PageRequest.of(0, 10))
+					.map(mapper::toResponse);
 			HttpEntity<Object> request = getHttpEntity(null);
-			ResponseEntity<Set<ShopRoomResponse>> res = template
-					.exchange("/room/shop/list?org_id={orgId}", HttpMethod.GET, request,
-							new ParameterizedTypeReference<Set<ShopRoomResponse>>() {
+			ResponseEntity<ParseablePage<EventRoomResponse>> res = template
+					.exchange("/room/event/list?org_id={orgId}&started=false", HttpMethod.GET, request,
+							new ParameterizedTypeReference<ParseablePage<EventRoomResponse>>() {
 							}, orgId);
 			assertEquals(HttpStatus.OK, res.getStatusCode());
-			Set<ShopRoomResponse> body = res.getBody();
-			assertEquals(rooms, body);
+			ParseablePage<EventRoomResponse> body = res.getBody();
+			assertEquals(rooms.getContent(), body.getContent());
+			assertTrue(body.getContent().stream().allMatch(Predicate.not(EventRoomResponse::isStarted)));
 		});
 	}
 
 	@Test
 	void getSingleRoom() {
-		ShopRoomResponse room = roomTemplateRepository.findById(501L)
+		EventRoomResponse room = roomTemplateRepository.findById(501L)
 				.map(mapper::toResponse).get();
-		ResponseEntity<ShopRoomResponse> res = template
-				.getForEntity("/room/shop?shop_id=51",
-						ShopRoomResponse.class);
+		ResponseEntity<EventRoomResponse> res = template
+				.getForEntity("/room/event?event_id=51",
+						EventRoomResponse.class);
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		ShopRoomResponse body = res.getBody();
+		EventRoomResponse body = res.getBody();
 		assertEquals(room, body);
 	}
 
@@ -97,59 +101,77 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	void setRoomSession() {
 		HttpEntity<Object> request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user81");
 		LocalDateTime before = LocalDateTime.now();
-		ResponseEntity<ShopRoomResponse> res = template
-				.postForEntity("/room/shop/session?shop_id=51", request,
-						ShopRoomResponse.class);
+		ResponseEntity<EventRoomResponse> res = template
+				.postForEntity("/room/event/session?event_id=51", request,
+						EventRoomResponse.class);
 		LocalDateTime after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		ShopRoomResponse body = res.getBody();
+		EventRoomResponse body = res.getBody();
 		assertRoomResponse(body, before, after, "test_new_session", "user81@nasnav.com");
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session_2\"}", "user81");
 		before = LocalDateTime.now();
 		res = template
-				.postForEntity("/room/shop/session?shop_id=52", request,
-						ShopRoomResponse.class);
+				.postForEntity("/room/event/session?event_id=52", request,
+						EventRoomResponse.class);
 		after = LocalDateTime.now();
-		assertEquals(HttpStatus.OK, res.getStatusCode());
-		body = res.getBody();
-		assertRoomResponse(body, before, after, "test_new_session_2", "user81@nasnav.com");
+		assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user82");
 		ResponseEntity<String> res2 = template
-				.postForEntity("/room/shop/session?shop_id=51", request,
+				.postForEntity("/room/event/session?event_id=51", request,
 						String.class);
 		assertEquals(HttpStatus.NOT_FOUND, res2.getStatusCode());
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user82");
 		res2 = template
-				.postForEntity("/room/shop/session?shop_id=53", request,
+				.postForEntity("/room/event/session?event_id=53", request,
 						String.class);
 		assertEquals(HttpStatus.NOT_FOUND, res2.getStatusCode());
+
+		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user83");
+		before = LocalDateTime.now();
+		res = template
+				.postForEntity("/room/event/session?event_id=52", request,
+						EventRoomResponse.class);
+		after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		body = res.getBody();
+		assertRoomResponse(body, before, after, "test_new_session", "user83@nasnav.com");
+
+		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "131415");
+		before = LocalDateTime.now();
+		res = template
+				.postForEntity("/room/event/session?event_id=52", request,
+						EventRoomResponse.class);
+		after = LocalDateTime.now();
+		assertEquals(HttpStatus.OK, res.getStatusCode());
+		body = res.getBody();
+		assertRoomResponse(body, before, after, "test_new_session", null);
 	}
 
 	@Test
 	void setRoomSessionWithoutBody() {
-		HttpEntity<Object> request = getHttpEntity("user81");
+		HttpEntity<Object> request = getHttpEntity("user83");
 		LocalDateTime before = LocalDateTime.now();
-		ResponseEntity<ShopRoomResponse> res = template
-				.postForEntity("/room/shop/session?shop_id=52", request,
-						ShopRoomResponse.class);
+		ResponseEntity<EventRoomResponse> res = template
+				.postForEntity("/room/event/session?event_id=52", request,
+						EventRoomResponse.class);
 		LocalDateTime after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		ShopRoomResponse body = res.getBody();
+		EventRoomResponse body = res.getBody();
 		String externalId = body.getSessionExternalId();
-		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertRoomResponse(body, before, after, externalId, "user83@nasnav.com");
 		assertDoesNotThrow(() -> UUID.fromString(externalId));
 
 		before = LocalDateTime.now();
 		res = template
-				.postForEntity("/room/shop/session?shop_id=52", request,
-						ShopRoomResponse.class);
+				.postForEntity("/room/event/session?event_id=52", request,
+						EventRoomResponse.class);
 		after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 		body = res.getBody();
-		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
+		assertRoomResponse(body, before, after, externalId, "user83@nasnav.com");
 		assertDoesNotThrow(() -> UUID.fromString(externalId));
 	}
 
@@ -181,38 +203,38 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 		assertDeleteTemplateRequest("131415", 51L, HttpStatus.OK);
 	}
 
-	private void assertDeleteTemplateRequest(String token, Long shopId, HttpStatus expectedStatus) {
+	private void assertDeleteTemplateRequest(String token, Long eventId, HttpStatus expectedStatus) {
 		HttpEntity<Object> request = getHttpEntity(token);
 		ResponseEntity<String> res = template
-				.exchange("/room/shop?shop_id=" + shopId, HttpMethod.DELETE, request,
+				.exchange("/room/event?event_id=" + eventId, HttpMethod.DELETE, request,
 						String.class);
 		assertEquals(expectedStatus, res.getStatusCode());
 		if (expectedStatus == HttpStatus.OK) {
-			Optional<ShopRoomTemplateEntity> roomOptional = roomTemplateRepository.findByShopId(shopId);
+			Optional<EventRoomTemplateEntity> roomOptional = roomTemplateRepository.findByEventId(eventId);
 			assertTrue(roomOptional.isEmpty());
 		}
 	}
 
-	private void assertTemplateRequest(String token, String requestBody, Long shopId, HttpStatus expectedStatus) {
+	private void assertTemplateRequest(String token, String requestBody, Long eventId, HttpStatus expectedStatus) {
 		HttpEntity<Object> request = getHttpEntity(requestBody, token);
-		ResponseEntity<ShopRoomResponse> res = template
-				.postForEntity("/room/shop/template?shop_id=" + shopId.toString(), request,
-						ShopRoomResponse.class);
+		ResponseEntity<EventRoomResponse> res = template
+				.postForEntity("/room/event/template?event_id=" + eventId.toString(), request,
+						EventRoomResponse.class);
 		assertEquals(expectedStatus, res.getStatusCode());
 		if (expectedStatus == HttpStatus.OK) {
-			ShopRoomResponse body = res.getBody();
+			EventRoomResponse body = res.getBody();
 			assertRoomResponse(body);
 		}
 	}
 
-	private void assertRoomResponse(ShopRoomResponse response) {
+	private void assertRoomResponse(EventRoomResponse response) {
 		assertRoomResponse(response, null, null, null, null);
 	}
 
-	private void assertRoomResponse(ShopRoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
+	private void assertRoomResponse(EventRoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
 			String externalSessionId, String userEmail) {
-		ShopRoomTemplateEntity template = roomTemplateRepository.findByShopId(response.getShop().getId()).get();
-		ShopRoomResponse dbRoom = mapper.toResponse(template);
+		EventRoomTemplateEntity template = roomTemplateRepository.findByEventId(response.getEventId()).get();
+		EventRoomResponse dbRoom = mapper.toResponse(template);
 		LocalDateTime dbTime = dbRoom.getSessionCreatedAt();
 		dbRoom.setSessionCreatedAt(null);
 		LocalDateTime responseTime = response.getSessionCreatedAt();

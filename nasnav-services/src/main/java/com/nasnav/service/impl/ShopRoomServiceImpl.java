@@ -22,7 +22,7 @@ import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.ShopRoomResponse;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.mappers.RoomMapper;
+import com.nasnav.mappers.ShopRoomMapper;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.RoomSessionEntity;
 import com.nasnav.persistence.ShopRoomTemplateEntity;
@@ -35,12 +35,13 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ShopRoomServiceImpl implements ShopRoomService {
+	private static final String ROOM_TYPE = "shop";
 	private final ShopRoomTemplateRepository roomTemplateRepository;
 	private final OrganizationRepository organizationRepository;
 	private final ShopsRepository shopsRepository;
 	private final SecurityService securityService;
 	private final AppConfig config;
-	private final RoomMapper mapper;
+	private final ShopRoomMapper mapper;
 
 	@Transactional
 	@Override
@@ -48,7 +49,7 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 		ShopRoomTemplateEntity entity = getRoomTemplateForUpdate(shopId).orElseGet(() -> getNewRoomTemplate(shopId));
 		mapper.updateTemplateEntityfromDTO(dto, entity);
 		entity = roomTemplateRepository.save(entity);
-		return mapper.toShopRoomResponse(entity);
+		return mapper.toResponse(entity);
 	}
 
 	@Transactional
@@ -57,30 +58,32 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 		ShopRoomTemplateEntity template = getRoomTemplateForUpdate(shopId)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
-								shopId));
+								ROOM_TYPE, shopId));
 		RoomSessionEntity session = getNewRoomSession(roomSessionDto, template.getSession());
 		session.setTemplate(template);
 		template.setSession(session);
 		template = roomTemplateRepository.save(template);
-		return mapper.toShopRoomResponse(template);
+		return mapper.toResponse(template);
 	}
 
 	@Transactional
 	@Override
 	public void deleteTemplate(Long shopId) {
 		Long employeeOrgId = securityService.getCurrentUserOrganizationId();
-		int affectedRows = roomTemplateRepository.deleteTemplateByShopIdAndShopOrganizationEntityId(shopId, employeeOrgId);
+		int affectedRows = roomTemplateRepository.deleteTemplateByShopIdAndShopOrganizationEntityId(shopId,
+				employeeOrgId);
 		if (affectedRows != 1) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, shopId);
+			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE, shopId);
 		}
 	}
 
 	@Override
 	public ShopRoomResponse getRoombyShopId(Long shopId) {
 		return getRoomTemplate(shopId)
-				.map(mapper::toShopRoomResponse)
+				.map(mapper::toResponse)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
+								ROOM_TYPE,
 								shopId));
 	}
 
@@ -97,7 +100,7 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 		} else {
 			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
 		}
-		return rooms.stream().map(mapper::toShopRoomResponse).collect(Collectors.toSet());
+		return rooms.stream().map(mapper::toResponse).collect(Collectors.toSet());
 	}
 
 	@Override
@@ -111,23 +114,25 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 		} else {
 			rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(userOrg.getId());
 		}
-		return rooms.stream().map(mapper::toShopRoomResponse).collect(Collectors.toSet());
+		return rooms.stream().map(mapper::toResponse).collect(Collectors.toSet());
 	}
 
 	private Optional<ShopRoomTemplateEntity> getRoomTemplateForUpdate(Long shopId) {
 		if (FALSE.equals(securityService.isShopAccessibleToCurrentUser(shopId))) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, shopId);
+			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE, shopId);
 		}
 		return getRoomTemplate(shopId);
 	}
 
 	private Optional<ShopRoomTemplateEntity> getRoomTemplate(Long shopId) {
-		return roomTemplateRepository.findByShopId(shopId).filter(room -> !config.isYeshteryInstance || room.getShop().getOrganizationEntity().getYeshteryState() == 1);
+		return roomTemplateRepository.findByShopId(shopId).filter(
+				room -> !config.isYeshteryInstance || room.getShop().getOrganizationEntity().getYeshteryState() == 1);
 	}
 
 	private ShopRoomTemplateEntity getNewRoomTemplate(Long shopId) {
 		OrganizationEntity userOrg = securityService.getCurrentUserOrganization();
-		ShopsEntity requestedShop = shopsRepository.findById(shopId).filter(shop -> shop.getOrganizationEntity().equals(userOrg))
+		ShopsEntity requestedShop = shopsRepository.findById(shopId)
+				.filter(shop -> shop.getOrganizationEntity().equals(userOrg))
 				.orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.S$0002, shopId));
 
 		ShopRoomTemplateEntity template = new ShopRoomTemplateEntity();

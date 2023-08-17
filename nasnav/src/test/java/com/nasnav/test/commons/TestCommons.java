@@ -5,8 +5,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.*;
 import org.springframework.util.MultiValueMap;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import javax.servlet.http.Cookie;
 import java.io.IOException;
@@ -15,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
@@ -33,6 +39,12 @@ public class TestCommons {
     public static String BaseURL = "";
     public static String TestUserEmail = "nonexistent@nasnav.com";
     public static long orgId = 99001;
+
+    @Data
+    public static class ParseablePage<T> {
+        private List<T> content;
+        private Long total;
+    }
 
     public static HttpEntity<Object> getHttpEntity(Object body) {
         HttpHeaders headers = new HttpHeaders();

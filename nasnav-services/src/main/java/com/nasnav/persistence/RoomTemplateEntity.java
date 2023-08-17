@@ -22,7 +22,7 @@ import lombok.EqualsAndHashCode.Exclude;
 @Table(name = "room_templates")
 @EqualsAndHashCode(callSuper = false)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorFormula("case when shop_id is not null then 'SHOP' else null end")
+@DiscriminatorFormula("case when shop_id is not null then 'SHOP' when event_id is not null then 'EVENT' else null end")
 public class RoomTemplateEntity extends DefaultBusinessEntity<Long> {
 
 	@Column(name = "scene_id", nullable = false)
@@ -36,4 +36,8 @@ public class RoomTemplateEntity extends DefaultBusinessEntity<Long> {
 	@Exclude
 	@lombok.ToString.Exclude
 	RoomSessionEntity session;
+
+	public Boolean isStarted()  {
+		return session != null;
+	}
 }

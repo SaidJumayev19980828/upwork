@@ -290,4 +290,23 @@ public class EventServiceImpl implements EventService{
         }
         return dto;
     }
+
+    @Override
+    public boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId) {
+        EventEntity event = eventRepository.findById(eventId).orElse(null);
+        if (event == null) {
+            return false;
+        }
+        if (user instanceof EmployeeUserEntity) {
+            return user.getOrganizationId().equals(event.getOrganization().getId());
+        } else {
+            try {
+                // change next line if event will have multiple influnecers
+                return user.equals(event.getInfluencer().getUser());
+            } catch(Exception ex) {
+                return false;
+            }
+
+        }
+    }
 }
