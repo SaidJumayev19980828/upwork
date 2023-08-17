@@ -293,6 +293,9 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId) {
+        if (user == null || eventId == null) {
+            return false;
+        }
         EventEntity event = eventRepository.findById(eventId).orElse(null);
         if (event == null) {
             return false;

@@ -50,7 +50,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 		EventRoomTemplateEntity entity = getRoomTemplateForUpdate(eventId).orElseGet(() -> getNewRoomTemplate(eventId));
 		mapper.updateTemplateEntityfromDTO(dto, entity);
 		entity = roomTemplateRepository.save(entity);
-		return mapper.toResponse(entity);
+		return toFullResponse(entity);
 	}
 
 	@Transactional
@@ -64,7 +64,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 		session.setTemplate(template);
 		template.setSession(session);
 		template = roomTemplateRepository.save(template);
-		return mapper.toResponse(template);
+		return toFullResponse(template);
 	}
 
 	@Transactional
@@ -82,7 +82,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 	@Override
 	public EventRoomResponse getRoombyEventId(Long eventId) {
 		return getRoomTemplate(eventId)
-				.map(mapper::toResponse)
+				.map(this::toFullResponse)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE,
@@ -105,7 +105,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 		} else {
 			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
 		}
-		return rooms.map(mapper::toResponse);
+		return rooms.map(this::toFullResponse);
 	}
 
 	@Override
@@ -124,7 +124,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 			rooms = started == null ? roomTemplateRepository.findAllByEventOrganizationId(userOrg.getId(), pageable)
 					: roomTemplateRepository.findAllByEventOrganizationIdAndSessionNullEquals(userOrg.getId(), started, pageable);
 		}
-		return rooms.map(mapper::toResponse);
+		return rooms.map(this::toFullResponse);
 	}
 
 	private Optional<EventRoomTemplateEntity> getRoomTemplateForUpdate(Long eventId) {
@@ -164,5 +164,14 @@ public class EventRoomServiceImpl implements EventRoomService {
 			session.setExternalId(externalId);
 		}
 		return session;
+	}
+
+	private EventRoomResponse toFullResponse(EventRoomTemplateEntity entity) {
+		BaseUserEntity currentUser = securityService.getCurrentUserOptional().orElse(null);
+		EventRoomResponse response = mapper.toResponse(entity);
+		// following lines need much optimization 
+		response.setCanStart(eventService.hasInfluencerOrEmployeeAccessToEvent(currentUser, entity.getEvent().getId()));
+		response.setEvent(eventService.getEventById(entity.getEvent().getId()));
+		return response;
 	}
 }

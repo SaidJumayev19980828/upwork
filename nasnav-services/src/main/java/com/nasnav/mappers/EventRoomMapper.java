@@ -13,7 +13,7 @@ import com.nasnav.persistence.EventRoomTemplateEntity;
 public interface EventRoomMapper {
 
 	@InheritConfiguration
-	@Mapping(target = "eventId", source = "event.id")
+	@Mapping(target = "event", ignore = true)
 	@Mapping(target = "canStart", ignore = true)
 	EventRoomResponse toResponse(EventRoomTemplateEntity entity);
 

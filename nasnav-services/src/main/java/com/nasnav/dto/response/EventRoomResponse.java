@@ -10,5 +10,5 @@ import lombok.EqualsAndHashCode;
 @JsonNaming(SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper = false)
 public class EventRoomResponse extends RoomResponse {
-	private Long eventId;
+	private EventResponseDto event;
 }

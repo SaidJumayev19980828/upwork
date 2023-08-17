@@ -35,8 +35,9 @@ import static com.nasnav.test.commons.TestCommons.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
-@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Event_Room_Api_Test_Data.sql")
+@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Event_Room_API_Test_Data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/database_cleanup.sql")
 @NotThreadSafe
 class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
@@ -63,6 +64,10 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 							});
 			assertEquals(HttpStatus.OK, res.getStatusCode());
 			ParseablePage<EventRoomResponse> body = res.getBody();
+			body.getContent().forEach(rt -> {
+				rt.setCanStart(false);
+				rt.setEvent(null);
+			});
 			assertEquals(rooms.getContent(), body.getContent());
 			assertTrue(body.getContent().stream().allMatch(EventRoomResponse::isStarted));
 		});
@@ -80,6 +85,10 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 							}, orgId);
 			assertEquals(HttpStatus.OK, res.getStatusCode());
 			ParseablePage<EventRoomResponse> body = res.getBody();
+			body.getContent().forEach(rt -> {
+				rt.setCanStart(false);
+				rt.setEvent(null);
+			});
 			assertEquals(rooms.getContent(), body.getContent());
 			assertTrue(body.getContent().stream().allMatch(Predicate.not(EventRoomResponse::isStarted)));
 		});
@@ -87,14 +96,12 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	void getSingleRoom() {
-		EventRoomResponse room = roomTemplateRepository.findById(501L)
-				.map(mapper::toResponse).get();
 		ResponseEntity<EventRoomResponse> res = template
 				.getForEntity("/room/event?event_id=51",
 						EventRoomResponse.class);
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 		EventRoomResponse body = res.getBody();
-		assertEquals(room, body);
+		assertRoomResponse(body, null, null, null, null);
 	}
 
 	@Test
@@ -233,12 +240,14 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 
 	private void assertRoomResponse(EventRoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
 			String externalSessionId, String userEmail) {
-		EventRoomTemplateEntity template = roomTemplateRepository.findByEventId(response.getEventId()).get();
+		EventRoomTemplateEntity template = roomTemplateRepository.findByEventId(response.getEvent().getId()).get();
 		EventRoomResponse dbRoom = mapper.toResponse(template);
 		LocalDateTime dbTime = dbRoom.getSessionCreatedAt();
 		dbRoom.setSessionCreatedAt(null);
 		LocalDateTime responseTime = response.getSessionCreatedAt();
 		response.setSessionCreatedAt(null);
+		response.setCanStart(false);
+		response.setEvent(null);
 		assertEquals(dbRoom, response);
 
 		if (Objects.nonNull(beforeRequest) && Objects.nonNull(afterRequest)) {
