@@ -19,6 +19,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.SchedulerTaskRepository;
 import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.service.scheduler.ScheduleTaskHelper;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,6 +45,11 @@ public class Yeshtery{
         for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
             this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
         }
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate() {
+        return new RestTemplate();
     }
 
     @Bean
