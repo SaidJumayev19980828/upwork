@@ -234,7 +234,7 @@ public class EventServiceImpl implements EventService{
         return entity;
     }
 
-    private EventResponseDto toDto(EventEntity entity){
+    public EventResponseDto toDto(EventEntity entity){
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
         productFetchDTO.setCheckVariants(false);
         productFetchDTO.setIncludeOutOfStock(true);
@@ -289,5 +289,32 @@ public class EventServiceImpl implements EventService{
             dto.setUserType("Employee");
         }
         return dto;
+    }
+
+    @Override
+    public boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId) {
+        if (user == null || eventId == null) {
+            return false;
+        }
+        EventEntity event = eventRepository.findById(eventId).orElse(null);
+        return hasInfluencerOrEmployeeAccessToEvent(user, event);
+    }
+
+    @Override
+    public boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event) {
+        if (event == null) {
+            return false;
+        }
+        if (user instanceof EmployeeUserEntity) {
+            return user.getOrganizationId().equals(event.getOrganization().getId());
+        } else {
+            try {
+                // change next line if event will have multiple influnecers
+                return user.equals(event.getInfluencer().getUser());
+            } catch(Exception ex) {
+                return false;
+            }
+
+        }
     }
 }

@@ -15,44 +15,44 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.request.RoomSessionDTO;
 import com.nasnav.dto.request.RoomTemplateDTO;
-import com.nasnav.dto.response.RoomResponse;
-import com.nasnav.service.MetaverseRoomService;
+import com.nasnav.dto.response.ShopRoomResponse;
+import com.nasnav.service.ShopRoomService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/room")
+@RequestMapping("/room/shop")
 @RequiredArgsConstructor
-public class MetaverseRoomController {
-	private final MetaverseRoomService metaverseRoomService;
+public class ShopRoomController {
+	private final ShopRoomService metaverseRoomService;
 
 	@GetMapping
-	public RoomResponse getShopRoom(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public ShopRoomResponse getShopRoom(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "shop_id") Long shopId) {
 		return metaverseRoomService.getRoombyShopId(shopId);
 	}
 
 	@PostMapping("/template")
-	public RoomResponse createUpdateRoomTemplate(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public ShopRoomResponse createUpdateRoomTemplate(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "shop_id") Long shopId,
 			@RequestBody @Valid RoomTemplateDTO roomTemplate) {
 		return metaverseRoomService.createOrUpdateTemplate(shopId, roomTemplate);
 	}
 
 	@PostMapping("/session")
-	public RoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public ShopRoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "shop_id") Long shopId,
 			@RequestBody(required = false) @Valid RoomSessionDTO roomSession) {
 		return metaverseRoomService.createNewSession(shopId, roomSession);
 	}
 
 	@GetMapping(value = "/list")
-	public Set<RoomResponse> getOrgRooms(@RequestParam(name = "org_id", required = false) Long orgId) {
+	public Set<ShopRoomResponse> getOrgRooms(@RequestParam(name = "org_id", required = false) Long orgId) {
 		return metaverseRoomService.getOrgRooms(orgId);
 	}
 
 	@GetMapping(value = "/list_for_user")
-	public Set<RoomResponse> getAllAccessibleRooms(@RequestHeader(name = "User-Token", required = false) String userToken) {
+	public Set<ShopRoomResponse> getAllAccessibleRooms(@RequestHeader(name = "User-Token", required = false) String userToken) {
 		return metaverseRoomService.getRooms();
 	}
 
