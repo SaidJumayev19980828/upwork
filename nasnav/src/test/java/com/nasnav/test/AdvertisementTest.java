@@ -6,8 +6,8 @@ import com.nasnav.dao.PostTransactionsRepository;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.dto.response.RestResponsePage;
-import com.nasnav.service.jobs.AdvertisementJob;
 import com.nasnav.persistence.AdvertisementEntity;
+import com.nasnav.service.jobs.AdvertisementJob;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -75,6 +75,7 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         assertThat(prevCount, equalTo(newCount - 1));
         assertThat(body, is(notNullValue()));
         assertThat(body.getId(), is(notNullValue()));
+        assertThat(body.getCreationDate(), is(notNullValue()));
         AdvertisementEntity advertisement = advertisementRepository.getOne(body.getId());
         assertThat(advertisement, is(notNullValue()));
 
