@@ -169,9 +169,9 @@ public class EventRoomServiceImpl implements EventRoomService {
 	private EventRoomResponse toFullResponse(EventRoomTemplateEntity entity) {
 		BaseUserEntity currentUser = securityService.getCurrentUserOptional().orElse(null);
 		EventRoomResponse response = mapper.toResponse(entity);
-		// following lines need much optimization 
-		response.setCanStart(eventService.hasInfluencerOrEmployeeAccessToEvent(currentUser, entity.getEvent().getId()));
-		response.setEvent(eventService.getEventById(entity.getEvent().getId()));
+		response.setCanStart(eventService.hasInfluencerOrEmployeeAccessToEvent(currentUser, entity.getEvent()));
+		// following line needs much optimization 
+		response.setEvent(eventService.toDto(entity.getEvent()));
 		return response;
 	}
 }

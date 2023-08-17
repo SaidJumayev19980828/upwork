@@ -27,13 +27,13 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.nasnav.dao.ShopRoomTemplateRepository;
 import com.nasnav.dto.response.ShopRoomResponse;
-import com.nasnav.mappers.RoomMapper;
+import com.nasnav.mappers.ShopRoomMapper;
 import com.nasnav.persistence.ShopRoomTemplateEntity;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
 
-@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Room_Api_Test_Data.sql")
+@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Shop_Room_Api_Test_Data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/database_cleanup.sql")
 @NotThreadSafe
 class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
@@ -41,7 +41,7 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private TestRestTemplate template;
 	@Autowired
-	private RoomMapper mapper;
+	private ShopRoomMapper mapper;
 	@Autowired
 	private ShopRoomTemplateRepository roomTemplateRepository;
 
@@ -49,7 +49,7 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	void getRoomsByUserToken() {
 		Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityYeshteryStateEquals1()
 				.stream()
-				.map(mapper::toShopRoomResponse).collect(Collectors.toSet());
+				.map(mapper::toResponse).collect(Collectors.toSet());
 		assertUserRooms("user81", rooms);
 		assertUserRooms("user83", Set.of());
 	}
@@ -87,7 +87,7 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 			var body = res.getBody();
 			Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(orgId)
 					.stream()
-					.map(mapper::toShopRoomResponse).collect(Collectors.toSet());
+					.map(mapper::toResponse).collect(Collectors.toSet());
 			assertEquals(rooms, body);
 		}
 	}
@@ -95,7 +95,7 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	void getSingleRoom() {
 		ShopRoomResponse room = roomTemplateRepository.findById(501L)
-				.map(mapper::toShopRoomResponse).get();
+				.map(mapper::toResponse).get();
 		ResponseEntity<ShopRoomResponse> res = template
 				.getForEntity("/v1/room/shop?shop_id=51",
 						ShopRoomResponse.class);
@@ -230,7 +230,7 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	private void assertRoomResponse(ShopRoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
 			String externalSessionId, String userEmail) {
 		ShopRoomTemplateEntity template = roomTemplateRepository.findByShopId(response.getShop().getId()).get();
-		ShopRoomResponse dbRoom = mapper.toShopRoomResponse(template);
+		ShopRoomResponse dbRoom = mapper.toResponse(template);
 		LocalDateTime dbTime = dbRoom.getSessionCreatedAt();
 		dbRoom.setSessionCreatedAt(null);
 		LocalDateTime responseTime = response.getSessionCreatedAt();

@@ -24,6 +24,7 @@ public interface EventService {
     void updateEvent(EventForRequestDTO dto, Long eventId);
     void deleteEvent(Long eventId, Boolean force);
     void intersetEventForUser(Long eventId);
-
-    boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId); 
+    boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
+    boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
+    EventResponseDto toDto(EventEntity entity);
 }

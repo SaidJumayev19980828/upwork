@@ -234,7 +234,7 @@ public class EventServiceImpl implements EventService{
         return entity;
     }
 
-    private EventResponseDto toDto(EventEntity entity){
+    public EventResponseDto toDto(EventEntity entity){
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
         productFetchDTO.setCheckVariants(false);
         productFetchDTO.setIncludeOutOfStock(true);
@@ -297,6 +297,11 @@ public class EventServiceImpl implements EventService{
             return false;
         }
         EventEntity event = eventRepository.findById(eventId).orElse(null);
+        return hasInfluencerOrEmployeeAccessToEvent(user, event);
+    }
+
+    @Override
+    public boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event) {
         if (event == null) {
             return false;
         }

@@ -4,6 +4,8 @@ DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
+DELETE FROM public.room_sessions;
+DELETE FROM public.room_templates;
 delete from public.event_requests;
 delete from public.event_products;
 delete from public.event_attachments;
@@ -83,8 +85,6 @@ DELETE FROM public.employee_user_otp WHERE user_id in
         (SELECT id FROM public.employee_users WHERE organization_id > 99000);
 DELETE FROM public.yeshtery_user_tokens WHERE yeshtery_user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.room_sessions where template_id in (SELECT id FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999));
-DELETE FROM public.room_templates WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.video_chat_logs WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
