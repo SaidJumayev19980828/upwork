@@ -74,10 +74,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	private  List<AuthPattern> permissions = asList(
 						// //url pattern	-------------------------	Method	------------	Roles
 						patternOf( "/360view/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/room/list_for_user"				,GET				, getAllRoles()),
-						patternOf( "/room/session"					,POST				, setOf(CUSTOMER)),
-						patternOf( "/room/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
-						patternOf( "/room"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/shop/list_for_user"				,GET				, getAllRoles()),
+						patternOf( "/room/shop/session"					,POST				, setOf(CUSTOMER)),
+						patternOf( "/room/shop/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/event/list_for_user"			,GET			, getAllRoles()),
+						patternOf( "/room/event/session"					,POST				, getAllRoles()),
+						patternOf( "/room/event/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/room/event"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/order/confirm"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -191,6 +195,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/queue/accept"					,PUT						,  getNonCustomersRoles()),
 						patternOf( "/queue/reject"					,PUT						,  getNonCustomersRoles()),
 						patternOf( "/queue/logs"					,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/bank/account"					,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/bank/account"					,PUT						,  setOf(NASNAV_ADMIN)),
+						patternOf( "/bank/account/setOpeningBalance",POST						,  setOf(NASNAV_ADMIN)),
+						patternOf( "/bank/account"					,POST						,  getAllRoles()),
+						patternOf( "/bank/transaction/**"		   ,POST						,  getAllRoles()),
+						patternOf( "/bank/account/reservations"		   ,GET						,  getAllRoles()),
+						patternOf( "/bank/account/reservation/**"		   ,GET						,  getAllRoles()),
+						patternOf( "/bank/account/history"		   			,GET					,  getAllRoles()),
+						patternOf( "/bank/account/summary"		   ,GET						,  getAllRoles()),
 						patternOf("/loyalty/points/update"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points"					, GET						, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/list"				, GET						, setOf(CUSTOMER)),
@@ -213,8 +226,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             	asList(
 						patternOf("/callbacks/**")
 					    , patternOf("/360view/**"						, HttpMethod.GET)
-						, patternOf("/room"								, GET)
-						, patternOf("/room/list"							, GET)
+						, patternOf("/room/shop"								, GET)
+						, patternOf("/room/shop/list"						, GET)
+						, patternOf("/room/event"								, GET)
+						, patternOf("/room/event/list"						, GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/recovery/otp-verify")

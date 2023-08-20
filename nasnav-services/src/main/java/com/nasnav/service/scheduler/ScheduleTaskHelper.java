@@ -1,11 +1,14 @@
 package com.nasnav.service.scheduler;
 
 import com.nasnav.persistence.SchedulerTaskEntity;
+import com.nasnav.service.BankAccountService;
 import com.nasnav.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,8 @@ public class ScheduleTaskHelper {
     Map<Long, ScheduledFuture<?>> jobsMap = new HashMap<>();
     @Autowired
     private MailService mailService;
+    @Autowired
+    private BankAccountService bankAccountService;
 
     public ScheduleTaskHelper(TaskScheduler scheduler) {
         this.scheduler = scheduler;
@@ -64,4 +69,11 @@ public class ScheduleTaskHelper {
     void contextRefreshedEvent() {
         // Get all tasks from DB and reschedule them in case of context restarted
     }
+
+    @Scheduled(cron = "@monthly")
+    @Async
+    public void run() {
+        bankAccountService.setAllAccountsOpeningBalance();
+    }
+
 }

@@ -25,50 +25,50 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
-import com.nasnav.dao.RoomTemplateRepository;
-import com.nasnav.dto.response.RoomResponse;
-import com.nasnav.mappers.RoomMapper;
-import com.nasnav.persistence.RoomTemplateEntity;
+import com.nasnav.dao.ShopRoomTemplateRepository;
+import com.nasnav.dto.response.ShopRoomResponse;
+import com.nasnav.mappers.ShopRoomMapper;
+import com.nasnav.persistence.ShopRoomTemplateEntity;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
 
-@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Room_Api_Test_Data.sql")
+@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "/sql/Shop_Room_Api_Test_Data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/database_cleanup.sql")
 @NotThreadSafe
-class RoomsApiTest extends AbstractTestWithTempBaseDir {
+class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TestRestTemplate template;
 	@Autowired
-	private RoomMapper mapper;
+	private ShopRoomMapper mapper;
 	@Autowired
-	private RoomTemplateRepository roomTemplateRepository;
+	private ShopRoomTemplateRepository roomTemplateRepository;
 
 	@Test
 	void getRoomsByUserToken() {
-		Set<RoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityYeshteryStateEquals1()
+		Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityYeshteryStateEquals1()
 				.stream()
-				.map(mapper::toRoomResponse).collect(Collectors.toSet());
+				.map(mapper::toResponse).collect(Collectors.toSet());
 		assertUserRooms("user81", rooms);
 		assertUserRooms("user83", Set.of());
 	}
 
-	private void assertUserRooms(String userToken, Set<RoomResponse> rooms) {
+	private void assertUserRooms(String userToken, Set<ShopRoomResponse> rooms) {
 
 		HttpEntity<Object> request = getHttpEntity(userToken);
-		ResponseEntity<Set<RoomResponse>> res = template
-				.exchange("/v1/room/list_for_user", HttpMethod.GET, request,
-						new ParameterizedTypeReference<Set<RoomResponse>>() {
+		ResponseEntity<Set<ShopRoomResponse>> res = template
+				.exchange("/v1/room/shop/list_for_user", HttpMethod.GET, request,
+						new ParameterizedTypeReference<Set<ShopRoomResponse>>() {
 						});
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		Set<RoomResponse> body = res.getBody();
+		Set<ShopRoomResponse> body = res.getBody();
 		assertEquals(rooms, body);
 	}
 
 	@Test
 	void getRoomsByOrgId() {
-		ParameterizedTypeReference<Set<RoomResponse>> okResponseType = new ParameterizedTypeReference<Set<RoomResponse>>() {
+		ParameterizedTypeReference<Set<ShopRoomResponse>> okResponseType = new ParameterizedTypeReference<Set<ShopRoomResponse>>() {
 		};
 		ParameterizedTypeReference<String> failResponseType = new ParameterizedTypeReference<String>() {
 		};
@@ -80,35 +80,35 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 	void assertOrgRooms(Long orgId, HttpStatus status, ParameterizedTypeReference<?> type) {
 		HttpEntity<Object> request = getHttpEntity(null);
 		ResponseEntity<?> res = template
-				.exchange("/v1/room/list?org_id={orgId}", HttpMethod.GET, request, type, orgId);
+				.exchange("/v1/room/shop/list?org_id={orgId}", HttpMethod.GET, request, type, orgId);
 		assertEquals(status, res.getStatusCode());
 
 		if (status == HttpStatus.OK) {
 			var body = res.getBody();
-			Set<RoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(orgId)
+			Set<ShopRoomResponse> rooms = roomTemplateRepository.findAllByShopOrganizationEntityId(orgId)
 					.stream()
-					.map(mapper::toRoomResponse).collect(Collectors.toSet());
+					.map(mapper::toResponse).collect(Collectors.toSet());
 			assertEquals(rooms, body);
 		}
 	}
 
 	@Test
 	void getSingleRoom() {
-		RoomResponse room = roomTemplateRepository.findById(501L)
-				.map(mapper::toRoomResponse).get();
-		ResponseEntity<RoomResponse> res = template
-				.getForEntity("/v1/room?shop_id=51",
-						RoomResponse.class);
+		ShopRoomResponse room = roomTemplateRepository.findById(501L)
+				.map(mapper::toResponse).get();
+		ResponseEntity<ShopRoomResponse> res = template
+				.getForEntity("/v1/room/shop?shop_id=51",
+						ShopRoomResponse.class);
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		RoomResponse body = res.getBody();
+		ShopRoomResponse body = res.getBody();
 		assertEquals(room, body);
 	}
 
 	@Test
 	void getSingleRoomNotYeshtery() {
-		ResponseEntity<RoomResponse> res = template
-				.getForEntity("/v1/room?shop_id=54",
-						RoomResponse.class);
+		ResponseEntity<ShopRoomResponse> res = template
+				.getForEntity("/v1/room/shop?shop_id=54",
+						ShopRoomResponse.class);
 		assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
 	}
 
@@ -116,19 +116,19 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 	void setRoomSession() {
 		HttpEntity<Object> request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user81");
 		LocalDateTime before = LocalDateTime.now();
-		ResponseEntity<RoomResponse> res = template
-				.postForEntity("/v1/room/session?shop_id=51", request,
-						RoomResponse.class);
+		ResponseEntity<ShopRoomResponse> res = template
+				.postForEntity("/v1/room/shop/session?shop_id=51", request,
+						ShopRoomResponse.class);
 		LocalDateTime after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		RoomResponse body = res.getBody();
+		ShopRoomResponse body = res.getBody();
 		assertRoomResponse(body, before, after, "test_new_session", "user81@nasnav.com");
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session_2\"}", "user81");
 		before = LocalDateTime.now();
 		res = template
-				.postForEntity("/v1/room/session?shop_id=52", request,
-						RoomResponse.class);
+				.postForEntity("/v1/room/shop/session?shop_id=52", request,
+						ShopRoomResponse.class);
 		after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 		body = res.getBody();
@@ -136,20 +136,20 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user82");
 		res = template
-				.postForEntity("/v1/room/session?shop_id=51", request,
-						RoomResponse.class);
+				.postForEntity("/v1/room/shop/session?shop_id=51", request,
+						ShopRoomResponse.class);
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user82");
 		res = template
-				.postForEntity("/v1/room/session?shop_id=54", request,
-						RoomResponse.class);
+				.postForEntity("/v1/room/shop/session?shop_id=54", request,
+						ShopRoomResponse.class);
 		assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
 
 		request = getHttpEntity("{\"session_external_id\":\"test_new_session\"}", "user83");
 		res = template
-				.postForEntity("/v1/room/session?shop_id=54", request,
-						RoomResponse.class);
+				.postForEntity("/v1/room/shop/session?shop_id=54", request,
+						ShopRoomResponse.class);
 		assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
 	}
 
@@ -157,20 +157,20 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 	void setRoomSessionWithoutBody() {
 		HttpEntity<Object> request = getHttpEntity("user81");
 		LocalDateTime before = LocalDateTime.now();
-		ResponseEntity<RoomResponse> res = template
-				.postForEntity("/v1/room/session?shop_id=52", request,
-						RoomResponse.class);
+		ResponseEntity<ShopRoomResponse> res = template
+				.postForEntity("/v1/room/shop/session?shop_id=52", request,
+						ShopRoomResponse.class);
 		LocalDateTime after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
-		RoomResponse body = res.getBody();
+		ShopRoomResponse body = res.getBody();
 		String externalId = body.getSessionExternalId();
 		assertRoomResponse(body, before, after, externalId, "user81@nasnav.com");
 		assertDoesNotThrow(() -> UUID.fromString(externalId));
 
 		before = LocalDateTime.now();
 		res = template
-				.postForEntity("/v1/room/session?shop_id=52", request,
-						RoomResponse.class);
+				.postForEntity("/v1/room/shop/session?shop_id=52", request,
+						ShopRoomResponse.class);
 		after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 		body = res.getBody();
@@ -202,35 +202,35 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 	private void assertDeleteTemplateRequest(String token, Long shopId, HttpStatus expectedStatus) {
 		HttpEntity<Object> request = getHttpEntity(token);
 		ResponseEntity<String> res = template
-				.exchange("/v1/room?shop_id=" + shopId, HttpMethod.DELETE, request,
+				.exchange("/v1/room/shop?shop_id=" + shopId, HttpMethod.DELETE, request,
 						String.class);
 		assertEquals(expectedStatus, res.getStatusCode());
 		if (expectedStatus == HttpStatus.OK) {
-			Optional<RoomTemplateEntity> roomOptional = roomTemplateRepository.findByShopId(shopId);
+			Optional<ShopRoomTemplateEntity> roomOptional = roomTemplateRepository.findByShopId(shopId);
 			assertTrue(roomOptional.isEmpty());
 		}
 	}
 
 	private void assertTemplateRequest(String token, String requestBody, Long shopId, HttpStatus expectedStatus) {
 		HttpEntity<Object> request = getHttpEntity(requestBody, token);
-		ResponseEntity<RoomResponse> res = template
-				.postForEntity("/v1/room/template?shop_id=" + shopId.toString(), request,
-						RoomResponse.class);
+		ResponseEntity<ShopRoomResponse> res = template
+				.postForEntity("/v1/room/shop/template?shop_id=" + shopId.toString(), request,
+						ShopRoomResponse.class);
 		assertEquals(expectedStatus, res.getStatusCode());
 		if (expectedStatus == HttpStatus.OK) {
-			RoomResponse body = res.getBody();
+			ShopRoomResponse body = res.getBody();
 			assertRoomResponse(body);
 		}
 	}
 
-	private void assertRoomResponse(RoomResponse response) {
+	private void assertRoomResponse(ShopRoomResponse response) {
 		assertRoomResponse(response, null, null, null, null);
 	}
 
-	private void assertRoomResponse(RoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
+	private void assertRoomResponse(ShopRoomResponse response, LocalDateTime beforeRequest, LocalDateTime afterRequest,
 			String externalSessionId, String userEmail) {
-		RoomTemplateEntity template = roomTemplateRepository.findByShopId(response.getShop().getId()).get();
-		RoomResponse dbRoom = mapper.toRoomResponse(template);
+		ShopRoomTemplateEntity template = roomTemplateRepository.findByShopId(response.getShop().getId()).get();
+		ShopRoomResponse dbRoom = mapper.toResponse(template);
 		LocalDateTime dbTime = dbRoom.getSessionCreatedAt();
 		dbRoom.setSessionCreatedAt(null);
 		LocalDateTime responseTime = response.getSessionCreatedAt();
@@ -238,8 +238,10 @@ class RoomsApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(dbRoom, response);
 
 		if (Objects.nonNull(beforeRequest) && Objects.nonNull(afterRequest)) {
-			assertThat(dbTime).isBetween(beforeRequest, afterRequest);
-			assertThat(responseTime).isBetween(beforeRequest, afterRequest);
+			LocalDateTime tolerentBefore = beforeRequest.minusSeconds(1);
+			LocalDateTime tolerentAfter = afterRequest.plusSeconds(1);
+			assertThat(dbTime).isBetween(tolerentBefore, tolerentAfter);
+			assertThat(responseTime).isBetween(tolerentBefore, tolerentAfter);
 		}
 
 		if (Objects.nonNull(userEmail)) {

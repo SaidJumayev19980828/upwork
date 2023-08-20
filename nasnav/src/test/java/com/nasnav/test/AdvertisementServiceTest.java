@@ -4,6 +4,8 @@ import com.nasnav.dao.AdvertisementRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.response.AdvertisementDTO;
+import com.nasnav.mappers.AdvertisementMapper;
+import com.nasnav.mappers.AdvertisementMapperImpl;
 import com.nasnav.persistence.AdvertisementEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.AdvertisementService;
@@ -36,6 +38,8 @@ class AdvertisementServiceTest {
     private ProductRepository productRepository;
     @Mock
     private ProductImageService imageService;
+    private AdvertisementMapper advertisementMapper = new AdvertisementMapperImpl();
+
     private final PageImpl<AdvertisementEntity> advertisementEntities = new PageImpl<>(List.of(createAdvertisementEntity()));
     private final String imageUrl = "random-image-url";
     private final AdvertisementEntity advertisementEntity = createAdvertisementEntity();
@@ -43,7 +47,7 @@ class AdvertisementServiceTest {
 
     @BeforeEach
     void reInit() {
-        this.advertisementService = new AdvertisementServiceImpl(advertisementRepository, imageService, productRepository);
+        this.advertisementService = new AdvertisementServiceImpl(advertisementRepository, imageService, productRepository, advertisementMapper);
         Mockito.when(advertisementRepository.findAll(any(PageRequest.class))).thenReturn(advertisementEntities);
         Mockito.when(advertisementRepository.save(any(AdvertisementEntity.class))).thenReturn(advertisementEntity);
         Mockito.when(productRepository.getById(any(Long.class))).thenReturn(productEntity);
