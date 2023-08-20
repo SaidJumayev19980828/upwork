@@ -246,14 +246,4 @@ public class UserController {
             throws BusinessException, ImportProductException {
         return this.userService.updateUserAvatar(file);
     }
-
-
-    @GetMapping(value = "list-active-employee", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getActiveEmployee(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                      @RequestParam (value = "org_id") Long orgId,
-                                                           @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                            @RequestParam(required = false, defaultValue = "10") Integer count) {
-        return employeeUserService.getActiveEmployee(orgId, start, count);
-    }
-
 }

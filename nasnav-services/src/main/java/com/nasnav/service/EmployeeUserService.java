@@ -24,6 +24,4 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	void sendEmailRecovery(String email);
 
 	public UserApiResponse activateUserAccount(ActivateOtpDto activateOtpDto);
-
-	List<UserRepresentationObject> getActiveEmployee(Long orgId, Integer start, Integer count);
 }

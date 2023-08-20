@@ -1,7 +1,6 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.EmployeeUserEntity;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,8 +39,6 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	EmployeeUserEntity getById(Long id);
 
 	List<EmployeeUserEntity> findByOrganizationId(Long orgId);
-
-	List<EmployeeUserEntity> findByOrganizationIdAndUserStatus(Long orgId,Integer userStatus, Pageable pageable);
 
 	List<EmployeeUserEntity> findByShopId(Long shopId);
 

@@ -1331,14 +1331,4 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 		assertTrue(exists);
 	}
 
-	@Test
-	public void testGetAllActiveEmployee() {
-		ResponseEntity<List<UserRepresentationObject>> response = template.exchange("/user/list-active-employee?org_id=99001", GET, null, new ParameterizedTypeReference<>() {
-        });
-		assertEquals(200, response.getStatusCode().value());
-		List<UserRepresentationObject> body = response.getBody();
-		MatcherAssert.assertThat(body, notNullValue());
-		MatcherAssert.assertThat(body.size(), equalTo(3));
-	}
-
 }

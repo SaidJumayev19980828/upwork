@@ -35,7 +35,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +42,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
@@ -469,14 +467,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		return securityService.login(user, false);
 	}
 
-    @Override
-    public List<UserRepresentationObject> getActiveEmployee(Long orgId, Integer start, Integer count) {
-		PageRequest page = getQueryPage(start, count);
-		List<EmployeeUserEntity> byOrganizationId = employeeUserRepository.findByOrganizationIdAndUserStatus(orgId, ACTIVATED.getValue(), page);
-		return byOrganizationId.stream().map(EmployeeUserEntity::getRepresentation).collect(toList());
-    }
-
-    private void activateUserInDB(EmployeeUserEntity user) {
+	private void activateUserInDB(EmployeeUserEntity user) {
 		user.setResetPasswordToken(null);
 		user.setUserStatus(ACTIVATED.getValue());
 		employeeUserRepository.save(user);
