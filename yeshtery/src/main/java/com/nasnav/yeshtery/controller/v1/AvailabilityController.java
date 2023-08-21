@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.AvailabilityDTO;
 import com.nasnav.service.AvailabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping(value = AvailabilityController.API_PATH, produces = APPLICATION_JSON_VALUE)
@@ -52,6 +54,20 @@ public class AvailabilityController {
     public List<AvailabilityDTO> getAllFreeAvailabilitiesByOrg(@RequestHeader(TOKEN_HEADER) String userToken,
             @PathVariable long orgId) {
         return availabilityService.getAllFreeAvailabilitiesByOrg(orgId);
+    }
+
+    @GetMapping(value = "/org/{orgId}/{employeeId}")
+    public List<AvailabilityDTO> getAllFreeAvailabilitiesByOrgAndEmployee(@RequestHeader(TOKEN_HEADER) String userToken,
+                                                                          @PathVariable long orgId,
+                                                                          @PathVariable long employeeId) {
+        return availabilityService.getAllFreeAvailabilitiesByOrgAndEmployee(orgId, employeeId);
+    }
+
+    @GetMapping(value = "/employee/slots")
+    public Set<UserRepresentationObject> getAllEmployeesWithOrWithoutSlotsByOrg(@RequestHeader(TOKEN_HEADER) String userToken,
+                                                                                @RequestParam long orgId,
+                                                                                @RequestParam boolean availableSlots ){
+        return availabilityService.getAllEmployeesWithOrWithoutSlotsByOrg(orgId, availableSlots);
     }
 
     @GetMapping(value = "/employee")

@@ -237,6 +237,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         availabilityDTO.setEndsAt(entity.getEndsAt());
         availabilityDTO.setOrganizationId(entity.getOrganization().getId());
         availabilityDTO.setPeriod(Duration.between(entity.getStartsAt(),entity.getEndsAt()).toMinutes());
+        availabilityDTO.setEmployee(entity.getEmployeeUser().getId());
         if(entity.getShop() != null)
             availabilityDTO.setShopId(entity.getShop().getId());
         return availabilityDTO;
