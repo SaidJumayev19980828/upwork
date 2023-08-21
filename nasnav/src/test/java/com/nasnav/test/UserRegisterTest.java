@@ -301,6 +301,20 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				UserApiResponse.class);
 	}
 
+	private void setAndAssertNotificationToken(String userToken, String sentNotificationToken) {
+			HttpEntity<?> request = getHttpEntity(sentNotificationToken, userToken);
+		ResponseEntity<Void> response = template.postForEntity("/user/notification-token", request, Void.class);
+		assertEquals(OK, response.getStatusCode());
+		String repoNotificationToken = userTokenRepo.findByToken(userToken).getNotificationToken();
+		assertEquals(sentNotificationToken, repoNotificationToken);
+	}
+
+	@Test
+	public void updateNotificationToken() {
+		setAndAssertNotificationToken("77", "Notification:Token");
+		setAndAssertNotificationToken("101112", "Other:Notification:Token");
+	}
+
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
