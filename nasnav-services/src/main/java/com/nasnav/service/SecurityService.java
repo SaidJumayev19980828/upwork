@@ -82,4 +82,6 @@ public interface SecurityService {
     boolean currentEmployeeHasOrgRolesOrHigher();
 
     boolean currentEmployeeHasNasnavRoles();
+
+    void setCurrentUserNotificationToken(String userToken, String notificationToken);
 }
