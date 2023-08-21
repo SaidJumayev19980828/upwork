@@ -663,6 +663,13 @@ public class SecurityServiceImpl implements SecurityService {
 	public boolean currentEmployeeHasNasnavRoles() {
 		return helper.employeeHasRoleOrHigher((EmployeeUserEntity) getCurrentUser(), Roles.NASNAV_EMPLOYEE);
 	}
+
+	@Override
+	public void setCurrentUserNotificationToken(String userToken, String notificationToken) {
+		UserTokensEntity tokenEntity = userTokenRepo.findByToken(userToken);
+		tokenEntity.setNotificationToken(notificationToken);
+		userTokenRepo.save(tokenEntity);
+	}
 }
 
 

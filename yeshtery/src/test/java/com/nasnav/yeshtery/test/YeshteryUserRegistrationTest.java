@@ -718,6 +718,20 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    private void setAndAssertNotificationToken(String userToken, String sentNotificationToken) {
+        HttpEntity<?> request = getHttpEntity(sentNotificationToken, userToken);
+        ResponseEntity<Void> response = template.postForEntity(API_PATH + "/user/notification-token", request, Void.class);
+        assertEquals(OK, response.getStatusCode());
+        String repoNotificationToken = userTokenRepo.findByToken(userToken).getNotificationToken();
+        assertEquals(sentNotificationToken, repoNotificationToken);
+    }
+
+    @Test
+    public void updateNotificationToken() {
+        setAndAssertNotificationToken("77", "Notification:Token");
+        setAndAssertNotificationToken("101112", "Other:Notification:Token");
+    }
+
     @Test
     public void updateSelfUserInvalidDataTest() {
         // update self data test success

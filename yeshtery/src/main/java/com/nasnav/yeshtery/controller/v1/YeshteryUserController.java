@@ -19,6 +19,7 @@ import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
 import com.nasnav.service.yeshtery.YeshteryUserService;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -173,6 +174,12 @@ public class YeshteryUserController {
             return employeeUserService.updateEmployeeUser(json);
         }
         return userService.updateUser(json);
+    }
+
+    @PostMapping("notification-token")
+    public void updateNotificationToken(@RequestHeader(name = "User-Token") String userToken,
+            @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
+        securityService.setCurrentUserNotificationToken(userToken, notificationToken);
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)

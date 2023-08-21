@@ -18,6 +18,7 @@ import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -125,6 +126,12 @@ public class UserController {
             return this.employeeUserService.updateEmployeeUser(json);
         }
         return this.userService.updateUser(json);
+    }
+
+    @PostMapping("notification-token")
+    public void updateNotificationToken(@RequestHeader(name = "User-Token") String userToken,
+            @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
+        securityService.setCurrentUserNotificationToken(userToken, notificationToken);
     }
 
     @GetMapping(value = "info", produces = APPLICATION_JSON_VALUE)
