@@ -23,7 +23,7 @@ public class ProductImagesEntity implements BaseEntity{
     @JsonIgnore
     private ProductEntity productEntity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "variant_id", referencedColumnName = "id")
     @JsonIgnore
     private ProductVariantsEntity productVariantsEntity;
