@@ -4,7 +4,6 @@ import com.nasnav.dao.EmployeeUserHeartBeatsLogsRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EmployeeUserHeartBeatsLogsEntity;
 import com.nasnav.service.EmployeeUserHeartBeatsLogsService;
 import com.nasnav.service.SecurityService;
 import lombok.AllArgsConstructor;
@@ -29,11 +28,7 @@ public class EmployeeUserHeartBeatsLogsServiceImpl implements EmployeeUserHeartB
     public void log() {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         if (currentUser != null) {
-            EmployeeUserHeartBeatsLogsEntity entity = new EmployeeUserHeartBeatsLogsEntity();
-            EmployeeUserEntity employeeUser = new EmployeeUserEntity();
-            employeeUser.setId(currentUser.getId());
-            entity.setEmployeeUserEntity(employeeUser);
-            employeeUserHeartBeatsLogsRepository.save(entity);
+            employeeUserHeartBeatsLogsRepository.save(LocalDateTime.now(), currentUser.getId());
         }
     }
 
