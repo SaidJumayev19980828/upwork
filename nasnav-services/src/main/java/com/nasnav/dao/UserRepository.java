@@ -61,9 +61,11 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
 
+	@Modifying
 	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
 	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
 
+	@Modifying
 	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
 	void updateUserTier(@Param("tierId") Long tierId, @Param("userId") Long userId);
 
