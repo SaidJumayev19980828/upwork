@@ -96,6 +96,12 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private PackageRegisteredEntity packageRegistration;
 
+    @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    @JsonIgnore
+    private BankAccountEntity bankAccount;
+
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
@@ -162,6 +168,8 @@ public class OrganizationEntity implements BaseEntity {
                 obj.setInfo(json.toMap());
             } catch (Exception e) {}
         }
+        if(this.bankAccount != null)
+            obj.setBankAccountId(this.bankAccount.getId());
         return obj;
     }
 
