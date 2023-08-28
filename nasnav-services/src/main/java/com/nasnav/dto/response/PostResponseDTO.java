@@ -8,6 +8,7 @@ import com.nasnav.enumerations.PostType;
 import com.nasnav.persistence.PostAttachmentsEntity;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -24,4 +25,5 @@ public class PostResponseDTO {
     private Long likesCount;
     private Long clicksCount;
     private Boolean isLiked;
+    private LocalDateTime createdAt;
 }
