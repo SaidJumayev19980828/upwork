@@ -6,7 +6,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
-import org.springframework.transaction.annotation.Transactional;
+import com.nasnav.persistence.ProductEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -119,4 +119,5 @@ ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessExceptio
    ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
 
 
+  ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean b);
 }

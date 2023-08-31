@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -52,6 +51,8 @@ public class PostServiceImpl implements PostService {
     private UserRepository userRepository;
     @Autowired
     private FollowerServcie followerServcie;
+    @Autowired
+    private AdvertisementRepository advertisementRepository;
 
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
@@ -197,11 +198,6 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    @Override
-    public PageImpl<PostEntity> getAllPostsWithinAdvertisement(Integer start, Integer count) {
-        PageRequest page = getQueryPage(start, count);
-        return postRepository.findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime.now(), LocalDateTime.now(), page);
-    }
 
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
         List<ProductEntity> products = new ArrayList<>();
@@ -239,6 +235,9 @@ public class PostServiceImpl implements PostService {
             dto.getAttachments().forEach(o -> {
                 o.setPost(entity);
             });
+        }
+        if (dto.getAdvertisementId() != null) {
+            entity.setAdvertisement(advertisementRepository.getOne(dto.getAdvertisementId()));
         }
 
         return entity;

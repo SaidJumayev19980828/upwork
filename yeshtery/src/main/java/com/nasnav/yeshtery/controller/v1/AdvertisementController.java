@@ -1,4 +1,4 @@
-package com.nasnav.controller;
+package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.service.AdvertisementService;
@@ -15,12 +15,12 @@ public class AdvertisementController {
     @Autowired
     private AdvertisementService advertisementService;
 
-    @GetMapping("")
+    @GetMapping
     public PageImpl<AdvertisementDTO> getAllAdvertisements(@RequestHeader(name = "User-Token", required = false) String token,
                                                            @RequestParam(required = false, defaultValue = "0") Integer start,
                                                            @RequestParam(required = false, defaultValue = "10") Integer count,
                                                            @RequestParam(required = false) String orgId) {
-        return advertisementService.findAllAdvertisements(orgId, start, count);
+        return advertisementService.findAllAdvertisements(orgId,start, count);
     }
 
     @GetMapping("/{id}")
@@ -31,12 +31,12 @@ public class AdvertisementController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAdvertisementsById(@RequestHeader(name = "User-Token", required = false) String token,
-                                                         @PathVariable("id") Long id) {
-        advertisementService.deleteAdvertisementById(id);
+                                                                     @PathVariable("id") Long id) {
+         advertisementService.deleteAdvertisementById(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("")
+    @PostMapping
     public AdvertisementDTO createAdvertisement(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @Validated @RequestBody AdvertisementDTO advertisementDTO) {
         return advertisementService.create(advertisementDTO);

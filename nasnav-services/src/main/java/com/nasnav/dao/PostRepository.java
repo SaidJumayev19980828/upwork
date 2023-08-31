@@ -15,5 +15,4 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     PageImpl<PostEntity> getAllByOrganization_IdAndType(long orgId, int type, Pageable page);
     PageImpl<PostEntity> getAllByUserInAndStatus(List<UserEntity> users, int status, Pageable page);
     Long countAllByUser_IdAndStatus(Long userId, int status);
-    PageImpl<PostEntity> findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime from, LocalDateTime to, Pageable pageable);
 }

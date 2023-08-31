@@ -60,6 +60,7 @@ delete from public.bank_inside_transactions;
 delete from public.bank_outside_transactions;
 delete from public.bank_reservations;
 delete from public.bank_accounts;
+DELETE FROM public.advertisement_product;
 DELETE FROM public.advertisements;
 DELETE FROM public.user_followers;
 DELETE FROM public.return_shipment where shipping_service_id = 'TEST';
