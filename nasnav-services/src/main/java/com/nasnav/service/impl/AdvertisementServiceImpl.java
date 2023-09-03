@@ -9,6 +9,7 @@ import com.nasnav.mappers.AdvertisementMapper;
 import com.nasnav.mappers.AdvertisementProductCollectionMapper;
 import com.nasnav.mappers.BrandsMapper;
 import com.nasnav.persistence.AdvertisementEntity;
+import com.nasnav.persistence.AdvertisementProductEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.AdvertisementProductService;
 import com.nasnav.service.AdvertisementService;
@@ -24,6 +25,7 @@ import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -83,6 +85,11 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Override
     public void deleteAdvertisementById(Long id) {
         advertisementRepository.deleteById(id);
+    }
+
+    @Override
+    public List<AdvertisementProductEntity> findAdvertisementProducts(Long advertisementId, Set<Long> productsInPost) {
+        return advertisementRepository.findAdvertisementProducts(advertisementId, productsInPost);
     }
 
     private AdvertisementDTO toDto(AdvertisementEntity entity) {
