@@ -3,6 +3,7 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(2,'United Stat
 --inserting organizations
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'fortune');
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, p_name) VALUES (99003, 'organization_3', 'org');
 
 --inserting countries/ cities/ areas/ sub-areas
 INSERT INTO public.cities(id, country_id, name) values(100001, 1,'Cairo');
