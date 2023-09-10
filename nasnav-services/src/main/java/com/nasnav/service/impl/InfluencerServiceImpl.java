@@ -337,13 +337,8 @@ public class InfluencerServiceImpl implements InfluencerService {
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(), 0));
-        if(entity.getInfluencer() != null){
-            if(entity.getInfluencer().getUser() != null){
-                dto.setInfluencer(entity.getInfluencer().getUser().getRepresentation());
-            }
-            else {
-                dto.setInfluencer(entity.getInfluencer().getEmployeeUser().getRepresentation());
-            }
+        if (entity.getInfluencer() != null) {
+            dto.setInfluencer(toInfluencerDto(entity.getInfluencer()));
         }
         dto.setVisible(entity.getVisible());
         dto.setAttachments(entity.getAttachments());
@@ -351,10 +346,11 @@ public class InfluencerServiceImpl implements InfluencerService {
         dto.setName(entity.getName());
         dto.setProducts(productDetailsDTOS);
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
+        dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
         return dto;
     }
 
-    private InfluencerDTO toInfluencerDto(InfluencerEntity entity) {
+    public InfluencerDTO toInfluencerDto(InfluencerEntity entity) {
         InfluencerDTO dto = new InfluencerDTO();
         dto.setId(entity.getId());
         if(entity.getEmployeeUser() != null){

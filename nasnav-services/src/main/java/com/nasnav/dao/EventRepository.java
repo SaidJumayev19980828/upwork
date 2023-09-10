@@ -4,6 +4,7 @@ import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
-public interface EventRepository extends CrudRepository<EventEntity, Long> {
+public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaSpecificationExecutor<EventEntity> {
     @Query("select event from EventEntity event where event.organization.id =:orgId and (:status is null or event.status =:status)")
     PageImpl<EventEntity> getAllEventForOrg(Long orgId, Integer status, Pageable page);
     @Query("select event from EventEntity event where event.organization.id =:orgId and event.visible = true and (:status is null or event.status =:status)")
