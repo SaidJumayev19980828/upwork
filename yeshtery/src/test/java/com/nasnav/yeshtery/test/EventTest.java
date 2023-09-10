@@ -4,6 +4,8 @@ import com.nasnav.dao.EventLogsRepository;
 import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRequestsRepository;
 import com.nasnav.dao.InfluencerRepository;
+import com.nasnav.dto.response.EventResponseDto;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.EventAttachmentsEntity;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.EventRequestsEntity;
@@ -17,10 +19,15 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -95,6 +102,17 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         assertTrue(entity.get().getVisible());
         assertNotNull(entity.get().getAttachments());
         assertNotNull(entity.get().getProducts());
+    }
+
+    @Test
+    public void getAllEvents(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<RestResponsePage<EventResponseDto>> responseType = new ParameterizedTypeReference<>() {
+        };
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
+        LocalDateTime toDate = LocalDateTime.now().plusDays(15);
+        ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
