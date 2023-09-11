@@ -392,8 +392,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                 user = commonNasnavUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
             }
+            return getUserRepresentationWithUserRoles(user);
         }
-        return getUserRepresentationWithUserRoles(user);
     }
 
     @Override
@@ -628,6 +628,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
         userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
         userRepObj.setIsInfluencer(influencerRepository.existsByUser_IdOrEmployeeUser_Id(user.getId(),user.getId()));
         userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
+        userRepObj.setDateOfBirth(user.getDateOfBirth());
+
         return userRepObj;
     }
 
