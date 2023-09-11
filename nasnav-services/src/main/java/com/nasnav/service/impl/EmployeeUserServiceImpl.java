@@ -278,7 +278,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		EmployeeUserEntity updateUser =
 				ofNullable(updatedUserId)
 				.flatMap(employeeUserRepository::findById)
-				.orElse(currentUser);//TODO: ASK
+				.orElse(currentUser);
 
 		List<String> updatedUserNewRoles = extractRoles(employeeUserJson);
 		if (!updatedUserNewRoles.isEmpty()) {
