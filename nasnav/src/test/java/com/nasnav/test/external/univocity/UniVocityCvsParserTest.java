@@ -33,10 +33,8 @@ public class UniVocityCvsParserTest {
 		
 		BeanListProcessor<CSVRowBean> rowProcessor = new BeanListProcessor<CSVRowBean>(CSVRowBean.class);
 		rowProcessor.setColumnMapper(mapper);
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
+
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
@@ -60,10 +58,8 @@ public class UniVocityCvsParserTest {
 		
 		BeanListProcessor<CSVRowBeanChild> rowProcessor = new BeanListProcessor<CSVRowBeanChild>(CSVRowBeanChild.class);
 		rowProcessor.setColumnMapper(mapper);
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
+
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
@@ -87,11 +83,9 @@ public class UniVocityCvsParserTest {
 		
 		BeanListProcessor<CSVRowBean> rowProcessor = new BeanListProcessor<CSVRowBean>(CSVRowBean.class);
 		rowProcessor.setColumnMapper(mapper);
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
-		
+
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
+
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
 		String[] headers = parser.getContext().parsedHeaders();
@@ -116,11 +110,9 @@ public class UniVocityCvsParserTest {
 		BeanListProcessor<CSVRowBean> rowProcessor = new BeanListProcessor<CSVRowBean>(CSVRowBean.class);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
-		
+
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
+
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));		
 	}
@@ -137,9 +129,7 @@ public class UniVocityCvsParserTest {
 		BeanListProcessor<CSVRowBean> rowProcessor = new BeanListProcessor<CSVRowBean>(CSVRowBean.class);
 		rowProcessor.setColumnMapper(mapper);
 		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
@@ -153,7 +143,13 @@ public class UniVocityCvsParserTest {
 	}
 
 
-
+	private CsvParserSettings createCsvParserSettings(BeanListProcessor<?> rowProcessor) {
+		CsvParserSettings settings = new CsvParserSettings();
+		settings.setLineSeparatorDetectionEnabled(true);
+		settings.setHeaderExtractionEnabled(true);
+		settings.setProcessor(rowProcessor);
+		return settings;
+	}
 
 
 
@@ -177,10 +173,8 @@ public class UniVocityCvsParserTest {
 		
 		BeanListProcessor<CSVRowBean> rowProcessor = new BeanListProcessor<CSVRowBean>(CSVRowBean.class);
 		rowProcessor.setColumnMapper(mapper);
-		
-		CsvParserSettings settings = new CsvParserSettings();
-		settings.setHeaderExtractionEnabled(true);
-		settings.setProcessor(rowProcessor);
+
+		CsvParserSettings settings = createCsvParserSettings(rowProcessor);
 		settings.setAutoClosingEnabled(true);
 		settings.setProcessorErrorHandler(new RowProcessorErrorHandler() {
 			@Override

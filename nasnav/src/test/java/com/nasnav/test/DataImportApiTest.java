@@ -3,12 +3,12 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -17,16 +17,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.jdbc.Sql;
@@ -65,14 +59,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class DataImportApiTest {
+public class DataImportApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
 
@@ -495,7 +485,7 @@ public class DataImportApiTest {
 	
 	
 	
-	
+	// not sure why the "invalid" name
 	@Test
 	public void uploadProductInvalidCSV() throws IOException, Exception {
 		var importProperties = createDataImportProperties();
@@ -917,7 +907,7 @@ public class DataImportApiTest {
 		var after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);         
 
-		//assertDataSavedWithoutUpdatingProductFeatures();
+		assertDataSavedWithoutUpdatingProductFeatures();
 
 		var report = readImportReport(result);
         assertEquals(1, report.getUpdatedProducts().size());
@@ -2083,7 +2073,7 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("squishy") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands( setOf(101L) );
-		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setFeatureSpecs(Set.of(new JSONObject("{}")));
 		data.setExtraAttributes( emptySet());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));

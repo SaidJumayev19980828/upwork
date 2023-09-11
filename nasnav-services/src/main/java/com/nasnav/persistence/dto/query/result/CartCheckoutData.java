@@ -1,11 +1,13 @@
 package com.nasnav.persistence.dto.query.result;
 
+import com.nasnav.dto.AddonDetailsDTO;
 import com.nasnav.persistence.AddressesEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -25,4 +27,9 @@ public class CartCheckoutData {
     private Long organizationId;
     private BigDecimal discount;
     private BigDecimal weight;
+    private BigDecimal addonsPrice;
+    List<AddonDetailsDTO> addons;
+    private String specialOrder;
+    
+    
 }

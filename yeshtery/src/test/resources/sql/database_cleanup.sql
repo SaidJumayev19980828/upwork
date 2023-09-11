@@ -4,9 +4,19 @@ DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99
 DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
+DELETE FROM public.room_sessions;
+DELETE FROM public.room_templates;
+delete from public.event_requests;
+delete from public.event_products;
+delete from public.event_attachments;
+delete from public.event_logs;
+DELETE FROM public.EVENTS;
+delete from public.influencer_categories;
+delete from public.influencers;
 DELETE FROM public.api_logs WHERE organization_id between 99000 AND 99999;
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.package_registered WHERE org_id > 99000;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shipment where id IN (
@@ -52,6 +62,8 @@ DELETE FROM public.units;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
 DELETE FROM public.variant_feature_values WHERE feature_id BETWEEN 234 AND 240;
 DELETE FROM public.product_features where organization_id between 99000 and 99999;
+DELETE FROM public.scheduler_tasks;
+DELETE FROM public.availabilities;
 DELETE FROM public.product_images WHERE
         product_id IN (SELECT id from public.products where organization_id between 99000 and 99999)
                                      or variant_id in (SELECT id FROM public.product_variants WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999));
@@ -64,10 +76,16 @@ DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
-                                  or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
+                                  or employee_user_id in (select id from employee_users WHERE organization_id > 99000);
 DELETE FROM public.loyalty_gift WHERE user_from_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.user_charity WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.yeshtery_user_otp WHERE user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.user_otp WHERE user_id in (SELECT id FROM public.users WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.employee_user_otp WHERE user_id in
+        (SELECT id FROM public.employee_users WHERE organization_id > 99000);
+DELETE FROM public.yeshtery_user_tokens WHERE yeshtery_user_id in (SELECT id FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.yeshtery_users WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.video_chat_logs WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
@@ -79,8 +97,9 @@ DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.loyalty_point_config WHERE  organization_id between 99000 and 99999;
+DELETE FROM public.loyalty_pins WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.addresses where (id between 12300001 and 12300100) or address_line_1 = '630f3256-59bb-4b87-9600-60e64d028d68';
+DELETE FROM public.addresses;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges
 WHERE child_id IN (
@@ -112,4 +131,7 @@ DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
+
+DELETE FROM public.services_registered_in_package;
+DELETE FROM public.package WHERE id > 99000;
 delete from public.loyalty_point_types where id between  31001 and 31999;

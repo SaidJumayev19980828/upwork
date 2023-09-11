@@ -52,8 +52,8 @@ public class VideoChatLogEntity implements BaseEntity {
     @ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "shop_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -72,17 +72,23 @@ public class VideoChatLogEntity implements BaseEntity {
         var obj = new VideoChatLogRepresentationObject();
         obj.setId(getId());
         obj.setName(name);
+        obj.setOrganizationId(organization.getId());
         obj.setOrganizationName(organization.getName());
         if(assignedTo != null) {
+            obj.setAssignedToId(assignedTo.getId());
             obj.setAssignedToName(assignedTo.getName());
         }
         if(getShop() != null) {
             obj.setShopId(getShop().getId());
+            obj.setShopName(getShop().getName());
         }
+        obj.setUserId(user.getId());
         obj.setUserName(user.getName());
+        obj.setUserEmail(user.getEmail());
         obj.setIsActive(isActive);
         obj.setDescription(description);
         obj.setCreatedAt(getCreatedAt());
+        obj.setEndedAt(endedAt);
 
         VideoChatStatus
                 .getVideoChatState(status)

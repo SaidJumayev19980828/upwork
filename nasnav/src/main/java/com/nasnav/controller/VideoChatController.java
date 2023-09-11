@@ -1,12 +1,12 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.VideoChatLogRepresentationObject;
+import com.nasnav.request.VideoChatSearchParam;
+import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.VideoChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -19,17 +19,17 @@ public class VideoChatController {
     private VideoChatService videoChatService;
 
     @GetMapping(value = "/sessions", produces = APPLICATION_JSON_VALUE)
-    public List<VideoChatLogRepresentationObject> getOrgSessions(@RequestHeader(name = "User-Token") String userToken,
-                                                                 @RequestParam(name = "org_id") Long orgId) {
-      return videoChatService.getOrgSessions(orgId);
+    public VideoChatListResponse getOrgSessions(@RequestHeader(name = "User-Token") String userToken, VideoChatSearchParam params) {
+      return videoChatService.getOrgSessions(params);
     }
 
     @PostMapping(value = "/session", produces = APPLICATION_JSON_VALUE)
     public VideoChatResponse createOrJoinSession(@RequestHeader(name = "User-Token") String userToken,
                                          @RequestParam(name = "session_name", required = false) String sessionName,
+                                         @RequestParam(name = "force", required = false, defaultValue = "false") Boolean force,
                                          @RequestParam(name = "org_id", required = false) Long orgId,
                                          @RequestParam(name = "shop_id", required = false) Long shopId){
-        return videoChatService.createOrJoinSession(sessionName, orgId, shopId);
+        return videoChatService.createOrJoinSession(sessionName, force, orgId, shopId);
     }
 
     @PostMapping(value = "/leave")

@@ -4,6 +4,8 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.service.BrandService;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -12,10 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
@@ -37,10 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.DELETE;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class BrandManagmentTest {
+public class BrandManagmentTest extends AbstractTestWithTempBaseDir {
 
     @Value("classpath:sql/Organization_Test_Data_Insert.sql")
     private Resource brandsDataInsert;

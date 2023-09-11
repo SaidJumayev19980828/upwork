@@ -2,22 +2,22 @@ package com.nasnav.test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.Product360ShopsRepository;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -32,13 +32,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql", "/sql/Shop_360_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-public class ShopThreeSixtyTest {
+public class ShopThreeSixtyTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private TestRestTemplate template;
@@ -193,5 +190,12 @@ public class ShopThreeSixtyTest {
         JSONObject object = new JSONObject(response.getBody());
         List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
         assertEquals(1, products.size());
+    }
+
+    @Test
+    public void getShop() {
+        var response = template.getForEntity("/360view/shop?shop_id=501", ShopRepresentationObject.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(Long.valueOf(99001), response.getBody().getOrgId());
     }
 }

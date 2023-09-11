@@ -79,6 +79,9 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
     public final com.querydsl.sql.ForeignKey<QProductsRelated> _productsRelatedRelatedProductIdFkey = createInvForeignKey(id, "related_product_id");
 
     public final com.querydsl.sql.ForeignKey<QShop360Products> _shop360ProductsProductIdFkey = createInvForeignKey(id, "product_id");
+    
+    public final com.querydsl.sql.ForeignKey<QProductAddons> _productAddonsProductIdFkey = createInvForeignKey(id, "product_id");
+
 
     public QProducts(String variable) {
         super(QProducts.class, forVariable(variable), "public", "products");

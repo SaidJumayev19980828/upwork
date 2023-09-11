@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.model.IdAndNamePair;
@@ -20,7 +21,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     List<ProductEntity> findByOrganizationId(Long organizationId);
 
-    List<ProductEntity> findByOrganizationIdAndProductType(Long orgId, Integer type);
+    @Query("select p from ProductEntity p left join p.productVariants v " +
+            "where p.removed = 0 and v.removed = 0 and p.organizationId = :orgId and p.productType = :type")
+    List<ProductEntity> findEmptyProductsByOrganizationIdAndProductType(@Param("orgId") Long orgId,
+                                                           @Param("type") Integer type);
 
     List<ProductEntity> findByIdIn(List<Long> ids);
     List<ProductEntity> findByIdInOrderByIdAsc(List<Long> ids);
@@ -49,11 +53,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " and ( (org.yeshteryState in (1)) OR :allowAll = true )")
     Optional<ProductEntity> findByProductId(@Param("id") Long id, @Param("allowAll") Boolean allowAll);
 
-    @Query("select p from ProductEntity p " +
+    @Query("select distinct p.id from ProductEntity p " +
             " LEFT JOIN OrganizationEntity org on p.organizationId = org.id " +
-            " where p.id = :id and p.productType in (0,1) " +
-            " and ( (org.yeshteryState in (1)) OR :allowAll = true )")
-    ProductEntity findProductDataById(@Param("id") Long id, @Param("allowAll") Boolean allowAll);
+            " where p.brand.id = :id and p.removed = 0")
+    List<Long> findByBrandId(@Param("id") Long id);
 
 	@Query("SELECT products FROM ProductEntity products "
 			+ " LEFT JOIN FETCH products.productVariants variants "
@@ -94,6 +97,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Transactional
     @Modifying
     void detachProductsFromTag(@Param("tag_id") Long tagId);
+    
 
     @Query(value = "update Products set category_id = :categoryId where id in :productsIds", nativeQuery = true)
     @Transactional
@@ -197,7 +201,23 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     long countByProductType(Integer productType);
 
     boolean existsByIdAndOrganizationId(Long productId, Long orgId);
+
+    @Query(value = "select p from ProductEntity p " +
+                    "left join p.brand b " +
+                    "left join p.tags t " +
+                    "where p.id in :productIds or b.id in :brandIds or t.id in :tagIds")
+    List<ProductEntity> findProductsByProductIdsOrBrandIdsOrTagIds(@Param("productIds") Set<Long> productId,
+                    @Param("brandIds") Set<Long> brandIds,
+                    @Param("tagIds") Set<Long> tagId);
+    
+
+    @Query(nativeQuery = true)
+    List<Pair> getProductAddons(@Param("productsIds") List<Long> productsIds, @Param("addonsIds") List<Long> addonsIds);
+    
+    @Query(value = "delete from Product_addons where addon_id = :addon_id", nativeQuery = true)
+    @Transactional
+    @Modifying
+    void detachProductsFromAddon(@Param("addon_id") Long addonId);
+
+
 }
-
-
-

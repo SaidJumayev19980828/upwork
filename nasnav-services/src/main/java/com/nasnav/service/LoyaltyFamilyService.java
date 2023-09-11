@@ -14,8 +14,9 @@ public interface LoyaltyFamilyService {
     void deleteFamily(Long id);
     List<LoyaltyFamilyEntity> listFamily(Long orgId);
     LoyaltyFamilyUpdateResponse updateFamily(LoyaltyFamilyDTO family);
-    void addNewMemberToFamily(Long userId, Long familyId);
+    List<UserEntity> addNewMemberToFamily(Long userId, Long familyId);
     Optional<LoyaltyFamilyEntity> getFamilyById(Long familyId);
 
     List<UserEntity> getFamilyMembers(Long familyId);
+    List<LoyaltyFamilyEntity> listFamily();
 }

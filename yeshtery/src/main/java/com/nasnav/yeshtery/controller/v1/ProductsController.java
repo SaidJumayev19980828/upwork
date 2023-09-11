@@ -10,9 +10,13 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.CsvExcelDataExportService;
+import com.nasnav.service.ImagesBulkService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
-import com.nasnav.service.ReviewServiceImpl;
+import com.nasnav.service.ReviewService;
+
+import lombok.RequiredArgsConstructor;
+
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,9 +40,10 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 @RestController
 @RequestMapping(ProductsController.API_PATH)
+@RequiredArgsConstructor
 public class ProductsController {
-
     static final String API_PATH = YeshteryConstants.API_PATH +"/product";
+    private final ImagesBulkService imagesBulkService;
 	@Autowired
 	private ProductService productService;
 	@Autowired
@@ -50,7 +55,7 @@ public class ProductsController {
     @Qualifier("excel")
     private CsvExcelDataExportService excelDataExportService;
     @Autowired
-    private ReviewServiceImpl reviewService;
+    private ReviewService reviewService;
     
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,
@@ -145,16 +150,12 @@ public class ProductsController {
     }
 
 	@PostMapping(value = "image/bulk", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-    public List<ProductImageUpdateResponse> importProductImagesBulk(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                                    @RequestPart("imgs_zip") @Valid MultipartFile zip,
-                                                                    @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
-                                                                    @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-        if(nonNull(metaData.getFeatureId())){
-            SwatchImageBulkUpdateDTO swatchMetaData = new SwatchImageBulkUpdateDTO(metaData);
-            productImgService.updateSwatchImagesBulk(zip, csv, swatchMetaData);
-            return emptyList();
-        }
-		return productImgService.updateProductImageBulk(zip, csv, metaData);
+    public List<ProductImageUpdateResponse> importProductImagesBulk(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestPart("imgs_zip") @Valid MultipartFile zip,
+            @RequestPart(name = "imgs_barcode_csv", required = false) MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+        return imagesBulkService.updateImagesBulk(zip, csv, metaData);
     }
 
 	@PostMapping(value = "image/bulk/url", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
@@ -227,19 +228,14 @@ public class ProductsController {
 
     @GetMapping(value = "empty_products", produces = APPLICATION_JSON_VALUE)
     public List<ProductDetailsDTO> getProducts(@RequestHeader(name = "User-Token", required = false) String token) {
-        return productService.getProducts();
+        return productService.getEmptyProducts();
     }
 
     @GetMapping(produces=APPLICATION_JSON_VALUE)
     public ProductDetailsDTO getProduct(@RequestHeader(name = "User-Token", required = false) String token,
-                                        @RequestParam(name = "product_id") Long productId,
-                                        @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
-        var params = new ProductFetchDTO(productId);
-        params.setShopId(shopId);
-        params.setCheckVariants(false);
-        params.setIncludeOutOfStock(true);
-        params.setOnlyYeshteryProducts(true);
-        return productService.getProduct(params);
+            @RequestParam(name = "product_id") Long productId,
+            @RequestParam(name = "shop_id", required = false) Long shopId) throws BusinessException {
+        return productService.getProduct(productId, shopId, true, false, true);
     }
 
     @PostMapping(value = "related_products", consumes = APPLICATION_JSON_VALUE)

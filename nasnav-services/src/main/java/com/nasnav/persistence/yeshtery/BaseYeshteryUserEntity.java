@@ -1,11 +1,14 @@
 package com.nasnav.persistence.yeshtery;
 
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.Gender;
 import com.nasnav.persistence.DefaultBusinessEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
 
@@ -49,6 +52,10 @@ public abstract class BaseYeshteryUserEntity extends DefaultBusinessEntity<Long>
 
 	@Column(name="user_status")
 	private Integer userStatus;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "gender")
+	private Gender gender;
 	
 	abstract public String getName();
 	abstract public void setName(String name);

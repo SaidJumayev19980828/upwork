@@ -21,10 +21,14 @@ public final class EmailConstants {
 
     public static final String ACCOUNT_EMAIL_PARAMETER = "#AccountEmail#";
 
+    public static final String OTP_PARAMETER = "#OTP#";
+
     public static final String ACTIVATION_ACCOUNT_EMAIL_SUBJECT = " Account Activation";
 
     public static final String NEW_EMAIL_ACTIVATION_TEMPLATE = "mail_templates/new_mail_recovery_template.html";
-    
+
+    public static final String OTP_TEMPLATE = "mail_templates/otp_template.html";
+
     public static final String ORDER_NOTIFICATION_TEMPLATE = "new_order_notification_template.html";
 
     public static final String META_ORDER_NOTIFICATION_TEMPLATE = "new_meta_order_notification_template.html";

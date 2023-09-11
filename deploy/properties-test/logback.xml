@@ -1,0 +1,14 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+        <pattern>%msg%n</pattern>
+      </encoder>
+    </appender>
+    <root level="OFF">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+    <logger name="org.springframework.test" level="ERROR"/>
+    <logger name="org.springframework.boot.test" level="ERROR"/>
+    <logger name="org.nasnav.test" level="ERROR"/>
+    <logger name="org.nasnav.yeshtery.test" level="ERROR"/>
+  </configuration>

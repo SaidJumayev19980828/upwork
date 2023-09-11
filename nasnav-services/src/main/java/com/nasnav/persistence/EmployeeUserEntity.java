@@ -11,11 +11,9 @@ import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 @Data
@@ -37,9 +35,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "organization_manager_id")
     private Long organizationManagerId;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
     @ManyToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER)
     @JsonIgnore
     @ToString.Exclude
@@ -56,6 +51,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
         obj.setId(getId());
         obj.setCreationDate(getCreationTime());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
+        obj.setImage(getImage());
         obj.setRoles(
                 ofNullable(roles)
                 .orElse(emptySet())

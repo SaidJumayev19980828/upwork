@@ -8,9 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -54,6 +52,10 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
         OrderSearchParam params = (OrderSearchParam) this.searchParams;
 
 
+        this.predicates = buildOrderPredicates(builder, root, params);
+    }
+
+    public static Predicate [] buildOrderPredicates(CriteriaBuilder builder, Path<OrdersEntity> root, OrderSearchParam params) {
         List<Predicate> predicatesList = new ArrayList<>();
         predicatesList.add( builder.notEqual(root.get("status"), DISCARDED.getValue()) );
         if(params.getUser_id() != null)
@@ -90,7 +92,7 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
         if(params.getMax_total() != null) {
             predicatesList.add(builder.le(root.get("total"), params.getMax_total()));
         }
-        this.predicates = predicatesList.stream().toArray(Predicate[]::new);
+        return predicatesList.stream().toArray(Predicate[]::new);
     }
 
     @Override
@@ -140,7 +142,7 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
         }
     }
 
-    private LocalDateTime readDate(String dateStr) {
+    private static LocalDateTime readDate(String dateStr) {
         return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss"));
     }
 }

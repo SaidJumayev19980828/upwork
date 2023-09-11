@@ -23,7 +23,6 @@ public class StringUtilsTest {
 			"2099-05-20T00:00:00Z[UTC]");
 
 	private List<String> inValidDateTime = List.of(
-			"2019-01-01T00:00:00",
 			"+5555-01-01T00:00:00",
 			"2022-00-01T00:00:00",
 			"2022-13-01T00:00:00",

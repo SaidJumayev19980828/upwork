@@ -1,7 +1,10 @@
 package com.nasnav.exceptions;
 
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.response.ImportProcessStatusResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -104,6 +109,28 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 		return new ResponseEntity<>(errorResponseDTO,
 				e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+
+	@ExceptionHandler(DataImportAsyncException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProcessStatusResponse> handleDataImportAsyncException(DataImportAsyncException e,
+			WebRequest requestInfo, HttpServletRequest request) {
+
+		logException(requestInfo, request, e);
+
+		return new ResponseEntity<>(e.getStatusResponse(), HttpStatus.NOT_ACCEPTABLE);
+	}
+
+	@ExceptionHandler(FileNotFoundException.class)
+	@ResponseBody
+	public ResponseEntity<ErrorResponseDTO> handleFileNotFound(FileNotFoundException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request, e);
+		ErrorCodes errorCode = ErrorCodes.GEN$0011;
+		// I don't like the following hardcoding but no easy way around it
+		String uri = request.getRequestURI().replaceFirst("/?(v1)?/files", "");
+		String errorMessage = String.format(errorCode.getValue(), uri);
+		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(errorMessage, errorCode.name());
+		return new ResponseEntity<>(errorResponseDTO, HttpStatus.NOT_FOUND);
+	}
 	
 	
 
@@ -132,6 +159,15 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 			WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , ex);
 		return new ResponseEntity<UserApiResponse>(ex.getUserApiResponse(), ex.getHttpStatus());
+	}
+
+	@ExceptionHandler(InCompleteOAuthRegistration.class)
+	public final ResponseEntity<Object> handleInCompleteOAuthRegistration(InCompleteOAuthRegistration ex,
+			WebRequest requestInfo, HttpServletRequest request) {
+		logException(requestInfo, request, ex);
+		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+				.header(HttpHeaders.LOCATION, EntityConstants.OAUTH_ENTER_EMAIL_PAGE + ex.getSocialLoginToken())
+				.build();
 	}
 	
 	

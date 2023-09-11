@@ -15,7 +15,11 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
+
+
 import lombok.RequiredArgsConstructor;
+
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -117,7 +121,11 @@ public class UserServicesHelper {
 				.noneMatch(Roles::isCanCreateUsers);
 	}
 
-
+	public boolean employeeHasRoleOrHigher(EmployeeUserEntity employee, Roles requiredRole) {
+		return employee.getRoles().stream()
+				.map(role -> Roles.valueOf(role.getName()))
+				.anyMatch(role -> role.getLevel() <= requiredRole.getLevel());
+	}
 
 	public boolean hasInsufficientLevel(Long currentUserId, List<String> otherUserRolesNames) {
 		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
@@ -178,8 +186,9 @@ public class UserServicesHelper {
 		employeeUser.setShopId(employeeUserJson.storeId);
 		employeeUser.setImage(employeeUserJson.getAvatar());
 		employeeUser.setUserStatus(NOT_ACTIVATED.getValue());
+		employeeUser = employeeUserRepository.save(employeeUser);
 
-		return employeeUserRepository.save(employeeUser);
+		return employeeUser;
 	}
 
 
@@ -199,6 +208,9 @@ public class UserServicesHelper {
 			validateStoreIdUpdate(currentUserId, employeeUserJson);
 			employeeUserEntity.setShopId(employeeUserJson.getStoreId());
 		}
+		if(isNotBlankOrNull(employeeUserJson.getAvatar())){
+			employeeUserEntity.setImage(employeeUserJson.getAvatar());
+		}
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
 			validateEmail(employeeUserJson.getEmail());
 			employeeUserEntity.setEmail(employeeUserJson.getEmail());
@@ -208,14 +220,19 @@ public class UserServicesHelper {
 			successResponseStatusList.addAll( asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT) );
 		}
 
+		if(isNotBlankOrNull(employeeUserJson.getGender())){
+			employeeUserEntity.setGender(employeeUserJson.getGender());
+		}
+
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
 
-		Long empId = employeeUserRepository.save(employeeUserEntity).getId();
+		employeeUserEntity = employeeUserRepository.save(employeeUserEntity);
+
 
 		if (successResponseStatusList.isEmpty())
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
 
-		return new UserApiResponse(empId, successResponseStatusList);
+		return new UserApiResponse(employeeUserEntity.getId(), successResponseStatusList);
 	}
 
 
@@ -245,8 +262,6 @@ public class UserServicesHelper {
 
 
 	private EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		if (employeeUserJson.getAvatar() != null)
-			employeeUserEntity.setImage(employeeUserJson.getAvatar());
 
 		if (employeeUserJson.getPhoneNumber() != null)
 			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());

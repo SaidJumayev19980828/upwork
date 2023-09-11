@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
@@ -18,6 +19,9 @@ import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
 import com.nasnav.service.*;
+
+import lombok.RequiredArgsConstructor;
+
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -44,8 +48,11 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @RequestMapping(OrganizationController.API_PATH)
 @CrossOrigin("*") // allow all origins
+@RequiredArgsConstructor
 public class OrganizationController {
     static final String API_PATH = YeshteryConstants.API_PATH +"/organization";
+
+    private final FeaturesService featuresService;
 
     @Autowired
     private OrganizationService orgService;
@@ -73,10 +80,12 @@ public class OrganizationController {
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                        @RequestPart("properties") String jsonString,
-                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
+                                                       @RequestPart(value = "cover", required = false) @Valid MultipartFile cover)
+                                                            throws BusinessException, JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationModificationDTO.class);
-        return orgService.updateOrganizationData(json, file);
+        return orgService.updateOrganizationData(json, logo, cover);
     }
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
@@ -105,30 +114,30 @@ public class OrganizationController {
 
     @GetMapping(value = "products_features", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) {
-        return orgService.getProductFeatures(orgId);
+        return featuresService.getProductFeatures(orgId);
     }
 
     @GetMapping(value = "products_features/types", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureType> getOrganizationFeaturesTypes(@RequestHeader(name = "User-Token", required = false) String token) {
-        return orgService.getProductFeatureTypes();
+        return featuresService.getProductFeatureTypes();
     }
 
     @PostMapping(value = "products_feature", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                                              @RequestBody ProductFeatureUpdateDTO featureDto) {
-        return orgService.updateProductFeature(featureDto);
+        return featuresService.updateProductFeature(featureDto);
     }
 
     @DeleteMapping(value = "products_feature")
     public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("id") Integer featureId) {
-        orgService.removeProductFeature(featureId);
+        featuresService.removeProductFeature(featureId);
     }
 
     @DeleteMapping(value = "extra_attribute")
     public void deleteExtraAttribute(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("attr_id") Integer attrId) {
-        orgService.deleteExtraAttribute(attrId);
+        featuresService.deleteExtraAttribute(attrId);
     }
 
     @PostMapping(value = "image", produces = APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -144,18 +153,13 @@ public class OrganizationController {
     public void deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam(value = "image_id", required = false) Long imageId,
                                       @RequestParam(value = "url", required = false) String url) {
-        if (imageId == null && url == null) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
-        }
         orgService.deleteImage(imageId, url);
     }
 
     @PostMapping(value = "tag", produces = APPLICATION_JSON_VALUE)
     public TagResponse updateOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
                                              @RequestBody TagsDTO tagDTO) throws BusinessException {
-        tagDTO.setHasCategory(true);
-        TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
-        return new TagResponse(tag.getId());
+        return categoryService.createOrUpdateTagThroughApi(tagDTO);
     }
 
     @DeleteMapping(value = "tag", produces = APPLICATION_JSON_VALUE)
@@ -225,7 +229,7 @@ public class OrganizationController {
 
     @GetMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken) {
-        return orgService.getExtraAttributes();
+        return featuresService.getExtraAttributes();
     }
 
     @GetMapping(value = "promotions", produces = APPLICATION_JSON_VALUE)

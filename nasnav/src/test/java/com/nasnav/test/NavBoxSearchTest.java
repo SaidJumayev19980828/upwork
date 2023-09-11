@@ -1,17 +1,15 @@
 package com.nasnav.test;
 
-import com.nasnav.NavBox;
 import com.nasnav.dto.response.navbox.SearchResult;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -33,14 +31,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Search_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @NotThreadSafe
 @Ignore  //it is used only by developers using a local elasticsearch instance
-public class NavBoxSearchTest {
+public class NavBoxSearchTest extends AbstractTestWithTempBaseDir {
 
     private String mockServerFullUrl;
 

@@ -23,7 +23,12 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
+	, U$LOG$0010("No user found with email [%email]!")
+	, U$LOG$0011("Need activation method !")
 
+	,U$IMG$0001("File with the same content already exists!")
+	,U$IMG$0002("Failed to delete image due to errors!\nerrors:[%s]")
+	,U$IMG$0003("Unable to read uploaded file")
 
 	, U$STATUS$0001("Account is already suspended!")
 	, U$STATUS$0002("User can't suspend/activates himself!")
@@ -46,6 +51,7 @@ public enum ErrorCodes {
 	,U$EMP$0012("Invalid store_id [%d]!")
 	,U$EMP$0013("Employee can't view other employees with requested roles!")
 	,U$EMP$0014("Employee can't view customers!")
+	,U$EMP$0015("Registration not confirmed by user!")
 
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")
@@ -75,17 +81,20 @@ public enum ErrorCodes {
 	,P$PRO$0013("No collections exists with ID %s!")
 	,P$PRO$0014("Some products are still used in collections! are you sure you want to delete them?")
 	,P$PRO$0015("Product with id [%d] has no stocks!")
+	,P$PRO$0016("Product with id [%d] Not Item or Bundle or not found")
 
 	,P$IMPORT$0001("Store Manager is allowed only to update stocks!")
 	,P$IMPORT$0002("Store Manager cannot access stocks of another shop!")
+	,P$IMPORT$0003("Imported file isn't supported")
+	,P$IMPORT$0004("Imported file is ambiguous and can be read as multiple types")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	,P$STO$0002("Stock total value can't be negative!")
 	,P$STO$0003("Stock is linked to %s!")
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
-	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
-	,P$BRA$0003("Brand with id [%d] linked to %d products!")
+	,P$BRA$0002("Brand with id [%d] doesn't belong to organization with id [%d]")
+	,P$BRA$0003("Brand with id [%d] linked to products [%s]!")
 	,P$BRA$0004("No Brand id is provided!")
 
 	,P$FTR$0001("No Product Feature type exists with code[%d]!")
@@ -163,7 +172,8 @@ public enum ErrorCodes {
 	,THEME$0004("uid is already used by another theme!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
-	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!"),
+	ORG$CREATE$001("Provided p_name is already used by another organization")
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
@@ -200,6 +210,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
 	,ORG$LOY$0024("No active config for org with id [%d] !")
+	,ORG$LOY$0025("the available points are not enough !")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")
@@ -214,6 +225,11 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0007("Can't delete %s linked to address")
 	,ADDR$ADDR$0008("No Country name was provided!")
 
+	,PA$USR$0001("Package not deleted because related user!")
+	,PA$USR$0002("No Package found with ID:[%d]")
+
+
+
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
@@ -223,6 +239,9 @@ public enum ErrorCodes {
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
+	,E$USR$0002("User not found!")
+	,E$USR$0003("Invalid current password!")
+	,E$USR$0004("Password and Confirm Password do not match!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
@@ -352,15 +371,21 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0016("Promo code [%s] is not applicable to the current user!")
 	,PROMO$PARAM$0017("Invalid start date")
 	,PROMO$PARAM$0018("Invalid end date")
+	,PROMO$PARAM$0019("organization(s) [%s] not found in yeshtery")
 
 	,DATE$TIME$0001("Invalid date time field [%s]")
 
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
+	,ORG$NOTFOUND("No Organization found")
 
 	,TAG$TREE$0001("No tag exists with id[%s]!")
 	,TAG$TREE$0002("No tag exists with name[%s]!")
-
+	,
+	ORG$ADDON$0001("No addon type exists with [%d]!")
+	,ORG$ADDON$0002("No addon stock exists with [%d]!"),
+	ORG$ADDON$0003("addon and cart item not in the same shop!")
+	,ORG$ADDON$0004("Cart item  addons has no stocks available!")
 	,NAVBOX$SRCH$0001("Missing required parameters, required parameters are org_id and keyword!")
 	,NAVBOX$SRCH$0002("Failed to run search query on elasticsaerch!\nError details: %s ")
 
@@ -394,11 +419,56 @@ public enum ErrorCodes {
 	,VIDEO$PARAM$0004("Invalid Session!")
 	,VIDEO$PARAM$0005("Couldn't establish new connection, %s")
 	,VIDEO$PARAM$0006("Must provide either org_id or shop_id!")
+	,VIDEO$PARAM$0007("User has active session!")
+	,VIDEO$PARAM$0008("Organization reached its maximum connections limit!")
 
 	,PAYMENT$CALLBACK$001("No payment entity found with transaction reference [%s]!")
 	,PAYMENT$CALLBACK$002("Untrusted source!")
 
-	,PROCESS$CANCEL$0001("Process not cancelable")
+	,PROCESS$CANCEL$0001("Process not cancelable"),
+
+	OTP$NOTFOUND("OTP not found"),
+	OTP$INVALID("Invalid OTP")
+
+	,AVA$NOT$EXIST("No Availability found")
+	,AVA$OVER$LAPPED("Availabilities is overlapped with others")
+
+	,G$INFLU$0001("Influencer Not found with id[%d]!")
+	,G$INFLU$0002("Influencer with id[%d] request already exist!")
+	,G$INFLU$0003("Influencer with id[%d] is suspended")
+
+	,G$EVENT$0001("Event Not fount with id[%d]!")
+	,EVENT$NOT$EDITABLE$0002("Event with id[%d] can't be updated due to it passed!")
+	,EVENT$MODIFICATION$0003("Event request can't be modified")
+	,EVENT$REQUEST$0004("Event request with id[%d] already exist!!")
+	,EVENT$REQUEST$0005("Event request with id[%d] not found!!")
+	,EVENT$HAS$HOST$0005("Event with id[%d] already has host!!")
+	,EVENT$HAS$INTEREST$0006("You already interested in Event with id[%d]!!")
+
+	,G$POST$0001("Post Not found with id[%id]!")
+	,POST$LIKE$0002("no record found that the user liked this post before!")
+	,POST$LIKE$0003("user already liked this post before!")
+	,POST$REVIEW$ATTACHMENT("No attachments found fot review you should upload images")
+
+	,G$QUEUE$0001("no queue entity found")
+
+	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
+
+	,BANK$ACC$0001("No user or org is provided")
+	,BANK$ACC$0002("an account already exist for this user or org")
+	,BANK$ACC$0003("no account found for the user")
+	,BANK$ACC$0004("the Deposit/Withdrawal not valid from BC point of view")
+	,BANK$ACC$0005("the account have not enough balance")
+	,BANK$ACC$0006("No reservation with id: [%d]")
+	,BANK$ACC$0007("this transaction is done before")
+
+	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
+	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
+
+	,NOTIF$0001("Firebase not initialized")
+	,NOTIF$0002("Firebase error occurred with error code [%s]")
+	,NOTIF$0003("No notification tokens found for user with id [%d]")
+
 	;
 
 	@Getter

@@ -4,10 +4,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.persistence.AddonBasketEntity;
+
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import javax.persistence.Column;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -39,6 +45,10 @@ public class BasketItem {
     private String sku;
     private String productCode;
     private String currency;
+    private BigDecimal addonTotal;
     @JsonIgnore
     private Integer availableStock;
+    private List<AddonDetailsDTO> addons;
+ 
+   	private String specialOrder;
 }

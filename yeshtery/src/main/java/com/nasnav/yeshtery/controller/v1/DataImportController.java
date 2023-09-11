@@ -4,6 +4,7 @@ import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.service.AutoDataImportService;
 import com.nasnav.service.CsvExcelDataImportService;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.commons.YeshteryConstants;
@@ -37,57 +38,33 @@ public class DataImportController {
 	@Qualifier("excel")
 	private CsvExcelDataImportService excelDataImportService;
 
+	@Autowired
+	private AutoDataImportService autoDataImportService;
+
 	@PostMapping(value = "productlist", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ImportProductContext> importProductList(
-    		@RequestHeader(name = "User-Token", required = false) String token,
-            @RequestPart("csv") @Valid MultipartFile file,
-            @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
-            		throws BusinessException, ImportProductException {
-		ImportProductContext importResult = null;
-		if(FilesUtils.isExcel(file)){
-			importResult = excelDataImportService.importProductList(file, importMetaData);
-		} else if(FilesUtils.isCsv(file)){
-			importResult = csvImportService.importProductList(file, importMetaData);
-		}
-		if(importResult != null && importResult.isSuccess()) {
-			return ResponseEntity.ok(importResult);
-		}else {
-			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
-		}			
-    }
+	public ImportProductContext importProductList(
+			@RequestHeader(name = "User-Token", required = false) String token,
+			@RequestPart("csv") @Valid MultipartFile file,
+			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
+			throws BusinessException, ImportProductException {
+		return autoDataImportService.importProductList(file, importMetaData);
+	}
 
 	@PostMapping(value = "productlist/xlsx", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ImportProductContext> importProductListXLSX(
+	public ImportProductContext importProductListXLSX(
 			@RequestHeader(name = "User-Token", required = false) String token,
 			@RequestPart("xlsx") @Valid MultipartFile file,
 			@RequestPart("properties") @Valid ProductListImportDTO importMetaData)
 			throws BusinessException, ImportProductException {
-		ImportProductContext importResult = null;
-		if(FilesUtils.isExcel(file)){
-			importResult = excelDataImportService.importProductList(file, importMetaData);
-		}
-		
-		if(importResult != null && importResult.isSuccess()) {
-			return ResponseEntity.ok(importResult);
-		}else {
-			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
-		}
+		return excelDataImportService.importProductList(file, importMetaData);
 	}
 
 	@PostMapping(value = "productlist/csv", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ImportProductContext> importProductListCSV(@RequestHeader(TOKEN_HEADER) String token,
+	public ImportProductContext importProductListCSV(@RequestHeader(TOKEN_HEADER) String token,
 																	 @RequestPart("csv") @Valid MultipartFile file,
 																	 @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
 			throws BusinessException, ImportProductException {
-		ImportProductContext importResult = null;
-		if(FilesUtils.isCsv(file)){
-			importResult = csvImportService.importProductList(file, importMetaData);
-		}
-		if(importResult != null && importResult.isSuccess()) {
-			return ResponseEntity.ok(importResult);
-		}else {
-			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
-		}
+		return csvImportService.importProductList(file, importMetaData);
 	}
 
 	@GetMapping(value = {"/productlist/csv/template", "/productlist/template"})

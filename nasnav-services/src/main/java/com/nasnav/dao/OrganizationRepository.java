@@ -19,6 +19,8 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
 
     OrganizationEntity findOneById(Long id);
 
+    boolean existsByIdAndYeshteryState(Long id, Integer yeshteryState);
+
     Optional<OrganizationEntity> findByIdAndYeshteryState(Long id, Integer yeshteryState);
 
     OrganizationEntity findByPname(String pname);

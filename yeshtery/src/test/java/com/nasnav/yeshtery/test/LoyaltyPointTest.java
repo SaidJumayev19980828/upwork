@@ -9,24 +9,21 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.persistence.LoyaltyFamilyEntity;
 import com.nasnav.persistence.LoyaltyPointConfigEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.*;
 import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.yeshtery.Yeshtery;
-import com.nasnav.yeshtery.test.commons.TestCommons;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -38,7 +35,6 @@ import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.ORG$LOY$0014;
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
-import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.json.JSONObject.NULL;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,13 +44,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
 @NotThreadSafe
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class LoyaltyPointTest {
+public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private TestRestTemplate template;
@@ -85,28 +78,13 @@ public class LoyaltyPointTest {
 
 
     @Test
-    public void createLoyaltyPointConfig() {
+    public void createLoyaltyPointConfigInvalidConstraints() {
 
         var body = createConfigJson()
-                .put("ratio_from", NULL)
+                .put("constraints", NULL)
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(406, response.getStatusCodeValue());
-
-        body = createConfigJson()
-                .put("ratio_to", NULL)
-                .toString();
-        request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(406, response.getStatusCodeValue());
-
-
-        body = createConfigJson()
-                .put("coefficient", NULL)
-                .toString();
-        request = getHttpEntity(body, "abcdefg");
-        response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
         assertEquals(406, response.getStatusCodeValue());
 
         request = getHttpEntity(body, "abcdefg");
@@ -115,16 +93,6 @@ public class LoyaltyPointTest {
 
         assertEquals(200, responseList.getStatusCodeValue());
         assertEquals(1, responseList.getBody().size());
-
-    }
-
-    private void assertConfigValues(LoyaltyPointConfigEntity config) {
-        assertEquals(config.getCoefficient(), new BigDecimal(0.5));
-        assertEquals(config.getRatioFrom(),  new BigDecimal(7));
-        assertEquals(config.getRatioTo(),  new BigDecimal(1));
-        assertNotNull(config.getOrganization());
-        assertNotNull(config.getDefaultTier());
-        assertEquals(config.getOrganization().getId(), 99001);
 
     }
     
@@ -171,13 +139,15 @@ public class LoyaltyPointTest {
     }
 
     private JSONObject createConfigJson() {
+        JSONObject constraints = json()
+                .put("ORDER_ONLINE",
+                        json()
+                        .put("ratio_from", new BigDecimal("7.00"))
+                        .put("ratio_to", new BigDecimal("1.00")));
         return json()
                 .put("description", "this is a configuration")
-                .put("coefficient", 0.5)
-                .put("ratio_from", 7)
-                .put("ratio_to", 1)
-                .put("default_tier", json().put("id", 1))
-                ;
+                .put("constraints", constraints)
+                .put("default_tier", json().put("id", 1));
     }
 
 
@@ -222,19 +192,21 @@ public class LoyaltyPointTest {
         LoyaltyTierDTO loyaltyTierDTO = resBody.get(1);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
-        assertEquals(loyaltyTierDTO.getCoefficient(), new BigDecimal(0.8) );
+        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyPointType.ORDER_ONLINE).doubleValue(), 0.8);
 
         tierRepository.deleteById(loyaltyTierDTO.getId());
     }
 
 
     private String getTierJsonString() {
+        JSONObject constraints = json()
+                .put("ORDER_ONLINE", "0.8");
         return json()
                 .put("operation", "create")
                 .put("tier_name", "tier test")
                 .put("selling_price", 10)
                 .put("org_id", 99001)
-                .put("coefficient", new BigDecimal(0.8) )
+                .put("constraints", constraints )
                 .put("is_active", true)
                 .put("is_special", false)
                 .toString();

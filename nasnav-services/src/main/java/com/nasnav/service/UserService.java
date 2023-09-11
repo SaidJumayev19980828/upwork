@@ -1,29 +1,33 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
-public interface UserService extends CommonUserServiceInterface{
+public interface UserService extends CommonUserServiceInterface {
 
-    UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
+    UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) throws BusinessException;
 
     RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 
-    UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson) ;
+    UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson);
 
     UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException;
 
-	void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException;
+    void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException;
 
-	UserApiResponse activateUserAccount(String token) throws BusinessException;
+    UserApiResponse activateUserAccount(String token) throws BusinessException;
 
     AddressDTO updateUserAddress(AddressDTO addressDTO);
 
@@ -46,4 +50,14 @@ public interface UserService extends CommonUserServiceInterface{
     List<UserEntity> getUsersByFamilyId(Long familyId);
 
     void sendEmailRecovery(String email, Long orgId);
+
+    UserApiResponse activateUserAccount(ActivateOtpDto activateOtp);
+
+    void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod);
+
+    RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
+
+    UserApiResponse updateUserAvatar(MultipartFile file);
+
+
 }

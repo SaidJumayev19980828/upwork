@@ -1,19 +1,10 @@
 package com.nasnav.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.stereotype.Service;
+import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.persistence.PackageRegisteredEntity;
 
+public interface AdminService {
 
-@Service
-public class AdminService {
+  void invalidateCaches();
 
-    @Autowired
-    private CacheManager cacheManager;
-
-    public void invalidateCaches() {
-        cacheManager.getCacheNames()
-                    .stream()
-                    .forEach(cacheName -> cacheManager.getCache(cacheName).clear());
-    }
 }

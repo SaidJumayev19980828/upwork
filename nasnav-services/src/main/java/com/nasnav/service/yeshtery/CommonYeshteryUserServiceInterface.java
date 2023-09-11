@@ -1,5 +1,6 @@
 package com.nasnav.service.yeshtery;
 
+import com.nasnav.dto.ActivationMethod;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.persistence.yeshtery.BaseYeshteryUserEntity;
 import com.nasnav.dto.response.YeshteryUserApiResponse;
@@ -36,7 +37,7 @@ public interface CommonYeshteryUserServiceInterface {
      * @param orgId user organization id
      * @return UserApiResponse object holding the status
      */
-    void sendEmailRecovery(String email, Long orgId);
+    void sendEmailRecovery(String email, Long orgId, ActivationMethod activationMethod);
 
 
     /**

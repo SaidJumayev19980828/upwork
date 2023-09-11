@@ -74,6 +74,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
             patternOf( "/v1/360view/**"						, POST  , setOf(ORGANIZATION_ADMIN)),
+            patternOf( "/v1/room/shop/list_for_user"				, GET	, getAllRoles()),
+            patternOf( "/v1/room/shop/session"					, POST	, setOf(CUSTOMER)),
+            patternOf( "/v1/room/shop/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/shop"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/event/list_for_user"			, GET	, getAllRoles()),
+            patternOf( "/v1/room/event/session"					, POST	, getAllRoles()),
+            patternOf( "/v1/room/event/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
+            patternOf( "/v1/room/event"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/order"							, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/order/confirm"					, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/order/reject"						, POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -146,11 +154,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/info")
             , patternOf( "/v1/user/create"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) )
             , patternOf( "/v1/user/update"							, getAllRoles() )
+            , patternOf( "/v1/user/notification-token"		, POST	, getAllRoles() )
+            , patternOf( "/v1/user/change/password"							, getAllRoles() )
             , patternOf( "/v1/user/logout"							, getAllRoles() )
             , patternOf( "/v1/user/logout_all"						, getAllRoles() )
             , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
+            , patternOf( "/v1/cart/{userId:\\d+}"		,GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))
             , patternOf( "/v1/cart/**"								, setOf(CUSTOMER))
             , patternOf( "/v1/pickup/**"							    , setOf(CUSTOMER))
+            , patternOf( "/v1/wishlist/{userId:\\d+}"		,GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))
             , patternOf( "/v1/wishlist/**"							, setOf(CUSTOMER))
             , patternOf( "/v1/shipping/**"							, setOf(CUSTOMER))
             , patternOf("/v1/yeshtery/review"					, POST  , setOf(CUSTOMER))
@@ -158,11 +170,32 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			, patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST   , setOf(NASNAV_ADMIN)),
             patternOf( "/v1/videochat/**"                   , POST    , getAllRoles()),
             patternOf( "/v1/videochat/**"                   , GET    , getNonCustomersRoles()),
+            patternOf("/v1/availability/org/**"                       				, getAllRoles()),
+            patternOf("/v1/availability/shop/**"                       				, getAllRoles()),
+            patternOf("/v1/availability/user"                       					, setOf(CUSTOMER)),
+            patternOf( "/availability/employee/**"                      			, getAllRoles()),
+            patternOf("/v1/availability/**"                       				, getNonCustomersRoles()),
+            patternOf("/v1/appointment/**"											, setOf(CUSTOMER)),
+            patternOf( "/v1/follow/**"					,POST						, setOf(CUSTOMER)),
+            patternOf( "/v1/follow/**"					,GET						, getAllRoles()),
+            patternOf( "/v1/post/orgSharedProducts"		,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/post/orgReviews"				,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/post/**"						,GET						,  setOf(CUSTOMER)),
+            patternOf( "/v1/post/**"						,POST						,  setOf(CUSTOMER)),
+            patternOf( "/v1/post/**"						,PUT						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/event"                   , POST    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/event"                   , DELETE    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/event/list/**"                                , getAllRoles()),
+            patternOf( "/v1/influencer/host/**"             , getAllRoles()),
+            patternOf( "/v1/influencer/response"             ,POST                 , setOf(NASNAV_ADMIN)),
+            patternOf( "/v1/influencer/hostingRequests"             ,GET                 , getNonCustomersRoles()),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/points/list"				, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points_per_org"			, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/spendable_points"			, GET	, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/spendable_points/{orgId}"			, GET	, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/share_points"			, GET	, setOf(CUSTOMER)),
 			patternOf("/v1/loyalty/user_tier"							, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/delete"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/type/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -171,9 +204,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf("/v1/loyalty/booster/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/config/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf("/v1/loyalty/user_tier"					, GET	, setOf(CUSTOMER)),
-            patternOf("/v1/loyalty/points/check"						, setOf(CUSTOMER)),
-            patternOf("/v1/loyalty/points/redeem"						, setOf(STORE_MANAGER)),
-			patternOf( "/**")
+            patternOf("/v1/loyalty/points/code/redeem"					, setOf(CUSTOMER)),
+            patternOf("/v1/loyalty/points/code/generate"				, setOf(STORE_MANAGER, STORE_EMPLOYEE)),
+			patternOf("/**")
     );
 
    
@@ -201,11 +234,18 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/error/**"							, GET)
                         , patternOf("/v1/yeshtery/**"						, GET)
                         , patternOf("/v1/360view/**"						, GET)
+						, patternOf("/v1/room/shop"								, GET)
+						, patternOf("/v1/room/shop/list"							, GET)
+						, patternOf("/v1/room/event"								, GET)
+						, patternOf("/v1/room/event/list"							, GET)
                         , patternOf("/v1/payment/**")
                         , patternOf("/v1/user/recover")
+                        , patternOf("/v1/user/recovery/otp-verify")
                         , patternOf("/v1/user/login/**")
                         , patternOf("/v1/user/register")
                         , patternOf("/v1/user/register/activate")
+						, patternOf("/v1/user/register/otp/activate")
+                        , patternOf("/v1/user/employee/otp/activate")
                         , patternOf("/v1/user/register/activate/resend")
                         , patternOf("/v1/user/subscribe")
                         , patternOf("/v1/user/subscribe/activate")

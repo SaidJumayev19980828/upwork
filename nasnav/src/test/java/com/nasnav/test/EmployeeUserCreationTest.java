@@ -3,19 +3,25 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.Gender;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.helpers.UserServicesHelper;
+
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
+import org.hamcrest.MatcherAssert;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,10 +29,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,26 +38,23 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
 @NotThreadSafe
-@PropertySource("classpath:test.database.properties")
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class EmployeeUserCreationTest {
+@Slf4j
+public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 	@Mock
 	private UserController userController;
@@ -74,6 +75,8 @@ public class EmployeeUserCreationTest {
 	EmployeeUserRepository empRepository;
 	@Autowired
 	private UserTokenRepository tokenRepo;
+	@Autowired
+	private SecurityService securityService;
 
 
 	@Before
@@ -489,6 +492,7 @@ public class EmployeeUserCreationTest {
 				.put("employee",true)
 				.put("name","Ahmad")
 				.put("email","ahmad.user@nasnav.com")
+				.put("gender", Gender.MALE)
 				.toString();
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
@@ -497,9 +501,25 @@ public class EmployeeUserCreationTest {
 		EmployeeUserEntity user = empRepository.findById(68L).get();
 		assertEquals("Ahmad", user.getName());
 		assertEquals("ahmad.user@nasnav.com", user.getEmail());
+		assertEquals(Gender.MALE, user.getGender());
 	}
-
-
+	@Test
+	public void updateSelfEmployeeUserWithAvatarSuccess() {
+		// update self data test success
+		String body = json()
+				.put("employee",true)
+				.put("name","Ahmad")
+				.put("email","ahmad.user@nasnav.com")
+				.put("avatar","test.png")
+				.toString();
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		assertEquals(200, response.getStatusCode().value());
+		EmployeeUserEntity user = empRepository.findById(68L).get();
+		assertEquals("Ahmad", user.getName());
+		assertEquals("test.png", user.getImage());
+		assertEquals("ahmad.user@nasnav.com", user.getEmail());
+	}
 
 	@Test
 	public void updateOtherEmployeeUserAuthByNasNavAdminTestSuccess() {
@@ -780,13 +800,13 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> header = getHttpEntity("yuhjhu");
 		ResponseEntity<UserRepresentationObject> response = 
 				template.exchange("/user/info", GET, header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
 		assertEquals( 88L, user.getId().longValue());
-		assertNotNull(user.roles);
-		assertFalse(user.roles.isEmpty());
+		assertNotNull(user.getRoles());
+		assertFalse(user.getRoles().isEmpty());
 	}
 
 	
@@ -799,7 +819,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> header = getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", GET,
 				header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals(200, response.getStatusCodeValue());
 
 		//-------------------------------------------------------------------
@@ -808,12 +828,14 @@ public class EmployeeUserCreationTest {
 		response = template.exchange("/user/info?id=88", GET,
 									header, UserRepresentationObject.class);
 		
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals( 200, response.getStatusCodeValue());
 		UserRepresentationObject user = response.getBody();
 		assertEquals( 88, response.getBody().getId().longValue());
-		assertNotNull(user.roles);
-		assertFalse(user.roles.isEmpty());
+		assertNotNull(user.getRoles());
+		assertFalse(user.getRoles().isEmpty());
+		assertNotNull(user.getLastLogin());
+		assertEquals(Gender.MALE, user.getGender());
 	}
 	
 	
@@ -825,7 +847,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> header = getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=526523", GET,
 				header, UserRepresentationObject.class);
-		System.out.println(response.toString());
+		log.debug("{}", response);
 		assertEquals( 406, response.getStatusCodeValue());
 	}
 	
@@ -913,21 +935,21 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> header = getHttpEntity("hijkllm");
 		ResponseEntity<List> response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(6, response.getBody().size());
 
 		// trying to filter with different org_id
 		response = template.exchange("/user/list?org_id=99002", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(response.getBody().size(), 6);
 
 		// trying to filter with store_id not exits in the organization
 		response = template.exchange("/user/list?shop_id=501", GET, header, List.class);
 		//returning EmpUsers within the same organization only
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(0, response.getBody().size());
 
@@ -935,7 +957,7 @@ public class EmployeeUserCreationTest {
 		header = getHttpEntity("123");
 		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_MANAGER
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(5, response.getBody().size());
 
@@ -943,7 +965,7 @@ public class EmployeeUserCreationTest {
 		header = getHttpEntity("hhhkkk");
 		response = template.exchange("/user/list", GET, header, List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_EMPLOYEE
-		System.out.println(response.getBody());
+		log.debug("{}", response.getBody());
 		assertEquals(response.getStatusCodeValue(), 200);
 		assertEquals(1, response.getBody().size());
 
@@ -982,6 +1004,32 @@ public class EmployeeUserCreationTest {
 				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
 	}
 
+	@Test
+	public void listUserNotificationTokens() {
+		final String notificationToken = "SomeNotificationToken";
+		String email = "user1@nasnav.com";
+		String password = "12345678"; 
+		
+		String request = new JSONObject()
+								.put("password", password)
+								.put("email", email)
+								.put("org_id", 99001L)
+								.put("employee", true)
+								.put("notification_token", notificationToken)
+								.toString();
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<Void> response = 
+				template.postForEntity("/user/login", userJson,	Void.class);
+		assertEquals(OK, response.getStatusCode());
+
+		EmployeeUserEntity user = empRepository.findByEmailIgnoreCaseAndOrganizationId("user1@nasnav.com", 99001L).orElse(null);
+		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
+		Set<String> notificationTokensByUsers = securityService.getValidEmployeeNotificationTokens(Set.of(user));
+
+		Set<String> expectedTokens = Set.of(notificationToken);
+		assertEquals(expectedTokens, notificationTokens);
+		assertEquals(expectedTokens, notificationTokensByUsers);
+	}
 
 	@Test
 	public void testEmployeeLoginWithoutOrgId() {

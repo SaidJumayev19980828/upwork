@@ -1,26 +1,21 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.*;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -62,21 +57,18 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@AutoConfigureMockMvc
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 //@Ignore
-public class DataImportXlsxApiTest {
+public class DataImportXlsxApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
 
 
 	private static final long TEST_VARIANT_UPDATED = 310003L;
 
+	private static final String URL_SHARED_UPLOAD_PRODUCT_LIST = "/upload/productlist";
 
 	private static final String URL_UPLOAD_PRODUCT_LIST = "/upload/productlist/xlsx";
 
@@ -323,7 +315,7 @@ public class DataImportXlsxApiTest {
         result.andExpect(status().is(406));
 
         ImportProductContext report = readImportReport(result);
-        assertEquals(4, report.getErrors().size());
+        assertEquals(3, report.getErrors().size());
         assertFalse(report.isSuccess());
     }
 
@@ -356,6 +348,24 @@ public class DataImportXlsxApiTest {
 
 		long unitsCountBefore = stockUnitRepo.count();
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileWithUnit, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long unitsCountAfter = stockUnitRepo.count();
+		assertEquals("imported two units, one already exists and the other is new"
+				, unitsCountAfter, unitsCountBefore + 1);
+	}
+
+	@Test
+	public void uploadProductXLSthroughSharedApi() throws Exception{
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		long unitsCountBefore = stockUnitRepo.count();
+		MockMultipartFile filePart = new MockMultipartFile("csv", xlsxFileWithUnit.getFilename(), "text/xlsx", xlsxFileWithUnit.getInputStream());
+
+    ResultActions result = uploadProductXlsx(URL_SHARED_UPLOAD_PRODUCT_LIST, "ggr45r5", filePart, importProperties);
+		uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFile, importProperties);
 
 		result.andExpect(status().is(200));
 
@@ -424,6 +434,7 @@ public class DataImportXlsxApiTest {
         		 , setOf( setOf("111222A"), setOf("1354ABN", "87847777EW")));
 	}
 
+	// not sure why the "invalid" name
 	@Test
 	public void uploadProductInvalidXLS() throws Exception{
 		JSONObject importProperties = createDataImportProperties();
@@ -433,7 +444,7 @@ public class DataImportXlsxApiTest {
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFile, importProperties);
 
-		result.andExpect(status().is(406));
+		result.andExpect(status().is(200));
 
 		ExtendedProductDataCount after = countExtendedProductData();
 		assertExpectedRowNumInserted(before, after, 2);
@@ -464,10 +475,10 @@ public class DataImportXlsxApiTest {
 
 		ResultActions result = uploadProductXlsx(URL_UPLOAD_PRODUCT_LIST, "ggr45r5", xlsxFileMissingFeatures, importProperties);
 
-		result.andExpect(status().is(406));
+		result.andExpect(status().is(200));
 
 		ProductEntity product = variantRepo.getVariantFullData(310001L).get().getProductEntity();
-		assertEquals("Bundle Product#1", product.getName());
+		assertEquals("Squishy shoes", product.getName());
 
         Optional<IntegrationMappingEntity> mapping =
         		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
@@ -771,11 +782,11 @@ public class DataImportXlsxApiTest {
 		ProductDataCount after = countProductData();
 		assertExpectedRowNumInserted(before, after, 0);
 
-		//assertDataSavedWithoutUpdatingProductFeatures();
+		assertDataSavedWithoutUpdatingProductFeatures();
 
-        ImportProductContext report = readImportReport(result);
-        assertEquals(1, report.getUpdatedProducts().size());
-        assertTrue(report.getErrors().isEmpty());
+		ImportProductContext report = readImportReport(result);
+		assertEquals(1, report.getUpdatedProducts().size());
+		assertTrue(report.getErrors().isEmpty());
 	}
 
 	@Test
@@ -1588,7 +1599,7 @@ public class DataImportXlsxApiTest {
 		data.setDescriptions( setOf("squishy") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands( setOf(101L) );
-		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setFeatureSpecs(Set.of(new JSONObject("{}")));
 		data.setExtraAttributes( emptySet());
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.enumerations.ConvertedImageTypes;
 import com.nasnav.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,14 +37,9 @@ public class FilesController {
                              HttpServletResponse resp,
                              @RequestParam(required = false) Integer height,
                              @RequestParam(required = false) Integer width,
-                             @RequestParam(required = false) String type) throws ServletException, IOException {
+                             @RequestParam(required = false) ConvertedImageTypes type) throws ServletException, IOException {
         String url = request.getRequestURI().replaceFirst("/files", "");
-        String resourceInternalUrl;
-        if (height != null || width != null) {
-            resourceInternalUrl = fileService.getResizedImageInternalUrl(url, width, height, type);
-        } else {
-            resourceInternalUrl = fileService.getResourceInternalUrl(url);
-        }
+        String resourceInternalUrl = fileService.getResourceInternalUrl(url, width, height, type);
 		resp.setStatus(HttpStatus.OK.value());
 		
 		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);

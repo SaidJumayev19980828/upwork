@@ -1,9 +1,10 @@
 package com.nasnav.test.integration.sallab;
 
-import com.nasnav.NavBox;
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
-import com.nasnav.integration.sallab.webclient.dto.Record;
 import com.nasnav.integration.sallab.webclient.dto.*;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.concurrentunit.Waiter;
 import org.json.JSONArray;
 import org.junit.Before;
@@ -14,9 +15,6 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -37,11 +35,9 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.springframework.http.HttpStatus.OK;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@PropertySource("classpath:test.database.properties")
-@AutoConfigureWebTestClient
-@DirtiesContext
-public class SallabIntegrationWebClientsTest {
+// @DirtiesContext
+@Slf4j
+public class SallabIntegrationWebClientsTest extends AbstractTestWithTempBaseDir {
 
     private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
@@ -100,7 +96,7 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         
         Consumer<ProductsResponse> onResponse = response -> {
-        	System.out.println(response.toString());
+        	log.debug("{}", response);
             waiter.resume();
         };
 
@@ -134,7 +130,7 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         
         Consumer<ProductsResponse> onResponse = response -> {
-        	System.out.println(response.toString());
+        	log.debug("{}", response);
             waiter.resume();
         };
 
@@ -169,7 +165,7 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         
         Consumer<ItemPrice> onResponse = response -> {
-        	System.out.println(response.toString());
+        	log.debug("{}", response);
             waiter.resume();
         };
 
@@ -204,7 +200,7 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         
         Consumer<ItemStockBalance> onResponse = response -> {
-        	System.out.println(response.toString());
+        	log.debug("{}", response);
             waiter.resume();
         };
 
@@ -384,44 +380,44 @@ public class SallabIntegrationWebClientsTest {
 
 
     private void printCustomerData(Customer c, Waiter w) {
-        System.out.println(c.toString());
+        log.debug("{}", c);
         w.resume();
     }
 
     private void printSuccessResponse(SuccessResponse response, Waiter waiter) {
-        System.out.println(response.toString());
+        log.debug("{}", response);
         waiter.resume();
     }
 
     private void printErrorResponse(String response, Waiter waiter) {
         JSONArray arr = new JSONArray(response);
-        System.out.println(arr.get(0));
+        log.debug("{}", arr.get(0));
         waiter.resume();
     }
 
     private void printItemData(ItemPrice item, Waiter waiter) {
-        System.out.println(item.toString());
+        log.debug("{}", item);
         waiter.resume();
     }
 
     private void print(String res, String id, Waiter waiter) {
-        System.out.println(res);
+        log.debug(res);
         if (!res.contains("errorCode"))
-            System.out.println("thisss "+id);
+            log.debug("thisss {}", id);
         if(id.equals("00P58000006DgNT"))
             waiter.resume();
     }
 
     private void printItemStock(List<ItemStockBalance> items, Waiter waiter) {
         for(Object item : items)
-            System.out.println(item.toString());
+            log.debug("{}", item);
         waiter.resume();
     }
 
     private void printProductsData(ProductsResponse response, Waiter waiter) {
-//        System.out.println(response.totalSize);
-//        System.out.println(response.nextRecordsUrl);
-//        System.out.println(response.done);
+//        log.debug(response.totalSize);
+//        log.debug(response.nextRecordsUrl);
+//        log.debug(response.done);
         /*for(Record r : response.records) {
             printRecordData(r);
         }*/
@@ -429,9 +425,9 @@ public class SallabIntegrationWebClientsTest {
     }
 
     private void printRecordData(Record r) {
-        System.out.println(r.id +" "+r.attributes+" "+r.unitPrice+" "+r.product);
-        System.out.println(r.attributes.type+" "+r.attributes.url);
-        System.out.println(r.unitPrice);
+        log.debug(r.id +" "+r.attributes+" "+r.unitPrice+" "+r.product);
+        log.debug(r.attributes.type+" "+r.attributes.url);
+        log.debug("{}", r.unitPrice);
         printProductData(r.product);
     }
 
@@ -441,10 +437,10 @@ public class SallabIntegrationWebClientsTest {
     }
 
     private void printProductData(Product p) {
-        System.out.println(p.id);
-        System.out.println(p.name);
+        log.debug(p.id);
+        log.debug(p.name);
         if(p.iconAttachmentId != null)
-            System.out.println(p.iconAttachmentId);
+            log.debug(p.iconAttachmentId);
     }
 
 

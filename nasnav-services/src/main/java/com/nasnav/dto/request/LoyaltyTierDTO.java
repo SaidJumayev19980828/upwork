@@ -2,9 +2,11 @@ package com.nasnav.dto.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.enumerations.LoyaltyPointType;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -20,6 +22,6 @@ public class LoyaltyTierDTO {
     private Long orgId;
     private Long boosterId;
     private BigDecimal cashBackPercentage;
-    private BigDecimal coefficient;
+    private Map<LoyaltyPointType, BigDecimal> constraints;
     private String operation;
 }

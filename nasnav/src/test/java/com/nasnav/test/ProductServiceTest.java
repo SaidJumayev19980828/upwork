@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.persistence.*;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,10 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -56,11 +55,9 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
-public class ProductServiceTest {
+@Slf4j
+public class ProductServiceTest extends AbstractTestWithTempBaseDir {
 
 	private static final BigDecimal DISCOUNT = new BigDecimal("20");
 	private static final String DUMMY_EXTRA_ATTR_VALUE = "Indeed";
@@ -150,7 +147,7 @@ public class ProductServiceTest {
 				template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId()+"&include_out_of_stock=true",
 				String.class);
 		//-----------------------------------------
-		System.out.println("product without stocks >>> " + response.getBody());
+		log.debug("product without stocks >>> {}", response.getBody());
 
 		assertValidResponseWithoutStocks(testData, response);
 
@@ -171,7 +168,7 @@ public class ProductServiceTest {
 				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with stocks >>> " + response.getBody());
+		log.debug("product with stocks >>> {}", response.getBody());
 
 		assertValidResponse(testData, response);
 
@@ -192,7 +189,7 @@ public class ProductServiceTest {
 				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with stocks for all shops >>> " + response.getBody());
+		log.debug("product with stocks for all shops >>> {}", response.getBody());
 
 		assertValidResponse(testData, response);
 
@@ -213,7 +210,7 @@ public class ProductServiceTest {
 				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with stocks for all shops >>> " + response.getBody());
+		log.debug("product with stocks for all shops >>> {}", response.getBody());
 
 		assertValidResponse(testData, response);
 
@@ -234,7 +231,7 @@ public class ProductServiceTest {
 				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), shopId),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with stocks for all shops >>> " + response.getBody());
+		log.debug("product with stocks for all shops >>> {}", response.getBody());
 
 		assertValidResponseWithSingleStockReturned(testData, response, shopId);
 
@@ -901,7 +898,7 @@ public class ProductServiceTest {
 				template.getForEntity(
 						"/navbox/product?product_id=" + TEST_BUNDLE_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 						String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 
 		assertEquals(200, response.getStatusCodeValue());
@@ -922,7 +919,7 @@ public class ProductServiceTest {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		JSONArray products = json.getJSONArray("products");
 
@@ -950,7 +947,7 @@ public class ProductServiceTest {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
 
@@ -1019,21 +1016,21 @@ public class ProductServiceTest {
 	private void performTestProductResponseByFilters() throws Throwable {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
 		assertEquals("there are total 3 products with with org_id = 99001 and no brand_id filter", 3, total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
 		assertEquals("there are 2 products with brand_id = 101", 2, total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
 		assertEquals("there are 1 product with brand_id = 102", 1, total);
@@ -1046,14 +1043,14 @@ public class ProductServiceTest {
 		getProductFromStringResponse(response, 1005L);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
-		System.out.println("response JSON >>>  " + response.getBody().toString());
+		log.debug("response JSON >>>  {}", response.getBody());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		//// finish test
 	}
 
 
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
-		System.out.println("response JSON >>>  " + response.getBody().toString());
+		log.debug("response JSON >>>  {}", response.getBody());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
@@ -1064,12 +1061,12 @@ public class ProductServiceTest {
 	public void productBarcodeTest() {
 		// product 1001 doesn't have barcode
 		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":null"));
 
 		// product 1002 has barcode = 123456789
 		response = template.getForEntity("/navbox/product?product_id=1002", String.class);
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
 	}
 
@@ -1135,7 +1132,7 @@ public class ProductServiceTest {
 				template.getForEntity("/navbox/products?org_id=99001&name=gens", String.class);
 		assertEquals(OK, response.getStatusCode());
 
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
 		});
 		assertEquals("there is 1 products with product code like the given", 1L, products.getTotal().longValue());
@@ -1158,7 +1155,7 @@ public class ProductServiceTest {
 				template.getForEntity("/navbox/products?org_id=99001&name=114", String.class);
 		assertEquals(OK, response.getStatusCode());
 
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
 		});
 		assertEquals("there is 1 products with sku like the given", 1L, products.getTotal().longValue());
@@ -1200,7 +1197,7 @@ public class ProductServiceTest {
 						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with extra attributes >>> " + response.getBody());
+		log.debug("product with extra attributes >>> {}", response.getBody());
 
 		assertValidResponseWithExtraAttr(testData, response);
 	}
@@ -1220,7 +1217,7 @@ public class ProductServiceTest {
 						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product with extra attributes >>> " + response.getBody());
+		log.debug("product with extra attributes >>> {}", response.getBody());
 
 		assertValidResponseWithInvisibleExtraAttr(testData, response);
 	}
@@ -1291,7 +1288,7 @@ public class ProductServiceTest {
 				template.getForEntity("/navbox/products?org_id=99001", String.class);
 		assertEquals(OK, response.getStatusCode());
 
-		System.out.println(response.getBody());
+		log.debug(response.getBody());
 		ProductsResponse prodResponse = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
 		});
 		List<ProductRepresentationObject> allProducts = prodResponse.getProducts();

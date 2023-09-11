@@ -7,6 +7,8 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,10 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +34,7 @@ import java.util.Optional;
 import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
 import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.*;
-import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
+import static com.nasnav.service.helpers.ProductImagesImportHelper.PRODUCT_IMAGE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.*;
@@ -43,15 +42,11 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
-
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@PropertySource("classpath:test.database.properties")
-@AutoConfigureWebTestClient
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-@DirtiesContext
-public class ElSallabIntegrationTest {
+// @DirtiesContext
+public class ElSallabIntegrationTest extends AbstractTestWithTempBaseDir {
 	
 	private static final String SALLAB_SERVER_URL = "https://azizsallab.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";

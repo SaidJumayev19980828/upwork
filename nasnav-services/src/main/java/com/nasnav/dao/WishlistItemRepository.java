@@ -26,6 +26,19 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<WishlistItemEntity> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
+	@Query("SELECT distinct item "
+			+ " FROM WishlistItemEntity item "
+			+ "	LEFT JOIN FETCH item.user user"
+			+ " LEFT JOIN FETCH item.stock stock "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.featureValues featureValues"
+			+ " LEFT JOIN FETCH featureValues.feature feature "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH product.brand brand "
+			+ " WHERE user.id = :user_id and stock.organizationEntity.id = :organization_id and product.removed = 0 and variant.removed = 0")
+	List<WishlistItemEntity> findCurrentCartItemsByUserIdAndOrgId(@Param("user_id") Long userId,@Param("organization_id") Long OrgId);
+
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
 

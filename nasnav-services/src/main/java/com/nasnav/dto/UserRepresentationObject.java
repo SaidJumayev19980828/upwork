@@ -3,40 +3,49 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.enumerations.Gender;
+
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class UserRepresentationObject {
 
-    public Long id;
-    public String name;
-    public String email;
-    public String image;
-    public String phoneNumber;
-    public String mobile;
-    public List<AddressRepObj> addresses;
-    public String firstName;
-    public String lastName;
-    public Long organizationId;
-    public Long shopId;
-    public Set<String> roles;
-    public String status;
-    public LocalDateTime creationDate;
-    public Long familyId;
-    public Long tierId;
-    public Boolean allowReward;
-    public LocalDateTime dateOfBirth;
-    public LocalDateTime tierCreatedAt;
-    public Long boosterId;
-    public String referral;
+    private Long id;
+    private String name;
+    private String email;
+    private String image;
+    private String phoneNumber;
+    private String mobile;
+    private List<AddressRepObj> addresses;
+    private String firstName;
+    private String lastName;
+    private Long organizationId;
+    private Long shopId;
+    private Set<String> roles;
+    private String status;
+    private LocalDateTime creationDate;
+    private Long familyId;
+    private Long tierId;
+    private Boolean allowReward;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime dateOfBirth;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime tierCreatedAt;
+    private Long boosterId;
+    private String referral;
+    private Boolean isInfluencer;
+    private LocalDateTime lastLogin;
+    private Gender gender;
 
     public String getReferral() {
-        return  "ref" + id;
+        return id + "";
     }
 }

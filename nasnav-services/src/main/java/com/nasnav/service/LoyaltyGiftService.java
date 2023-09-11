@@ -10,7 +10,6 @@ public interface LoyaltyGiftService {
 
     LoyaltyGiftUpdateResponse sendGiftFromUserToAnother(GiftDTO dto);
     List<LoyaltyGiftEntity> getGiftsByUserId(Long userId);
-    List<LoyaltyGiftEntity> getGiftsNotRedeemByUserId(Long userId);
-    List<LoyaltyGiftEntity> getGiftsRedeemByUserReceiveId(Long userId);
+    List<LoyaltyGiftEntity> getGiftsByUserIdAndIsRedeem(Long userId, boolean isRedeem);
     void updateOrCreateLoyaltyGiftTransaction(Long giftId);
 }

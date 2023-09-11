@@ -34,9 +34,12 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (71, 'testuser3@nasnav.com', 99002, '5289361',  NULL);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '5289361', now(), 71, null);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
@@ -55,12 +58,14 @@ insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'ORGANIZATION_MANAGER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 68, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 69, 4);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 71, 2);
 
 
 --insert units

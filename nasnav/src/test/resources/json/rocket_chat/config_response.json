@@ -1,0 +1,99 @@
+{
+	"config": {
+			"enabled": true,
+			"settings": {
+					"registrationForm": true,
+					"allowSwitchingDepartments": true,
+					"nameFieldRegistrationForm": true,
+					"emailFieldRegistrationForm": true,
+					"displayOfflineForm": true,
+					"videoCall": false,
+					"fileUpload": true,
+					"language": "",
+					"transcript": false,
+					"historyMonitorType": "url",
+					"forceAcceptDataProcessingConsent": false,
+					"showConnecting": false,
+					"agentHiddenInfo": false,
+					"clearLocalStorageWhenChatEnded": false,
+					"limitTextLength": false
+			},
+			"theme": {
+					"title": "Rocket.Chat",
+					"color": "#C1272D",
+					"offlineTitle": "Leave a message",
+					"offlineColor": "#666666",
+					"actionLinks": {
+							"webrtc": [
+									{
+											"actionLinksAlignment": "flex-start",
+											"i18nLabel": "Join_call",
+											"label": "Join call",
+											"method_id": "joinLivechatWebRTCCall"
+									},
+									{
+											"i18nLabel": "End_call",
+											"label": "End call",
+											"method_id": "endLivechatWebRTCCall",
+											"danger": true
+									}
+							],
+							"jitsi": [
+									{
+											"icon": "icon-videocam",
+											"i18nLabel": "Accept"
+									},
+									{
+											"icon": "icon-cancel",
+											"i18nLabel": "Decline"
+									}
+							]
+					}
+			},
+			"messages": {
+					"offlineMessage": "",
+					"offlineSuccessMessage": "",
+					"offlineUnavailableMessage": "",
+					"conversationFinishedMessage": "",
+					"conversationFinishedText": "",
+					"transcriptMessage": "",
+					"registrationFormMessage": "",
+					"dataProcessingConsentText": ""
+			},
+			"survey": {
+					"items": [
+							"satisfaction",
+							"agentKnowledge",
+							"agentResposiveness",
+							"agentFriendliness"
+					],
+					"values": [
+							"1",
+							"2",
+							"3",
+							"4",
+							"5"
+					]
+			},
+			"triggers": [],
+			"departments": [],
+			"resources": {
+					"sound": "https://chat.dev.meetusvr.com/sounds/chime.mp3",
+					"emojis": []
+			},
+			"online": true,
+			"customFields": [],
+			"guest": {
+					"_id": "testId",
+					"username": "guest-13",
+					"name": "testName",
+					"token": "testToken",
+					"visitorEmails": [
+							{
+									"address": "test@email.co"
+							}
+					]
+			}
+	},
+	"success": true
+}

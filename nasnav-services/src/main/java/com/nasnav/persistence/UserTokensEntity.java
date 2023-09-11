@@ -28,6 +28,9 @@ public class UserTokensEntity {
     @UpdateTimestamp
     private LocalDateTime updateTime;
 
+    @Column(name = "notification_token")
+    private String notificationToken;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore

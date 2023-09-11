@@ -1,8 +1,14 @@
 package com.nasnav.dto;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.enumerations.Gender;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.Value;
 
 public class UserDTOs {
 
@@ -22,10 +28,12 @@ public class UserDTOs {
         @JsonProperty("phone_number")
         private String phoneNumber;
         @JsonProperty("date_of_birth")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         private String dateOfBirth;
     }
 
     @Getter
+    @Setter
     @Schema(name = "User Registration Data")
     public static class UserRegistrationObjectV2 {
         public String name;
@@ -40,6 +48,8 @@ public class UserDTOs {
         private String avatar;
         @JsonProperty("phone_number")
         private String phoneNumber;
+        @JsonProperty(value = "activation_method",defaultValue = "VERIFICATION_LINK")
+        private ActivationMethod activationMethod;
     }
 
     @Getter
@@ -77,9 +87,14 @@ public class UserDTOs {
 
         @JsonProperty("remember_me")
         public boolean rememberMe;
+
+        @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX")
+        @JsonProperty("notification_token")
+        private String notificationToken;
     }
 
     @Getter
+    @Setter
     @Schema(name = "Employee User Creation Data")
 	public static class EmployeeUserCreationObject {
         @Schema(example = "testuser@nasnav.com", required = true)
@@ -101,6 +116,32 @@ public class UserDTOs {
 
         @Schema(example = "99001/avatar.jpg")
         private String avatar;
+
+    }
+
+    @Getter
+    @Setter
+    @Schema(name = "Employee User Creation Data With Password")
+    public static class EmployeeUserWithPassword extends EmployeeUserCreationObject {
+        @Schema(example = "pass1234")
+        public String password;
+    }
+
+    @Getter
+    @Schema(name = "User Change Password ")
+	public static class ChangePasswordUserObject {
+        @Schema(example = "PaSSworD", required = true)
+        @JsonProperty("current_password")
+        public String currentPassword;
+
+        @Schema(example = "NewPaSSworD", required = true)
+        @JsonProperty("new_password")
+        public String newPassword;
+
+        @Schema(example = "CNewPaSSworD", required = true)
+        @JsonProperty("confirm_password")
+        public String confirmPassword;
+
     }
 
     @Getter
@@ -134,7 +175,7 @@ public class UserDTOs {
         private String avatar;
 
         @Schema(example = "Male")
-        private String gender;
+        private Gender gender;
 
         @Schema(example = "08/08/2010")
         @JsonProperty("birth_date")

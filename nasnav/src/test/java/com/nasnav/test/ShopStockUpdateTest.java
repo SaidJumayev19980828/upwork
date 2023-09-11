@@ -1,21 +1,18 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.nasnav.NavBox;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -29,13 +26,10 @@ import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.*;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Stock_Update_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-public class ShopStockUpdateTest {
+public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	private static final Long TEST_SHOP_ID = 100001L;
 	

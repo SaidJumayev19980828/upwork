@@ -1,27 +1,42 @@
 package com.nasnav.yeshtery.test;
 
+import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.*;
+import com.nasnav.dao.yeshtery.YeshteryUserOtpRepository;
+import com.nasnav.dao.yeshtery.YeshteryUserRepository;
+import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
+import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.AdminService;
+import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.service.otp.OtpType;
 import com.nasnav.yeshtery.test.commons.TestCommons;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -29,11 +44,18 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.annotation.PreDestroy;
+import javax.mail.MessagingException;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
@@ -46,14 +68,12 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
+// @RunWith(SpringRunner.class)
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/User_Test_Data.sql"})
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"}) //FIXME temporarly
-public class YeshteryUserRegistrationTest {
+@Slf4j
+public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
 
     private static final String YESHTERY_SUSPEND_API_PATH = API_PATH + "/user/suspend";
     private final String YESHTERY_LOGIN_API_PATH = API_PATH + "/user/login";
@@ -63,10 +83,20 @@ public class YeshteryUserRegistrationTest {
     private UserEntity persistentUser;
     private OrganizationEntity organization;
 
+    
+	@MockBean
+	private MailService mailService;
+
     @Autowired
     private TestRestTemplate template;
     @Autowired
     private UserService userService;
+    @Autowired
+    private YeshteryUserOtpRepository yeshteryUserOtpRepository;
+    @Autowired
+    private UserOtpRepository userOtpRepository;
+    @Autowired
+    private YeshteryUserRepository yeshteryUserRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -79,14 +109,11 @@ public class YeshteryUserRegistrationTest {
     private UserSubscriptionRepository subsRepo;
     @Autowired
     private AdminService adminService;
-
-    @Before
-    public void clearCache() {
-        adminService.invalidateCaches();
-    }
+    @Autowired
+    private AppConfig config;
 
 
-    @Before
+    @BeforeEach
     public void setupLoginUser() {
         if (organization == null) {
             organization = organizationRepository.findOneById(99001L);
@@ -134,7 +161,7 @@ public class YeshteryUserRegistrationTest {
         response = template.postForEntity(API_PATH + "/user/register", userJson, UserApiResponse.class);
 
         // response status should contain EMAIL_EXISTS
-        System.out.println(response.getBody());
+        log.debug("{}", response.getBody());
         Assert.assertTrue(response.getBody().getStatus().contains(EMAIL_EXISTS));
         Assert.assertEquals(406, response.getStatusCode().value());
         // Delete this user
@@ -142,10 +169,218 @@ public class YeshteryUserRegistrationTest {
     }
 
     @Test
+    public void testRegisterSuccess() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"activation_method\":\"OTP\",\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+        // get userId for deletion after test
+        Long userId = response.getBody().getEntityId();
+
+        log.debug("{}", response.getBody());
+        Assert.assertEquals(201, response.getStatusCode().value());
+
+        Set<Long> yeshteryOrgIds = organizationRepository.findByYeshteryState(1)
+                .stream()
+                .map(OrganizationEntity::getId)
+                .collect(Collectors.toSet());
+        Set<Long> userOrgIds = userRepository.findByYeshteryUserId(userId)
+                .stream()
+                .map(UserEntity::getOrganizationId)
+                .collect(Collectors.toSet());
+        assertEquals(yeshteryOrgIds, userOrgIds);
+    }
+
+    @Test
+    public void testRegisterWithoutActivationMethod() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(CREATED, response.getStatusCode());
+        UserEntity createdUser = userRepository.getByEmailAndOrganizationId("new_email@nasnav.com", organization.getId());
+        assertNotNull(createdUser);
+    }
+
+    @Test
+    public void testRegisterWithoutActivationMethodAndNoRedirectUrl() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true,\"org_id\":"
+                        + organization.getId() + "}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+        UserEntity createdUser = userRepository.getByEmailAndOrganizationId("new_email@nasnav.com", organization.getId());
+        assertNull(createdUser);
+    }
+
+    @Test
+    public void testRegisterWithoutConfirmationFlag() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"activation_method\":\"OTP\",\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"org_id\":"
+                        + organization.getId() + ",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+                null);
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/register", userJson,
+                UserApiResponse.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    private JSONObject createUserRegisterRequest(String redirectUrl) {
+        return json()
+                .put("name", "Ahmad")
+                .put("email", "test@nasnav.com")
+                .put("password", "password")
+                .put("org_id", 99001)
+                .put("confirmation_flag", true)
+                .put("redirect_url", redirectUrl);
+    }
+
+	private JSONObject registerWithOtpAndAssert() throws MessagingException, IOException {
+		JSONObject jsonBody = createUserRegisterRequest(null).put("activation_method", "OTP");
+		String body = jsonBody.toString();
+		HttpEntity<Object> request = getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/register", request, String.class);
+
+		Assert.assertEquals(201, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(
+				  Mockito.eq("organization_1")
+				, Mockito.eq("test@nasnav.com")
+				, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+		return jsonBody;
+	}
+
+	@Test
+	public void newUserRegisterWithOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
+		String email = userJson.getString("email");
+		Long orgId = userJson.getLong("org_id");
+		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
+		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
+		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		// otp is deleted request should fail
+		response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+    @Test
+    public void testChangePassword() throws MessagingException, IOException{
+        String body =
+                json()
+                        .put("current_password", "12345678")
+                        .put("new_password", "newPassword")
+                        .put("confirm_password", "newPassword")
+                        .toString();
+        HttpEntity<Object> userJson = getHttpEntity(body, "123");
+        ResponseEntity<String> response = template.postForEntity(API_PATH +"/user/change/password", userJson, String.class);
+        assertEquals(200, response.getStatusCode().value());
+
+    }
+	@Test
+	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
+		JSONObject userJson = registerWithOtpAndAssert();
+		String email = userJson.getString("email");
+		Long orgId = userJson.getLong("org_id");
+		YeshteryUserEntity newUser = yeshteryUserRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		String otp = yeshteryUserOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
+		ActivateOtpDto activationBody = new ActivateOtpDto(email, "invalid otp", orgId);
+		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+		ResponseEntity<String> response;
+
+		for (int i = 0; i < config.otpMaxRetries; i++) {
+			response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+			Assert.assertEquals(400, response.getStatusCodeValue());
+		}
+
+		// next request will fail as otp is deleted after max retries
+		activationBody = new ActivateOtpDto("test@nasnav.com", otp, 99001L);
+		request = new HttpEntity<ActivateOtpDto>(activationBody);
+		response = template.postForEntity(API_PATH + "/user/register/otp/activate", request, String.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+    private void assertResetTocken(String token) {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}", null);
+
+        ResponseEntity<UserApiResponse> response = template.postForEntity(API_PATH + "/user/recover", userJson,
+                UserApiResponse.class);
+
+        
+        Assert.assertEquals(OK.value(), response.getStatusCode().value());
+
+        userJson = getHttpEntity(
+                "{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\""
+                        + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
+
+        response = template.postForEntity(API_PATH + "/user/login", userJson, UserApiResponse.class);
+
+        // Delete this user
+        
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void testPasswordResetWithOtp() {
+
+        getResponseFromGet(API_PATH + "/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
+                + "&employee=false&activation_method=OTP", UserApiResponse.class);
+        String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
+        ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+        HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+        
+        ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(200, recoveryResponse.getStatusCodeValue());
+        String token = recoveryResponse.getBody().getResetToken();
+
+        assertResetTocken(token);
+        recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+    }
+
+    @Test
+    public void testPasswordResetWithInvalidOtp() {
+
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
+                + "&employee=false&activation_method=OTP", UserApiResponse.class);
+        String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
+        ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), "invalid otp", persistentUser.getOrganizationId());
+        HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
+        
+        ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+
+        for (int i = 0; i < config.otpMaxRetries; i++) {
+            recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+            Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+        }
+
+        activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
+        request = new HttpEntity<ActivateOtpDto>(activationBody);
+        // otp is now deleted after max retries
+        recoveryResponse = template.postForEntity(API_PATH + "/user/recovery/otp-verify", request, RecoveryUserResponse.class);
+        Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
+    }
+
+    @Test
     public void testSendResetPasswordTokenForInvalidMail() {
         ResponseEntity<String> response = getResponseFromGet(API_PATH + "/user/recover?email=foo&org_id=" +
                 organization.getId() + "&employee=false", String.class);
-        System.out.println("###############" + response.getBody());
+        log.debug("###############{}", response.getBody());
         Assert.assertTrue(response.getBody().contains("U$EMP$0004"));
 
         Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -316,7 +551,7 @@ public class YeshteryUserRegistrationTest {
         Assert.assertEquals(200, response.getStatusCode().value());
         assertFalse(userTokenRepo.existsByToken(token));
         assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
-        System.out.println(response.getHeaders().get("Set-Cookie").get(0));
+        log.debug(response.getHeaders().get("Set-Cookie").get(0));
     }
 
     @Ignore("Yeshtery module doesn't has product controller")
@@ -328,7 +563,7 @@ public class YeshteryUserRegistrationTest {
         LocalDateTime tokenUpdateTimeBefore = tokenEntityBefore.getUpdateTime();
 
         ResponseEntity<String> response = template.exchange(API_PATH + "/product/images" + "?product_id=1234", GET, getHttpEntity("", token), String.class);
-        Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCodeValue());
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 
         UserTokensEntity tokenEntityAfter = userTokenRepo.findByToken(token);
         assertNotNull(tokenEntityAfter);
@@ -349,7 +584,7 @@ public class YeshteryUserRegistrationTest {
         HttpEntity<Object> userJson = getHttpEntity(
                 "{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"New_Password\",\n" +
                         "\"employee\": false" + "}", null);
-        System.out.println(userJson);
+        log.debug("{}", userJson);
         template.postForEntity(API_PATH + "/user/recover", userJson, UserApiResponse.class);
 
         // login using the new password
@@ -483,6 +718,20 @@ public class YeshteryUserRegistrationTest {
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    private void setAndAssertNotificationToken(String userToken, String sentNotificationToken) {
+        HttpEntity<?> request = getHttpEntity(sentNotificationToken, userToken);
+        ResponseEntity<Void> response = template.postForEntity(API_PATH + "/user/notification-token", request, Void.class);
+        assertEquals(OK, response.getStatusCode());
+        String repoNotificationToken = userTokenRepo.findByToken(userToken).getNotificationToken();
+        assertEquals(sentNotificationToken, repoNotificationToken);
+    }
+
+    @Test
+    public void updateNotificationToken() {
+        setAndAssertNotificationToken("77", "Notification:Token");
+        setAndAssertNotificationToken("101112", "Other:Notification:Token");
+    }
+
     @Test
     public void updateSelfUserInvalidDataTest() {
         // update self data test success
@@ -490,7 +739,7 @@ public class YeshteryUserRegistrationTest {
         HttpEntity<Object> userJson = getHttpEntity(body, "123");
         ResponseEntity<String> response = template.postForEntity(API_PATH + "/user/update", userJson, String.class);
 
-        System.out.println(response.toString());
+        log.debug("{}", response);
         Assert.assertEquals(406, response.getStatusCodeValue());
     }
 
@@ -587,9 +836,9 @@ public class YeshteryUserRegistrationTest {
         HttpEntity req = getHttpEntity("101112");
         ResponseEntity<String> res = template.postForEntity(YESHTERY_SUSPEND_API_PATH + "?user_id=88004&suspend=false", req, String.class);
 
-        assertEquals(NOT_ACCEPTABLE, res.getStatusCodeValue());
+        assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
         UserEntity user = userRepository.findById(88004L).get();
-        assertEquals(OK, user.getUserStatus().intValue());
+        assertEquals(OK.value(), user.getUserStatus().intValue());
     }
 
 
@@ -645,5 +894,23 @@ public class YeshteryUserRegistrationTest {
         assertEquals(200, res.getStatusCodeValue());
         user = employeeUserRepo.findById(userId).get();
         assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+    }
+
+    private static Stream<Arguments> generator() {
+		return Stream.of(
+				Arguments.of("101112", 1),
+				Arguments.of("nasnav-admin-token", 2));
+	}
+
+    @ParameterizedTest
+    @MethodSource("generator")
+    public void testListYeshteryUser(String employeeToken, int expectedNumberOfUsers) {
+        HttpEntity<Object> req = getHttpEntity(employeeToken);
+        ResponseEntity<List<UserRepresentationObject>> response = template.exchange(API_PATH + "/user/list/customer", GET, req, new ParameterizedTypeReference<List<UserRepresentationObject>>() {
+            
+        });
+
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(expectedNumberOfUsers, response.getBody().size());
     }
 }

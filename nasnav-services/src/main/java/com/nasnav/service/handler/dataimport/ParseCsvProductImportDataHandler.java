@@ -116,6 +116,7 @@ public class ParseCsvProductImportDataHandler implements Handler<ImportDataComma
                                                     RowParseErrorHandler rowParsingErrHandler) {
 
         CsvParserSettings settings = new CsvParserSettings();
+        settings.setLineSeparatorDetectionEnabled(true);
         settings.setHeaderExtractionEnabled(true);
         settings.setProcessor(rowProcessor);
         settings.setProcessorErrorHandler(rowParsingErrHandler);

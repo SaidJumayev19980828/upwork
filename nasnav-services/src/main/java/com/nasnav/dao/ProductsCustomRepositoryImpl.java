@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.service.model.ProductAddonPair;
 import com.nasnav.service.model.ProductTagPair;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -183,6 +184,29 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 		insert
 		.set(productTags.productId ,productId)
 		.set(productTags.tagId, tagId)
+		.addBatch();
+	}
+
+	@Override
+	public void batchInsertProductAddons(Set<ProductAddonPair> validProductAddons) {
+		QProductAddons productAddons = QProductAddons.productAddons; 
+		SQLInsertClause insertClause = queryFactory.insert(productAddons);
+		
+		validProductAddons.forEach(productTag -> insertProductAddon(productAddons, insertClause, productTag));
+		
+		if(!validProductAddons.isEmpty()) {
+			insertClause.execute();
+		}
+		
+	}
+	
+	private void insertProductAddon(QProductAddons productTags, SQLInsertClause insert, ProductAddonPair productAddon) {
+		Long productId = productAddon.getProductId();
+		Long addonId = productAddon.getAddonId();
+		
+		insert
+		.set(productTags.productId ,productId)
+		.set(productTags.addonId, addonId)
 		.addBatch();
 	}
 }

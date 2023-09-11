@@ -1,15 +1,15 @@
 package com.nasnav.yeshtery.test.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.yeshtery.Yeshtery;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import com.nasnav.commons.YeshteryConstants;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
@@ -18,11 +18,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -42,6 +40,7 @@ import static com.nasnav.yeshtery.test.controllers.YeshteryOrdersControllerTest.
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
@@ -50,14 +49,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Yeshtery.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 
-public class YeshteryCartControllerTest {
+public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
 
     private final String YESHTERY_CART_API_PATH = YeshteryConstants.API_PATH + "/cart";
     private final String YESHTERY_CART_ITEM_API_PATH = YeshteryConstants.API_PATH + "/cart/item";
@@ -80,6 +76,10 @@ public class YeshteryCartControllerTest {
 
     @Autowired
     private OrderService orderService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EmployeeUserRepository empRepo;
 
 
     @Test
@@ -92,6 +92,15 @@ public class YeshteryCartControllerTest {
 
         Assert.assertEquals(UNAUTHORIZED, response.getStatusCode());
     }
+
+    @Test
+	public void getCartNoToken() {
+        ResponseEntity<Cart> response =
+        		template.getForEntity("/cart", Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
 
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
@@ -115,6 +124,35 @@ public class YeshteryCartControllerTest {
         Assert.assertEquals(OK, response.getStatusCode());
         Assert.assertEquals(2, response.getBody().getItems().size());
         assertProductNamesReturned(response);
+    }
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getCartWithUserIdSuccess() {
+        EmployeeUserEntity user = empRepo.findById(68L).get();
+        String authtoken = user.getAuthenticationToken();
+
+        HttpEntity<?> request = getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH +"/"+88L, GET, request, Cart.class);
+
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void checkRoleUserToGetCartWithUserIdSuccess() {
+        UserEntity user = userRepository.findById(88L).get();
+        String authtoken = user.getAuthenticationToken();
+
+        HttpEntity<?> request = getHttpEntity(authtoken);
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH +"/"+88L, GET, request, Cart.class);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     private void assertProductNamesReturned(ResponseEntity<Cart> response) {

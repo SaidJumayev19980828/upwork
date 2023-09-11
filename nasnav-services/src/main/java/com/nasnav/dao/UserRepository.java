@@ -10,10 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findById(Long id);
+
+	boolean existsByIdAndOrganizationId(Long id, Long orgId);
 
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
@@ -32,6 +35,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
 	List<UserEntity> findByOrganizationId(Long orgId);
+
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id where u.organizationId = :orgId")
+	Set<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId);
+
+	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id")
+	Set<UserEntity> findAllLinkedToYeshteryUser();
 
 	@Query("select count (u.id) from UserEntity u " +
 			" where u.organizationId = :orgId and u.creationTime between :minMonth and :maxMonth and u.creationTime is not null ")
@@ -52,13 +61,20 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
 
+	@Modifying
 	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
 	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
 
+	@Modifying
 	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
 	void updateUserTier(@Param("tierId") Long tierId, @Param("userId") Long userId);
 
 	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
+
+	@Query("select u from UserEntity u left join YeshteryUserEntity y on u.yeshteryUserId = CAST (y.referral as int) " +
+			"where y.id = :yeshteryUserId and u.organizationId = :orgId and y.referral is not null ")
+	UserEntity findByReferralUserIdAndOrganizationId(@Param("yeshteryUserId") Long yeshteryUserId,
+													 @Param("orgId") Long orgId);
 
     void deleteByYeshteryUserId(Long yeshteryUserId);
 

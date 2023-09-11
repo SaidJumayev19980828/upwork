@@ -2,11 +2,13 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductAddonsDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.*;
+import org.springframework.data.jpa.repository.Query;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -29,6 +31,14 @@ import static lombok.AccessLevel.NONE;
                         @ColumnResult(name = "product_id", type = long.class),
                         @ColumnResult(name = "tag_id", type = long.class)
                 }))
+@SqlResultSetMapping(
+        name = "addonPair",
+        classes = @ConstructorResult(
+                targetClass = Pair.class,
+                columns = {
+                        @ColumnResult(name = "product_id", type = long.class),
+                        @ColumnResult(name = "addon_id", type = long.class)
+                }))
 @NamedNativeQuery(
         name = "ProductEntity.getProductTags",
         query = "SELECT t.product_id, t.tag_id FROM Product_tags t WHERE t.product_id in :productsIds and t.tag_id in :tagsIds",
@@ -39,7 +49,13 @@ import static lombok.AccessLevel.NONE;
         query = "select t.product_id, t.tag_id from Product_tags t where t.product_id in :ids",
         resultSetMapping = "Pair"
 )
+@NamedNativeQuery(
+        name = "ProductEntity.getProductAddons",
+        query = "SELECT t.product_id, t.addon_id FROM Product_addons t WHERE t.product_id in :productsIds and t.addon_id in :addonsIds",
+        resultSetMapping = "addonPair"
+)
 
+       
 @Entity
 @Table(name = "products")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -144,6 +160,16 @@ public class ProductEntity {
             ,joinColumns = {@JoinColumn(name="product_id")}
             ,inverseJoinColumns = {@JoinColumn(name="tag_id")})
     private Set<TagsEntity> tags;
+    
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "product_addons"
+            ,joinColumns = {@JoinColumn(name="product_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="addon_id")})
+    private Set<AddonEntity> addons;
+
 
     public void insertProductTag(TagsEntity tag) {
         this.tags.add(tag);
@@ -151,5 +177,12 @@ public class ProductEntity {
 
     public void removeProductTag(TagsEntity tag) {
         this.tags.remove(tag);
+    }
+    public void insertProductAddon(AddonEntity addon) {
+        this.addons.add(addon);
+    }
+
+    public void removeProductAddon(AddonEntity addon) {
+        this.addons.remove(addon);
     }
 }

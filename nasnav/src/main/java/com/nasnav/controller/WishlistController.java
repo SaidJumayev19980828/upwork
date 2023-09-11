@@ -34,6 +34,10 @@ public class WishlistController {
     public Wishlist getWishlist(@RequestHeader(name = "User-Token", required = false) String userToken) {
         return wishlistService.getWishlist();
     }
+    @GetMapping( value = "/{userId}",produces = APPLICATION_JSON_VALUE)
+    public Wishlist getWishlistWithUserId(@PathVariable Long userId) {
+        return wishlistService.getWishlist(userId, false);
+    }
 
     @PostMapping(value = "/item/into_cart", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public Cart moveWishlistItemIntoCart(@RequestHeader(name = "User-Token", required = false) String userToken,

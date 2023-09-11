@@ -8,6 +8,9 @@ INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organiz
 INSERT INTO public.organization_domains (id, "domain", organization_id, canonical) VALUES(150001, 'fortune.nasnav.com', 99001, 0);
 INSERT INTO public.organization_domains (id, "domain", organization_id, canonical) VALUES(150002, 'www.fortune.com', 99001, 1);
 
+INSERT INTO public.organization_domains (id, "domain", subdir, organization_id, canonical) VALUES(150003, 'fortune.nasnav.com', 'org2', 99002, 0);
+INSERT INTO public.organization_domains (id, "domain", subdir, organization_id, canonical) VALUES(150004, 'www.fortune.com', 'org2', 99002, 1);
+
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);

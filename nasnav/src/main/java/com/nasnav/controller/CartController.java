@@ -6,9 +6,12 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
-import com.nasnav.service.PromotionsService;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,12 +23,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/cart")
+@RequiredArgsConstructor
 public class CartController {
+	private final CartCheckoutService cartCheckoutService;
 
 	@Autowired
 	private CartService cartService;
-	@Autowired
-	private PromotionsService promoService;
 	@Autowired
 	private CartOptimizationService cartOptimizeService;
 
@@ -35,6 +38,11 @@ public class CartController {
 						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
 						@RequestParam(required = false) Set<Long> points) {
 		return cartService.getCart(promoCode, points, false);
+	}
+
+	@GetMapping(value = "/{userId}",produces=APPLICATION_JSON_VALUE)
+	public Cart getCartWithUserId(@PathVariable Long userId) {
+		return cartService.getUserCart(userId,false);
 	}
 
 	@PostMapping(value = "/item", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -63,7 +71,7 @@ public class CartController {
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
-		return cartService.checkoutCart(dto);
+		return cartCheckoutService.checkoutCart(dto);
 	}
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
@@ -74,6 +82,6 @@ public class CartController {
 	@GetMapping(value = "/promo/discount", produces = APPLICATION_JSON_VALUE)
 	public AppliedPromotionsResponse calcPromoDiscount(@RequestHeader(TOKEN_HEADER) String userToken,
 													   @RequestParam(value = "promo", required = false) String promoCode) {
-		return promoService.calcPromoDiscountForCart(promoCode);
+		return cartService.getCartPromotions(promoCode);
 	}
 }

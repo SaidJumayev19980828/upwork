@@ -1,0 +1,75 @@
+variables:
+  VERSION: "1.0"
+  POSTGRES_DB: nasnav-tests
+  POSTGRES_USER: nasnav
+  POSTGRES_PASSWORD: nasnav
+  POSTGRES_HOST_AUTH_METHOD: trust
+  MAVEN_OPTS: -Dmaven.repo.local=/cache/.m2/repository
+
+# not working used volume instead
+# cache:
+#   key: m2cache
+#   paths:
+#     - .m2/repository
+
+stages:
+  - test
+  - visualize-coverage
+
+test:maven:
+  stage: test
+  interruptible: true
+  services:
+    - postgres:15.2-alpine
+  image: maven:3.8.6-openjdk-11
+  script:
+    - mvn --version
+    - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
+    - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
+    - mvn -B test
+    - ./coverage.sh target/site/jacoco-aggregate/jacoco.csv
+  coverage: '/Code coverage: \d+\.\d+/'
+  artifacts:
+    when: always
+    paths:
+      - target/site/jacoco-aggregate/jacoco.xml
+    reports:
+      junit:
+        - nasnav/target/surefire-reports/TEST-*.xml
+        - yeshtery/target/surefire-reports/TEST-*.xml
+  tags:
+    - test
+  only:
+    - merge_requests
+    - develop
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
+
+coverage:
+  stage: visualize-coverage
+  interruptible: true
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
+  script:
+    # convert report from jacoco to cobertura, using relative project path
+    - 'python /opt/cover2cover.py target/site/jacoco-aggregate/jacoco.xml
+        $CI_PROJECT_DIR/nasnav-services/src/main/java/
+        $CI_PROJECT_DIR/nasnav/src/main/java/
+        $CI_PROJECT_DIR/yeshtery/src/main/java/
+        > target/site/cobertura.xml'
+  needs: ["test:maven"]
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/cobertura.xml
+  tags:
+    - test
+  only:
+    - merge_requests
+  except:
+    variables:
+    # matches "Draft:", "[Draft]", or "(Draft)" ignoring case
+      - $CI_MERGE_REQUEST_TITLE =~ /^([Dd][Rr][Aa][Ff][Tt]):|\[[Dd][Rr][Aa][Ff][Tt]\]|\([Dd][Rr][Aa][Ff][Tt]\)/
+

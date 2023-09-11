@@ -32,14 +32,8 @@ public class LoyaltyPointConfigEntity {
     @lombok.ToString.Exclude
     private OrganizationEntity organization;
 
-    @Column(name = "ratio_from")
-    private BigDecimal ratioFrom;
-
-    @Column(name = "ratio_to")
-    private BigDecimal ratioTo;
-
-    @Column(name = "coefficient")
-    private BigDecimal coefficient;
+    @Column(name = "constraints")
+    private String constraints;
 
     @Column(name = "is_active")
     private Boolean isActive;
@@ -47,9 +41,6 @@ public class LoyaltyPointConfigEntity {
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @Column(name = "expiry")
-    private Integer expiry;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_tier_id", referencedColumnName = "id")

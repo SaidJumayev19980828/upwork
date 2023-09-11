@@ -60,27 +60,26 @@ public class DataExportController {
 				.body(s.toByteArray());
 	}
 
-	@GetMapping(value = "/products/images")
+	@GetMapping(value = "/products/images", params = "type=CSV")
 	@ResponseBody
 	public ResponseEntity<byte[]> generateProductsImagesCsv(@RequestHeader(TOKEN_HEADER) String token,
-															@RequestParam(name = "type") FileType type) throws IOException {
-		if(FileType.CSV == type) {
-			ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
-			return ResponseEntity.ok()
-					.contentType(MediaType.parseMediaType("text/csv"))
-					.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
-					.body(s.toByteArray());
-		}else if(FileType.XLSX == type) {
+			@RequestParam(name = "type") FileType type) throws IOException {
+		ByteArrayOutputStream s = csvExportService.generateProductsImagesFile();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
+				.body(s.toByteArray());
+	}
 
-			ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
-			return ResponseEntity.ok()
-					.contentType(MediaType.parseMediaType("text/csv"))
-					.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-					.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
-					.body(s.toByteArray());
-		}
-		throw  new UnsupportedOperationException();
-
+	@GetMapping(value = "/products/images", params = "type=XLSX")
+	@ResponseBody
+	public ResponseEntity<byte[]> generateProductsImagesExcel(@RequestHeader(TOKEN_HEADER) String token,
+			@RequestParam(name = "type") FileType type) throws IOException {
+		ByteArrayOutputStream s = excelExportService.generateProductsImagesFile();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
+				.body(s.toByteArray());
 	}
 
 	@GetMapping(value = "/products/images/csv")

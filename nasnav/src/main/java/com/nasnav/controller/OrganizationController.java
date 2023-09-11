@@ -1,31 +1,12 @@
 package com.nasnav.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.*;
-import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
-import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
-import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.dto.request.theme.OrganizationThemeClass;
-import com.nasnav.dto.response.*;
-import com.nasnav.enumerations.ProductFeatureType;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
-import com.nasnav.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
+import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
-import javax.validation.Valid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -33,17 +14,64 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0007;
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.*;
+import javax.validation.Valid;
 
+import com.nasnav.dto.response.*;
+import com.nasnav.response.*;
+import com.nasnav.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.OrganizationThemesSettingsDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.PromotionSearchParamDTO;
+import com.nasnav.dto.SeoKeywordsDTO;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.SubAreasRepObj;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsTreeCreationDTO;
+import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
+import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
+import com.nasnav.enumerations.ProductFeatureType;
+import com.nasnav.exceptions.BusinessException;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
+import com.nasnav.dto.request.RegisterDto;
 @RestController
 @RequestMapping("/organization")
 @CrossOrigin("*") // allow all origins
+@RequiredArgsConstructor
 public class OrganizationController {
+	private final FeaturesService featuresService;
     @Autowired
     private OrganizationService orgService;
     @Autowired
@@ -66,14 +94,23 @@ public class OrganizationController {
     private SeoService seoService;
     @Autowired
     private AddressService addressService;
+    @Autowired
+    private OrganizationService organizationService;
 
+
+    @PostMapping(value = "register", produces = APPLICATION_JSON_VALUE)
+    public OrganizationResponse registerOrganization(@RequestBody RegisterDto registerDto) throws Exception {
+        return organizationService.registerOrganization(registerDto);
+    }
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                        @RequestPart("properties") String jsonString,
-                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+                                                       @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
+                                                       @RequestPart(value = "cover", required = false) @Valid MultipartFile cover)
+                                                            throws BusinessException, JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationModificationDTO.class);
-        return orgService.updateOrganizationData(json, file);
+        return orgService.updateOrganizationData(json, logo, cover);
     }
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
@@ -102,30 +139,30 @@ public class OrganizationController {
 
     @GetMapping(value = "products_features", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) {
-        return orgService.getProductFeatures(orgId);
+        return featuresService.getProductFeatures(orgId);
     }
 
     @GetMapping(value = "products_features/types", produces = APPLICATION_JSON_VALUE)
     public List<ProductFeatureType> getOrganizationFeaturesTypes(@RequestHeader(name = "User-Token", required = false) String token) {
-        return orgService.getProductFeatureTypes();
+        return featuresService.getProductFeatureTypes();
     }
 
     @PostMapping(value = "products_feature", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                                              @RequestBody ProductFeatureUpdateDTO featureDto) {
-        return orgService.updateProductFeature(featureDto);
+        return featuresService.updateProductFeature(featureDto);
     }
 
     @DeleteMapping(value = "products_feature")
     public void removeProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("id") Integer featureId) {
-        orgService.removeProductFeature(featureId);
+        featuresService.removeProductFeature(featureId);
     }
 
     @DeleteMapping(value = "extra_attribute")
     public void deleteExtraAttribute(@RequestHeader(name = "User-Token", required = false) String token,
                                      @RequestParam("attr_id") Integer attrId) {
-        orgService.deleteExtraAttribute(attrId);
+        featuresService.deleteExtraAttribute(attrId);
     }
 
     @PostMapping(value = "image", produces = APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -141,18 +178,13 @@ public class OrganizationController {
     public void deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam(value = "image_id", required = false) Long imageId,
                                       @RequestParam(value = "url", required = false) String url) {
-        if (imageId == null && url == null) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$IMG$0003);
-        }
         orgService.deleteImage(imageId, url);
     }
 
     @PostMapping(value = "tag", produces = APPLICATION_JSON_VALUE)
     public TagResponse updateOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
                                              @RequestBody TagsDTO tagDTO) throws BusinessException {
-        tagDTO.setHasCategory(true);
-        TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
-        return new TagResponse(tag.getId());
+        return categoryService.createOrUpdateTagThroughApi(tagDTO);
     }
 
     @DeleteMapping(value = "tag", produces = APPLICATION_JSON_VALUE)
@@ -160,6 +192,8 @@ public class OrganizationController {
                                              @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         return categoryService.deleteOrgTag(tagId);
     }
+
+
 
     @PostMapping(value = "tag/tree", produces = APPLICATION_JSON_VALUE)
     public void createTagTree(@RequestHeader (name = "User-Token", required = false) String userToken,
@@ -222,14 +256,14 @@ public class OrganizationController {
 
     @GetMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken) {
-        return orgService.getExtraAttributes();
+        return featuresService.getExtraAttributes();
     }
 
     @PostMapping(value = "extra_attribute", produces = APPLICATION_JSON_VALUE)
     public Integer createOrgExtraAttribute(@RequestHeader (name = "User-Token", required = false) String userToken,
                                            @RequestParam("operation") String operation,
                                            @RequestBody ExtraAttributeDTO extraAttrDTO) {
-        return orgService.createUpdateExtraAttributes(extraAttrDTO, operation);
+        return featuresService.createUpdateExtraAttributes(extraAttrDTO, operation);
     }
 
     @GetMapping(value = "promotions", produces = APPLICATION_JSON_VALUE)

@@ -1,16 +1,25 @@
 package com.nasnav;
 
+import com.nasnav.dao.SchedulerTaskRepository;
+import com.nasnav.persistence.SchedulerTaskEntity;
+import com.nasnav.service.scheduler.ScheduleTaskHelper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 @SpringBootApplication(exclude = {
@@ -20,6 +29,28 @@ import java.util.Properties;
 @EnableScheduling
 public class NavBox
 {
+    @Autowired
+    private SchedulerTaskRepository schedulerTaskRepository;
+    @Autowired
+    private ScheduleTaskHelper scheduleTaskHelper;
+
+    @Bean
+    public void runScheduleTask() {
+        List<SchedulerTaskEntity> appointmentEntities = this.schedulerTaskRepository.findAll();
+        for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
+            this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
+        }
+    }
+
+    @Bean
+    public RestTemplate getRestTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    public AppConfig initAppConfig() {
+        return new AppConfig(false);
+    }
 
     public static void main(String[] args) throws IOException
     {

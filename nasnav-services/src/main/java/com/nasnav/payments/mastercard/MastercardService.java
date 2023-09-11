@@ -9,6 +9,9 @@ import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.*;
 import com.nasnav.service.OrderService;
+
+// import lombok.extern.slf4j.Slf4j;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -39,6 +42,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
+// @Slf4j
 public class MastercardService {
 
     public static final int FLAVOR_BASIC = 1;
@@ -394,8 +398,8 @@ public class MastercardService {
             data.put("apiOperation", "REFUND");
             data.put("transaction", transactionObj);
 
-//System.out.println("URI: " + request.getURI().toString());
-//System.out.println("PAYLOAD: " + data.toString());
+//log.debug("URI: {}", request.getURI().toString());
+//log.debug("PAYLOAD: {}", data.toString());
 
             // Execute call and fetch the result
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);

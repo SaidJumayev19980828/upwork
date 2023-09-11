@@ -19,10 +19,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
@@ -33,29 +38,30 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
 import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert.sql"})
 @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@AutoConfigureWebTestClient
-@PropertySource("classpath:test.database.properties")
-public class PromotionsTest {
+@Slf4j
+public class PromotionsTest extends AbstractTestWithTempBaseDir {
 	@Autowired
     private TestRestTemplate template;
 	
@@ -137,6 +143,7 @@ public class PromotionsTest {
 	@Test
 	public void getPromotionStartAndCountTest() {
 		HttpEntity<?> req = getHttpEntity("hijkllm");
+
 		ResponseEntity<PromotionResponse> res =
 				template.exchange("/organization/promotions?count=1", GET, req, PromotionResponse.class);
 
@@ -448,7 +455,7 @@ public class PromotionsTest {
 		ResponseEntity<AppliedPromotionsResponse> res =
 				template.exchange(url, GET, req, AppliedPromotionsResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
-		System.out.println(res.getBody().toString());
+		log.debug("{}", res.getBody());
 		return res.getBody().getTotalDiscount();
 	}
 
@@ -902,6 +909,101 @@ public class PromotionsTest {
 		assertEquals(400 , order.getSubtotal().intValue());
 		assertEquals(12.76 , order.getShipping().doubleValue(), 1e-15);
 		assertEquals("total is subTotal - discount + shipping", 312.76 , order.getTotal().doubleValue(), 1e-15);
+	}
+
+	private ItemsPromotionsDTO getApplicaPromotions(Set<String> productIds, Set<String> brandIds, Set<String> tagIds, Long promotionsPerItem) {
+		List<String> queryParams = new LinkedList<>();
+		if (!isNull(productIds))
+			queryParams.add("product_ids=" + String.join(",", productIds));
+		if (!isNull(brandIds))
+			queryParams.add("brand_ids=" + String.join(",", brandIds));
+		if (!isNull(tagIds))
+			queryParams.add("tag_ids=" + String.join(",", tagIds));
+		if (!isNull(promotionsPerItem))
+			queryParams.add("promotions_per_item=" + promotionsPerItem);
+
+		String queryString = queryParams.isEmpty() ? "" : "?" + String.join("&", queryParams);
+
+		ResponseEntity<ItemsPromotionsDTO> res = template
+				.getForEntity(
+						"/navbox/applicable_promotions_list" + queryString,
+						ItemsPromotionsDTO.class, queryParams);
+		assertEquals(200, res.getStatusCodeValue());
+
+		var responseBody = res.getBody();
+		List<List<Long>> promoIdsFromLists = new LinkedList<>();
+		promoIdsFromLists.addAll(responseBody.getProductPromotionIds().values());
+		promoIdsFromLists.addAll(responseBody.getBrandPromotionIds().values());
+		promoIdsFromLists.addAll(responseBody.getTagPromotionIds().values());
+
+		Set<Long> promoIdsFromListsSet = promoIdsFromLists.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+		Map<Long, PromotionDTO> promosMap = responseBody.getPromotions();
+
+		assertEquals(promoIdsFromListsSet, promosMap.keySet());
+
+		assertTrue(promosMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue().getId())));
+
+		return responseBody;
+	}
+
+	
+	@Test
+	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert_6.sql" })
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+	public void getApplicablePromotionsList() throws JsonProcessingException {
+		ItemsPromotionsDTO applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), setOf("2103", "2101"), setOf("22001"),
+				10L);
+		var productPromotions = applicablePromotions.getProductPromotionIds();
+		assertEquals(2, productPromotions.size());
+		assertEquals(List.of(99007L, 99006L, 99009L), productPromotions.get(1001L));
+		assertEquals(List.of(99007L, 99006L, 99009L), productPromotions.get(1005L));
+		var brandsPromotions = applicablePromotions.getBrandPromotionIds();
+		assertEquals(2, brandsPromotions.size());
+		assertEquals(Collections.<Long>emptyList(), brandsPromotions.get(2103L));
+		assertEquals(List.of(99007L, 99006L, 99009L, 99008L), brandsPromotions.get(2101L));
+		var tagsPromotions = applicablePromotions.getTagPromotionIds();
+		assertEquals(1, tagsPromotions.size());
+		assertEquals(List.of(99007L, 99006L, 99009L, 99008L), tagsPromotions.get(22001L));
+
+		applicablePromotions = getApplicaPromotions(setOf("1001", "1005"), null, null,
+				null);
+		productPromotions = applicablePromotions.getProductPromotionIds();
+		assertEquals(2, productPromotions.size());
+		assertEquals(List.of(99007L), productPromotions.get(1001L));
+		assertEquals(List.of(99007L), productPromotions.get(1005L));
+		brandsPromotions = applicablePromotions.getBrandPromotionIds();
+		assertTrue(brandsPromotions.isEmpty());
+		tagsPromotions = applicablePromotions.getTagPromotionIds();
+		assertTrue(tagsPromotions.isEmpty());
+	}
+
+	@Test
+	public void getActivePromotions() {
+		ResponseEntity<List<PromotionDTO>> res = template
+				.exchange(
+						"/navbox/active_promotions?org_id=99001&type_ids=1",
+						HttpMethod.GET,
+						null,
+						new ParameterizedTypeReference<List<PromotionDTO>>(){});
+		assertEquals(200, res.getStatusCodeValue());
+
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
+		assertEquals(List.of(), promotionIds);
+	}
+
+
+	@Test
+	public void getActivePromotionsWithoutFilter() {
+		ResponseEntity<List<PromotionDTO>> res = template
+				.exchange(
+						"/navbox/active_promotions?org_id=99001",
+						HttpMethod.GET,
+						null,
+						new ParameterizedTypeReference<List<PromotionDTO>>(){});
+		assertEquals(200, res.getStatusCodeValue());
+
+		List<Long> promotionIds = res.getBody().stream().map(PromotionDTO::getId).collect(Collectors.toList());
+		assertEquals(List.of(630002L, 630003L), promotionIds);
 	}
 
 

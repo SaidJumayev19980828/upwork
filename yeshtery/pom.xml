@@ -210,6 +210,9 @@
                 <version>${jacoco.version}</version>
                 <configuration>
                     <append>true</append>
+                    <excludes>
+                        <exclude>com/gargoylesoftware/htmlunit/javascript/host/css/StyleAttributes$Definition</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>

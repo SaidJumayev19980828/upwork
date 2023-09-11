@@ -62,7 +62,7 @@ public class UserEntity extends BaseUserEntity{
     @lombok.ToString.Exclude
     private LoyaltyFamilyEntity family;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tier_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -88,6 +88,13 @@ public class UserEntity extends BaseUserEntity{
     @Column(name = "yeshtery_user_id")
     private Long yeshteryUserId;
 
+    private String referral;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    @JsonIgnore
+    RocketChatCustomerTokenEntity rocketChatTokenEntity;
 
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
@@ -127,6 +134,7 @@ public class UserEntity extends BaseUserEntity{
         if (this.getBooster() != null)
             obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
+        obj.setImage(this.getImage());
 
         return obj;
     }

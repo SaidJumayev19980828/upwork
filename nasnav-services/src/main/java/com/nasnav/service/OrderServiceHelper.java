@@ -1,61 +1,20 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.persistence.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
-import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.OrdersEntity;
 
-@Service
-public class OrderServiceHelper {
+public interface OrderServiceHelper {
 
-    @Autowired
-    private ProductImageService imgService;
+  Map<Long, Optional<String>> getVariantsImagesList(MetaOrderEntity order);
 
-    @Autowired
-    private BasketRepository basketRepository;
+  Map<Long, Optional<String>> getVariantsImagesList(Set<OrdersEntity> orders);
 
-    @Autowired
-    private SecurityService securityService;
+  Map<Long, BasketsEntity> getBasketsMap(List<Long> ids);
 
-
-
-    public Map<Long, Optional<String>> getVariantsImagesList(MetaOrderEntity order) {
-        Set<OrdersEntity> orders = order.getSubOrders();
-        return getVariantsImagesList(orders);
-    }
-
-
-    public Map<Long, Optional<String>> getVariantsImagesList(Set<OrdersEntity> orders) {
-        List<Long> variantsIds =
-                orders
-                .stream()
-                .map(OrdersEntity::getBasketsEntity)
-                .flatMap(Set::stream)
-                .map(BasketsEntity::getStocksEntity)
-                .map(StocksEntity::getProductVariantsEntity)
-                .map(ProductVariantsEntity::getId)
-                .collect(toList());
-        return imgService.getVariantsCoverImages(variantsIds);
-    }
-
-
-    public Map<Long, BasketsEntity> getBasketsMap(List<Long> ids) {
-        if(ids.isEmpty()){
-            return emptyMap();
-        }
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return mapInBatches(ids, 500, batch -> basketRepository.findByIdIn(batch, orgId))
-                .stream()
-                .collect(toMap(BasketsEntity::getId, b -> b));
-    }
 }

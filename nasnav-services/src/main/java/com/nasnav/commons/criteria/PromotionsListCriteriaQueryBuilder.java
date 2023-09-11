@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -46,12 +43,12 @@ public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBui
 
         ArrayList<Predicate> predicates = new ArrayList<>();
 
-        if(params.status.isPresent()) {
+        if (params.status.isPresent()) {
             Predicate predicate = builder.equal(root.get("status"), params.status.get());
             predicates.add(predicate);
         }
 
-        if(params.id.isPresent()) {
+        if (params.id.isPresent()) {
             Predicate predicate = builder.equal(root.get("id"), params.id.get());
             predicates.add(predicate);
         }
@@ -83,9 +80,9 @@ public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBui
         PromotionsSearchParams params = (PromotionsSearchParams) searchParams;
 
         this.resultList = entityManager.createQuery(query)
-                                .setFirstResult(params.getStart())
-                                .setMaxResults(params.getCount())
-                                .getResultList();
+                .setFirstResult(params.getStart())
+                .setMaxResults(params.getCount())
+                .getResultList();
     }
 
     private Predicate createPromotionInTimeWindowPerdicate(CriteriaBuilder builder, Root<PromotionsEntity> root,

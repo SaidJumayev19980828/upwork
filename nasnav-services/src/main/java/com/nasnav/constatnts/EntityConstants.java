@@ -12,7 +12,7 @@ public final class EntityConstants {
     public static final String EMAIL_PATTERN = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,6}$";
     public static final String Name_PATTERN = "^[a-zA-z0-9 \'&-]+$";
     public static final String DATE_TIME_PATTERN =
-                    "^20[2-9][0-9]-" +  // YYYY
+                    "^20[1-9][0-9]-" +  // YYYY
                     "(0{1}[1-9]|1[0-2])-" + // MM
                     "(0{1}[1-9]|1[0-9]|2[0-9]|3[0-1])" + // DD
                     "(T|:)(0{1}[0-9]|1[0-9]|2[0-3]):" + // HH
@@ -31,8 +31,10 @@ public final class EntityConstants {
 
     //Number of seconds that login token stay valid during
     public static final int AUTH_TOKEN_VALIDITY = 2592000; // 1 month
-    
-    
+
+    public static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+
+
     public static final String NASNAV_DOMAIN = "nasnav.com";
     public static final String NASORG_DOMAIN = "nasnav.org";
 
