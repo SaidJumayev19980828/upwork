@@ -36,6 +36,17 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private AdvertisementRepository advertisementRepository;
 
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private AdvertisementProductRepository advertisementProductRepository;
+
+
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+
     @ParameterizedTest
     @ValueSource(strings = {"", "?orgId=99002"})
     void testFindAllAdvertisement(String urlQuery) {
@@ -55,26 +66,26 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
 
         String requestBody =
                 json()
-                        .put("bannerUrl", "bannerUrl")
-                        .put("fromDate", LocalDateTime.now().minusYears(10).toString())
-                        .put("toDate", LocalDateTime.now().plusYears(20).toString())
-                        .put("orgId", 99001)
-                        .put("advertisementProductDTOS",
+                        .put("banner_url", "bannerUrl")
+                        .put("from_date", LocalDateTime.now().minusYears(10).toString())
+                        .put("to_date", LocalDateTime.now().plusYears(20).toString())
+                        .put("org_id", 99001)
+                        .put("products",
                                 jsonArray()
                                         .put(0, json()
                                                 .put("coins", 100)
                                                 .put("likes", 3000)
-                                                .put("productId", 1001)
+                                                .put("product_id", 1001)
                                         )
                                         .put(1, json()
                                                 .put("coins", 100)
                                                 .put("likes", 3000)
-                                                .put("productId", 1002)
+                                                .put("product_id", 1002)
                                         )
                                         .put(2, json()
                                                 .put("coins", 100)
                                                 .put("likes", 3000)
-                                                .put("productId", 1003)
+                                                .put("product_id", 1003)
                                         )
                         )
                         .toString();
@@ -94,19 +105,19 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         assertThat(body.getFromDate(), is(notNullValue()));
         assertThat(body.getToDate(), is(notNullValue()));
         assertThat(body.getCreationDate(), is(notNullValue()));
-        assertThat(body.getAdvertisementProductDTOS(), is(notNullValue()));
+        assertThat(body.getProducts(), is(notNullValue()));
 
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("id", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("id", is(notNullValue()))));
 
 
-        assertThat(body.getAdvertisementProductDTOS(), hasSize(3));
+        assertThat(body.getProducts(), hasSize(3));
 
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1001L)))));
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1002L)))));
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1003L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1001L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1002L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1003L)))));
 
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("brandsDTO", is(notNullValue()))));
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("productDetailsDTO", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("brandsDTO", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("productDetailsDTO", is(notNullValue()))));
 
     }
 
@@ -126,30 +137,20 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         assertThat(body.getFromDate(), is(notNullValue()));
         assertThat(body.getToDate(), is(notNullValue()));
         assertThat(body.getCreationDate(), is(notNullValue()));
-        assertThat(body.getAdvertisementProductDTOS(), is(notNullValue()));
+        assertThat(body.getProducts(), is(notNullValue()));
 
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("id", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("id", is(notNullValue()))));
 
 
-        assertThat(body.getAdvertisementProductDTOS(), hasSize(3));
+        assertThat(body.getProducts(), hasSize(3));
 
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1001L)))));
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1002L)))));
-        assertThat(body.getAdvertisementProductDTOS(), hasItem(hasProperty("productId", is(equalTo(1003L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1001L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1002L)))));
+        assertThat(body.getProducts(), hasItem(hasProperty("productId", is(equalTo(1003L)))));
 
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("brandsDTO", is(notNullValue()))));
-        assertThat(body.getAdvertisementProductDTOS(), everyItem(hasProperty("productDetailsDTO", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("brandsDTO", is(notNullValue()))));
+        assertThat(body.getProducts(), everyItem(hasProperty("productDetailsDTO", is(notNullValue()))));
     }
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private AdvertisementProductRepository advertisementProductRepository;
-
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
 
     @ParameterizedTest
     @ValueSource(ints = {1006})
@@ -165,8 +166,8 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
         assertThat(firstBodyExchange, is(notNullValue()));
 
         Long orgId = firstBodyExchange.getOrgId();
-        List<Long> productIds = firstBodyExchange.getAdvertisementProductDTOS().stream().map(AdvertisementProductDTO::getProductId).collect(Collectors.toList());
-        List<Long> advertisementProductIds = firstBodyExchange.getAdvertisementProductDTOS().stream().map(AdvertisementProductDTO::getId).collect(Collectors.toList());
+        List<Long> productIds = firstBodyExchange.getProducts().stream().map(AdvertisementProductDTO::getProductId).collect(Collectors.toList());
+        List<Long> advertisementProductIds = firstBodyExchange.getProducts().stream().map(AdvertisementProductDTO::getId).collect(Collectors.toList());
 
 
         ResponseEntity<Void> deleteExchange = template.exchange("/advertisement/" + advertisementId, HttpMethod.DELETE, getHttpEntity("1"), Void.class);

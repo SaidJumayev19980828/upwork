@@ -1,5 +1,7 @@
 package com.nasnav.dto.response;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.response.navbox.AdvertisementProductDTO;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,13 +13,14 @@ import java.util.List;
 
 @Getter
 @Setter
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class AdvertisementDTO {
     private Long id;
     @NotNull
     private Long orgId;
     @NotNull
     private String bannerUrl;
-    private List<AdvertisementProductDTO> advertisementProductDTOS;
+    private List<AdvertisementProductDTO> products;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime creationDate;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

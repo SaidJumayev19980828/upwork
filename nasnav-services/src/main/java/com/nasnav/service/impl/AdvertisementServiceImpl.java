@@ -70,9 +70,9 @@ public class AdvertisementServiceImpl implements AdvertisementService {
             advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
         }
         AdvertisementEntity advertisementEntity = advertisementRepository.save(advertisement);
-        List<AdvertisementProductDTO> advertisementProductDTOS = advertisementProductService.save(advertisementEntity, advertisementDTO.getAdvertisementProductDTOS());
+        List<AdvertisementProductDTO> advertisementProductDTOS = advertisementProductService.save(advertisementEntity, advertisementDTO.getProducts());
         AdvertisementDTO dto = advertisementMapper.toDto(advertisementEntity);
-        dto.setAdvertisementProductDTOS(advertisementProductDTOS);
+        dto.setProducts(advertisementProductDTOS);
         return dto;
     }
 
@@ -94,7 +94,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     private AdvertisementDTO toDto(AdvertisementEntity entity) {
         AdvertisementDTO dto = advertisementMapper.toDto(entity);
-        dto.setAdvertisementProductDTOS(advertisementProductCollectionMapper.toDto(entity.getAdvertisementProducts()).stream().map(itx -> {
+        dto.setProducts(advertisementProductCollectionMapper.toDto(entity.getAdvertisementProducts()).stream().map(itx -> {
             if (itx.getProductId() != null) {
                 ProductEntity product = productRepository.getById(itx.getProductId());
                 itx.setProductDetailsDTO(productService.toProductDetailsDTO(product, false));
