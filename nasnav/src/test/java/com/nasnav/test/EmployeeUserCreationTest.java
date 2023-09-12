@@ -1024,7 +1024,7 @@ public class EmployeeUserCreationTest extends AbstractTestWithTempBaseDir {
 
 		EmployeeUserEntity user = empRepository.findByEmailIgnoreCaseAndOrganizationId("user1@nasnav.com", 99001L).orElse(null);
 		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
-		Set<String> notificationTokensByUsers = securityService.getValidEmployeeNotificationTokens(Set.of(user));
+		Set<String> notificationTokensByUsers = securityService.getValidNotificationTokensForOrgEmployees(99001L);
 
 		Set<String> expectedTokens = Set.of(notificationToken);
 		assertEquals(expectedTokens, notificationTokens);
