@@ -112,6 +112,26 @@ class NotificationTest {
         Mockito.verify(firebaseMessaging, times(2)).sendEachForMulticast(any());
     }
 
+    @Test
+    void sendToOrgEmployees() throws FirebaseMessagingException, NoSuchFieldException, SecurityException,
+            IllegalArgumentException, IllegalAccessException {
+        Set<String> tokens = getSetOfTokens(800);
+        PushMessageDTO<Integer> notificationRequestDto = new PushMessageDTO<>("some title", 58);
+        Mockito.when(securityService.getValidNotificationTokensForOrgEmployees(58L)).thenReturn(tokens);
+        notificationService.sendMessageToOrganizationEmplyees(58L, notificationRequestDto);
+        Mockito.verify(firebaseMessaging, times(2)).sendEachForMulticast(any());
+    }
+
+    @Test
+    void sendToShopEmployees() throws FirebaseMessagingException, NoSuchFieldException, SecurityException,
+            IllegalArgumentException, IllegalAccessException {
+        Set<String> tokens = getSetOfTokens(800);
+        PushMessageDTO<Integer> notificationRequestDto = new PushMessageDTO<>("some title", 58);
+        Mockito.when(securityService.getValidNotificationTokensForShopEmployees(58L)).thenReturn(tokens);
+        notificationService.sendMessageToShopEmplyees(58L, notificationRequestDto);
+        Mockito.verify(firebaseMessaging, times(2)).sendEachForMulticast(any());
+    }
+
 
     Set<String> getSetOfTokens(int count) {
         return IntStream.range(0, count).mapToObj((current) -> "token" + current).collect(Collectors.toSet());

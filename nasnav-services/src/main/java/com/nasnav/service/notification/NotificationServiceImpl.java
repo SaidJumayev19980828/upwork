@@ -34,6 +34,8 @@ public class NotificationServiceImpl implements NotificationService {
         this.objectMapper = objectMapper;
     }
 
+    // TODO: support async calls
+
     @Override
     public void sendMessage(BaseUserEntity user, PushMessageDTO<?> notification) {
         validateFirebaseMessagingUp();
@@ -56,7 +58,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     }
 
-    // TODO: @Async
     @Override
     public void sendMessageToShopEmplyees(Long shopId, PushMessageDTO<?> notification) {
         validateFirebaseMessagingUp();
