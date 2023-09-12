@@ -1,6 +1,5 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
@@ -11,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 
@@ -54,14 +52,13 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
     @Query(value = "select t from UserTokensEntity t where t.userEntity = :user")
 	Set<UserTokensEntity> getByUserEntity(@Param("user") UserEntity user);
 
-    Set<UserTokensEntity> getByUserEntityAndNotificationTokenNotNull(UserEntity user);
+    Set<UserTokensEntity> getDistinctByUserEntityAndNotificationTokenNotNull(UserEntity user);
 
-    Set<UserTokensEntity> getByUserEntityInAndNotificationTokenNotNull(Set<UserEntity> users);
+    Set<UserTokensEntity> getDistinctByEmployeeUserEntityAndNotificationTokenNotNull(EmployeeUserEntity employee);
 
-    Set<UserTokensEntity> getByEmployeeUserEntityAndNotificationTokenNotNull(EmployeeUserEntity employee);
+    Set<UserTokensEntity> getDistinctByEmployeeUserEntityOrganizationIdAndNotificationTokenNotNull(Long orgId);
 
-    Set<UserTokensEntity> getByEmployeeUserEntityInAndNotificationTokenNotNull(Set<EmployeeUserEntity> employees);
-
+    Set<UserTokensEntity> getDistinctByEmployeeUserEntityShopIdAndNotificationTokenNotNull(Long shopId);
 
     @Query(value = "select t from UserTokensEntity t where t.userEntity in :users")
 	Set<UserTokensEntity> getByUserEntities(@Param("users") Set<UserEntity> user);
