@@ -52,7 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
         validateFirebaseMessagingUp();
         Set<String> notificationTokens = securityService.getValidNotificationTokensForOrgEmployees(orgId);
         if (notificationTokens.isEmpty()) {
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, orgId);
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0004, orgId);
         }
         sendMulticast(notification, notificationTokens);
 
@@ -63,7 +63,7 @@ public class NotificationServiceImpl implements NotificationService {
         validateFirebaseMessagingUp();
         Set<String> notificationTokens = securityService.getValidNotificationTokensForShopEmployees(shopId);
         if (notificationTokens.isEmpty()) {
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, shopId);
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0005, shopId);
         }
         sendMulticast(notification, notificationTokens);
 
