@@ -224,6 +224,9 @@ public class UserServicesHelper {
 			employeeUserEntity.setGender(employeeUserJson.getGender());
 		}
 
+		if(isNotBlankOrNull(employeeUserJson.getBirthDate())){
+			employeeUserEntity.setDateOfBirth(LocalDateTime.parse(employeeUserJson.getBirthDate()));
+		}
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
 
 		employeeUserEntity = employeeUserRepository.save(employeeUserEntity);
