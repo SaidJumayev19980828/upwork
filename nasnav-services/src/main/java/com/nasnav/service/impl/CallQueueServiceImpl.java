@@ -1,9 +1,8 @@
 package com.nasnav.service.impl;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dto.request.notification.NotificationRequestDto;
+import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
@@ -93,7 +92,7 @@ public class CallQueueServiceImpl implements CallQueueService {
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
         String userResponseSTR = userResponse.toString();
-        notificationService.sendMessage(entity.getUser(), new NotificationRequestDto("call queue started", userResponseSTR));
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("call queue started", userResponseSTR));
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
@@ -153,7 +152,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                     .put("total",queue.size())
                             .toString();
             notificationService.sendMessage(entity.getUser(),
-                    new NotificationRequestDto("queue summary",response));
+                    new PushMessageDTO<>("queue summary",response));
         }
     }
 

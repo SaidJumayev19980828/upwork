@@ -37,8 +37,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="mobile")
     private String mobile;
 
-    @Column(name = "date_of_birth")
-    private LocalDateTime dateOfBirth;
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore

@@ -172,7 +172,8 @@ public enum ErrorCodes {
 	,THEME$0004("uid is already used by another theme!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
-	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!"),
+	ORG$CREATE$001("Provided p_name is already used by another organization")
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
@@ -467,6 +468,10 @@ public enum ErrorCodes {
 	,NOTIF$0001("Firebase not initialized")
 	,NOTIF$0002("Firebase error occurred with error code [%s]")
 	,NOTIF$0003("No notification tokens found for user with id [%d]")
+	,NOTIF$0004("No notification tokens found for organization with id [%d]")
+	,NOTIF$0005("No notification tokens found for shop with id [%d]")
+	,NOTIF$0006("Couldn't get message body")
+
 
 	;
 

@@ -587,44 +587,31 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 	public Set<String> getValidEmployeeNotificationTokens(EmployeeUserEntity employee) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityAndNotificationTokenNotNull(employee);
-		return getFilteredNotificationTokens(tokenEntities, true);
-	}
-
-	@Override
-	public Set<String> getValidEmployeeNotificationTokens(Set<EmployeeUserEntity> employees) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityInAndNotificationTokenNotNull(employees);
-		return getFilteredNotificationTokens(tokenEntities, true);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getDistinctByEmployeeUserEntityAndNotificationTokenNotNull(employee);
+		return getValidNotificationTokens(tokenEntities);
 	}
 
 	@Override
 	public Set<String> getValidUserNotificationTokens(UserEntity user) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityAndNotificationTokenNotNull(user);
-		return getFilteredNotificationTokens(tokenEntities, true);
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getDistinctByUserEntityAndNotificationTokenNotNull(user);
+		return getValidNotificationTokens(tokenEntities);
 	}
 
 	@Override
-	public Set<String> getValidUserNotificationTokens(Set<UserEntity> users) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityInAndNotificationTokenNotNull(users);
-		return getFilteredNotificationTokens(tokenEntities, true);
+	public Set<String> getValidNotificationTokensForOrgEmployees(Long orgId) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getDistinctByEmployeeUserEntityOrganizationIdAndNotificationTokenNotNull(orgId);
+		return getValidNotificationTokens(tokenEntities);
 	}
 
 	@Override
-	public Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByEmployeeUserEntityAndNotificationTokenNotNull(employee);
-		return getFilteredNotificationTokens(tokenEntities, false);
-	}
-
-	@Override
-	public Set<String> getInvalidUserNotificationTokens(UserEntity user) {
-		Set<UserTokensEntity> tokenEntities = userTokenRepo.getByUserEntityAndNotificationTokenNotNull(user);
-		return getFilteredNotificationTokens(tokenEntities, false);
+	public Set<String> getValidNotificationTokensForShopEmployees(Long shopId) {
+		Set<UserTokensEntity> tokenEntities = userTokenRepo.getDistinctByEmployeeUserEntityShopIdAndNotificationTokenNotNull(shopId);
+		return getValidNotificationTokens(tokenEntities);
 	}
 
 
-	private Set<String> getFilteredNotificationTokens(Set<UserTokensEntity> tokenEntities, boolean valid) {
-		Predicate<UserTokensEntity> predicate = valid ? Predicate.not(this::isExpired) : this::isExpired;
-		return tokenEntities.stream().filter(predicate)
+	private Set<String> getValidNotificationTokens(Set<UserTokensEntity> tokenEntities) {
+		return tokenEntities.stream().filter(Predicate.not(this::isExpired))
 				.map(UserTokensEntity::getNotificationToken).collect(toSet());
 	}
 

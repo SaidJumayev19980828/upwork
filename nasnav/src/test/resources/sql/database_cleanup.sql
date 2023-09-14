@@ -101,6 +101,7 @@ DELETE FROM public.files  where user_id in (SELECT id from public.users where or
 DELETE FROM public.video_chat_logs WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.package_registered WHERE org_id > 99000;
+DELETE FROM public.employee_user_heart_beats_logs;
 DELETE FROM public.employee_users WHERE organization_id > 99000;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_images where organization_id between 99000 and 99999;

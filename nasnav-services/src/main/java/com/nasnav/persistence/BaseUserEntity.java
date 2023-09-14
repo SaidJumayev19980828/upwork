@@ -67,6 +67,9 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	@CreationTimestamp
 	private LocalDateTime creationTime;
 
+	@Column(name = "date_of_birth")
+	private LocalDateTime dateOfBirth;
+
 	public abstract String getName();
 	public abstract void setName(String name);
 
