@@ -149,7 +149,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     public List<AvailabilityDTO> getAllFreeAvailabilitiesByOrgAndEmployee(Long orgId, Long employeeId) {
         Optional<OrganizationEntity> org = organizationRepository.findById(orgId);
         if(org.isPresent()){
-            return availabilityRepository.getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(org.get(), getEmployee())
+            return availabilityRepository.getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(org.get(), employeeId)
                     .stream().map(this::toDTO).collect(Collectors.toList());
         }
         return null;
@@ -238,6 +238,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         availabilityDTO.setOrganizationId(entity.getOrganization().getId());
         availabilityDTO.setPeriod(Duration.between(entity.getStartsAt(),entity.getEndsAt()).toMinutes());
         availabilityDTO.setEmployee(entity.getEmployeeUser().getId());
+        availabilityDTO.setEmployeeRepresentation(entity.getEmployeeUser().getRepresentation());
         if(entity.getShop() != null)
             availabilityDTO.setShopId(entity.getShop().getId());
         return availabilityDTO;

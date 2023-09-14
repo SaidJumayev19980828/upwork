@@ -11,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/bank")
 @AllArgsConstructor
+@CrossOrigin("*")
 public class BankController {
     private final BankAccountService bankAccountService;
     private final BankAccountActivityService bankAccountActivityService;
