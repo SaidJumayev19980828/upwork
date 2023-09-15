@@ -277,7 +277,6 @@ public class PostServiceImpl implements PostService {
         else {
             dto.setIsLiked(false);
         }
-        dto.setCreatedAt(entity.getCreatedAt());
 
         return dto;
     }

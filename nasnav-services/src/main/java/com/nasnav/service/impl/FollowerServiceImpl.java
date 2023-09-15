@@ -4,7 +4,6 @@ import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,16 +37,10 @@ public class FollowerServiceImpl implements FollowerServcie{
     private PostRepository postRepository;
 
     @Override
-    public PageImpl<FollowerDTO> getAllFollowersByUserId(long userId, Integer start, Integer count) {
-        List<FollowerDTO> dtos = new ArrayList<>();
+    public PageImpl<UserRepresentationObject> getAllFollowersByUserId(long userId, Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
         PageImpl<FollowerEntity> source = followerRepository.getAllByUser_Id(userId, page);
-        source.getContent().stream().forEach(o -> {
-                FollowerDTO dto = new FollowerDTO();
-                dto.setUserRepresentationObject(o.getFollower().getRepresentation());
-                dto.setIsFollowed(followerRepository.existsByFollower_IdAndUser_Id(userId, o.getFollower().getId()));
-                dtos.add(dto);
-        });
+        List<UserRepresentationObject> dtos = source.getContent().stream().map(o -> o.getFollower().getRepresentation()).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
