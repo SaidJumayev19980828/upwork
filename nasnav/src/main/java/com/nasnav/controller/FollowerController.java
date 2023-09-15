@@ -1,7 +1,6 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.FollowerEntity;
@@ -23,10 +22,10 @@ public class FollowerController {
     private FollowerServcie followerServcie;
 
     @GetMapping("/follower")
-    public PageImpl<FollowerDTO> getAllFollowersByUserId(@RequestHeader(name = "User-Token", required = false) String token,
-                                                         @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                         @RequestParam(required = false, defaultValue = "10") Integer count,
-                                                         @RequestParam Long userId) {
+    public PageImpl<UserRepresentationObject> getAllFollowersByUserId(@RequestHeader(name = "User-Token", required = false) String token,
+                                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                                      @RequestParam(required = false, defaultValue = "10") Integer count,
+                                                                      @RequestParam Long userId) {
         return followerServcie.getAllFollowersByUserId(userId, start, count);
     }
 
