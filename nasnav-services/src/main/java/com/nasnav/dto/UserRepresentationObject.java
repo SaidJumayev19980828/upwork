@@ -44,8 +44,6 @@ public class UserRepresentationObject {
     private Boolean isInfluencer;
     private LocalDateTime lastLogin;
     private Gender gender;
-    private Long BankAccountId;
-    private Long influencerId;
 
     public String getReferral() {
         return id + "";

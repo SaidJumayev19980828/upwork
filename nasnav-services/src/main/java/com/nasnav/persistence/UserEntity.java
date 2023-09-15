@@ -94,18 +94,6 @@ public class UserEntity extends BaseUserEntity{
     @JsonIgnore
     RocketChatCustomerTokenEntity rocketChatTokenEntity;
 
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    @JsonIgnore
-    private BankAccountEntity bankAccount;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    @JsonIgnore
-    private InfluencerEntity influencer;
-
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
     public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
@@ -145,10 +133,7 @@ public class UserEntity extends BaseUserEntity{
             obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
         obj.setImage(this.getImage());
-        if(this.bankAccount != null)
-            obj.setBankAccountId(this.bankAccount.getId());
-        if(this.influencer != null)
-            obj.setInfluencerId(this.influencer.getId());
+
         return obj;
     }
 }

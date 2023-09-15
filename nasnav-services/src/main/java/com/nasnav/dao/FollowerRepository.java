@@ -15,5 +15,4 @@ public interface FollowerRepository extends CrudRepository<FollowerEntity, Long>
     FollowerEntity getByUser_IdAndFollower_Id(long userId, long followerId);
     Long countAllByFollower_Id(long followerId);
     Long countAllByUser_Id(long user);
-    Boolean existsByFollower_IdAndUser_Id(long followerId, long followingId);
 }

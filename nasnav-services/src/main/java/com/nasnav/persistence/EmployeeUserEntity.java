@@ -44,12 +44,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
             ,inverseJoinColumns = {@JoinColumn(name="role_id")})
     private Set<Role> roles;
 
-    @OneToOne(mappedBy = "employeeUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    @JsonIgnore
-    private InfluencerEntity influencer;
-
     @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
@@ -65,8 +59,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
                 .map(Role::getName)
                 .collect(toSet())
         );
-        if(this.influencer != null)
-            obj.setInfluencerId(this.influencer.getId());
         return obj;
     }
 }
