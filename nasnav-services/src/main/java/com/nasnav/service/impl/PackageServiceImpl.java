@@ -89,7 +89,6 @@ public class PackageServiceImpl implements PackageService {
 
         packageRegisteredEntity.setCreatorEmployee(employee);
 
-        packageRepository.save(packageEntity);
         return packageRegisteredRepository.save(packageRegisteredEntity).getId();
     }
 }

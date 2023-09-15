@@ -9,30 +9,28 @@ import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
-@Table(name = "package")
+@Table(name = "service")
 @EqualsAndHashCode(callSuper=false)
 @Entity
 @Data
-public class PackageEntity extends DefaultBusinessEntity<Long> {
+public class ServiceEntity extends DefaultBusinessEntity<Long> {
+
+    @Column(name="code" , unique = true)
+    private String code;
+
     @Column(name="name")
     private String name;
 
     @Column(name="description")
     private String description;
 
-    @Column(name = "price")
-    private BigDecimal price;
-
-    @Column(name = "period")
-    private Long period;
-
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "package_service"
-            ,joinColumns = {@JoinColumn(name="package_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="service_id")})
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private Set<ServiceEntity> services;
+    @JoinTable(name = "package_service"
+            ,joinColumns = {@JoinColumn(name="package_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="service_id")})
+    private Set<PackageEntity> packageEntity = new HashSet<>();;
 
 }

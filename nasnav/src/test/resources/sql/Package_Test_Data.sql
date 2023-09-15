@@ -61,8 +61,20 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 --inserting package
-INSERT INTO public.package(id,name,description,price) values (99001,'test 1','test description',1.5);
-INSERT INTO public.package(id,name,description,price) values (99002,'test 2','test2 description',1.9);
---inserting package
+INSERT INTO public.package(id,name,description,price,period) values (99001,'test 1','test description',1.5,30);
+INSERT INTO public.package(id,name,description,price,period) values (99002,'test 2','test2 description',1.9,30);
+--inserting service
+INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY','THREE_SIXTY','THREE_SIXTY Service');
+INSERT INTO public.service(id,code,name,description) values (99002,'MET_AVERSE','MET_AVERSE','MET_AVERSE Service');
+INSERT INTO public.service(id,code,name,description) values (99003,'CHAT_SERVICES','CHAT_SERVICES','CHAT_SERVICES Service');
+INSERT INTO public.service(id,code,name,description) values (99004,'VIRTUAL_LANDS','VIRTUAL_LANDS','VIRTUAL_LANDS Service');
+
+-- Join package & service
+INSERT INTO public.package_service(package_id,service_id) values (99001,99001);
+INSERT INTO public.package_service(package_id,service_id) values (99001,99002);
+
+INSERT INTO public.package_service(package_id,service_id) values (99002,99003);
+INSERT INTO public.package_service(package_id,service_id) values (99002,99004);
+
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 68, 99001, 100, now());
 

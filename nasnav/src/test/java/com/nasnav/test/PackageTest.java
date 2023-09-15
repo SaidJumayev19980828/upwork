@@ -5,6 +5,7 @@ import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,4 +103,11 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
         assertEquals(70L, registation.getCreatorEmployee().getId().longValue());
     }
 
+    @Test
+    public void completeProfileNotValidPackageTest() {
+        String requestBody = json().put("package_id", 123456L).toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "123456");
+        ResponseEntity<String> response = template.postForEntity("/package/complete-profile", json, String.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
 }
