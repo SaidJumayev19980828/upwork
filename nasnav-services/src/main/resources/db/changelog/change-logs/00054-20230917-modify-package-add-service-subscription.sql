@@ -6,7 +6,7 @@
 
 ALTER TABLE public.package ADD COLUMN period bigint NULL ;
 
---comment: create service
+--comment: create service table
 
 CREATE SEQUENCE IF NOT EXISTS public.service_seq
     INCREMENT 1
@@ -38,4 +38,34 @@ CREATE TABLE public.package_service (
 
 ALTER TABLE public.package_service OWNER TO nasnav;
 
+--comment: Delete services_registered_in_package table
+
+Delete FROM public.services_registered_in_package;
+
+--comment: create subscription table
+
+CREATE SEQUENCE IF NOT EXISTS public.subscription_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE public.subscription_seq
+    OWNER TO nasnav;
+
+CREATE TABLE IF NOT EXISTS public.subscription
+(
+    id bigint NOT NULL DEFAULT nextval('subscription_seq'::regclass),
+    type text,
+    payment_date timestamp without time zone NOT NULL,
+    start_date timestamp NOT NULL,
+    expiration_date timestamp NOT NULL,
+    paid_amount numeric(10,2) DEFAULT 0,
+    package_id BIGINT,
+    org_id BIGINT,
+    CONSTRAINT subscription_pkey PRIMARY KEY (id),
+    CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
+    CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id)
+);
 
