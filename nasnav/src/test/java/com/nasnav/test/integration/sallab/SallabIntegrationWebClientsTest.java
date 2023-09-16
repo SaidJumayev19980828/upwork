@@ -2,6 +2,7 @@ package com.nasnav.test.integration.sallab;
 
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
 import com.nasnav.integration.sallab.webclient.dto.*;
+import com.nasnav.integration.sallab.webclient.dto.Record;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import lombok.extern.slf4j.Slf4j;

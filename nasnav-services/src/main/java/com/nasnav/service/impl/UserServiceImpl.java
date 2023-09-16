@@ -128,8 +128,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void givePointsToReferrer(Long referrer, Long orgId) {
-		UserEntity referrerEntity = userRepository.findById(referrer)
-				.orElse(null);
+		UserEntity referrerEntity = userRepository.findById(referrer).orElse(null);
 		if (referrerEntity != null)
 			loyaltyPointsService.givePointsToReferrer(referrerEntity, orgId);
 	}
@@ -309,11 +308,10 @@ public class UserServiceImpl implements UserService {
 
 	/**
 	 * we use a immutable approach for addresses, as they are referenced by orders.
-	 * and orders will need the address original data when the order was made.
-	 * so, updating an existing address actually creates a totally new address
-	 * entity and
-	 * the existing entity is just being unlinked from the user instead of modifying
-	 * it.
+	 * and orders will need the address original data when the order was made. so,
+	 * updating an existing address actually creates a totally new address entity
+	 * and the existing entity is just being unlinked from the user instead of
+	 * modifying it.
 	 */
 	private AddressDTO doUpdateUserAddressesImmutably(AddressDTO addressDTO) {
 		unlinkExistingAddressEntityFromUser(addressDTO);
@@ -355,8 +353,7 @@ public class UserServiceImpl implements UserService {
 			return;
 		}
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		SubAreasEntity subArea = subAreaRepo
-				.findByIdAndOrganization_Id(subAreaId, orgId)
+		SubAreasEntity subArea = subAreaRepo.findByIdAndOrganization_Id(subAreaId, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
 		address.setSubAreasEntity(subArea);
 		if (isNull(addressDTO.getAreaId())) {
@@ -368,12 +365,8 @@ public class UserServiceImpl implements UserService {
 
 	private void validateSubAreaMatchesGivenArea(AddressDTO addressDTO, AddressesEntity address, Long subAreaId,
 			SubAreasEntity subArea) {
-		Long givenAreaId = ofNullable(address.getAreasEntity())
-				.map(AreasEntity::getId)
-				.orElse(addressDTO.getAreaId());
-		Long subAreaParentId = ofNullable(subArea.getArea())
-				.map(AreasEntity::getId)
-				.orElse(null);
+		Long givenAreaId = ofNullable(address.getAreasEntity()).map(AreasEntity::getId).orElse(addressDTO.getAreaId());
+		Long subAreaParentId = ofNullable(subArea.getArea()).map(AreasEntity::getId).orElse(null);
 		if (!Objects.equals(givenAreaId, subAreaParentId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$002, subAreaId, givenAreaId);
 		}
@@ -488,10 +481,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	/*
-	 * get user own info or other user info
-	 * for customer, get his own info only
-	 * for nasnav admin, get requested user info regardless of its roles or
-	 * organization
+	 * get user own info or other user info for customer, get his own info only for
+	 * nasnav admin, get requested user info regardless of its roles or organization
 	 * for employees, only organization admins and managers can get employee or
 	 * customer info withing the same organization
 	 */
@@ -576,12 +567,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private List<AddressRepObj> getUserAddresses(Long userId) {
-		return userAddressRepo
-				.findByUser_Id(userId)
-				.stream()
-				.filter(Objects::nonNull)
-				.map(a -> (AddressRepObj) a.getRepresentation())
-				.collect(toList());
+		return userAddressRepo.findByUser_Id(userId).stream().filter(Objects::nonNull)
+				.map(a -> (AddressRepObj) a.getRepresentation()).collect(toList());
 	}
 
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
@@ -703,8 +690,7 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put("orgLogo", orgLogo);
 			parametersMap.put("orgName", orgName);
 			parametersMap.put("year", year);
-			mailService.send(orgName, email, "Subscribe to newsletter",
-					USER_SUBSCRIPTION_TEMPLATE, parametersMap);
+			mailService.send(orgName, email, "Subscribe to newsletter", USER_SUBSCRIPTION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
 		}
@@ -739,19 +725,30 @@ public class UserServiceImpl implements UserService {
 		return new RedirectView(url);
 	}
 
-	public List<UserRepresentationObject> getUserList(Integer start, Integer count, Integer userStatus) {
+	public List<UserRepresentationObject> getUserList() {
 		List<UserEntity> customers;
+		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			customers = userRepository.findAll();
+		} else {
+			customers = userRepository.findByOrganizationId(securityService.getCurrentUserOrganizationId());
+		}
+		return customers.stream().map(UserEntity::getRepresentation).collect(toList());
+	}
+
+		public List<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus) {
+		List<UserEntity> customers = null;
 		PageRequest pageRequest = PagingUtils.getQueryPageAddIdSort(start, count);
 		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
-			customers = userRepository.findAllUsersByStatusPaged(userStatus, pageRequest);
+
+			customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+
 		} else {
-			customers = userRepository.findByOrganizationIdandStatusPaged(
-					securityService.getCurrentUserOrganizationId(), userStatus, pageRequest);
+
+			Long orgID = securityService.getCurrentUserOrganizationId();
+			customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+
 		}
-		return customers
-				.stream()
-				.map(UserEntity::getRepresentation)
-				.collect(toList());
+		return customers.stream().map(UserEntity::getRepresentation).collect(toList());
 	}
 
 	@Override
@@ -794,9 +791,7 @@ public class UserServiceImpl implements UserService {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
-		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
-				.map(LoyaltyTierEntity::getId)
-				.orElse(-1L);
+		return ofNullable(loyaltyTierService.getTierByAmount(orderCount)).map(LoyaltyTierEntity::getId).orElse(-1L);
 	}
 
 	private void updateUserBoosterByFamilyMember(Long userId) {

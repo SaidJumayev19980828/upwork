@@ -162,7 +162,7 @@ public class UserController {
                                         @RequestParam (value = "paging_start", required = false) Integer start,
                                         @RequestParam (value = "paging_count", required = false) Integer count,
                                         @RequestParam (value = "user_status", required = false) Integer userStatus) {
-        return userService.getUserList(start,count,userStatus);
+        return userService.getUserListByStatusPaging( start, count, userStatus);
     }
     
     
