@@ -57,11 +57,7 @@ public class UserServicesHelper {
 
 
 	public void createRoles(List<String> rolesList, EmployeeUserEntity employee, Long orgId) {
-		List<String> existingRolesListNames = roleRepository
-				.findAll()
-				.stream()
-				.map(Role::getName)
-				.collect(toList());
+		List<String> existingRolesListNames = getAllRoles();
 		Role role;
 		Roles roleEnum;
 		roleEmployeeUserRepository.deleteByEmployee_Id(employee.getId()); //delete all existing rolesemployeeuser relations
@@ -79,6 +75,24 @@ public class UserServicesHelper {
 	}
 
 
+	public void updateUserRolesIfPossible(List<String> newRoles, EmployeeUserEntity updatedEmployee) {
+		List<String> allExistedRoles = getAllRoles();
+		Role role;
+		Roles roleEnum;
+		if (!newRoles.isEmpty()) {
+			roleEmployeeUserRepository.deleteByEmployee_Id(updatedEmployee.getId());
+		}
+		for (String roleToBeUpdated : newRoles) {
+			if (!allExistedRoles.contains(roleToBeUpdated)){
+				roleEnum = Roles.valueOf(roleToBeUpdated);
+				role = createRole(roleEnum);
+			}else {
+				role = roleRepository.findByName(roleToBeUpdated);
+			}
+			createRoleEmployeeUser(updatedEmployee, role);
+
+		}
+	}
 
 	private void createRoleEmployeeUser(EmployeeUserEntity employee, Role role) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
@@ -87,6 +101,13 @@ public class UserServicesHelper {
 		roleEmployeeUserRepository.save(roleEmployeeUser);
 	}
 
+	private List<String> getAllRoles() {
+		return 	roleRepository
+				.findAll()
+				.stream()
+				.map(Role::getName)
+				.collect(toList());
+	}
 
 	private Role createRole( Roles roleEnum) {
 		Role role = new Role();
