@@ -58,6 +58,12 @@ public class BankController {
         bankInsideTransactionService.transfer(receiverAccountId, amount);
     }
 
+    @PostMapping("/pay")
+    public void pay(@RequestHeader(name = "User-Token", required = false) String token,
+                                  @RequestParam long amount) {
+        bankInsideTransactionService.pay(amount);
+    }
+
     @GetMapping("/account/reservations")
     public List<BankReservationDTO> getReservations(@RequestHeader(name = "User-Token", required = false) String token,
                                                     @RequestParam(required = false) Boolean isFulfilled) {

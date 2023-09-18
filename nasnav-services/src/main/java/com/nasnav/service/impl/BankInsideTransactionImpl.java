@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.BankAccountRepository;
 import com.nasnav.dao.BankInsideTransactionRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -26,13 +27,25 @@ public class BankInsideTransactionImpl implements BankInsideTransactionService {
     private final BankInsideTransactionRepository bankInsideTransactionRepository;
     private final BankAccountActivityService bankAccountActivityService;
     private final BankAccountService bankAccountService;
+    private final AppConfig appConfig;
+
+    @Override
+    public void transfer(long receiverAccountId, float amount) {
+        BankAccountEntity sender = bankAccountService.getLoggedAccount();
+        BankAccountEntity receiver = bankAccountRepository.findById(receiverAccountId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));
+        this.transferImpl(sender, receiver, amount);
+    }
+
+    @Override
+    public void pay(float amount) {
+        BankAccountEntity sender = bankAccountService.getLoggedAccount();
+        BankAccountEntity receiver = bankAccountRepository.findById(appConfig.nasnavOrgId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));
+        this.transferImpl(sender, receiver, amount);
+    }
 
     @Override
     @Transactional
-    public void transfer(long receiverAccountId, float amount) {
-        //insert record into inside transaction
-        BankAccountEntity sender = bankAccountService.getLoggedAccount();
-        BankAccountEntity receiver = bankAccountRepository.findById(receiverAccountId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));
+    public void transferImpl(BankAccountEntity sender, BankAccountEntity receiver, float amount) {
         if(!bankAccountActivityService.checkAvailableBalance(sender.getId(), amount)) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,BANK$ACC$0005);
         }

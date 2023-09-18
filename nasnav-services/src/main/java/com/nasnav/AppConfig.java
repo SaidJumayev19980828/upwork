@@ -20,6 +20,8 @@ public class AppConfig {
     @Value("${yeshtery.mastercard}")    public String yeshteryMastercardProperties = "";
     @Value("${yeshtery.orgid:0}")
     public int yeshteryOrgId;
+    @Value("${nasnav.orgid:0}")
+    public long nasnavOrgId;
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     @Value("${environment.development}") public boolean develEnvironment = false;
