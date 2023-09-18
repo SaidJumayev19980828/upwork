@@ -202,6 +202,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/bank/account/setOpeningBalance",POST						,  setOf(NASNAV_ADMIN)),
 						patternOf( "/bank/account"					,POST						,  getAllRoles()),
 						patternOf( "/bank/transaction/**"		   ,POST						,  getAllRoles()),
+						patternOf( "/bank/pay"		   				,POST						,  getAllRoles()),
 						patternOf( "/bank/account/reservations"		   ,GET						,  getAllRoles()),
 						patternOf( "/bank/account/reservation/**"		   ,GET						,  getAllRoles()),
 						patternOf( "/bank/account/history"		   			,GET					,  getAllRoles()),

@@ -22,13 +22,13 @@ public class InfluencerEntity {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "employee_user_id")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private EmployeeUserEntity employeeUser;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
