@@ -4,7 +4,12 @@
 
 --comment: add period to package
 
-ALTER TABLE public.package ADD COLUMN period bigint NULL ;
+ALTER TABLE public.package ADD COLUMN period bigint NOT NULL ;
+
+--comment: add constraint to package_registered
+
+ALTER TABLE public.package_registered ADD CONSTRAINT package_registered_package_id_fk FOREIGN KEY (package_id) REFERENCES public.package(id);
+
 
 --comment: create service table
 
@@ -58,14 +63,14 @@ CREATE TABLE IF NOT EXISTS public.subscription
 (
     id bigint NOT NULL DEFAULT nextval('subscription_seq'::regclass),
     type text,
-    payment_date timestamp without time zone NOT NULL,
-    start_date timestamp NOT NULL,
-    expiration_date timestamp NOT NULL,
+    payment_date timestamp  NOT NULL,
+    start_date timestamp without time zone NOT NULL,
+    expiration_date timestamp without time zone NOT NULL,
     paid_amount numeric(10,2) DEFAULT 0,
     package_id BIGINT,
     org_id BIGINT,
     CONSTRAINT subscription_pkey PRIMARY KEY (id),
     CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
-    CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id)
+    CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
 );
 

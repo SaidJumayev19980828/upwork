@@ -229,6 +229,10 @@ public enum ErrorCodes {
 	,PA$USR$0002("No Package found with ID:[%d]")
 
 
+	,PR$Org$0001("No Package Registered In Organization with ID:[%d]")
+
+
+
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")

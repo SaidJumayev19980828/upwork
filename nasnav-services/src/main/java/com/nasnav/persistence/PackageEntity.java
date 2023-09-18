@@ -22,8 +22,9 @@ public class PackageEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name = "price")
     private BigDecimal price;
+    private BigDecimal price = BigDecimal.ZERO;
 
-    @Column(name = "period")
+    @Column(name = "period" , nullable = false)
     private Long period;
 
     @ManyToMany(fetch = FetchType.LAZY)

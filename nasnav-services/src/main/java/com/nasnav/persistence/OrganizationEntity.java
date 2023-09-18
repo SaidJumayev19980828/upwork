@@ -101,6 +101,11 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     @JsonIgnore
     private BankAccountEntity bankAccount;
+    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY,cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<SubscriptionEntity> subscriptions;
 
     public OrganizationEntity() {
         id = null;
