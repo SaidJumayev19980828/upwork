@@ -1,5 +1,7 @@
 package com.nasnav.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.nasnav.dto.InfluencerDTO;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.UserRepresentationObject;
@@ -21,12 +23,14 @@ public class EventResponseDto {
     private LocalDateTime endsAt;
     @NotNull
     private OrganizationRepresentationObject organization;
-    private UserRepresentationObject influencer;
+    private InfluencerDTO influencer;
     private Boolean visible;
     private List<EventAttachmentsEntity> attachments;
     private String name;
     private String description;
     private EventStatus status;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private EventStatus statusRepresentation;
     private Set<ProductDetailsDTO> products;
     private List<EventResponseDto> relatedEvents;
 }

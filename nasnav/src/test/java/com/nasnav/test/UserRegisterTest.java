@@ -1604,7 +1604,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 		UserEntity user = userRepository.findByEmailAndOrganizationId("user1@nasnav.com", 99001L).orElse(persistentUser);
 		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
-		Set<String> notificationTokensByUsers = securityService.getValidUserNotificationTokens(Set.of(user));
+		Set<String> notificationTokensByUsers = securityService.getValidUserNotificationTokens(user);
 
 		Set<String> expectedTokens = Set.of(notificationToken);
 		assertEquals(expectedTokens, notificationTokens);

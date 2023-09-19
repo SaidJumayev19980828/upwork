@@ -1,5 +1,6 @@
 package com.nasnav.dto.request;
 
+import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
@@ -26,4 +27,5 @@ public class AvailabilityDTO {
     private Long period;
     private Long user;
     private Long employee;
+    private UserRepresentationObject employeeRepresentation;
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.employee_users ADD COLUMN date_of_birth timestamp NULL ;

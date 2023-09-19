@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -49,8 +50,14 @@ public class EventController {
     public PageImpl<EventResponseDto> getEventsForEmployeePageable(@RequestHeader(name = "User-Token", required = false) String token,
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
-                                                                   @RequestParam(required = false) EventStatus status){
-        return eventService.getEventsForEmployee(start, count, status);
+                                                                   @RequestParam(required = false) EventStatus status,
+                                                                   @RequestParam(required = false, name = "fromDate")
+                                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                                   LocalDateTime fromDate,
+                                                                   @RequestParam(required = false, name = "toDate")
+                                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                                   LocalDateTime toDate) {
+        return eventService.getEventsForEmployee(start, count, status, fromDate, toDate);
     }
 
     @GetMapping("/list/advertise")

@@ -93,5 +93,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private String domain;
     private Integer priority;
     private boolean enableVideoChat;
+    private Long bankAccountId;
 }
 

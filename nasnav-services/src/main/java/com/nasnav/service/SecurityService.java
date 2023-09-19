@@ -63,17 +63,13 @@ public interface SecurityService {
 
     Set<String> getValidEmployeeNotificationTokens(EmployeeUserEntity employee);
 
-    Set<String> getValidEmployeeNotificationTokens(Set<EmployeeUserEntity> employee);
-
     Set<String> getValidUserNotificationTokens(UserEntity user);
 
-    Set<String> getValidUserNotificationTokens(Set<UserEntity> user);
-
-    Set<String> getInvalidEmployeeNotificationTokens(EmployeeUserEntity employee);
-
-    Set<String> getInvalidUserNotificationTokens(UserEntity user);
-
     Set<String> getValidNotificationTokens(BaseUserEntity user);
+
+    Set<String> getValidNotificationTokensForOrgEmployees(Long orgId);
+
+    Set<String> getValidNotificationTokensForShopEmployees(Long  shopId);
 
     LocalDateTime getLastLoginForUser(BaseUserEntity user);
 

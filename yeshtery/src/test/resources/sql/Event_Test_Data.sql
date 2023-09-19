@@ -56,5 +56,9 @@ INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (101,now(),70,true);
 
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(101,now(),CURRENT_DATE - INTERVAL '30 day',CURRENT_DATE + INTERVAL '30 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(102,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(103,now(),CURRENT_DATE - INTERVAL '17 day',CURRENT_DATE + INTERVAL '17 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(104,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'name','desc',0);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),100,100,0);
