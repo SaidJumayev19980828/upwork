@@ -1,7 +1,0 @@
-2023-09-20T13:34:39.496+0200 INFO Starting EventTest using Java 17.0.5 on DESKTOP-NPUUBU5 with PID 13912 (started by Beshoy Gerges in D:\moamen\nasnav-backend\yeshtery)
-2023-09-20T13:34:39.497+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
-2023-09-20T13:34:39.503+0200 INFO No active profile set, falling back to default profiles: default
-2023-09-20T13:35:13.753+0200 INFO DryRun : true
-2023-09-20T13:35:13.757+0200 INFO Mail Host : mail.nasnav.com:25
-2023-09-20T13:35:37.350+0200 INFO Started EventTest in 60.06 seconds (JVM running for 64.134)
-2023-09-20T13:35:48.281+0200 DEBUG Authenticated user
