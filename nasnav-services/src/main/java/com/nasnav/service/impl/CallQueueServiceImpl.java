@@ -6,6 +6,7 @@ import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.VideoChatResponse;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -58,13 +60,20 @@ public class CallQueueServiceImpl implements CallQueueService {
             callQueueRepository.save(entity);
         }
 
+        Set<String> notificationTokens = securityService.getValidNotificationTokens(userEntity);
+        if (notificationTokens.isEmpty()) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, userEntity.getId());
+        }
+
         entity = new CallQueueEntity();
+
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
         entity.setStatus(CallQueueStatus.OPEN.getValue());
 
         entity = callQueueRepository.save(entity);
+
 
         notifyQueue(orgId);
 
@@ -144,15 +153,19 @@ public class CallQueueServiceImpl implements CallQueueService {
         queue = queue.stream().sorted(Comparator.comparing(CallQueueEntity::getJoinsAt)).collect(Collectors.toList());
         CallQueueEntity entity;
         for(int i = 0; i < queue.size(); i++) {
+        try {
             entity = queue.get(i);
             String response = new JSONObject()
                     .put("id",entity.getId())
                     .put("joinsAt",entity.getJoinsAt())
                     .put("position",i+1)
                     .put("total",queue.size())
-                            .toString();
+                    .toString();
             notificationService.sendMessage(entity.getUser(),
                     new PushMessageDTO<>("queue summary",response));
+        }catch (RuntimeBusinessException e){
+            continue; // Skip to the next iteration
+        }
         }
     }
 
