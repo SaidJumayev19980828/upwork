@@ -30,7 +30,7 @@ DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
 DELETE FROM public.promotions;
 
-DELETE FROM public.cart_item_addon_details WHERE cart_item_id between 99000 and 99999;
+DELETE FROM public.cart_item_addon_details
 DELETE FROM public.cart_items where id in (
 	select crt.id
 	from public.cart_items crt
@@ -115,7 +115,7 @@ DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.loyalty_point_config WHERE  organization_id between 99000 and 99999;
 DELETE FROM public.loyalty_pins WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.addon_stocks WHERE shop_id = 502;
+DELETE FROM public.addon_stocks
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
@@ -141,9 +141,9 @@ DELETE FROM public.loyalty_family;
 DELETE FROM public.loyalty_booster;
 DELETE FROM public.loyalty_points  where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.loyalty_tier  where organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.addons WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.addons ;
 
-DELETE FROM public.organizations WHERE id > 99000;
+DELETE FROM public.organizations ;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
 DELETE FROM public.cities;
@@ -153,14 +153,8 @@ DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;
 
-DELETE FROM public.addons
-	WHERE id > 0;
-DELETE FROM public.organizations
-	WHERE id > 0;
-DELETE FROM public.addon_stocks
-	WHERE id > 0;
-DELETE FROM public.cart_item_addon_details
-	WHERE id=1006;
+
+
 DELETE FROM public.services_registered_in_package;
 DELETE FROM public.package WHERE id > 99000;
 
