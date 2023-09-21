@@ -13,7 +13,6 @@ public interface RoomMapper {
 
 	@Mapping(target = "sessionExternalId", source = "session.externalId")
 	@Mapping(target = "sessionCreatedAt", source = "session.createdAt")
-	@Mapping(target = "started", expression = "java(entity.isStarted())")
 	RoomResponse toResponse(RoomTemplateEntity entity);
 
 	@Mapping(target = "session", ignore = true)

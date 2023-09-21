@@ -18,6 +18,5 @@ public class RoomResponse extends RoomTemplateDTO {
 	private String sessionExternalId;
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private LocalDateTime sessionCreatedAt;
-	private boolean started;
 	private boolean canStart;
 }
