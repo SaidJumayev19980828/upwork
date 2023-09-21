@@ -471,6 +471,7 @@ public enum ErrorCodes {
 	,NOTIF$0004("No notification tokens found for organization with id [%d]")
 	,NOTIF$0005("No notification tokens found for shop with id [%d]")
 	,NOTIF$0006("Couldn't get message body")
+	,FRT$VARS001("Error while processing the file")
 
 
 	;

@@ -268,6 +268,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
 						, patternOf("/advertisement", HttpMethod.GET)
+						, patternOf("/frontend/setting", GET)
                  );
 
     AuthenticationProvider provider;
