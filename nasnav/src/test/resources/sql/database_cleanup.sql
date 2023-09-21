@@ -12,6 +12,12 @@ delete from public.event_logs;
 DELETE FROM public.EVENTS;
 delete from public.influencer_categories;
 delete from public.influencers;
+DELETE FROM public.cart_item_addon_details;
+delete from addon_stocks;
+delete from public.product_addons;
+delete from addons;
+
+
 DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT id FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (295);

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.AvailabilityDTO;
 import com.nasnav.service.AvailabilityService;
@@ -22,8 +23,8 @@ public class AvailabilityController {
 
     @PostMapping
     public List<AvailabilityDTO> createOrOverrideAvailabilities(@RequestHeader(TOKEN_HEADER) String userToken,
-            @RequestBody AvailabilityDTO dto,
-            @RequestParam(required = false, defaultValue = "false") boolean force) {
+                                                                @RequestBody AvailabilityDTO dto,
+                                                                @RequestParam(required = false, defaultValue = "false") boolean force) {
         return availabilityService.overrideAvailabilities(dto, force);
     }
 
