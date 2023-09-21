@@ -115,7 +115,7 @@ DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.loyalty_point_config WHERE  organization_id between 99000 and 99999;
 DELETE FROM public.loyalty_pins WHERE shop_id in (select id from shops where organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.addon_stocks
+DELETE FROM public.addon_stocks;
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
