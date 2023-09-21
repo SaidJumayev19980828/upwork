@@ -45,10 +45,10 @@ public class EventRoomController {
 	}
 
 	@PostMapping("/session")
-	public void createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public EventRoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "event_id") Long eventId,
 			@RequestBody(required = false) @Valid Optional<RoomSessionDTO> roomSession) {
-		metaverseRoomService.startSession(eventId, roomSession);
+		return metaverseRoomService.startSession(eventId, roomSession);
 	}
 
 	@PostMapping("/session/suspend")

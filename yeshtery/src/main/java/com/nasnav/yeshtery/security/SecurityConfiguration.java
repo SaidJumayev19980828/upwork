@@ -80,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/room/shop"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/room/event/list_for_user"			, GET	, getAllRoles()),
             patternOf( "/v1/room/event/session"					, POST	, getAllRoles()),
+            patternOf( "/v1/room/event/session/suspend"			, POST	, getAllRoles()),
             patternOf( "/v1/room/event/template"					, POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/room/event"					        , DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
             patternOf( "/v1/order"							, DELETE, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
