@@ -30,7 +30,7 @@ DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
 DELETE FROM public.promotions;
 
-DELETE FROM public.cart_item_addon_details
+DELETE FROM public.cart_item_addon_details;
 DELETE FROM public.cart_items where id in (
 	select crt.id
 	from public.cart_items crt
