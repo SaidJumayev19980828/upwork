@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dto.request.PackageDto;
@@ -7,15 +8,13 @@ import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.PackageMapper;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PackageEntity;
-import com.nasnav.persistence.PackageRegisteredEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +33,7 @@ public class PackageServiceImpl implements PackageService {
     private final PackageRepository packageRepository;
     private final PackageRegisteredRepository packageRegisteredRepository;
     private final PackageMapper packageMapper;
-
+    private final CountryRepository countryRepo;
     @Override
     public List<PackageResponse> getPackages() {
         return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
@@ -46,17 +45,29 @@ public class PackageServiceImpl implements PackageService {
         newPackage.setName(json.getName());
         newPackage.setDescription(json.getDescription());
         newPackage.setPrice(json.getPrice());
+        newPackage.setPeriodInDays(json.getPeriodInDays());
+        CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
+        if(country == null){
+           throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,json.getCurrencyIso());
+        }
+        newPackage.setCountry(country);
         packageRepository.save(newPackage);
     }
 
     @Override
     public void updatePackage(PackageDto dto, Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,packageId)
+                () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
+        entity.setPeriodInDays(dto.getPeriodInDays());
+        CountriesEntity country = countryRepo.findByIsoCode(dto.getCurrencyIso());
+        if(country == null){
+            throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,dto.getCurrencyIso());
+        }
+        entity.setCountry(country);
         packageRepository.save(entity);
     }
     @Override
@@ -74,7 +85,7 @@ public class PackageServiceImpl implements PackageService {
 
     @Transactional
     @Override
-    public Long completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
+    public Long registerPackageProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
 

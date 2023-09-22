@@ -40,9 +40,9 @@ public class PackageController {
         packageService.removePackage(packageId);
     }
 
-    @PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE)
-    public Long completeProfile(@RequestHeader(name = "User-Token", required = false) String token,
-            @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
-        return packageService.completeProfile(packageRegisteredByUserDTO);
+    @PostMapping(value = "register-package-profile", produces = APPLICATION_JSON_VALUE)
+    public Long registerPackageProfile(@RequestHeader(name = "User-Token", required = false) String token,
+                                       @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
+        return packageService.registerPackageProfile(packageRegisteredByUserDTO);
     }
 }

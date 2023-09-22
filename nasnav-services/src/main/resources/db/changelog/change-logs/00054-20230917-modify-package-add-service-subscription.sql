@@ -4,7 +4,9 @@
 
 --comment: add period to package
 
-ALTER TABLE public.package ADD COLUMN period bigint NOT NULL ;
+ALTER TABLE public.package ADD COLUMN period_in_days bigint;
+ALTER TABLE public.package ADD COLUMN currency_iso Integer;
+ALTER TABLE public.package ADD CONSTRAINT package_currency_iso_fk FOREIGN KEY (currency_iso) REFERENCES public.countries(iso_code);
 
 --comment: add constraint to package_registered
 

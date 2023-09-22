@@ -16,6 +16,6 @@ public interface PackageService {
 
     void removePackage(Long packageId);
 
-    Long completeProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO);
+    Long registerPackageProfile(PackageRegisteredByUserDTO packageRegisteredByUserDTO);
 
 }

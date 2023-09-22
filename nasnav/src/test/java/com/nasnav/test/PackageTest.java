@@ -49,7 +49,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPackageTest() {
-        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).toString();
+        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("periodInDays", 30).put("currencyIso", 818).toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/package/create", json, Void.class);
@@ -57,16 +57,26 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void createPackageWrongCurrencyTest() {
+        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currencyIso", 123464).toString();
+
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.postForEntity("/package/create", json, Void.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
     public void updatePackageTest() {
-        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2.5).toString();
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819).toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.exchange("/package/" + 99001L, PUT, json, Void.class);
         ResponseEntity<Object[]> res = template.exchange("/package", GET, null, Object[].class);
-        Map<String, Object> body = (Map<String, Object>) res.getBody()[1];
-        String name = (String) body.get("name");
-        assertEquals("updated name ", name);
         assertEquals(200, response.getStatusCode().value());
+        Map<String, Object> body = (Map<String, Object>) res.getBody()[1];
+        assertEquals("updated name ", body.get("name"));
+        assertEquals("description updated ", body.get("description"));
+        assertEquals(40, body.get("periodInDays"));
     }
 
     @Test
@@ -84,7 +94,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     public void testCompleteRegister() {
         String requestBody = json().put("package_id", 99001L).toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "123456");
-        ResponseEntity<String> response = template.postForEntity("/package/complete-profile", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/package/register-package-profile", json, String.class);
         assertEquals(200, response.getStatusCode().value());
         Long registrationId = Long.parseLong(response.getBody());
         PackageRegisteredEntity registation = packageRegisteredRepository.findById(registrationId).get();
@@ -94,7 +104,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
         requestBody = json().put("package_id", 99002L).toString();
         json = getHttpEntity(requestBody, "123456");
-        response = template.postForEntity("/package/complete-profile", json, String.class);
+        response = template.postForEntity("/package/register-package-profile", json, String.class);
         assertEquals(200, response.getStatusCode().value());
         registrationId = Long.parseLong(response.getBody());
         registation = packageRegisteredRepository.findById(registrationId).get();
@@ -107,7 +117,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     public void completeProfileNotValidPackageTest() {
         String requestBody = json().put("package_id", 123456L).toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "123456");
-        ResponseEntity<String> response = template.postForEntity("/package/complete-profile", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/package/register-package-profile", json, String.class);
         assertEquals(404, response.getStatusCode().value());
     }
 }

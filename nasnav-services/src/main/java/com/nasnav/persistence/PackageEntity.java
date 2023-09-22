@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -21,11 +22,18 @@ public class PackageEntity extends DefaultBusinessEntity<Long> {
     private String description;
 
     @Column(name = "price")
-    private BigDecimal price;
     private BigDecimal price = BigDecimal.ZERO;
 
-    @Column(name = "period" , nullable = false)
-    private Long period;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private CountriesEntity country;
+
+    //Period In Days
+    @Column(name = "period_in_days")
+    private Long periodInDays = 0l;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "package_service"

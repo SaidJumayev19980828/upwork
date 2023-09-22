@@ -9,4 +9,7 @@ public class PackageDto {
     private String name;
     private String description;
     private BigDecimal price;
+    private Integer currencyIso;
+    private Long periodInDays;
+
 }
