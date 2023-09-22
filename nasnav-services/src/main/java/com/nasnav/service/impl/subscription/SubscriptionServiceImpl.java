@@ -12,13 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.Date;
 
-import static com.nasnav.exceptions.ErrorCodes.PR$Org$0001;
+import java.time.LocalDate;
+
+import static com.nasnav.exceptions.ErrorCodes.PA$USR$0002;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
-public class SubscriptionServiceImpl implements SubscriptionService {
+public abstract class SubscriptionServiceImpl implements SubscriptionService {
+
 
     @Autowired
     private SecurityService securityService;
@@ -32,21 +34,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    @Override
-    @Transactional
-    public Long completeSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
+
+
+    protected Long savePackageSuccessfulSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
-        //Get Package that the org selected before
-        PackageEntity packageEntity = packageRepository.findPackageByPackageRegisteredOrganization(org).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PR$Org$0001, org.getId())
-        );
+        PackageEntity packageEntity = packageRepository.findById(subscriptionDTO.getPackageId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, subscriptionDTO.getPackageId()));
+
+        LocalDate startDate = LocalDate.now();
+        LocalDate expirationDate = startDate.plusDays(packageEntity.getPeriodInDays());
 
         SubscriptionEntity subscriptionEntity = new SubscriptionEntity();
         subscriptionEntity.setType(subscriptionDTO.getType());
         subscriptionEntity.setPaidAmount(subscriptionDTO.getPaidAmount());
-        subscriptionEntity.setStartDate(java.sql.Date.valueOf(subscriptionDTO.getStartDate()));
-        subscriptionEntity.setExpirationDate(java.sql.Date.valueOf(subscriptionDTO.getStartDate().plusDays(packageEntity.getPeriod())));
+        subscriptionEntity.setStartDate(java.sql.Date.valueOf(startDate));
+        subscriptionEntity.setExpirationDate(java.sql.Date.valueOf(expirationDate));
         subscriptionEntity.setPackageEntity(packageEntity);
         subscriptionEntity.setOrganization(org);
         return subscriptionRepository.save(subscriptionEntity).getId();

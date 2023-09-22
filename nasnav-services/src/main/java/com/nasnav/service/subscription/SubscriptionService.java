@@ -4,6 +4,6 @@ import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 
 public interface SubscriptionService {
-    public Long completeSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
+    public Long subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException;
 
 }
