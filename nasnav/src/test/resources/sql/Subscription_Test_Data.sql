@@ -66,7 +66,8 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 --inserting package
 INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99001,'test 1','test description',1500,30,818);
 INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99002,'test 2','test2 description',1900,30,819);
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99003,'test3','package with wrong currency',1.9,30,818181);
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99003,'test 3','package with wrong currency',1.9,30,818181);
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99004,'test 4','package with missing currency',1.9,30,null);
 
 --inserting service
 INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY','THREE_SIXTY','THREE_SIXTY Service');

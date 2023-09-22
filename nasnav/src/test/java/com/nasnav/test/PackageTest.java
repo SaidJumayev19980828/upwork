@@ -80,6 +80,24 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void updatePackageWrongCurrencyTest() {
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 123464).toString();
+
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.exchange("/package/" + 99001L, PUT, json, Void.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateInvalidPackageTest() {
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819).toString();
+
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<Void> response = template.exchange("/package/" + 990045L, PUT, json, Void.class);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
     public void removePackageTest() {
         HttpEntity<?> json = getHttpEntity("abcdefg");
         ResponseEntity<Object[]> resBefore = template.exchange("/package", GET, null, Object[].class);

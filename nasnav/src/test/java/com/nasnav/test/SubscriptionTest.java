@@ -57,6 +57,16 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    public void wertSubscriptionWithPackageMissingCurrencyTest() {
+        String requestBody = json()
+                .put("package_id", "99004")
+                .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody,"123456");
+        ResponseEntity response = template.postForEntity("/subscription/wertSubscription", json, Void.class);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
     public void wertSubscriptionWithInvalidPackageCurrency() {
         String requestBody = json()
                 .put("package_id", "99003")
