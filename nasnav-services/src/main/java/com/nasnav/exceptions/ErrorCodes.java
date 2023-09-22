@@ -233,6 +233,7 @@ public enum ErrorCodes {
 
 
 
+	,BC$PRI$0001("Failed To Fetch Currency Price")
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
