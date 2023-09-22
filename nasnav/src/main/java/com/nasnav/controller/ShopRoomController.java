@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import java.util.Optional;
 import java.util.Set;
 
 import javax.validation.Valid;
@@ -42,8 +43,8 @@ public class ShopRoomController {
 	@PostMapping("/session")
 	public ShopRoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "shop_id") Long shopId,
-			@RequestBody(required = false) @Valid RoomSessionDTO roomSession) {
-		return metaverseRoomService.createNewSession(shopId, roomSession);
+			@RequestBody(required = false) @Valid Optional<RoomSessionDTO> roomSession) {
+		return metaverseRoomService.startSession(shopId, roomSession);
 	}
 
 	@GetMapping(value = "/list")

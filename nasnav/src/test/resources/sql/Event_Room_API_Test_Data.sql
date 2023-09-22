@@ -67,10 +67,17 @@ INSERT INTO public.influencers(id,created_at,user_id,approved) values (101,now()
 INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(51,100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name100','desc',0);
 INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(52,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
 INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(53,null,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99002	,false,'name101','desc',0);
+INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(54,100,now(),CURRENT_DATE - INTERVAL '5 day',CURRENT_DATE - INTERVAL '2 day',99001,false,'name100','desc',0);
+INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(55,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
+INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(56,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
+
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),51,100,0);
 
 INSERT INTO public.room_templates(id, event_id, scene_id, data) VALUES (501, 51, 'anything501', '{"property501": "value501"}');
 INSERT INTO public.room_templates(id, event_id, scene_id, data) VALUES (502, 52, 'anything502', '{"property502": "value502"}');
+INSERT INTO public.room_templates(id, event_id, scene_id, data) VALUES (504, 54, 'anything501', '{"property503": "value501"}');
+INSERT INTO public.room_templates(id, event_id, scene_id, data) VALUES (505, 55, 'anything502', '{"property502": "value502"}');
 
-INSERT INTO public.room_sessions(id, template_id, external_id, created_at, user_creator) VALUES (5001, 501, 'external5001', now(), 81);
+INSERT INTO public.room_sessions(id, template_id, status, external_id, created_at, user_creator) VALUES (5001, 501, 'STARTED', 'external5001', now(), 81);
+INSERT INTO public.room_sessions(id, template_id, status, external_id, created_at, user_creator) VALUES (5005, 505, 'SUSPENDED', 'external5005', now(), 81);

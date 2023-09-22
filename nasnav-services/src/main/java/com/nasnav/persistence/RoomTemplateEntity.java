@@ -37,7 +37,13 @@ public class RoomTemplateEntity extends DefaultBusinessEntity<Long> {
 	@lombok.ToString.Exclude
 	RoomSessionEntity session;
 
-	public Boolean isStarted()  {
-		return session != null;
+	public void start(String sessionExternalId) {
+		if (session != null) {
+			session.start(sessionExternalId);
+		} else {
+			RoomSessionEntity newSession = new RoomSessionEntity(sessionExternalId);
+			setSession(newSession);
+			session.setTemplate(this);
+		}
 	}
 }

@@ -463,6 +463,7 @@ public enum ErrorCodes {
 	,BANK$ACC$0007("this transaction is done before")
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
+	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
 	,NOTIF$0001("Firebase not initialized")

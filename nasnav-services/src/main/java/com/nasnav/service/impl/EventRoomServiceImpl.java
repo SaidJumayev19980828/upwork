@@ -1,7 +1,6 @@
 package com.nasnav.service.impl;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,13 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.PagingUtils;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRoomTemplateRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.request.RoomSessionDTO;
 import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventRoomResponse;
+import com.nasnav.enumerations.EventRoomStatus;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.EventRoomMapper;
@@ -25,7 +24,6 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.EventRoomTemplateEntity;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.RoomSessionEntity;
 import com.nasnav.service.EventRoomService;
 import com.nasnav.service.EventService;
 import com.nasnav.service.SecurityService;
@@ -55,16 +53,35 @@ public class EventRoomServiceImpl implements EventRoomService {
 
 	@Transactional
 	@Override
-	public EventRoomResponse createNewSession(Long eventId, RoomSessionDTO roomSessionDto) {
+	public EventRoomResponse startSession(Long eventId, Optional<RoomSessionDTO> roomSessionDto) {
 		EventRoomTemplateEntity template = getRoomTemplateForUpdate(eventId)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE, eventId));
-		RoomSessionEntity session = getNewRoomSession(roomSessionDto, template.getSession());
-		session.setTemplate(template);
-		template.setSession(session);
-		template = roomTemplateRepository.save(template);
+		try {
+			template.start(roomSessionDto.map(RoomSessionDTO::getSessionExternalId).orElse(null));
+			template = roomTemplateRepository.save(template);
+		} catch (IllegalStateException ex) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.ROOMS$ROOM$InvalidStatus,
+								template.getStatus(), EventRoomStatus.SUSPENDED);
+		}
 		return toFullResponse(template);
+	}
+
+	@Transactional
+	@Override
+	public void suspendSession(Long eventId) {
+		EventRoomTemplateEntity template = getRoomTemplateForUpdate(eventId)
+				.orElseThrow(
+						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
+								ROOM_TYPE, eventId));
+		try {
+			template.suspend();
+			roomTemplateRepository.save(template);
+		} catch (IllegalStateException ex) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.ROOMS$ROOM$InvalidStatus,
+								template.getStatus(), EventRoomStatus.SUSPENDED);
+		}
 	}
 
 	@Transactional
@@ -90,7 +107,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 	}
 
 	@Override
-	public Page<EventRoomResponse> getOrgRooms(Long orgId, Boolean started, Integer start, Integer count) {
+	public Page<EventRoomResponse> getOrgRooms(Long orgId, EventRoomStatus status, Integer start, Integer count) {
 		Page<EventRoomTemplateEntity> rooms;
 
 		Pageable pageable = PagingUtils.getQueryPageAddIdSort(start, count);
@@ -100,8 +117,8 @@ public class EventRoomServiceImpl implements EventRoomService {
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound,
 								orgId));
 		if (!config.isYeshteryInstance || requestedOrg.getYeshteryState() == 1) {
-			rooms = started == null ? roomTemplateRepository.findAllByEventOrganizationId(orgId, pageable)
-					: roomTemplateRepository.findAllByEventOrganizationIdAndSessionNullEquals(orgId, started, pageable);
+			rooms = status == null ? roomTemplateRepository.findAllByEventOrganizationId(orgId, pageable)
+					: roomTemplateRepository.findAllByEventOrganizationIdAndStatus(orgId, status, pageable);
 		} else {
 			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
 		}
@@ -109,20 +126,20 @@ public class EventRoomServiceImpl implements EventRoomService {
 	}
 
 	@Override
-	public Page<EventRoomResponse> getRooms(Boolean started, Integer start, Integer count) {
+	public Page<EventRoomResponse> getRooms(EventRoomStatus status, Integer start, Integer count) {
 		Page<EventRoomTemplateEntity> rooms = Page.empty();
 		Pageable pageable = PagingUtils.getQueryPageAddIdSort(start, count);
 		OrganizationEntity userOrg = securityService.getCurrentUserOrganization();
 		if (config.isYeshteryInstance) {
 			if (userOrg.getYeshteryState() == 1) {
-				rooms = started == null
+				rooms = status == null
 						? roomTemplateRepository.findAllByEventOrganizationYeshteryStateEquals1(pageable)
-						: roomTemplateRepository.findAllByEventOrganizationYeshteryStateEquals1AndStarted(started,
+						: roomTemplateRepository.findAllByEventOrganizationYeshteryStateEquals1AndStatus(status,
 								pageable);
 			}
 		} else {
-			rooms = started == null ? roomTemplateRepository.findAllByEventOrganizationId(userOrg.getId(), pageable)
-					: roomTemplateRepository.findAllByEventOrganizationIdAndSessionNullEquals(userOrg.getId(), started, pageable);
+			rooms = status == null ? roomTemplateRepository.findAllByEventOrganizationId(userOrg.getId(), pageable)
+					: roomTemplateRepository.findAllByEventOrganizationIdAndStatus(userOrg.getId(), status, pageable);
 		}
 		return rooms.map(this::toFullResponse);
 	}
@@ -153,25 +170,16 @@ public class EventRoomServiceImpl implements EventRoomService {
 		return template;
 	}
 
-	private RoomSessionEntity getNewRoomSession(RoomSessionDTO sessionDto, RoomSessionEntity oldSession) {
-		RoomSessionEntity session = new RoomSessionEntity();
-		if (sessionDto != null && StringUtils.isNotBlankOrNull(sessionDto.getSessionExternalId())) {
-			session.setExternalId(sessionDto.getSessionExternalId());
-		} else {
-			String externalId = oldSession != null && StringUtils.isNotBlankOrNull(oldSession.getExternalId())
-					? oldSession.getExternalId()
-					: UUID.randomUUID().toString();
-			session.setExternalId(externalId);
-		}
-		return session;
-	}
-
 	private EventRoomResponse toFullResponse(EventRoomTemplateEntity entity) {
 		BaseUserEntity currentUser = securityService.getCurrentUserOptional().orElse(null);
 		EventRoomResponse response = mapper.toResponse(entity);
 		response.setCanStart(eventService.hasInfluencerOrEmployeeAccessToEvent(currentUser, entity.getEvent()));
+		if (response.getStatus() != EventRoomStatus.STARTED && !response.isCanStart()) {
+			response.setSessionExternalId(null);
+		}
 		// following line needs much optimization 
 		response.setEvent(eventService.toDto(entity.getEvent()));
+		
 		return response;
 	}
 }

@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import java.util.Optional;
+
 import javax.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nasnav.dto.request.RoomSessionDTO;
 import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventRoomResponse;
+import com.nasnav.enumerations.EventRoomStatus;
 import com.nasnav.service.EventRoomService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,27 +43,34 @@ public class EventRoomController {
 	}
 
 	@PostMapping("/session")
-	public EventRoomResponse createRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public EventRoomResponse startRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "event_id") Long eventId,
-			@RequestBody(required = false) @Valid RoomSessionDTO roomSession) {
-		return metaverseRoomService.createNewSession(eventId, roomSession);
+			@RequestBody(required = false) @Valid Optional<RoomSessionDTO> roomSession) {
+		return metaverseRoomService.startSession(eventId, roomSession);
 	}
+
+	@PostMapping("/session/suspend")
+	public void suspendRoomSession(@RequestHeader(name = "User-Token", required = false) String userToken,
+			@RequestParam(name = "event_id") Long eventId) {
+		metaverseRoomService.suspendSession(eventId);
+	}
+
 
 	@GetMapping(value = "/list")
 	public Page<EventRoomResponse> getOrgRooms(@RequestParam(name = "org_id", required = true) Long orgId,
-			@RequestParam(required = false) Boolean started,
+			@RequestParam(required = false) EventRoomStatus status,
 			@RequestParam(required = false, defaultValue = "0") Integer start,
 			@RequestParam(required = false, defaultValue = "10") Integer count) {
-		return metaverseRoomService.getOrgRooms(orgId, started, start, count);
+		return metaverseRoomService.getOrgRooms(orgId, status, start, count);
 	}
 
 	@GetMapping(value = "/list_for_user")
 	public Page<EventRoomResponse> getAllAccessibleRooms(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
-			@RequestParam(required = false) Boolean started,
+			@RequestParam(required = false) EventRoomStatus status,
 			@RequestParam(required = false, defaultValue = "0") Integer start,
 			@RequestParam(required = false, defaultValue = "10") Integer count) {
-		return metaverseRoomService.getRooms(started, start, count);
+		return metaverseRoomService.getRooms(status, start, count);
 	}
 
 	@DeleteMapping
