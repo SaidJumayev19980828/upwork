@@ -32,7 +32,6 @@ public class UserRepresentationObject {
     private Set<String> roles;
     private String status;
     private LocalDateTime creationDate;
-    private Long familyId;
     private Long tierId;
     private Boolean allowReward;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

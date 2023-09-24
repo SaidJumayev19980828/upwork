@@ -41,7 +41,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
@@ -810,14 +809,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserByFamilyId(Long familyId, Long userId) {
-		if (userId > 0 && familyId > 0) {
-			userRepository.updateUserWithFamilyId(familyId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
-		}
-	}
-
-	@Override
 	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
 		if (tierId <= 0) {
 			tierId = getTierIdByUserOrders(orgId, userId);
@@ -826,11 +817,6 @@ public class UserServiceImpl implements UserService {
 			userRepository.updateUserTier(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
 		}
-	}
-
-	@Override
-	public List<UserEntity> getUsersByFamilyId(Long familyId) {
-		return userRepository.findByFamily_Id(familyId);
 	}
 
 	private Long getTierIdByUserOrders(Long orgId, Long userId) {
