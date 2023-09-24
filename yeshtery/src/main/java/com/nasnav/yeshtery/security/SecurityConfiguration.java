@@ -189,7 +189,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/event"                   , DELETE    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/event/list/**"                                , getAllRoles()),
             patternOf( "/v1/influencer/host/**"             , getAllRoles()),
-            patternOf( "/v1/influencer/response"             ,POST                 , setOf(NASNAV_ADMIN)),
+            //TODO change roles so that the testing process continues the old one is setOf(NASNAV_ADMIN)
+            patternOf( "/v1/influencer/response"             ,POST                 ,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/influencer/hostingRequests"             ,GET                 , getNonCustomersRoles()),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
