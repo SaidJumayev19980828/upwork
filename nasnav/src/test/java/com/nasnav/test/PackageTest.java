@@ -1,8 +1,13 @@
 package com.nasnav.test;
 
 import com.nasnav.dao.PackageRegisteredRepository;
+import com.nasnav.dao.PackageRepository;
+import com.nasnav.dao.ServiceRepository;
+import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.PackageResponse;
+import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.PackageRegisteredEntity;
+import com.nasnav.persistence.ServiceEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.junit.Assert;
@@ -15,8 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Arrays;
-import java.util.Map;
+import javax.transaction.Transactional;
+import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -34,6 +39,11 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     private PackageRegisteredRepository  packageRegisteredRepository;
 
     @Autowired
+    private PackageRepository packageRepository;
+    @Autowired
+    private ServiceRepository serviceRepository;
+
+    @Autowired
     private TestRestTemplate template;
 
     @Test
@@ -49,16 +59,40 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPackageTest() {
-        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("periodInDays", 30).put("currencyIso", 818).toString();
-
+        String requestBody = json().put("name", "first name").put("description", "description test").put("price", 1.5).put("periodInDays", 30).put("currencyIso", 818)
+                .put("services", servicesExample())
+                .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
-        ResponseEntity<Void> response = template.postForEntity("/package/create", json, Void.class);
+        ResponseEntity<Long> response = template.postForEntity("/package/create", json, Long.class);
         assertEquals(200, response.getStatusCode().value());
+        PackageEntity packageEntity = packageRepository.findById(response.getBody()).get();
+        assertEquals(packageEntity.getName(), "first name");
+        assertEquals(packageEntity.getDescription(), "description test");
+        assertTrue(packageEntity.getCountry().getIsoCode().equals(818));
+        validateServices(packageEntity.getId(),servicesExample());
+    }
+
+    private Set<ServiceDTO> servicesExample(){
+           return Set.of(
+                new ServiceDTO("THREE_SIXTY"),
+                new ServiceDTO("CHAT_SERVICES"),
+                new ServiceDTO("MET_AVERSE")
+        );
+    }
+
+    @Transactional
+    public void validateServices(Long package_id, Set<ServiceDTO> services){
+        Set<ServiceEntity> servicesEntitySet =  serviceRepository.findAllByPackageEntity_Id(package_id);
+        for(ServiceDTO serviceDTO : services){
+            Assert.assertTrue(!servicesEntitySet.stream().filter(serviceEntity -> serviceEntity.getCode().equals(serviceDTO.getCode())).findFirst().isEmpty());
+        }
     }
 
     @Test
     public void createPackageWrongCurrencyTest() {
-        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currencyIso", 123464).toString();
+        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currencyIso", 123464)
+                .put("services", servicesExample())
+                .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/package/create", json, Void.class);
@@ -67,16 +101,17 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void updatePackageTest() {
-        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819).toString();
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819)
+                .put("services", servicesExample())
+                .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.exchange("/package/" + 99001L, PUT, json, Void.class);
-        ResponseEntity<Object[]> res = template.exchange("/package", GET, null, Object[].class);
         assertEquals(200, response.getStatusCode().value());
-        Map<String, Object> body = (Map<String, Object>) res.getBody()[1];
-        assertEquals("updated name ", body.get("name"));
-        assertEquals("description updated ", body.get("description"));
-        assertEquals(40, body.get("periodInDays"));
+        PackageEntity packageEntity = packageRepository.findById(99001L).get();
+        assertEquals("updated name ", packageEntity.getName());
+        assertEquals("description updated ", packageEntity.getDescription());
+        validateServices(99001L,servicesExample());
     }
 
     @Test

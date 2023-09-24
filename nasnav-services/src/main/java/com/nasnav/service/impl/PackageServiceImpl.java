@@ -3,8 +3,10 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.CountryRepository;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.PackageRegisteredRepository;
-import com.nasnav.dto.request.PackageDto;
+import com.nasnav.dao.ServiceRepository;
+import com.nasnav.dto.request.PackageDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.PackageMapper;
@@ -14,12 +16,13 @@ import com.nasnav.service.SecurityService;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -34,13 +37,14 @@ public class PackageServiceImpl implements PackageService {
     private final PackageRegisteredRepository packageRegisteredRepository;
     private final PackageMapper packageMapper;
     private final CountryRepository countryRepo;
+    private final ServiceRepository serviceRepository;
     @Override
     public List<PackageResponse> getPackages() {
         return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
     }
 
     @Override
-    public void createPackage(PackageDto json) throws Exception {
+    public Long createPackage(PackageDTO json) throws Exception {
         PackageEntity newPackage = new PackageEntity();
         newPackage.setName(json.getName());
         newPackage.setDescription(json.getDescription());
@@ -51,11 +55,22 @@ public class PackageServiceImpl implements PackageService {
            throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,json.getCurrencyIso());
         }
         newPackage.setCountry(country);
-        packageRepository.save(newPackage);
+        Set<ServiceEntity> serviceEntitySet = new HashSet<ServiceEntity>();
+        if(json.getServices() != null){
+            for(ServiceDTO serviceDTO : json.getServices()){
+                ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
+                        () -> new RuntimeBusinessException(NOT_FOUND,PA$SRV$0001,serviceDTO.getCode())
+                );
+                serviceEntitySet.add(serviceEntity);
+            }
+        }
+
+        newPackage.setServices(serviceEntitySet);
+        return packageRepository.save(newPackage).getId();
     }
 
     @Override
-    public void updatePackage(PackageDto dto, Long packageId) {
+    public void updatePackage(PackageDTO dto, Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
@@ -68,13 +83,25 @@ public class PackageServiceImpl implements PackageService {
             throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,dto.getCurrencyIso());
         }
         entity.setCountry(country);
+
+        Set<ServiceEntity> serviceEntitySet = new HashSet<>();
+        if(dto.getServices() != null){
+            for(ServiceDTO serviceDTO : dto.getServices()){
+                ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
+                        () -> new RuntimeBusinessException(NOT_FOUND,PA$SRV$0001,serviceDTO.getCode())
+                );
+                serviceEntitySet.add(serviceEntity);
+            }
+        }
+
+        entity.setServices(serviceEntitySet);
         packageRepository.save(entity);
     }
     @Override
     @Transactional(rollbackFor = Throwable.class)
     public void removePackage(Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,packageId)
+                () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
         List<PackageRegisteredEntity> packagesRegistered= packageRegisteredRepository.findByPackageId(packageId);
         if(!packagesRegistered.isEmpty()){

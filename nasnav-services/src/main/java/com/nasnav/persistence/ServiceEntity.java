@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,8 +28,8 @@ public class ServiceEntity extends DefaultBusinessEntity<Long> {
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     @JoinTable(name = "package_service"
-            ,joinColumns = {@JoinColumn(name="package_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="service_id")})
+            ,joinColumns = {@JoinColumn(name="service_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="package_id")})
     private Set<PackageEntity> packageEntity = new HashSet<>();;
 
 }

@@ -7,7 +7,6 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.Set;
 
 @Table(name = "package")

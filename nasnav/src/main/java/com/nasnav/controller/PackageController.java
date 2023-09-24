@@ -1,6 +1,6 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.request.PackageDto;
+import com.nasnav.dto.request.PackageDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.service.PackageService;
@@ -26,12 +26,12 @@ public class PackageController {
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE)
-    public void createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDto packageDto) throws Exception {
-        packageService.createPackage(packageDto);
+    public Long createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDTO packageDto) throws Exception {
+        return packageService.createPackage(packageDto);
     }
 
     @PutMapping("/{packageId}")
-    public void updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDto packageDto, @PathVariable Long packageId){
+    public void updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
         packageService.updatePackage(packageDto, packageId);
     }
 
