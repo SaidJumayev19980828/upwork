@@ -1,0 +1,142 @@
+2023-09-24T14:29:46.310+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-09-24T14:29:46.583+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-09-24T14:29:46.599+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@4d18aa28, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@75390459, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@7756c3cd, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@2313052e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@2bd2b28e, org.springframework.test.context.support.DirtiesContextTestExecutionListener@16746061, org.springframework.test.context.transaction.TransactionalTestExecutionListener@57fd91c9, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@6cfcd46d, org.springframework.test.context.event.EventPublishingTestExecutionListener@52045dbe, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@674658f7, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@5c8eee0f, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@565b064f, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@26425897, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@73163d48, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@58c34bb3]
+2023-09-24T14:29:47.710+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-09-24T14:29:52.235+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-09-24T14:29:52.775+0200 INFO Finished Spring Data repository scanning in 532 ms. Found 129 JPA repository interfaces.
+2023-09-24T14:29:54.021+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$8d1bde86] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:29:54.239+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$1c89a83a] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:29:54.423+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@21780905' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:29:54.455+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:29:54.879+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-09-24T14:29:55.075+0200 INFO Root WebApplicationContext: initialization completed in 7320 ms
+2023-09-24T14:32:47.899+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-09-24T14:32:48.208+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-09-24T14:32:48.233+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@75390459, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@7756c3cd, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@2313052e, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@2bd2b28e, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@16746061, org.springframework.test.context.support.DirtiesContextTestExecutionListener@57fd91c9, org.springframework.test.context.transaction.TransactionalTestExecutionListener@6cfcd46d, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@52045dbe, org.springframework.test.context.event.EventPublishingTestExecutionListener@674658f7, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@5c8eee0f, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@565b064f, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@26425897, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@73163d48, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@58c34bb3, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@56a4479a]
+2023-09-24T14:32:49.376+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-09-24T14:32:51.031+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-09-24T14:32:51.531+0200 INFO Finished Spring Data repository scanning in 493 ms. Found 129 JPA repository interfaces.
+2023-09-24T14:32:52.595+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$da9cd3aa] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:32:52.713+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$6a0a9d5e] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:32:52.840+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@5ac7550a' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:32:52.854+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:32:53.236+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-09-24T14:32:53.437+0200 INFO Root WebApplicationContext: initialization completed in 4000 ms
+2023-09-24T14:37:58.742+0200 WARN Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'liquibase' defined in class path resource [org/springframework/boot/autoconfigure/liquibase/LiquibaseAutoConfiguration$LiquibaseConfiguration.class]: Invocation of init method failed; nested exception is liquibase.exception.LockException: Could not acquire change log lock.  Currently locked by DESKTOP-NPUUBU5 (192.168.1.2) since 9/21/23, 3:51 PM
+2023-09-24T14:37:58.762+0200 INFO 
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2023-09-24T14:37:58.782+0200 ERROR Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'liquibase' defined in class path resource [org/springframework/boot/autoconfigure/liquibase/LiquibaseAutoConfiguration$LiquibaseConfiguration.class]: Invocation of init method failed; nested exception is liquibase.exception.LockException: Could not acquire change log lock.  Currently locked by DESKTOP-NPUUBU5 (192.168.1.2) since 9/21/23, 3:51 PM
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1786)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:602)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:524)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:322)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208)
+	at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1154)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:908)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:583)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:144)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:769)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:761)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:426)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:326)
+	at org.springframework.boot.test.context.SpringBootContextLoader.loadContext(SpringBootContextLoader.java:123)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:99)
+	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:124)
+	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:124)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.injectDependencies(DependencyInjectionTestExecutionListener.java:118)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.prepareTestInstance(DependencyInjectionTestExecutionListener.java:83)
+	at org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener.prepareTestInstance(SpringBootDependencyInjectionTestExecutionListener.java:43)
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:244)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:227)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:289)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:291)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:246)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:97)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:70)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:190)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:232)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:55)
+Caused by: liquibase.exception.LockException: Could not acquire change log lock.  Currently locked by DESKTOP-NPUUBU5 (192.168.1.2) since 9/21/23, 3:51 PM
+	at liquibase.lockservice.StandardLockService.waitForLock(StandardLockService.java:236)
+	at liquibase.Liquibase.update(Liquibase.java:183)
+	at liquibase.Liquibase.update(Liquibase.java:178)
+	at liquibase.integration.spring.SpringLiquibase.performUpdate(SpringLiquibase.java:368)
+	at liquibase.integration.spring.SpringLiquibase.afterPropertiesSet(SpringLiquibase.java:316)
+	at org.springframework.boot.autoconfigure.liquibase.DataSourceClosingSpringLiquibase.afterPropertiesSet(DataSourceClosingSpringLiquibase.java:46)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1845)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1782)
+	... 47 common frames omitted
+2023-09-24T14:37:58.935+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-09-24T14:37:59.482+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-09-24T14:37:59.596+0200 INFO Finished Spring Data repository scanning in 114 ms. Found 129 JPA repository interfaces.
+2023-09-24T14:37:59.800+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$da9cd3aa] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:37:59.847+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$6a0a9d5e] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:37:59.917+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@5db9952b' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:37:59.925+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:38:00.037+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-09-24T14:38:00.099+0200 INFO Root WebApplicationContext: initialization completed in 1153 ms
+2023-09-24T14:43:03.300+0200 WARN Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'liquibase' defined in class path resource [org/springframework/boot/autoconfigure/liquibase/LiquibaseAutoConfiguration$LiquibaseConfiguration.class]: Invocation of init method failed; nested exception is liquibase.exception.LockException: Could not acquire change log lock.  Currently locked by DESKTOP-NPUUBU5 (192.168.1.2) since 9/21/23, 3:51 PM
+2023-09-24T14:43:19.927+0200 INFO Could not detect default resource locations for test class [com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir]: no resource found for suffixes {-context.xml, Context.groovy}.
+2023-09-24T14:43:20.135+0200 INFO Loaded default TestExecutionListener class names from location [META-INF/spring.factories]: [org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener, org.springframework.test.context.web.ServletTestExecutionListener, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener, org.springframework.test.context.event.ApplicationEventsTestExecutionListener, org.springframework.test.context.support.DependencyInjectionTestExecutionListener, org.springframework.test.context.support.DirtiesContextTestExecutionListener, org.springframework.test.context.transaction.TransactionalTestExecutionListener, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener, org.springframework.test.context.event.EventPublishingTestExecutionListener]
+2023-09-24T14:43:20.153+0200 INFO Using TestExecutionListeners: [org.springframework.test.context.web.ServletTestExecutionListener@565b064f, org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener@26425897, org.springframework.test.context.event.ApplicationEventsTestExecutionListener@73163d48, org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener@58c34bb3, org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener@56a4479a, org.springframework.test.context.support.DirtiesContextTestExecutionListener@62163b39, org.springframework.test.context.transaction.TransactionalTestExecutionListener@20a8a64e, org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener@62f4ff3b, org.springframework.test.context.event.EventPublishingTestExecutionListener@1698fc68, org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener@4504d271, org.springframework.boot.test.autoconfigure.restdocs.RestDocsTestExecutionListener@207b8649, org.springframework.boot.test.autoconfigure.web.client.MockRestServiceServerResetTestExecutionListener@65b3a85a, org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrintOnlyOnFailureTestExecutionListener@34997338, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverTestExecutionListener@57eda880, org.springframework.boot.test.autoconfigure.webservices.client.MockWebServiceServerTestExecutionListener@2b5825fa]
+2023-09-24T14:43:21.020+0200 WARN 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/org/json/json/20210307/json-20210307.jar!/org/json/JSONObject.class
+	jar:file:/C:/Users/Beshoy%20Gerges/.m2/repository/com/vaadin/external/google/android-json/0.0.20131108.vaadin1/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2023-09-24T14:43:22.512+0200 INFO Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2023-09-24T14:43:22.939+0200 INFO Finished Spring Data repository scanning in 420 ms. Found 129 JPA repository interfaces.
+2023-09-24T14:43:23.944+0200 INFO Bean 'persistenceConfig' of type [com.nasnav.PersistenceConfig$$EnhancerBySpringCGLIB$$34a9dcb5] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:43:24.061+0200 INFO Bean 'cachingConfig' of type [com.nasnav.cache.CachingConfig$$EnhancerBySpringCGLIB$$c417a669] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:43:24.204+0200 INFO Bean 'org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler@6167c42f' of type [org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:43:24.217+0200 INFO Bean 'methodSecurityMetadataSource' of type [org.springframework.security.access.method.DelegatingMethodSecurityMetadataSource] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying)
+2023-09-24T14:43:24.627+0200 INFO Tomcat initialized with port(s): 0 (http)
+2023-09-24T14:43:24.854+0200 INFO Root WebApplicationContext: initialization completed in 3792 ms
