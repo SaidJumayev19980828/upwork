@@ -176,8 +176,6 @@ public class OrderServiceImpl implements OrderService {
 	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
 	@Autowired
 	private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
-	@Autowired
-	private LoyaltyPinsRepository loyaltyPinsRepository;
 
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;

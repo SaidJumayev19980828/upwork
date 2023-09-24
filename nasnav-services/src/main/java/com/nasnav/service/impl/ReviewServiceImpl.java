@@ -11,7 +11,6 @@ import com.nasnav.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -31,10 +30,6 @@ public class ReviewServiceImpl implements ReviewService{
     private ProductVariantsRepository productVariantsRepository;
     @Autowired
     private OrdersRepository ordersRepository;
-    @Autowired
-    private LoyaltyBoosterRepository loyaltyBoosterRepository;
-    @Autowired
-    private UserRepository userRepository;
 
     @Override
     public void rateProduct(ProductRateDTO dto) {
@@ -47,7 +42,6 @@ public class ReviewServiceImpl implements ReviewService{
         ProductVariantsEntity variant = productVariantsRepository.findById(dto.getVariantId())
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getVariantId()));
         createProductRate(dto, variant, user);
-        updateUserBoosterByFamilyMember(user.getId());
     }
 
 
@@ -124,31 +118,5 @@ public class ReviewServiceImpl implements ReviewService{
     public List<ProductRateRepresentationObject> getUserProductsRatings(Set<Long> variantIds) {
         Long userId  = securityService.getCurrentUser().getId();
         return toReviewDtoList(productRatingRepo.findUserVariantRatings(userId, variantIds));
-    }
-
-    private void updateUserBoosterByFamilyMember(Long userId) {
-        if (userId < 0) {
-            userId = securityService.getCurrentUser().getId();
-        }
-        UserEntity userEntity = userRepository.findById(userId).get();
-        Integer reviewCounts = productRatingRepo.countTotalRatingByUserId(userId);
-        LoyaltyBoosterEntity loyaltyBoosterEntity = null;
-        LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
-        List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
-        if (userEntity.getBooster() != null) {
-            userLoyaltyBoosterEntity = userEntity.getBooster();
-        }
-        boosterList = loyaltyBoosterRepository.getAllByReviewProducts(reviewCounts);
-        int boosterSize = boosterList.size();
-        if (boosterSize > 0) {
-            loyaltyBoosterEntity = boosterList.get(boosterSize - 1);
-            if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
-                if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
-                    return;
-                }
-            }
-            userEntity.setBooster(loyaltyBoosterEntity);
-        }
-        userRepository.save(userEntity);
     }
 }

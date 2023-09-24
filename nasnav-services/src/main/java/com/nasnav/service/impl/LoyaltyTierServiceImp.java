@@ -42,8 +42,6 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     @Autowired
     private LoyaltyPointConfigRepository configRepo;
     @Autowired
-    private LoyaltyBoosterRepository loyaltyBoosterRepository;
-    @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
     private UserRepository userRepository;
@@ -158,17 +156,9 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         }
         if (tier.getCashBackPercentage() != null) {
             entity.setCashBackPercentage(tier.getCashBackPercentage());
-        }if (tier.getConstraints() != null) {
-            entity.setConstraints(serializeDTO(tier.getConstraints()));
         }
-
-        if (tier.getIsSpecial() != null &&
-                tier.getIsSpecial()) {
-            entity.setBooster(null);
-        } else if(tier.getBoosterId() != null){
-            LoyaltyBoosterEntity booster = loyaltyBoosterRepository.findById(tier.getBoosterId())
-                            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, BOOSTER$PARAM$0002, tier.getBoosterId()));
-            entity.setBooster(booster);
+        if (tier.getConstraints() != null) {
+            entity.setConstraints(serializeDTO(tier.getConstraints()));
         }
         return tierRepository.save(entity);
     }

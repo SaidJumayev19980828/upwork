@@ -37,21 +37,10 @@ public class LoyaltyPointEntity {
     @lombok.ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyPointTypeEntity type;
-
     public LoyaltyPointDTO getRepresentation() {
         LoyaltyPointDTO dto = new LoyaltyPointDTO();
         BeanUtils.copyProperties(this, dto);
         dto.setOrgId(this.getOrganization().getId());
-        if(this.getType() != null) {
-            dto.setTypeId(this.getType().getId());
-            dto.setType(this.getType().getName());
-        }
         return dto;
     }
 }
