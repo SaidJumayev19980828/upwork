@@ -231,7 +231,7 @@ public enum ErrorCodes {
 	,PA$SRV$0001("No Service Exist with Code : [%s]")
 
 	,ORG$SUB$0001("No Package Registered In Organization with ID:[%d]")
-	,ORG$SUB$0002("Unable to get Currency In Package")
+	,ORG$SUB$0002("Unable to get Currency From Package")
 
 	,BC$PRI$0001("Failed To Fetch Currency Price")
 

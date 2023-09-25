@@ -43,7 +43,7 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl{
 
         //Get Amount in Coins
         PackageEntity packageEntity = packageRepository.findById(subscriptionDTO.getPackageId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_ACCEPTABLE, PA$USR$0002, subscriptionDTO.getPackageId()));
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, subscriptionDTO.getPackageId()));
         if(packageEntity.getCountry() == null || packageEntity.getCountry().getCurrency() == null){
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$SUB$0002);
         }
@@ -52,7 +52,7 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl{
         BigDecimal amount = packageEntity.getPrice().divide(new BigDecimal(currencyPrice),0, RoundingMode.HALF_UP);
 
         //Bank Account Pay with Wallet
-//        bankInsideTransactionService.pay(amount.floatValue());
+        bankInsideTransactionService.pay(amount.floatValue());
 
         //Save Subscription
         subscriptionDTO.setType(SubscriptionMethod.WERT.getValue());

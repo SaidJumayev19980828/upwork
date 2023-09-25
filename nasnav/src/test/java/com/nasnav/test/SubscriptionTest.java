@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 import com.nasnav.dao.SubscriptionRepository;
+import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import java.sql.Timestamp;
@@ -22,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Subscription_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+@TestPropertySource(properties = "nasnav.orgid=11")
 public class SubscriptionTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
@@ -36,9 +39,9 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
                 .put("package_id", "99002")
                 .toString();
         HttpEntity<?> json = getHttpEntity(requestBody,"123456");
-        ResponseEntity<Long> response = template.postForEntity("/subscription/wertSubscription", json, Long.class);
+        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wertSubscription", json, SubscriptionDTO.class);
         assertEquals(200, response.getStatusCode().value());
-        SubscriptionEntity subscription = subscriptionRepository.findById(response.getBody()).get();
+        SubscriptionEntity subscription = subscriptionRepository.findById(response.getBody().getId()).get();
         assertEquals(subscription.getType(), SubscriptionMethod.WERT.getValue());
         assertEquals(subscription.getOrganization().getId().longValue(), 99002);
         assertEquals(subscription.getPackageEntity().getId().longValue(), 99002);
@@ -53,7 +56,7 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
                 .toString();
         HttpEntity<?> json = getHttpEntity(requestBody,"123456");
         ResponseEntity response = template.postForEntity("/subscription/wertSubscription", json, Void.class);
-        assertEquals(406, response.getStatusCode().value());
+        assertEquals(404, response.getStatusCode().value());
     }
 
     @Test

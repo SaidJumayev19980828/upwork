@@ -6,6 +6,9 @@ INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(3,'Egypt', 818
 --inserting organizations
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'fortune');
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+-- Add Nasnav organization
+INSERT INTO public.organizations(id, name, p_name, currency_iso) VALUES (99003, 'nasnav','nasnav', 818);
+
 
 --inserting organization domain
 INSERT INTO public.organization_domains (id, "domain", organization_id, canonical) VALUES(150001, 'fortune.nasnav.com', 99001, 0);
@@ -89,4 +92,7 @@ INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_i
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (201, 70, 99001, 99003, now());
 
 INSERT INTO public.bank_accounts(id,created_At,org_id,user_id,wallet_Address,opening_Balance,opening_Balance_Activity_id,opening_Balance_Date,locked)
-values (10,now(),99002,null,'address',0,null,now(),false);
+values (10,now(),99002,null,'address',40000,null,now(),false);
+-- Add Nasnav bank account
+INSERT INTO public.bank_accounts(id,created_At,org_id,user_id,wallet_Address,opening_Balance,opening_Balance_Activity_id,opening_Balance_Date,locked)
+values (11,now(),99003,null,'address',0,null,now(),false);

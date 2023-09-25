@@ -15,6 +15,7 @@ import java.time.LocalDate;
 
 import static com.nasnav.exceptions.ErrorCodes.PA$USR$0002;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public abstract class SubscriptionServiceImpl implements SubscriptionService {
@@ -38,7 +39,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         PackageEntity packageEntity = packageRepository.findById(subscriptionDTO.getPackageId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_ACCEPTABLE, PA$USR$0002, subscriptionDTO.getPackageId()));
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, subscriptionDTO.getPackageId()));
 
         LocalDate startDate = LocalDate.now();
         LocalDate expirationDate = startDate.plusDays(packageEntity.getPeriodInDays());
