@@ -1,10 +1,7 @@
 package com.nasnav.service.impl.subscription;
 
-import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dto.SubscriptionDTO;
-import com.nasnav.dto.request.BankOutsideTransactionValidDTO;
-import com.nasnav.dto.request.CurrencyPriceResponseDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -12,12 +9,8 @@ import com.nasnav.persistence.PackageEntity;
 import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.CurrencyPriceBlockChainService;
 import com.nasnav.service.PackageService;
-import org.elasticsearch.client.Response;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -41,7 +34,7 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl{
 
 
     @Override
-    public Long subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
+    public SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
 
         //Register Package In Profile
         PackageRegisteredByUserDTO packageRegisteredByUserDTO = new PackageRegisteredByUserDTO();
@@ -50,7 +43,7 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl{
 
         //Get Amount in Coins
         PackageEntity packageEntity = packageRepository.findById(subscriptionDTO.getPackageId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, subscriptionDTO.getPackageId()));
+                () -> new RuntimeBusinessException(NOT_ACCEPTABLE, PA$USR$0002, subscriptionDTO.getPackageId()));
         if(packageEntity.getCountry() == null || packageEntity.getCountry().getCurrency() == null){
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$SUB$0002);
         }

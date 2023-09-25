@@ -11,12 +11,10 @@ import com.nasnav.service.subscription.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
-
 import java.time.LocalDate;
 
 import static com.nasnav.exceptions.ErrorCodes.PA$USR$0002;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public abstract class SubscriptionServiceImpl implements SubscriptionService {
@@ -36,11 +34,11 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
 
 
-    protected Long savePackageSuccessfulSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
+    protected SubscriptionDTO savePackageSuccessfulSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         PackageEntity packageEntity = packageRepository.findById(subscriptionDTO.getPackageId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002, subscriptionDTO.getPackageId()));
+                () -> new RuntimeBusinessException(NOT_ACCEPTABLE, PA$USR$0002, subscriptionDTO.getPackageId()));
 
         LocalDate startDate = LocalDate.now();
         LocalDate expirationDate = startDate.plusDays(packageEntity.getPeriodInDays());
@@ -52,6 +50,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
         subscriptionEntity.setExpirationDate(java.sql.Date.valueOf(expirationDate));
         subscriptionEntity.setPackageEntity(packageEntity);
         subscriptionEntity.setOrganization(org);
-        return subscriptionRepository.save(subscriptionEntity).getId();
+        subscriptionDTO.setId(subscriptionRepository.save(subscriptionEntity).getId());
+        return subscriptionDTO;
     }
 }

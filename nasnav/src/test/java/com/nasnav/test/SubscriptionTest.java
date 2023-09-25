@@ -53,7 +53,7 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
                 .toString();
         HttpEntity<?> json = getHttpEntity(requestBody,"123456");
         ResponseEntity response = template.postForEntity("/subscription/wertSubscription", json, Void.class);
-        assertEquals(404, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test

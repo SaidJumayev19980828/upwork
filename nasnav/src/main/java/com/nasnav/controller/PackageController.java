@@ -26,13 +26,13 @@ public class PackageController {
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE)
-    public Long createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDTO packageDto) throws Exception {
+    public PackageResponse createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDTO packageDto) throws Exception {
         return packageService.createPackage(packageDto);
     }
 
     @PutMapping("/{packageId}")
-    public void updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
-        packageService.updatePackage(packageDto, packageId);
+    public PackageResponse updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
+        return packageService.updatePackage(packageDto, packageId);
     }
 
     @DeleteMapping(value = "{packageId}")

@@ -10,9 +10,9 @@ public interface PackageService {
 
     List<PackageResponse> getPackages();
 
-    Long createPackage(PackageDTO json) throws Exception;
+    PackageResponse createPackage(PackageDTO json) throws Exception;
 
-    void updatePackage(PackageDTO packageDto, Long packageId);
+    PackageResponse updatePackage(PackageDTO packageDto, Long packageId);
 
     void removePackage(Long packageId);
 

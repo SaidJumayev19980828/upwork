@@ -24,7 +24,7 @@ public class SubscriptionController {
 
     @PostMapping
     @RequestMapping(value = "wertSubscription", produces = APPLICATION_JSON_VALUE)
-    public Long wertSubscription(@RequestHeader(name = "User-Token", required = false) String userToken,@RequestBody SubscriptionDTO subscriptionDTO){
+    public SubscriptionDTO wertSubscription(@RequestHeader(name = "User-Token", required = false) String userToken,@RequestBody SubscriptionDTO subscriptionDTO){
        return wertSubscriptionService.subscribe(subscriptionDTO);
     }
 }

@@ -59,13 +59,13 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPackageTest() {
-        String requestBody = json().put("name", "first name").put("description", "description test").put("price", 1.5).put("periodInDays", 30).put("currencyIso", 818)
+        String requestBody = json().put("name", "first name").put("description", "description test").put("price", 1.5).put("period_in_days", 30).put("currency_iso", 818)
                 .put("services", servicesExample())
                 .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
-        ResponseEntity<Long> response = template.postForEntity("/package/create", json, Long.class);
+        ResponseEntity<PackageResponse> response = template.postForEntity("/package/create", json, PackageResponse.class);
         assertEquals(200, response.getStatusCode().value());
-        PackageEntity packageEntity = packageRepository.findById(response.getBody()).get();
+        PackageEntity packageEntity = packageRepository.findById(response.getBody().getId()).get();
         assertEquals(packageEntity.getName(), "first name");
         assertEquals(packageEntity.getDescription(), "description test");
         assertTrue(packageEntity.getCountry().getIsoCode().equals(818));
@@ -90,23 +90,23 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPackageWrongCurrencyTest() {
-        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currencyIso", 123464)
+        String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currency_iso", 123464)
                 .put("services", servicesExample())
                 .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/package/create", json, Void.class);
-        assertEquals(404, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
     public void updatePackageTest() {
-        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819)
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("period_in_days", 40).put("currency_iso", 819)
                 .put("services", servicesExample())
                 .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
-        ResponseEntity<Void> response = template.exchange("/package/" + 99001L, PUT, json, Void.class);
+        ResponseEntity<PackageResponse> response = template.exchange("/package/" + 99001L, PUT, json, PackageResponse.class);
         assertEquals(200, response.getStatusCode().value());
         PackageEntity packageEntity = packageRepository.findById(99001L).get();
         assertEquals("updated name ", packageEntity.getName());
@@ -116,16 +116,16 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void updatePackageWrongCurrencyTest() {
-        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 123464).toString();
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("period_in_days", 40).put("currency_iso", 123464).toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.exchange("/package/" + 99001L, PUT, json, Void.class);
-        assertEquals(404, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
     public void updateInvalidPackageTest() {
-        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("periodInDays", 40).put("currencyIso", 819).toString();
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("period_in_days", 40).put("currency_iso", 819).toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<Void> response = template.exchange("/package/" + 990045L, PUT, json, Void.class);

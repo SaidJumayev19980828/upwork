@@ -25,6 +25,7 @@ import java.util.Date;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @NoArgsConstructor
 public class SubscriptionDTO {
+    private Long id;
     @Positive(message = "package_id can't be null or 0")
     @JsonProperty("package_id")
     private Long packageId;

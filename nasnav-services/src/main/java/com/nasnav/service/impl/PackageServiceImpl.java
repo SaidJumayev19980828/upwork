@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
@@ -44,7 +45,8 @@ public class PackageServiceImpl implements PackageService {
     }
 
     @Override
-    public Long createPackage(PackageDTO json) throws Exception {
+    public PackageResponse createPackage(PackageDTO json) throws Exception {
+        PackageResponse packageResponse = new PackageResponse();
         PackageEntity newPackage = new PackageEntity();
         newPackage.setName(json.getName());
         newPackage.setDescription(json.getDescription());
@@ -52,25 +54,26 @@ public class PackageServiceImpl implements PackageService {
         newPackage.setPeriodInDays(json.getPeriodInDays());
         CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
         if(country == null){
-           throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,json.getCurrencyIso());
+           throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,json.getCurrencyIso());
         }
         newPackage.setCountry(country);
         Set<ServiceEntity> serviceEntitySet = new HashSet<ServiceEntity>();
         if(json.getServices() != null){
             for(ServiceDTO serviceDTO : json.getServices()){
                 ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
-                        () -> new RuntimeBusinessException(NOT_FOUND,PA$SRV$0001,serviceDTO.getCode())
+                        () -> new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,serviceDTO.getCode())
                 );
                 serviceEntitySet.add(serviceEntity);
             }
         }
-
         newPackage.setServices(serviceEntitySet);
-        return packageRepository.save(newPackage).getId();
+        packageResponse.setId(packageRepository.save(newPackage).getId());
+        return packageResponse;
     }
 
     @Override
-    public void updatePackage(PackageDTO dto, Long packageId) {
+    public PackageResponse updatePackage(PackageDTO dto, Long packageId) {
+        PackageResponse packageResponse = new PackageResponse();
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
@@ -80,7 +83,7 @@ public class PackageServiceImpl implements PackageService {
         entity.setPeriodInDays(dto.getPeriodInDays());
         CountriesEntity country = countryRepo.findByIsoCode(dto.getCurrencyIso());
         if(country == null){
-            throw new RuntimeBusinessException(NOT_FOUND,PA$CUR$0002,dto.getCurrencyIso());
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,dto.getCurrencyIso());
         }
         entity.setCountry(country);
 
@@ -88,20 +91,21 @@ public class PackageServiceImpl implements PackageService {
         if(dto.getServices() != null){
             for(ServiceDTO serviceDTO : dto.getServices()){
                 ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
-                        () -> new RuntimeBusinessException(NOT_FOUND,PA$SRV$0001,serviceDTO.getCode())
+                        () -> new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,serviceDTO.getCode())
                 );
                 serviceEntitySet.add(serviceEntity);
             }
         }
 
         entity.setServices(serviceEntitySet);
-        packageRepository.save(entity);
+        packageResponse.setId(packageRepository.save(entity).getId());
+        return packageResponse;
     }
     @Override
     @Transactional(rollbackFor = Throwable.class)
     public void removePackage(Long packageId) {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
+                    () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
         List<PackageRegisteredEntity> packagesRegistered= packageRegisteredRepository.findByPackageId(packageId);
         if(!packagesRegistered.isEmpty()){
