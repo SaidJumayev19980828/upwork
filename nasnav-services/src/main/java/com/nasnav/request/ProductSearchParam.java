@@ -38,6 +38,8 @@ public class ProductSearchParam {
     public Boolean include_out_of_stock;
     public boolean yeshtery_products;
     public Map<String, List<String>> features;
+    public List<Long> promo_id;
+    public List<BigDecimal> discount;
 
     public void setSort(ProductSortOptions sort) {
         this.sort = sort;

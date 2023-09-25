@@ -1,12 +1,10 @@
 package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.gson.Gson;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
@@ -28,17 +26,11 @@ import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.request.AllowedPromotionConstraints;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.VariantSearchParam;
 import com.nasnav.response.*;
-import com.nasnav.service.FileService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ProductServiceTransactions;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.SeoService;
-import com.nasnav.service.StockService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
@@ -75,7 +67,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
-import javax.validation.Valid;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -216,7 +207,13 @@ public class ProductServiceImpl implements ProductService {
 	private ProductCollectionItemRepository collectionItemRepo;
 
 	@Autowired
+	private PromotionRepository promotionRepository;
+
+	@Autowired
 	private SeoService seoService;
+
+	@Autowired
+	private PromotionsService promotionsService;
 	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
@@ -619,6 +616,10 @@ public class ProductServiceImpl implements ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant, organization);
 
+		BooleanBuilder predicateForPromotions = getQueryPredicateForPromotions(product, params);
+		predicate.and(predicateForPromotions);
+		BooleanBuilder predicateForDiscounts = getQueryPredicateForDiscounts(stock, organization, shop, params);
+		predicate.and(predicateForDiscounts);
 		List<OrderSpecifier> order = getProductQueryOrder(params, product, stock);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
@@ -700,6 +701,10 @@ public class ProductServiceImpl implements ProductService {
 		QOrganizations organization = QOrganizations.organizations;
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant, organization);
+		BooleanBuilder predicateForPromotions = getQueryPredicateForPromotions(product, finalParams);
+		predicate.or(predicateForPromotions);
+		BooleanBuilder queryPredicateForDiscounts = getQueryPredicateForDiscounts(stock, organization, shop, finalParams);
+		predicate.or(queryPredicateForDiscounts);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -944,7 +949,80 @@ public class ProductServiceImpl implements ProductService {
 		return predicate;
 	}
 
+	private BooleanBuilder getQueryPredicateForPromotions(QProducts product, ProductSearchParam params){
+		AllowedPromotionConstraints searchParams = getSearchParam(params);
+		BooleanBuilder promoPredicate = new BooleanBuilder();
+		if(searchParams.getProductIds() != null && !searchParams.getProductIds().isEmpty())
+			promoPredicate.or(product.id.in(searchParams.getProductIds()));
+		if(searchParams.getBrandIds() != null && !searchParams.getBrandIds().isEmpty())
+			promoPredicate.or(product.brandId.in(searchParams.getBrandIds()));
+		if (searchParams.getTagIds() != null && !searchParams.getTagIds().isEmpty())
+			promoPredicate.or(product.id.in(productRepository.getProductIdsByTagsList(searchParams.getTagIds())));
 
+		return promoPredicate;
+	}
+
+	private BooleanBuilder getQueryPredicateForDiscounts(QStocks stock,QOrganizations organization, QShops shop, ProductSearchParam params){
+		BooleanBuilder discountPredicate = new BooleanBuilder();
+	if(params.discount != null && !params.discount.isEmpty()) {
+		discountPredicate.or(stock.discount.in(params.discount));
+
+		if(params.org_id != null)
+			discountPredicate.and(organization.id.eq(params.org_id));
+
+		if(params.shop_id != null)
+			discountPredicate.and(shop.id.eq(params.shop_id));
+	}
+		return discountPredicate;
+	}
+
+
+
+	private AllowedPromotionConstraints getSearchParam(ProductSearchParam productSearchParam) {
+		Optional<List<PromosConstraints>> promotionConstraints = getPromotionConstraints(productSearchParam.promo_id);
+		return extractSearchParamFromConstraints(promotionConstraints);
+	}
+	private AllowedPromotionConstraints extractSearchParamFromConstraints(Optional<List<PromosConstraints>> constraints) {
+		if (constraints.isEmpty())
+			return new AllowedPromotionConstraints();
+
+		AllowedPromotionConstraints searchParam = new AllowedPromotionConstraints();
+		for (PromosConstraints constraint : constraints.get()) {
+
+			if(constraint.getBrands() != null && !constraint.getBrands().isEmpty())
+				searchParam.addBrandIds(constraint.getBrands());
+
+			if(constraint.getProducts() != null && !constraint.getProducts().isEmpty())
+				searchParam.addProductIds(constraint.getProducts());
+
+			if(constraint.getTags() != null && !constraint.getTags().isEmpty())
+				searchParam.addTagIds(constraint.getTags());
+
+		}
+		return searchParam;
+	}
+
+	private Optional<List<PromosConstraints>>  getPromotionConstraints(List<Long> promotionIds) {
+		if(promotionIds == null)
+			return Optional.empty();
+
+		return Optional.of(promotionRepository.findAllById(promotionIds)
+                .stream()
+                .map(PromotionsEntity::getConstrainsJson).collect(toList())
+                .stream().map(this::readJsonStr).collect(toList()));
+	}
+
+
+
+	private PromosConstraints readJsonStr(String jsonStr){
+		ObjectMapper objectMapper = createObjectMapper();
+		try {
+			return objectMapper.readValue(jsonStr, PromosConstraints.class);
+		} catch (Exception e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
+		}
+	}
 
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException {
 		ProductSearchParam params = new ProductSearchParam();
