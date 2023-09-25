@@ -134,12 +134,6 @@ public class ProductEntity {
     @Column(name = "allow_reward")
     private Boolean allowReward;
 
-    @Column(name = "buy_with_coins")
-    private Boolean buyWithCoins;
-
-    @Column(name = "only_buy_with_coins")
-    private Boolean onlyBuyWithCoins;
-
     @OneToOne
     @JoinColumn(name = "minimum_tier_id", referencedColumnName = "id")
     @JsonIgnore

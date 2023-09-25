@@ -1,15 +1,8 @@
 package com.nasnav.controller;
 
-import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.GiftDTO;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
-import com.nasnav.persistence.LoyaltyCoinsDropEntity;
-import com.nasnav.persistence.LoyaltyFamilyEntity;
-import com.nasnav.persistence.LoyaltyGiftEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
-import static com.nasnav.constatnts.DefaultValueStrings.INVALID_ID;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -30,19 +21,7 @@ public class LoyaltyPointController {
     @Autowired
     private LoyaltyPointsService loyaltyPointsService;
     @Autowired
-    private LoyaltyFamilyService loyaltyFamilyService;
-    @Autowired
     private LoyaltyTierService loyaltyTierService;
-    @Autowired
-    private LoyaltyCharityService loyaltyCharityService;
-    @Autowired
-    private LoyaltyGiftService loyaltyGiftService;
-    @Autowired
-    private LoyaltyCoinsDropService loyaltyCoinsDropService;
-    @Autowired
-    private LoyaltyBoosterService loyaltyBoosterService;
-    @Autowired
-    private LoyaltyEventService loyaltyEventService;
 
 
     @GetMapping(value ="points")
@@ -133,14 +112,6 @@ public class LoyaltyPointController {
         return loyaltyTierService.changeUserTier(userId, tierId);
     }
 
-
-    /*
-    @GetMapping(value = "points/check", produces = APPLICATION_JSON_VALUE)
-    public List<RedeemPointsOfferDTO> checkRedeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
-                                                        @RequestParam String code) {
-        return loyaltyPointsService.checkRedeemPoints(code);
-    }
-    */
     @PostMapping(value = "points/code/redeem")
     public void redeemPoints(@RequestHeader(name = "User-Token", required = false) String token,
                              @RequestParam("order_id") Long orderId,
@@ -154,159 +125,4 @@ public class LoyaltyPointController {
                            @RequestParam("shop_id") Long shopId) {
         return loyaltyPointsService.generateUserShopPinCode(shopId);
     }
-
-
-    /***
-     * Family APIs
-     * **/
-
-    //@GetMapping(value = "family")
-    public Optional<LoyaltyFamilyEntity> getFamilyById(@RequestHeader(name = "User-Token", required = false) String token,
-                                                       @RequestParam(value = "family_id") Long familyId) {
-        return loyaltyFamilyService.getFamilyById(familyId);
-    }
-
-    //@PostMapping(value = "family/update")
-    public LoyaltyFamilyUpdateResponse createFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                                                    @RequestBody LoyaltyFamilyDTO dto) {
-        return loyaltyFamilyService.updateFamily(dto);
-    }
-
-    //@GetMapping(value = "family/list")
-    public List<LoyaltyFamilyEntity> getFamily(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyFamilyService.listFamily();
-    }
-
-    //@PostMapping(value = "family/new_member")
-    public List<UserEntity> addNewMemberToFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                                                 @RequestParam(value = "family_id") Long familyId,
-                                                 @RequestParam(value = "user_id") Long userId) {
-        
-        return loyaltyFamilyService.addNewMemberToFamily(userId, familyId);
-    }
-
-    //@DeleteMapping(value = "family/delete")
-    public void deleteFamily(@RequestHeader(name = "User-Token", required = false) String token,
-                             @RequestParam(value = "family_id") Long familyId) {
-        loyaltyFamilyService.deleteFamily(familyId);
-    }
-
-
-
-    /**
-     * Coins Drop APIs
-     *
-     */
-    //@PostMapping(value = "coins_drop/update")
-    public LoyaltyCoinUpdateResponse createCoin(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestBody LoyaltyCoinsDropDTO dto) {
-        return loyaltyCoinsDropService.updateCoinsDrop(dto);
-    }
-
-    //@GetMapping(value = "coins_drop/all")
-    public List<LoyaltyCoinsDropEntity> getCoin(@RequestHeader(name = "User-Token", required = false) String token) {
-        return loyaltyCoinsDropService.getForAuthenticatedUserOrg();
-    }
-
-
-    /**
-     * Booster APIs
-     **/
-
-    //@GetMapping(value = "booster")
-    public LoyaltyBoosterDTO getBoosterById(@RequestHeader(name = "User-Token", required = false) String token,
-                                            @RequestParam(value = "booster_id") Long boosterId) {
-        return loyaltyBoosterService.getBoosterById(boosterId);
-    }
-
-    //@PostMapping(value = "booster/update")
-    public LoyaltyBoosterUpdateResponse createBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                                                      @RequestBody LoyaltyBoosterDTO dto) {
-        return loyaltyBoosterService.updateBooster(dto);
-    }
-
-    //@GetMapping(value = "booster/list")
-    public List<LoyaltyBoosterDTO> getBooster(@RequestHeader(name = "User-Token", required = false) String token) {
-        
-        return loyaltyBoosterService.getBoosters();
-    }
-
-    //@DeleteMapping(value = "booster/delete")
-    public void deleteBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                              @RequestParam(value = "booster_id") Long boosterId) {
-        loyaltyBoosterService.deleteBooster(boosterId);
-    }
-
-    //@PostMapping(value = "booster/upgrade")
-    public void upgradeUserBooster(@RequestHeader(name = "User-Token", required = false) String token,
-                                   @RequestParam(value = "booster_id") Long boosterId,
-                                   @RequestParam(value = "user_id") Long userId) {
-        loyaltyBoosterService.upgradeUserBooster(boosterId, userId);
-    }
-
-    /**
-     * Charity APIs
-     *
-     */
-    //@PostMapping(value = "charity/update")
-    public LoyaltyCharityUpdateResponse createCharity(@RequestHeader(name = "User-Token", required = false) String token,
-                                                      @RequestBody LoyaltyCharityDTO dto) {
-        return loyaltyCharityService.updateCharity(dto);
-    }
-
-    //@PostMapping(value = "charity/user/update")
-    public LoyaltyCharityUpdateResponse createCharity(@RequestHeader(name = "User-Token", required = false) String token,
-                                                      @RequestBody UserCharityDTO dto) {
-        return loyaltyCharityService.updateUserCharity(dto);
-    }
-
-    //@PostMapping(value = "charity/user/donate")
-    public void donateUserToCharity(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestParam(value = "charity_id") Long charityId,
-                                    @RequestParam(value = "user_id") Long userId,
-                                    @RequestParam(value = "shop_id") Long shopId) {
-        loyaltyCharityService.updateOrCreateLoyaltyUserCharityTransaction(charityId, userId, shopId);
-    }
-
-    /**
-     * Gift APIs
-     *
-     */
-    //@PostMapping(value = "gift/send")
-    public LoyaltyGiftUpdateResponse createGift(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestBody GiftDTO dto) {
-        return loyaltyGiftService.sendGiftFromUserToAnother(dto);
-    }
-
-    //@GetMapping(value = "gift/all")
-    public List<LoyaltyGiftEntity> getUserGifts(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestParam(value = "user_id") Long userId) {
-        return loyaltyGiftService.getGiftsByUserId(userId);
-    }
-
-    //@GetMapping(value = "gift/redeem")
-    public List<LoyaltyGiftEntity> getUserGiftsNotRedeem(@RequestHeader(name = "User-Token", required = false) String token,
-                                                         @RequestParam(value = "user_id") Long userId,
-                                                         @RequestParam(value = "is_redeem", required = false) Boolean isRedeem) {
-        return loyaltyGiftService.getGiftsByUserIdAndIsRedeem(userId, isRedeem);
-    }
-
-    /**
-     * Events API
-     */
-
-    //@GetMapping("event")
-    public List<LoyaltyEventDTO> getAllEvents(@RequestHeader(name = "User-Token", required = false) String token){
-        return loyaltyEventService.getAllEvents();
-    }
-    //@PostMapping("event")
-    public  LoyaltyEventUpdateResponse createUpdateEvent(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody LoyaltyEventDTO request){
-        return loyaltyEventService.createUpdateEvent(request);
-    }
-
-    //@DeleteMapping("event/{id}")
-    public void deleteEvent(@RequestHeader(name = "User-Token", required = false) String token, @PathVariable Long id){
-        loyaltyEventService.deleteById(id);
-    }
-
 }

@@ -43,11 +43,7 @@ public interface UserService extends CommonUserServiceInterface {
 
     List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward);
 
-    void updateUserByFamilyId(Long familyId, Long userId);
-
     void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId);
-
-    List<UserEntity> getUsersByFamilyId(Long familyId);
 
     void sendEmailRecovery(String email, Long orgId);
 

@@ -53,11 +53,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     private SecurityService securityService;
     @Autowired
     private LoyaltyTierService loyaltyTierService;
-    @Autowired
-    private LoyaltyPointTypeRepository loyaltyPointTypeRepo;
-
-    @Autowired
-    private LoyaltyPointRepository loyaltyPointRepo;
 
     @Autowired
     private LoyaltyPointTransactionRepository loyaltyPointTransRepo;
@@ -168,40 +163,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         entity.setIsActive(false);
         loyaltyPointConfigRepo.save(entity);
         return new LoyaltyPointDeleteResponse(true, entity.getId());
-    }
-
-    @Override
-    public void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate) {
-        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
-        entity.setPoints(points);
-        entity.setIsValid(true);
-        entity.setUser(user);
-        entity.setCharity(charity);
-        entity.setShop(shopEntity);
-        loyaltyPointTransRepo.save(entity);
-    }
-
-    @Override
-    public LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift) {
-        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
-        entity.setPoints(points);
-        entity.setIsValid(true);
-        entity.setUser(user);
-        entity.setGift(gift);
-        loyaltyPointTransRepo.save(entity);
-        return new LoyaltyPointsUpdateResponse(entity.getId());
-    }
-
-    @Override
-    public LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop) {
-        LoyaltyPointTransactionEntity entity = new LoyaltyPointTransactionEntity();
-        entity.setPoints(points);
-        entity.setIsValid(true);
-        entity.setUser(user);
-        entity.setCoinsDrop(coins);
-        entity.setShop(shopEntity);
-        loyaltyPointTransRepo.save(entity);
-        return new LoyaltyPointsUpdateResponse(entity.getId());
     }
 
     @Override
@@ -426,14 +387,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return loyaltyPointTransRepo.findByUser_IdAndOrganization_Id(user.getId(), orgId)
                 .stream()
                 .map(LoyaltyPointTransactionEntity::getRepresentation)
-                .collect(toList());
-    }
-
-    @Override
-    public List<LoyaltyPointTypeDTO> listLoyaltyPointTypes() {
-        return loyaltyPointTypeRepo.findAll()
-                .stream()
-                .map(LoyaltyPointTypeEntity::getRepresentation)
                 .collect(toList());
     }
 

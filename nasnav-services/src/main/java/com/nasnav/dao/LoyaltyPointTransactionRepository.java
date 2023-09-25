@@ -82,8 +82,6 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     List<LoyaltyPointTransactionEntity> findByOrderIdInOrYeshteryMetaOrderIdIn(@Param("orderIds") Set<Long> orderIds,
                                                                                @Param("metaOrderIds") Set<Long> metaOrderIds);
 
-    List<LoyaltyPointTransactionEntity> getByCharity_Id(Long charityId);
-
     @Query("Select count(transaction) from LoyaltyPointTransactionEntity transaction " +
             " where transaction.user.id = :userId and DATE(transaction.createdAt) BETWEEN :dateFrom and :dateTo")
     Integer getCoinsDropTransactionsByUser_IdAndCreatedAt(Long userId, LocalDate dateFrom, LocalDate dateTo);

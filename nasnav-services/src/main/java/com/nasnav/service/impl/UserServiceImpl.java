@@ -6,7 +6,6 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
-import com.nasnav.enumerations.LoyaltyEvents;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -42,7 +41,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.UserStatus.*;
@@ -85,13 +83,9 @@ public class UserServiceImpl implements UserService {
 
 	private final SubAreaRepository subAreaRepo;
 
-	private final LoyaltyCoinsDropService loyaltyCoinsDropService;
-
 	private final MetaOrderRepository metaOrderRepository;
 
 	private final LoyaltyTierService loyaltyTierService;
-
-	private final LoyaltyBoosterRepository loyaltyBoosterRepository;
 
 	private final OtpService otpService;
 
@@ -259,16 +253,6 @@ public class UserServiceImpl implements UserService {
 			userEntity = userRepository.saveAndFlush(userEntity);
 			sendRecoveryMail(userEntity);
 			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
-		}
-		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
-			updateUserBoosterByFamilyMember(userEntity.getId());
-		}
-		if (isNotBlankOrNull(userJson.getTierId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-		}
-		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
@@ -573,9 +557,6 @@ public class UserServiceImpl implements UserService {
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
 		Long orgId = user.getOrganizationId();
 		Long userId = user.getId();
-		if (userId > 0 && loyaltyCoinsDropService.getByOrganizationIdAndTypeId(orgId, LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
-			loyaltyCoinsDropService.giveUserCoinsSignUp(user);
-		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
@@ -828,17 +809,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserByFamilyId(Long familyId, Long userId) {
-		if (userId > 0 && familyId > 0) {
-			userRepository.updateUserWithFamilyId(familyId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getFamily().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
-			}
-		}
-	}
-
-	@Override
 	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
 		if (tierId <= 0) {
 			tierId = getTierIdByUserOrders(orgId, userId);
@@ -846,15 +816,7 @@ public class UserServiceImpl implements UserService {
 		if (userId > 0 && tierId > 0) {
 			userRepository.updateUserTier(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getTier().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-			}
 		}
-	}
-
-	@Override
-	public List<UserEntity> getUsersByFamilyId(Long familyId) {
-		return userRepository.findByFamily_Id(familyId);
 	}
 
 	private Long getTierIdByUserOrders(Long orgId, Long userId) {
@@ -865,40 +827,6 @@ public class UserServiceImpl implements UserService {
 		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
 				.map(LoyaltyTierEntity::getId)
 				.orElse(-1L);
-	}
-
-	private void updateUserBoosterByFamilyMember(Long userId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		UserEntity userEntity = getUserEntityById(userId);
-		Long familyId = userEntity.getFamily().getId();
-		if (familyId < 0) {
-			return;
-		}
-		List<UserEntity> familyUsers = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
-		Integer familyCount = familyUsers.size();
-		if (familyCount == 0) {
-			return;
-		}
-		LoyaltyBoosterEntity loyaltyBoosterEntity = null;
-		LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
-		List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
-		if (userEntity.getBooster() != null) {
-			userLoyaltyBoosterEntity = userEntity.getBooster();
-		}
-		boosterList = loyaltyBoosterRepository.getAllByLinkedFamilyMember(familyCount+1);
-		if (boosterList.isEmpty()) {
-			boosterList = loyaltyBoosterRepository.getAllByNumberFamilyChildren(familyCount);
-		}
-		if (boosterList.size() > 0) {
-			loyaltyBoosterEntity = boosterList.get(boosterList.size() - 1);
-			if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
-				if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
-					return;
-				}
-			}
-			userEntity.setBooster(loyaltyBoosterEntity);
-		}
-		userRepository.save(userEntity);
 	}
 
 	private void sendUserOtp(UserEntity userEntity, String otp) {
