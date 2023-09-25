@@ -66,9 +66,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name = "tier_created_at")
     private LocalDateTime tierCreatedAt;
 
-    @Column(name = "booster_created")
-    private LocalDateTime boosterCreated;
-
     @Column(name = "yeshtery_user_id")
     private Long yeshteryUserId;
 

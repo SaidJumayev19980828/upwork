@@ -25,7 +25,5 @@ public class LoyaltyPointTransactionDTO {
     private Long shopId;
     private String shopName;
     private String shopLogo;
-    private Boolean isCoinsDrop;
-    private Boolean isGift;
     private Boolean gotOnline;
 }

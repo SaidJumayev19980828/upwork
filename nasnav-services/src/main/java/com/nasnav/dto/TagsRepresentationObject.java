@@ -27,8 +27,6 @@ public class TagsRepresentationObject extends BaseRepresentationObject {
     public List<TagsRepresentationObject> children;
 
     private Boolean allowReward;
-    private Boolean buyWithCoins;
-    private Boolean onlyBuyWithCoins;
     private Long minimumTierId;
 
     public TagsRepresentationObject() {

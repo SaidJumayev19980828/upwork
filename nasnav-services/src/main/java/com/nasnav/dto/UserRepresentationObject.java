@@ -38,7 +38,6 @@ public class UserRepresentationObject {
     private LocalDateTime dateOfBirth;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime tierCreatedAt;
-    private Long boosterId;
     private String referral;
     private Boolean isInfluencer;
     private LocalDateTime lastLogin;
