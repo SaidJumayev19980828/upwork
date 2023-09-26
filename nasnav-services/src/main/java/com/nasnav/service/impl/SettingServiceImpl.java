@@ -39,7 +39,7 @@ public class SettingServiceImpl implements SettingService {
             Map<Object, Object> propMap = mapper.readValue(propJson, new TypeReference<>() {
             });
             Map<?, ?> objectMap = (Map<?, ?>) propMap.get(key);
-            objectMap.forEach((key1, value) -> res.put(((String) key1).toUpperCase(), value));
+           objectMap.forEach((key1, value) -> res.put(((String) key1), value));
         } catch (JsonProcessingException e) {
             throw new RuntimeBusinessException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCodes.FRT$VARS001);
         } catch (NullPointerException ex) {

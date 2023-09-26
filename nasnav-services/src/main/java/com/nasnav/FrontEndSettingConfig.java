@@ -1,10 +1,14 @@
 package com.nasnav;
 
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -12,8 +16,9 @@ import java.util.Properties;
 @Configuration
 @Slf4j
 @Profile("!test")
+@RequiredArgsConstructor
 public class FrontEndSettingConfig {
-    private final static String FILE_PATH = "/frontend.properties";
+   private final AppConfig appConfig;
     private final static String KEY_NAME_VALIDATION_PATTERN = "^([a-zA-Z0-9_](\\.[a-zA-Z0-9_])*)*";
     @Bean("frontendProps")
     public Properties frontendProps() {
@@ -23,15 +28,7 @@ public class FrontEndSettingConfig {
     private Properties loadPropertiesFile() {
         final var properties = new Properties();
 
-        try (final var propertiesFileAsInputStream =  getClass().getResourceAsStream(FILE_PATH)) {
-            /*
-                during the boot of app if the File not found
-                should return empty properties object to avoid failing app to run
-                or throwing an exception !
-             */
-            if (propertiesFileAsInputStream == null) {
-                return properties;
-            }
+        try (final var propertiesFileAsInputStream =  new FileInputStream(appConfig.filePath)) {
 
              properties.load(propertiesFileAsInputStream);
 
