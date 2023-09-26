@@ -43,13 +43,8 @@ public class SettingServiceImpl implements SettingService {
         } catch (JsonProcessingException e) {
             throw new RuntimeBusinessException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCodes.FRT$VARS001);
         } catch (NullPointerException ex) {
-            /*
-                in case of wrong key or empty file
-                 should we return an empty response (Current Impl)!
-                 or
-                 throw an exception !
-             */
             log.info("Empty File Or Wrong Key ");
+            throw new RuntimeBusinessException(HttpStatus.INTERNAL_SERVER_ERROR,ErrorCodes.FRT$VARS002);
         }
         return res;
     }
