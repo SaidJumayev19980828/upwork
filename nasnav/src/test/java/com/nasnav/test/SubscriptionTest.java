@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Subscription_Test_Data.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-@TestPropertySource(properties = "nasnav.orgid=11")
+@TestPropertySource(properties = "nasnav.orgid=99003")
 public class SubscriptionTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
