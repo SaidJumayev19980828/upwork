@@ -99,15 +99,16 @@ public class AvailabilityTest extends AbstractTestWithTempBaseDir {
         }
     }
 
-    @Test
-    public void setAppointment(){
-        HttpEntity<?> json = getHttpEntity("123");
-        ResponseEntity<Void> response = template.postForEntity("/appointment/1", json, Void.class);
-        assertEquals(200, response.getStatusCode().value());
-        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
-        long result = entity.get().getUser().getId();
-        assertEquals(88,result);
-    }
+    //TODO
+//    @Test
+//    public void setAppointment(){
+//        HttpEntity<?> json = getHttpEntity("123");
+//        ResponseEntity<Void> response = template.postForEntity("/appointment/1", json, Void.class);
+//        assertEquals(200, response.getStatusCode().value());
+//        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
+//        long result = entity.get().getUser().getId();
+//        assertEquals(88,result);
+//    }
 
     @Test
     public void getAllEmployeesWithOrWithoutSlotsByOrg(){

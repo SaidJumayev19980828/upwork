@@ -1,11 +1,13 @@
 package com.nasnav.service.impl;
 
+import org.json.JSONObject;
 import com.nasnav.dao.AvailabilityRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.AvailabilityDTO;
+import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.AvailabilityService;
@@ -13,6 +15,7 @@ import com.nasnav.service.SchedulerTaskService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 
+import com.nasnav.service.notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +49,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private UserService userService;
     @Autowired
     private EmployeeUserRepository employeeUserRepository;
+    @Autowired
+    private  NotificationService notificationService;
 
     private List<AvailabilityEntity> createAvailabilities(AvailabilityDTO dto) {
         if(overlappingValidator(dto.getStartsAt(), dto.getEndsAt())){
@@ -112,7 +117,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,AVA$NOT$EXIST,"availability not found");
         }
         availabilityEntity.get().setUser(getUser());
-        return availabilityRepository.save(availabilityEntity.get());
+        AvailabilityEntity availability=  availabilityRepository.save(availabilityEntity.get());
+        String response = new JSONObject()
+                .put("userName",getUser().getName())
+                .put("Reserve Availability with",availability.getShop())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response));
+
+        return availability;
     }
 
     @Override

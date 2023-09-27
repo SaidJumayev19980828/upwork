@@ -76,6 +76,11 @@ public class CallQueueServiceImpl implements CallQueueService {
 
 
         notifyQueue(orgId);
+        String response = new JSONObject()
+                .put("userName",userEntity.getName())
+                .put("joinsAt",entity.getJoinsAt())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("queue Updates",response));
 
         return getQueueStatus(orgId, entity);
     }
