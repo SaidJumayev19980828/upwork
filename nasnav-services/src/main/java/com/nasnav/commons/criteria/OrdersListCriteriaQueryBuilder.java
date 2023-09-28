@@ -34,11 +34,12 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
                 .fetch("areasEntity", LEFT)
                 .fetch("citiesEntity", LEFT)
                 .fetch("countriesEntity", LEFT);
-        root.fetch("basketsEntity", LEFT)
-                .fetch("stocksEntity", LEFT)
+        var basket = root.fetch("basketsEntity", LEFT);
+        basket.fetch("addons", LEFT)
+                .fetch("stocksEntity", LEFT);
+        basket.fetch("stocksEntity", LEFT)
                 .fetch("productVariantsEntity", LEFT)
                 .fetch("productEntity", LEFT);
-        // root.fetch(, LEFT)
         root.fetch("organizationEntity", LEFT);
         root.fetch("paymentEntity", LEFT);
 
