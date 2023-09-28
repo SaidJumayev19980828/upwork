@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.enumerations.NotificationType;
 import org.json.JSONObject;
 import com.nasnav.dao.AvailabilityRepository;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -122,8 +123,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .put("userName",getUser().getName())
                 .put("Reserve Availability with",availability.getShop())
                 .toString();
-        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response));
-
+        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
         return availability;
     }
 

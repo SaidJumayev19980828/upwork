@@ -1,5 +1,8 @@
 package com.nasnav.enumerations;
 
 public enum NotificationType {
-	GENERIC;
+	GENERIC,
+	USER_QUEUE_UPDATES,
+	ORGANIZATION_QUEUE_UPDATES ,
+	RESERVE_AVAILABILITY
 }

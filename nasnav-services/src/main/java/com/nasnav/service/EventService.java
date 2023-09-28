@@ -28,4 +28,6 @@ public interface EventService {
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
+    PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count);
+
 }

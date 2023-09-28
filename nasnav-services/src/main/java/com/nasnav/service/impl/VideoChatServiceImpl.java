@@ -160,7 +160,9 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     private VideoChatLogEntity getVideoChatLogEntity(String sessionName, Long orgId) {
-        if (sessionName.isEmpty() || sessionName.isBlank() || !sessionsMap.containsKey(sessionName)) {
+        Optional<String> sessionNameOptional = Optional.ofNullable(sessionName);
+        if (sessionNameOptional.isPresent() && (sessionNameOptional.get().isEmpty()
+                || sessionNameOptional.get().isBlank() || !sessionsMap.containsKey(sessionNameOptional.get()))) {
             throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
         }
         return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)

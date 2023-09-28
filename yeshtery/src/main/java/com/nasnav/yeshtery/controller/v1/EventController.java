@@ -102,4 +102,11 @@ public class EventController {
                                 @PathVariable Long eventId){
         eventService.intersetEventForUser(eventId);
     }
+
+    @GetMapping("/all")
+    public PageImpl<EventResponseDto> getAllEventsPageable(
+                                                                   @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                                   @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
+        return eventService.getAllEvents(start, count);
+    }
 }
