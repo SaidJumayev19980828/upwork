@@ -10,9 +10,11 @@ import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.service.AvailabilityService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,7 @@ public class AvailabilityTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
+
     private AvailabilityService availabilityService;
     @Test
     public void createAvailabilitiesTest(){
@@ -100,15 +103,19 @@ public class AvailabilityTest extends AbstractTestWithTempBaseDir {
     }
 
     //TODO
-//    @Test
-//    public void setAppointment(){
-//        HttpEntity<?> json = getHttpEntity("123");
-//        ResponseEntity<Void> response = template.postForEntity("/appointment/1", json, Void.class);
-//        assertEquals(200, response.getStatusCode().value());
-//        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
-//        long result = entity.get().getUser().getId();
-//        assertEquals(88,result);
-//    }
+    @Test
+    @Ignore
+
+    public void setAppointment(){
+
+
+        HttpEntity<?> json = getHttpEntity("123");
+        ResponseEntity<Void> response = template.postForEntity("/appointment/1", json, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
+        long result = entity.get().getUser().getId();
+        assertEquals(88,result);
+    }
 
     @Test
     public void getAllEmployeesWithOrWithoutSlotsByOrg(){

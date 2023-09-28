@@ -7,6 +7,7 @@ import com.nasnav.dao.SchedulerTaskRepository;
 import com.nasnav.persistence.AvailabilityEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SchedulerTaskEntity;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,15 +94,16 @@ public class AvailabilityTest extends AbstractTestWithTempBaseDir {
         }
     }
 //TODO
-//    @Test
-//    public void setAppointment(){
-//        HttpEntity<?> json = getHttpEntity("123");
-//        ResponseEntity<Void> response = template.postForEntity("/v1/appointment/1", json, Void.class);
-//        assertEquals(200, response.getStatusCode().value());
-//        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
-//        long result = entity.get().getUser().getId();
-//        assertEquals(88,result);
-//    }
+    @Test
+    @Ignore
+    public void setAppointment(){
+        HttpEntity<?> json = getHttpEntity("123");
+        ResponseEntity<Void> response = template.postForEntity("/v1/appointment/1", json, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+        Optional<AvailabilityEntity> entity = availabilityRepository.findById(1L);
+        long result = entity.get().getUser().getId();
+        assertEquals(88,result);
+    }
 
 
 

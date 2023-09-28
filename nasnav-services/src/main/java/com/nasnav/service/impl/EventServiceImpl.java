@@ -134,8 +134,11 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
-        return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
+    return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
+//        return eventRepository.getAllByOrganizationOrFindAll(null).stream().map(this::toDto).collect(Collectors.toList());
     }
+
+
 
     @Override
     public List<EventResponseDto> getAdvertisedEventsForInfluencer() {
@@ -277,6 +280,14 @@ public class EventServiceImpl implements EventService{
         dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
         dto.setProducts(productDetailsDTOS);
         return dto;
+    }
+
+    @Override
+    public PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventEntity> source = eventRepository.getAllEventFilterPageable(page);
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
     EventInterestDTO toEventInterstDto(EventLogsEntity entity){

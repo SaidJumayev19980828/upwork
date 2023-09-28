@@ -6,6 +6,7 @@ import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
+import com.nasnav.enumerations.NotificationType;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -80,7 +81,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                 .put("userName",userEntity.getName())
                 .put("joinsAt",entity.getJoinsAt())
                 .toString();
-        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("queue Updates",response));
+        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("queue Updates",response, NotificationType.ORGANIZATION_QUEUE_UPDATES));
 
         return getQueueStatus(orgId, entity);
     }
@@ -167,7 +168,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                     .put("total",queue.size())
                     .toString();
             notificationService.sendMessage(entity.getUser(),
-                    new PushMessageDTO<>("queue summary",response));
+                    new PushMessageDTO<>("queue summary",response,NotificationType.USER_QUEUE_UPDATES));
         }catch (RuntimeBusinessException e){
             continue; // Skip to the next iteration
         }
