@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.google.common.base.Enums;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
@@ -90,7 +91,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Autowired
 	@Qualifier("userListQueryBuilder")
-	private AbstractCriteriaQueryBuilder<EmployeeUserEntity> criteriaQueryBuilder;
+	private AbstractCriteriaQueryBuilder<EmployeeUserEntity, UsersSearchParam> criteriaQueryBuilder;
 
 	@Override
 	@Transactional
@@ -377,9 +378,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		shopId = getUserShopId(shopId, user, userHighestRole);
 
 		UsersSearchParam params = new UsersSearchParam(roles, orgId, shopId);
-		return criteriaQueryBuilder
-				.getResultList(params, false)
-				.stream()
+		CrieteriaQueryResults<EmployeeUserEntity> results = criteriaQueryBuilder
+				.getResultList(params, false);
+		return results.getResultList().stream()
 				.map(EmployeeUserEntity::getRepresentation)
 				.collect(toList());
 	}
