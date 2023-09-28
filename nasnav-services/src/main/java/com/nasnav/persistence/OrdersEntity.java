@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
@@ -41,6 +42,12 @@ public class OrdersEntity implements BaseEntity{
 
 	@Column(name = "payment_status", nullable = false)
 	private Integer paymentStatus;
+
+	@OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private LoyaltyPointTransactionEntity gainedPointsTransaction;
 
 	public PaymentStatus getPaymentStatus() {
 		return PaymentStatus.getPaymentStatus(paymentStatus);

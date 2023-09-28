@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -60,7 +61,7 @@ public class VideoChatServiceImpl implements VideoChatService {
     private SettingRepository settingRepo;
     @Autowired
     @Qualifier("videoChatQueryBuilder")
-    private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
+    private AbstractCriteriaQueryBuilder<VideoChatLogEntity, VideoChatSearchParam> criteriaQueryBuilder;
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
@@ -266,12 +267,12 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Override
     public VideoChatListResponse getOrgSessions(VideoChatSearchParam params) {
         setVideoChatListDefaultParams(params);
-        List<VideoChatLogRepresentationObject> result = criteriaQueryBuilder.getResultList(params, true)
-                .stream()
+        CrieteriaQueryResults<VideoChatLogEntity> results = criteriaQueryBuilder.getResultList(params, true);
+        List<VideoChatLogRepresentationObject> resultList = results.getResultList().stream()
                 .map(v -> (VideoChatLogRepresentationObject) v.getRepresentation())
                 .collect(toList());
-        Long count = criteriaQueryBuilder.getResultCount();
-        return new VideoChatListResponse(count, result);
+        Long count = results.getResultCount();
+        return new VideoChatListResponse(count, resultList);
     }
 
     private void setVideoChatListDefaultParams(VideoChatSearchParam searchParams) {

@@ -1,6 +1,10 @@
 package com.nasnav.commons.criteria;
 
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.request.BaseSearchParams;
+
+import lombok.Builder;
+import lombok.Getter;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -9,73 +13,74 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
 
-import static java.util.Objects.isNull;
+public abstract class AbstractCriteriaQueryBuilder<T, P extends BaseSearchParams> {
+    private final Class<T> theClass;
+    final EntityManager entityManager;
 
-public abstract class AbstractCriteriaQueryBuilder<T> {
-    private Class<T> theClass;
-    private Long resultCount;
-    List<T> resultList;
-    EntityManager entityManager;
-    CriteriaBuilder builder;
-    CriteriaQuery<T> query;
-    BaseSearchParams searchParams;
-    String orderBy;
-    Predicate [] predicates;
-
-    public AbstractCriteriaQueryBuilder(EntityManager entityManager, Class<T> theClass){
+    AbstractCriteriaQueryBuilder(EntityManager entityManager, Class<T> theClass) {
         this.entityManager = entityManager;
         this.theClass = theClass;
     }
 
-    public List<T> getResultList(BaseSearchParams searchParams, boolean count){
-        this.searchParams = searchParams;
+    public CrieteriaQueryResults<T> getResultList(P searchParams, boolean count) {
 
-        buildQuery();
-        initiateListQuery();
-        if (count)
-            initiateCountQuery();
-        resetResources();
+        CriteriaQueryContext<T, P> context = buildQuery(searchParams);
+        List<T> results = queryForList(context.getQuery(), searchParams);
 
-        return resultList;
+        Long total = null;
+        if (count) {
+            total = queryForCount(context.getCriteriaBuilder(), context.getPredicates());
+        }
+
+        return new CrieteriaQueryResults<>(results, total);
     }
 
-    public Long getResultCount() {
-        return resultCount;
+    private CriteriaQueryContext<T, P> buildQuery(P searchParams) {
+        CriteriaBuilder criteriaBuilder = getCriteriaBuilder();
+        CriteriaQuery<T> query = getCriteriaQuery(criteriaBuilder);
+        Root<T> root = getRoot(query);
+        Predicate[] predicates = getPredicates(criteriaBuilder, root, searchParams);
+        CriteriaQueryContext<T, P> context = CriteriaQueryContext.<T, P>builder()
+                .searchParams(searchParams)
+                .criteriaBuilder(criteriaBuilder)
+                .query(query)
+                .root(root)
+                .predicates(predicates)
+                .build();
+        updateQueryWithConditionAndOrderBy(context);
+        return context;
     }
 
-    private void buildQuery(){
-        setCriteriaBuilder();
-        setCriteriaQuery();
-        setRoot();
-        setPredicates();
-        setOrderBy();
-        setQueryConditionAndOrderBy();
+    private CriteriaBuilder getCriteriaBuilder() {
+        return entityManager.getCriteriaBuilder();
     }
 
-    private void setCriteriaBuilder(){
-        builder = entityManager.getCriteriaBuilder();
+    private CriteriaQuery<T> getCriteriaQuery(CriteriaBuilder criteriaBuilder) {
+        return criteriaBuilder.createQuery(theClass);
     }
 
-    private void setCriteriaQuery(){
-        query = builder.createQuery(theClass);
-    }
-
-    private void initiateCountQuery(){
+    private Long queryForCount(CriteriaBuilder criteriaBuilder, Predicate[] predicates) {
         CriteriaQuery<Long> countQuery = entityManager.getCriteriaBuilder().createQuery(Long.class);
         Root<T> root = countQuery.from(theClass);
-        countQuery.select(  builder.count( root ) ).where(predicates);
-        resultCount =  entityManager.createQuery(countQuery).getSingleResult();
+        countQuery.select(criteriaBuilder.count(root)).where(predicates);
+        return entityManager.createQuery(countQuery).getSingleResult();
     }
 
-    private void resetResources(){
-        builder = null;
-        query = null;
-        predicates = new Predicate[50];
-    }
+    abstract Root<T> getRoot(CriteriaQuery<T> query);
 
-    abstract void setRoot();
-    abstract void setPredicates();
-    abstract void setOrderBy();
-    abstract void initiateListQuery();
-    abstract void setQueryConditionAndOrderBy();
+    abstract Predicate[] getPredicates(CriteriaBuilder criteriaBuilder, Root<T> root, P searchParams);
+
+    abstract void updateQueryWithConditionAndOrderBy(CriteriaQueryContext<T, P> context);
+
+    abstract List<T> queryForList(CriteriaQuery<T> query, P searchParams);
+}
+
+@Getter
+@Builder
+class CriteriaQueryContext<T, P extends BaseSearchParams> {
+    private final P searchParams;
+    private final CriteriaBuilder criteriaBuilder;
+    private final CriteriaQuery<T> query;
+    private final Root<T> root;
+    private final Predicate[] predicates;
 }
