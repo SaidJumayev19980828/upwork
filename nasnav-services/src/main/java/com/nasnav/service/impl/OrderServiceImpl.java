@@ -794,7 +794,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private List<LoyaltyOrderDetailDTO> getOrderPoints(OrdersEntity order) {
-		return loyaltyPointTransactionRepository.findByOrder_Id(order.getId())
+		return Optional.ofNullable(order.getGainedPointsTransaction())
 				.map(p -> new LoyaltyOrderDetailDTO(p.getAmount(), p.getPoints()))
 				.map(p -> List.of(p))
 				.orElse(emptyList());

@@ -42,6 +42,7 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
                 .fetch("productEntity", LEFT);
         root.fetch("organizationEntity", LEFT);
         root.fetch("paymentEntity", LEFT);
+        root.fetch("gainedPointsTransaction", LEFT);
 
         return root;
     }
