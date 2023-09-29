@@ -46,6 +46,8 @@ insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001)
 insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (19, 68,2);
+
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 4);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 6);
@@ -56,5 +58,9 @@ INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (
 INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (101,now(),70,true);
 
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(101,now(),CURRENT_DATE - INTERVAL '30 day',CURRENT_DATE + INTERVAL '30 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(102,now(),CURRENT_DATE - INTERVAL '20 day',CURRENT_DATE + INTERVAL '20 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(103,now(),CURRENT_DATE - INTERVAL '17 day',CURRENT_DATE + INTERVAL '17 day',99001,false,'name','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(104,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'name','desc',0);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),100,100,0);

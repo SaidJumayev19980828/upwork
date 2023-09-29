@@ -4,6 +4,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.util.List;
 
+import com.nasnav.dto.AddonDetailsDTO;
+import com.nasnav.dto.AddonStockDTO;
+import com.nasnav.dto.AddonStocksDTO;
+import com.nasnav.dto.AddonsDTO;
+import com.nasnav.dto.ProductAddonDTO;
+import com.nasnav.dto.ProductAddonsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,12 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nasnav.dto.AddonDetailsDTO;
-import com.nasnav.dto.AddonStockDTO;
-import com.nasnav.dto.AddonStocksDTO;
-import com.nasnav.dto.AddonsDTO;
-import com.nasnav.dto.ProductAddonDTO;
-import com.nasnav.dto.ProductAddonsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.AddonEntity;
 import com.nasnav.persistence.AddonStocksEntity;
@@ -88,7 +88,7 @@ public class AddonsController {
 
 	@GetMapping(value = "stock", produces = APPLICATION_JSON_VALUE)
 	public List<AddonStocksDTO> getAllAddonsStock(@RequestHeader(name = "User-Token", required = false) String token,
-			@RequestParam(name = "shop_id", required = true) Long shopId) throws BusinessException {
+												  @RequestParam(name = "shop_id", required = true) Long shopId) throws BusinessException {
 		return addonService.getAllAddonStocks(shopId);
 
 	}
@@ -102,13 +102,13 @@ public class AddonsController {
 	
 	@GetMapping(value = "item", produces = APPLICATION_JSON_VALUE)
 	public List<AddonDetailsDTO> getItemAddons(@RequestHeader(name = "User-Token", required = false) String token,
-			@RequestParam(name = "item_id", required = true) Long itemId) throws BusinessException {
+											   @RequestParam(name = "item_id", required = true) Long itemId) throws BusinessException {
 		return addonService.listItemAddons(itemId);
 
 	}
 	@GetMapping(value = "product", produces = APPLICATION_JSON_VALUE)
 	public List<ProductAddonsDTO> getProductAddonsInStock(@RequestHeader(name = "User-Token", required = false) String token,
-			@RequestParam(name = "product_id" )Long productId,@RequestParam(name = "shop_id" )Long shopId) throws BusinessException{
+														  @RequestParam(name = "product_id" )Long productId, @RequestParam(name = "shop_id" )Long shopId) throws BusinessException{
       return addonService.getProductAddonsInStock(productId,shopId);
 }
 }

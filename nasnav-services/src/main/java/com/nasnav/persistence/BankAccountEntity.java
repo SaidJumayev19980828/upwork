@@ -23,13 +23,13 @@ public class BankAccountEntity {
     private LocalDateTime createdAt;
 
     @OneToOne
-    @JoinColumn(name = "org_id")
+    @JoinColumn(name = "org_id", unique = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private OrganizationEntity organization;
 
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", unique = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private UserEntity user;

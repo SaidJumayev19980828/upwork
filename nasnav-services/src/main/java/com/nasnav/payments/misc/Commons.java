@@ -85,6 +85,7 @@ public class Commons {
 	public Account getMerchantAccount(Long metaOrderId, Gateway gateway) {
 		OrganizationPaymentGatewaysEntity gatewayEntity = getPaymentAccount(metaOrderId, gateway);
 		Properties props = getAccountProperties(gatewayEntity);
+		classLogger.debug("Getting merchant account for MetaOrder {}, gateway: {}, props: {}, entity: {}", metaOrderId, gateway.name(), props, gatewayEntity);
 		if (props != null) {
 			switch (gateway) {
 				case MASTERCARD:

@@ -10,18 +10,16 @@ import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.service.EventService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.service.*;
 
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,6 +42,7 @@ public class EventServiceImpl implements EventService{
     private final ProductService productService;
     private final EventRequestsRepository eventRequestsRepository;
     private final EventAttachmentsRepository eventAttachmentsRepository;
+    private final InfluencerService influencerService;
 
     @Override
     public EventResponseDto createEvent(EventForRequestDTO dto) {
@@ -103,16 +102,30 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status) {
+    public PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime endDate) {
         PageRequest page = getQueryPage(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        if(loggedInUser instanceof EmployeeUserEntity){
+        if (loggedInUser instanceof EmployeeUserEntity) {
             EmployeeUserEntity employeeUserEntity = (EmployeeUserEntity) loggedInUser;
-            Integer statusValue = null;
-            if(status != null){
-                statusValue = status.getValue();
-            }
-            PageImpl<EventEntity> source = eventRepository.getAllEventForOrg(employeeUserEntity.getOrganizationId(),statusValue, page);
+            Page<EventEntity> source = eventRepository.findAll((root, cq, cb) -> {
+                ArrayList<javax.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+                predicates.add(cb.equal(root.get("organization").get("id"), employeeUserEntity.getOrganizationId()));
+                if (status != null) {
+                    predicates.add(cb.equal(root.get("status"), status.getValue()));
+                }
+                if (fromDate != null) {
+                    predicates.add(cb.and(
+                            root.get("startsAt").isNotNull(),
+                            cb.greaterThanOrEqualTo(root.get("startsAt"), fromDate)));
+                }
+
+                if (endDate != null) {
+                    predicates.add(cb.and(root.get("endsAt").isNotNull(), cb.lessThanOrEqualTo(root.get("endsAt"), endDate)));
+                }
+
+                return cb.and(predicates.toArray(Predicate[]::new));
+            }, page);
             List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
             return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
         }
@@ -121,8 +134,11 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
-        return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
+    return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
+//        return eventRepository.getAllByOrganizationOrFindAll(null).stream().map(this::toDto).collect(Collectors.toList());
     }
+
+
 
     @Override
     public List<EventResponseDto> getAdvertisedEventsForInfluencer() {
@@ -254,20 +270,24 @@ public class EventServiceImpl implements EventService{
         dto.setEndsAt(entity.getEndsAt());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         if(entity.getInfluencer() != null){
-            if(entity.getInfluencer().getUser() != null){
-                dto.setInfluencer(entity.getInfluencer().getUser().getRepresentation());
-            }
-            else {
-                dto.setInfluencer(entity.getInfluencer().getEmployeeUser().getRepresentation());
-            }
+            dto.setInfluencer(influencerService.toInfluencerDto(entity.getInfluencer()));
         }
         dto.setVisible(entity.getVisible());
         dto.setAttachments(entity.getAttachments());
         dto.setDescription(entity.getDescription());
         dto.setName(entity.getName());
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
+        dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
         dto.setProducts(productDetailsDTOS);
         return dto;
+    }
+
+    @Override
+    public PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventEntity> source = eventRepository.getAllEventFilterPageable(page);
+        List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 
     EventInterestDTO toEventInterstDto(EventLogsEntity entity){

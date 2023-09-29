@@ -198,8 +198,5 @@ public class UserDTOs {
 
         @JsonProperty("tier_id")
         private Long tierId;
-
-        @JsonProperty("family_id")
-        private Long familyId;
     }
 }

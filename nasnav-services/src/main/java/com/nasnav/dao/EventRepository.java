@@ -4,6 +4,7 @@ import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
-public interface EventRepository extends CrudRepository<EventEntity, Long> {
+public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaSpecificationExecutor<EventEntity> {
     @Query("select event from EventEntity event where event.organization.id =:orgId and (:status is null or event.status =:status)")
     PageImpl<EventEntity> getAllEventForOrg(Long orgId, Integer status, Pageable page);
     @Query("select event from EventEntity event where event.organization.id =:orgId and event.visible = true and (:status is null or event.status =:status)")
@@ -21,6 +22,10 @@ public interface EventRepository extends CrudRepository<EventEntity, Long> {
     @Query("select event from EventEntity event where (CAST(:dateFilter as date) is null or CAST(event.startsAt as date) = :dateFilter) order by event.startsAt desc")
     PageImpl<EventEntity> getAllEventFilterByDatePageable(@DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Pageable page);
     List<EventEntity> getAllByInfluencerNullAndStartsAtAfter(LocalDateTime now);
+
+    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization)")
+    List<EventEntity> getAllByOrganizationOrFindAll(@Param("organization") OrganizationEntity organization);
+
     List<EventEntity> getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
     @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
     PageImpl<EventEntity> getAllByInfluencer_Id(Long influencerId, Long orgId, Pageable page);
@@ -33,4 +38,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long> {
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
     @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
     List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
+
+    @Query("select event from EventEntity event  order by event.startsAt desc")
+    PageImpl<EventEntity> getAllEventFilterPageable(Pageable page);
 }

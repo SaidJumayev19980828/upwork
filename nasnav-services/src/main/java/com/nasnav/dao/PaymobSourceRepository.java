@@ -11,4 +11,6 @@ public interface PaymobSourceRepository extends JpaRepository<PaymobSourceEntity
     List<PaymobSourceEntity> findByOrganization_Id(Long organizationId);
 
     Optional<PaymobSourceEntity> findByValue(String value);
+
+    Optional<PaymobSourceEntity> findByNameAndOrganization_Id(String name, Long orgId);
 }

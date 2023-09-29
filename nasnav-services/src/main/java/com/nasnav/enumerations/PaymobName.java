@@ -3,10 +3,10 @@ package com.nasnav.enumerations;
 import lombok.Getter;
 
 public enum PaymobName {
-    ONLINE_CARD("1627922"),
-    CASH_COLLECTION("1974407"),
-    ACCEPT_KIOSK("1739266"),
-    MOBILE_WALLET("1928804");
+    ONLINE_CARD("Online Card"),
+    CASH_COLLECTION("Cash Collection"),
+    ACCEPT_KIOSK("Accept Kiosk"),
+    MOBILE_WALLET("Mobile Wallet");
 
     @Getter
     private final String value;

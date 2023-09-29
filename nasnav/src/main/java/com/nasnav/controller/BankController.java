@@ -11,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/bank")
 @AllArgsConstructor
+@CrossOrigin("*")
 public class BankController {
     private final BankAccountService bankAccountService;
     private final BankAccountActivityService bankAccountActivityService;
@@ -55,6 +56,12 @@ public class BankController {
                                   @RequestParam long receiverAccountId,
                                   @RequestParam long amount) {
         bankInsideTransactionService.transfer(receiverAccountId, amount);
+    }
+
+    @PostMapping("/pay")
+    public void pay(@RequestHeader(name = "User-Token", required = false) String token,
+                                  @RequestParam long amount) {
+        bankInsideTransactionService.pay(amount);
     }
 
     @GetMapping("/account/reservations")

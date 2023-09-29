@@ -37,8 +37,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="mobile")
     private String mobile;
 
-    @Column(name = "date_of_birth")
-    private LocalDateTime dateOfBirth;
 
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
@@ -55,13 +53,6 @@ public class UserEntity extends BaseUserEntity{
     @EqualsAndHashCode.Exclude
     private Set<UserAddressEntity> userAddresses;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id", referencedColumnName = "id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyFamilyEntity family;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tier_id", referencedColumnName = "id")
     @JsonIgnore
@@ -75,16 +66,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name = "tier_created_at")
     private LocalDateTime tierCreatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booster_id", referencedColumnName = "id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyBoosterEntity booster;
-
-    @Column(name = "booster_created")
-    private LocalDateTime boosterCreated;
-
     @Column(name = "yeshtery_user_id")
     private Long yeshteryUserId;
 
@@ -95,6 +76,18 @@ public class UserEntity extends BaseUserEntity{
     @lombok.ToString.Exclude
     @JsonIgnore
     RocketChatCustomerTokenEntity rocketChatTokenEntity;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    @JsonIgnore
+    private BankAccountEntity bankAccount;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    @JsonIgnore
+    private InfluencerEntity influencer;
 
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 
@@ -124,18 +117,17 @@ public class UserEntity extends BaseUserEntity{
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
         obj.setId(getId());
-        if (this.getFamily() != null)
-            obj.setFamilyId(this.getFamily().getId());
         if (this.getTier() != null)
             obj.setTierId(this.getTier().getId());
         obj.setAllowReward(getAllowReward());
         obj.setCreationDate(getCreationTime());
         obj.setTierCreatedAt(this.getTierCreatedAt());
-        if (this.getBooster() != null)
-            obj.setBoosterId(this.booster.getId());
         obj.setStatus(UserStatus.getUserStatus(getUserStatus()).name());
         obj.setImage(this.getImage());
-
+        if(this.bankAccount != null)
+            obj.setBankAccountId(this.bankAccount.getId());
+        if(this.influencer != null)
+            obj.setInfluencerId(this.influencer.getId());
         return obj;
     }
 }

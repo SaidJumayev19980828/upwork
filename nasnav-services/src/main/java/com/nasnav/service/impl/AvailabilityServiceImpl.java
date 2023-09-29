@@ -1,11 +1,14 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.enumerations.NotificationType;
+import org.json.JSONObject;
 import com.nasnav.dao.AvailabilityRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.AvailabilityDTO;
+import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.AvailabilityService;
@@ -13,6 +16,7 @@ import com.nasnav.service.SchedulerTaskService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 
+import com.nasnav.service.notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +50,8 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     private UserService userService;
     @Autowired
     private EmployeeUserRepository employeeUserRepository;
+    @Autowired
+    private  NotificationService notificationService;
 
     private List<AvailabilityEntity> createAvailabilities(AvailabilityDTO dto) {
         if(overlappingValidator(dto.getStartsAt(), dto.getEndsAt())){
@@ -112,7 +118,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,AVA$NOT$EXIST,"availability not found");
         }
         availabilityEntity.get().setUser(getUser());
-        return availabilityRepository.save(availabilityEntity.get());
+        AvailabilityEntity availability=  availabilityRepository.save(availabilityEntity.get());
+        String response = new JSONObject()
+                .put("userName",getUser().getName())
+                .put("Reserve Availability with",availability.getShop())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
+        return availability;
     }
 
     @Override
@@ -149,7 +161,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     public List<AvailabilityDTO> getAllFreeAvailabilitiesByOrgAndEmployee(Long orgId, Long employeeId) {
         Optional<OrganizationEntity> org = organizationRepository.findById(orgId);
         if(org.isPresent()){
-            return availabilityRepository.getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(org.get(), getEmployee())
+            return availabilityRepository.getAllFreeAvailabilitiesByOrganizationAndEmployeeUser(org.get(), employeeId)
                     .stream().map(this::toDTO).collect(Collectors.toList());
         }
         return null;
@@ -238,6 +250,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         availabilityDTO.setOrganizationId(entity.getOrganization().getId());
         availabilityDTO.setPeriod(Duration.between(entity.getStartsAt(),entity.getEndsAt()).toMinutes());
         availabilityDTO.setEmployee(entity.getEmployeeUser().getId());
+        availabilityDTO.setEmployeeRepresentation(entity.getEmployeeUser().getRepresentation());
         if(entity.getShop() != null)
             availabilityDTO.setShopId(entity.getShop().getId());
         return availabilityDTO;

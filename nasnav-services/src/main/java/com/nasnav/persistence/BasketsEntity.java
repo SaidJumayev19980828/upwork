@@ -50,6 +50,8 @@ public class BasketsEntity implements BaseEntity{
     
     
     @OneToMany(mappedBy = "basketEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Set<AddonBasketEntity> addons = Set.of();
 
     @Override

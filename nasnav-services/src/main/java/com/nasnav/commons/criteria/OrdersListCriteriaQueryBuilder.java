@@ -4,7 +4,7 @@ import com.nasnav.enumerations.OrderSortOptions;
 import com.nasnav.enumerations.SortingWay;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.request.OrderSearchParam;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
@@ -20,39 +20,36 @@ import static java.util.Optional.ofNullable;
 import static javax.persistence.criteria.JoinType.LEFT;
 
 @Component("ordersQueryBuilder")
-public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder {
-
-
-    private Root<OrdersEntity> root;
-
-    @Autowired
+public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<OrdersEntity, OrderSearchParam> {
     public OrdersListCriteriaQueryBuilder(EntityManager entityManager) {
         super(entityManager, OrdersEntity.class);
     }
 
     @Override
-    void setRoot() {
-        root = query.from(OrdersEntity.class);
+    Root<OrdersEntity> getRoot(CriteriaQuery<OrdersEntity> query) {
+        Root<OrdersEntity> root = query.from(OrdersEntity.class);
         root.fetch("metaOrder", LEFT);
         root.fetch("shipment", LEFT);
         root.fetch("addressEntity", LEFT)
                 .fetch("areasEntity", LEFT)
                 .fetch("citiesEntity", LEFT)
                 .fetch("countriesEntity", LEFT);
-        root.fetch("basketsEntity", LEFT)
-                .fetch("stocksEntity", LEFT)
+        var basket = root.fetch("basketsEntity", LEFT);
+        basket.fetch("addons", LEFT)
+                .fetch("stocksEntity", LEFT);
+        basket.fetch("stocksEntity", LEFT)
                 .fetch("productVariantsEntity", LEFT)
                 .fetch("productEntity", LEFT);
         root.fetch("organizationEntity", LEFT);
         root.fetch("paymentEntity", LEFT);
+        root.fetch("gainedPointsTransaction", LEFT);
+
+        return root;
     }
 
     @Override
-    void setPredicates() {
-        OrderSearchParam params = (OrderSearchParam) this.searchParams;
-
-
-        this.predicates = buildOrderPredicates(builder, root, params);
+    Predicate[] getPredicates(CriteriaBuilder builder, Root<OrdersEntity> root, OrderSearchParam params) {
+        return buildOrderPredicates(builder, root, params);
     }
 
     public static Predicate [] buildOrderPredicates(CriteriaBuilder builder, Path<OrdersEntity> root, OrderSearchParam params) {
@@ -95,51 +92,56 @@ public class OrdersListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder
         return predicatesList.stream().toArray(Predicate[]::new);
     }
 
-    @Override
-    void setOrderBy() {
-        OrderSearchParam params = (OrderSearchParam) this.searchParams;
+    private String getOrderBy(OrderSearchParam params) {
 
-        this.orderBy = ofNullable(params.getOrders_sorting_option())
+        String orderColumn = ofNullable(params.getOrders_sorting_option())
                             .map(OrderSortOptions::getValue)
                             .orElse("updateDate");
 
-        if(orderBy.equalsIgnoreCase("quantity"))
-            orderBy = null;
+        if(orderColumn.equalsIgnoreCase("quantity"))
+            orderColumn = null;
+        
+        return orderColumn;
     }
 
     @Override
-    void setQueryConditionAndOrderBy() {
-        query.where(predicates);
-        if(orderBy != null){
-            query.orderBy(getSortingWay());
+    void updateQueryWithConditionAndOrderBy(CriteriaQueryContext<OrdersEntity, OrderSearchParam> context) {
+        CriteriaQuery<OrdersEntity> query = context.getQuery();
+        query.where(context.getPredicates());
+
+        String orderColumn = getOrderBy(context.getSearchParams());
+        if(orderColumn != null){
+            query.orderBy(getSortingWay(context.getCriteriaBuilder(), context.getRoot(), context.getSearchParams(), orderColumn));
         }
     }
 
-    private Order getSortingWay(){
-        OrderSearchParam params = (OrderSearchParam) this.searchParams;
+    private Order getSortingWay(CriteriaBuilder criteriaBuilder, Root<OrdersEntity> root, OrderSearchParam params,
+            String orderColumn) {
         SortingWay sortingWay = params.getSorting_way();
 
         if(sortingWay.equals(SortingWay.ASC))
-            return builder.asc( root.get(orderBy) );
+            return criteriaBuilder.asc( root.get(orderColumn) );
         else
-            return builder.desc( root.get(orderBy) );
+            return criteriaBuilder.desc( root.get(orderColumn) );
     }
 
     @Override
-    void initiateListQuery() {
-        OrderSearchParam params = (OrderSearchParam) searchParams;
+    List<OrdersEntity> queryForList(CriteriaQuery<OrdersEntity> query, OrderSearchParam params) {
         Boolean useCount = ofNullable(params.getUseCount())
                 .orElse(true);
 
-        if(useCount){
-            this.resultList = entityManager.createQuery(query)
+        List<OrdersEntity> results = null;
+        if(Boolean.TRUE.equals(useCount)){
+            results = entityManager.createQuery(query)
                                     .setFirstResult(params.getStart())
                                     .setMaxResults(params.getCount())
                                     .getResultList();
         }else{
-            this.resultList = entityManager.createQuery(query)
+            results = entityManager.createQuery(query)
                                     .getResultList();
         }
+
+        return results;
     }
 
     private static LocalDateTime readDate(String dateStr) {

@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static com.nasnav.exceptions.ErrorCodes.COINS$PARAM$0004;
+import static com.nasnav.exceptions.ErrorCodes.LOY$PARAM$0004;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public enum Services {
@@ -27,6 +27,6 @@ public enum Services {
         return Arrays.stream(Services.values())
                 .filter(p -> Objects.equals(p.value, value))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, COINS$PARAM$0004, value));
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, LOY$PARAM$0004, value));
     }
 }

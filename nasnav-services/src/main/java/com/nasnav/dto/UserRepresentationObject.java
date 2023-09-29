@@ -32,18 +32,18 @@ public class UserRepresentationObject {
     private Set<String> roles;
     private String status;
     private LocalDateTime creationDate;
-    private Long familyId;
     private Long tierId;
     private Boolean allowReward;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime dateOfBirth;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime tierCreatedAt;
-    private Long boosterId;
     private String referral;
     private Boolean isInfluencer;
     private LocalDateTime lastLogin;
     private Gender gender;
+    private Long BankAccountId;
+    private Long influencerId;
 
     public String getReferral() {
         return id + "";

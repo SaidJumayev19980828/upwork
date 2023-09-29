@@ -1,12 +1,13 @@
 package com.nasnav.service.impl;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dto.request.notification.NotificationRequestDto;
+import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
+import com.nasnav.enumerations.NotificationType;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.VideoChatResponse;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
@@ -59,7 +61,13 @@ public class CallQueueServiceImpl implements CallQueueService {
             callQueueRepository.save(entity);
         }
 
+        Set<String> notificationTokens = securityService.getValidNotificationTokens(userEntity);
+        if (notificationTokens.isEmpty()) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, userEntity.getId());
+        }
+
         entity = new CallQueueEntity();
+
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
@@ -67,7 +75,13 @@ public class CallQueueServiceImpl implements CallQueueService {
 
         entity = callQueueRepository.save(entity);
 
+
         notifyQueue(orgId);
+        String response = new JSONObject()
+                .put("userName",userEntity.getName())
+                .put("joinsAt",entity.getJoinsAt())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("queue Updates",response, NotificationType.ORGANIZATION_QUEUE_UPDATES));
 
         return getQueueStatus(orgId, entity);
     }
@@ -93,7 +107,7 @@ public class CallQueueServiceImpl implements CallQueueService {
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
         String userResponseSTR = userResponse.toString();
-        notificationService.sendMessage(entity.getUser(), new NotificationRequestDto("call queue started", userResponseSTR));
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("call queue started", userResponseSTR));
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
@@ -145,15 +159,19 @@ public class CallQueueServiceImpl implements CallQueueService {
         queue = queue.stream().sorted(Comparator.comparing(CallQueueEntity::getJoinsAt)).collect(Collectors.toList());
         CallQueueEntity entity;
         for(int i = 0; i < queue.size(); i++) {
+        try {
             entity = queue.get(i);
             String response = new JSONObject()
                     .put("id",entity.getId())
                     .put("joinsAt",entity.getJoinsAt())
                     .put("position",i+1)
                     .put("total",queue.size())
-                            .toString();
+                    .toString();
             notificationService.sendMessage(entity.getUser(),
-                    new NotificationRequestDto("queue summary",response));
+                    new PushMessageDTO<>("queue summary",response,NotificationType.USER_QUEUE_UPDATES));
+        }catch (RuntimeBusinessException e){
+            continue; // Skip to the next iteration
+        }
         }
     }
 

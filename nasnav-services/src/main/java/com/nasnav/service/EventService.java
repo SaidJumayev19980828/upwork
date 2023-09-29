@@ -9,6 +9,7 @@ import com.nasnav.persistence.EventEntity;
 
 import org.springframework.data.domain.PageImpl;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public interface EventService {
     EventResponseDto getEventById(Long eventId);
     List<EventResponseDto> getEventsByOrgIdForUsers(Long orgID, EventStatus status);
     PageImpl<EventResponseDto> getAllEventsForUser(Integer start, Integer count, Date dateFilter);
-    PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status);
+    PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime toDate);
     List<EventResponseDto> getAdvertisedEvents();
     List<EventResponseDto> getAdvertisedEventsForInfluencer();
     PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count);
@@ -27,4 +28,6 @@ public interface EventService {
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
+    PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count);
+
 }

@@ -15,6 +15,7 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -350,9 +351,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         validateOrganizationNameForCreate(json);
         OrganizationEntity organization = organizationRepository.findByPname(json.getPname());
         if (organization != null) {
-            throw new BusinessException("INVALID_PARAM: p_name",
-                    "Provided p_name is already used by another organization (id: " + organization.getId() +
-                            ", name: " + organization.getName() + ")", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$CREATE$001);
         }
         organization = new OrganizationEntity();
         organization.setName(json.getName());

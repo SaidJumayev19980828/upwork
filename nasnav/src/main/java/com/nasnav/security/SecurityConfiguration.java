@@ -80,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/room/event/list_for_user"			,GET			, getAllRoles()),
 						patternOf( "/room/event/session"					,POST				, getAllRoles()),
+						patternOf( "/room/event/session/suspend"					,POST				, getAllRoles()),
 						patternOf( "/room/event/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/room/event"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -182,6 +183,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/availability/user"                       					, setOf(CUSTOMER)),
 						patternOf( "/availability/employee/**"                      			, getAllRoles()),
 						patternOf( "/availability/**"                       				, getNonCustomersRoles()),
+						patternOf( "/employee-user-heart-beats-logs/log"		, POST		, getNonCustomersRoles()),
 						patternOf( "/appointment/**"											, setOf(CUSTOMER)),
 						patternOf( "/follow/**"					,POST						, setOf(CUSTOMER)),
 						patternOf( "/follow/**"					,GET						, getAllRoles()),
@@ -201,6 +203,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/bank/account/setOpeningBalance",POST						,  setOf(NASNAV_ADMIN)),
 						patternOf( "/bank/account"					,POST						,  getAllRoles()),
 						patternOf( "/bank/transaction/**"		   ,POST						,  getAllRoles()),
+						patternOf( "/bank/pay"		   				,POST						,  getAllRoles()),
 						patternOf( "/bank/account/reservations"		   ,GET						,  getAllRoles()),
 						patternOf( "/bank/account/reservation/**"		   ,GET						,  getAllRoles()),
 						patternOf( "/bank/account/history"		   			,GET					,  getAllRoles()),
@@ -211,9 +214,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf("/loyalty/spendable_points"		, GET						, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/type/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf("/loyalty/family/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/tier/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf("/loyalty/booster/**"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/config/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/check"									, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/redeem"									, setOf(STORE_MANAGER)),
@@ -243,6 +244,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register/activate/resend")
 						, patternOf( "/user/subscribe")
 						, patternOf( "/user/subscribe/activate")
+						, patternOf("/employee-user-heart-beats-logs/list-active-employee", GET)
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/package"					    , HttpMethod.GET)
@@ -265,6 +267,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
 						, patternOf("/advertisement", HttpMethod.GET)
+						, patternOf("/frontend/setting", GET)
                  );
 
     AuthenticationProvider provider;

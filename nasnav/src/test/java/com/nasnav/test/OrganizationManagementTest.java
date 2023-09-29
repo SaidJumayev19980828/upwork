@@ -9,6 +9,8 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.UserApiResponse;
@@ -269,15 +271,30 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(expectedRoles, foundRoles);
     }
 
+    @Test
+    public void organizationRegistrationWithP_NameAlreadyExistedTest() {
+        RegisterDto registerDto = dbExistedRegisterDto();
+        assertTrue(registerDto.getPassword().length() < PASSWORD_MAX_LENGTH);
+        assertTrue(registerDto.getPassword().length() > PASSWORD_MIN_LENGTH);
+        ResponseEntity<Object> response = template.postForEntity("/organization/register", registerDto, Object.class);
+        assertEquals(NOT_ACCEPTABLE,response.getStatusCode());
+    }
+
     private RegisterDto registerOrg() {
         RegisterDto registerDTO = new RegisterDto();
-        registerDTO.setOrganizationName("Solad Pant1");
+        registerDTO.setOrganizationName("solad pant1");
         registerDTO.setCurrencyIso(818);
         registerDTO.setPassword("D@ner$2010");
         registerDTO.setName("test test test ");
         registerDTO.setEmail(TestUserEmail);
         
         return  registerDTO;
+    }
+
+    private RegisterDto dbExistedRegisterDto(){
+        RegisterDto registerDto = registerOrg();
+        registerDto.setOrganizationName("org");
+        return  registerDto;
     }
 
     private ActivateOtpDto activateOtp(String otp, String email, Long orgId) {
