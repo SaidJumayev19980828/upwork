@@ -17,6 +17,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
@@ -65,6 +66,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -190,6 +192,8 @@ public class OrderServiceImpl implements OrderService {
 	AddonsBasketRepository addonsBasketRepository;
 	@Autowired
 	private OrderStatisticService orderStatisticService;
+	@Autowired
+	private PromotionMapper promotionMapper;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -852,6 +856,15 @@ public class OrderServiceImpl implements OrderService {
 			}
 			obj.setShippingAddress(address);
 		}
+		Set<PromotionsEntity> orderAssociatedPromos = entity.getMetaOrder().getPromotions();
+		if(orderAssociatedPromos != null && !orderAssociatedPromos.isEmpty()){
+			List<OrderAssociatedPromotions> associatedPromotions = orderAssociatedPromos
+					.stream()
+					.map(promo -> promotionMapper.toDto(promo)).collect(toList());
+			obj.setOrderAssociatedPromotions(associatedPromotions);
+		}
+
+
 	}
 
 	private BasketItem readBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages){
@@ -2002,6 +2015,7 @@ public class OrderServiceImpl implements OrderService {
 		SubordersAndDiscountsInfo data = createSubOrders(cartDividedByShop, address, dto, org);
 
 		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
+       promotion.ifPresent(order::addPromotion);
 		return metaOrderRepo.save(order);
 	}
 
