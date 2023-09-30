@@ -3,6 +3,7 @@ package com.nasnav.test;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.persistence.*;
 import com.nasnav.service.AdvertisementService;
+import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.PostService;
 import com.nasnav.service.PostTransactionsService;
 import com.nasnav.service.jobs.AdvertisementJob;
@@ -32,10 +33,12 @@ class AdvertisementJobTest {
     private PostLikesRepository postLikesRepository;
     @Mock
     private PostTransactionsService postTransactionsService;
+    @Mock
+    private BankInsideTransactionService bankInsideTransactionService;
 
     @BeforeEach
     void init() {
-        this.advertisementJob = new AdvertisementJob(postService, advertisementService, postLikesRepository, postTransactionsService);
+        this.advertisementJob = new AdvertisementJob(postService, advertisementService, postLikesRepository, postTransactionsService, bankInsideTransactionService);
     }
 
     @Test
@@ -233,9 +236,14 @@ class AdvertisementJobTest {
         post.setId(1L);
         UserEntity user = new UserEntity();
         user.setId(1L);
+        user.setBankAccount(new BankAccountEntity());
         post.setUser(user);
         AdvertisementEntity advertisement = new AdvertisementEntity();
         advertisement.setId(1L);
+        OrganizationEntity organization = new OrganizationEntity();
+        organization.setId(1L);
+        organization.setBankAccount(new BankAccountEntity());
+        advertisement.setOrganization(organization);
         post.setAdvertisement(advertisement);
         ProductEntity p1 = new ProductEntity();
         p1.setId(1L);
@@ -258,5 +266,6 @@ class AdvertisementJobTest {
         Mockito.when(postTransactionsService.getPaidCoins(1L)).thenReturn(900L);
         advertisementJob.calculateLikes();
         Mockito.verify(postTransactionsService, Mockito.times(1)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(bankInsideTransactionService, Mockito.times(1)).transferImpl(Mockito.any(), Mockito.any(), Mockito.anyFloat());
     }
 }

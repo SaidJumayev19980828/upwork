@@ -3,9 +3,11 @@ package com.nasnav.service.jobs;
 import com.nasnav.constatnts.CronExpression;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.persistence.AdvertisementProductEntity;
+import com.nasnav.persistence.BankAccountEntity;
 import com.nasnav.persistence.PostEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.AdvertisementService;
+import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.PostService;
 import com.nasnav.service.PostTransactionsService;
 import lombok.AllArgsConstructor;
@@ -26,6 +28,7 @@ public class AdvertisementJob {
     private final AdvertisementService advertisementService;
     private final PostLikesRepository postLikesRepository;
     private final PostTransactionsService postTransactionsService;
+    private final BankInsideTransactionService bankInsideTransactionService;
     private final int batchSize = 10;
 
 
@@ -33,9 +36,8 @@ public class AdvertisementJob {
     public void calculateLikes() {
         PageImpl<PostEntity> page = postService.getAllPostsWithinAdvertisement(0, batchSize);
         for (PostEntity post : page.getContent()) {
-            Long postLikes = postLikesRepository.countAllByPost_Id(post.getId());
-
-            if (post.getProducts() != null) {
+            if (post.getProducts() != null && !post.getProducts().isEmpty()) {
+                Long postLikes = postLikesRepository.countAllByPost_Id(post.getId());
                 if (postLikes > 0) {
                     Set<Long> productsInPost = post.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
                     if (!productsInPost.isEmpty()) {
@@ -52,10 +54,13 @@ public class AdvertisementJob {
                                 Long currentPaidCoins = postTransactionsService.getPaidCoins(post.getId());
 
                                 if (totalCoinsShouldBePaid > currentPaidCoins) {
-                                    postTransactionsService.saveTransactionsCoins(post.getId(), totalCoinsShouldBePaid - currentPaidCoins);
-                                    log.info("pay {} to user {} for post {}", totalCoinsShouldBePaid - currentPaidCoins, post.getUser().getId(), post.getId());
+                                    long coins = totalCoinsShouldBePaid - currentPaidCoins;
+                                    log.info("pay {} to user {} for post {}", coins, post.getUser().getId(), post.getId());
+                                    BankAccountEntity sender = post.getAdvertisement().getOrganization().getBankAccount();
+                                    BankAccountEntity receiver = post.getUser().getBankAccount();
+                                    bankInsideTransactionService.transferImpl(sender, receiver, ((float) coins));
+                                    postTransactionsService.saveTransactionsCoins(post.getId(), coins);
                                 }
-
                             }
                         }
 
@@ -64,5 +69,4 @@ public class AdvertisementJob {
             }
         }
     }
-
 }

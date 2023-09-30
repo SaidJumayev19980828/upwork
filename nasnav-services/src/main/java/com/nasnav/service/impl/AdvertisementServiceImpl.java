@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -69,6 +70,8 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         if (advertisementDTO.getOrgId() != null) {
             advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
         }
+        Assert.notNull(advertisement.getOrganization(), "organization cant be null");
+        Assert.notNull(advertisement.getOrganization().getBankAccount(), "organization should have a bank account");
         AdvertisementEntity advertisementEntity = advertisementRepository.save(advertisement);
         List<AdvertisementProductDTO> advertisementProductDTOS = advertisementProductService.save(advertisementEntity, advertisementDTO.getProducts());
         AdvertisementDTO dto = advertisementMapper.toDto(advertisementEntity);
