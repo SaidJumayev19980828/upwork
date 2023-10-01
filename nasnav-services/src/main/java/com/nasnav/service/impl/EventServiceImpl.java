@@ -285,9 +285,23 @@ public class EventServiceImpl implements EventService{
     @Override
     public PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
-        PageImpl<EventEntity> source = eventRepository.getAllEventFilterPageable(page);
-        List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+        PageImpl<EventEntity> events = eventRepository.getAllEventFilterPageable(page);
+        List<EventResponseDto> dtos = events.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
+    }
+
+    @Override
+
+    public PageImpl<EventResponseDto> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
+        PageRequest page = getQueryPage(start, count);
+        OrganizationEntity organization=null;
+        if (orgId !=null){
+            organization = organizationRepository.findById(orgId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
+        }
+        PageImpl<EventEntity>  AdvertisedEvent =  eventRepository.getAllByOrganizationOrFindAll(page,organization);
+        List<EventResponseDto> dtos = AdvertisedEvent.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, AdvertisedEvent.getPageable(), AdvertisedEvent.getTotalElements());
     }
 
     EventInterestDTO toEventInterstDto(EventLogsEntity entity){

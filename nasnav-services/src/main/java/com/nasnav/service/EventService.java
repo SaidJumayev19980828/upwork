@@ -30,4 +30,6 @@ public interface EventService {
     EventResponseDto toDto(EventEntity entity);
     PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count);
 
+    PageImpl<EventResponseDto> getAllAdvertisedEvents(Integer start, Integer count,Long orgId);
+
 }
