@@ -38,7 +38,7 @@ public class SchedulerTaskEntity {
     @ToString.Exclude
     private EmployeeUserEntity employeeUser;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "availability_id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude
