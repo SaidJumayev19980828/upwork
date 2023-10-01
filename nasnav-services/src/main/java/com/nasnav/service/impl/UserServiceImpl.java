@@ -537,8 +537,10 @@ public class UserServiceImpl implements UserService {
 					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
-				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				;
+//				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
+//						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);
