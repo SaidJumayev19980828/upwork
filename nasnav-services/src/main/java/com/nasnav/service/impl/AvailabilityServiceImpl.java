@@ -123,7 +123,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .put("userName",getUser().getName())
                 .put("Reserve Availability with",availability.getShop())
                 .toString();
-        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
+    notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
         return availability;
     }
 

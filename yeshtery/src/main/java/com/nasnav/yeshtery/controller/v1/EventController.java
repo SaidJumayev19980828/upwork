@@ -109,4 +109,14 @@ public class EventController {
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
         return eventService.getAllEvents(start, count);
     }
+
+    @GetMapping("/advertise/all")
+    public PageImpl<EventResponseDto> getAllAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token ,
+                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                      @RequestParam(required = false ) Long orgId ,
+                                                      @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+                                                      ){
+        return eventService.getAllAdvertisedEvents(start,count,orgId);
+    }
+
 }

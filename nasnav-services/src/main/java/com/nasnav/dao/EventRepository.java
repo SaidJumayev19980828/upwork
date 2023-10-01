@@ -23,8 +23,9 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     PageImpl<EventEntity> getAllEventFilterByDatePageable(@DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Pageable page);
     List<EventEntity> getAllByInfluencerNullAndStartsAtAfter(LocalDateTime now);
 
-    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization)")
-    List<EventEntity> getAllByOrganizationOrFindAll(@Param("organization") OrganizationEntity organization);
+//    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization)")
+    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization) AND (e.influencer IS NULL )")
+    PageImpl<EventEntity> getAllByOrganizationOrFindAll(Pageable page ,@Param("organization") OrganizationEntity organization);
 
     List<EventEntity> getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
     @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
