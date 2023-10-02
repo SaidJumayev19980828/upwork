@@ -107,12 +107,12 @@ public class CallQueueServiceImpl implements CallQueueService {
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
         String userResponseSTR = userResponse.toString();
-        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("call queue started", userResponseSTR));
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("call queue started", userResponseSTR,NotificationType.START_CALL));
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
         entity.setEmployee(getEmployee());
-        callQueueRepository.save(entity);
+        callQueueRepository.saveAndFlush(entity);
 
         notifyQueue(entity.getOrganization().getId());
 
@@ -165,6 +165,8 @@ public class CallQueueServiceImpl implements CallQueueService {
                     .put("id",entity.getId())
                     .put("joinsAt",entity.getJoinsAt())
                     .put("position",i+1)
+                    .put("message",
+                            "We are Sorry for let you wait,our Agent Will be with You As soon as possible")
                     .put("total",queue.size())
                     .toString();
             notificationService.sendMessage(entity.getUser(),

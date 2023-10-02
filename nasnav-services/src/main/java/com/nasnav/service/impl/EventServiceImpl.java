@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
@@ -250,6 +251,8 @@ public class EventServiceImpl implements EventService{
         return entity;
     }
 
+
+
     public EventResponseDto toDto(EventEntity entity){
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
         productFetchDTO.setCheckVariants(false);
@@ -283,25 +286,21 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventResponseDto> getAllEvents(Integer start, Integer count) {
+    public PageImpl<EventProjection> getAllEvents(Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
-        PageImpl<EventEntity> events = eventRepository.getAllEventFilterPageable(page);
-        List<EventResponseDto> dtos = events.getContent().stream().map(this::toDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
+        return  eventRepository.findAllOrderedByStartsAtDesc(page);
     }
 
     @Override
 
-    public PageImpl<EventResponseDto> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
+    public PageImpl<EventProjection> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
         PageRequest page = getQueryPage(start, count);
         OrganizationEntity organization=null;
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
-        PageImpl<EventEntity>  AdvertisedEvent =  eventRepository.getAllByOrganizationOrFindAll(page,organization);
-        List<EventResponseDto> dtos = AdvertisedEvent.getContent().stream().map(this::toDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos, AdvertisedEvent.getPageable(), AdvertisedEvent.getTotalElements());
+       return  eventRepository.getAllByOrganizationOrFindAll(page,organization);
     }
 
     EventInterestDTO toEventInterstDto(EventLogsEntity entity){

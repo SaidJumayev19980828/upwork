@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.EventProjection;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.domain.PageImpl;
@@ -25,7 +26,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
 //    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization)")
     @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization) AND (e.influencer IS NULL )")
-    PageImpl<EventEntity> getAllByOrganizationOrFindAll(Pageable page ,@Param("organization") OrganizationEntity organization);
+    PageImpl<EventProjection> getAllByOrganizationOrFindAll(Pageable page ,@Param("organization") OrganizationEntity organization);
 
     List<EventEntity> getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
     @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
@@ -40,6 +41,13 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
     List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
 
-    @Query("select event from EventEntity event  order by event.startsAt desc")
-    PageImpl<EventEntity> getAllEventFilterPageable(Pageable page);
+//    @Query("select event from EventEntity event  order by event.startsAt desc")
+//    PageImpl<EventEntity> getAllEventFilterPageable(Pageable page);
+
+//    @Query("SELECT e.id AS id, e.startsAt AS startsAt, e.endsAt AS endsAt, e.influencer AS influencer, e.attachments AS attachments, e.name AS name, e.description AS description, e.status AS status FROM EventEntity e ORDER BY e.startsAt DESC")
+        @Query("select event from EventEntity event  order by event.startsAt desc")
+    PageImpl<EventProjection> findAllOrderedByStartsAtDesc(Pageable pageable);
+
+
 }
+
