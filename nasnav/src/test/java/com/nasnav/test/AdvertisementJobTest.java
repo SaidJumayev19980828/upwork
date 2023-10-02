@@ -1,13 +1,12 @@
 package com.nasnav.test;
 
 import com.nasnav.dao.PostLikesRepository;
-import com.nasnav.dto.response.AdvertisementDTO;
-import com.nasnav.service.jobs.AdvertisementJob;
-import com.nasnav.persistence.PostEntity;
-import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.AdvertisementService;
+import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.PostService;
 import com.nasnav.service.PostTransactionsService;
+import com.nasnav.service.jobs.AdvertisementJob;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,14 +18,12 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class AdvertisementJobTest {
+class AdvertisementJobTest {
     private AdvertisementJob advertisementJob;
     @Mock
     private PostService postService;
@@ -36,155 +33,239 @@ public class AdvertisementJobTest {
     private PostLikesRepository postLikesRepository;
     @Mock
     private PostTransactionsService postTransactionsService;
-
-
-    private static List<PostEntity> getPostEntities() {
-        UserEntity user = new UserEntity();
-        user.setId(150L);
-        PostEntity pe1 = new PostEntity();
-        pe1.setId(1L);
-        pe1.setUser(user);
-        PostEntity pe2 = new PostEntity();
-        pe2.setId(2L);
-        pe2.setUser(user);
-        PostEntity pe3 = new PostEntity();
-        pe3.setId(3L);
-        pe3.setUser(user);
-        PostEntity pe4 = new PostEntity();
-        pe4.setId(4L);
-        pe4.setUser(user);
-        return List.of(pe1, pe2, pe3, pe4);
-    }
-
-    private static Map<Long, AdvertisementDTO> getAdvertisementByPost() {
-        AdvertisementDTO v1 = new AdvertisementDTO();
-        v1.setCoins(1000);
-        v1.setLikes(20 * 1000);
-
-        AdvertisementDTO v2 = new AdvertisementDTO();
-        v2.setCoins(500);
-        v2.setLikes(3 * 1000);
-
-        AdvertisementDTO v3 = new AdvertisementDTO();
-        v3.setCoins(200);
-        v3.setLikes(650);
-
-        AdvertisementDTO v4 = new AdvertisementDTO();
-        v4.setCoins(600);
-        v4.setLikes(12 * 1000);
-
-        return Map.of(1L, v1, 2L, v2, 3L, v3, 4L, v4);
-    }
-
-    private static Map<Long, Long> getPaidCoinsByPost() {
-        return Map.of(1L, 100L, 2L, 200L, 3L, 300L, 4L, 400L);
-    }
-
-    private static Map<Long, Long> getLikesByPost() {
-        return Map.of(1L, 10 * 1000L, 2L, 6000L, 3L, 1950L, 4L, 0L);
-    }
+    @Mock
+    private BankInsideTransactionService bankInsideTransactionService;
 
     @BeforeEach
     void init() {
-        this.advertisementJob = new AdvertisementJob(postService, advertisementService, postLikesRepository, postTransactionsService);
+        this.advertisementJob = new AdvertisementJob(postService, advertisementService, postLikesRepository, postTransactionsService, bankInsideTransactionService);
     }
 
     @Test
-    void shouldNotCallSaveTransactionsWhenCurrentLikesLessThanAdvertisementLikes1() {
-        List<PostEntity> posts = getPostEntities().stream().skip(0).limit(1).collect(Collectors.toList());
-        Mockito.when(postService.getAllPostsWithinAdvertisement(any(), any())).thenReturn(new PageImpl<>(posts));
-
-        Map<Long, Long> likesByPost = getLikesByPost();
-        likesByPost.forEach((key, value) -> Mockito.when(postLikesRepository.countAllByPost_Id(key)).thenReturn(value));
-
-        Map<Long, AdvertisementDTO> advertisementByPost = getAdvertisementByPost();
-        advertisementByPost.forEach((key, value) -> Mockito.when(advertisementService.findOneByPostId(key)).thenReturn(value));
-
-        Map<Long, Long> paidCoinsByPost = getPaidCoinsByPost();
-        paidCoinsByPost.forEach((key, value) -> Mockito.when(postTransactionsService.getPaidCoins(key)).thenReturn(value));
-
-        advertisementJob.calculateLikes();
-
+    void shouldNotCallSaveTransactionsWhenCurrentLikesIsZero() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
         posts.forEach(it -> {
-            Mockito.verify(postLikesRepository).countAllByPost_Id(it.getId());
-            Mockito.verify(advertisementService).findOneByPostId(it.getId());
-            Mockito.verify(postTransactionsService).getPaidCoins(it.getId());
+            Mockito.when(postLikesRepository.countAllByPost_Id(it.getId())).thenReturn(0L);
         });
+        advertisementJob.calculateLikes();
         Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
-    void shouldCallSaveTransactionsWhenCurrentLikesGreeterThanAdvertisementLikes2() {
-        List<PostEntity> posts = getPostEntities().stream().skip(1).limit(1).collect(Collectors.toList());
-        Mockito.when(postService.getAllPostsWithinAdvertisement(any(), any())).thenReturn(new PageImpl<>(posts));
-
-        Map<Long, Long> likesByPost = getLikesByPost();
-        likesByPost.forEach((key, value) -> Mockito.when(postLikesRepository.countAllByPost_Id(key)).thenReturn(value));
-
-        Map<Long, AdvertisementDTO> advertisementByPost = getAdvertisementByPost();
-        advertisementByPost.forEach((key, value) -> Mockito.when(advertisementService.findOneByPostId(key)).thenReturn(value));
-
-        Map<Long, Long> paidCoinsByPost = getPaidCoinsByPost();
-        paidCoinsByPost.forEach((key, value) -> Mockito.when(postTransactionsService.getPaidCoins(key)).thenReturn(value));
-
-        advertisementJob.calculateLikes();
-
+    void shouldNotCallSaveTransactionsWhenCurrentPostProductIsZero() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        post.setProducts(List.of());
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
         posts.forEach(it -> {
-            Mockito.verify(postLikesRepository).countAllByPost_Id(it.getId());
-            Mockito.verify(advertisementService).findOneByPostId(it.getId());
-            Mockito.verify(postTransactionsService).getPaidCoins(it.getId());
+            Mockito.when(postLikesRepository.countAllByPost_Id(it.getId())).thenReturn(10L);
         });
-        Mockito.verify(postTransactionsService, Mockito.times(1)).saveTransactionsCoins(2L, 800L);
-
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
-    void shouldCallSaveTransactionsWhenCurrentLikesGreeterThanAdvertisementLikes3() {
-        List<PostEntity> posts = getPostEntities().stream().skip(2).limit(1).collect(Collectors.toList());
-        Mockito.when(postService.getAllPostsWithinAdvertisement(any(), any())).thenReturn(new PageImpl<>(posts));
-
-        Map<Long, Long> likesByPost = getLikesByPost();
-        likesByPost.forEach((key, value) -> Mockito.when(postLikesRepository.countAllByPost_Id(key)).thenReturn(value));
-
-        Map<Long, AdvertisementDTO> advertisementByPost = getAdvertisementByPost();
-        advertisementByPost.forEach((key, value) -> Mockito.when(advertisementService.findOneByPostId(key)).thenReturn(value));
-
-        Map<Long, Long> paidCoinsByPost = getPaidCoinsByPost();
-        paidCoinsByPost.forEach((key, value) -> Mockito.when(postTransactionsService.getPaidCoins(key)).thenReturn(value));
-
-        advertisementJob.calculateLikes();
-
-        posts.forEach(it -> {
-            Mockito.verify(postLikesRepository).countAllByPost_Id(it.getId());
-            Mockito.verify(advertisementService).findOneByPostId(it.getId());
-            Mockito.verify(postTransactionsService).getPaidCoins(it.getId());
+    void shouldNotCallSaveTransactionsWhenAdvertisementProductsIsEmpty() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(10L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of());
         });
-        Mockito.verify(postTransactionsService, Mockito.times(1)).saveTransactionsCoins(3L, 300L);
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
     }
 
     @Test
-    void shouldNotCallSaveTransactionsWhenCurrentLikesLessThanAdvertisementLikes4() {
-        List<PostEntity> posts = getPostEntities().stream().skip(3).limit(1).collect(Collectors.toList());
-        Mockito.when(postService.getAllPostsWithinAdvertisement(any(), any())).thenReturn(new PageImpl<>(posts));
-
-        Map<Long, Long> likesByPost = getLikesByPost();
-        likesByPost.forEach((key, value) -> Mockito.when(postLikesRepository.countAllByPost_Id(key)).thenReturn(value));
-
-        Map<Long, AdvertisementDTO> advertisementByPost = getAdvertisementByPost();
-        advertisementByPost.forEach((key, value) -> Mockito.when(advertisementService.findOneByPostId(key)).thenReturn(value));
-
-        Map<Long, Long> paidCoinsByPost = getPaidCoinsByPost();
-        paidCoinsByPost.forEach((key, value) -> Mockito.when(postTransactionsService.getPaidCoins(key)).thenReturn(value));
-
-        advertisementJob.calculateLikes();
-
-        posts.forEach(it -> {
-            Mockito.verify(postLikesRepository).countAllByPost_Id(it.getId());
-            Mockito.verify(advertisementService).findOneByPostId(it.getId());
-            Mockito.verify(postTransactionsService).getPaidCoins(it.getId());
+    void shouldNotCallSaveTransactionsWhenTotalAdvertisementProductsLikesIsZero() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(10L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            AdvertisementProductEntity e1 = new AdvertisementProductEntity();
+            e1.setLikes(0);
+            e1.setCoins(150);
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of(e1));
         });
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+    }
 
-        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(any(), any());
+    @Test
+    void shouldNotCallSaveTransactionsWhenTotalAdvertisementProductsLikesIsGreeterThanPostLikes() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(10L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            AdvertisementProductEntity e1 = new AdvertisementProductEntity();
+            e1.setLikes(5000);
+            e1.setCoins(150);
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of(e1));
+        });
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+    }
 
+    @Test
+    void shouldNotCallSaveTransactionsWhenCurrentPaidCoinsIsGreeterThanPostLikesCoins() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(16000L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            AdvertisementProductEntity e1 = new AdvertisementProductEntity();
+            e1.setLikes(6000);
+            e1.setCoins(300);
+            AdvertisementProductEntity e2 = new AdvertisementProductEntity();
+            e2.setLikes(2000);
+            e2.setCoins(150);
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of(e1, e2));
+        });
+        Mockito.when(postTransactionsService.getPaidCoins(1L)).thenReturn(900L);
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    void shouldNotCallSaveTransactionsWhenCurrentPaidCoinsIsGreeterThanPostLikesCoinsAbs() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(15000L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            AdvertisementProductEntity e1 = new AdvertisementProductEntity();
+            e1.setLikes(6000);
+            e1.setCoins(300);
+            AdvertisementProductEntity e2 = new AdvertisementProductEntity();
+            e2.setLikes(2000);
+            e2.setCoins(150);
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of(e1, e2));
+        });
+        Mockito.when(postTransactionsService.getPaidCoins(1L)).thenReturn(900L);
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(0)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+    }
+
+    @Test
+    void shouldNotCallSaveTransactionsWhenCurrentPaidCoinsIsGreeterThanPostLikesCoinsAbso() {
+        PostEntity post = new PostEntity();
+        post.setId(1L);
+        UserEntity user = new UserEntity();
+        user.setId(1L);
+        user.setBankAccount(new BankAccountEntity());
+        post.setUser(user);
+        AdvertisementEntity advertisement = new AdvertisementEntity();
+        advertisement.setId(1L);
+        OrganizationEntity organization = new OrganizationEntity();
+        organization.setId(1L);
+        organization.setBankAccount(new BankAccountEntity());
+        advertisement.setOrganization(organization);
+        post.setAdvertisement(advertisement);
+        ProductEntity p1 = new ProductEntity();
+        p1.setId(1L);
+        ProductEntity p2 = new ProductEntity();
+        p2.setId(2L);
+        post.setProducts(List.of(p1, p2));
+        List<PostEntity> posts = List.of(post);
+        Mockito.when(postService.getAllPostsWithinAdvertisement(0, 10)).thenReturn(new PageImpl<>(posts));
+        posts.forEach(p -> {
+            Mockito.when(postLikesRepository.countAllByPost_Id(p.getId())).thenReturn(24000L);
+            Set<Long> products = p.getProducts().stream().map(ProductEntity::getId).collect(Collectors.toSet());
+            AdvertisementProductEntity e1 = new AdvertisementProductEntity();
+            e1.setLikes(6000);
+            e1.setCoins(300);
+            AdvertisementProductEntity e2 = new AdvertisementProductEntity();
+            e2.setLikes(2000);
+            e2.setCoins(150);
+            Mockito.when(advertisementService.findAdvertisementProducts(p.getAdvertisement().getId(), products)).thenReturn(List.of(e1, e2));
+        });
+        Mockito.when(postTransactionsService.getPaidCoins(1L)).thenReturn(900L);
+        advertisementJob.calculateLikes();
+        Mockito.verify(postTransactionsService, Mockito.times(1)).saveTransactionsCoins(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(bankInsideTransactionService, Mockito.times(1)).transferImpl(Mockito.any(), Mockito.any(), Mockito.anyFloat());
     }
 }

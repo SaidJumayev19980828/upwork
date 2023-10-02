@@ -1,5 +1,4 @@
-package com.nasnav.controller;
-
+package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.service.AdvertisementService;

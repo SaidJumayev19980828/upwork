@@ -10,18 +10,14 @@ import com.nasnav.enumerations.PostType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.service.FollowerServcie;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.PostService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.SecurityService;
-
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -52,6 +48,8 @@ public class PostServiceImpl implements PostService {
     private UserRepository userRepository;
     @Autowired
     private FollowerServcie followerServcie;
+    @Autowired
+    private AdvertisementRepository advertisementRepository;
 
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
@@ -197,10 +195,10 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    @Override
+   @Override
     public PageImpl<PostEntity> getAllPostsWithinAdvertisement(Integer start, Integer count) {
         PageRequest page = getQueryPage(start, count);
-        return postRepository.findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime.now(), LocalDateTime.now(), page);
+       return postRepository.findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime.now(), LocalDateTime.now(), page);
     }
 
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
@@ -239,6 +237,10 @@ public class PostServiceImpl implements PostService {
             dto.getAttachments().forEach(o -> {
                 o.setPost(entity);
             });
+        }
+        if (dto.getAdvertisementId() != null) {
+            Assert.notNull(entity.getUser().getBankAccount(), "user should create bank account first");
+            entity.setAdvertisement(advertisementRepository.getOne(dto.getAdvertisementId()));
         }
 
         return entity;

@@ -2832,7 +2832,8 @@ public class ProductServiceImpl implements ProductService {
 
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
+	@Override
+	public ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		ProductRepresentationObject representationObj = getProductRepresentation(product, includeOutOfStock);
 		copyProperties(representationObj, dto);
