@@ -4,6 +4,7 @@ import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
+import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.SecurityService;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.PA$USR$0002;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -33,6 +35,19 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+
+    public SubscriptionInfoDTO getSubscriptionInfo() throws RuntimeBusinessException{
+        SubscriptionInfoDTO subscriptionInfoDTO = new SubscriptionInfoDTO();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        Optional<SubscriptionEntity> subscriptionEntity = subscriptionRepository.findFirstByOrganizationOrderByExpirationDateDesc(org);
+        if(!subscriptionEntity.isPresent()){
+            subscriptionInfoDTO.setSubscribed(false);
+        }else{
+            subscriptionInfoDTO.setSubscribed(true);
+            subscriptionInfoDTO.setExpirationDate(subscriptionEntity.get().getExpirationDate());
+        }
+        return subscriptionInfoDTO;
+    }
 
 
     protected SubscriptionDTO savePackageSuccessfulSubscription(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {

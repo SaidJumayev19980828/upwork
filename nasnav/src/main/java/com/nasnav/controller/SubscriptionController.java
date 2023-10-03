@@ -2,12 +2,15 @@ package com.nasnav.controller;
 
 
 import com.nasnav.dto.SubscriptionDTO;
+import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.PackageService;
+import com.nasnav.service.impl.subscription.SubscriptionServiceImpl;
 import com.nasnav.service.impl.subscription.WertSubscriptionServiceImpl;
 import com.nasnav.service.subscription.SubscriptionService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -20,7 +23,14 @@ public class SubscriptionController {
 
 
     private final WertSubscriptionServiceImpl wertSubscriptionService;
+    @Qualifier("subscriptionServiceImpl")
+    private final SubscriptionServiceImpl subscriptionService;
 
+    @GetMapping
+    @RequestMapping(value = "info", produces = APPLICATION_JSON_VALUE)
+    public SubscriptionInfoDTO subscriptionInfo(@RequestHeader(name = "User-Token", required = false) String userToken){
+        return subscriptionService.getSubscriptionInfo();
+    }
 
     @PostMapping
     @RequestMapping(value = "wertSubscription", produces = APPLICATION_JSON_VALUE)

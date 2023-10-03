@@ -2,6 +2,7 @@ package com.nasnav.test;
 
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
+import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
+import static org.springframework.http.HttpMethod.GET;
 
 @RunWith(SpringRunner.class)
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Subscription_Test_Data.sql"})
@@ -79,6 +81,22 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
         assertEquals(500, response.getStatusCode().value());
         assertEquals(response.getBody(),"{\"message\":\"Failed To Fetch Currency Price\",\"error\":\"BC$PRI$0001\"}");
 
+    }
+
+
+    @Test
+    public void getSubscriptionInfoNotSubscribed() {
+        ResponseEntity<SubscriptionInfoDTO> response = template.exchange("/subscription/info",GET, getHttpEntity("123456"), SubscriptionInfoDTO.class);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(response.getBody().isSubscribed(), false);
+    }
+
+    @Test
+    public void getSubscriptionInfoSubscribed() {
+        ResponseEntity<SubscriptionInfoDTO> response = template.exchange("/subscription/info",GET, getHttpEntity("124567"), SubscriptionInfoDTO.class);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(response.getBody().isSubscribed(), true);
+        assertEquals(response.getBody().getExpirationDate().toInstant().toString(), "2023-10-31T22:00:00Z");
     }
 
 }
