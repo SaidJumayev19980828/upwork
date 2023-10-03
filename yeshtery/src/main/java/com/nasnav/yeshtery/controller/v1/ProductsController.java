@@ -1,5 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
@@ -31,6 +33,7 @@ import javax.validation.Valid;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -259,5 +262,33 @@ public class ProductsController {
     public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestParam Long id) {
         reviewService.approveRate(id);
+    }
+
+    @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    public ProductUpdateResponse createProductV2(
+            @RequestHeader(name = "User-Token", required = false) String token,
+            @RequestPart("product") @Valid NewProductFlowDTO productJson,
+            @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
+            @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
+            @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
+            @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
+    ) throws BusinessException, JsonMappingException, JsonProcessingException {
+
+        return productService.updateProductVersion2(productJson, imgs, uploadedImagePriorities, updatedImages, deletedImages);
+    }
+
+
+
+
+    @PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    public VariantUpdateResponse updateProductVariantV2(
+            @RequestHeader(name = "User-Token", required = false) String token,
+            @RequestPart("var") @Valid VariantUpdateDTO variant,
+            @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
+            @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
+            @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
+            @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
+    ) throws BusinessException {
+        return productService.updateVariantV2(variant, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
 }

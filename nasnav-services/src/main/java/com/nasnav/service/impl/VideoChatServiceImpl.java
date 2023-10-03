@@ -146,14 +146,6 @@ public class VideoChatServiceImpl implements VideoChatService {
             videChatLogObj.addDescription("employee (" +loggedInUser.getName() + ") has joined the session");
             videoChatLogRepository.save(videChatLogObj);
         }
-        // TODO send notification to Dashboard here
-        String notificationMessage = new JSONObject()
-                .put("id",videChatLogObj.getUser().getId())
-                .put("userName",videChatLogObj.getUser().getName())
-                .put("sessionName",sessionName)
-                .put("message","Our Agent has joined the session")
-                .toString();
-        notificationService.sendMessage(loggedInUser, new PushMessageDTO<>("call start ", notificationMessage, NotificationType.START_CALL));
 
         return new VideoChatResponse(token, loggedInUser.getName(), sessionName, getVideoChatShopId(videChatLogObj));
     }
@@ -270,13 +262,6 @@ public class VideoChatServiceImpl implements VideoChatService {
             List<UserSessionInfo> sessionInfos = new ArrayList<>();
             sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, connection.getConnectionId()));
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
-            //TODO ADD send notification To User To Tell Him your call will Start Now here
-            String notificationMessage = new JSONObject()
-                    .put("id",loggedInUser.getId())
-                    .put("sessionName",sessionName)
-                    .put("message","Our Agent Will be with You now")
-                    .toString();
-            notificationService.sendMessage(loggedInUser, new PushMessageDTO<>("call start ", notificationMessage, NotificationType.START_CALL));
 
             return new VideoChatResponse(token, null, sessionName, getVideoChatShopId(newVideChatLog));
         } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
