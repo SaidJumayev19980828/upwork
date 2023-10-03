@@ -96,7 +96,9 @@ public class SubscriptionTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<SubscriptionInfoDTO> response = template.exchange("/subscription/info",GET, getHttpEntity("124567"), SubscriptionInfoDTO.class);
         assertEquals(200, response.getStatusCode().value());
         assertEquals(response.getBody().isSubscribed(), true);
-        assertEquals(response.getBody().getExpirationDate().toInstant().toString(), "2023-10-31T22:00:00Z");
+        SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(10000011l).get();
+
+        assertEquals(response.getBody().getExpirationDate(), subscriptionEntity.getExpirationDate());
     }
 
 }
