@@ -1,9 +1,6 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.dao.CountryRepository;
-import com.nasnav.dao.PackageRepository;
-import com.nasnav.dao.PackageRegisteredRepository;
-import com.nasnav.dao.ServiceRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.request.PackageDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.request.ServiceDTO;
@@ -22,10 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.util.stream.Stream.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -39,6 +38,8 @@ public class PackageServiceImpl implements PackageService {
     private final PackageMapper packageMapper;
     private final CountryRepository countryRepo;
     private final ServiceRepository serviceRepository;
+    private final OrganizationRepository orgRepo;
+
     @Override
     public List<PackageResponse> getPackages() {
         return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
@@ -132,5 +133,25 @@ public class PackageServiceImpl implements PackageService {
         packageRegisteredEntity.setCreatorEmployee(employee);
 
         return packageRegisteredRepository.save(packageRegisteredEntity).getId();
+    }
+
+    @Transactional
+    @Override
+    public Long getPackageIdRegisteredInOrg(UserEntity user) {
+        Long packageId = null;
+        //Get User Organization
+        if(user == null || user.getOrganizationId() == null){
+            return null;
+        }
+        Optional<OrganizationEntity> organizationEntity = orgRepo.findById(user.getOrganizationId());
+        if(!organizationEntity.isPresent()){
+            return null;
+        }
+        //Get Package Registered For the organization
+        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organizationEntity.get()).orElse(null);
+        if(packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null){
+            packageId = packageRegisteredEntity.getPackageEntity().getId();
+        }
+        return packageId;
     }
 }
