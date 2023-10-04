@@ -29,7 +29,7 @@ public interface EventService {
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
-    PageImpl<EventProjection> getAllEvents(Integer start, Integer count);
+    PageImpl<EventProjection> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate);
 
     PageImpl<EventProjection> getAllAdvertisedEvents(Integer start, Integer count,Long orgId);
 

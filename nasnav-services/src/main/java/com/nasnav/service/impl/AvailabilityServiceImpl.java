@@ -166,10 +166,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         }
         return null;
     }
-
     @Override
     public Set<UserRepresentationObject> getAllEmployeesWithOrWithoutSlotsByOrg(Long orgId, boolean availableSlots) {
         OrganizationEntity org = organizationRepository.findById(orgId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,ORG$NOTFOUND,orgId));
+
+
         List<AvailabilityEntity> freeSlots = availabilityRepository.getAllFreeAvailabilitiesByOrganization(org);
         if(availableSlots){
             return freeSlots.stream().map(o -> o.getEmployeeUser().getRepresentation()).collect(Collectors.toSet());

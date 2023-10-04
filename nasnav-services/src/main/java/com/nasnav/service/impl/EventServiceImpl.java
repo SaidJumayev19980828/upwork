@@ -286,9 +286,9 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventProjection> getAllEvents(Integer start, Integer count) {
+    public PageImpl<EventProjection> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
         PageRequest page = getQueryPage(start, count);
-        return  eventRepository.findAllOrderedByStartsAtDesc(page);
+        return  eventRepository.findAllOrderedByStartsAtDesc( fromDate , page );
     }
 
     @Override
