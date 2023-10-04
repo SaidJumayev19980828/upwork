@@ -19,7 +19,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
-@EnableAutoConfiguration
 @ActiveProfiles("test")
 public class SettingsControllerTest extends AbstractTestWithTempBaseDir {
     private static final String YESHTERY_FRONTEND_SETTING_API_PATH = YeshteryConstants.API_PATH + "/frontend/setting";
@@ -44,7 +43,7 @@ public class SettingsControllerTest extends AbstractTestWithTempBaseDir {
 
     private JSONObject expectedResponse() {
         JSONObject jsonRes = new JSONObject();
-        jsonRes.put("FIREBASE_API_KEY", "${nasnav.frontend.dash2.firebase_api_key}");
+        jsonRes.put("firebase_api_key", "${nasnav.frontend.dash2.firebase_api_key}");
         return jsonRes;
     }
 
