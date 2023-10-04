@@ -108,8 +108,13 @@ public class CallQueueServiceImpl implements CallQueueService {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
-        String userResponseSTR = userResponse.toString();
-        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", userResponseSTR,NotificationType.START_CALL));
+        String notificationUserContent = new JSONObject()
+                .put("sessionToken",userResponse.getSessionToken())
+                .put("sessionName",userResponse.getSessionName())
+                .put("employeeName",getEmployee().getName())
+                .put("shopId",getEmployee().getShopId())
+                .toString();
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", notificationUserContent,NotificationType.START_CALL));
 
 
 
@@ -123,7 +128,9 @@ public class CallQueueServiceImpl implements CallQueueService {
                 .put("sessionName",userResponse.getSessionName())
                 .put("employeeName",entity.getEmployee().getName())
                 .put("employeeImage",entity.getEmployee().getImage())
-                .put("shopId",userResponse.getShopId())
+                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
+                        .collect(Collectors.joining(", ")))
+                .put("shopId",getEmployee().getShopId())
                 .toString();
         notificationService.sendMessageToOrganizationEmplyees(entity.getOrganization().getId(), new PushMessageDTO<>("Employee Accept the Call",notificationContent, NotificationType.START_CALL));
 

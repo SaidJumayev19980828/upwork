@@ -107,8 +107,12 @@ public class EventController {
     @GetMapping("/all")
     public PageImpl<EventProjection> getAllEventsPageable(
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
-                                                                   @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
-        return eventService.getAllEvents(start, count);
+                                                                   @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count ,
+                                                                   @RequestParam(required = false, name = "fromDate")
+                                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                                   LocalDateTime fromDate
+                                                                   ) {
+        return eventService.getAllEvents(start, count , fromDate);
     }
 
     @GetMapping("/advertise/all")
