@@ -43,7 +43,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
 
 
-    @Query("SELECT event FROM EventEntity event WHERE " +
+    @Query( "SELECT event FROM EventEntity event WHERE " +
             "event.influencer IS NOT NULL " +
             "AND " +
             "( cast(cast (:startsAt as text) as timestamp) " +
