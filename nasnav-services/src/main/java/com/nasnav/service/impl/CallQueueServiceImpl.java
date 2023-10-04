@@ -59,7 +59,7 @@ public class CallQueueServiceImpl implements CallQueueService {
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
         ShopsEntity shop = shopsRepository.findById(shopId)
-                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,shopId));
+                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,S$0002,shopId));
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(userEntity.getId(), CallQueueStatus.OPEN.getValue());
         if (entity != null){
             entity.setStatus(CallQueueStatus.REJECTED.getValue());
