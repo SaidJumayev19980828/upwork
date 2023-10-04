@@ -49,6 +49,7 @@ public class CallQueueServiceImpl implements CallQueueService {
     private NotificationService notificationService;
 
     @Override
+    @Transactional
     public CallQueueStatusDTO enterQueue(Long orgId) {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
@@ -80,7 +81,6 @@ public class CallQueueServiceImpl implements CallQueueService {
         String response = new JSONObject()
                 .put("userName",userEntity.getName())
                 .put("queueId",entity.getId())
-                .put("assignTo",entity.getEmployee().getName())
                 .put("joinsAt",entity.getJoinsAt())
                 .toString();
         notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("Customer Joining the Queue",response, NotificationType.ORGANIZATION_QUEUE_UPDATES));
@@ -150,9 +150,9 @@ public class CallQueueServiceImpl implements CallQueueService {
         String response = new JSONObject()
                 .put("userName",entity.getUser().getName())
                 .put("queueId",entity.getId())
-                .put("assignTo",entity.getEmployee().getName())
+                .put("rejectedBy",entity.getEmployee().getName())
                 .put("action","The Agent Reject Your Call")
-                .put("joinsAt",entity.getJoinsAt())
+                .put("EndsAt",entity.getEndsAt())
                 .toString();
         notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Reject the Call", response,NotificationType.REJECT_CALL));
 

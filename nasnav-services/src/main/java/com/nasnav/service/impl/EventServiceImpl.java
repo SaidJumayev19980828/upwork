@@ -288,6 +288,9 @@ public class EventServiceImpl implements EventService{
     @Override
     public PageImpl<EventProjection> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
         PageRequest page = getQueryPage(start, count);
+        if(fromDate == null){
+            fromDate = LocalDateTime.of(2020,1,1,0,0,0);
+        }
         return  eventRepository.findAllOrderedByStartsAtDesc( fromDate , page );
     }
 
