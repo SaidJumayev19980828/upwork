@@ -52,4 +52,10 @@ public class CallQueueEntity {
     @Column(name = "status")
     private Integer status;
 
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "shop_id", nullable = false)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ShopsEntity shop;
 }

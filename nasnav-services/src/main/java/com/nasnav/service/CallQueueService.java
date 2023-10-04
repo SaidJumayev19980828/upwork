@@ -14,7 +14,7 @@ public interface CallQueueService {
      * @param orgId
      * @return
      */
-    public CallQueueStatusDTO enterQueue(Long orgId);
+    public CallQueueStatusDTO enterQueue(Long orgId , Long shopId);
 
     /**
      * user decided to kick himself out of the queue upon his will

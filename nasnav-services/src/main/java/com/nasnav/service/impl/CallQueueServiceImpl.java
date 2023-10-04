@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
@@ -39,6 +40,9 @@ public class CallQueueServiceImpl implements CallQueueService {
     private CallQueueRepository callQueueRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private ShopsRepository shopsRepository;
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -50,10 +54,12 @@ public class CallQueueServiceImpl implements CallQueueService {
 
     @Override
     @Transactional
-    public CallQueueStatusDTO enterQueue(Long orgId) {
+    public CallQueueStatusDTO enterQueue(Long orgId,Long shopId) {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
+        ShopsEntity shop = shopsRepository.findById(shopId)
+                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,S$0002,shopId));
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(userEntity.getId(), CallQueueStatus.OPEN.getValue());
         if (entity != null){
             entity.setStatus(CallQueueStatus.REJECTED.getValue());
@@ -72,6 +78,7 @@ public class CallQueueServiceImpl implements CallQueueService {
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
+        entity.setShop(shop);
         entity.setStatus(CallQueueStatus.OPEN.getValue());
 
         entity = callQueueRepository.save(entity);
@@ -107,12 +114,16 @@ public class CallQueueServiceImpl implements CallQueueService {
     public VideoChatResponse acceptCall(Long queueId, Boolean force) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
+        System.out.println("shopId "+entity.getShop().getId());
+
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
         String notificationUserContent = new JSONObject()
                 .put("sessionToken",userResponse.getSessionToken())
                 .put("sessionName",userResponse.getSessionName())
                 .put("employeeName",getEmployee().getName())
-                .put("shopId",getEmployee().getShopId())
+                .put("employeeImage",getEmployee().getImage())
+                .put("employeeEmail",getEmployee().getEmail())
+                .put("shopId",entity.getShop().getId())
                 .toString();
         notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", notificationUserContent,NotificationType.START_CALL));
 
@@ -130,7 +141,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                 .put("employeeImage",entity.getEmployee().getImage())
                 .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
                         .collect(Collectors.joining(", ")))
-                .put("shopId",getEmployee().getShopId())
+                .put("shopId",entity.getShop().getId())
                 .toString();
         notificationService.sendMessageToOrganizationEmplyees(entity.getOrganization().getId(), new PushMessageDTO<>("Employee Accept the Call",notificationContent, NotificationType.START_CALL));
 
