@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -136,7 +137,7 @@ public class EventServiceImpl implements EventService{
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
     return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
-//        return eventRepository.getAllByOrganizationOrFindAll(null).stream().map(this::toDto).collect(Collectors.toList());
+
     }
 
 
@@ -288,9 +289,6 @@ public class EventServiceImpl implements EventService{
     @Override
     public PageImpl<EventProjection> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
         PageRequest page = getQueryPage(start, count);
-        if(fromDate == null){
-            fromDate = LocalDateTime.of(2020,1,1,0,0,0);
-        }
         return  eventRepository.findAllOrderedByStartsAtDesc( fromDate , page );
     }
 

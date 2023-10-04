@@ -42,16 +42,29 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
 
 
+//
+//    @Query( "SELECT event FROM EventEntity event WHERE " +
+//            "event.influencer IS NOT NULL " +
+//            "AND " +
+//            "( cast(cast (:startsAt as text) as timestamp) " +
+//            "IS NULL OR " +
+//            "event.startsAt >=" +
+//            "cast(cast (:startsAt as text) as timestamp) )" +
+//            "ORDER BY event.startsAt DESC")
+//    PageImpl<EventProjection> findAllOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+
+
 
     @Query( "SELECT event FROM EventEntity event WHERE " +
             "event.influencer IS NOT NULL " +
             "AND " +
-            "( cast(cast (:startsAt as text) as timestamp) " +
+            "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
             "IS NULL OR " +
-            "event.startsAt >=" +
-            "cast(cast (:startsAt as text) as timestamp) )" +
+            "event.startsAt >= " +
+            "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
             "ORDER BY event.startsAt DESC")
     PageImpl<EventProjection> findAllOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+
 
 
 }

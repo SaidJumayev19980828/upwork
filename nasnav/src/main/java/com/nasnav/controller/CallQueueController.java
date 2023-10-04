@@ -24,8 +24,10 @@ public class CallQueueController {
 
     @PostMapping
     public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
-                                         @RequestParam Long orgId) {
-        return callQueueService.enterQueue(orgId);
+                                         @RequestParam Long orgId ,
+                                         @RequestParam Long shopId
+                                         ) {
+        return callQueueService.enterQueue(orgId,shopId);
     }
 
     @GetMapping("/status")
