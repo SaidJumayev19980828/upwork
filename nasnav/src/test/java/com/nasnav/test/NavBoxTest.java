@@ -28,6 +28,7 @@ import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -349,4 +350,14 @@ public class NavBoxTest extends AbstractTestWithTempBaseDir {
         responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
         assertEquals(2, responseBody.size());
     }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Filter_Data_Insert.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getProductsByPromotionsIds() {
+        String url = "/navbox/products?promo_id=630001&org_id=99001";
+        ResponseEntity<ProductsResponse> responseEntity = template.getForEntity(url, ProductsResponse.class);
+        assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
+    }
+
 }

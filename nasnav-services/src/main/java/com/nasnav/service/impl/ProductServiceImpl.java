@@ -72,6 +72,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -212,14 +214,15 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private SeoService seoService;
 
-	@Autowired
-	private PromotionsService promotionsService;
+	private final PromotionsService promotionsService;
+
+	private final ShopsRepository shopsRepository;
 	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-						  StockService stockService) {
+						  StockService stockService,PromotionsService promotionsService, ShopsRepository shopsRepository ) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -227,6 +230,8 @@ public class ProductServiceImpl implements ProductService {
 		this.productFeaturesRepository = productFeaturesRepository;
 		this.bundleRepository = bundleRepository;
 		this.stockService = stockService;
+		this.promotionsService = promotionsService;
+		this.shopsRepository = shopsRepository;
 	}
 
 	@Override
@@ -979,15 +984,16 @@ public class ProductServiceImpl implements ProductService {
 
 
 	private AllowedPromotionConstraints getSearchParam(ProductSearchParam productSearchParam) {
-		Optional<List<PromosConstraints>> promotionConstraints = getPromotionConstraints(productSearchParam.promo_id);
+
+		List<PromosConstraints> promotionConstraints = getPromotionConstraints(productSearchParam);
 		return extractSearchParamFromConstraints(promotionConstraints);
 	}
-	private AllowedPromotionConstraints extractSearchParamFromConstraints(Optional<List<PromosConstraints>> constraints) {
-		if (constraints.isEmpty())
+	private AllowedPromotionConstraints extractSearchParamFromConstraints(List<PromosConstraints> constraints) {
+		if (constraints == null)
 			return new AllowedPromotionConstraints();
 
 		AllowedPromotionConstraints searchParam = new AllowedPromotionConstraints();
-		for (PromosConstraints constraint : constraints.get()) {
+		for (PromosConstraints constraint : constraints) {
 
 			if(constraint.getBrands() != null && !constraint.getBrands().isEmpty())
 				searchParam.addBrandIds(constraint.getBrands());
@@ -1002,16 +1008,36 @@ public class ProductServiceImpl implements ProductService {
 		return searchParam;
 	}
 
-	private Optional<List<PromosConstraints>>  getPromotionConstraints(List<Long> promotionIds) {
-		if(promotionIds == null)
-			return Optional.empty();
 
-		return Optional.of(promotionRepository.findAllById(promotionIds)
-                .stream()
-                .map(PromotionsEntity::getConstrainsJson).collect(toList())
-                .stream().map(this::readJsonStr).collect(toList()));
+	private List<PromosConstraints>  getPromotionConstraints(ProductSearchParam params) {
+		Supplier<List<PromotionsEntity>> promotionsListSupplier = getPromosSupplier(params);
+		if(promotionsListSupplier == null) {
+			return null;
+		}
+		return promotionsListSupplier.get()
+					.stream()
+					.map(PromotionsEntity::getConstrainsJson).collect(Collectors.toList())
+					.stream().map(this::readJsonStr).collect(Collectors.toList());
+
 	}
 
+private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam params) {
+		Supplier<List<PromotionsEntity>> supplier;
+		if(params.yeshtery_products && params.has_promotions && params.org_id == null)
+			return supplier = () -> promotionRepository.findAllActivePromotions();
+
+		if(params.yeshtery_products && params.promo_id != null && params.org_id == null )
+			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id);
+
+		if(params.has_promotions && params.org_id != null)
+		    return supplier = () -> promotionRepository.findActivePromosByOrgIdIn(List.of(params.org_id));
+
+		if(params.promo_id != null && params.org_id != null )
+		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id);
+
+		return null;
+
+	}
 
 
 	private PromosConstraints readJsonStr(String jsonStr){
