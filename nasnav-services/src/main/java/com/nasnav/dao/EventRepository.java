@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.EventProjection;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.domain.PageImpl;
@@ -22,6 +23,11 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     @Query("select event from EventEntity event where (CAST(:dateFilter as date) is null or CAST(event.startsAt as date) = :dateFilter) order by event.startsAt desc")
     PageImpl<EventEntity> getAllEventFilterByDatePageable(@DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Pageable page);
     List<EventEntity> getAllByInfluencerNullAndStartsAtAfter(LocalDateTime now);
+
+//    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization)")
+    @Query("SELECT e FROM EventEntity e WHERE (:organization IS NULL OR e.organization = :organization) AND (e.influencer IS NULL )")
+    PageImpl<EventProjection> getAllByOrganizationOrFindAll(Pageable page ,@Param("organization") OrganizationEntity organization);
+
     List<EventEntity> getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
     @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
     PageImpl<EventEntity> getAllByInfluencer_Id(Long influencerId, Long orgId, Pageable page);
@@ -34,4 +40,27 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
     @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
     List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
+
+
+
+    @Query( "SELECT event FROM EventEntity event WHERE " +
+            "event.influencer IS NOT NULL " +
+            "ORDER BY event.startsAt DESC")
+    PageImpl<EventProjection> findAllOrderedByStartsAtDesc( Pageable pageable);
+
+
+
+    @Query( "SELECT event FROM EventEntity event WHERE " +
+            "event.influencer IS NOT NULL " +
+            "AND " +
+            "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "IS NULL OR " +
+            "event.startsAt >= " +
+            "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
+            "ORDER BY event.startsAt DESC")
+    PageImpl<EventProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+
+
+
 }
+

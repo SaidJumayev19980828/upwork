@@ -116,28 +116,13 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
         for (Cell cell : row) {
             headers.add(cell.getStringCellValue());
         }
-        List<String> originalHeaders = getProductImportTemplateHeaders(orgId);
+        List<String> originalHeaders = new ArrayList<>(CsvExcelDataImportService.CSV_BASE_HEADERS);
         String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
         if (!headerNotFound.isEmpty()) {
             ImportProductContext context = new ImportProductContext();
             context.logNewError("The following table header(s) not found : [ " + headerNotFound + " ]", 1);
             throw new ImportProductException(context);
         }
-    }
-
-    //TODO Check Duplication AbstractCsvExcelDataImportService
-    private List<String> getProductImportTemplateHeaders(Long orgId) {
-
-        var extraAttributes =
-                extraAttrRepo.findByOrganizationId(orgId)
-                        .stream()
-                        .map(ExtraAttributesEntity::getName)
-                        .sorted()
-                        .collect(toList());
-
-        List<String> baseHeaders = getProductImportTemplateHeadersWithoutExtraAttributes(orgId);
-        baseHeaders.addAll(extraAttributes);
-        return baseHeaders;
     }
 
     //TODO Check Duplication ExcelDataImportServiceImpl
@@ -177,22 +162,6 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
             lines.add(line);
         }
         return lines;
-    }
-
-    //TODO Check Duplication AbstractCsvExcelDataImportService
-    private List<String> getProductImportTemplateHeadersWithoutExtraAttributes(Long orgId) {
-
-        var features =
-                featureRepo
-                        .findByOrganizationId(orgId)
-                        .stream()
-                        .map(ProductFeaturesEntity::getName)
-                        .sorted()
-                        .collect(toList());
-
-        List<String> baseHeaders = new ArrayList<>(CsvExcelDataImportService.CSV_BASE_HEADERS);
-        baseHeaders.addAll(features);
-        return baseHeaders;
     }
 
     //TODO Check Duplication ExcelDataImportServiceImpl

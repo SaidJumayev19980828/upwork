@@ -11,6 +11,7 @@ public class PostCreationDTO {
     private Boolean isReview;
     private String description;
     private Long organizationId;
+    private Long advertisementId;
     private Set<Long> productsIds;
     private List<PostAttachmentsEntity> attachments;
 }

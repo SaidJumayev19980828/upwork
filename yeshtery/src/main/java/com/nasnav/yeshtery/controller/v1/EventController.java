@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
@@ -102,4 +103,25 @@ public class EventController {
                                 @PathVariable Long eventId){
         eventService.intersetEventForUser(eventId);
     }
+
+    @GetMapping("/all")
+    public PageImpl<EventProjection> getAllEventsPageable(
+                                                                   @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                                   @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count ,
+                                                                   @RequestParam(required = false, name = "fromDate")
+                                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                                                   LocalDateTime fromDate
+                                                                   ) {
+        return eventService.getAllEvents(start, count , fromDate);
+    }
+
+    @GetMapping("/advertise/all")
+    public PageImpl<EventProjection> getAllAdvertisedEvents(@RequestHeader(name = "User-Token", required = false) String token ,
+                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                      @RequestParam(required = false ) Long orgId ,
+                                                      @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+                                                      ){
+        return eventService.getAllAdvertisedEvents(start,count,orgId);
+    }
+
 }

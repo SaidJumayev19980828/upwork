@@ -34,7 +34,7 @@ public class SchedulerTaskServiceImpl implements SchedulerTaskService {
         availabilityEntity.setUser(getUser());
         SchedulerTaskEntity schedulerTaskEntity = new SchedulerTaskEntity(availabilityEntity);
         schedulerTaskEntity = schedulerTaskRepository.save(schedulerTaskEntity);
-        scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
+        scheduleTaskHelper.sendMailAndAddTaskToScheduler(schedulerTaskEntity);
     }
 
     @Transactional

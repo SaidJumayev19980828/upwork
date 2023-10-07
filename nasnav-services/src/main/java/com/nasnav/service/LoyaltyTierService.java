@@ -9,7 +9,6 @@ import com.nasnav.response.LoyaltyTierUpdateResponse;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 public interface LoyaltyTierService {
 

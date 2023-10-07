@@ -59,12 +59,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	UserEntity getYeshteryUserByEmail(@Param("email")String email,
 									  @Param("orgId")Long orgId);
 
-	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
-
-	@Modifying
-	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
-	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
-
 	@Modifying
 	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
 	void updateUserTier(@Param("tierId") Long tierId, @Param("userId") Long userId);
@@ -77,8 +71,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 													 @Param("orgId") Long orgId);
 
     void deleteByYeshteryUserId(Long yeshteryUserId);
-
-    List<UserEntity> findByFamily_Id(Long familyId);
 
     Optional<UserEntity> findByEmailAndOrganizationId(String email, Long orgId);
 

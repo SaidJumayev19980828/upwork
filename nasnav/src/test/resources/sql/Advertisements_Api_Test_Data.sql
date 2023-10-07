@@ -16,6 +16,11 @@ VALUES (99001, 'organization_1', 818) on CONFLICT do NOTHING;
 INSERT INTO public.organizations(id, name, currency_iso)
 VALUES (99002, 'organization_2', 818) on CONFLICT do NOTHING;
 
+
+INSERT INTO public.bank_accounts(id, created_At, org_id, user_id, wallet_Address, opening_Balance,
+                                 opening_Balance_Activity_id, opening_Balance_Date, locked)
+values (10, now(), 99001, null, 'address', 10000, null, now(), false);
+
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id)
 VALUES (101, 202, 'brand_1', 99002) on CONFLICT do NOTHING;
@@ -46,30 +51,58 @@ VALUES (1007, 'product_7', 101, 202, 99002, now(), now()) on conflict do nothing
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at)
 VALUES (1008, 'product_8', 102, 202, 99002, now(), now()) on conflict do nothing;
 
-INSERT INTO public.advertisements (id, coins, created_at, from_date, to_date, likes, product_id)
-VALUES (1001, 100, now(), now() - INTERVAL '20 DAY', now() + INTERVAL '20 YEAR', 3, 1001) on conflict do nothing;
+INSERT INTO public.advertisements (id, created_at)
+VALUES (1001, now()) on conflict do nothing;
 
-INSERT INTO public.advertisements (id, coins, created_at, from_date, to_date, likes, product_id)
-VALUES (1002, 100, now(), now() - INTERVAL '20 DAY', now() + INTERVAL '10 YEAR', 2000, 1002) on conflict do nothing;
+INSERT INTO public.advertisements (id, created_at)
+VALUES (1002, now()) on conflict do nothing;
 
-INSERT INTO public.advertisements (id, coins, created_at, from_date, to_date, likes, product_id)
-VALUES (1003, 100, now(), now() - INTERVAL '20 DAY', now() - INTERVAL '10 YEAR', 2000, 1003) on conflict do nothing;
+INSERT INTO public.advertisements (id, created_at)
+VALUES (1003, now()) on conflict do nothing;
 
-INSERT INTO public.advertisements (id, coins, created_at, from_date, to_date, likes, product_id)
-VALUES (1004, 100, now(), now() - INTERVAL '20 DAY', now() - INTERVAL '20 YEAR', 2000, 1004) on conflict do nothing;
+INSERT INTO public.advertisements (id, created_at, organization_id)
+VALUES (1004, now(), 99002) on conflict do nothing;
+
+INSERT INTO public.advertisements (id, created_at, from_date, to_date, banner_url, organization_id)
+VALUES (1005, now(), now(), now(), 'bannessssssssr_url', 99002) on conflict do nothing;
+
+INSERT INTO public.advertisements (id, created_at, from_date, to_date, banner_url, organization_id)
+VALUES (1006, now(), now(), now(), 'bannessssssssr_url', 99002) on conflict do nothing;
 
 
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (88, 'testuser1@nasnav.com', 99001, '101112',  null);
+
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1001, 100, 3000, 1001, 1005);
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1002, 100, 3000, 1002, 1005);
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1003, 100, 3000, 1003, 1005);
+
+
+
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1004, 100, 3000, 1001, 1006);
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1005, 100, 3000, 1002, 1006);
+INSERT INTO public.advertisement_product (id, coins, likes, product_id, advertisement_id)
+VALUES (1006, 100, 3000, 1003, 1006);
+
+
+INSERT INTO public.employee_users(id, email, organization_id, authentication_token, shop_id)
+VALUES (88, 'testuser1@nasnav.com', 99001, '101112', null);
 
 INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
 VALUES (88, 'user1@nasnav.com', 'user1', '1', 99001) on CONFLICT do nothing;
 
-insert into public.roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
-insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_MANAGER', 99001);
+insert into public.roles(id, name, organization_id)
+values (1, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name, organization_id)
+values (2, 'ORGANIZATION_MANAGER', 99001);
 
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 88, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 88, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id)
+VALUES (20, 88, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id)
+VALUES (21, 88, 2);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id)

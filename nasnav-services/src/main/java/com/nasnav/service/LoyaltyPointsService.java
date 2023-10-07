@@ -3,7 +3,6 @@ package com.nasnav.service;
 import com.nasnav.dto.AppliedPointsResponse;
 import com.nasnav.dto.SpentPointsInfo;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
-import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -29,13 +28,8 @@ public interface LoyaltyPointsService {
     void redeemPoints(Long orderId, String code);
     void sharePoints(Long pointId, String email , BigDecimal points);
     List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
-    List<LoyaltyPointTypeDTO> listLoyaltyPointTypes();
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     LoyaltyPointConfigDTO getLoyaltyPointActiveConfig();
-
-    void createLoyaltyPointCharityTransaction(LoyaltyCharityEntity charity, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isDonate);
-    LoyaltyPointsUpdateResponse createLoyaltyPointGiftTransaction(LoyaltyGiftEntity gift, UserEntity user, BigDecimal points, Boolean isGift);
-    LoyaltyPointsUpdateResponse createLoyaltyPointCoinsDropTransaction(LoyaltyCoinsDropEntity coins, UserEntity user, BigDecimal points, ShopsEntity shopEntity, Boolean isCoinsDrop);
 
     LoyaltyUserPointsResponse getUserPoints();
 

@@ -77,27 +77,6 @@ public class LoyaltyPointTransactionEntity {
     @lombok.ToString.Exclude
     private MetaOrderEntity metaOrder;
 
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "charity_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyCharityEntity charity;
-
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "gift_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyGiftEntity gift;
-
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "coins_drop_id")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private LoyaltyCoinsDropEntity coinsDrop;
-
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.REMOVE)
     @JsonIgnore
     @ToString.Exclude

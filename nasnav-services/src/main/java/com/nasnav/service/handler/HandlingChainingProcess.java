@@ -56,6 +56,7 @@ public abstract class HandlingChainingProcess<T> implements Runnable {
                 Log.info("End Handler -------------------------------------------------> " + handler.getName()
                         + " in time millisecond = " + (System.currentTimeMillis() - startTime));
             } catch (Exception e) {
+                handleException(e);
                 log.error("Error in handler name " + handler.getName(), e);
                 currentStatus.changeStatusToFailed();
                 break;
@@ -84,5 +85,5 @@ public abstract class HandlingChainingProcess<T> implements Runnable {
 
     public abstract Object getResult();
 
-
+    protected abstract void handleException(Exception ex);
 }

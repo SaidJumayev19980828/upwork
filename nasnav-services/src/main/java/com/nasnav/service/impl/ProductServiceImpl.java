@@ -2936,7 +2936,8 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
+	@Override
+	public ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		ProductRepresentationObject representationObj = getProductRepresentation(product, includeOutOfStock);
 		copyProperties(representationObj, dto);
@@ -3675,34 +3676,32 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
     }
 
 	@Override
-	public ProductUpdateResponse updateProductV2(NewProductFlowDTO productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
-		
+
+	public ProductUpdateResponse updateProductVersion2(
+			NewProductFlowDTO productJson,
+			MultipartFile[] imgs,
+			Integer[] uploadedImagePriorities,
+			List<Map<String, Long>> updatedImages,
+			Long[] deletedImages
+	) throws BusinessException, JsonMappingException, JsonProcessingException {
+
 		validateProductNewFlow(productJson);
 		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 		String json = ow.writeValueAsString(productJson);
 
-
-		 
-		 List<Long> tagsId = productJson.getTags();
-		 List<String> keywords = productJson.getKeywords();
+		List<Long> tagsId = productJson.getTags();
+		List<String> keywords = productJson.getKeywords();
 		Long id = updateProductBatch(asList(json), false, false).stream().findFirst().orElse(null);
 		if (id != null) {
-			imgService.deleteImage(null, id, null);
-			if (coverImg != null) {
-				ProductImageUpdateDTO coverMetaData = new ProductImageUpdateDTO();
-				coverMetaData.setOperation(Operation.CREATE);
-				coverMetaData.setProductId(id);
-				coverMetaData.setPriority(0);
-				coverMetaData.setType(7);
-				imgService.updateProductImage(coverImg, coverMetaData);
-			}
-
 			if (imgs != null) {
 				for (int i = 0; i < imgs.length; i++) {
 					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
 					img.setOperation(Operation.CREATE);
 					img.setProductId(id);
-					img.setPriority(i + 1);
+					int priority = (uploadedImagePriorities != null && i < uploadedImagePriorities.length)
+							? uploadedImagePriorities[i]
+							: i + 1;
+					img.setPriority(priority);
 					img.setType(7);
 					imgService.updateProductImage(imgs[i], img);
 				}
@@ -3721,32 +3720,81 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 				seoService.addSeoKeywords(seo);
 			}
 		}
+
+
+
+		if (updatedImages != null && !updatedImages.isEmpty()) {
+			for (Map<String, Long> imageInfo : updatedImages) {
+				Long imageId = imageInfo.get("id");
+				Long priority = imageInfo.get("priority");
+				Optional<ProductImagesEntity> optionalImage = productImagesRepository.findById(imageId);
+				if (optionalImage.isPresent()) {
+					ProductImagesEntity image =optionalImage.get();
+					image.setPriority(Math.toIntExact(priority));
+					productImagesRepository.save(image);
+				}
+			}
+		}
+
+		if (deletedImages != null && deletedImages.length > 0) {
+			for (Long imageId : deletedImages) {
+				imgService.deleteImage(imageId, null, null);
+			}
+		}
+
+
 		return new ProductUpdateResponse(id);
 	}
-   
-	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile[] imgs)
-			throws BusinessException {
+
+@Override
+public VariantUpdateResponse updateVariantV2(
+			VariantUpdateDTO variant,
+			MultipartFile[] imgs,
+			Integer[] uploadedImagePriorities,
+			List<Map<String, Long>> updatedImages,
+			Long[] deletedImages
+	) throws BusinessException {
 		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
 		if (id != null) {
 
 			Operation operation = variant.getOperation();
-
-			if (operation.equals(UPDATE)) {
-				imgService.deleteVarientImages(id);
-
-			}
 			if (imgs != null) {
+				//Insert
 				for (int i = 0; i < imgs.length; i++) {
 					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
 					img.setOperation(Operation.CREATE);
+					int priority = (uploadedImagePriorities != null && i < uploadedImagePriorities.length)
+							? uploadedImagePriorities[i]
+							: i + 1;
+					img.setPriority(priority);
 					img.setVariantId(id);
-					img.setPriority(i);
 					img.setType(7);
 					img.setProductId(variant.getProductId());
 					imgService.updateProductImage(imgs[i], img);
 				}
 			}
 
+
+			//Update
+			if (updatedImages != null && !updatedImages.isEmpty()) {
+				for (Map<String, Long> imageInfo : updatedImages) {
+					Long imageId = imageInfo.get("id");
+					Long priority = imageInfo.get("priority");
+					Optional<ProductImagesEntity> optionalImage = productImagesRepository.findById(imageId);
+					if (optionalImage.isPresent()) {
+						ProductImagesEntity image =optionalImage.get();
+						image.setPriority(Math.toIntExact(priority));
+						productImagesRepository.save(image);
+					}
+				}
+			}
+
+			//DELETE
+			if (deletedImages != null && deletedImages.length > 0) {
+				for (Long imageId : deletedImages) {
+					imgService.deleteImage(imageId, null, null);
+				}
+			}
 		}
 
 		return new VariantUpdateResponse(id);

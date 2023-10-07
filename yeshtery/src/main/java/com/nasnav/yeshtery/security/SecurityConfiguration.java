@@ -176,7 +176,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf("/v1/availability/shop/**"                       				, getAllRoles()),
             patternOf("/v1/availability/user"                       					, setOf(CUSTOMER)),
             patternOf("/v1/employee-user-heart-beats-logs/log"		, POST		    , getNonCustomersRoles()),
-            patternOf( "/availability/employee/**"                      			, getAllRoles()),
+            patternOf( "/v1/availability/employee/**"                      			, getAllRoles()),
             patternOf("/v1/availability/**"                       				, getNonCustomersRoles()),
             patternOf("/v1/appointment/**"											, setOf(CUSTOMER)),
             patternOf( "/v1/follow/**"					,POST						, setOf(CUSTOMER)),
@@ -189,8 +189,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/event"                   , POST    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/event"                   , DELETE    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/event/list/**"                                , getAllRoles()),
+            patternOf( "/v1/event/advertise/all/**"                                , getAllRoles()),
+
             patternOf( "/v1/influencer/host/**"             , getAllRoles()),
-            patternOf( "/v1/influencer/response"             ,POST                 , setOf(NASNAV_ADMIN)),
+            //TODO change roles so that the testing process continues the old one is setOf(NASNAV_ADMIN) only
+            patternOf( "/v1/influencer/response"             ,POST                 ,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/influencer/hostingRequests"             ,GET                 , getNonCustomersRoles()),
             patternOf("/v1/loyalty/points/update"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/loyalty/points"					, GET	, setOf(CUSTOMER)),
@@ -254,6 +257,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/user/subscribe/activate")
 						, patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
                         , patternOf("/v1/frontend/setting", GET)
+                        ,              patternOf( "/v1/event/all/**"                                , GET)
                         );
 
     AuthenticationProvider provider;

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
+import com.nasnav.dto.request.notification.PushMessageDTO;
+import com.nasnav.enumerations.NotificationType;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -19,6 +22,7 @@ import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
+import com.nasnav.service.notification.NotificationService;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
@@ -26,6 +30,7 @@ import lombok.Data;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -60,7 +65,7 @@ public class VideoChatServiceImpl implements VideoChatService {
     private SettingRepository settingRepo;
     @Autowired
     @Qualifier("videoChatQueryBuilder")
-    private AbstractCriteriaQueryBuilder<VideoChatLogEntity> criteriaQueryBuilder;
+    private AbstractCriteriaQueryBuilder<VideoChatLogEntity, VideoChatSearchParam> criteriaQueryBuilder;
     private Map<String, Session> sessionsMap = new ConcurrentHashMap<>();
 
     private Map<String, List<UserSessionInfo>> mapSessionNamesTokens = new ConcurrentHashMap<>();
@@ -77,6 +82,9 @@ public class VideoChatServiceImpl implements VideoChatService {
     private ConnectionProperties connectionProperties;
 
     private SessionProperties sessionProperties;
+
+    @Autowired
+    private  NotificationService notificationService;
 
     @Autowired
     public void initController() {
@@ -160,7 +168,7 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     private VideoChatLogEntity getVideoChatLogEntity(String sessionName, Long orgId) {
-        if (sessionName.isEmpty() || sessionName.isBlank() || !sessionsMap.containsKey(sessionName)) {
+        if ( sessionName == null || sessionName.isEmpty() || sessionName.isBlank() || !sessionsMap.containsKey(sessionName)) {
             throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
         }
         return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)
@@ -248,13 +256,13 @@ public class VideoChatServiceImpl implements VideoChatService {
             newVideChatLog.setShop(shop);
             newVideChatLog.setOrganization(organizationEntity);
             newVideChatLog.setStatus(NEW.getValue());
-
             videoChatLogRepository.saveAndFlush(newVideChatLog);
 
             this.sessionsMap.put(sessionName, session);
             List<UserSessionInfo> sessionInfos = new ArrayList<>();
             sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, connection.getConnectionId()));
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
+
             return new VideoChatResponse(token, null, sessionName, getVideoChatShopId(newVideChatLog));
         } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
@@ -264,12 +272,12 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Override
     public VideoChatListResponse getOrgSessions(VideoChatSearchParam params) {
         setVideoChatListDefaultParams(params);
-        List<VideoChatLogRepresentationObject> result = criteriaQueryBuilder.getResultList(params, true)
-                .stream()
+        CrieteriaQueryResults<VideoChatLogEntity> results = criteriaQueryBuilder.getResultList(params, true);
+        List<VideoChatLogRepresentationObject> resultList = results.getResultList().stream()
                 .map(v -> (VideoChatLogRepresentationObject) v.getRepresentation())
                 .collect(toList());
-        Long count = criteriaQueryBuilder.getResultCount();
-        return new VideoChatListResponse(count, result);
+        Long count = results.getResultCount();
+        return new VideoChatListResponse(count, resultList);
     }
 
     private void setVideoChatListDefaultParams(VideoChatSearchParam searchParams) {

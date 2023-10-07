@@ -2,10 +2,12 @@ package com.nasnav.service.impl;
 
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.CallQueueStatusDTO;
 import com.nasnav.enumerations.CallQueueStatus;
+import com.nasnav.enumerations.NotificationType;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -38,6 +40,9 @@ public class CallQueueServiceImpl implements CallQueueService {
     private CallQueueRepository callQueueRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private ShopsRepository shopsRepository;
     @Autowired
     private OrganizationService organizationService;
     @Autowired
@@ -48,10 +53,13 @@ public class CallQueueServiceImpl implements CallQueueService {
     private NotificationService notificationService;
 
     @Override
-    public CallQueueStatusDTO enterQueue(Long orgId) {
+    @Transactional
+    public CallQueueStatusDTO enterQueue(Long orgId,Long shopId) {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
+        ShopsEntity shop = shopsRepository.findById(shopId)
+                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,S$0002,shopId));
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(userEntity.getId(), CallQueueStatus.OPEN.getValue());
         if (entity != null){
             entity.setStatus(CallQueueStatus.REJECTED.getValue());
@@ -70,12 +78,19 @@ public class CallQueueServiceImpl implements CallQueueService {
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
+        entity.setShop(shop);
         entity.setStatus(CallQueueStatus.OPEN.getValue());
 
         entity = callQueueRepository.save(entity);
 
 
         notifyQueue(orgId);
+        String response = new JSONObject()
+                .put("userName",userEntity.getName())
+                .put("queueId",entity.getId())
+                .put("joinsAt",entity.getJoinsAt())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("Customer Joining the Queue",response, NotificationType.ORGANIZATION_QUEUE_UPDATES));
 
         return getQueueStatus(orgId, entity);
     }
@@ -99,14 +114,38 @@ public class CallQueueServiceImpl implements CallQueueService {
     public VideoChatResponse acceptCall(Long queueId, Boolean force) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
+        System.out.println("shopId "+entity.getShop().getId());
+
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
-        String userResponseSTR = userResponse.toString();
-        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("call queue started", userResponseSTR));
+        String notificationUserContent = new JSONObject()
+                .put("sessionToken",userResponse.getSessionToken())
+                .put("sessionName",userResponse.getSessionName())
+                .put("employeeName",getEmployee().getName())
+                .put("employeeImage",getEmployee().getImage())
+                .put("employeeEmail",getEmployee().getEmail())
+                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
+                        .collect(Collectors.joining(", ")))
+                .put("shopId",entity.getShop().getId())
+                .toString();
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", notificationUserContent,NotificationType.START_CALL));
+
+
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
         entity.setEmployee(getEmployee());
-        callQueueRepository.save(entity);
+        callQueueRepository.saveAndFlush(entity);
+
+        String notificationContent = new JSONObject()
+                .put("sessionToken",userResponse.getSessionToken())
+                .put("sessionName",userResponse.getSessionName())
+                .put("employeeName",entity.getEmployee().getName())
+                .put("employeeImage",entity.getEmployee().getImage())
+                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
+                        .collect(Collectors.joining(", ")))
+                .put("shopId",entity.getShop().getId())
+                .toString();
+        notificationService.sendMessageToOrganizationEmplyees(entity.getOrganization().getId(), new PushMessageDTO<>("Employee Accept the Call",notificationContent, NotificationType.START_CALL));
 
         notifyQueue(entity.getOrganization().getId());
 
@@ -121,6 +160,14 @@ public class CallQueueServiceImpl implements CallQueueService {
         entity.setEndsAt(LocalDateTime.now());
         entity.setReason("Employee reject the call");
         callQueueRepository.save(entity);
+        String response = new JSONObject()
+                .put("userName",entity.getUser().getName())
+                .put("queueId",entity.getId())
+                .put("rejectedBy",entity.getEmployee().getName())
+                .put("action","The Agent Reject Your Call")
+                .put("EndsAt",entity.getEndsAt())
+                .toString();
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Reject the Call", response,NotificationType.REJECT_CALL));
 
         notifyQueue(entity.getOrganization().getId());
 
@@ -159,10 +206,12 @@ public class CallQueueServiceImpl implements CallQueueService {
                     .put("id",entity.getId())
                     .put("joinsAt",entity.getJoinsAt())
                     .put("position",i+1)
+                    .put("message",
+                            "We are Sorry for let you wait,our Agent Will be with You As soon as possible")
                     .put("total",queue.size())
                     .toString();
             notificationService.sendMessage(entity.getUser(),
-                    new PushMessageDTO<>("queue summary",response));
+                    new PushMessageDTO<>("Joining the Queue",response,NotificationType.USER_QUEUE_UPDATES));
         }catch (RuntimeBusinessException e){
             continue; // Skip to the next iteration
         }

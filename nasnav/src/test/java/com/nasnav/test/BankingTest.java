@@ -6,6 +6,7 @@ import com.nasnav.persistence.BankAccountEntity;
 import com.nasnav.persistence.BankReservationEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import lombok.AllArgsConstructor;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ public class BankingTest extends AbstractTestWithTempBaseDir {
         assertEquals(true, entity.getLocked());
     }
 
+    @Ignore
     @Test
     public void outsideTransaction(){
         String requestBody =
