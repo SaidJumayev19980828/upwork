@@ -1,17 +1,20 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.nasnav.dto.ProductsResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -20,8 +23,8 @@ import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 @NotThreadSafe
-@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert.sql" })
-@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = { "/sql/Promotion_Test_Data_Insert.sql" })
+@Sql(executionPhase = AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
 class ActivePromotionsTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private TestRestTemplate template;
@@ -68,5 +71,17 @@ class ActivePromotionsTest extends AbstractTestWithTempBaseDir {
 						});
 		assertEquals(406, res.getStatusCodeValue());
 		assertEquals(ErrorCodes.PROMO$PARAM$0019.toString(), res.getBody().getError());
+	}
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Filter_Data_Insert.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getProductsWithActivePromotions() {
+		String url = "/v1/yeshtery/products?has_promotions=true";
+		ResponseEntity<ProductsResponse> responseEntity = template.getForEntity(url, ProductsResponse.class);
+		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+		ProductsResponse response = responseEntity.getBody();
+		int totalProducts = response.getProducts().size();
+		assertEquals(4, totalProducts);
 	}
 }

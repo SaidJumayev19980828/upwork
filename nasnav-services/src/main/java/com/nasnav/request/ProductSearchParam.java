@@ -40,7 +40,7 @@ public class ProductSearchParam {
     public Map<String, List<String>> features;
     public List<Long> promo_id;
     public List<BigDecimal> discount;
-    public Boolean has_promotions ;
+    public boolean has_promotions;
 
     public void setSort(ProductSortOptions sort) {
         this.sort = sort;

@@ -102,8 +102,10 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 
 	@Query("select promo "
 		   + " FROM PromotionsEntity promo "
-	       + " where promo.id in : promoIds"
-	       + " AND promo.organization.id = : orgId")
+	       + " where promo.id in :promoIds"
+	       + " AND promo.organization.id = :orgId"
+	       + " AND now() between promo.dateStart and promo.dateEnd"
+	       + " AND promo.status = 1")
 	List<PromotionsEntity> findByIdsAndOrgId(@Param("promoIds") List<Long> promoIds, @Param("orgId") Long orgId);
 
 	@Query("select promo "
@@ -114,7 +116,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 
 	@Query("select promo"
 	+ " FROM PromotionsEntity promo"
-	+ " WHERE promo.id in : promoIds"
+	+ " WHERE promo.id in :promoIds"
 	+ " AND now() between promo.dateStart and promo.dateEnd"
 	+ " AND promo.status = 1")
 	List<PromotionsEntity> findActivePromosByIds(@Param("promoIds") Collection<Long> promoIds);

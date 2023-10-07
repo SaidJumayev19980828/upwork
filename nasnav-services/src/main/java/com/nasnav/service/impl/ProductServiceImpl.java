@@ -208,21 +208,17 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ProductCollectionItemRepository collectionItemRepo;
 
-	@Autowired
-	private PromotionRepository promotionRepository;
+	private final PromotionRepository promotionRepository;
 
 	@Autowired
 	private SeoService seoService;
 
-	private final PromotionsService promotionsService;
-
-	private final ShopsRepository shopsRepository;
 	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-						  StockService stockService,PromotionsService promotionsService, ShopsRepository shopsRepository ) {
+						  StockService stockService, PromotionRepository promotionRepository ) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -230,8 +226,7 @@ public class ProductServiceImpl implements ProductService {
 		this.productFeaturesRepository = productFeaturesRepository;
 		this.bundleRepository = bundleRepository;
 		this.stockService = stockService;
-		this.promotionsService = promotionsService;
-		this.shopsRepository = shopsRepository;
+		this.promotionRepository = promotionRepository;
 	}
 
 	@Override
