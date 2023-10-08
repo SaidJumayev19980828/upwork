@@ -152,18 +152,19 @@ public class CallQueueServiceImpl implements CallQueueService {
     }
 
     @Override
-    public List<CallQueueDTO> rejectCall(Long queueId) {
+    public List<CallQueueDTO> rejectCall(Long queueId , String reason) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
         entity.setEmployee(getEmployee());
         entity.setStatus(CallQueueStatus.REJECTED.getValue());
         entity.setEndsAt(LocalDateTime.now());
-        entity.setReason("Employee reject the call");
+        entity.setReason(reason);
         callQueueRepository.save(entity);
         String response = new JSONObject()
                 .put("userName",entity.getUser().getName())
                 .put("queueId",entity.getId())
                 .put("rejectedBy",entity.getEmployee().getName())
                 .put("action","The Agent Reject Your Call")
+                .put("rejectionReason",reason)
                 .put("EndsAt",entity.getEndsAt())
                 .toString();
         notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Reject the Call", response,NotificationType.REJECT_CALL));

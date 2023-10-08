@@ -34,7 +34,7 @@ public interface CallQueueService {
      * @param queueId
      * @return
      */
-    public List<CallQueueDTO> rejectCall(Long queueId);
+    public List<CallQueueDTO> rejectCall(Long queueId , String rejectionReason);
 
     /**
      * get a full details of queue for employee inside an org
