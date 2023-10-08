@@ -50,8 +50,10 @@ public class CallQueueController {
 
     @PutMapping("/reject")
     public List<CallQueueDTO> rejectCallByEmployee(@RequestHeader(TOKEN_HEADER) String userToken,
-                                                   @RequestParam Long queueId)  {
-        return callQueueService.rejectCall(queueId);
+                                                   @RequestParam Long queueId,
+                                                   @RequestParam String rejectionReason
+                                                   )  {
+        return callQueueService.rejectCall(queueId,rejectionReason);
     }
 
     @PutMapping("/cancel")

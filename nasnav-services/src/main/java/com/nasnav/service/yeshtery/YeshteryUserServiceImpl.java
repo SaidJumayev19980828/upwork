@@ -121,6 +121,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     @Autowired
     private InfluencerRepository influencerRepository;
 
+    @Autowired
+    private UserRepository userRepo;
 
     @Override
     public void deleteUser(Long userId) {
@@ -389,8 +391,8 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
                     if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
                         throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
                 }
-                user = commonNasnavUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+                user = userRepo.findById(userId)
+                        .map(BaseUserEntity.class::cast).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
             }
             return getUserRepresentationWithUserRoles(user);
         }
