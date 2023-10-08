@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -114,9 +115,8 @@ public class CallQueueServiceImpl implements CallQueueService {
     public VideoChatResponse acceptCall(Long queueId, Boolean force) {
         CallQueueEntity entity = callQueueRepository.findById(queueId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$QUEUE$0001));
 
-        System.out.println("shopId "+entity.getShop().getId());
-
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
+
         String notificationUserContent = new JSONObject()
                 .put("sessionToken",userResponse.getSessionToken())
                 .put("sessionName",userResponse.getSessionName())
@@ -127,9 +127,8 @@ public class CallQueueServiceImpl implements CallQueueService {
                         .collect(Collectors.joining(", ")))
                 .put("shopId",entity.getShop().getId())
                 .toString();
+
         notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", notificationUserContent,NotificationType.START_CALL));
-
-
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());

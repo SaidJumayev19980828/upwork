@@ -11,8 +11,6 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.VideoChatLogRepository;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
-import com.nasnav.dto.request.notification.PushMessageDTO;
-import com.nasnav.enumerations.NotificationType;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.VideoChatStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -30,9 +28,9 @@ import lombok.Data;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -171,7 +169,9 @@ public class VideoChatServiceImpl implements VideoChatService {
         if ( sessionName == null || sessionName.isEmpty() || sessionName.isBlank() || !sessionsMap.containsKey(sessionName)) {
             throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
         }
-        return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)
+        OrganizationEntity organization = organizationRepository.findById(orgId)
+                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
+        return videoChatLogRepository.findByNameAndOrganization(sessionName, organization)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
 
