@@ -36,8 +36,6 @@ public class AppConfig {
     public int otpLength;
     @Value("${otp.max-retries:3}")
     public int otpMaxRetries;
-    @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
-    public String rocketChatUrl;
     @Value("${firebase-config:}")        public String firebaseConfig;
 
     @Value("${files.basepath}")
@@ -47,6 +45,20 @@ public class AppConfig {
     @Value("${frontend.setting.path:}")
     public String filePath ;
     
+
+    @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
+    public String rocketChatUrl;
+    @Value("${rocketchat.access-token:}")
+    @Getter
+    @Setter
+    private String rocketChatAccessToken;
+    @Value("${rocketchat.user-id:}")
+    @Getter
+    @Setter
+    private String rocketChatUserId;
+
+
+
     public final boolean isYeshteryInstance;
     public AppConfig(boolean isYeshtery) {
         isYeshteryInstance = isYeshtery;
