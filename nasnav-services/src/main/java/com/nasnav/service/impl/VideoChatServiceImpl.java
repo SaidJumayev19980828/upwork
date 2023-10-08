@@ -142,7 +142,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             videChatLogObj.setAssignedTo(loggedInUser);
             videChatLogObj.setStatus(STARTED.getValue());
             videChatLogObj.addDescription("employee (" +loggedInUser.getName() + ") has joined the session");
-            videoChatLogRepository.save(videChatLogObj);
+            videoChatLogRepository.saveAndFlush(videChatLogObj);
         }
 
         return new VideoChatResponse(token, loggedInUser.getName(), sessionName, getVideoChatShopId(videChatLogObj));
