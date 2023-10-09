@@ -9,4 +9,6 @@ import reactor.core.publisher.Mono;
 @Service
 public interface DepartmentRocketChatService {
 	Mono<String> getDepartmentIdCreateDepartmentIfNeeded(OrganizationEntity org);
+
+	Mono<String> getDepartmentIdCreateDepartmentIfNeeded(Long orgId);
 }

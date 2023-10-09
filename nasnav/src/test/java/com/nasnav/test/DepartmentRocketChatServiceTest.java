@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
 import com.nasnav.dto.rocketchat.RocketChatDepartmentDTO;
 import com.nasnav.persistence.OrganizationEntity;
@@ -26,11 +27,13 @@ class DepartmentRocketChatServiceTest {
 	private RocketChatOrganizationDepartmentRepository departmentsRepo;
 	@Mock
 	private RocketChatClient client;
+	@Mock
+	OrganizationRepository organizationRepository;
 	private DepartmentRocketChatService departmentRocketChatService;
 
 	@BeforeEach
 	void setup() {
-		departmentRocketChatService = new DepartmentRocketChatServiceImpl(departmentsRepo, client);
+		departmentRocketChatService = new DepartmentRocketChatServiceImpl(organizationRepository, departmentsRepo, client);
 	}
 
 	@Test

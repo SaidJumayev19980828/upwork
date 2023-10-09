@@ -4,6 +4,7 @@ import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
 import com.nasnav.dto.rocketchat.RocketChatDepartmentDTO;
 import com.nasnav.persistence.OrganizationEntity;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class DepartmentRocketChatServiceImpl implements DepartmentRocketChatService {
+	private final OrganizationRepository organizationRepository;
 	private final RocketChatOrganizationDepartmentRepository departmentsRepo;
 	private final RocketChatClient client;
 
@@ -30,6 +32,12 @@ public class DepartmentRocketChatServiceImpl implements DepartmentRocketChatServ
 		return departmentsRepo.findByOrganizationId(org.getId())
 				.switchIfEmpty(Mono.defer(() -> createDepartment(org)))
 				.map(RocketChatOrganizationDepartmentEntity::getDepartmentId);
+	}
+
+	@Override
+	public Mono<String> getDepartmentIdCreateDepartmentIfNeeded(Long orgId) {
+		return Mono.fromSupplier(() -> organizationRepository.getOne(orgId))
+				.flatMap(this::getDepartmentIdCreateDepartmentIfNeeded);
 	}
 
 	private Mono<RocketChatOrganizationDepartmentEntity> createDepartment(OrganizationEntity org) {
@@ -47,8 +55,7 @@ public class DepartmentRocketChatServiceImpl implements DepartmentRocketChatServ
 
 	private RocketChatOrganizationDepartmentEntity persistDepartment(
 			RocketChatDepartmentDTO dto,
-			OrganizationEntity org
-	) {
+			OrganizationEntity org) {
 		try {
 			RocketChatOrganizationDepartmentEntity entity = new RocketChatOrganizationDepartmentEntity();
 			entity.setOrganization(org);

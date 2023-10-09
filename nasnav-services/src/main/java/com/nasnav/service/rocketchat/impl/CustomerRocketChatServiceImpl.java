@@ -15,6 +15,7 @@ import com.nasnav.persistence.RocketChatCustomerTokenEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.rocketchat.CustomerRocketChatService;
+import com.nasnav.service.rocketchat.DepartmentRocketChatService;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -26,6 +27,7 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 	private final UserRepository userRepository;
 	private final SecurityService securityService;
 	private final RocketChatClient rocketChatClient;
+	private final DepartmentRocketChatService departmentService;
 
 	@Override
 	public Mono<RocketChatVisitorDTO> getRocketChatVisitorData() {
@@ -35,8 +37,10 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 
 		final String token = tokenEntity.getToken();
 
-		return rocketChatClient
-				.liveChatInit(token, user.getOrganizationId().toString())
+		Long orgId = user.getOrganizationId();
+
+		return departmentService.getDepartmentIdCreateDepartmentIfNeeded(orgId).flatMap(departmentId -> rocketChatClient
+				.liveChatInit(token, departmentId))
 				.filter(visitor -> areVisitorDataValid(visitor, user))
 				.switchIfEmpty(Mono.defer(() -> registerNewVisitor(user, token)))
 				.onErrorResume(WebClientResponseException.class,
@@ -74,6 +78,7 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 	}
 
 	private boolean areVisitorDataValid(RocketChatVisitorDTO visitor, UserEntity user) {
-		return visitor != null && visitor.getName().equals(user.getName()) && visitor.getEmail().equals(user.getEmail());
+		return visitor != null && visitor.getName().equals(user.getName())
+				&& visitor.getEmail().equals(user.getEmail());
 	}
 }
