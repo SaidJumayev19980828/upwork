@@ -123,7 +123,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                 .put("employeeName",getEmployee().getName())
                 .put("employeeImage",getEmployee().getImage())
                 .put("employeeEmail",getEmployee().getEmail())
-                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
+                .put("employeeRole",getEmployee().getRoles().stream().map(role -> role.getName())
                         .collect(Collectors.joining(", ")))
                 .put("shopId",entity.getShop().getId())
                 .toString();
@@ -242,6 +242,7 @@ public class CallQueueServiceImpl implements CallQueueService {
         dto.setJoinsAt(entity.getJoinsAt());
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
+        dto.setShop(entity.getShop());
         dto.setUser(entity.getUser().getRepresentation());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         dto.setStatus(CallQueueStatus.getEnumByValue(entity.getStatus()));
