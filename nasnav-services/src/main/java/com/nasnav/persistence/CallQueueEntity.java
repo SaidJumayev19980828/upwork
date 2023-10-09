@@ -27,14 +27,14 @@ public class CallQueueEntity {
     @Column(name = "ends_at")
     private LocalDateTime endsAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
