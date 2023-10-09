@@ -123,7 +123,7 @@ public class CallQueueServiceImpl implements CallQueueService {
                 .put("employeeName",getEmployee().getName())
                 .put("employeeImage",getEmployee().getImage())
                 .put("employeeEmail",getEmployee().getEmail())
-                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
+                .put("employeeRole",getEmployee().getRoles().stream().map(role -> role.getName())
                         .collect(Collectors.joining(", ")))
                 .put("shopId",entity.getShop().getId())
                 .toString();
