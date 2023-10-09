@@ -184,10 +184,16 @@ public class VideoChatServiceImpl implements VideoChatService {
         if (Strings.isNotEmpty(sessionName)) {
             return getExistingChatSession(sessionName, orgId);
         }
-        String userActiveSession = getUserActiveSession(loggedInUser);
-        if (userActiveSession != null) {
+        //TODO here is the problem replace it by search into DB By status live and userId
+//        String userActiveSession = getUserActiveSession(loggedInUser);
+        List<VideoChatLogEntity> userActiveSession = videoChatLogRepository.findByStatusAndUser(STARTED.getValue(),loggedInUser);
+
+        if (!userActiveSession.isEmpty()) {
             if (force) {
-                leaveSession(userActiveSession, orgId, shopId, true);
+                userActiveSession.stream().forEach(s->{
+                    leaveSession(s.getName(), orgId, shopId, true);
+                });
+//                leaveSession(userActiveSession, orgId, shopId, true);
             } else {
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0007);
             }
@@ -393,7 +399,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         try {
             Session session = getSession(videoEntity.getName());
             session.close();
-        } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
+        } catch (OpenViduHttpException | OpenViduJavaClientException | RuntimeException ex ) {
             logger.error("couldn't close session! , {}", ex.getMessage());
             videoEntity.setStatus(FAILED.getValue());
         }
