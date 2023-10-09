@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@Table(name = "rocket_chat_customer_tokens")
+@Table(name = "rocket_chat_organization_departments")
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 public class RocketChatOrganizationDepartmentEntity {

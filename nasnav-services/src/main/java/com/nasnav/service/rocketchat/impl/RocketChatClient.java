@@ -97,7 +97,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<Void> deleteDepartment(String departmentId) {
-		return webClient.get()
+		return webClient.delete()
 				.uri("/livechat/department/{departmentId}", departmentId)
 				.accept(MediaType.APPLICATION_JSON)
 				.retrieve()
