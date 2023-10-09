@@ -242,6 +242,7 @@ public class CallQueueServiceImpl implements CallQueueService {
         dto.setJoinsAt(entity.getJoinsAt());
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
+        dto.setShop(entity.getShop());
         dto.setUser(entity.getUser().getRepresentation());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         dto.setStatus(CallQueueStatus.getEnumByValue(entity.getStatus()));
