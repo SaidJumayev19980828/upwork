@@ -26,4 +26,6 @@ public class EventForRequestDTO {
     private String description;
     private EventStatus status;
     private Set<Long> productsIds;
+
+    private Long coin;
 }

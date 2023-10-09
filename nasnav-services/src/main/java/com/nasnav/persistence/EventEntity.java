@@ -59,6 +59,9 @@ public class EventEntity {
     @Column(name = "status")
     private Integer status;
 
+    @Column(name = "coin")
+    private Long coin;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude

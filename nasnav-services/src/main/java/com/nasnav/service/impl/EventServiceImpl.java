@@ -224,6 +224,7 @@ public class EventServiceImpl implements EventService{
         entity.setEndsAt(dto.getEndsAt());
         entity.setOrganization(org);
         entity.setInfluencer(influencer);
+        entity.setCoin(influencer == null ?  dto.getCoin() : null);
         entity.setProducts(products);
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
@@ -280,6 +281,7 @@ public class EventServiceImpl implements EventService{
         dto.setAttachments(entity.getAttachments());
         dto.setDescription(entity.getDescription());
         dto.setName(entity.getName());
+        dto.setCoin(entity.getCoin());
         dto.setStatus(EventStatus.getEnumByValue(entity.getStatus()));
         dto.setStatusRepresentation(EventStatus.getStatusRepresentation(entity.getStartsAt(), entity.getEndsAt()));
         dto.setProducts(productDetailsDTOS);

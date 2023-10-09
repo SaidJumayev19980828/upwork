@@ -23,6 +23,8 @@ public class EventResponseDto {
     private LocalDateTime endsAt;
     @NotNull
     private OrganizationRepresentationObject organization;
+
+    private Long coin;
     private InfluencerDTO influencer;
     private Boolean visible;
     private List<EventAttachmentsEntity> attachments;
