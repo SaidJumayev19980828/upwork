@@ -702,9 +702,9 @@ public class ProductServiceImpl implements ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant, organization);
 		BooleanBuilder predicateForPromotions = getQueryPredicateForPromotions(product, finalParams);
-		predicate.or(predicateForPromotions);
+		predicate.and(predicateForPromotions);
 		BooleanBuilder queryPredicateForDiscounts = getQueryPredicateForDiscounts(stock, organization, shop, finalParams);
-		predicate.or(queryPredicateForDiscounts);
+		predicate.and(queryPredicateForDiscounts);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -962,17 +962,12 @@ public class ProductServiceImpl implements ProductService {
 		return promoPredicate;
 	}
 
-	private BooleanBuilder getQueryPredicateForDiscounts(QStocks stock,QOrganizations organization, QShops shop, ProductSearchParam params){
+	private BooleanBuilder getQueryPredicateForDiscounts(QStocks stock,QOrganizations organization, QShops shop
+			, ProductSearchParam params){
 		BooleanBuilder discountPredicate = new BooleanBuilder();
-	if(params.discount != null && !params.discount.isEmpty()) {
-		discountPredicate.or(stock.discount.in(params.discount));
+		if(params.discount != null && !params.discount.isEmpty())
+			discountPredicate.or(stock.discount.in(params.discount));
 
-		if(params.org_id != null)
-			discountPredicate.and(organization.id.eq(params.org_id));
-
-		if(params.shop_id != null)
-			discountPredicate.and(shop.id.eq(params.shop_id));
-	}
 		return discountPredicate;
 	}
 
