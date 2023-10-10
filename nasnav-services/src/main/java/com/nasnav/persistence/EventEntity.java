@@ -42,7 +42,7 @@ public class EventEntity {
     @ToString.Exclude
     private InfluencerEntity influencer;
 
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL , fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<EventAttachmentsEntity> attachments;
@@ -76,5 +76,6 @@ public class EventEntity {
     @Exclude
     @lombok.ToString.Exclude
     private EventRoomTemplateEntity roomTemplate;
-    
+
+
 }

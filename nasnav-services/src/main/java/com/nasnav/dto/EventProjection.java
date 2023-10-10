@@ -15,6 +15,7 @@ public interface EventProjection {
         String getName();
         String getDescription();
         EventStatus getStatus();
+        OrganizationProjection getOrganization();
 
     }
 
