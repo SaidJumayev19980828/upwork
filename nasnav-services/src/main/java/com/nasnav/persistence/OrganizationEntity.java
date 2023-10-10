@@ -81,7 +81,7 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private Set<ShopsEntity> shops;
 
-    @OneToMany(mappedBy = "organizationEntity")
+    @OneToMany(mappedBy = "organizationEntity" ,fetch = FetchType.EAGER)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude

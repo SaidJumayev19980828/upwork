@@ -2,11 +2,14 @@ package com.nasnav.service.impl;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.EventProjection;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.OrganizationNewDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
+import com.nasnav.dto.OrganizationProjection;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -22,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +47,7 @@ public class EventServiceImpl implements EventService{
     private final EventRequestsRepository eventRequestsRepository;
     private final EventAttachmentsRepository eventAttachmentsRepository;
     private final InfluencerService influencerService;
+    private final OrganizationThemeRepository  organizationThemeRepository;
 
     @Override
     public EventResponseDto createEvent(EventForRequestDTO dto) {
@@ -289,24 +292,48 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventProjection> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
+    public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
         PageRequest page = getQueryPage(start, count);
+        PageImpl<EventProjection> events;
         if(fromDate == null){
-            return  eventRepository.findAllOrderedByStartsAtDesc(page);
+            events=  eventRepository.findAllOrderedByStartsAtDesc(page);
+        }else {
+            events = eventRepository.findAllByStartOrderedByStartsAtDesc(fromDate, page);
         }
-        return  eventRepository.findAllByStartOrderedByStartsAtDesc( fromDate , page );
+        List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
+        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
     }
 
     @Override
 
-    public PageImpl<EventProjection> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
+    public PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
         PageRequest page = getQueryPage(start, count);
         OrganizationEntity organization=null;
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
-       return  eventRepository.getAllByOrganizationOrFindAll(page,organization);
+        PageImpl<EventProjection> events= eventRepository.getAllByOrganizationOrFindAll(page,organization);
+        List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
+        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
+
+    }
+
+    public EventsNewDTO mapEventProjectionToDTO(EventProjection eventProjection) {
+
+        EventsNewDTO eventDTO = new EventsNewDTO();
+        eventDTO.setId(eventProjection.getId());
+        eventDTO.setStartsAt(eventProjection.getStartsAt());
+        eventDTO.setEndsAt(eventProjection.getEndsAt());
+        // Map other properties here
+        OrganizationProjection orgProjection = eventProjection.getOrganization();
+        OrganizationNewDTO orgDTO = new OrganizationNewDTO();
+        List<String> logo =organizationThemeRepository. getLogoByOrganizationEntity_Id(eventProjection.getOrganization().getId());
+        orgDTO.setId(orgProjection.getId());
+        orgDTO.setName(orgProjection.getName());
+        orgDTO.setUri(logo.isEmpty() ? "nasnav-logo.png" : logo.get(0));
+        eventDTO.setOrganization(orgDTO);
+        return eventDTO;
     }
 
     EventInterestDTO toEventInterstDto(EventLogsEntity entity){
