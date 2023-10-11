@@ -143,9 +143,7 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 		LocalDateTime after = LocalDateTime.now();
 		assertEquals(HttpStatus.OK, res.getStatusCode());
 		EventRoomResponse body = res.getBody();
-		// Define a maximum allowable duration (adjust as needed)
 		Duration maxDuration = Duration.ofMinutes(2);
-		// Check if the duration falls within the acceptable range
 		Duration actualDuration = Duration.between(before, after);
 		assertTrue(actualDuration.compareTo(maxDuration) <= 0, "Time duration exceeded the acceptable range");
 		assertEquals(HttpStatus.OK, res.getStatusCode());
