@@ -137,7 +137,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
         ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
         };
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/advertise/all" , HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/advertise/all" , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
 
