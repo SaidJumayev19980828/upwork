@@ -64,13 +64,19 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.influencers(id,created_at,user_id,approved) values (100,now(),81,true);
 INSERT INTO public.influencers(id,created_at,user_id,approved) values (101,now(),83,true);
 
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(51,100,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name100','desc',0);
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(52,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(53,null,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99002	,false,'name101','desc',0);
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(54,100,now(),CURRENT_DATE - INTERVAL '5 day',CURRENT_DATE - INTERVAL '2 day',99001,false,'name100','desc',0);
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(55,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
-INSERT INTO public.events(id,influencer_id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(56,101,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(51,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name100','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(52,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(53,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99002	,false,'name101','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(54,now(),CURRENT_DATE - INTERVAL '5 day',CURRENT_DATE - INTERVAL '2 day',99001,false,'name100','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(55,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
+INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(56,now(),CURRENT_DATE + INTERVAL '1 day',CURRENT_DATE + INTERVAL '2 day',99001,false,'name101','desc',0);
 
+
+INSERT INTO public.event_influencers(id, event_id, influencer_id)VALUES (1, 51, 100);
+INSERT INTO public.event_influencers(id, event_id, influencer_id)VALUES (2, 52, 101);
+INSERT INTO public.event_influencers(id, event_id, influencer_id)VALUES (3, 54, 100 );
+INSERT INTO public.event_influencers(id, event_id, influencer_id)VALUES (4, 55 , 101);
+INSERT INTO public.event_influencers(id, event_id, influencer_id)VALUES (5, 56, 101);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),51,100,0);
 
