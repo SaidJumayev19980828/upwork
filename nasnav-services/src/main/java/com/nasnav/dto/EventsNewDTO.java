@@ -14,7 +14,7 @@ public class EventsNewDTO {
     private Long id;
     private LocalDateTime startsAt;
     private LocalDateTime endsAt;
-    private InfluencerDTO influencer;
+    private List<InfluencerProjection> influencers;
     private List<EventAttachmentsEntity> attachments;
     private String name;
     private String description;

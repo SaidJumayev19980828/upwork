@@ -4,6 +4,7 @@ import com.nasnav.dao.EventLogsRepository;
 import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRequestsRepository;
 import com.nasnav.dao.InfluencerRepository;
+import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.EventAttachmentsEntity;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -75,6 +75,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
                 .put("coin",10L)
                 .put("description","description")
                 .put("productsIds",Arrays.asList(1001))
+                .put("influencersIds",Arrays.asList(100,101))
                 .put("visible","false")
                 ;
 
@@ -118,6 +119,25 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
         LocalDateTime toDate = LocalDateTime.now().plusDays(15);
         ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getAllEventsForUnAuth(){
+        HttpEntity<Object> httpEntity = getHttpEntity("");
+        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
+        };
+
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/all" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
+
+    }
+    @Test
+    public void getAllAdvertises(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/advertise/all" , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
 
