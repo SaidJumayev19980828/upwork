@@ -3,6 +3,7 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.*;
 import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.InfluencerDTO;
 import com.nasnav.dto.OrganizationNewDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
@@ -50,6 +51,7 @@ public class EventServiceImpl implements EventService{
     private final OrganizationThemeRepository  organizationThemeRepository;
 
     @Override
+    @Transactional
     public EventResponseDto createEvent(EventForRequestDTO dto) {
         InfluencerEntity influencer = null;
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
@@ -66,7 +68,7 @@ public class EventServiceImpl implements EventService{
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE,P$PRO$0016,id);
         });
 
-        return toDto(eventRepository.save(toEntity(dto, org, influencer, null)));
+        return toDto(eventRepository.save(toEntity(dto, org, null)));
     }
 
     @Override
@@ -139,7 +141,8 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public List<EventResponseDto> getAdvertisedEvents() {
-    return eventRepository.getAllByInfluencerNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
+        //Return if error
+    return eventRepository.getAllByInfluencersNullAndStartsAtAfter(LocalDateTime.now()).stream().map(this::toDto).collect(Collectors.toList());
 
     }
 
@@ -152,7 +155,7 @@ public class EventServiceImpl implements EventService{
         if(influencerEntity != null){
             List<OrganizationEntity> orgs = organizationRepository.findYeshteryOrganizationsFilterByCategory(influencerEntity.getCategories().stream()
                     .map(o->o.getId()).collect(Collectors.toList()));
-            List<EventEntity> eventEntities = eventRepository.getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(orgs, LocalDateTime.now());
+            List<EventEntity> eventEntities = eventRepository.getAllByOrganizationInAndInfluencersNullAndStartsAtAfter(orgs, LocalDateTime.now());
             List<EventEntity> requestsEntities = eventRequestsRepository.getAllByInfluencer_Id(influencerEntity.getId())
                     .stream().map(o -> o.getEvent()).collect(Collectors.toList());
             eventEntities.removeAll(requestsEntities);
@@ -180,7 +183,7 @@ public class EventServiceImpl implements EventService{
         }
 
         eventAttachmentsRepository.deleteAllByEvent_Id(eventId);
-        entity = toEntity(dto, entity.getOrganization(), entity.getInfluencer(), entity.getId());
+        entity = toEntity(dto, entity.getOrganization(), entity.getId());
         eventRepository.save(entity);
     }
 
@@ -218,7 +221,7 @@ public class EventServiceImpl implements EventService{
         eventLogsRepository.save(entity);
     }
 
-    private EventEntity toEntity(EventForRequestDTO dto, OrganizationEntity org, InfluencerEntity influencer, Long id){
+    private EventEntity toEntity(EventForRequestDTO dto, OrganizationEntity org,  Long id){
         EventEntity entity = new EventEntity();
         List<ProductEntity> products = new ArrayList<>();
         entity.setId(id);
@@ -226,8 +229,15 @@ public class EventServiceImpl implements EventService{
         entity.setStartsAt(dto.getStartsAt());
         entity.setEndsAt(dto.getEndsAt());
         entity.setOrganization(org);
-        entity.setInfluencer(influencer);
-        entity.setCoin(influencer == null ?  dto.getCoin() : null);
+        if( dto.getInfluencersIds() != null && !dto.getInfluencersIds().isEmpty()){
+            dto.getInfluencersIds().forEach(i -> {
+                InfluencerEntity influencerEntity= influencerRepository.findById(i).orElseThrow(
+                        () -> new RuntimeBusinessException(NOT_FOUND, G$INFLU$0001, i));
+                entity.addInfluencer(influencerEntity);
+            });
+        }
+//        entity.setInfluencer(influencer);
+        entity.setCoin(entity.getInfluencers() == null || entity.getInfluencers().isEmpty() ?  dto.getCoin() : null);
         entity.setProducts(products);
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
@@ -277,8 +287,17 @@ public class EventServiceImpl implements EventService{
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
-        if(entity.getInfluencer() != null){
-            dto.setInfluencer(influencerService.toInfluencerDto(entity.getInfluencer()));
+//        if(entity.getInfluencer() != null){
+//            dto.setInfluencer(influencerService.toInfluencerDto(entity.getInfluencer()));
+//        }
+
+        if ( entity.getInfluencers()!= null && !entity.getInfluencers().isEmpty()){
+            List<InfluencerDTO> influencers = new ArrayList<>();
+            entity.getInfluencers().forEach(influencer -> {
+                influencers.add(influencerService.toInfluencerDto(influencer));
+
+            });
+            dto.setInfluencers(influencers);
         }
         dto.setVisible(entity.getVisible());
         dto.setAttachments(entity.getAttachments());
@@ -305,7 +324,6 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-
     public PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
         PageRequest page = getQueryPage(start, count);
         OrganizationEntity organization=null;
@@ -313,7 +331,7 @@ public class EventServiceImpl implements EventService{
             organization = organizationRepository.findById(orgId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
-        PageImpl<EventProjection> events= eventRepository.getAllByOrganizationOrFindAll(page,organization);
+        PageImpl<EventProjection> events= eventRepository.getAllByOrganizationAndInfluencersNull(page,organization);
         List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
         return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
 
@@ -323,8 +341,13 @@ public class EventServiceImpl implements EventService{
 
         EventsNewDTO eventDTO = new EventsNewDTO();
         eventDTO.setId(eventProjection.getId());
+        eventDTO.setName(eventProjection.getName());
+        eventDTO.setDescription(eventProjection.getDescription());
+        eventDTO.setStatus(eventProjection.getStatus());
         eventDTO.setStartsAt(eventProjection.getStartsAt());
         eventDTO.setEndsAt(eventProjection.getEndsAt());
+        eventDTO.setInfluencers(eventProjection.getInfluencers());
+        eventDTO.setAttachments(eventProjection.getAttachments());
         // Map other properties here
         OrganizationProjection orgProjection = eventProjection.getOrganization();
         OrganizationNewDTO orgDTO = new OrganizationNewDTO();
@@ -375,12 +398,19 @@ public class EventServiceImpl implements EventService{
             return user.getOrganizationId().equals(event.getOrganization().getId());
         } else {
             try {
-                // change next line if event will have multiple influnecers
-                return user.equals(event.getInfluencer().getUser());
+                if (event.getInfluencers() != null && !event.getInfluencers().isEmpty()) {
+                    for (InfluencerEntity influencer : event.getInfluencers()) {
+                        if (user.equals(influencer.getUser())) {
+                            return true; // User is associated with one of the influencers
+                        }
+                    }
+                }
+                return false; // User is not associated with any influencer
             } catch(Exception ex) {
                 return false;
             }
 
         }
     }
+
 }

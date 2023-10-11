@@ -10,7 +10,7 @@ public interface EventProjection {
         LocalDateTime getStartsAt();
         LocalDateTime getEndsAt();
 
-        InfluencerProjection getInfluencer();
+        List<InfluencerProjection> getInfluencers();
         List<EventAttachmentsEntity> getAttachments();
         String getName();
         String getDescription();

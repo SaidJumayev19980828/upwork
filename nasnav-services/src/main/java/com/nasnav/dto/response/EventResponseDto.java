@@ -28,6 +28,7 @@ public class EventResponseDto {
     private InfluencerDTO influencer;
     private Boolean visible;
     private List<EventAttachmentsEntity> attachments;
+    private List<InfluencerDTO> influencers;
     private String name;
     private String description;
     private EventStatus status;
