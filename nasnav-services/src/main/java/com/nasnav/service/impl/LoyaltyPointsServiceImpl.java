@@ -12,7 +12,6 @@ import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.OrganizationPoints;
-import com.nasnav.persistence.yeshtery.YeshteryUserEntity;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
 import com.nasnav.response.LoyaltyPointsUpdateResponse;
 import com.nasnav.response.LoyaltyUserPointsResponse;
@@ -175,8 +174,16 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Override
     public LoyaltyUserPointsResponse getUserPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
-        Integer points = loyaltyPointTransRepo.findOrgRedeemablePoints(user.getId(), orgId);
-        return new LoyaltyUserPointsResponse(points);
+        List<LoyaltyPointTransactionEntity> userTrx = loyaltyPointTransRepo.findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValid(user.getId(),orgId,LocalDateTime.now(),true);
+        Integer totalPoints = 0;
+        for(LoyaltyPointTransactionEntity pt : userTrx){
+            totalPoints+=pt.getPoints().intValue();
+            List<LoyaltySpentTransactionEntity> allReverseTrx = loyaltySpendTransactionRepo.findAllByTransaction_Id(pt.getId());
+            for(LoyaltySpentTransactionEntity negativePt : allReverseTrx){
+                totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
+            }
+        }
+        return new LoyaltyUserPointsResponse(totalPoints);
     }
 
     @Override
@@ -640,8 +647,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     @Override
     public void givePointsToReferrer(UserEntity user, Long orgId) {
-        OrganizationEntity org = organizationRepository.findById(orgId).get();
-        prepareLoyaltyPointTransaction(user, org, REFERRAL, null, false);
+        Optional<OrganizationEntity> org = organizationRepository.findById(orgId);
+        if(org.isPresent()){
+            prepareLoyaltyPointTransaction(user, org.get(), REFERRAL, null, false);
+        }else {
+            throw new RuntimeException("Organization not exist");
+        }
+
     }
 
     @Override
