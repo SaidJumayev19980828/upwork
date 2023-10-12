@@ -344,22 +344,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         BigDecimal coefficient = getTierCoefficientByType(tier, type);
 
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
-        if(Objects.isNull(constraint)){
-            logger.warn(ORG$LOY$0002.getValue());
-            return BigDecimal.ZERO;
-        }
         BigDecimal from = constraint.getRatioFrom();
         BigDecimal to = constraint.getRatioTo();
         BigDecimal localAmount = constraint.getAmount();
 
-        if(Objects.isNull(from) || Objects.isNull(to) || Objects.isNull(localAmount)){
+        if (anyIsNull(from, to, coefficient, localAmount)) {
             logger.warn(ORG$LOY$0002.getValue());
             return BigDecimal.ZERO;
         }
-//        if (anyIsNull(from, to, coefficient, localAmount)) {
-//            logger.warn(ORG$LOY$0002.getValue());
-//            return BigDecimal.ZERO;
-//        }
         return localAmount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
     }
 
