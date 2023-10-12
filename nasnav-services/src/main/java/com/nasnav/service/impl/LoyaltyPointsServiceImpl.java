@@ -318,12 +318,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
-        HashMap<LoyaltyPointType, BigDecimal> loyaltyPointTypeBigDecimalHashMap = loyaltyTierService.readTierJsonStr(entity.getConstraints());
-        BigDecimal coefficient = loyaltyPointTypeBigDecimalHashMap.get(type);
-//        if(Objects.isNull(coefficient)){
-//            coefficient = loyaltyPointTypeBigDecimalHashMap.get(ORDER_ONLINE);
-//        }
-        return coefficient;
+        return loyaltyTierService.readTierJsonStr(entity.getConstraints()).get(type);
     }
 
     @Override
@@ -340,13 +335,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyPointType type) {
-
         BigDecimal coefficient = getTierCoefficientByType(tier, type);
 
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
-        BigDecimal from = constraint.getRatioFrom();
-        BigDecimal to = constraint.getRatioTo();
-        BigDecimal localAmount = constraint.getAmount();
+        BigDecimal from = ofNullable(constraint.getRatioFrom()).orElse(ZERO);
+        BigDecimal to = ofNullable(constraint.getRatioTo()).orElse(ZERO);
+        BigDecimal localAmount = ofNullable(amount).orElse(constraint.getAmount());
 
         if (anyIsNull(from, to, coefficient, localAmount)) {
             logger.warn(ORG$LOY$0002.getValue());
@@ -581,8 +575,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private LoyaltyConfigConstraint getConfigConstraint(LoyaltyPointConfigEntity entity, LoyaltyPointType type) {
-        HashMap<LoyaltyPointType, LoyaltyConfigConstraint> loyaltyPointTypeLoyaltyConfigConstraintHashMap = readConfigJsonStr(entity.getConstraints());
-        return loyaltyPointTypeLoyaltyConfigConstraintHashMap.getOrDefault(type, null);
+        return readConfigJsonStr(entity.getConstraints()).getOrDefault(type, null);
     }
 
     private HashMap<LoyaltyPointType, LoyaltyConfigConstraint> readConfigJsonStr(String jsonStr) {
