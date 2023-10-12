@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
 
 	private final FileService fileService;
 
-	private LoyaltyPointsService loyaltyPointsService;
+	private final LoyaltyPointsService loyaltyPointsService;
 
 	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if(userJson.getActivationMethod() == null){
