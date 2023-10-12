@@ -63,6 +63,8 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
 @NotThreadSafe
@@ -1100,6 +1102,17 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		assertTrue(response.getBody()!=null);
 	}
 
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Order_Associated_Promotions.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getOrderAssociatedPromoCodeIfExist() {
+		ResponseEntity<DetailedOrderRepObject> response = template.exchange("/order/info?order_id=1", GET,
+				getHttpEntity("123"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		DetailedOrderRepObject body = response.getBody();
+		List<OrderAssociatedPromotions> orderAssociatedPromotions = body.getOrderAssociatedPromotions();
+		assertEquals(orderAssociatedPromotions.get(0).getCode(),"GREEEEEED");
+	}
 
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})

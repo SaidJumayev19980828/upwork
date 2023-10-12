@@ -8,7 +8,9 @@ DELETE FROM public.room_templates;
 delete from public.event_requests;
 delete from public.event_products;
 delete from public.event_attachments;
+delete from public.event_influencers;
 delete from public.event_logs;
+
 DELETE FROM public.EVENTS;
 delete from public.influencer_categories;
 delete from public.influencers;

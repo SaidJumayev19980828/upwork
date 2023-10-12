@@ -40,7 +40,7 @@ public class AvailabilityEntity {
     @ToString.Exclude
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude

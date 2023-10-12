@@ -52,4 +52,9 @@ public final class EmailConstants {
     public static final String ABANDONED_CART_TEMPLATE = "abandoned_cart_template_2.html";
 
     public static final String RESTOCKED_WISHLIST_TEMPLATE = "restocked_wishlist_template.html";
+    public static final String NEW_CLIENT_EMAIL_Booked_Appointment_TEMPLATE = "mail_templates/NEW_CLIENT_EMAIL_Booked_Appointment_TEMPLATE.html";
+    public static final String NEW_EMPLOYEE_EMAIL_Booked_Appointment_TEMPLATE = "mail_templates/NEW_EMPLOYEE_EMAIL_Booked_Appointment_TEMPLATE.html";
+
+
+
 }

@@ -44,6 +44,8 @@ public class AppConfig {
     @Getter
     @Setter
     private String basePathStr;
+    @Value("${frontend.setting.path:}")
+    public String filePath ;
     
     public final boolean isYeshteryInstance;
     public AppConfig(boolean isYeshtery) {

@@ -20,6 +20,7 @@ import com.nasnav.response.VideoChatListResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
+import com.nasnav.service.notification.NotificationService;
 import com.rometools.utils.Strings;
 import io.openvidu.java.client.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -78,6 +80,9 @@ public class VideoChatServiceImpl implements VideoChatService {
     private ConnectionProperties connectionProperties;
 
     private SessionProperties sessionProperties;
+
+    @Autowired
+    private  NotificationService notificationService;
 
     @Autowired
     public void initController() {
@@ -137,7 +142,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             videChatLogObj.setAssignedTo(loggedInUser);
             videChatLogObj.setStatus(STARTED.getValue());
             videChatLogObj.addDescription("employee (" +loggedInUser.getName() + ") has joined the session");
-            videoChatLogRepository.save(videChatLogObj);
+            videoChatLogRepository.saveAndFlush(videChatLogObj);
         }
 
         return new VideoChatResponse(token, loggedInUser.getName(), sessionName, getVideoChatShopId(videChatLogObj));
@@ -161,12 +166,12 @@ public class VideoChatServiceImpl implements VideoChatService {
     }
 
     private VideoChatLogEntity getVideoChatLogEntity(String sessionName, Long orgId) {
-        Optional<String> sessionNameOptional = Optional.ofNullable(sessionName);
-        if (sessionNameOptional.isPresent() && (sessionNameOptional.get().isEmpty()
-                || sessionNameOptional.get().isBlank() || !sessionsMap.containsKey(sessionNameOptional.get()))) {
+        if ( sessionName == null || sessionName.isEmpty() || sessionName.isBlank() ) {
             throw new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003);
         }
-        return videoChatLogRepository.findByNameAndOrganization_Id(sessionName, orgId)
+        OrganizationEntity organization = organizationRepository.findById(orgId)
+                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
+        return videoChatLogRepository.findByNameAndOrganization(sessionName, organization)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004));
     }
 
@@ -179,10 +184,16 @@ public class VideoChatServiceImpl implements VideoChatService {
         if (Strings.isNotEmpty(sessionName)) {
             return getExistingChatSession(sessionName, orgId);
         }
-        String userActiveSession = getUserActiveSession(loggedInUser);
-        if (userActiveSession != null) {
+        //TODO here is the problem replace it by search into DB By status live and userId
+//        String userActiveSession = getUserActiveSession(loggedInUser);
+        List<VideoChatLogEntity> userActiveSession = videoChatLogRepository.findByStatusAndUser(STARTED.getValue(),loggedInUser);
+
+        if (!userActiveSession.isEmpty()) {
             if (force) {
-                leaveSession(userActiveSession, orgId, shopId, true);
+                userActiveSession.stream().forEach(s->{
+                    leaveSession(s.getName(), orgId, shopId, true);
+                });
+//                leaveSession(userActiveSession, orgId, shopId, true);
             } else {
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0007);
             }
@@ -251,13 +262,13 @@ public class VideoChatServiceImpl implements VideoChatService {
             newVideChatLog.setShop(shop);
             newVideChatLog.setOrganization(organizationEntity);
             newVideChatLog.setStatus(NEW.getValue());
-
             videoChatLogRepository.saveAndFlush(newVideChatLog);
 
             this.sessionsMap.put(sessionName, session);
             List<UserSessionInfo> sessionInfos = new ArrayList<>();
             sessionInfos.add(new UserSessionInfo(loggedInUser.getId(), false, connection.getConnectionId()));
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
+
             return new VideoChatResponse(token, null, sessionName, getVideoChatShopId(newVideChatLog));
         } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
@@ -388,7 +399,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         try {
             Session session = getSession(videoEntity.getName());
             session.close();
-        } catch (OpenViduHttpException | OpenViduJavaClientException ex) {
+        } catch (OpenViduHttpException | OpenViduJavaClientException | RuntimeException ex ) {
             logger.error("couldn't close session! , {}", ex.getMessage());
             videoEntity.setStatus(FAILED.getValue());
         }

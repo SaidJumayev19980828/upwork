@@ -523,7 +523,8 @@ public class UserServiceImpl implements UserService {
 	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
 		BaseUserEntity user;
-		if (securityService.currentUserIsCustomer() || userId == null || userId.equals(currentUser.getId())) {
+
+		if ( securityService.currentUserIsCustomer() || userId == null ) {
 			return getUserRepresentationWithUserRoles(currentUser);
 		} else {
 			Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
@@ -537,8 +538,10 @@ public class UserServiceImpl implements UserService {
 					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
-				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				;
+//				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
+//						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);

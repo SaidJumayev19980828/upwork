@@ -110,13 +110,25 @@ public interface ProductService {
   List<Long> getVariantsWithFeature(ProductFeaturesEntity feature);
 
 
-ProductUpdateResponse updateProductV2(NewProductFlowDTO productJson, @Valid MultipartFile cover, @Valid MultipartFile []img) throws BusinessException, JsonMappingException, JsonProcessingException;
 
-VariantUpdateResponse updateVariantV2(@Valid VariantUpdateDTO variant, @Valid MultipartFile [] imgs) throws BusinessException;
-
+  public VariantUpdateResponse updateVariantV2(
+          VariantUpdateDTO variant,
+          MultipartFile[] imgs,
+          Integer[] uploadedImagePriorities,
+          List<Map<String, Long>> updatedImages,
+          Long[] deletedImages
+  ) throws BusinessException ;
 ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
    ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
+
+  public ProductUpdateResponse updateProductVersion2(
+          NewProductFlowDTO productJson,
+          MultipartFile[] imgs,
+          Integer[] uploadedImagePriorities,
+          List<Map<String, Long>> updatedImages,
+          Long[] deletedImages
+  ) throws BusinessException, JsonMappingException, JsonProcessingException;
 
 
   ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean b);

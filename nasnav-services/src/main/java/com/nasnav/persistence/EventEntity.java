@@ -9,7 +9,9 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Table(name = "events")
 @Entity
@@ -36,11 +38,12 @@ public class EventEntity {
     @ToString.Exclude
     private OrganizationEntity organization;
 
-    @ManyToOne
-    @JoinColumn(name = "influencer_id")
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private InfluencerEntity influencer;
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @JoinTable(name = "event_influencers"
+            ,joinColumns = {@JoinColumn(name="event_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="influencer_id")})
+    private Set<InfluencerEntity> influencers;
+
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
     @ToString.Exclude
@@ -59,6 +62,9 @@ public class EventEntity {
     @Column(name = "status")
     private Integer status;
 
+    @Column(name = "coin")
+    private Long coin;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
@@ -73,5 +79,22 @@ public class EventEntity {
     @Exclude
     @lombok.ToString.Exclude
     private EventRoomTemplateEntity roomTemplate;
-    
-}
+
+
+    public void addInfluencer(InfluencerEntity influencer) {
+        if (influencer != null) {
+            if (getInfluencers() == null)
+                setInfluencers(new HashSet<>());
+            if (!getInfluencers().contains(influencer))
+                getInfluencers().add(influencer);
+             }
+        }
+
+
+
+    }
+
+
+
+
+

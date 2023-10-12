@@ -123,7 +123,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
                 .put("userName",getUser().getName())
                 .put("Reserve Availability with",availability.getShop())
                 .toString();
-        notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
+    notificationService.sendMessageToOrganizationEmplyees(availabilityEntity.get().getOrganization().getId(), new PushMessageDTO<>("queue Updates",response, NotificationType.RESERVE_AVAILABILITY));
         return availability;
     }
 
@@ -166,10 +166,11 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         }
         return null;
     }
-
     @Override
     public Set<UserRepresentationObject> getAllEmployeesWithOrWithoutSlotsByOrg(Long orgId, boolean availableSlots) {
         OrganizationEntity org = organizationRepository.findById(orgId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,ORG$NOTFOUND,orgId));
+
+
         List<AvailabilityEntity> freeSlots = availabilityRepository.getAllFreeAvailabilitiesByOrganization(org);
         if(availableSlots){
             return freeSlots.stream().map(o -> o.getEmployeeUser().getRepresentation()).collect(Collectors.toSet());
