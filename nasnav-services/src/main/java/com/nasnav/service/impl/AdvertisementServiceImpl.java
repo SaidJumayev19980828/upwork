@@ -95,6 +95,24 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         return advertisementRepository.findAdvertisementProducts(advertisementId, productsInPost);
     }
 
+    @Transactional
+    @Override
+    public void update(AdvertisementDTO advertisementDTO) {
+        advertisementRepository.findById(advertisementDTO.getId())
+                .ifPresent(e -> {
+                    AdvertisementEntity advertisement = advertisementMapper.toEntity(advertisementDTO);
+                    if (advertisementDTO.getOrgId() != null) {
+                        advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
+                    }
+                    Assert.notNull(advertisement.getOrganization(), "organization cant be null");
+                    Assert.notNull(advertisement.getOrganization().getBankAccount(), "organization should have a bank account");
+                    advertisementProductService.deleteAll(advertisement.getId());
+                    advertisement.setCreationDate(e.getCreationDate());
+                    AdvertisementEntity advertisementEntity = advertisementRepository.save(advertisement);
+                    advertisementProductService.save(advertisementEntity, advertisementDTO.getProducts());
+        });
+    }
+
     private AdvertisementDTO toDto(AdvertisementEntity entity) {
         AdvertisementDTO dto = advertisementMapper.toDto(entity);
         dto.setProducts(advertisementProductCollectionMapper.toDto(entity.getAdvertisementProducts()).stream().map(itx -> {

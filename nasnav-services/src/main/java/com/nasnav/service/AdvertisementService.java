@@ -18,4 +18,6 @@ public interface AdvertisementService {
     void deleteAdvertisementById(Long id);
 
     List<AdvertisementProductEntity> findAdvertisementProducts(Long advertisementId, Set<Long> productsInPost);
+
+    void update(AdvertisementDTO advertisementDTO);
 }

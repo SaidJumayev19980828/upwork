@@ -40,6 +40,11 @@ public class AdvertisementController {
     @PostMapping("")
     public AdvertisementDTO createAdvertisement(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @Validated @RequestBody AdvertisementDTO advertisementDTO) {
-        return advertisementService.create(advertisementDTO);
+        if (advertisementDTO.getId() == null) {
+            return advertisementService.create(advertisementDTO);
+        } else {
+            advertisementService.update(advertisementDTO);
+            return advertisementService.findAdvertisementById(advertisementDTO.getId()).orElse(null);
+        }
     }
 }

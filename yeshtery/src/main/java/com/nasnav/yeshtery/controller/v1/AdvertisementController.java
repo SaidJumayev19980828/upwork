@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery.controller.v1;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.response.AdvertisementDTO;
 import com.nasnav.service.AdvertisementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,9 +10,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/advertisement")
+@RequestMapping(AdvertisementController.API_PATH)
 @CrossOrigin("*")
 public class AdvertisementController {
+    static final String API_PATH = YeshteryConstants.API_PATH + "/advertisement";
     @Autowired
     private AdvertisementService advertisementService;
 
@@ -39,6 +41,11 @@ public class AdvertisementController {
     @PostMapping("")
     public AdvertisementDTO createAdvertisement(@RequestHeader(name = "User-Token", required = false) String token,
                                                 @Validated @RequestBody AdvertisementDTO advertisementDTO) {
-        return advertisementService.create(advertisementDTO);
+        if (advertisementDTO.getId() == null) {
+            return advertisementService.create(advertisementDTO);
+        } else {
+            advertisementService.update(advertisementDTO);
+            return advertisementService.findAdvertisementById(advertisementDTO.getId()).orElse(null);
+        }
     }
 }

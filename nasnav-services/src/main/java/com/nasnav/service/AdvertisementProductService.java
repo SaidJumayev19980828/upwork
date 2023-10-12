@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AdvertisementProductService {
     List<AdvertisementProductDTO> save(AdvertisementEntity advertisement, List<AdvertisementProductDTO> advertisementProductDTOS);
+
+    void deleteAll(Long advertisementId);
 }
