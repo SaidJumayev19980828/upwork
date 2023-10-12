@@ -121,6 +121,96 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
 
     }
 
+
+    @Test
+    void testUpdateAdvertisement() {
+        String createRequest =
+                json()
+                        .put("banner_url", "bannerUrl")
+                        .put("from_date", LocalDateTime.now().minusYears(10).toString())
+                        .put("to_date", LocalDateTime.now().plusYears(20).toString())
+                        .put("org_id", 99001)
+                        .put("products",
+                                jsonArray()
+                                        .put(0, json()
+                                                .put("coins", 900)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1001)
+                                        )
+                                        .put(1, json()
+                                                .put("coins", 21213)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1002)
+                                        )
+                                        .put(2, json()
+                                                .put("coins", 80016)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1003)
+                                        )
+                        )
+                        .toString();
+
+        ParameterizedTypeReference<AdvertisementDTO> responseType = new ParameterizedTypeReference<>() {
+        };
+
+        ResponseEntity<AdvertisementDTO> createExchange = template.exchange("/advertisement", HttpMethod.POST, getHttpEntity(createRequest, "1"), responseType);
+        assertThat(createExchange.getStatusCode().value(), equalTo(200));
+        AdvertisementDTO createBody = createExchange.getBody();
+        assertThat(createBody, is(notNullValue()));
+        assertThat(createBody.getProducts(), hasSize(3));
+
+
+        String updateRequest =
+                json()
+                        .put("id", createBody.getId())
+                        .put("banner_url", "bannerUrl")
+                        .put("from_date", LocalDateTime.now().minusYears(10).toString())
+                        .put("to_date", LocalDateTime.now().plusYears(20).toString())
+                        .put("org_id", 99001)
+                        .put("products",
+                                jsonArray()
+                                        .put(0, json()
+                                                .put("coins", 60012)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1001)
+                                        )
+                                        .put(1, json()
+                                                .put("coins", 88771)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1002)
+                                        )
+                                        .put(2, json()
+                                                .put("coins", 992145)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1003)
+                                        )
+                                        .put(3, json()
+                                                .put("coins", 6565)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1003)
+                                        )
+                                        .put(4, json()
+                                                .put("coins", 3232)
+                                                .put("likes", 3000)
+                                                .put("product_id", 1003)
+                                        )
+                        )
+                        .toString();
+
+        ResponseEntity<AdvertisementDTO> updateExchange = template.exchange("/advertisement", HttpMethod.POST, getHttpEntity(updateRequest, "1"), responseType);
+        assertThat(updateExchange.getStatusCode().value(), equalTo(200));
+        AdvertisementDTO updateBody = updateExchange.getBody();
+        assertThat(updateBody, is(notNullValue()));
+        assertThat(updateBody.getProducts(), hasSize(5));
+
+        ResponseEntity<AdvertisementDTO> findExchange = template.exchange("/advertisement/" + createBody.getId(), HttpMethod.GET, getHttpEntity("1"), responseType);
+
+        assertThat(updateExchange.getStatusCode().value(), equalTo(200));
+        AdvertisementDTO findBody = findExchange.getBody();
+        assertThat(findBody, is(notNullValue()));
+        assertThat(updateBody.getProducts(), hasSize(5));
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1005})
     void testFindOneAdvertisement(int advertisementId) {

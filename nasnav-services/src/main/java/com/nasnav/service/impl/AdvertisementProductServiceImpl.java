@@ -52,4 +52,10 @@ public class AdvertisementProductServiceImpl implements AdvertisementProductServ
         }
     }
 
+    @Transactional
+    @Override
+    public void deleteAll(Long advertisementId) {
+        advertisementProductRepository.deleteAllByAdvertisement_Id(advertisementId);
+    }
+
 }
