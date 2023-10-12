@@ -320,9 +320,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     private BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
         HashMap<LoyaltyPointType, BigDecimal> loyaltyPointTypeBigDecimalHashMap = loyaltyTierService.readTierJsonStr(entity.getConstraints());
         BigDecimal coefficient = loyaltyPointTypeBigDecimalHashMap.get(type);
-        if(Objects.isNull(coefficient)){
-            coefficient = loyaltyPointTypeBigDecimalHashMap.get(ORDER_ONLINE);
-        }
+//        if(Objects.isNull(coefficient)){
+//            coefficient = loyaltyPointTypeBigDecimalHashMap.get(ORDER_ONLINE);
+//        }
         return coefficient;
     }
 
@@ -344,17 +344,22 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         BigDecimal coefficient = getTierCoefficientByType(tier, type);
 
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
-        BigDecimal from = constraint.getRatioFrom();
-        BigDecimal to = constraint.getRatioTo();
-        BigDecimal localAmount = ONE;
-        if(Objects.nonNull(constraint.getAmount())){
-            localAmount = constraint.getAmount();
-        }
-
-        if (anyIsNull(from, to, coefficient, localAmount)) {
+        if(Objects.isNull(constraint)){
             logger.warn(ORG$LOY$0002.getValue());
             return BigDecimal.ZERO;
         }
+        BigDecimal from = constraint.getRatioFrom();
+        BigDecimal to = constraint.getRatioTo();
+        BigDecimal localAmount = constraint.getAmount();
+
+        if(Objects.isNull(from) || Objects.isNull(to) || Objects.isNull(localAmount)){
+            logger.warn(ORG$LOY$0002.getValue());
+            return BigDecimal.ZERO;
+        }
+//        if (anyIsNull(from, to, coefficient, localAmount)) {
+//            logger.warn(ORG$LOY$0002.getValue());
+//            return BigDecimal.ZERO;
+//        }
         return localAmount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
     }
 
@@ -585,7 +590,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     private LoyaltyConfigConstraint getConfigConstraint(LoyaltyPointConfigEntity entity, LoyaltyPointType type) {
         HashMap<LoyaltyPointType, LoyaltyConfigConstraint> loyaltyPointTypeLoyaltyConfigConstraintHashMap = readConfigJsonStr(entity.getConstraints());
-        return loyaltyPointTypeLoyaltyConfigConstraintHashMap.getOrDefault(type, loyaltyPointTypeLoyaltyConfigConstraintHashMap.get(ORDER_ONLINE));
+        return loyaltyPointTypeLoyaltyConfigConstraintHashMap.getOrDefault(type, null);
     }
 
     private HashMap<LoyaltyPointType, LoyaltyConfigConstraint> readConfigJsonStr(String jsonStr) {
