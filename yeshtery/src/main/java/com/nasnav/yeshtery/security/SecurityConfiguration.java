@@ -212,6 +212,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf("/v1/loyalty/user_tier"					, GET	, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/code/redeem"					, setOf(CUSTOMER)),
             patternOf("/v1/loyalty/points/code/generate"				, setOf(STORE_MANAGER, STORE_EMPLOYEE)),
+            patternOf("/v1/chat-widget-setting/create",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/chat-widget-setting/publish",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf("/v1/chat-widget-setting/get-unpublished",GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			patternOf("/**")
     );
 
@@ -258,6 +261,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
                         , patternOf("/v1/frontend/setting", GET)
                         ,              patternOf( "/v1/event/all/**"                                , GET)
+                        , patternOf("/v1/chat-widget-setting/get-published", GET)
                         );
 
     AuthenticationProvider provider;

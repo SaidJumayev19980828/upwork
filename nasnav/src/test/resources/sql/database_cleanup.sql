@@ -152,6 +152,7 @@ DELETE FROM public.loyalty_points  where organization_id BETWEEN 99000 AND 99999
 DELETE FROM public.loyalty_tier  where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addons ;
 
+DELETE FROM public.chat_widget_setting;
 DELETE FROM public.organizations ;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
