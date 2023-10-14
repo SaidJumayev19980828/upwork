@@ -75,11 +75,6 @@ public class ShopsEntity implements BaseEntity{
     @lombok.ToString.Exclude
     private Set<ShopThreeSixtyEntity> shop360s;
 
-    @OneToOne(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    @Exclude
-    @lombok.ToString.Exclude
-    private ShopRoomTemplateEntity roomTemplate;
 
 
     @Column(name = "yeshtery_state")

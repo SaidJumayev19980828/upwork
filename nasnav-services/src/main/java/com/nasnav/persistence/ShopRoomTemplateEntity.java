@@ -18,10 +18,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ShopRoomTemplateEntity extends RoomTemplateEntity {
-	@PreRemove
-	private void preRemove() {
-		shop.setRoomTemplate(null);
-	}
 
 	@OneToOne(fetch = FetchType.EAGER, optional = false)
 	@JoinColumn(name = "shop_id", referencedColumnName = "id")

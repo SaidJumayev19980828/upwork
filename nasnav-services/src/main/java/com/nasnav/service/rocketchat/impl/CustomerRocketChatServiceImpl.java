@@ -69,9 +69,7 @@ public class CustomerRocketChatServiceImpl implements CustomerRocketChatService 
 
 		if (tokenEntity.getUser() == null) {
 			tokenEntity.setUser(user);
-			user.setRocketChatTokenEntity(tokenEntity);
 			tokenEntity = rocketChatUserTokenRepository.save(tokenEntity);
-			userRepository.save(user);
 		}
 
 		return tokenEntity;

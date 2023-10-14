@@ -74,12 +74,6 @@ public class EventEntity {
             ,inverseJoinColumns = {@JoinColumn(name="product_id")})
     private List<ProductEntity> products;
 
-    @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    @Exclude
-    @lombok.ToString.Exclude
-    private EventRoomTemplateEntity roomTemplate;
-
 
     public void addInfluencer(InfluencerEntity influencer) {
         if (influencer != null) {
