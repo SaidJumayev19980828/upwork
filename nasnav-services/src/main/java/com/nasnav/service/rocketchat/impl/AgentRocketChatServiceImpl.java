@@ -26,7 +26,7 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 	public Mono<RocketChatAgentTokenDTO> createAgentTokenForCurrentEmployeeCreateAgentIfNeeded() {
 		EmployeeUserEntity employee = (EmployeeUserEntity) securityService.getCurrentUser();
 
-		return agentRepository.findByEmployeeId(employee.getId())
+		return Mono.justOrEmpty(agentRepository.findByEmployeeId(employee.getId()))
 				.switchIfEmpty(Mono.defer(() -> createRocketChatUser(employee)))
 				.doOnNext(this::updateAgentDepartmentIfNeeded)
 				.map(RocketChatEmployeeAgentEntity::getAgentId)

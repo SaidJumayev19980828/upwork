@@ -2,6 +2,8 @@ package com.nasnav.test;
 
 import static org.mockito.ArgumentMatchers.any;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +42,7 @@ class DepartmentRocketChatServiceTest {
 	void returnPDepartmentIdIfFound() {
 		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
-				.thenReturn(Mono.just(departmentEntity));
+				.thenReturn(Optional.of(departmentEntity));
 		Mono<String> departmentIdMono = departmentRocketChatService
 				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization());
 		StepVerifier.create(departmentIdMono)
@@ -52,7 +54,7 @@ class DepartmentRocketChatServiceTest {
 	void createDepartmentIfNotFound() {
 		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
-				.thenReturn(Mono.empty());
+				.thenReturn(Optional.empty());
 		Mockito.when(client.createDepartment(any()))
 				.thenReturn(
 						Mono.just(RocketChatDepartmentDTO.builder()
@@ -71,7 +73,7 @@ class DepartmentRocketChatServiceTest {
 	void createDepartmentRace() {
 		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
-				.thenReturn(Mono.empty());
+				.thenReturn(Optional.empty());
 		Mockito.when(client.createDepartment(any()))
 				.thenReturn(
 						Mono.just(RocketChatDepartmentDTO.builder()

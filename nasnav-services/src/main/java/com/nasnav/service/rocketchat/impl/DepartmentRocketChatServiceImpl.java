@@ -29,7 +29,7 @@ public class DepartmentRocketChatServiceImpl implements DepartmentRocketChatServ
 	@Override
 	@Transactional
 	public Mono<String> getDepartmentIdCreateDepartmentIfNeeded(OrganizationEntity org) {
-		return departmentsRepo.findByOrganizationId(org.getId())
+		return Mono.justOrEmpty(departmentsRepo.findByOrganizationId(org.getId()))
 				.switchIfEmpty(Mono.defer(() -> createDepartment(org)))
 				.map(RocketChatOrganizationDepartmentEntity::getDepartmentId);
 	}
