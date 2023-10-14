@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -18,8 +19,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RocketChatOrganizationDepartmentEntity {
 	@Id
+	@Column(name = "org_id")
 	private Long orgId;
 
+	@Column(name = "department_id")
 	private String departmentId;
 
 	@MapsId

@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -18,8 +19,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RocketChatEmployeeAgentEntity {
 	@Id
+	@Column(name = "employee_id")
 	private Long employeeId;
 	// rocket chat user id is the same as agent id
+	@Column(name = "agent_id")
 	private String agentId;
 
 	@MapsId
