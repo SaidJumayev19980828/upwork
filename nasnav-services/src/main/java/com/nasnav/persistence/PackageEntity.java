@@ -34,6 +34,9 @@ public class PackageEntity extends DefaultBusinessEntity<Long> {
     @Column(name = "period_in_days")
     private Long periodInDays = 0l;
 
+    @Column(name="stripe_price_id")
+    private String stripePriceId;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "package_service"
             ,joinColumns = {@JoinColumn(name="package_id")}

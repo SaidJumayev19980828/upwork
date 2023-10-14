@@ -63,8 +63,8 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 --inserting package
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99001,'test 1','test description',1.5,30,818);
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99002,'test 2','test2 description',1.9,30,819);
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99001,'test 1','test description',1.5,30,818,'price_1NzLNBGR4qGEOW4EItZ5eADp');
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99002,'test 2','test2 description',1.9,30,819,'price_1NzLNBGR4qGEOmsEItZ5eE2p');
 --inserting service
 INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY','THREE_SIXTY','THREE_SIXTY Service');
 INSERT INTO public.service(id,code,name,description) values (99002,'MET_AVERSE','MET_AVERSE','MET_AVERSE Service');

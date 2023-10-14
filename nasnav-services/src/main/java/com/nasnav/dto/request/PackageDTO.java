@@ -15,5 +15,14 @@ public class PackageDTO {
     private BigDecimal price;
     private Integer currencyIso;
     private Long periodInDays;
+    private String stripePriceId;
     private Set<ServiceDTO> services;
+    private CountryDTO country;
+
+
+    @Data
+    @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+    public static class CountryDTO{
+        private String currency;
+    }
 }

@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.PackageDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
@@ -24,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static java.util.stream.Stream.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -45,6 +45,7 @@ public class PackageServiceImpl implements PackageService {
         return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
     }
 
+
     @Override
     public PackageResponse createPackage(PackageDTO json) throws Exception {
         PackageResponse packageResponse = new PackageResponse();
@@ -53,6 +54,10 @@ public class PackageServiceImpl implements PackageService {
         newPackage.setDescription(json.getDescription());
         newPackage.setPrice(json.getPrice());
         newPackage.setPeriodInDays(json.getPeriodInDays());
+        if(StringUtils.isBlankOrNull(json.getStripePriceId())){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$USR$0003);
+        }
+        newPackage.setStripePriceId(json.getStripePriceId());
         CountriesEntity country = countryRepo.findByIsoCode(json.getCurrencyIso());
         if(country == null){
            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,json.getCurrencyIso());
@@ -82,6 +87,10 @@ public class PackageServiceImpl implements PackageService {
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
         entity.setPeriodInDays(dto.getPeriodInDays());
+        if(StringUtils.isBlankOrNull(dto.getStripePriceId())){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$USR$0003);
+        }
+        entity.setStripePriceId(dto.getStripePriceId());
         CountriesEntity country = countryRepo.findByIsoCode(dto.getCurrencyIso());
         if(country == null){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,dto.getCurrencyIso());
@@ -149,6 +158,23 @@ public class PackageServiceImpl implements PackageService {
         }
         //Get Package Registered For the organization
         PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organizationEntity.get()).orElse(null);
+        if(packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null){
+            packageId = packageRegisteredEntity.getPackageEntity().getId();
+        }
+        return packageId;
+    }
+
+
+    @Transactional
+    @Override
+    public Long getPackageIdRegisteredInOrg(OrganizationEntity organization) {
+        Long packageId = null;
+        //Get User Organization
+        if(organization == null){
+            return null;
+        }
+        //Get Package Registered For the organization
+        PackageRegisteredEntity packageRegisteredEntity = packageRegisteredRepository.findByOrganization(organization).orElse(null);
         if(packageRegisteredEntity != null && packageRegisteredEntity.getPackageEntity() != null){
             packageId = packageRegisteredEntity.getPackageEntity().getId();
         }

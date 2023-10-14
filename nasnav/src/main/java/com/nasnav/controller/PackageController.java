@@ -41,8 +41,8 @@ public class PackageController {
     }
 
     @PostMapping(value = "register-package-profile", produces = APPLICATION_JSON_VALUE)
-    public Long registerPackageProfile(@RequestHeader(name = "User-Token", required = false) String token,
+    public void registerPackageProfile(@RequestHeader(name = "User-Token", required = false) String token,
                                        @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
-        return packageService.registerPackageProfile(packageRegisteredByUserDTO);
+        packageService.registerPackageProfile(packageRegisteredByUserDTO);
     }
 }

@@ -16,4 +16,6 @@ public interface PackageRepository extends JpaRepository<PackageEntity, Long> {
             "join PackageRegisteredEntity pr on  p.id = pr.packageEntity.id " +
             "where pr.organization = :organizationEntity")
     Optional<PackageEntity> findPackageByPackageRegisteredOrganization(OrganizationEntity organizationEntity);
+
+    Optional<PackageEntity> findByStripePriceId( String stripePriceId);
 }

@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -23,14 +25,18 @@ import java.util.Date;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 public class SubscriptionDTO {
     private Long id;
     @Positive(message = "package_id can't be null or 0")
     @JsonProperty("package_id")
     private Long packageId;
-
+    private String packageName;
     private String type;
+
+    private String currency;
 
     private BigDecimal paidAmount;
 

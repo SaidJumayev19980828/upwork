@@ -1,13 +1,16 @@
 package com.nasnav.test;
 
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.PackageRegisteredRepository;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.ServiceRepository;
 import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.PackageResponse;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PackageEntity;
 import com.nasnav.persistence.PackageRegisteredEntity;
 import com.nasnav.persistence.ServiceEntity;
+import com.nasnav.service.PackageService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import org.junit.Assert;
@@ -44,6 +47,12 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     private ServiceRepository serviceRepository;
 
     @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private PackageService packageService;
+
+    @Autowired
     private TestRestTemplate template;
 
     @Test
@@ -61,6 +70,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     public void createPackageTest() {
         String requestBody = json().put("name", "first name").put("description", "description test").put("price", 1.5).put("period_in_days", 30).put("currency_iso", 818)
                 .put("services", servicesExample())
+                .put("stripe_price_id","price_1NzLNBGR4qGEOW4EItZ5eE2p")
                 .toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
         ResponseEntity<PackageResponse> response = template.postForEntity("/package/create", json, PackageResponse.class);
@@ -69,7 +79,19 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
         assertEquals(packageEntity.getName(), "first name");
         assertEquals(packageEntity.getDescription(), "description test");
         assertTrue(packageEntity.getCountry().getIsoCode().equals(818));
+        assertEquals("price_1NzLNBGR4qGEOW4EItZ5eE2p", packageEntity.getStripePriceId());
         validateServices(packageEntity.getId(),servicesExample());
+    }
+
+
+    @Test
+    public void createPackageWithMissingStripePriceIdTest() {
+        String requestBody = json().put("name", "first name").put("description", "description test").put("price", 1.5).put("period_in_days", 30).put("currency_iso", 818)
+                .put("services", servicesExample())
+                .toString();
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<PackageResponse> response = template.postForEntity("/package/create", json, PackageResponse.class);
+        assertEquals(406, response.getStatusCode().value());
     }
 
     private Set<ServiceDTO> servicesExample(){
@@ -92,6 +114,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     public void createPackageWrongCurrencyTest() {
         String requestBody = json().put("name", "first name ").put("description", "description tes ").put("price", 1.5).put("currency_iso", 123464)
                 .put("services", servicesExample())
+                .put("stripe_price_id","price_1NzLNBGR4qGEOW4EItZ5eE2p")
                 .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
@@ -103,6 +126,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     public void updatePackageTest() {
         String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("period_in_days", 40).put("currency_iso", 819)
                 .put("services", servicesExample())
+                .put("stripe_price_id","price_1NzLNBGR4qGEOW4EItZ5eE2p")
                 .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
@@ -111,7 +135,19 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
         PackageEntity packageEntity = packageRepository.findById(99001L).get();
         assertEquals("updated name ", packageEntity.getName());
         assertEquals("description updated ", packageEntity.getDescription());
+        assertEquals("price_1NzLNBGR4qGEOW4EItZ5eE2p", packageEntity.getStripePriceId());
         validateServices(99001L,servicesExample());
+    }
+
+    @Test
+    public void updatePackageWithMissingStripePriceIdTest() {
+        String requestBody = json().put("name", "updated name ").put("description", "description updated ").put("price", 2000).put("period_in_days", 40).put("currency_iso", 819)
+                .put("services", servicesExample())
+                .toString();
+
+        HttpEntity<?> json = getHttpEntity(requestBody, "abcdefg");
+        ResponseEntity<PackageResponse> response = template.exchange("/package/" + 99001L, PUT, json, PackageResponse.class);
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -144,33 +180,32 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    public void testCompleteRegister() {
+    public void updateRegisteredPackageTest() {
         String requestBody = json().put("package_id", 99001L).toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "123456");
-        ResponseEntity<String> response = template.postForEntity("/package/register-package-profile", json, String.class);
+        ResponseEntity response = template.postForEntity("/package/register-package-profile", json, Void.class);
         assertEquals(200, response.getStatusCode().value());
-        Long registrationId = Long.parseLong(response.getBody());
-        PackageRegisteredEntity registation = packageRegisteredRepository.findById(registrationId).get();
+        OrganizationEntity org = organizationRepository.findById(99002l).get();
+        PackageRegisteredEntity registation = packageRegisteredRepository.findByOrganization(org).get();
         assertEquals(99002L, registation.getOrganization().getId().longValue());
         assertEquals(99001L, registation.getPackageEntity().getId().longValue());
         assertEquals(70L, registation.getCreatorEmployee().getId().longValue());
 
         requestBody = json().put("package_id", 99002L).toString();
         json = getHttpEntity(requestBody, "123456");
-        response = template.postForEntity("/package/register-package-profile", json, String.class);
+        response = template.postForEntity("/package/register-package-profile", json, Void.class);
         assertEquals(200, response.getStatusCode().value());
-        registrationId = Long.parseLong(response.getBody());
-        registation = packageRegisteredRepository.findById(registrationId).get();
+        registation = packageRegisteredRepository.findByOrganization(org).get();
         assertEquals(99002L, registation.getOrganization().getId().longValue());
         assertEquals(99002L, registation.getPackageEntity().getId().longValue());
         assertEquals(70L, registation.getCreatorEmployee().getId().longValue());
     }
 
     @Test
-    public void completeProfileNotValidPackageTest() {
+    public void updateRegisteredPackageNotValidPackageTest() {
         String requestBody = json().put("package_id", 123456L).toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "123456");
-        ResponseEntity<String> response = template.postForEntity("/package/register-package-profile", json, String.class);
+        ResponseEntity response = template.postForEntity("/package/register-package-profile", json, Void.class);
         assertEquals(404, response.getStatusCode().value());
     }
 }
