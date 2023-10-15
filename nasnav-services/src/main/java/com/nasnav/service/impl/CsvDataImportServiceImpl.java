@@ -6,6 +6,8 @@ import static java.util.stream.Collectors.toList;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -95,12 +97,28 @@ public class CsvDataImportServiceImpl extends AbstractCsvExcelDataImportService 
 			parser.parse(in, encoding);
 		}catch(Exception e) {
 			logger.error(e,e);
+			if (e instanceof DataProcessingException) {
+				var ex = (DataProcessingException) e;
+				String message = ex.getMessage();
+				String missingHeaders = extractMissingHeaders(message);
+				context.logNewErrorForMissingHeaders(missingHeaders);
+			}
 			throw new ImportProductException(e, context); 
 		}		
 		
 		if(!context.isSuccess()) {
 			throw new ImportProductException(context);
 		}
+	}
+
+	private String extractMissingHeaders(String exceptionMessage) {
+		String missingHeaders = "";
+		Pattern pattern = Pattern.compile("\\[(.*?)]");
+		Matcher matcher = pattern.matcher(exceptionMessage);
+		if(matcher.find())
+			return matcher.group(1);
+
+		return missingHeaders;
 	}
 
 	private CsvParserSettings createParsingSettings(BeanListProcessor<CsvRow> rowProcessor,
