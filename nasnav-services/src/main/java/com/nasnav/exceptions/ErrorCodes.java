@@ -239,6 +239,7 @@ public enum ErrorCodes {
 
 
 
+	,STR$CAL$0003("Stripe Failed To Create Customer Using Email : [%s]")
 
 	,BC$PRI$0001("Failed To Fetch Currency Price")
 

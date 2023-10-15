@@ -81,3 +81,24 @@ ALTER TABLE public.organizations ADD column owner_id BIGINT NULL;
 ALTER TABLE public.organizations ADD CONSTRAINT organizations_owner_id_fk FOREIGN KEY (owner_id) REFERENCES public.employee_users(id) ON DELETE SET NULL;
 
 
+--comment: create stripe customer table
+
+CREATE SEQUENCE IF NOT EXISTS public.stripe_customer_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
+ALTER SEQUENCE public.stripe_customer_seq
+    OWNER TO nasnav;
+
+CREATE TABLE IF NOT EXISTS public.stripe_customer
+(
+    id bigint NOT NULL DEFAULT nextval('stripe_customer_seq'::regclass),
+    customer_id text,
+    org_id BIGINT,
+    CONSTRAINT stripe_customer_pkey PRIMARY KEY (id),
+    CONSTRAINT stripe_customer_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
+);
+
