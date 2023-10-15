@@ -11,4 +11,10 @@ import java.util.Optional;
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, Long> {
 
     Optional<SubscriptionEntity> findFirstByOrganizationOrderByExpirationDateDesc(OrganizationEntity organization);
+    List<SubscriptionEntity> findByOrganizationAndStatusNotIn(OrganizationEntity organization,List<String> excludedStatues);
+
+    Optional<SubscriptionEntity> findByStripeSubscriptionId(String stripeSubscriptionId);
+
+    List<SubscriptionEntity> findByOrganizationAndTypeAndStatusNotIn(OrganizationEntity organizationEntity,String type,List<String> excludedStatues);
+
 }

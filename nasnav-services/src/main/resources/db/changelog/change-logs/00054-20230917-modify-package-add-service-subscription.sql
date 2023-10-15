@@ -65,12 +65,13 @@ CREATE TABLE IF NOT EXISTS public.subscription
 (
     id bigint NOT NULL DEFAULT nextval('subscription_seq'::regclass),
     type text,
-    payment_date timestamp  NOT NULL,
-    start_date timestamp without time zone NOT NULL,
-    expiration_date timestamp without time zone NOT NULL,
+    payment_date timestamp,
+    start_date timestamp without time zone,
+    expiration_date timestamp without time zone,
     paid_amount numeric(10,2) DEFAULT 0,
     package_id BIGINT,
     org_id BIGINT,
+    status text NOT NULL,
     CONSTRAINT subscription_pkey PRIMARY KEY (id),
     CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
     CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE

@@ -227,11 +227,18 @@ public enum ErrorCodes {
 
 	,PA$USR$0001("Package not deleted because related user!")
 	,PA$USR$0002("No Package found with ID: [%d]")
+	,PA$USR$0003("Stripe Price Id Is Missing")
 	,PA$CUR$0002("Currency Not found with iso: [%d]")
 	,PA$SRV$0001("No Service Exist with Code : [%s]")
 
-	,ORG$SUB$0001("No Package Registered In Organization with ID:[%d]")
+
+	,ORG$SUB$0001("No Package Registered In Organization")
 	,ORG$SUB$0002("Unable to get Currency From Package")
+	,ORG$SUB$0004("Organization Owner User Is Not Found")
+	,ORG$SUB$0005("Organization Already Have Subscription")
+
+
+
 
 	,BC$PRI$0001("Failed To Fetch Currency Price")
 

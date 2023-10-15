@@ -76,10 +76,10 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 --inserting package
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99001,'test 1','test description',1500,30,818);
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99002,'test 2','test2 description',1900,30,819);
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99003,'test 3','package with wrong currency',1.9,30,818181);
-INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso) values (99004,'test 4','package with missing currency',1.9,30,null);
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99001,'test 1','test description',1500,30,818,'price_1NzLNBAV4qGEOW4EItZ5eE2p');
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99002,'test 2','test2 description',1900,30,819,'price_1NzLNBGCDqGEOW4EItZ5eE2p');
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99003,'test 3','package with wrong currency',1.9,30,818181,'price_1NzEFNBGR4qGEOW4EItZ5eE2p');
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99004,'test 4','package with missing currency',1.9,30,null,'price_1NzLNGHR4qGEOW4EItZ5eE2p');
 
 --inserting service
 INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY','THREE_SIXTY','THREE_SIXTY Service');
@@ -107,5 +107,8 @@ values (10,now(),99002,null,'address',40000,null,now(),false);
 INSERT INTO public.bank_accounts(id,created_At,org_id,user_id,wallet_Address,opening_Balance,opening_Balance_Activity_id,opening_Balance_Date,locked)
 values (11,now(),99003,null,'address',0,null,now(),false);
 
-INSERT INTO public.subscription(id, type, payment_date, start_date, expiration_date, paid_amount, package_id, org_id)
-values (10000011,'wert','2023-10-02 22:19:50.321129','2023-10-02 00:00:00',	'2023-11-01 00:00:00' , 3455.00,99002,99004)
+INSERT INTO public.subscription(id, type, payment_date, start_date, expiration_date, paid_amount, package_id, org_id,status,stripe_subscription_id)
+values (10000011,'wert','2023-10-02 22:19:50.321129','2023-10-02 00:00:00',	'4023-10-02 00:00:00' , 3455.00,99002,99004,'active', null);
+
+INSERT INTO public.subscription(id, type, payment_date, start_date, expiration_date, paid_amount, package_id, org_id,status,stripe_subscription_id)
+values (10000012,'wert','2023-10-02 22:19:50.321129','2022-10-02 00:00:00',	'2022-10-02 00:00:00' , 3455.00,99002,99002,'active', null);

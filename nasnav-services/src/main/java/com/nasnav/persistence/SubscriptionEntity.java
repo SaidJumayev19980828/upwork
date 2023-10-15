@@ -2,8 +2,6 @@ package com.nasnav.persistence;
 
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -40,4 +38,10 @@ public class SubscriptionEntity extends DefaultBusinessEntity<Long> implements S
     @ManyToOne(optional = false)
     @JoinColumn(name = "org_id", referencedColumnName = "id")
     private OrganizationEntity organization;
+
+    @Column(name="status")
+    private String status;
+
+    @Column(name="stripe_subscription_id")
+    private String stripeSubscriptionId;
 }

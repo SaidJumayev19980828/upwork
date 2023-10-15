@@ -18,6 +18,9 @@ import java.util.Date;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @NoArgsConstructor
 public class SubscriptionInfoDTO {
+    //Has Subscription Not(Canceled or Expired)
     private boolean isSubscribed;
-    private Date expirationDate;;
+    private String type;
+    private String status;
+    private Date expirationDate;
 }
