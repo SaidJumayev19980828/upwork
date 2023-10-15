@@ -16,7 +16,8 @@ public class Error{
 	private Integer rowNum;
 	private String message;
 	private String stackTrace;
-	
+	private String errorCode;
+
 	public Error(Throwable exception, String data, Integer rowNum) {
 		this.data = data;
 		this.rowNum = rowNum;
