@@ -96,6 +96,15 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private PackageRegisteredEntity packageRegistration;
 
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private EmployeeUserEntity owner;
+
+
     @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude

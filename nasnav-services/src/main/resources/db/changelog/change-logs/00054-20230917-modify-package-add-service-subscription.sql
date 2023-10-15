@@ -76,4 +76,8 @@ CREATE TABLE IF NOT EXISTS public.subscription
     CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
     CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
 );
+--comment: Add Owner To Organization Table
+ALTER TABLE public.organizations ADD column owner_id BIGINT NULL;
+ALTER TABLE public.organizations ADD CONSTRAINT organizations_owner_id_fk FOREIGN KEY (owner_id) REFERENCES public.employee_users(id) ON DELETE SET NULL;
+
 
