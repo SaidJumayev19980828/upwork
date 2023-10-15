@@ -156,6 +156,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/sub_areas"								, setOf(ORGANIZATION_ADMIN)),
 						patternOf("/subscription/info"						, HttpMethod.GET ,getNonCustomersRoles()),
 						patternOf("/subscription/wert/createSubscription"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf("/subscription/stripe/createSubscription"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/mail/cart/abandoned"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/mail/wishlist/stock"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -270,7 +271,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
 						, patternOf("/advertisement", HttpMethod.GET)
-                 );
+						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
+
+				);
 
     AuthenticationProvider provider;
 

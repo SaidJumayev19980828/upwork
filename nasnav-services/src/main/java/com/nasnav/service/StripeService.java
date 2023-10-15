@@ -12,5 +12,12 @@ public interface StripeService {
 
     String createCustomer(String name , String email);
 
-    
+    StripeSubscriptionPendingDTO createSubscription(String stripePriceId , String customerId);
+
+
+    Subscription getSubscriptionFromWebhookEvent(Event event);
+
+    Event verifyAndGetEventWebhook(String signatureHeader , String body);
+
+    PackageEntity getPackageByStripeSubscription(Subscription subscription);
 }

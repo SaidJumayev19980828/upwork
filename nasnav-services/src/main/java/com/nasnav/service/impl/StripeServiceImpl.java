@@ -73,4 +73,91 @@ public class StripeServiceImpl implements StripeService {
 
 
 
+    public StripeSubscriptionPendingDTO createSubscription(String stripePriceId , String customerId){
+        StripeSubscriptionPendingDTO stripeSubscriptionPendingDTO = null;
+        try {
+            SubscriptionCreateParams.PaymentSettings paymentSettings =
+                    SubscriptionCreateParams.PaymentSettings
+                            .builder()
+                            .setSaveDefaultPaymentMethod(SubscriptionCreateParams.PaymentSettings.SaveDefaultPaymentMethod.ON_SUBSCRIPTION)
+                            .build();
+
+            SubscriptionCreateParams subCreateParams = SubscriptionCreateParams
+                    .builder()
+                    .setCustomer(customerId)
+                    .addItem(
+                            SubscriptionCreateParams
+                                    .Item.builder()
+                                    .setPrice(stripePriceId)
+                                    .build()
+                    )
+                    .setPaymentSettings(paymentSettings)
+                    .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
+                    .addAllExpand(Arrays.asList("latest_invoice.payment_intent", "pending_setup_intent"))
+                    .build();
+
+            Subscription subscription = Subscription.create(subCreateParams);
+            stripeSubscriptionPendingDTO = new StripeSubscriptionPendingDTO();
+            if (subscription.getPendingSetupIntentObject() != null) {
+                stripeSubscriptionPendingDTO.setType("setup");
+                stripeSubscriptionPendingDTO.setClientSecret(subscription.getPendingSetupIntentObject().getClientSecret());
+            }
+            else {
+                stripeSubscriptionPendingDTO.setType("payment");
+                stripeSubscriptionPendingDTO.setClientSecret( subscription.getLatestInvoiceObject().getPaymentIntentObject().getClientSecret());
+            }
+
+        } catch (StripeException e) {
+            stripeLogger.error("Failed To Create Stripe Subscription :" + e.getMessage());
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0004);
+        }
+        return stripeSubscriptionPendingDTO;
+    }
+
+
+    @Override
+    public Subscription getSubscriptionFromWebhookEvent(Event event){
+        Subscription subscription= (Subscription) event.getDataObjectDeserializer().getObject().get();
+        System.out.println(subscription.getStatus());
+        System.out.println(subscription.getStartDate());
+        System.out.println(subscription.getStartDate());
+//        System.out.println(subscription.getStartDate());
+        return subscription;
+
+
+    }
+
+
+
+
+
+
+
+    @Override
+    public Event verifyAndGetEventWebhook(String signatureHeader , String body){
+        Event event = null;
+        try {
+            event = Webhook.constructEvent(body, signatureHeader, webhookSecret);
+        } catch (Exception e) {
+            // Invalid payload
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0001);
+        }
+        return event;
+
+    }
+
+
+
+    public PackageEntity getPackageByStripeSubscription(Subscription subscription){
+        PackageEntity packageEntity = null;
+        try {
+            List<SubscriptionItem> subscriptionItemList = subscription.getItems().getData();
+            SubscriptionItem subscriptionItem = subscriptionItemList.get(0);
+            String priceId = subscriptionItem.getPrice().getId();
+            packageEntity = packageRepository.findByStripePriceId(priceId).get();
+        }catch (Exception ex){
+            throw new RuntimeBusinessException(NOT_FOUND, STR$WH$0003);
+        }
+        return packageEntity;
+    }
 }

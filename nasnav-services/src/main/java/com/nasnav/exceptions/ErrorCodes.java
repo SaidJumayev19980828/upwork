@@ -240,6 +240,13 @@ public enum ErrorCodes {
 
 
 	,STR$CAL$0003("Stripe Failed To Create Customer Using Email : [%s]")
+	,STR$CAL$0004("Stripe Failed To Create Subscription")
+	,STR$WH$0001("Stripe Webhook is not valid")
+	,STR$WH$0002("Stripe Webhook : Failed To get Organization")
+	,STR$WH$0003("Stripe Webhook : Failed To get subscribed Package")
+	,STR$WH$0004("Stripe Webhook : Subscription Not Found")
+
+
 
 	,BC$PRI$0001("Failed To Fetch Currency Price")
 

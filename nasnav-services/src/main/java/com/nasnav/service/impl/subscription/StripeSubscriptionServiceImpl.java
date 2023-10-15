@@ -105,7 +105,114 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
         return stripeSubscriptionDTO;
     }
 
-    
+    public void handleStripeSubscriptionCreated(Event event) throws RuntimeBusinessException {
+        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
+        //check Exists in database
+        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+        if(!subscriptionEntityOptional.isPresent()){
+            //create
+            createSubscription(subscription);
+        }
+
+    }
+
+    public void handleStripeSubscriptionUpdated(Event event) throws RuntimeBusinessException {
+        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
+        //check Exists in database
+        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+        if(subscriptionEntityOptional.isPresent()){
+            //update
+            updateSubscription(subscription);
+        }else{
+            //create
+            createSubscription(subscription);
+        }
+
+    }
+
+    public void handleStripeSubscriptionDeleted(Event event) throws RuntimeBusinessException {
+        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
+        //check Exists in database
+        SubscriptionEntity subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, STR$WH$0004)
+        );
+        //update
+        updateSubscription(subscription);
+    }
+    private void createSubscription(Subscription subscription){
+
+        String customerId = subscription.getCustomer();
+        OrganizationEntity organization = stripeCustomerRepository.findByCustomerId(customerId).orElseThrow(
+                ()-> new RuntimeBusinessException(NOT_FOUND, STR$WH$0002)).getOrganization();
+
+
+        PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
+        //Get Start Date
+        Long startDateMillis = (subscription.getStartDate() != null)? subscription.getStartDate() : subscription.getTrialStart();
+        Date startDate = startDateMillis == null ? new Date() : new Date(TimeUnit.SECONDS.toMillis(startDateMillis));
+
+
+        SubscriptionEntity subscriptionEntity = new SubscriptionEntity();
+        subscriptionEntity.setType(SubscriptionMethod.STRIPE.getValue());
+        subscriptionEntity.setPaidAmount(packageEntity.getPrice());
+        subscriptionEntity.setStartDate(startDate);
+        subscriptionEntity.setPackageEntity(packageEntity);
+        subscriptionEntity.setOrganization(organization);
+        subscriptionEntity.setStripeSubscriptionId(subscription.getId());
+        subscriptionEntity.setStatus(subscription.getStatus());
+        subscriptionRepository.save(subscriptionEntity);
+
+    }
+
+    public void updateSubscription(Subscription subscription){
+
+        PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
+        //Get Start Date
+//        Long startDateMillis = (subscription.getStartDate() != null)? subscription.getStartDate() : subscription.getTrialStart();
+//        Date startDate = startDateMillis == null ? new Date() : new Date(TimeUnit.SECONDS.toMillis(startDateMillis));
+        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+        SubscriptionEntity subscriptionEntity = subscriptionEntityOptional.get();
+        subscriptionEntity.setPaidAmount(packageEntity.getPrice());
+//        subscriptionEntity.setStartDate(startDate);
+        subscriptionEntity.setPackageEntity(packageEntity);;
+        subscriptionEntity.setStatus(subscription.getStatus());
+        subscriptionRepository.save(subscriptionEntity);
+
+    }
+
+    public SubscriptionEntity getCurrentStripeSubscription(){
+        SubscriptionEntity currentSubscription = null;
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        List<SubscriptionEntity> subscriptionEntities = subscriptionRepository.findByOrganizationAndTypeAndStatusNotIn(org,SubscriptionMethod.STRIPE.getValue(),List.of(SubscriptionStatus.CANCELED.getValue(),SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()));
+        Optional<SubscriptionEntity> activeSubscription = subscriptionEntities.stream().filter(subscriptionEntity -> subscriptionEntity.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())).findFirst();
+        if(activeSubscription.isPresent()){
+            currentSubscription = activeSubscription.get();
+        }else{
+            Optional<SubscriptionEntity> pendingSubscription = subscriptionEntities.stream().filter(subscriptionEntity -> !subscriptionEntity.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())).findFirst();
+            if(pendingSubscription.isPresent()){
+                currentSubscription = pendingSubscription.get();
+            }
+        }
+        return currentSubscription;
+    }
+
+
+
+
+    @Override
+    public SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
+        super.subscribe(subscriptionDTO);
+        StripeSubscriptionDTO stripeSubscriptionDTO = new StripeSubscriptionDTO();
+        stripeSubscriptionDTO.setStripeSubscriptionPendingDTO(callStripeCreateSubscription());
+        return stripeSubscriptionDTO;
+    }
+
+    private StripeSubscriptionPendingDTO callStripeCreateSubscription() throws RuntimeBusinessException {
+        StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
+        //Create Subscription
+        StripeSubscriptionPendingDTO stripeSubscriptionPendingDTO = stripeService.createSubscription( stripeSubscriptionDTO.getStripePriceId() , getOrCreateStripeCustomer());
+        return stripeSubscriptionPendingDTO;
+    }
 
 
 

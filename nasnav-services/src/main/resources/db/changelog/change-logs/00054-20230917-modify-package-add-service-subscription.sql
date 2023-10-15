@@ -6,6 +6,7 @@
 
 ALTER TABLE public.package ADD COLUMN period_in_days bigint;
 ALTER TABLE public.package ADD COLUMN currency_iso Integer;
+ALTER TABLE public.package ADD COLUMN stripe_price_id text NOT NULL ;
 ALTER TABLE public.package ADD CONSTRAINT package_currency_iso_fk FOREIGN KEY (currency_iso) REFERENCES public.countries(iso_code);
 
 --comment: add constraint to package_registered
@@ -72,6 +73,7 @@ CREATE TABLE IF NOT EXISTS public.subscription
     package_id BIGINT,
     org_id BIGINT,
     status text NOT NULL,
+    stripe_subscription_id text,
     CONSTRAINT subscription_pkey PRIMARY KEY (id),
     CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
     CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
