@@ -4,9 +4,6 @@ import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
-import com.nasnav.dto.request.PackageRegisteredByUserDTO;
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
-import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.enumerations.SubscriptionStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -20,7 +17,6 @@ import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -46,9 +42,14 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
 
     @Transactional
     public SubscriptionInfoDTO getSubscriptionInfo() throws RuntimeBusinessException{
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        return getSubscriptionInfo(org);
+    }
+
+    @Transactional
+    public SubscriptionInfoDTO getSubscriptionInfo(OrganizationEntity org) throws RuntimeBusinessException{
         SubscriptionInfoDTO subscriptionInfoDTO = new SubscriptionInfoDTO();
         subscriptionInfoDTO.setSubscribed(false);
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
         List<SubscriptionEntity> subscriptionEntityList = subscriptionRepository.
                 findByOrganizationAndStatusNotIn(org,
                         List.of(
@@ -64,6 +65,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
                 subscriptionInfoDTO.setType(subscriptionEntity.getType());
                 subscriptionInfoDTO.setExpirationDate(subscriptionEntity.getExpirationDate());
                 subscriptionInfoDTO.setStatus(subscriptionEntity.getStatus());
+                subscriptionInfoDTO.setSubscriptionEntityId(subscriptionEntity.getId());
             }else{
                 subscriptionEntity.setStatus("canceled");
                 subscriptionRepository.save(subscriptionEntity);

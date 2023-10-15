@@ -42,7 +42,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     public void wertSubscriptionSuccessTest() {
         registerPackage("123456","99002");
         HttpEntity<?> json = getHttpEntity("","123456");
-        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/createSubscription", json, SubscriptionDTO.class);
+        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/create", json, SubscriptionDTO.class);
         assertEquals(200, response.getStatusCode().value());
         SubscriptionEntity subscription = subscriptionRepository.findById(response.getBody().getId()).get();
         assertEquals(subscription.getType(), SubscriptionMethod.WERT.getValue());
@@ -58,7 +58,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     public void wertSubscriptionWithPackageMissingCurrencyTest() {
         registerPackage("123456","99004");
         HttpEntity<?> json = getHttpEntity("","123456");
-        ResponseEntity response = template.postForEntity("/subscription/wert/createSubscription", json, Void.class);
+        ResponseEntity response = template.postForEntity("/subscription/wert/create", json, Void.class);
         assertEquals(500, response.getStatusCode().value());
     }
 
@@ -66,7 +66,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     public void wertSubscriptionWithInvalidPackageCurrencyTest() {
         registerPackage("123456","99003");
         HttpEntity<?> json = getHttpEntity("","abcdefg");
-        ResponseEntity<String> response = template.postForEntity("/subscription/wert/createSubscription", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/subscription/wert/create", json, String.class);
         assertEquals(500, response.getStatusCode().value());
         assertEquals(response.getBody(),"{\"message\":\"Failed To Fetch Currency Price\",\"error\":\"BC$PRI$0001\"}");
 
@@ -84,7 +84,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     @Test
     public void subscribeAlreadySubscribedOrganizationTest() {
         HttpEntity<?> json = getHttpEntity("","124567");
-        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/createSubscription", json, SubscriptionDTO.class);
+        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/create", json, SubscriptionDTO.class);
         assertEquals(406, response.getStatusCode().value());
     }
 
@@ -97,7 +97,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
 
         registerPackage("123456","99002");
         HttpEntity<?> json = getHttpEntity("","123456");
-        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/createSubscription", json, SubscriptionDTO.class);
+        ResponseEntity<SubscriptionDTO> response = template.postForEntity("/subscription/wert/create", json, SubscriptionDTO.class);
         assertEquals(200, response.getStatusCode().value());
         SubscriptionEntity subscription = subscriptionRepository.findById(response.getBody().getId()).get();
         assertEquals(subscription.getType(), SubscriptionMethod.WERT.getValue());

@@ -2,21 +2,18 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.PackageRepository;
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
+import com.nasnav.dto.stripe.StripeConfirmDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.PackageEntity;
 import com.nasnav.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Customer;
-import com.stripe.model.Event;
-import com.stripe.model.Subscription;
-import com.stripe.model.SubscriptionItem;
-import com.stripe.model.checkout.Session;
+import com.stripe.model.*;
 import com.stripe.net.Webhook;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.SetupIntentCreateParams;
 import com.stripe.param.SubscriptionCreateParams;
-import com.stripe.param.checkout.SessionCreateParams;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +21,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
@@ -73,8 +71,8 @@ public class StripeServiceImpl implements StripeService {
 
 
 
-    public StripeSubscriptionPendingDTO createSubscription(String stripePriceId , String customerId){
-        StripeSubscriptionPendingDTO stripeSubscriptionPendingDTO = null;
+    public StripeConfirmDTO createSubscription(String stripePriceId , String customerId){
+        StripeConfirmDTO stripeConfirmDTO = null;
         try {
             SubscriptionCreateParams.PaymentSettings paymentSettings =
                     SubscriptionCreateParams.PaymentSettings
@@ -97,37 +95,80 @@ public class StripeServiceImpl implements StripeService {
                     .build();
 
             Subscription subscription = Subscription.create(subCreateParams);
-            stripeSubscriptionPendingDTO = new StripeSubscriptionPendingDTO();
+            stripeConfirmDTO = new StripeConfirmDTO();
             if (subscription.getPendingSetupIntentObject() != null) {
-                stripeSubscriptionPendingDTO.setType("setup");
-                stripeSubscriptionPendingDTO.setClientSecret(subscription.getPendingSetupIntentObject().getClientSecret());
+                stripeConfirmDTO.setType("setup");
+                stripeConfirmDTO.setClientSecret(subscription.getPendingSetupIntentObject().getClientSecret());
             }
             else {
-                stripeSubscriptionPendingDTO.setType("payment");
-                stripeSubscriptionPendingDTO.setClientSecret( subscription.getLatestInvoiceObject().getPaymentIntentObject().getClientSecret());
+                stripeConfirmDTO.setType("payment");
+                stripeConfirmDTO.setClientSecret( subscription.getLatestInvoiceObject().getPaymentIntentObject().getClientSecret());
             }
 
         } catch (StripeException e) {
             stripeLogger.error("Failed To Create Stripe Subscription :" + e.getMessage());
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0004);
         }
-        return stripeSubscriptionPendingDTO;
+        return stripeConfirmDTO;
     }
 
+
+
+    public StripeConfirmDTO setupIntent(String customerId){
+        StripeConfirmDTO stripeConfirmDTO = null;
+        try {
+        SetupIntentCreateParams params =
+            SetupIntentCreateParams.builder()
+                    .setCustomer(customerId)
+                    .setAutomaticPaymentMethods(
+                            SetupIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build()
+                    )
+                    .build();
+            SetupIntent setupIntent = SetupIntent.create(params);
+            stripeConfirmDTO = new StripeConfirmDTO();
+            stripeConfirmDTO.setClientSecret(setupIntent.getClientSecret());
+//            System.out.println(setupIntent.get());
+        } catch (StripeException e) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0002);
+        }
+        return stripeConfirmDTO;
+
+}
 
     @Override
-    public Subscription getSubscriptionFromWebhookEvent(Event event){
-        Subscription subscription= (Subscription) event.getDataObjectDeserializer().getObject().get();
-        System.out.println(subscription.getStatus());
-        System.out.println(subscription.getStartDate());
-        System.out.println(subscription.getStartDate());
-//        System.out.println(subscription.getStartDate());
-        return subscription;
-
-
+    public StripeObject getStripeObjectFromWebhookEvent(Event event){
+        return event.getDataObjectDeserializer().getObject().get();
     }
 
+    @Override
+    public void updateCustomerDefaultPaymentMethod(String customerId, String paymentMethodId){
+        try {
+            Customer resource = Customer.retrieve(customerId);
+            CustomerUpdateParams params =
+                    CustomerUpdateParams.builder()
+                            .setInvoiceSettings(
+                                    CustomerUpdateParams.InvoiceSettings.builder()
+                                            .setDefaultPaymentMethod(paymentMethodId)
+                                            .build()
+                            )
+                            .build();
+            Customer customer = resource.update(params);
+        } catch (StripeException e) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$WH$0005);
+        }
+    }
 
+    @Override
+    public void updateSubscriptionDefaultPaymentMethod(String subscriptionId, String paymentMethodId){
+        try {
+            Subscription subscription = Subscription.retrieve(subscriptionId);
+            Map<String, Object> params = new HashMap<>();
+            params.put("default_payment_method", paymentMethodId);
+            subscription.update(params);
+        } catch (StripeException e) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$WH$0006);
+        }
+    }
 
 
 
@@ -160,4 +201,35 @@ public class StripeServiceImpl implements StripeService {
         }
         return packageEntity;
     }
+
+
+    public void lastOpenInvoicePayRetry(String customerId , String subscriptionId){
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("customer", customerId);
+            params.put("subscription", subscriptionId);
+            params.put("status", "open");
+            params.put("limit", 1);
+            List<Invoice> invoices = Invoice.list(params).getData();
+            if(!invoices.isEmpty()){
+                invoices.get(0).pay();
+            }
+        }catch (StripeException e){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0007);
+        }
+    }
+
+    public void cancelSubscription(String subscriptionId){
+        try {
+            Subscription subscription = Subscription.retrieve(subscriptionId);
+            Subscription deletedSubscription = subscription.cancel();
+        }catch (StripeException e){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0001);
+        }
+
+
+
+    }
+
+
 }

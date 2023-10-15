@@ -4,8 +4,9 @@ package com.nasnav.controller;
 import com.nasnav.dto.StripeSubscriptionDTO;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
+import com.nasnav.dto.stripe.StripeConfirmDTO;
 import com.nasnav.service.StripeService;
+import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.impl.subscription.StripeSubscriptionServiceImpl;
 import com.nasnav.service.impl.subscription.WertSubscriptionServiceImpl;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class SubscriptionController {
 
     private final WertSubscriptionServiceImpl wertSubscriptionService;
     private final StripeSubscriptionServiceImpl stripeSubscriptionService;
+    private final StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     private final StripeService stripeService;
 
     @GetMapping
@@ -33,7 +35,7 @@ public class SubscriptionController {
     }
 
     @PostMapping
-    @RequestMapping(value = "wert/createSubscription", produces = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "wert/create", produces = APPLICATION_JSON_VALUE)
     public SubscriptionDTO wertCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
        return wertSubscriptionService.subscribe(new SubscriptionDTO());
     }
@@ -45,25 +47,45 @@ public class SubscriptionController {
     //3. Change Package
 
     @PostMapping
-    @RequestMapping(value = "stripe/createSubscription", produces = APPLICATION_JSON_VALUE)
-    public StripeSubscriptionPendingDTO stripeCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-        return ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO())).getStripeSubscriptionPendingDTO();
+    @RequestMapping(value = "stripe/create", produces = APPLICATION_JSON_VALUE)
+    public StripeConfirmDTO stripeCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
+        return ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO())).getStripeConfirmDTO();
     }
 
+    @PostMapping
+    @RequestMapping(value = "stripe/changePaymentMethod", produces = APPLICATION_JSON_VALUE)
+    public StripeConfirmDTO stripeSetupIntent(@RequestHeader(name = "User-Token", required = false) String userToken){
+        return stripeSubscriptionService.setupIntent();
+    }
+
+    @PostMapping
+    @RequestMapping(value = "stripe/cancel", produces = APPLICATION_JSON_VALUE)
+    public void stripeCancelSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
+        stripeSubscriptionService.cancelSubscription();
+    }
 
     @PostMapping(value = "/stripe/webhook")
     public void stripeWebhook(@RequestHeader("Stripe-Signature") String signature, @RequestBody String body) {
         Event event = stripeService.verifyAndGetEventWebhook(signature,body);
-        if ("customer.subscription.created".equals(event.getType())) {
-            stripeSubscriptionService.handleStripeSubscriptionCreated(event);
-        }
-        else if ("customer.subscription.updated".equals(event.getType())) {
-            stripeSubscriptionService.handleStripeSubscriptionUpdated(event);
-        }
-        else if ("customer.subscription.deleted".equals(event.getType())) {
-            stripeSubscriptionService.handleStripeSubscriptionDeleted(event);
-        }
+        try {
 
+            if ("customer.subscription.created".equals(event.getType())) {
+                stripeWebhookSubscriptionService.handleStripeSubscriptionCreated(event);
+            }
+            else if ("customer.subscription.updated".equals(event.getType())) {
+                stripeWebhookSubscriptionService.handleStripeSubscriptionUpdated(event);
+            }
+            else if ("customer.subscription.deleted".equals(event.getType())) {
+                stripeWebhookSubscriptionService.handleStripeSubscriptionDeleted(event);
+            }
+            else if ("setup_intent.succeeded".equals(event.getType())) {
+                stripeWebhookSubscriptionService.handleStripeSetupIntent(event);
+            }
+
+
+        }catch (Exception ex){
+
+        }
     }
 
 

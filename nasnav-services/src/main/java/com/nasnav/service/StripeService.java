@@ -1,23 +1,31 @@
 package com.nasnav.service;
 
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
+import com.nasnav.dto.stripe.StripeConfirmDTO;
 import com.nasnav.persistence.PackageEntity;
 import com.stripe.model.Event;
+import com.stripe.model.StripeObject;
 import com.stripe.model.Subscription;
-import com.stripe.model.checkout.Session;
-
-import java.math.BigDecimal;
 
 public interface StripeService {
 
     String createCustomer(String name , String email);
 
-    StripeSubscriptionPendingDTO createSubscription(String stripePriceId , String customerId);
+    StripeConfirmDTO createSubscription(String stripePriceId , String customerId);
+
+    StripeConfirmDTO setupIntent(String customerId);
+
+    StripeObject getStripeObjectFromWebhookEvent(Event event);
 
 
-    Subscription getSubscriptionFromWebhookEvent(Event event);
+    void updateCustomerDefaultPaymentMethod(String customerId, String paymentMethodId);
+
+    void updateSubscriptionDefaultPaymentMethod(String subscriptionId, String paymentMethodId);
 
     Event verifyAndGetEventWebhook(String signatureHeader , String body);
 
     PackageEntity getPackageByStripeSubscription(Subscription subscription);
+    void lastOpenInvoicePayRetry(String customerId , String subscriptionId);
+
+    void cancelSubscription(String subscriptionId);
+
 }

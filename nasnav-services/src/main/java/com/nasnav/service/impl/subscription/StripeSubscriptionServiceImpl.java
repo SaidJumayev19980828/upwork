@@ -5,8 +5,8 @@ import com.nasnav.dao.StripeCustomerRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.StripeSubscriptionDTO;
 import com.nasnav.dto.SubscriptionDTO;
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
-import com.nasnav.enumerations.SubscriptionStatus;
+import com.nasnav.dto.SubscriptionInfoDTO;
+import com.nasnav.dto.stripe.StripeConfirmDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
@@ -16,19 +16,9 @@ import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.StripeService;
-import com.stripe.model.Event;
-import com.stripe.model.Subscription;
-import com.stripe.model.SubscriptionItem;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
@@ -54,10 +44,6 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
     private SubscriptionRepository subscriptionRepository;
 
 
-    private static final Logger stripeSubscriptionLogger = LogManager.getLogger("Subscription:STRIPE");
-
-
-
     public boolean checkOrgHasStripeCustomer(){
         //Check Stripe Customer Exist for organization
         OrganizationEntity org = securityService.getCurrentUserOrganization();
@@ -71,20 +57,24 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
      * @return the id of the customer
      */
     public String getOrCreateStripeCustomer(){
-        String customerId = null;
+        StripeCustomerEntity stripeCustomerEntity = null;
         //Check Stripe Customer Exist for organization
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         if(checkOrgHasStripeCustomer()){
-            StripeCustomerEntity stripeCustomerEntity = stripeCustomerRepository.findByOrganization(org).get();
-            customerId = stripeCustomerEntity.getCustomerId();
+            stripeCustomerEntity = stripeCustomerRepository.findByOrganization(org).get();
         }else{
-            //call Stripe Service to create customer
+            //call Stripe Service to create customer then save it
             if(org.getOwner() == null){
                 throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0004);
             }
-            customerId = stripeService.createCustomer(org.getOwner().getName() , org.getOwner().getEmail());
+            String customerId = stripeService.createCustomer(org.getOwner().getName() , org.getOwner().getEmail());
+            stripeCustomerEntity = new StripeCustomerEntity();
+            stripeCustomerEntity.setCustomerId(customerId);
+            stripeCustomerEntity.setOrganization(org);
+            stripeCustomerEntity = stripeCustomerRepository.save(stripeCustomerEntity);
         }
-        return customerId;
+        return stripeCustomerEntity.getCustomerId();
+
     }
 
 
@@ -105,113 +95,48 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
         return stripeSubscriptionDTO;
     }
 
-    public void handleStripeSubscriptionCreated(Event event) throws RuntimeBusinessException {
-        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
-        //check Exists in database
-        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
-        if(!subscriptionEntityOptional.isPresent()){
-            //create
-            createSubscription(subscription);
-        }
-
-    }
-
-    public void handleStripeSubscriptionUpdated(Event event) throws RuntimeBusinessException {
-        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
-        //check Exists in database
-        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
-        if(subscriptionEntityOptional.isPresent()){
-            //update
-            updateSubscription(subscription);
-        }else{
-            //create
-            createSubscription(subscription);
-        }
-
-    }
-
-    public void handleStripeSubscriptionDeleted(Event event) throws RuntimeBusinessException {
-        Subscription subscription = stripeService.getSubscriptionFromWebhookEvent(event);
-        //check Exists in database
-        SubscriptionEntity subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId()).orElseThrow(
-                () -> new RuntimeBusinessException(NOT_FOUND, STR$WH$0004)
-        );
-        //update
-        updateSubscription(subscription);
-    }
-    private void createSubscription(Subscription subscription){
-
-        String customerId = subscription.getCustomer();
-        OrganizationEntity organization = stripeCustomerRepository.findByCustomerId(customerId).orElseThrow(
-                ()-> new RuntimeBusinessException(NOT_FOUND, STR$WH$0002)).getOrganization();
-
-
-        PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
-        //Get Start Date
-        Long startDateMillis = (subscription.getStartDate() != null)? subscription.getStartDate() : subscription.getTrialStart();
-        Date startDate = startDateMillis == null ? new Date() : new Date(TimeUnit.SECONDS.toMillis(startDateMillis));
-
-
-        SubscriptionEntity subscriptionEntity = new SubscriptionEntity();
-        subscriptionEntity.setType(SubscriptionMethod.STRIPE.getValue());
-        subscriptionEntity.setPaidAmount(packageEntity.getPrice());
-        subscriptionEntity.setStartDate(startDate);
-        subscriptionEntity.setPackageEntity(packageEntity);
-        subscriptionEntity.setOrganization(organization);
-        subscriptionEntity.setStripeSubscriptionId(subscription.getId());
-        subscriptionEntity.setStatus(subscription.getStatus());
-        subscriptionRepository.save(subscriptionEntity);
-
-    }
-
-    public void updateSubscription(Subscription subscription){
-
-        PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
-        //Get Start Date
-//        Long startDateMillis = (subscription.getStartDate() != null)? subscription.getStartDate() : subscription.getTrialStart();
-//        Date startDate = startDateMillis == null ? new Date() : new Date(TimeUnit.SECONDS.toMillis(startDateMillis));
-        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
-        SubscriptionEntity subscriptionEntity = subscriptionEntityOptional.get();
-        subscriptionEntity.setPaidAmount(packageEntity.getPrice());
-//        subscriptionEntity.setStartDate(startDate);
-        subscriptionEntity.setPackageEntity(packageEntity);;
-        subscriptionEntity.setStatus(subscription.getStatus());
-        subscriptionRepository.save(subscriptionEntity);
-
-    }
-
-    public SubscriptionEntity getCurrentStripeSubscription(){
-        SubscriptionEntity currentSubscription = null;
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
-        List<SubscriptionEntity> subscriptionEntities = subscriptionRepository.findByOrganizationAndTypeAndStatusNotIn(org,SubscriptionMethod.STRIPE.getValue(),List.of(SubscriptionStatus.CANCELED.getValue(),SubscriptionStatus.INCOMPLETE_EXPIRED.getValue()));
-        Optional<SubscriptionEntity> activeSubscription = subscriptionEntities.stream().filter(subscriptionEntity -> subscriptionEntity.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())).findFirst();
-        if(activeSubscription.isPresent()){
-            currentSubscription = activeSubscription.get();
-        }else{
-            Optional<SubscriptionEntity> pendingSubscription = subscriptionEntities.stream().filter(subscriptionEntity -> !subscriptionEntity.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())).findFirst();
-            if(pendingSubscription.isPresent()){
-                currentSubscription = pendingSubscription.get();
-            }
-        }
-        return currentSubscription;
-    }
-
-
-
-
     @Override
     public SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
         super.subscribe(subscriptionDTO);
         StripeSubscriptionDTO stripeSubscriptionDTO = new StripeSubscriptionDTO();
-        stripeSubscriptionDTO.setStripeSubscriptionPendingDTO(callStripeCreateSubscription());
+        stripeSubscriptionDTO.setStripeConfirmDTO(callStripeCreateSubscription());
         return stripeSubscriptionDTO;
     }
 
-    private StripeSubscriptionPendingDTO callStripeCreateSubscription() throws RuntimeBusinessException {
+    private StripeConfirmDTO callStripeCreateSubscription() throws RuntimeBusinessException {
         StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
         //Create Subscription
-        StripeSubscriptionPendingDTO stripeSubscriptionPendingDTO = stripeService.createSubscription( stripeSubscriptionDTO.getStripePriceId() , getOrCreateStripeCustomer());
-        return stripeSubscriptionPendingDTO;
+        StripeConfirmDTO stripeConfirmDTO = stripeService.createSubscription( stripeSubscriptionDTO.getStripePriceId() , getOrCreateStripeCustomer());
+        return stripeConfirmDTO;
+    }
+
+    /**
+     * call setup intent to allow org add payment method in stripe then update payment method of subscription
+     * using webhook
+    **/
+    public StripeConfirmDTO setupIntent() throws RuntimeBusinessException {
+
+        SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
+        if(!subscriptionInfoDTO.isSubscribed()){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
+        }
+        StripeConfirmDTO stripeConfirmDTO = stripeService.setupIntent(getOrCreateStripeCustomer());
+        return stripeConfirmDTO;
+    }
+
+
+
+    public void cancelSubscription() throws RuntimeBusinessException {
+        SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
+        if(
+                !subscriptionInfoDTO.isSubscribed() ||
+                !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
+                subscriptionInfoDTO.getSubscriptionEntityId() == null
+        ){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
+        }
+        SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
+        stripeService.cancelSubscription(subscriptionEntity.getStripeSubscriptionId());
     }
 
 

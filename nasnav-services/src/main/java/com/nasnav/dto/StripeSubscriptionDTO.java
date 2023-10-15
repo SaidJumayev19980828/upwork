@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.nasnav.dto.stripe.StripeSubscriptionPendingDTO;
-import com.stripe.model.Event;
+import com.nasnav.dto.stripe.StripeConfirmDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -18,6 +17,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class StripeSubscriptionDTO extends SubscriptionDTO {
     private String stripePriceId;
-    private StripeSubscriptionPendingDTO stripeSubscriptionPendingDTO;
+    private StripeConfirmDTO stripeConfirmDTO;
 
 }
