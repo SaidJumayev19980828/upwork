@@ -28,6 +28,7 @@ import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -35,6 +36,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static junit.framework.TestCase.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -349,4 +351,44 @@ public class NavBoxTest extends AbstractTestWithTempBaseDir {
         responseBody = objectMapper.readValue(response.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
         assertEquals(2, responseBody.size());
     }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Filter_Data_Insert.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getProductsByPromotionsIds() {
+        String url = "/navbox/products?promo_id=630001&org_id=99001";
+        ResponseEntity<ProductsResponse> responseEntity = template.getForEntity(url, ProductsResponse.class);
+        assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
+        ProductsResponse response = responseEntity.getBody();
+        assert response != null;
+        assertEquals(2,response.getProducts().size());
+        List<ProductRepresentationObject> products = response.getProducts();
+        products.sort((o1,o2) -> (int)(o1.getId() - o2.getId()));
+        ProductRepresentationObject firstProduct = products.get(0);
+        Long actualOrgId = firstProduct.getOrganizationId();
+        int price = firstProduct.getPrice().intValue();
+        Long expOrgId = 99001L;
+        assertEquals(expOrgId,actualOrgId);
+        assertEquals(price,300);
+        assertTrue(firstProduct.isMultipleVariants());
+        Prices prices = firstProduct.getPrices();
+        int minVariantPrice = prices.getMinPrice().intValue();
+        int maxVariantPrice = prices.getMaxPrice().intValue();
+        assertEquals(1200, maxVariantPrice);
+        assertEquals(300, minVariantPrice);
+    }
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Filter_Data_Insert.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getNasnavProductsWhichHavePromotions() {
+        String url = "/navbox/products?has_promotions=true&org_id=99001";
+        ResponseEntity<ProductsResponse> responseEntity = template.getForEntity(url, ProductsResponse.class);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        ProductsResponse body = responseEntity.getBody();
+        long totalProducts = body.getTotal();
+        assertEquals(2L, totalProducts);
+    }
+
+
 }
