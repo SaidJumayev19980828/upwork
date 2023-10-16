@@ -120,7 +120,7 @@ public interface ProductService {
   ) throws BusinessException ;
 ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
-   ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;
+   ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams,Integer offset) throws BusinessException;
 
   public ProductUpdateResponse updateProductVersion2(
           NewProductFlowDTO productJson,
