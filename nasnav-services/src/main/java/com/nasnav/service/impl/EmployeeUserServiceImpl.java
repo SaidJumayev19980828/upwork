@@ -290,7 +290,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 		validateCurrentUserCanManageEmpAccount(updateUser.getOrganizationId(), updateUser.getShopId(), allRolesToCheck);
 
-		empUserSvcHelper.createRoles(updatedUserNewRoles, updateUser, updateUser.getOrganizationId());
+		empUserSvcHelper.updateUserRolesIfPossible(updatedUserNewRoles, updateUser);
 
 		return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
 	}
