@@ -26,5 +26,6 @@ public class SubscriptionInfoDTO {
     private Date expirationDate;
     @JsonIgnore
     private Long subscriptionEntityId;
+    private Long packageId;
 
 }

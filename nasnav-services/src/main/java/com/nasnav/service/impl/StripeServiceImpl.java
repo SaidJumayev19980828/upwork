@@ -10,10 +10,7 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
 import com.stripe.net.Webhook;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerUpdateParams;
-import com.stripe.param.SetupIntentCreateParams;
-import com.stripe.param.SubscriptionCreateParams;
+import com.stripe.param.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -226,9 +223,31 @@ public class StripeServiceImpl implements StripeService {
         }catch (StripeException e){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0001);
         }
+    }
 
+    public Subscription changePlan(String subscriptionId, String priceId){
+        try {
+            Subscription subscription = Subscription.retrieve(subscriptionId);
+            SubscriptionUpdateParams params = SubscriptionUpdateParams
+                    .builder()
+                    .addItem(
+                            SubscriptionUpdateParams
+                                    .Item.builder()
+                                    .setId(subscription.getItems().getData().get(0).getId())
+                                    .setPrice(priceId)
+                                    .build()
+                    )
+                    .setCancelAtPeriodEnd(false)
+                    .build();
 
-
+            return subscription.update(params);
+        }catch (StripeException e){
+            if(e.getMessage().startsWith("No such price")){
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0006,priceId);
+            }else {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0005);
+            }
+        }
     }
 
 

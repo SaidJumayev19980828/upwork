@@ -159,7 +159,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf("/subscription/stripe/create"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf("/subscription/stripe/changePaymentMethod"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf("/subscription/stripe/cancel"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
-
+						patternOf("/subscription/stripe/changePlan"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/mail/cart/abandoned"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/mail/wishlist/stock"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),

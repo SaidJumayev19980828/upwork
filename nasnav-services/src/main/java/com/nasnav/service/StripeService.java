@@ -27,5 +27,6 @@ public interface StripeService {
     void lastOpenInvoicePayRetry(String customerId , String subscriptionId);
 
     void cancelSubscription(String subscriptionId);
+    Subscription changePlan(String subscriptionId, String priceId);
 
 }

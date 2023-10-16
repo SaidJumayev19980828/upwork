@@ -1,10 +1,13 @@
 package com.nasnav.service.impl.subscription;
 
+import com.drew.lang.StringUtil;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.StripeCustomerRepository;
 import com.nasnav.dao.SubscriptionRepository;
 import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.enumerations.SubscriptionMethod;
+import com.nasnav.enumerations.SubscriptionStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PackageEntity;
@@ -19,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -126,6 +131,9 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         subscriptionEntity.setType(SubscriptionMethod.STRIPE.getValue());
         subscriptionEntity.setPaidAmount(packageEntity.getPrice());
         subscriptionEntity.setStartDate(startDate);
+        if(subscription.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())){
+            subscriptionEntity.setPaymentDate(startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        }
         subscriptionEntity.setPackageEntity(packageEntity);
         subscriptionEntity.setOrganization(organization);
         subscriptionEntity.setStripeSubscriptionId(subscription.getId());
@@ -135,23 +143,24 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
     }
 
     public void updateSubscription(Subscription subscription){
-
-        PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
-        //Get Start Date
-//        Long startDateMillis = (subscription.getStartDate() != null)? subscription.getStartDate() : subscription.getTrialStart();
-//        Date startDate = startDateMillis == null ? new Date() : new Date(TimeUnit.SECONDS.toMillis(startDateMillis));
-        Optional<SubscriptionEntity> subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
-        SubscriptionEntity subscriptionEntity = subscriptionEntityOptional.get();
-        subscriptionEntity.setPaidAmount(packageEntity.getPrice());
-//        subscriptionEntity.setStartDate(startDate);
-        subscriptionEntity.setPackageEntity(packageEntity);;
-          subscriptionEntity.setStatus(subscription.getStatus());
-        subscriptionRepository.save(subscriptionEntity);
+        //Package Of the Subscription Received From Webhook
+        PackageEntity subscriptionPackage = stripeService.getPackageByStripeSubscription(subscription);
+        //Saved Subscription In Database
+        Optional<SubscriptionEntity> savedSubscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId());
+        SubscriptionEntity savedSubscriptionEntity = savedSubscriptionEntityOptional.get();
+       if(
+                !savedSubscriptionEntity.getStatus().equals(SubscriptionStatus.ACTIVE.getValue()) &&
+                subscription.getStatus().equals(SubscriptionStatus.ACTIVE.getValue())
+        ){
+           //Set Payment Date as the date where the status changed to active
+            savedSubscriptionEntity.setPaymentDate(LocalDateTime.now());
+        }
+        savedSubscriptionEntity.setPaidAmount(subscriptionPackage.getPrice());
+        savedSubscriptionEntity.setPackageEntity(subscriptionPackage);;
+        savedSubscriptionEntity.setStatus(subscription.getStatus());
+        subscriptionRepository.save(savedSubscriptionEntity);
 
     }
-
-
-
 
 
 }

@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Optional;
+
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
@@ -90,7 +92,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
         }
         PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001));
-
+        stripeSubscriptionDTO.setPackageId(packageId);
         stripeSubscriptionDTO.setStripePriceId(packageEntity.getStripePriceId());
         return stripeSubscriptionDTO;
     }
@@ -137,6 +139,27 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
         }
         SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
         stripeService.cancelSubscription(subscriptionEntity.getStripeSubscriptionId());
+    }
+
+    public void changePlan() throws RuntimeBusinessException {
+        SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
+        if(
+                !subscriptionInfoDTO.isSubscribed() ||
+                        !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
+                        subscriptionInfoDTO.getSubscriptionEntityId() == null
+        ){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
+        }
+        StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
+
+        if(stripeSubscriptionDTO.getPackageId().equals(subscriptionInfoDTO.getPackageId())){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0008,stripeSubscriptionDTO.getPackageId());
+        }
+        PackageEntity packageEntity = packageRepository.findById(stripeSubscriptionDTO.getPackageId()).orElseThrow(
+                () -> new RuntimeBusinessException(NOT_FOUND, PA$USR$0002));
+
+        SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
+        stripeService.changePlan(subscriptionEntity.getStripeSubscriptionId(),packageEntity.getStripePriceId());
     }
 
 

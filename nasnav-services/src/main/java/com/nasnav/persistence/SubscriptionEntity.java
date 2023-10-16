@@ -19,7 +19,6 @@ public class SubscriptionEntity extends DefaultBusinessEntity<Long> implements S
     private String type;
 
     @Column(name="payment_date")
-    @CreationTimestamp
     private LocalDateTime paymentDate;
 
     @Column(name="paid_amount")

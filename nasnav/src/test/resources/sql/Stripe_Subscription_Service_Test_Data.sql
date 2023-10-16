@@ -98,7 +98,10 @@ INSERT INTO public.package_service(package_id,service_id) values (99003,99003);
 INSERT INTO public.package_service(package_id,service_id) values (99003,99004);
 
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (201, 70, 99001, 99001, now());
-INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (202, 70, 99004, 99003, now());
+INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (202, 70, 99002, 99001, now());
+INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (203, 70, 99004, 99003, now());
 
 UPDATE public.organizations SET owner_id = 68 where id = 99001;
 INSERT INTO public.stripe_customer(id,customer_id,org_id) values (1,'12346454654645',99002);
+INSERT INTO public.subscription(id, type, payment_date, start_date, expiration_date, paid_amount, package_id, org_id,status,stripe_subscription_id)
+values (10000012,'stripe','2023-10-02 22:19:50.321129','2022-10-02 00:00:00',	null , 3455.00,99002,99002,'active', 'sub_1O1z1PGAVCEOW4ETbqNN9ki');

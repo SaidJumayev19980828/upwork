@@ -237,12 +237,17 @@ public enum ErrorCodes {
 	,ORG$SUB$0004("Organization Owner User Is Not Found")
 	,ORG$SUB$0005("Organization Already Have Subscription")
 	,ORG$SUB$0006("No Stripe Subscription In Organization")
+	,ORG$SUB$0007("Package Id is Missing")
+	,ORG$SUB$0008("Organization is Already subscribed in Package : [%d]")
+
 
 
 	,STR$CAL$0001("Stripe Failed To Cancel Subscription")
 	,STR$CAL$0002("Stripe Failed To Create Setup Intent")
 	,STR$CAL$0003("Stripe Failed To Create Customer Using Email : [%s]")
 	,STR$CAL$0004("Stripe Failed To Create Subscription")
+	,STR$CAL$0005("Stripe Failed To Change Plan")
+	,STR$CAL$0006("Stripe Failed To Change Plan : PriceId [%s] is Not Exist In Stripe")
 	,STR$WH$0001("Stripe Webhook is not valid")
 	,STR$WH$0002("Stripe Webhook : Failed To get Organization")
 	,STR$WH$0003("Stripe Webhook : Failed To get subscribed Package")

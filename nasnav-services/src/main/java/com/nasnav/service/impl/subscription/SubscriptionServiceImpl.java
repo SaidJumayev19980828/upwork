@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -66,6 +67,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
                 subscriptionInfoDTO.setExpirationDate(subscriptionEntity.getExpirationDate());
                 subscriptionInfoDTO.setStatus(subscriptionEntity.getStatus());
                 subscriptionInfoDTO.setSubscriptionEntityId(subscriptionEntity.getId());
+                subscriptionInfoDTO.setPackageId(subscriptionEntity.getPackageEntity().getId());
             }else{
                 subscriptionEntity.setStatus("canceled");
                 subscriptionRepository.save(subscriptionEntity);
@@ -105,6 +107,7 @@ public abstract class SubscriptionServiceImpl implements SubscriptionService {
         SubscriptionEntity subscriptionEntity = new SubscriptionEntity();
         subscriptionEntity.setType(subscriptionDTO.getType());
         subscriptionEntity.setPaidAmount(subscriptionDTO.getPaidAmount());
+        subscriptionEntity.setPaymentDate(LocalDateTime.now());
         subscriptionEntity.setStartDate(java.sql.Date.valueOf(startDate));
         subscriptionEntity.setExpirationDate(java.sql.Date.valueOf(expirationDate));
         subscriptionEntity.setPackageEntity(packageEntity);

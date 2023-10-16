@@ -10,6 +10,7 @@ import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.impl.subscription.StripeSubscriptionServiceImpl;
 import com.nasnav.service.impl.subscription.WertSubscriptionServiceImpl;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.stripe.model.Event;
 
@@ -23,10 +24,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class SubscriptionController {
 
 
-    private final WertSubscriptionServiceImpl wertSubscriptionService;
-    private final StripeSubscriptionServiceImpl stripeSubscriptionService;
-    private final StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
-    private final StripeService stripeService;
+    @Autowired
+    private WertSubscriptionServiceImpl wertSubscriptionService;
+    @Autowired
+    private StripeSubscriptionServiceImpl stripeSubscriptionService;
+    @Autowired
+    private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
+    @Autowired
+    private StripeService stripeService;
 
     @GetMapping
     @RequestMapping(value = "info", produces = APPLICATION_JSON_VALUE)
@@ -62,6 +67,12 @@ public class SubscriptionController {
     @RequestMapping(value = "stripe/cancel", produces = APPLICATION_JSON_VALUE)
     public void stripeCancelSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
         stripeSubscriptionService.cancelSubscription();
+    }
+
+    @PostMapping
+    @RequestMapping(value = "stripe/changePlan", produces = APPLICATION_JSON_VALUE)
+    public void stripeChangePlan(@RequestHeader(name = "User-Token", required = false) String userToken){
+        stripeSubscriptionService.changePlan();
     }
 
     @PostMapping(value = "/stripe/webhook")

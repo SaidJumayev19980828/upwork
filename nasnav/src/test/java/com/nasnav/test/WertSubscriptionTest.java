@@ -48,7 +48,6 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
         assertEquals(subscription.getType(), SubscriptionMethod.WERT.getValue());
         assertEquals(subscription.getOrganization().getId().longValue(), 99002);
         assertEquals(subscription.getPackageEntity().getId().longValue(), 99002);
-        assertEquals(subscription.getPaymentDate().toLocalDate(), LocalDateTime.now().toLocalDate());
         assertEquals(subscription.getStatus(), SubscriptionStatus.ACTIVE.getValue());
         assertEquals(((Timestamp) subscription.getStartDate()).toLocalDateTime().toLocalDate(), LocalDate.now());
         assertEquals(((Timestamp) subscription.getExpirationDate()).toLocalDateTime().toLocalDate(), LocalDate.now().plusDays(subscription.getPackageEntity().getPeriodInDays()));

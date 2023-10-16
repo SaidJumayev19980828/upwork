@@ -32,9 +32,22 @@ public class StripeSubscriptionTest extends AbstractTestWithTempBaseDir {
     public void stripeCreateSubscriptionNotRegisteredPackage() {
         HttpEntity<?> json = getHttpEntity("", "123456");
         ResponseEntity<StripeSubscriptionDTO> response = template.postForEntity("/subscription/stripe/create", json, StripeSubscriptionDTO.class);
-        assertEquals(404, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
+    @Test
+    public void stripeChangePlanInNotSubscribedOrgTest() {
+        HttpEntity<?> json = getHttpEntity("", "abcdefg");
+        ResponseEntity<StripeSubscriptionDTO> response = template.postForEntity("/subscription/stripe/changePlan", json, StripeSubscriptionDTO.class);
+        assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void stripeChangePlanToSameRegisteredPackageTest() {
+        HttpEntity<?> json = getHttpEntity("", "abcdefg");
+        ResponseEntity<StripeSubscriptionDTO> response = template.postForEntity("/subscription/stripe/changePlan", json, StripeSubscriptionDTO.class);
+        assertEquals(406, response.getStatusCode().value());
+    }
 //    @Test
 //    public void stripeCreateSubscriptionWithWrongPriceId() {
 //        HttpEntity<?> json = getHttpEntity("", "abcdefg");
