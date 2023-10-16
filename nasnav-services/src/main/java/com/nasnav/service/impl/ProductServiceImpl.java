@@ -3841,7 +3841,7 @@ public VariantUpdateResponse updateVariantV2(
 				.limit(params.count);
 
 		if(Objects.isNull(offset)){
-			offset = 1;
+			offset = 0;
 		}
 
 		Long[] productIds = productsQuery.fetch().toArray(Long[]::new);
