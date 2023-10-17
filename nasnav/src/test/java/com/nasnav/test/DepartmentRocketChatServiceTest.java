@@ -30,21 +30,29 @@ class DepartmentRocketChatServiceTest {
 	@Mock
 	private RocketChatClient client;
 	@Mock
-	OrganizationRepository organizationRepository;
+	private OrganizationRepository organizationRepository;
 	private DepartmentRocketChatService departmentRocketChatService;
+
+	private static final RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 
 	@BeforeEach
 	void setup() {
-		departmentRocketChatService = new DepartmentRocketChatServiceImpl(organizationRepository, departmentsRepo, client);
+		departmentRocketChatService = new DepartmentRocketChatServiceImpl(organizationRepository, departmentsRepo,
+				client);
+		Mockito.when(organizationRepository.findById(departmentEntity.getOrgId()))
+				.thenReturn(Optional.of(departmentEntity.getOrganization()));
 	}
 
 	@Test
 	void returnPDepartmentIdIfFound() {
-		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
 				.thenReturn(Optional.of(departmentEntity));
+		Mockito.when(client.getDepartment(departmentEntity.getDepartmentId()))
+				.thenReturn(Mono.just(RocketChatDepartmentDTO.builder()
+						.id(departmentEntity.getDepartmentId())
+						.build()));
 		Mono<String> departmentIdMono = departmentRocketChatService
-				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization());
+				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization().getId());
 		StepVerifier.create(departmentIdMono)
 				.expectNext(departmentEntity.getDepartmentId())
 				.verifyComplete();
@@ -52,7 +60,6 @@ class DepartmentRocketChatServiceTest {
 
 	@Test
 	void createDepartmentIfNotFound() {
-		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
 		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
 				.thenReturn(Optional.empty());
 		Mockito.when(client.createDepartment(any()))
@@ -63,33 +70,13 @@ class DepartmentRocketChatServiceTest {
 		Mockito.when(departmentsRepo.save(any())).thenReturn(departmentEntity);
 
 		Mono<String> departmentIdMono = departmentRocketChatService
-				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization());
+				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization().getId());
 		StepVerifier.create(departmentIdMono)
 				.expectNext(departmentEntity.getDepartmentId())
 				.verifyComplete();
 	}
 
-	@Test
-	void createDepartmentRace() {
-		RocketChatOrganizationDepartmentEntity departmentEntity = createDepartmentEntity();
-		Mockito.when(departmentsRepo.findByOrganizationId(departmentEntity.getOrganization().getId()))
-				.thenReturn(Optional.empty());
-		Mockito.when(client.createDepartment(any()))
-				.thenReturn(
-						Mono.just(RocketChatDepartmentDTO.builder()
-								.id(departmentEntity.getDepartmentId())
-								.build()));
-		Mockito.when(departmentsRepo.save(any())).thenThrow(new RuntimeException());
-		Mockito.when(client.deleteDepartment(departmentEntity.getDepartmentId())).thenReturn(Mono.empty());
-
-		Mono<String> departmentIdMono = departmentRocketChatService
-				.getDepartmentIdCreateDepartmentIfNeeded(departmentEntity.getOrganization());
-		StepVerifier.create(departmentIdMono)
-				.expectError(IllegalStateException.class)
-				.verify();
-	}
-
-	RocketChatOrganizationDepartmentEntity createDepartmentEntity() {
+	private static RocketChatOrganizationDepartmentEntity createDepartmentEntity() {
 		final Long orgId = 51L;
 		final String testDepartmentId = "TEST_DEPARTMENT_ID";
 		OrganizationEntity org = new OrganizationEntity();

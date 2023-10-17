@@ -46,7 +46,7 @@ public class AppConfig {
     public String filePath ;
     
 
-    @Value("${rocketchat.url:https://chat.dev.meetusvr.com/api/v1}")
+    @Value("${rocketchat.url:}")
     public String rocketChatUrl;
     @Value("${rocketchat.access-token:}")
     @Getter

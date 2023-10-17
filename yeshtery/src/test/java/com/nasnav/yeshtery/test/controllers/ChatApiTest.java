@@ -1,6 +1,6 @@
-package com.nasnav.test;
+package com.nasnav.yeshtery.test.controllers;
 
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -17,11 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
 import com.nasnav.persistence.RocketChatOrganizationDepartmentEntity;
 import com.nasnav.service.rocketchat.impl.RocketChatClient;
-import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -30,6 +31,8 @@ import reactor.test.StepVerifier;
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = { "/sql/Chat_Test_Data.sql" })
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
 class ChatApiTest extends AbstractTestWithTempBaseDir {
+	private static final String VISITOR_PATH = YeshteryConstants.API_PATH + "/chat/visitor?org_id=99001";
+
 	@Autowired
 	private TestRestTemplate template;
 
@@ -50,11 +53,11 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 	@Test
 	void getVisitorData() {
 		HttpEntity<?> request = getHttpEntity("abc");
-		ResponseEntity<RocketChatVisitorDTO> response = template.exchange("/chat/visitor", POST, request,
+		ResponseEntity<RocketChatVisitorDTO> response = template.exchange(VISITOR_PATH, POST, request,
 				RocketChatVisitorDTO.class);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 
-		response = template.exchange("/chat/visitor", POST, request,
+		response = template.exchange(VISITOR_PATH, POST, request,
 				RocketChatVisitorDTO.class);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 	}

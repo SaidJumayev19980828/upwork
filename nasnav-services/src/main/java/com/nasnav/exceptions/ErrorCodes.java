@@ -441,7 +441,7 @@ public enum ErrorCodes {
 
 	,G$QUEUE$0001("no queue entity found")
 
-	,CHAT$CUSTOMER$EXTERNAL("Chat Server responded with [%d]")
+	,CHAT$EXTERNAL("Chat Server responded with [%d]")
 
 	,BANK$ACC$0001("No user or org is provided")
 	,BANK$ACC$0002("an account already exist for this user or org")

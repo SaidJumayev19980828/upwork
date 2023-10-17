@@ -1,12 +1,17 @@
 package com.nasnav.service.rocketchat.impl;
 
-import javax.transaction.Transactional;
+import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
 import com.nasnav.dto.rocketchat.RocketChatDepartmentDTO;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.RocketChatOrganizationDepartmentEntity;
 import com.nasnav.service.rocketchat.DepartmentRocketChatService;
@@ -21,48 +26,48 @@ public class DepartmentRocketChatServiceImpl implements DepartmentRocketChatServ
 	private final RocketChatOrganizationDepartmentRepository departmentsRepo;
 	private final RocketChatClient client;
 
-	@RequiredArgsConstructor
-	private class SaveDepartmentException extends RuntimeException {
-		public final String departmentId;
-	}
-
-	@Override
 	@Transactional
-	public Mono<String> getDepartmentIdCreateDepartmentIfNeeded(OrganizationEntity org) {
-		return Mono.justOrEmpty(departmentsRepo.findByOrganizationId(org.getId()))
-				.switchIfEmpty(Mono.defer(() -> createDepartment(org)))
-				.map(RocketChatOrganizationDepartmentEntity::getDepartmentId);
-	}
-
 	@Override
 	public Mono<String> getDepartmentIdCreateDepartmentIfNeeded(Long orgId) {
-		return Mono.fromSupplier(() -> organizationRepository.getOne(orgId))
-				.flatMap(this::getDepartmentIdCreateDepartmentIfNeeded);
+		return organizationRepository.findById(orgId)
+				.map(this::getDepartmentIdCreateDepartmentIfNeeded)
+				.orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,
+						ErrorCodes.G$ORG$0001,
+						orgId));
 	}
 
-	private Mono<RocketChatOrganizationDepartmentEntity> createDepartment(OrganizationEntity org) {
+	public Mono<String> getDepartmentIdCreateDepartmentIfNeeded(OrganizationEntity org) {
+		return departmentsRepo.findByOrganizationId(org.getId())
+				.map(department -> client.getDepartment(department.getDepartmentId())
+						.switchIfEmpty(Mono.defer(() -> createDepartment(department))))
+				.orElseGet(() -> createDepartmentDeleteIfFailed(persistDepartment(org)))
+				.map(RocketChatDepartmentDTO::getId)
+				.onErrorResume(WebClientResponseException.class,
+						e -> Mono.error(new RuntimeBusinessException(
+								HttpStatus.NOT_ACCEPTABLE,
+								ErrorCodes.CHAT$EXTERNAL,
+								e.getStatusCode().value())));
+	}
+
+	private Mono<RocketChatDepartmentDTO> createDepartmentDeleteIfFailed(RocketChatOrganizationDepartmentEntity department) {
+		return createDepartment(department).doOnError(Exception.class, ex -> departmentsRepo.deleteById(department.getOrgId()));
+	}
+
+	private Mono<RocketChatDepartmentDTO> createDepartment(RocketChatOrganizationDepartmentEntity department) {
 		RocketChatDepartmentDTO dto = RocketChatDepartmentDTO.builder()
 				.enabled(true)
 				.email("no@email")
-				.name(org.getId().toString())
-				.description(org.getName())
+				.name(department.getOrgId().toString())
+				.description(department.getOrganization().getName())
+				.id(department.getDepartmentId())
 				.build();
-		return client.createDepartment(dto)
-				.map(response -> persistDepartment(response, org))
-				.doOnError(SaveDepartmentException.class, ex -> client.deleteDepartment(ex.departmentId))
-				.onErrorMap(SaveDepartmentException.class, ex -> new IllegalStateException());
+		return client.createDepartment(dto);
 	}
 
-	private RocketChatOrganizationDepartmentEntity persistDepartment(
-			RocketChatDepartmentDTO dto,
-			OrganizationEntity org) {
-		try {
-			RocketChatOrganizationDepartmentEntity entity = new RocketChatOrganizationDepartmentEntity();
-			entity.setOrganization(org);
-			entity.setDepartmentId(dto.getId());
-			return departmentsRepo.save(entity);
-		} catch (Exception ex) {
-			throw new SaveDepartmentException(dto.getId());
-		}
+	private RocketChatOrganizationDepartmentEntity persistDepartment(OrganizationEntity org) {
+		RocketChatOrganizationDepartmentEntity entity = new RocketChatOrganizationDepartmentEntity();
+		entity.setOrganization(org);
+		entity.setDepartmentId(UUID.randomUUID().toString());
+		return departmentsRepo.save(entity);
 	}
 }

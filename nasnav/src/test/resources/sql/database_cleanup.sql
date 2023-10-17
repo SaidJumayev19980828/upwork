@@ -38,6 +38,9 @@ DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
 DELETE FROM public.promotions;
 
+DELETE FROM public.rocket_chat_organization_departments;
+DELETE FROM public.rocket_chat_employee_agents;
+
 DELETE FROM public.cart_item_addon_details;
 DELETE FROM public.cart_items where id in (
 	select crt.id

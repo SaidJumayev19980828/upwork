@@ -6,10 +6,11 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
 
-
-@JsonIgnoreProperties(ignoreUnknown = true)
+// ignore any field named agents because it causes a problem
+@JsonIgnoreProperties(ignoreUnknown = true, value = {"agents"})
 @Data
 public class RocketChatDTOWrapper<T extends RocketChatWrappedData> {
 

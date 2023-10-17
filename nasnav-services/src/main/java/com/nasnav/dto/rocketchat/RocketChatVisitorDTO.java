@@ -25,6 +25,8 @@ public class RocketChatVisitorDTO implements RocketChatWrappedData {
 
 	private String token;
 
+	private String department;
+
 	@JsonIgnore
 	private String userId;
 
@@ -42,7 +44,7 @@ public class RocketChatVisitorDTO implements RocketChatWrappedData {
 
 	public List<RocketChatCustomFieldDTO> getCustomFields() {
 		return List.of(new RocketChatCustomFieldDTO("user_id", userId),
-				new RocketChatCustomFieldDTO("org_id", userId));
+				new RocketChatCustomFieldDTO("org_id", orgId));
 	}
 
 	public void setCustomFields(List<RocketChatCustomFieldDTO> cutomField) {
