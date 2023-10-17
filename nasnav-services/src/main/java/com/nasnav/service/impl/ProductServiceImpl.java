@@ -3806,7 +3806,7 @@ public VariantUpdateResponse updateVariantV2(
 
 	@Transactional
 	@Override
-	public ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams,Integer offset) throws BusinessException {
+	public ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
 		QProducts products = QProducts.products;
@@ -3840,17 +3840,11 @@ public VariantUpdateResponse updateVariantV2(
 				.offset(params.start)
 				.limit(params.count);
 
-		if(Objects.isNull(offset)){
-			offset = 0;
-		}
-
 		Long[] productIds = productsQuery.fetch().toArray(Long[]::new);
 		SQLQuery<Tuple> allProductQuery = queryFactory
 				.select(products.all())
 				.from(products)
-				.where(products.id.in(productIds))
-				.limit(5)
-				.offset(offset);
+				.where(pronasnav-services/src/main/java/com/nasnav/service/ProductService.javaducts.id.in(productIds));
 
 		List<ProductRepresentationObject> result = template.query(allProductQuery.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
