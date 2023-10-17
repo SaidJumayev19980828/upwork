@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dto.stripe.StripeConfirmDTO;
@@ -29,12 +30,8 @@ import static org.springframework.http.HttpStatus.*;
 @Service
 public class StripeServiceImpl implements StripeService {
 
-    @Value("${stripe.apikey}")
-    public String apiKey;
-
-    @Value("${stripe.webhook.secret}")
-    public String webhookSecret;
-
+    @Autowired
+    AppConfig appConfig;
     @Autowired
     PackageRepository packageRepository;
 
@@ -42,10 +39,10 @@ public class StripeServiceImpl implements StripeService {
 
     @PostConstruct
     public void init() {
-        if(StringUtils.isBlankOrNull(apiKey)){
+        if(StringUtils.isBlankOrNull(appConfig.stripeApiKey)){
             stripeLogger.error("Fail To Load Api key of Stripe");
         }else{
-            Stripe.apiKey = apiKey;
+            Stripe.apiKey = appConfig.stripeApiKey;
         }
     }
 
@@ -175,7 +172,7 @@ public class StripeServiceImpl implements StripeService {
     public Event verifyAndGetEventWebhook(String signatureHeader , String body){
         Event event = null;
         try {
-            event = Webhook.constructEvent(body, signatureHeader, webhookSecret);
+            event = Webhook.constructEvent(body, signatureHeader, appConfig.stripeWebhookSecret);
         } catch (Exception e) {
             // Invalid payload
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0001);
