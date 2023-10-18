@@ -35,6 +35,7 @@ import javax.annotation.PostConstruct;
 import javax.persistence.criteria.*;
 
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -80,7 +81,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Qualifier("promotionQueryBuilder")
 	@Autowired
-	private AbstractCriteriaQueryBuilder<PromotionsEntity> criteriaQueryBuilder;
+	private AbstractCriteriaQueryBuilder<PromotionsEntity, PromotionsSearchParams> criteriaQueryBuilder;
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
@@ -121,13 +122,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 		PromotionsSearchParams params = createSearchParam(searchParams);
 
 		setPromotionDefaultParams(params);
-
-		List<PromotionDTO> promotions =
-				criteriaQueryBuilder.getResultList(params, true)
-					.stream()
+		CrieteriaQueryResults<PromotionsEntity> results = criteriaQueryBuilder.getResultList(params, true);
+		List<PromotionDTO> promotions = results.getResultList().stream()
 					.map(this::createPromotionDTO)
 					.collect(toList());
-		Long total = criteriaQueryBuilder.getResultCount();
+		Long total = results.getResultCount();
 
 		return new PromotionResponse(total, promotions);
 	}

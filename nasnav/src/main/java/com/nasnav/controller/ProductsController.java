@@ -277,25 +277,37 @@ public class ProductsController {
                             @RequestParam Long id) {
         reviewService.approveRate(id);
     }
-    
-    
-    @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
-    public ProductUpdateResponse createProductV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		 @RequestPart("product") @Valid NewProductFlowDTO productJson,  @RequestPart(value = "cover", required = true) @Valid MultipartFile cover, 
-    		@RequestPart(value = "imgs", required = false) @Valid MultipartFile [] imgs ) throws BusinessException, JsonMappingException, JsonProcessingException {
-		
-    	return productService.updateProductV2(productJson,cover,imgs);
+
+    @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    public ProductUpdateResponse createProductV2(
+            @RequestHeader(name = "User-Token", required = false) String token,
+            @RequestPart("product") @Valid NewProductFlowDTO productJson,
+            @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
+            @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
+            @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
+            @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
+    ) throws BusinessException, JsonMappingException, JsonProcessingException {
+
+        return productService.updateProductVersion2(productJson, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
-   
-    
-    
-	@PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes =MULTIPART_FORM_DATA_VALUE)
-    public VariantUpdateResponse updateProductVariantV2(@RequestHeader(name = "User-Token", required = false) String token,
-    		  @RequestPart("var") @Valid VariantUpdateDTO variant, @RequestPart(value = "imgs", required = false) @Valid MultipartFile []imgs) throws BusinessException {
-		return  productService.updateVariantV2(variant, imgs);
+
+
+
+
+    @PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    public VariantUpdateResponse updateProductVariantV2(
+            @RequestHeader(name = "User-Token", required = false) String token,
+            @RequestPart("var") @Valid VariantUpdateDTO variant,
+            @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
+            @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
+            @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
+            @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
+    ) throws BusinessException {
+        return productService.updateVariantV2(variant, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
-	
-	   @GetMapping(value = "v2/productdata",produces=APPLICATION_JSON_VALUE)
+
+
+    @GetMapping(value = "v2/productdata",produces=APPLICATION_JSON_VALUE)
 	    public ProductDetailsDTO getProductData(@RequestHeader(name = "User-Token", required = false) String token,
 	                                        @RequestParam(name = "product_id") Long productId) throws BusinessException {
 	        var params = new ProductFetchDTO(productId);
@@ -317,8 +329,8 @@ public class ProductsController {
 	    }
 
     @GetMapping(value = "/out-of-stock-products", produces = APPLICATION_JSON_VALUE)
-    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
-        return productService.getOutOfStockProducts(productSearchParam);
+    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken,@RequestParam(name="offset",required = false) Integer offset) throws BusinessException {
+        return productService.getOutOfStockProducts(productSearchParam,offset);
     }
 
 }

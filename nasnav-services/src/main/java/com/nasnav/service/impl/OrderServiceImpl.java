@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -17,6 +18,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
@@ -40,7 +42,6 @@ import com.nasnav.service.ShippingManagementService;
 import com.nasnav.service.StockService;
 import com.nasnav.service.UserService;
 import com.nasnav.service.OrderStatisticService;
-import com.nasnav.service.OrderService.OrderValue;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -65,6 +66,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -117,7 +119,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Qualifier("ordersQueryBuilder")
 	@Autowired
-	private AbstractCriteriaQueryBuilder<OrdersEntity> criteriaQueryBuilder;
+	private AbstractCriteriaQueryBuilder<OrdersEntity, OrderSearchParam> criteriaQueryBuilder;
 	@Autowired
 	private SecurityService securityService;
 	@Autowired
@@ -176,8 +178,6 @@ public class OrderServiceImpl implements OrderService {
 	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
 	@Autowired
 	private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
-	@Autowired
-	private LoyaltyPinsRepository loyaltyPinsRepository;
 
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -192,6 +192,8 @@ public class OrderServiceImpl implements OrderService {
 	AddonsBasketRepository addonsBasketRepository;
 	@Autowired
 	private OrderStatisticService orderStatisticService;
+	@Autowired
+	private PromotionMapper promotionMapper;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -796,7 +798,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private List<LoyaltyOrderDetailDTO> getOrderPoints(OrdersEntity order) {
-		return loyaltyPointTransactionRepository.findByOrder_Id(order.getId())
+		return Optional.ofNullable(order.getGainedPointsTransaction())
 				.map(p -> new LoyaltyOrderDetailDTO(p.getAmount(), p.getPoints()))
 				.map(p -> List.of(p))
 				.orElse(emptyList());
@@ -854,6 +856,15 @@ public class OrderServiceImpl implements OrderService {
 			}
 			obj.setShippingAddress(address);
 		}
+		Set<PromotionsEntity> orderAssociatedPromos = entity.getMetaOrder().getPromotions();
+		if(orderAssociatedPromos != null && !orderAssociatedPromos.isEmpty()){
+			List<OrderAssociatedPromotions> associatedPromotions = orderAssociatedPromos
+					.stream()
+					.map(promo -> promotionMapper.toDto(promo)).collect(toList());
+			obj.setOrderAssociatedPromotions(associatedPromotions);
+		}
+
+
 	}
 
 	private BasketItem readBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages){
@@ -981,9 +992,9 @@ public class OrderServiceImpl implements OrderService {
 		params.setUseCount(true);
 		OrderSearchParam finalParams = getFinalOrderSearchParams(params);
 		Integer detailsLevel = finalParams.getDetails_level();
-
-		List<OrdersEntity> ordersEntityList = criteriaQueryBuilder.getResultList(finalParams, true);
-		Long ordersCount = criteriaQueryBuilder.getResultCount();
+		CrieteriaQueryResults<OrdersEntity> results = criteriaQueryBuilder.getResultList(finalParams, true);
+		List<OrdersEntity> ordersEntityList = results.getResultList();
+		Long ordersCount = results.getResultCount();
 
 		Set<OrdersEntity> orders = new HashSet<>();
 
@@ -1005,7 +1016,6 @@ public class OrderServiceImpl implements OrderService {
 
 		if(detailsLevel >= 2 && finalParams.getOrders_sorting_option().equals(QUANTITY))
 			detailedOrders = sortByTotalQuantity(detailedOrders, finalParams.getSorting_way());
-
 		return new OrdersListResponse(ordersCount, detailedOrders);
 	}
 
@@ -2004,6 +2014,7 @@ public class OrderServiceImpl implements OrderService {
 		SubordersAndDiscountsInfo data = createSubOrders(cartDividedByShop, address, dto, org);
 
 		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
+       promotion.ifPresent(order::addPromotion);
 		return metaOrderRepo.save(order);
 	}
 

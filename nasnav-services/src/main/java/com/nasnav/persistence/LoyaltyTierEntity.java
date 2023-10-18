@@ -49,12 +49,6 @@ public class LoyaltyTierEntity {
     @ToString.Exclude
     private OrganizationEntity organization;
 
-    @OneToOne
-    @JoinColumn(name = "booster_id")
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private LoyaltyBoosterEntity booster;
-
     @Column( name = "cash_back_percentage")
     private BigDecimal cashBackPercentage;
 
@@ -67,9 +61,6 @@ public class LoyaltyTierEntity {
         BeanUtils.copyProperties(this, dto);
         if(organization != null ) {
             dto.setOrgId(organization.getId());
-        }
-        if (booster != null) {
-            dto.setBoosterId(booster.getId());
         }
         return dto;
     }

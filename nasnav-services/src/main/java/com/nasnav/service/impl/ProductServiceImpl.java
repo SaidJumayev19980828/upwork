@@ -1,12 +1,10 @@
 package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.gson.Gson;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
@@ -28,17 +26,11 @@ import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.request.AllowedPromotionConstraints;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.request.VariantSearchParam;
 import com.nasnav.response.*;
-import com.nasnav.service.FileService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductImageService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ProductServiceTransactions;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.SeoService;
-import com.nasnav.service.StockService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
@@ -75,12 +67,13 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.*;
-import javax.validation.Valid;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -215,14 +208,17 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private ProductCollectionItemRepository collectionItemRepo;
 
+	private final PromotionRepository promotionRepository;
+
 	@Autowired
 	private SeoService seoService;
+
 	
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-						  StockService stockService) {
+						  StockService stockService, PromotionRepository promotionRepository ) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -230,6 +226,7 @@ public class ProductServiceImpl implements ProductService {
 		this.productFeaturesRepository = productFeaturesRepository;
 		this.bundleRepository = bundleRepository;
 		this.stockService = stockService;
+		this.promotionRepository = promotionRepository;
 	}
 
 	@Override
@@ -619,6 +616,10 @@ public class ProductServiceImpl implements ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant, organization);
 
+		BooleanBuilder predicateForPromotions = getQueryPredicateForPromotions(product, params);
+		predicate.and(predicateForPromotions);
+		BooleanBuilder predicateForDiscounts = getQueryPredicateForDiscounts(stock, organization, shop, params);
+		predicate.and(predicateForDiscounts);
 		List<OrderSpecifier> order = getProductQueryOrder(params, product, stock);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
@@ -700,6 +701,10 @@ public class ProductServiceImpl implements ProductService {
 		QOrganizations organization = QOrganizations.organizations;
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant, organization);
+		BooleanBuilder predicateForPromotions = getQueryPredicateForPromotions(product, finalParams);
+		predicate.and(predicateForPromotions);
+		BooleanBuilder queryPredicateForDiscounts = getQueryPredicateForDiscounts(stock, organization, shop, finalParams);
+		predicate.and(queryPredicateForDiscounts);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -944,7 +949,96 @@ public class ProductServiceImpl implements ProductService {
 		return predicate;
 	}
 
+	private BooleanBuilder getQueryPredicateForPromotions(QProducts product, ProductSearchParam params){
+		AllowedPromotionConstraints searchParams = getSearchParam(params);
+		BooleanBuilder promoPredicate = new BooleanBuilder();
+		if(searchParams.getProductIds() != null && !searchParams.getProductIds().isEmpty())
+			promoPredicate.or(product.id.in(searchParams.getProductIds()));
+		if(searchParams.getBrandIds() != null && !searchParams.getBrandIds().isEmpty())
+			promoPredicate.or(product.brandId.in(searchParams.getBrandIds()));
+		if (searchParams.getTagIds() != null && !searchParams.getTagIds().isEmpty())
+			promoPredicate.or(product.id.in(productRepository.getProductIdsByTagsList(searchParams.getTagIds())));
 
+		return promoPredicate;
+	}
+
+	private BooleanBuilder getQueryPredicateForDiscounts(QStocks stock,QOrganizations organization, QShops shop
+			, ProductSearchParam params){
+		BooleanBuilder discountPredicate = new BooleanBuilder();
+		if(params.discount != null && !params.discount.isEmpty())
+			discountPredicate.or(stock.discount.in(params.discount));
+
+		return discountPredicate;
+	}
+
+
+
+	private AllowedPromotionConstraints getSearchParam(ProductSearchParam productSearchParam) {
+
+		List<PromosConstraints> promotionConstraints = getPromotionConstraints(productSearchParam);
+		return extractSearchParamFromConstraints(promotionConstraints);
+	}
+	private AllowedPromotionConstraints extractSearchParamFromConstraints(List<PromosConstraints> constraints) {
+		if (constraints == null)
+			return new AllowedPromotionConstraints();
+
+		AllowedPromotionConstraints searchParam = new AllowedPromotionConstraints();
+		for (PromosConstraints constraint : constraints) {
+
+			if(constraint.getBrands() != null && !constraint.getBrands().isEmpty())
+				searchParam.addBrandIds(constraint.getBrands());
+
+			if(constraint.getProducts() != null && !constraint.getProducts().isEmpty())
+				searchParam.addProductIds(constraint.getProducts());
+
+			if(constraint.getTags() != null && !constraint.getTags().isEmpty())
+				searchParam.addTagIds(constraint.getTags());
+
+		}
+		return searchParam;
+	}
+
+
+	private List<PromosConstraints>  getPromotionConstraints(ProductSearchParam params) {
+		Supplier<List<PromotionsEntity>> promotionsListSupplier = getPromosSupplier(params);
+		if(promotionsListSupplier == null) {
+			return null;
+		}
+		return promotionsListSupplier.get()
+					.stream()
+					.map(PromotionsEntity::getConstrainsJson).collect(Collectors.toList())
+					.stream().map(this::readJsonStr).collect(Collectors.toList());
+
+	}
+
+private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam params) {
+		Supplier<List<PromotionsEntity>> supplier;
+		if(params.yeshtery_products && params.has_promotions && params.org_id == null)
+			return supplier = () -> promotionRepository.findAllActivePromotions();
+
+		if(params.yeshtery_products && params.promo_id != null && params.org_id == null )
+			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id);
+
+		if(params.has_promotions && params.org_id != null)
+		    return supplier = () -> promotionRepository.findActivePromosByOrgIdIn(List.of(params.org_id));
+
+		if(params.promo_id != null && params.org_id != null )
+		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id);
+
+		return null;
+
+	}
+
+
+	private PromosConstraints readJsonStr(String jsonStr){
+		ObjectMapper objectMapper = createObjectMapper();
+		try {
+			return objectMapper.readValue(jsonStr, PromosConstraints.class);
+		} catch (Exception e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
+		}
+	}
 
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException {
 		ProductSearchParam params = new ProductSearchParam();
@@ -2832,7 +2926,8 @@ public class ProductServiceImpl implements ProductService {
 
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
+	@Override
+	public ProductDetailsDTO toProductDetailsDTO(ProductEntity product, boolean includeOutOfStock) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		ProductRepresentationObject representationObj = getProductRepresentation(product, includeOutOfStock);
 		copyProperties(representationObj, dto);
@@ -3571,34 +3666,32 @@ public class ProductServiceImpl implements ProductService {
     }
 
 	@Override
-	public ProductUpdateResponse updateProductV2(NewProductFlowDTO productJson, MultipartFile coverImg, MultipartFile[] imgs) throws BusinessException, JsonMappingException, JsonProcessingException {
-		
+
+	public ProductUpdateResponse updateProductVersion2(
+			NewProductFlowDTO productJson,
+			MultipartFile[] imgs,
+			Integer[] uploadedImagePriorities,
+			List<Map<String, Long>> updatedImages,
+			Long[] deletedImages
+	) throws BusinessException, JsonMappingException, JsonProcessingException {
+
 		validateProductNewFlow(productJson);
 		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 		String json = ow.writeValueAsString(productJson);
 
-
-		 
-		 List<Long> tagsId = productJson.getTags();
-		 List<String> keywords = productJson.getKeywords();
+		List<Long> tagsId = productJson.getTags();
+		List<String> keywords = productJson.getKeywords();
 		Long id = updateProductBatch(asList(json), false, false).stream().findFirst().orElse(null);
 		if (id != null) {
-			imgService.deleteImage(null, id, null);
-			if (coverImg != null) {
-				ProductImageUpdateDTO coverMetaData = new ProductImageUpdateDTO();
-				coverMetaData.setOperation(Operation.CREATE);
-				coverMetaData.setProductId(id);
-				coverMetaData.setPriority(0);
-				coverMetaData.setType(7);
-				imgService.updateProductImage(coverImg, coverMetaData);
-			}
-
 			if (imgs != null) {
 				for (int i = 0; i < imgs.length; i++) {
 					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
 					img.setOperation(Operation.CREATE);
 					img.setProductId(id);
-					img.setPriority(i + 1);
+					int priority = (uploadedImagePriorities != null && i < uploadedImagePriorities.length)
+							? uploadedImagePriorities[i]
+							: i + 1;
+					img.setPriority(priority);
 					img.setType(7);
 					imgService.updateProductImage(imgs[i], img);
 				}
@@ -3617,32 +3710,81 @@ public class ProductServiceImpl implements ProductService {
 				seoService.addSeoKeywords(seo);
 			}
 		}
+
+
+
+		if (updatedImages != null && !updatedImages.isEmpty()) {
+			for (Map<String, Long> imageInfo : updatedImages) {
+				Long imageId = imageInfo.get("id");
+				Long priority = imageInfo.get("priority");
+				Optional<ProductImagesEntity> optionalImage = productImagesRepository.findById(imageId);
+				if (optionalImage.isPresent()) {
+					ProductImagesEntity image =optionalImage.get();
+					image.setPriority(Math.toIntExact(priority));
+					productImagesRepository.save(image);
+				}
+			}
+		}
+
+		if (deletedImages != null && deletedImages.length > 0) {
+			for (Long imageId : deletedImages) {
+				imgService.deleteImage(imageId, null, null);
+			}
+		}
+
+
 		return new ProductUpdateResponse(id);
 	}
-   
-	public VariantUpdateResponse updateVariantV2(VariantUpdateDTO variant, MultipartFile[] imgs)
-			throws BusinessException {
+
+@Override
+public VariantUpdateResponse updateVariantV2(
+			VariantUpdateDTO variant,
+			MultipartFile[] imgs,
+			Integer[] uploadedImagePriorities,
+			List<Map<String, Long>> updatedImages,
+			Long[] deletedImages
+	) throws BusinessException {
 		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
 		if (id != null) {
 
 			Operation operation = variant.getOperation();
-
-			if (operation.equals(UPDATE)) {
-				imgService.deleteVarientImages(id);
-
-			}
 			if (imgs != null) {
+				//Insert
 				for (int i = 0; i < imgs.length; i++) {
 					ProductImageUpdateDTO img = new ProductImageUpdateDTO();
 					img.setOperation(Operation.CREATE);
+					int priority = (uploadedImagePriorities != null && i < uploadedImagePriorities.length)
+							? uploadedImagePriorities[i]
+							: i + 1;
+					img.setPriority(priority);
 					img.setVariantId(id);
-					img.setPriority(i);
 					img.setType(7);
 					img.setProductId(variant.getProductId());
 					imgService.updateProductImage(imgs[i], img);
 				}
 			}
 
+
+			//Update
+			if (updatedImages != null && !updatedImages.isEmpty()) {
+				for (Map<String, Long> imageInfo : updatedImages) {
+					Long imageId = imageInfo.get("id");
+					Long priority = imageInfo.get("priority");
+					Optional<ProductImagesEntity> optionalImage = productImagesRepository.findById(imageId);
+					if (optionalImage.isPresent()) {
+						ProductImagesEntity image =optionalImage.get();
+						image.setPriority(Math.toIntExact(priority));
+						productImagesRepository.save(image);
+					}
+				}
+			}
+
+			//DELETE
+			if (deletedImages != null && deletedImages.length > 0) {
+				for (Long imageId : deletedImages) {
+					imgService.deleteImage(imageId, null, null);
+				}
+			}
 		}
 
 		return new VariantUpdateResponse(id);
@@ -3664,7 +3806,7 @@ public class ProductServiceImpl implements ProductService {
 
 	@Transactional
 	@Override
-	public ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException {
+	public ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams,Integer offset) throws BusinessException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
 		QProducts products = QProducts.products;
@@ -3698,8 +3840,17 @@ public class ProductServiceImpl implements ProductService {
 				.offset(params.start)
 				.limit(params.count);
 
+		if(Objects.isNull(offset)){
+			offset = 1;
+		}
+
 		Long[] productIds = productsQuery.fetch().toArray(Long[]::new);
-		SQLQuery<Tuple> allProductQuery = queryFactory.select(products.all()).from(products).where(products.id.in(productIds));
+		SQLQuery<Tuple> allProductQuery = queryFactory
+				.select(products.all())
+				.from(products)
+				.where(products.id.in(productIds))
+				.limit(5)
+				.offset(offset);
 
 		List<ProductRepresentationObject> result = template.query(allProductQuery.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));

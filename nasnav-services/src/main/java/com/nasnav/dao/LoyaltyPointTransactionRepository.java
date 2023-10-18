@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.Set;
 public interface LoyaltyPointTransactionRepository extends JpaRepository<LoyaltyPointTransactionEntity, Long> {
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId); // used for listing transactions only
+    List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValid(Long userId, Long orgId, LocalDateTime startDate,Boolean valid); // used for listing transactions only
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndType(Long userId, Long orgId, Integer type);
 
@@ -81,8 +83,6 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     @Query("select t from LoyaltyPointTransactionEntity t where t.order.id in :orderIds or t.metaOrder.id in :metaOrderIds")
     List<LoyaltyPointTransactionEntity> findByOrderIdInOrYeshteryMetaOrderIdIn(@Param("orderIds") Set<Long> orderIds,
                                                                                @Param("metaOrderIds") Set<Long> metaOrderIds);
-
-    List<LoyaltyPointTransactionEntity> getByCharity_Id(Long charityId);
 
     @Query("Select count(transaction) from LoyaltyPointTransactionEntity transaction " +
             " where transaction.user.id = :userId and DATE(transaction.createdAt) BETWEEN :dateFrom and :dateTo")

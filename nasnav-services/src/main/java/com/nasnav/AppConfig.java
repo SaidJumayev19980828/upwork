@@ -49,6 +49,9 @@ public class AppConfig {
     public String stripeApiKey;
     @Value("${stripe.webhook.secret:whsec_c6c1772b65026654a21e1beac00f0a213eacbb56edd1bca45a8fdfd10fdb1c6c}")
     public String stripeWebhookSecret;
+    @Value("${frontend.setting.path:}")
+    public String filePath ;
+    
     public final boolean isYeshteryInstance;
     public AppConfig(boolean isYeshtery) {
         isYeshteryInstance = isYeshtery;

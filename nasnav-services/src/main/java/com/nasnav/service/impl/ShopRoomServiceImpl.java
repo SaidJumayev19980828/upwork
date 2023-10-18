@@ -5,7 +5,6 @@ import static java.lang.Boolean.FALSE;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopRoomTemplateRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -24,7 +22,6 @@ import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.ShopRoomMapper;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.RoomSessionEntity;
 import com.nasnav.persistence.ShopRoomTemplateEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.ShopRoomService;
@@ -54,14 +51,13 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 
 	@Transactional
 	@Override
-	public ShopRoomResponse createNewSession(Long shopId, RoomSessionDTO roomSessionDto) {
+	public ShopRoomResponse startSession(Long shopId, Optional<RoomSessionDTO> roomSessionDto) {
 		ShopRoomTemplateEntity template = getRoomTemplateForUpdate(shopId)
 				.orElseThrow(
 						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE, shopId));
-		RoomSessionEntity session = getNewRoomSession(roomSessionDto, template.getSession());
-		session.setTemplate(template);
-		template.setSession(session);
+		
+		template.start(roomSessionDto.map(RoomSessionDTO::getSessionExternalId).orElse(null));
 		template = roomTemplateRepository.save(template);
 		return mapper.toResponse(template);
 	}
@@ -138,18 +134,5 @@ public class ShopRoomServiceImpl implements ShopRoomService {
 		ShopRoomTemplateEntity template = new ShopRoomTemplateEntity();
 		template.setShop(requestedShop);
 		return template;
-	}
-
-	private RoomSessionEntity getNewRoomSession(RoomSessionDTO sessionDto, RoomSessionEntity oldSession) {
-		RoomSessionEntity session = new RoomSessionEntity();
-		if (sessionDto != null && StringUtils.isNotBlankOrNull(sessionDto.getSessionExternalId())) {
-			session.setExternalId(sessionDto.getSessionExternalId());
-		} else {
-			String externalId = oldSession != null && StringUtils.isNotBlankOrNull(oldSession.getExternalId())
-					? oldSession.getExternalId()
-					: UUID.randomUUID().toString();
-			session.setExternalId(externalId);
-		}
-		return session;
 	}
 }

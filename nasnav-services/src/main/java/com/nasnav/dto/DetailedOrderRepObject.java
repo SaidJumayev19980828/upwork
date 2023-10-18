@@ -31,6 +31,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private BigDecimal total;
     private String currency;
     private String notes;
+
     
     @JsonProperty("creation_date")
     private LocalDateTime createdAt;
@@ -50,4 +51,5 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private List<LoyaltyOrderDetailDTO> points;
     @JsonProperty("total_point_amount")
     private BigDecimal totalPointAmount;
+    private List<OrderAssociatedPromotions> orderAssociatedPromotions;
 }

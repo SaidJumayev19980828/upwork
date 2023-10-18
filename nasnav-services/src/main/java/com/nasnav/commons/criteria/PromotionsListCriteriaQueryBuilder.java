@@ -4,41 +4,37 @@ package com.nasnav.commons.criteria;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.request.PromotionsSearchParams;
 import com.nasnav.service.SecurityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 import static java.time.LocalDateTime.now;
 import static javax.persistence.criteria.JoinType.INNER;
 
 @Component("promotionQueryBuilder")
-public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder {
+public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<PromotionsEntity, PromotionsSearchParams> {
+    private final SecurityService securityService;
 
-    @Autowired
-    private SecurityService securityService;
-
-    private Root<PromotionsEntity> root;
-
-    @Autowired
-    public PromotionsListCriteriaQueryBuilder(EntityManager entityManager) {
+    public PromotionsListCriteriaQueryBuilder(EntityManager entityManager, SecurityService securityService) {
         super(entityManager, PromotionsEntity.class);
+        this.securityService = securityService;
     }
 
     @Override
-    void setRoot() {
-        root = query.from(PromotionsEntity.class);
+    Root<PromotionsEntity> getRoot(CriteriaQuery<PromotionsEntity> query) {
+        Root<PromotionsEntity> root = query.from(PromotionsEntity.class);
         root.fetch("organization", INNER);
         root.fetch("createdBy", INNER);
+
+        return root;
     }
 
     @Override
-    void setPredicates() {
-        PromotionsSearchParams params = (PromotionsSearchParams) this.searchParams;
-
+    Predicate[] getPredicates(CriteriaBuilder builder, Root<PromotionsEntity> root, PromotionsSearchParams params) {
         Long orgId = securityService.getCurrentUserOrganizationId();
 
         ArrayList<Predicate> predicates = new ArrayList<>();
@@ -60,26 +56,19 @@ public class PromotionsListCriteriaQueryBuilder extends AbstractCriteriaQueryBui
 
         predicates.add(isPromotionInTimeWindowPredicate);
 
-        this.predicates = predicates.stream().toArray(Predicate[]::new);
+        return predicates.stream().toArray(Predicate[]::new);
     }
 
     @Override
-    void setOrderBy() {
-        orderBy = "id";
+    void updateQueryWithConditionAndOrderBy(CriteriaQueryContext<PromotionsEntity, PromotionsSearchParams> context) {
+        context.getQuery()
+                .where(context.getPredicates())
+                .orderBy(context.getCriteriaBuilder().desc(context.getRoot().get("id")));
     }
 
     @Override
-    void setQueryConditionAndOrderBy() {
-        query
-                .where(predicates)
-                .orderBy(builder.desc(root.get(orderBy)));
-    }
-
-    @Override
-    void initiateListQuery() {
-        PromotionsSearchParams params = (PromotionsSearchParams) searchParams;
-
-        this.resultList = entityManager.createQuery(query)
+    List<PromotionsEntity> queryForList(CriteriaQuery<PromotionsEntity> query, PromotionsSearchParams params) {
+        return entityManager.createQuery(query)
                 .setFirstResult(params.getStart())
                 .setMaxResults(params.getCount())
                 .getResultList();

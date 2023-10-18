@@ -153,7 +153,7 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "variants", produces = APPLICATION_JSON_VALUE)
-    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,                                                                                                                                                                                                  
+    public VariantsResponse getVariants(@RequestParam(required = false, defaultValue = "") String name,
                                         @RequestParam(required = false, defaultValue = "0") Integer start,
                                         @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count) {
         return productService.getVariantsForYeshtery(name, start, count);

@@ -1,6 +1,8 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.EventProjection;
 import com.nasnav.persistence.EventEntity;
+import com.nasnav.persistence.InfluencerEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,17 +23,55 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
     List<EventEntity> getAllEventForUser(Long orgId, Integer status);
     @Query("select event from EventEntity event where (CAST(:dateFilter as date) is null or CAST(event.startsAt as date) = :dateFilter) order by event.startsAt desc")
     PageImpl<EventEntity> getAllEventFilterByDatePageable(@DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Pageable page);
-    List<EventEntity> getAllByInfluencerNullAndStartsAtAfter(LocalDateTime now);
-    List<EventEntity> getAllByOrganizationInAndInfluencerNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
-    @Query("select event from EventEntity event where event.influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
-    PageImpl<EventEntity> getAllByInfluencer_Id(Long influencerId, Long orgId, Pageable page);
-    Integer countAllByInfluencer_Id(Long influencerId);
+
+    //Done
+    List<EventEntity> getAllByInfluencersNullAndStartsAtAfter(LocalDateTime now);
+//    @Query("SELECT  event FROM EventEntity event  JOIN event.influencers influencer WHERE  influencer IS NULL AND (:organization IS NULL OR event.organization = :organization)  ")
+
+//
+//    PageImpl<EventProjection> getAllByOrganizationOrFindAll(Pageable page ,@Param("organization") OrganizationEntity organization);
+
+    @Query("SELECT event FROM EventEntity event LEFT JOIN event.influencers influencer WHERE influencer IS NULL And (:organization is null or event.organization=:organization)")
+
+    PageImpl<EventProjection> getAllByOrganizationAndInfluencersNull(Pageable page , @Param("organization") OrganizationEntity organization);
+    List<EventEntity> getAllByOrganizationInAndInfluencersNullAndStartsAtAfter(List<OrganizationEntity> orgs, LocalDateTime now);
+    @Query("select DISTINCT event from EventEntity event   JOIN event.influencers influencer where influencer.id =:influencerId and (:orgId is null or event.organization.id =:orgId)")
+    PageImpl<EventEntity> getAllByInfluencers(Long influencerId, Long orgId, Pageable page);
+
+//    Integer countAllByInfluencers(Long influencerId);
+    //Done
+    Integer countAllByInfluencersContains(InfluencerEntity influencer);
     @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id,e.influencer_id,e.name,e.description,e.status,e.visible from events e" +
             " inner join event_products ep on ep.event_id = e.id inner join products p on p.id = ep.product_id " +
             "where p.category_id in (:categories) and e.visible=true" +
             " and e.status=0 and e.influencer_id is not null" +
             " and e.id != :sourceEventId", nativeQuery = true)
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
-    @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
+//    @Query("select distinct event.organization from EventEntity event where event.influencer.id = :influencerId")
+//    List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
+
+    //Done
+    @Query("select distinct event.organization from EventEntity event join event.influencers influencer where influencer.id = :influencerId")
     List<OrganizationEntity> getOrgsThatInfluencerHostFor(Long influencerId);
+
+    //Done
+    @Query( "SELECT DISTINCT event  FROM EventEntity event JOIN event.influencers influencer  WHERE " +
+            "influencer IS NOT NULL " +
+            "ORDER BY event.startsAt DESC")
+    PageImpl<EventProjection> findAllOrderedByStartsAtDesc( Pageable pageable);
+
+    //Done
+
+    @Query( "SELECT DISTINCT event FROM EventEntity event JOIN event.influencers influencer WHERE " +
+            "influencer IS NOT NULL " +
+            "AND " +
+            "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "IS NULL OR " +
+            "event.startsAt >= " +
+            "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
+            "ORDER BY event.startsAt DESC")
+    PageImpl<EventProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+
+
 }
+

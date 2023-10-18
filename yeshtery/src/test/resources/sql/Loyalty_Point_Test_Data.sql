@@ -83,7 +83,3 @@ INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organizati
 
 insert into public.loyalty_point_config
 values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
-
-INSERT INTO public.loyalty_booster
-(booster_name, linked_family_member, number_family_children, review_products, number_purchase_offline, social_media_reviews, organization_id, level_booster, activation_months, id, is_active, purchase_size)
-VALUES('test booster', 0, 0, NULL, 0, NULL, 99001, 0, 0, 199001, true, NULL);

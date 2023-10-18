@@ -19,6 +19,11 @@ public class EventAttachmentsEntity {
 
     private String type;
 
+    @Column(name = "coin")
+    private Long coin;
+
+
+
     @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "event_id", nullable = false,referencedColumnName = "id")
     @JsonIgnore

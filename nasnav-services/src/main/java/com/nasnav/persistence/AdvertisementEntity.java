@@ -24,17 +24,15 @@ public class AdvertisementEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id")
+    @JsonIgnore
     @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    private ProductEntity product;
+    @lombok.ToString.Exclude
+    private OrganizationEntity organization;
 
-    @Column(name = "coins")
-    private Integer coins;
-
-    @Column(name = "likes")
-    private Integer likes;
+    @Column(name = "banner_url")
+    private String bannerUrl;
 
     @Column(name = "from_date")
     private LocalDateTime fromDate;
@@ -52,4 +50,10 @@ public class AdvertisementEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<PostEntity> posts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<AdvertisementProductEntity> advertisementProducts = new ArrayList<>();
 }

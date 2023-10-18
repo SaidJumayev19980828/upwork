@@ -14,7 +14,7 @@ public interface CallQueueService {
      * @param orgId
      * @return
      */
-    public CallQueueStatusDTO enterQueue(Long orgId);
+    public CallQueueStatusDTO enterQueue(Long orgId , Long shopId);
 
     /**
      * user decided to kick himself out of the queue upon his will
@@ -34,7 +34,7 @@ public interface CallQueueService {
      * @param queueId
      * @return
      */
-    public List<CallQueueDTO> rejectCall(Long queueId);
+    public List<CallQueueDTO> rejectCall(Long queueId , String rejectionReason);
 
     /**
      * get a full details of queue for employee inside an org

@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
+import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dto.response.ApiLogsDTO;
 import com.nasnav.dto.response.ApiLogsResponse;
@@ -25,7 +26,7 @@ public class ApiLogsServiceImpl implements ApiLogsService{
 
 	@Autowired
 	@Qualifier("apiLogsQueryBuilder")
-	private AbstractCriteriaQueryBuilder<ApiLogsEntity> criteriaQueryBuilder;
+	private AbstractCriteriaQueryBuilder<ApiLogsEntity, ApiLogsSearchParam> criteriaQueryBuilder;
 
 
 	@Override
@@ -33,13 +34,13 @@ public class ApiLogsServiceImpl implements ApiLogsService{
 		validateDates(searchParam);
 		setSearchStartAndCount(searchParam);
 
-		List<ApiLogsDTO> resultList = criteriaQueryBuilder
-				.getResultList(searchParam, true)
-				.stream()
+		CrieteriaQueryResults<ApiLogsEntity> results = criteriaQueryBuilder
+				.getResultList(searchParam, true);
+		List<ApiLogsDTO> resultList = results.getResultList().stream()
 				.map(log -> (ApiLogsDTO) log.getRepresentation())
 				.collect(Collectors.toList());
 
-		return new ApiLogsResponse(criteriaQueryBuilder.getResultCount(), resultList);
+		return new ApiLogsResponse(results.getResultCount(), resultList);
 	}
 
 	private void validateDates(ApiLogsSearchParam searchParam) {

@@ -114,6 +114,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		}else {
 			if (isBlankOrNull(orgId)) {
 				throw new RuntimeBusinessException(UNAUTHORIZED, U$LOG$0002);
+
 			}
 			return userRepo.findByIdAndOrganizationId(id, orgId)
 					.map(BaseUserEntity.class::cast);

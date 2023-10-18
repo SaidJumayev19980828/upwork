@@ -22,8 +22,12 @@ public class EventForRequestDTO {
     @NotNull
     private Boolean visible;
     private List<EventAttachmentsEntity> attachments;
+    private Set<Long> influencersIds;
+
     private String name;
     private String description;
     private EventStatus status;
     private Set<Long> productsIds;
+
+    private Long coin;
 }

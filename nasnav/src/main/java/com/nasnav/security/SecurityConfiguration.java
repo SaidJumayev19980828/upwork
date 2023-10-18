@@ -80,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/room/event/list_for_user"			,GET			, getAllRoles()),
 						patternOf( "/room/event/session"					,POST				, getAllRoles()),
+						patternOf( "/room/event/session/suspend"					,POST				, getAllRoles()),
 						patternOf( "/room/event/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/room/event"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
@@ -219,13 +220,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf("/loyalty/spendable_points"		, GET						, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/delete"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/type/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf("/loyalty/family/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/tier/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf("/loyalty/booster/**"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/config/**"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf("/loyalty/points/check"									, setOf(CUSTOMER)),
 						patternOf("/loyalty/points/redeem"									, setOf(STORE_MANAGER)),
 			            patternOf("/advertisement",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			            patternOf("/chat-widget-setting/create",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			            patternOf("/chat-widget-setting/publish",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			            patternOf("/chat-widget-setting/get-unpublished",GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/**")
 						);
 
@@ -275,8 +277,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/error/**"							, HttpMethod.GET)
 						, patternOf("/advertisement", HttpMethod.GET)
 						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
+						, patternOf("/frontend/setting", GET)
+						, patternOf("/chat-widget-setting/get-published", GET)
 
-				);
+                 );
 
     AuthenticationProvider provider;
 

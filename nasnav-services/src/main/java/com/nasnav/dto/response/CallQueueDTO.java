@@ -3,6 +3,7 @@ package com.nasnav.dto.response;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.CallQueueStatus;
+import com.nasnav.persistence.ShopsEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -20,4 +21,5 @@ public class CallQueueDTO {
     private String reason;
     private Integer position;
     private Integer total;
+    private ShopsEntity shop;
 }

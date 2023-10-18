@@ -111,10 +111,11 @@ public class InfluencerServiceImpl implements InfluencerService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencer.getId());
         EventEntity event = eventRepository.findById(dto.getId()).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,dto.getId()));
+// multiple hosts  allowed
 
-        if(event.getInfluencer() != null){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$HAS$HOST$0005,event.getId());
-        }
+//        if(event.getInfluencer() != null){
+//            throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$HAS$HOST$0005,event.getId());
+//        }
         if(eventRequestsRepository.existsByInfluencerAndEvent(influencer, event))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$REQUEST$0004,event.getId());
 
@@ -152,9 +153,12 @@ public class InfluencerServiceImpl implements InfluencerService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,entity.getEvent().getId()));
 
         if(entity.getStatus() == EventRequestStatus.PENDING.getValue()){
-            if(action && onlyOneRequestApproved(eventEntity.getId())){
+            //Remove only one approved request
+//            if(action && onlyOneRequestApproved(eventEntity.getId())){
+            if(action){
                 entity.setStatus(EventRequestStatus.APPROVED.getValue());
-                eventEntity.setInfluencer(entity.getInfluencer());
+//                eventEntity.setInfluencer(entity.getInfluencer());
+                eventEntity.addInfluencer(entity.getInfluencer());
                 eventEntity.setStartsAt(entity.getStartsAt());
                 eventEntity.setEndsAt(entity.getEndsAt());
                 eventRepository.save(eventEntity);
@@ -178,7 +182,7 @@ public class InfluencerServiceImpl implements InfluencerService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,entity.getEvent().getId()));
 
         entity.setStatus(EventRequestStatus.APPROVED.getValue());
-        eventEntity.setInfluencer(entity.getInfluencer());
+        eventEntity.addInfluencer(entity.getInfluencer());
         eventEntity.setStartsAt(entity.getStartsAt());
         eventEntity.setEndsAt(entity.getEndsAt());
         eventRepository.save(eventEntity);
@@ -217,7 +221,7 @@ public class InfluencerServiceImpl implements InfluencerService {
         if(!influencerEntity.getApproved())
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,G$INFLU$0003,influencerEntity.getId());
 
-        PageImpl<EventEntity> source = eventRepository.getAllByInfluencer_Id(influencerEntity.getId(), null, page);
+        PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerEntity.getId(), null, page);
         List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
@@ -225,7 +229,7 @@ public class InfluencerServiceImpl implements InfluencerService {
     @Override
     public PageImpl<EventResponseDto> getEventsByInfluencerId(Long influencerId, Integer start, Integer count, Long orgId) {
         PageRequest page = getQueryPage(start, count);
-        PageImpl<EventEntity> source = eventRepository.getAllByInfluencer_Id(influencerId, orgId, page);
+        PageImpl<EventEntity> source = eventRepository.getAllByInfluencers(influencerId, orgId, page);
         List<EventResponseDto> dtos = source.getContent().stream().map(this::eventToDto).collect(Collectors.toList());
         return new PageImpl<>(dtos,source.getPageable(),source.getTotalElements());
     }
@@ -337,8 +341,16 @@ public class InfluencerServiceImpl implements InfluencerService {
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(), 0));
-        if (entity.getInfluencer() != null) {
-            dto.setInfluencer(toInfluencerDto(entity.getInfluencer()));
+//        if (entity.getInfluencer() != null) {
+//            dto.setInfluencer(toInfluencerDto(entity.getInfluencer()));
+//        }
+        if (!entity.getInfluencers().isEmpty()){
+            List<InfluencerDTO> influencers = new ArrayList<>();
+            entity.getInfluencers().forEach(influencer -> {
+                influencers.add(toInfluencerDto(influencer));
+
+            });
+            dto.setInfluencers(influencers);
         }
         dto.setVisible(entity.getVisible());
         dto.setAttachments(entity.getAttachments());
@@ -369,9 +381,9 @@ public class InfluencerServiceImpl implements InfluencerService {
             dto.setUserRepresentationObject(entity.getUser().getRepresentation());
         }
         dto.setCategories(entity.getCategories().stream().map(this::toCategoryDTO).collect(Collectors.toList()));
-        dto.setHostedEvents(eventRepository.countAllByInfluencer_Id(entity.getId()));
-        dto.setInterests(eventLogsRepository.countByEvent_Influencer_Id(entity.getId()));
-        dto.setAttends(eventLogsRepository.countByEvent_Influencer_IdAndAttendAtNotNull(entity.getId()));
+        dto.setHostedEvents(eventRepository.countAllByInfluencersContains(entity));
+        dto.setInterests(eventLogsRepository.countByEvent_InfluencersContains(entity.getId()));
+        dto.setAttends(eventLogsRepository.countByEvent_InfluencersContainsAndAttendAtNotNull(entity.getId()));
         dto.setIsGuided(entity.getIsGuided());
         dto.setDate(entity.getCreatedAt());
         return dto;

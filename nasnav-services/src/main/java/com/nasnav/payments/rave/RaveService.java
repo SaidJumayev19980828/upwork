@@ -154,6 +154,7 @@ public class RaveService {
 			classLogger.error("Empty response for flwRef ({})", flwRef);
 			throw new BusinessException("\"Unable to retrieve confirmation from the gateway", "PAYMENT_UNRECOGNIZED_RESPONSE", HttpStatus.BAD_GATEWAY);
 		}
+		classLogger.info("Received RAVE response for order (" +orderUid+ "): " + responseObject.toString());
 
 		String status = responseObject.optString("status", null);
 		data = responseObject.getJSONObject("data");

@@ -7,14 +7,11 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.nasnav.dao.*;
 import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.dto.request.LoyaltyBoosterDTO;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
-import com.nasnav.dto.request.LoyaltyPointTypeDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
-import com.nasnav.persistence.LoyaltyFamilyEntity;
 import com.nasnav.persistence.LoyaltyPointConfigEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.*;
@@ -64,17 +61,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private ObjectMapper mapper;
     @Autowired
-    private LoyaltyPointTypeRepository typeRepository;
-    @Autowired
     private LoyaltyTierRepository tierRepository;
-    @Autowired
-    private LoyaltyBoosterRepository loyaltyBoosterRepository;
-    @Autowired
-    private LoyaltyFamilyRepository loyaltyFamilyRepository;
-    @Autowired
-    private UserCharityRepository userCharityRepository;
-    @Autowired
-    private LoyaltyGiftRepository loyaltyGiftRepository;
     @Autowired
     private LoyaltyPointConfigRepository configRepository;
     @Autowired
@@ -242,31 +229,6 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     }
 
-    /**
-     * Type
-     */
-
-
-    @Test
-    @Ignore("api is hidden for now")
-    public void createLoyaltyPointType() {
-        String body = json().put("name", "test type").toString();
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/type/update", request, LoyaltyPointsUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().getLoyaltyPointId() > 0L);
-        typeRepository.deleteByName("test type");
-    }
-
-    @Test
-    public void createLoyaltyPointTypeInvalidAuthZ() {
-        String body = json().put("name", "test type").toString();
-        var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyalty/type/update", request, String.class);
-        assertEquals(401, response.getStatusCodeValue());
-        typeRepository.deleteByName("test type");
-
-    }
 
     @Test
     @Ignore("api is hidden for now")
@@ -281,18 +243,6 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertTrue(response.getBody().getLoyaltyPointId() > 0L);
      }
 
-    @Test
-    @Ignore("api is hidden for now")
-    public void getLoyaltyPointType() throws JsonProcessingException {
-        var request = getHttpEntity("abcdefg");
-        var response = template.exchange("/loyalty/type/list", GET, request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        List<LoyaltyPointTypeDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<LoyaltyPointTypeDTO>>() {});
-        assertEquals(1, body.size());
-        assertEquals(31001, body.get(0).getId());
-        assertEquals("old name", body.get(0).getName());
-    }
-
 
     @Test
     public void updateLoyaltyPointConfigInvalidId() {
@@ -304,48 +254,13 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertEquals(404, response.getStatusCodeValue());
     }
 
-
-    private JSONObject createLoyaltyPointJson() {
-        return json()
-                .put("description", "this is a loyalty point")
-                .put("type_id", 31001)
-                .put("amount", 10000)
-                .put("points", 100)
-                .put("org_id", 99001)
-                .put("start_date", LocalDateTime.now())
-                .put("end_date", LocalDateTime.now().plusMonths(1));
-    }
-
-    @Test
-    @Ignore("api is hidden for now")
-    public void testUserObtainPoints() throws JsonProcessingException {
-        // confirming order
-        var request = getHttpEntity("abcdefg");
-        var response = template.postForEntity("/order/confirm?order_id=33001", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-
-        //fetch available points
-        request = getHttpEntity("123");
-        response = template.exchange("/loyalty/points/check?code=code1", GET, request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        List<RedeemPointsOfferDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        assertFalse(resBody.isEmpty());
-        Long pointId = resBody.get(0).getPointId();
-        Long userId = 88L;
-
-        //obtain user points
-        request = getHttpEntity("192021");
-        response = template.postForEntity("/loyalty/points/redeem?point_id="+pointId+"&user_id="+userId, request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(0, transactionRepo.findOrgRedeemablePoints(userId, 99001L));
-    }
-
     @Test
     public void getUserPointsNoUserInOrg() {
         var request = getHttpEntity("101112");
         var response = template.exchange("/loyalty/points", GET, request, String.class);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
+
     @Test
     public void getUserPoints() {
         var request = getHttpEntity("123");
@@ -354,178 +269,6 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertTrue(response.getBody().contains("points"));
     }
 
-    // family
-    @Test
-    @Ignore("api is hidden for now")
-    public void createFamily(){
-        String body = json().put("family_name", "family 1")
-                .put("parent_id", "0")
-                .put("booster_id", 199001)
-                .put("org_id", 99001)
-                .put("is_active", true)
-                .toString();
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/family/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
-        loyaltyFamilyRepository.deleteByFamilyName("family 1");
-    }
-
-
-    @Test
-    public void creatFamilyInvalidAuthZ() {
-        String body = json().put("family_name", "family 1")
-                .put("parent_id", "0")
-                .put("booster_id", 199001)
-                .put("org_id", 99001)
-                .put("is_active", true)
-                .toString();
-
-        var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyalty/family/update", request, String.class);
-        assertEquals(401, response.getStatusCodeValue());
-    }
-
-    @Test
-    @Ignore("family apis are hidden for now")
-    public void creatAndGetFamily() throws JsonProcessingException {
-        String body = json().put("family_name", "family 1")
-                .put("parent_id", "0")
-                .put("booster_id", 199001)
-                .put("org_id", 99001)
-                .put("is_active", true)
-                .toString();
-
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/family/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(loyaltyFamilyRepository.findByFamilyName("family 1").isPresent());
-
-        request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyalty/family/list", GET, request, String.class);
-        List<LoyaltyFamilyEntity> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        LoyaltyFamilyEntity loyaltyFamilyEntity = resBody.get(0);
-        assertEquals(1, resBody.size());
-        assertEquals("family 1", loyaltyFamilyEntity.getFamilyName());
-
-        loyaltyFamilyRepository.deleteByFamilyName("family 1");
-    }
-
-
-    //Booster
-    @Test
-    @Ignore("api is hidden for now")
-    public void creatBooster() {
-        String body = json().put("booster_name", "booster 1")
-                .put("linked_family_member", "0")
-                .put("is_active", true)
-                .put("number_family_children", "0")
-                .put("purchase_size", "0")
-                .put("review_products", "0")
-                .put("social_media_reviews", "0")
-                .put("number_purchase_offline", "0")
-                .put("org_id", 99001)
-                .put("level_booster", "0")
-                .put("activation_months", "0")
-                .toString();
-
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
-        loyaltyBoosterRepository.deleteByBoosterName("booster 1");
-    }
-
-    @Test
-    public void creatBoosterInvalidAuthZ() {
-        String body = json().put("booster_name", "booster 1")
-                .put("linked_family_member", "0")
-                .put("is_active", true)
-                .put("number_family_children", "0")
-                .put("purchase_size", "0")
-                .put("review_products", "0")
-                .put("social_media_reviews", "0")
-                .put("number_purchase_offline", "0")
-                .put("org_id", 99001)
-                .put("level_booster", "0")
-                .put("activation_months", "0")
-                .toString();
-
-        var request = getHttpEntity(body, "invalid");
-        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
-        assertEquals(401, response.getStatusCodeValue());
-    }
-
-    @Test
-    @Ignore("api is hidden for now")
-    public void creatAndGetBooster() throws JsonProcessingException {
-        String body = json().put("booster_name", "booster 1")
-                .put("linked_family_member", "0")
-                .put("is_active", true)
-                .put("number_family_children", "0")
-                .put("purchase_size", "0")
-                .put("review_products", "0")
-                .put("social_media_reviews", "0")
-                .put("number_purchase_offline", "0")
-                .put("org_id", 99001)
-                .put("level_booster", "0")
-                .put("activation_months", "0")
-                .toString();
-
-        var request = getHttpEntity(body, "abcdefg");
-        var response = template.postForEntity("/loyalty/booster/update", request, String.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(loyaltyBoosterRepository.findByBoosterName("booster 1").isPresent());
-
-
-        request = getHttpEntity("abcdefg");
-        response = template.exchange("/loyalty/booster/list", GET, request, String.class);
-        List<LoyaltyBoosterDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        LoyaltyBoosterDTO booster = resBody.get(1);
-        assertEquals(2, resBody.size());
-        assertEquals("booster 1", booster.getBoosterName());
-
-        loyaltyBoosterRepository.deleteByBoosterName("booster 1");
-    }
-
-    //Charity
-    @Test
-    @Ignore("api is hidden for now")
-    public void creatCharity() {
-        String body = json().put("donation_percentage", 10)
-                .put("is_active", true)
-                .put("user_id", 88)
-                .toString();
-
-        var request = getHttpEntity(body, "123");
-        var response = template.postForEntity("/loyalty/charity/user/update", request, LoyaltyCharityUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(userCharityRepository.findById(response.getBody().getCharityId()).isPresent());
-        userCharityRepository.deleteById( response.getBody().getCharityId());
-    }
-
-    //Gift
-
-    @Test
-    @Ignore("api is hidden for now")
-    public void creatGift() {
-
-         String body = json().put("user_from_id", 424)
-                .put("user_to_id", 333)
-                .put("is_active", true)
-                .put("points", 10)
-                .put("phone_number", "4564644")
-                .put("user_to_email", "user2@nasnav.com")
-                .put("is_redeem", true)
-                .put("org_id", 99001)
-                .toString();
-
-        var request = getHttpEntity(body, "456");
-        var response = template.postForEntity("/loyalty/gift/send", request, LoyaltyGiftUpdateResponse.class);
-        assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().getGiftId() > 0L);
-        loyaltyGiftRepository.deleteById(response.getBody().getGiftId());
-    }
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     @Test
@@ -554,6 +297,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         Assert.assertEquals(OK, response.getStatusCode());
 
     }
+
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     @Test

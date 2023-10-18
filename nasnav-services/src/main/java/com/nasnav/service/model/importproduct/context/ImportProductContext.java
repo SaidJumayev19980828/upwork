@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.service.model.DataImportCachedData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -80,7 +81,15 @@ public class ImportProductContext {
 	public void logNewError(String message, Integer rowNum) {
 		errors.add(new Error(message, rowNum));
 	}
-	
+
+	public void logNewErrorForMissingHeaders(String missingHeaders) {
+		ErrorCodes errorCode = ErrorCodes.CSV$001;
+		String message = String.format(errorCode.getValue(), missingHeaders);
+		Error error = new Error();
+		error.setErrorCode(errorCode.toString());
+		error.setMessage(message);
+		errors.add(error);
+	}
 	
 	public boolean isSuccess() {
 		return errors.isEmpty();

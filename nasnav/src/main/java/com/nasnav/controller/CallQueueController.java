@@ -24,8 +24,10 @@ public class CallQueueController {
 
     @PostMapping
     public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
-                                         @RequestParam Long orgId) {
-        return callQueueService.enterQueue(orgId);
+                                         @RequestParam Long orgId ,
+                                         @RequestParam Long shopId
+                                         ) {
+        return callQueueService.enterQueue(orgId,shopId);
     }
 
     @GetMapping("/status")
@@ -48,8 +50,10 @@ public class CallQueueController {
 
     @PutMapping("/reject")
     public List<CallQueueDTO> rejectCallByEmployee(@RequestHeader(TOKEN_HEADER) String userToken,
-                                                   @RequestParam Long queueId)  {
-        return callQueueService.rejectCall(queueId);
+                                                   @RequestParam Long queueId,
+                                                   @RequestParam String rejectionReason
+                                                   )  {
+        return callQueueService.rejectCall(queueId,rejectionReason);
     }
 
     @PutMapping("/cancel")

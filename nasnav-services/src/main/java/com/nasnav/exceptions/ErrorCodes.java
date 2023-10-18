@@ -205,7 +205,6 @@ public enum ErrorCodes {
 	,ORG$LOY$0017("Invalid Pin code [%s] !")
 	,ORG$LOY$0018("No config with id [%d] for org with id [%d] !")
 	,ORG$LOY$0019("No tier found with id [%d]!")
-	,ORG$LOY$0020("No charity found with id [%d]!")
 	,ORG$LOY$0021("No tier found for user with id [%d]!")
 	,ORG$LOY$0022("Tier is linked to config with id [%d]!")
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
@@ -427,20 +426,10 @@ public enum ErrorCodes {
 
 	,INTG$EVENT$0001("Failed to create instance of event of type[%s]!")
 
-	,COINS$PARAM$0001("No Coins Drop exists with id[%d]!")
-	,COINS$PARAM$0002("Cannot update coins drop with id[%d], only inactive coins drop can be update!")
-	,COINS$PARAM$0003("Missing parameters in given coins drop [%s]!")
-	,COINS$PARAM$0004("Invalid coins drop type_id[%d]!")
+	,LOY$PARAM$0004("Invalid loyalty points type_id[%d]!")
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
 	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")
-	,CHARITY$PARAM$0001("Missing Charity properties!")
-	,CHARITY$PARAM$0002("No Charity exists with id[%d]!")
-	,CHARITY$PARAM$0003("No Charity donation exists for user with id[%d]!")
-	,GIFT$PARAM$0001("Missing Gift properties!")
-	,FAMILY$PARAM$0001("Missing parameters in given family [%s]!")
-	,BOOSTER$PARAM$0001("Missing Booster properties!")
-	,BOOSTER$PARAM$0002("No Booster exists with id[%d]!")
 
 
 	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
@@ -493,6 +482,7 @@ public enum ErrorCodes {
 	,BANK$ACC$0007("this transaction is done before")
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
+	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
 	,ROOMS$ORG$NotFound("Organization with id [%d] not found or inaccessible")
 
 	,NOTIF$0001("Firebase not initialized")
@@ -501,7 +491,9 @@ public enum ErrorCodes {
 	,NOTIF$0004("No notification tokens found for organization with id [%d]")
 	,NOTIF$0005("No notification tokens found for shop with id [%d]")
 	,NOTIF$0006("Couldn't get message body")
-
+	,FRT$VARS001("Error while processing the file")
+	,FRT$VARS002("Invalid Key Or Error while processing the file ")
+	,CSV$001("Parsing error due to missing headers [%s]")
 
 	;
 

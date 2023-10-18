@@ -20,7 +20,6 @@ public class LoyaltyTierDTO {
     private Integer noOfPurchaseTo;
     private Integer sellingPrice;
     private Long orgId;
-    private Long boosterId;
     private BigDecimal cashBackPercentage;
     private Map<LoyaltyPointType, BigDecimal> constraints;
     private String operation;

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
+
 public class NotificationServiceImpl implements NotificationService {
     private final FirebaseMessaging firebaseMessaging;
     private final SecurityService securityService;

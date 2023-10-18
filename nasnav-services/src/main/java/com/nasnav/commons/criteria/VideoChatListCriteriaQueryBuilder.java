@@ -5,6 +5,8 @@ import com.nasnav.request.VideoChatSearchParam;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -17,8 +19,7 @@ import static javax.persistence.criteria.JoinType.LEFT;
 
 @Component("videoChatQueryBuilder")
 
-public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<VideoChatLogEntity>{
-
+public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<VideoChatLogEntity, VideoChatSearchParam>{
     private static final String ID = "id";
     private static final String USER = "user";
     private static final String ASSIGNED_TO = "assignedTo";
@@ -35,17 +36,18 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
     }
 
     @Override
-    void setRoot() {
+    Root<VideoChatLogEntity> getRoot(CriteriaQuery<VideoChatLogEntity> query) {
         root = query.distinct(true).from(VideoChatLogEntity.class);
         root.fetch(USER, LEFT);
         root.fetch(ASSIGNED_TO, LEFT);
         root.fetch(ORGANIZATION, LEFT);
         root.fetch(SHOP, LEFT);
+
+        return root;
     }
 
     @Override
-    void setPredicates() {
-        VideoChatSearchParam searchParam = (VideoChatSearchParam) this.searchParams;
+    Predicate[] getPredicates(CriteriaBuilder builder, Root<VideoChatLogEntity> root, VideoChatSearchParam searchParam) {
         List<Predicate> predicatesList = new ArrayList<>();
 
         if (searchParam.getOrgId() != null) {
@@ -88,24 +90,18 @@ public class VideoChatListCriteriaQueryBuilder extends AbstractCriteriaQueryBuil
             predicatesList.add( builder.or(nullCreatedAt, startedEarlier));
         }
 
-        this.predicates = predicatesList.stream().toArray(Predicate[]::new);
+        return predicatesList.stream().toArray(Predicate[]::new);
     }
 
     @Override
-    void setOrderBy() {
-        this.orderBy = ID;
+    void updateQueryWithConditionAndOrderBy(CriteriaQueryContext<VideoChatLogEntity, VideoChatSearchParam> context) {
+        context.getQuery().where(context.getPredicates())
+                .orderBy(context.getCriteriaBuilder().desc( root.get(ID)));
     }
 
     @Override
-    void setQueryConditionAndOrderBy() {
-        query.where(predicates)
-                .orderBy(builder.desc( root.get(orderBy) ));
-    }
-
-    @Override
-    void initiateListQuery() {
-        VideoChatSearchParam params = (VideoChatSearchParam) this.searchParams;
-        this.resultList = entityManager.createQuery(query)
+    List<VideoChatLogEntity> queryForList(CriteriaQuery<VideoChatLogEntity> query, VideoChatSearchParam params) {
+        return entityManager.createQuery(query)
                 .setFirstResult(params.getStart())
                 .setMaxResults(params.getCount())
                 .getResultList();

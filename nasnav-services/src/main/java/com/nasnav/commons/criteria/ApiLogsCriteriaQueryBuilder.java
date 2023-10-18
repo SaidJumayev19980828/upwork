@@ -2,10 +2,12 @@ package com.nasnav.commons.criteria;
 
 import com.nasnav.persistence.ApiLogsEntity;
 import com.nasnav.request.ApiLogsSearchParam;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Component;
 
 import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -14,29 +16,27 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Optional.ofNullable;
 import static javax.persistence.criteria.JoinType.LEFT;
 
 @Component("apiLogsQueryBuilder")
-public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
-	private Root<ApiLogsEntity> root;
+public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder<ApiLogsEntity, ApiLogsSearchParam> {
 
-	@Autowired
 	public ApiLogsCriteriaQueryBuilder(EntityManager entityManager) {
 		super(entityManager, ApiLogsEntity.class);
 	}
 
 	@Override
-	void setRoot() {
-		root = query.from(ApiLogsEntity.class);
+	Root<ApiLogsEntity> getRoot(CriteriaQuery<ApiLogsEntity> query) {
+		Root<ApiLogsEntity> root = query.from(ApiLogsEntity.class);
 		root.fetch("loggedCustomer", LEFT);
 		root.fetch("loggedEmployee", LEFT);
 		root.fetch("organization", LEFT);
+
+		return root;
 	}
 
 	@Override
-	void setPredicates() {
-		ApiLogsSearchParam searchParam = (ApiLogsSearchParam) this.searchParams;
+	Predicate[] getPredicates(CriteriaBuilder builder, Root<ApiLogsEntity> root, ApiLogsSearchParam searchParam) {
 		List<Predicate> predicatesList = new ArrayList<>();
 
 
@@ -67,7 +67,7 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 
 		}
 
-		this.predicates = predicatesList.stream().toArray(Predicate[]::new);
+		return predicatesList.stream().toArray(Predicate[]::new);
 	}
 
 	private boolean containUsersIds(ApiLogsSearchParam searchParam){
@@ -79,20 +79,16 @@ public class ApiLogsCriteriaQueryBuilder extends AbstractCriteriaQueryBuilder{
 	}
 
 	@Override
-	void setOrderBy() {
-		this.orderBy = "callDate";
+	void updateQueryWithConditionAndOrderBy(CriteriaQueryContext<ApiLogsEntity, ApiLogsSearchParam> context) {
+		context.getQuery()
+				.where(context.getPredicates())
+				.orderBy(context.getCriteriaBuilder()
+				.desc( context.getRoot().get("callDate") ));
 	}
 
 	@Override
-	void setQueryConditionAndOrderBy() {
-		query.where(predicates)
-				.orderBy(builder.desc( root.get(orderBy) ));
-	}
-
-	@Override
-	void initiateListQuery() {
-		ApiLogsSearchParam params = (ApiLogsSearchParam) this.searchParams;
-		this.resultList = entityManager.createQuery(query)
+	List<ApiLogsEntity> queryForList(CriteriaQuery<ApiLogsEntity> query, ApiLogsSearchParam params) {
+		return entityManager.createQuery(query)
 				.setFirstResult(params.getStart())
 				.setMaxResults(params.getCount())
 				.getResultList();
