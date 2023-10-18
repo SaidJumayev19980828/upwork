@@ -100,6 +100,7 @@ class CustomerRocketChatServiceTest {
 
 	private UserEntity createUser() {
 		UserEntity user = new UserEntity();
+		user.setId(85L);
 		user.setName("test user");
 		user.setEmail("test@email.co");
 		user.setOrganizationId(99001L);
@@ -118,6 +119,9 @@ class CustomerRocketChatServiceTest {
 				.name(user.getName())
 				.email(user.getEmail())
 				.token(TOKEN)
+				.department(DEPARTMENT_ID)
+				.orgId(user.getOrganizationId().toString())
+				.userId(user.getId().toString())
 				.build();
 	}
 }
