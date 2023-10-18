@@ -329,8 +329,8 @@ public class ProductsController {
 	    }
 
     @GetMapping(value = "/out-of-stock-products", produces = APPLICATION_JSON_VALUE)
-    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken,@RequestParam(name="offset",required = false) Integer offset) throws BusinessException {
-        return productService.getOutOfStockProducts(productSearchParam,offset);
+    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
+        return productService.getOutOfStockProducts(productSearchParam);
     }
 
 }
