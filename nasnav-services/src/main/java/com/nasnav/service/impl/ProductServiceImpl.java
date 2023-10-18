@@ -3844,7 +3844,7 @@ public VariantUpdateResponse updateVariantV2(
 		SQLQuery<Tuple> allProductQuery = queryFactory
 				.select(products.all())
 				.from(products)
-				.where(pronasnav-services/src/main/java/com/nasnav/service/ProductService.javaducts.id.in(productIds));
+				.where(products.id.in(productIds));
 
 		List<ProductRepresentationObject> result = template.query(allProductQuery.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
