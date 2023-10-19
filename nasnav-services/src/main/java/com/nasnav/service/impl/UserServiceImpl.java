@@ -91,6 +91,8 @@ public class UserServiceImpl implements UserService {
 
 	private final FileService fileService;
 
+	private final PackageService packageService;
+
 	private final LoyaltyPointsService loyaltyPointsService;
 
 	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
@@ -110,8 +112,9 @@ public class UserServiceImpl implements UserService {
 		} else {
 			sendActivationMail(user, userJson.getRedirectUrl());
 		}
-
-		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
+		//Get Package Registered In Organization
+		Long packageId = packageService.getPackageIdRegisteredInOrg(user);
+		return new UserApiResponse(user.getId(),packageId, asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 	@Override
 	public UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) {
@@ -886,7 +889,11 @@ public class UserServiceImpl implements UserService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
 		otpService.validateOtp(activateOtpDto.getOtp(), user, OtpType.REGISTER);
 		activateUserInDB(user);
-		return securityService.login(user, false);
+		//Get Package Registered In Organization
+		Long packageId = packageService.getPackageIdRegisteredInOrg(user);
+		UserApiResponse userApiResponse = securityService.login(user, false);
+		userApiResponse.setPackageId(packageId);
+		return userApiResponse;
 	}
 
 	@Transactional

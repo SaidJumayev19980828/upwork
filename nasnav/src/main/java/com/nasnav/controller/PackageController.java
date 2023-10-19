@@ -1,6 +1,6 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.request.PackageDto;
+import com.nasnav.dto.request.PackageDTO;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
 import com.nasnav.dto.response.PackageResponse;
 import com.nasnav.service.PackageService;
@@ -26,13 +26,13 @@ public class PackageController {
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE)
-    public void createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDto packageDto) throws Exception {
-        packageService.createPackage(packageDto);
+    public PackageResponse createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDTO packageDto) throws Exception {
+        return packageService.createPackage(packageDto);
     }
 
     @PutMapping("/{packageId}")
-    public void updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDto packageDto, @PathVariable Long packageId){
-        packageService.updatePackage(packageDto, packageId);
+    public PackageResponse updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
+        return packageService.updatePackage(packageDto, packageId);
     }
 
     @DeleteMapping(value = "{packageId}")
@@ -40,9 +40,9 @@ public class PackageController {
         packageService.removePackage(packageId);
     }
 
-    @PostMapping(value = "complete-profile", produces = APPLICATION_JSON_VALUE)
-    public Long completeProfile(@RequestHeader(name = "User-Token", required = false) String token,
-            @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
-        return packageService.completeProfile(packageRegisteredByUserDTO);
+    @PostMapping(value = "register-package-profile", produces = APPLICATION_JSON_VALUE)
+    public void registerPackageProfile(@RequestHeader(name = "User-Token", required = false) String token,
+                                       @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
+        packageService.registerPackageProfile(packageRegisteredByUserDTO);
     }
 }
