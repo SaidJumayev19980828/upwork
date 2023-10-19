@@ -7,10 +7,11 @@ import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.dto.stripe.StripeConfirmDTO;
 import com.nasnav.service.StripeService;
 import com.nasnav.service.StripeWebhookSubscriptionService;
-import com.nasnav.service.impl.subscription.StripeSubscriptionServiceImpl;
-import com.nasnav.service.impl.subscription.WertSubscriptionServiceImpl;
+import com.nasnav.service.subscription.StripeSubscriptionService;
+import com.nasnav.service.subscription.SubscriptionService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import com.stripe.model.Event;
 
@@ -18,16 +19,17 @@ import com.stripe.model.Event;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@AllArgsConstructor
 @CrossOrigin("*")
 @RequestMapping("/subscription")
 public class SubscriptionController {
 
 
     @Autowired
-    private WertSubscriptionServiceImpl wertSubscriptionService;
+    @Qualifier("wert")
+    private SubscriptionService wertSubscriptionService;
     @Autowired
-    private StripeSubscriptionServiceImpl stripeSubscriptionService;
+    @Qualifier("stripe")
+    private StripeSubscriptionService stripeSubscriptionService;
     @Autowired
     private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     @Autowired

@@ -12,7 +12,10 @@ import com.nasnav.service.BankInsideTransactionService;
 import com.nasnav.service.CurrencyPriceBlockChainService;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.subscription.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,8 +24,8 @@ import java.math.RoundingMode;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
-@Service
-public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl{
+@Component("wert")
+public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl implements SubscriptionService {
 
     @Autowired
     BankInsideTransactionService bankInsideTransactionService;

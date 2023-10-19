@@ -16,17 +16,19 @@ import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.StripeService;
+import com.nasnav.service.subscription.StripeSubscriptionService;
+import com.nasnav.service.subscription.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
-@Service
-public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
+@Component("stripe")
+public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl implements StripeSubscriptionService , SubscriptionService {
 
     @Autowired
     PackageService packageService;
@@ -46,6 +48,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
     private SubscriptionRepository subscriptionRepository;
 
 
+    @Override
     public boolean checkOrgHasStripeCustomer(){
         //Check Stripe Customer Exist for organization
         OrganizationEntity org = securityService.getCurrentUserOrganization();
@@ -54,6 +57,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
 
 
 
+    @Override
     /**
      * Used to create customer if not exist
      * @return the id of the customer
@@ -116,6 +120,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
      * call setup intent to allow org add payment method in stripe then update payment method of subscription
      * using webhook
     **/
+    @Override
     public StripeConfirmDTO setupIntent() throws RuntimeBusinessException {
 
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
@@ -127,7 +132,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
     }
 
 
-
+    @Override
     public void cancelSubscription() throws RuntimeBusinessException {
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
         if(
@@ -141,6 +146,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl{
         stripeService.cancelSubscription(subscriptionEntity.getStripeSubscriptionId());
     }
 
+    @Override
     public void changePlan() throws RuntimeBusinessException {
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
         if(
