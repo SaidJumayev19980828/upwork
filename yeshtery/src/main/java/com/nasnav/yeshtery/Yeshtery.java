@@ -39,13 +39,13 @@ public class Yeshtery{
     @Autowired
     private ScheduleTaskHelper scheduleTaskHelper;
 
-    @Bean
-    public void runScheduleTask() {
-        List<SchedulerTaskEntity> appointmentEntities = this.schedulerTaskRepository.findAll();
-        for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
-            this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
-        }
-    }
+//    @Bean
+//    public void runScheduleTask() {
+//        List<SchedulerTaskEntity> appointmentEntities = this.schedulerTaskRepository.findAll();
+//        for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
+//            this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
+//        }
+//    }
 
     @Bean
     public RestTemplate getRestTemplate() {
