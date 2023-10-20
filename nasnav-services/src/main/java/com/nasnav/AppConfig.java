@@ -44,11 +44,6 @@ public class AppConfig {
     @Getter
     @Setter
     private String basePathStr;
-
-    @Value("${stripe.apikey:sk_test_51NxqlfGR4qGEOW4E6Qni6REIWcwheVdU8mf2LtTVn1BWn8dtdQSg7stf9b0cqE8CJZVja9aTuOISKg15qC52CjLf00bmLe17sU}")
-    public String stripeApiKey;
-    @Value("${stripe.webhook.secret:whsec_c6c1772b65026654a21e1beac00f0a213eacbb56edd1bca45a8fdfd10fdb1c6c}")
-    public String stripeWebhookSecret;
     @Value("${frontend.setting.path:}")
     public String filePath ;
     
