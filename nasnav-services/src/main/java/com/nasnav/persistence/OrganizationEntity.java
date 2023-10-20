@@ -35,6 +35,9 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "theme_id")
     private Integer themeId;
 
+    @Column(name = "google_analytics_site_id")
+    private String googleAnalyticsSiteId;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
@@ -152,6 +155,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setMatomoSiteId(getMatomoId());
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());
+        obj.setGoogleAnalyticsSiteId(getGoogleAnalyticsSiteId());
         if (yeshteryState != null) {
             obj.setYeshteryState(yeshteryState == 1);
         }

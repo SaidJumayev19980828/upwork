@@ -7,6 +7,8 @@ import com.nasnav.dto.BaseJsonDTO;
 import com.nasnav.enumerations.YeshteryState;
 import lombok.Data;
 
+import javax.persistence.Column;
+
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class OrganizationCreationDTO extends BaseJsonDTO {
@@ -23,10 +25,17 @@ public class OrganizationCreationDTO extends BaseJsonDTO {
     private Boolean enableVideoChat;
     private Integer matomoSiteId;
     private String pixelSiteId;
+    @JsonProperty("google_analytics_site_id")
+    private String googleAnalyticsSiteId;
 
     @Override
     protected void initRequiredProperties() {
 
+    }
+
+    public void setGoogleAnalyticsSiteId(String googleAnalyticsSiteId) {
+        setPropertyAsUpdated("googleAnalyticsSiteId");
+        this.googleAnalyticsSiteId = googleAnalyticsSiteId;
     }
 
     public void setId(Long id) {

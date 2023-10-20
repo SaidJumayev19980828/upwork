@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import javax.persistence.Column;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +50,9 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @Schema(name = "URL-friendly Name of the organization")
     @JsonProperty("p_name")
     private String pname;
+
+    @JsonProperty("google_analytics_site_id")
+    private String googleAnalyticsSiteId;
 
     @Schema(name = "Description")
     private String description;

@@ -192,6 +192,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         setPublicSettings(orgRepObj);
         setDomain(orgRepObj);
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
+        //Google analytical site id
+        orgRepObj.setGoogleAnalyticsSiteId(entity.getGoogleAnalyticsSiteId());
 
         return orgRepObj;
     }
@@ -393,6 +395,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
         if (json.isUpdated("pixelSiteId")) {
             organization.setPixelId(json.getPixelSiteId());
+        }if (json.isUpdated("googleAnalyticsSiteId")) {
+            organization.setGoogleAnalyticsSiteId(json.getGoogleAnalyticsSiteId());
         }
     }
 
