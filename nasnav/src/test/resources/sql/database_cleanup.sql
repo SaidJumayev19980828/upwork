@@ -157,10 +157,6 @@ DELETE FROM public.organizations ;
 DELETE FROM public.shipping_areas;
 DELETE FROM public.areas;
 DELETE FROM public.cities;
-DELETE FROM public.subscription;
-DELETE FROM public.package_service;
-DELETE FROM public.package;
-DELETE FROM public.service;
 DELETE FROM public.countries;
 DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
@@ -173,7 +169,3 @@ DELETE FROM public.services_registered_in_package;
 DELETE FROM public.package WHERE id > 99000;
 
 delete from public.loyalty_point_types where id between  31001 and 31999;
-DELETE FROM public.stripe_customer;
-
-
-

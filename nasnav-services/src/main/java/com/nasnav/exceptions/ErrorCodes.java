@@ -225,39 +225,9 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0008("No Country name was provided!")
 
 	,PA$USR$0001("Package not deleted because related user!")
-	,PA$USR$0002("No Package found with ID: [%d]")
-	,PA$USR$0003("Stripe Price Id Is Missing")
-	,PA$CUR$0002("Currency Not found with iso: [%d]")
-	,PA$SRV$0001("No Service Exist with Code : [%s]")
+	,PA$USR$0002("No Package found with ID:[%d]")
 
 
-	,ORG$SUB$0001("No Package Registered In Organization")
-	,ORG$SUB$0002("Unable to get Currency From Package")
-	,ORG$SUB$0004("Organization Owner User Is Not Found")
-	,ORG$SUB$0005("Organization Already Have Subscription")
-	,ORG$SUB$0006("No Stripe Subscription In Organization")
-	,ORG$SUB$0007("Package Id is Missing")
-	,ORG$SUB$0008("Organization is Already subscribed in Package : [%d]")
-
-
-
-	,STR$CAL$0001("Stripe Failed To Cancel Subscription")
-	,STR$CAL$0002("Stripe Failed To Create Setup Intent")
-	,STR$CAL$0003("Stripe Failed To Create Customer Using Email : [%s]")
-	,STR$CAL$0004("Stripe Failed To Create Subscription")
-	,STR$CAL$0005("Stripe Failed To Change Plan")
-	,STR$CAL$0006("Stripe Failed To Change Plan : PriceId [%s] is Not Exist In Stripe")
-	,STR$WH$0001("Stripe Webhook is not valid")
-	,STR$WH$0002("Stripe Webhook : Failed To get Organization")
-	,STR$WH$0003("Stripe Webhook : Failed To get subscribed Package")
-	,STR$WH$0004("Stripe Webhook : Subscription Not Found")
-	,STR$WH$0005("Stripe Webhook : Failed To Update Customer Default Payment Method")
-	,STR$WH$0006("Stripe Webhook : Failed To Update Subscription Default Payment Method")
-	,STR$WH$0007("Stripe Webhook : Failed To PayRetry Invoice of Subscription")
-
-
-
-	,BC$PRI$0001("Failed To Fetch Currency Price")
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
