@@ -2,6 +2,7 @@ package com.nasnav.service.rocketchat.impl;
 
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -13,6 +14,8 @@ import com.nasnav.dto.rocketchat.RocketChatAgentTokenDTO;
 import com.nasnav.dto.rocketchat.RocketChatDepartmentAgentDTO;
 import com.nasnav.dto.rocketchat.RocketChatUpdateDepartmentAgentDTO;
 import com.nasnav.dto.rocketchat.RocketChatUserDTO;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.RocketChatEmployeeAgentEntity;
 import com.nasnav.service.SecurityService;
@@ -34,8 +37,13 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 	@Transactional
 	@Override
 	public Mono<RocketChatAgentTokenDTO> createAgentTokenForCurrentEmployeeCreateAgentIfNeeded() {
-		return getOrCreateAgentForEmployee((EmployeeUserEntity)securityService.getCurrentUser())
-				.flatMap(this::createAgentToken);
+		return getOrCreateAgentForEmployee((EmployeeUserEntity) securityService.getCurrentUser())
+				.flatMap(this::createAgentToken)
+				.onErrorResume(WebClientResponseException.class,
+						e -> Mono.error(new RuntimeBusinessException(
+								HttpStatus.NOT_ACCEPTABLE,
+								ErrorCodes.CHAT$EXTERNAL,
+								e.getStatusCode().value())));
 	}
 
 	private Mono<RocketChatEmployeeAgentEntity> getOrCreateAgentForEmployee(EmployeeUserEntity employee) {
@@ -46,9 +54,6 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 
 	private Mono<RocketChatAgentTokenDTO> createAgentToken(RocketChatEmployeeAgentEntity agent) {
 		return rocketChatClient.createAgentToken(new RocketChatAgentTokenDTO(agent.getAgentId()));
-		// for testing
-		// return Mono.just(RocketChatAgentTokenDTO.builder().userId(agent.getAgentId())
-		// 		.authToken(UUID.randomUUID().toString()).build());
 	}
 
 	private Mono<RocketChatEmployeeAgentEntity> createAgent(EmployeeUserEntity employee) {
@@ -68,7 +73,8 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 
 	private RocketChatEmployeeAgentEntity createAgentEntity(EmployeeUserEntity employee) {
 		RocketChatEmployeeAgentEntity agent = new RocketChatEmployeeAgentEntity();
-		agent.setEmployee(employeeUserRepository.getOne(employee.getId())); // not sure why I need to refresh the employee!
+		// not sure why I need to refresh the employee!
+		agent.setEmployee(employeeUserRepository.getOne(employee.getId()));
 		return agentRepository.save(agent);
 	}
 
@@ -88,9 +94,10 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 
 	Mono<Void> registerUserAsAgentIfNeeded(RocketChatEmployeeAgentEntity agent) {
 		return rocketChatClient.getAgent(agent.getAgentId())
-			.onErrorResume(WebClientResponseException.class, ex -> createRocketChatUser(agent).then(registerUserAsAgent(agent)))
-			.switchIfEmpty(Mono.defer(() -> registerUserAsAgent(agent)))
-			.then();
+				.onErrorResume(WebClientResponseException.class,
+						ex -> createRocketChatUser(agent).then(registerUserAsAgent(agent)))
+				.switchIfEmpty(Mono.defer(() -> registerUserAsAgent(agent)))
+				.then();
 	}
 
 	private Mono<RocketChatUserDTO> registerUserAsAgent(RocketChatEmployeeAgentEntity agent) {
@@ -109,7 +116,8 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 	private Mono<Void> addAgentToDepartmentsIfNeeded(RocketChatEmployeeAgentEntity agent,
 			RocketChatAgentDepartmentsDTO agentDepartments,
 			String departmentId) {
-		if (agentDepartments.stream().map(RocketChatDepartmentAgentDTO::getDepartmentId).anyMatch(departmentId::equals)) {
+		if (agentDepartments.stream().map(RocketChatDepartmentAgentDTO::getDepartmentId)
+				.anyMatch(departmentId::equals)) {
 			return Mono.empty();
 		} else {
 			return registerUserAsAgentIfNeeded(agent).then(addAgentToDepartment(departmentId, agent));
@@ -132,6 +140,7 @@ public class AgentRocketChatServiceImpl implements AgentRocketChatService {
 	}
 
 	private Mono<String> getNeededDepartmentId(RocketChatEmployeeAgentEntity agent) {
-		return departmentRocketChatService.getDepartmentIdCreateDepartmentIfNeeded(agent.getEmployee().getOrganizationId());
+		return departmentRocketChatService
+				.getDepartmentIdCreateDepartmentIfNeeded(agent.getEmployee().getOrganizationId());
 	}
 }
