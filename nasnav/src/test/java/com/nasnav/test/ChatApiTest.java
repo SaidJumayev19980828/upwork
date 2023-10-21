@@ -1,10 +1,14 @@
 package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
+import java.util.UUID;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -17,8 +21,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
+import com.nasnav.dao.RocketChatEmployeeAgentRepository;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
+import com.nasnav.dto.rocketchat.RocketChatAgentTokenDTO;
+import com.nasnav.dto.rocketchat.RocketChatUserDTO;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
+import com.nasnav.persistence.RocketChatEmployeeAgentEntity;
 import com.nasnav.persistence.RocketChatOrganizationDepartmentEntity;
 import com.nasnav.service.rocketchat.impl.RocketChatClient;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -37,6 +45,9 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 	private RocketChatOrganizationDepartmentRepository rocketChatOrganizationDepartmentRepository;
 
 	@Autowired
+	private RocketChatEmployeeAgentRepository rocketChatEmployeeAgentRepository;
+
+	@Autowired
 	private RocketChatClient client;
 
 	@AfterEach
@@ -44,6 +55,13 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 		StepVerifier.create(Flux.fromIterable(rocketChatOrganizationDepartmentRepository.findAll())
 				.map(RocketChatOrganizationDepartmentEntity::getDepartmentId)
 				.flatMap(client::deleteDepartment))
+				.verifyComplete();
+		StepVerifier.create(Flux.fromIterable(rocketChatEmployeeAgentRepository.findAll())
+				.map(RocketChatEmployeeAgentEntity::getUsername)
+				.map(username -> RocketChatUserDTO.builder()
+						.username(username)
+						.build())
+				.flatMap(client::deleteUser))
 				.verifyComplete();
 	}
 
@@ -57,5 +75,22 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 		response = template.exchange("/chat/visitor", POST, request,
 				RocketChatVisitorDTO.class);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@Test
+	void createAgentToken() {
+		HttpEntity<?> request = getHttpEntity("qwe");
+		final ResponseEntity<RocketChatAgentTokenDTO> response1 = template.exchange("/chat/agent/authenticate", POST, request,
+				RocketChatAgentTokenDTO.class);
+		assertEquals(HttpStatus.OK, response1.getStatusCode());
+		assertDoesNotThrow(() -> UUID.fromString(response1.getBody().getAuthToken()));
+
+		final ResponseEntity<RocketChatAgentTokenDTO> response2 = template.exchange("/chat/agent/authenticate", POST, request,
+				RocketChatAgentTokenDTO.class);
+		assertEquals(HttpStatus.OK, response2.getStatusCode());
+		assertDoesNotThrow(() -> UUID.fromString(response2.getBody().getAuthToken()));
+
+		assertEquals(response1.getBody().getUserId(), response2.getBody().getUserId());
+		assertNotEquals(response1.getBody().getAuthToken(), response2.getBody().getAuthToken());
 	}
 }

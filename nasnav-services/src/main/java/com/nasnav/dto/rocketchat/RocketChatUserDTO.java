@@ -15,11 +15,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RocketChatUserDTO implements RocketChatWrappedData {
+	@JsonProperty("_id")
 	private String id;
 	private String name;
 	private String username;
 	private String email;
-	private boolean active;
+	private String password;
+	private Boolean active;
 
 	@Override
 	public String getFieldName() {
@@ -28,10 +30,5 @@ public class RocketChatUserDTO implements RocketChatWrappedData {
 
 	public void setVisitorEmails(List<Map<String, String>> guestEmails) {
 		email = guestEmails.get(0).get("address");
-	}
-
-	@JsonProperty("_id")
-	public void setId(String id) {
-		this.id = id;
 	}
 }

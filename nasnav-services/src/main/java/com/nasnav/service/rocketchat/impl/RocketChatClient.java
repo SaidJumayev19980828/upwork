@@ -123,6 +123,18 @@ public class RocketChatClient {
 				.map(RocketChatResponseWrapper::getData);
 	}
 
+	Mono<RocketChatUserDTO> getAgent(String agentId) {
+		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatUserDTO>> typeRef = new ParameterizedTypeReference<>() {
+		};
+
+		return webClient.get()
+				.uri("/livechat/users/agent/{agentId}", agentId)
+				.accept(MediaType.APPLICATION_JSON)
+				.retrieve()
+				.bodyToMono(typeRef)
+				.map(RocketChatResponseWrapper::getData);
+	}
+
 	public Mono<RocketChatUserDTO> registerAgent(RocketChatUserDTO user) {
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatUserDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
@@ -158,7 +170,7 @@ public class RocketChatClient {
 				.map(RocketChatResponseWrapper::getData);
 	}
 
-	public Flux<RocketChatDepartmentAgentDTO> getAgentDepartments(String agentId) {
+	public Mono<RocketChatAgentDepartmentsDTO> getAgentDepartments(String agentId) {
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatAgentDepartmentsDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -167,7 +179,14 @@ public class RocketChatClient {
 				.accept(MediaType.APPLICATION_JSON)
 				.retrieve()
 				.bodyToMono(typeRef)
-				.map(RocketChatResponseWrapper::getData)
-				.flatMapMany(Flux::fromIterable);
+				.map(RocketChatResponseWrapper::getData);
+	}
+
+	public Mono<Void> deleteUser(RocketChatUserDTO user) {
+		return webClient.post()
+				.uri("/users.delete")
+				.bodyValue(user)
+				.retrieve()
+				.bodyToMono(Void.class);
 	}
 }

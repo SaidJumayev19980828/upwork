@@ -98,6 +98,14 @@ class CustomerRocketChatServiceTest {
 		Mockito.verify(rocketChatClient).liveChatRegisterVisitor(newVisitor);
 	}
 
+	// @Test
+	// void dumbTest() {
+	// 	var mono1 = Mono.just("abc");
+	// 	var mono2 = Mono.just("def");
+	// 	var m = Mono.zip(mono1, mono2, (m1, m2) -> null).block();
+	// 	System.out.println(m);
+	// }
+
 	private UserEntity createUser() {
 		UserEntity user = new UserEntity();
 		user.setId(85L);

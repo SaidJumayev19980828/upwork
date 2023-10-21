@@ -13,6 +13,8 @@ public class RocketChatDepartmentAgentDTO {
 	private String agentId;
 	private String username;
 	private String departmentId;
-	private Integer count;
-	private Integer order;
+	@Builder.Default
+	private Integer count = 0;
+	@Builder.Default
+	private Integer order = 0;
 }

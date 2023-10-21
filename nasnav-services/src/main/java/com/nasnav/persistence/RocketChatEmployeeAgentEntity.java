@@ -24,14 +24,10 @@ public class RocketChatEmployeeAgentEntity {
 	// rocket chat user id is the same as agent id
 	@Column(name = "agent_id")
 	private String agentId;
+	private String username;
 
 	@MapsId
 	@OneToOne(optional = false)
 	@JoinColumn(name = "employee_id", referencedColumnName = "id")
 	private EmployeeUserEntity employee;
-
-	public RocketChatEmployeeAgentEntity(String agentId, EmployeeUserEntity employee) {
-		this.agentId = agentId;
-		this.employee = employee;
-	}
 }

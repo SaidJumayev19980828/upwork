@@ -14,6 +14,10 @@ public class RocketChatAgentTokenDTO implements RocketChatWrappedData {
 	private String username;
 	private String authToken;
 
+	public RocketChatAgentTokenDTO(String userId) {
+		this.userId = userId;
+	}
+
 	@Override
 	public String getFieldName() {
 		return "data";
