@@ -41,8 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @AutoConfigureMockMvc(print = MockMvcPrint.LOG_DEBUG)
 @PropertySource("classpath:test.database.properties")
 @ContextConfiguration(classes = BaseTestConfiguration.class)
-@TestPropertySource(properties = { "rocketchat.access-token=C6bWoL8QAzR5lm0vSxHBcqO74QUDOGKNxA-enp5wAsq",
-        "rocketchat.user-id=9ptuFvk97CbRSHiri", "rocketchat.url=https://chat.dev.meetusvr.com/api/v1" })
 public abstract class AbstractTestWithTempBaseDir {
     @Autowired
     private AdminService adminService;
