@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.ProductStockDTO;
 import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -49,5 +50,5 @@ public interface StockService {
 
 	Long updateStocks(ProductStocksDTO productStocksDTO) throws BusinessException;
 
-	Map<Long, List<StocksEntity>> getProductStocks(Long productId);
+	Map<Long, List<ProductStockDTO>> getProductStocks(Long productId);
 }

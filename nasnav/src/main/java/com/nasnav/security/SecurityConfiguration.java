@@ -222,7 +222,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			            patternOf("/chat-widget-setting/create",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			            patternOf("/chat-widget-setting/publish",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 			            patternOf("/chat-widget-setting/get-unpublished",GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/**")
+						patternOf( "/post/save" , POST                              , getAllRoles()),
+					patternOf( "/post/unsave"       ,POST                         , getAllRoles()),
+					patternOf( "/post/saved"        ,GET                        , getAllRoles()),
+			patternOf( "/follow/users/list"        ,GET                        , getAllRoles()),
+
+			patternOf( "/**")
 						);
 
    

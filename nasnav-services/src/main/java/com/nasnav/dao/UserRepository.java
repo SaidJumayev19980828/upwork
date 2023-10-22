@@ -1,5 +1,7 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.UserFollow;
+import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -84,4 +86,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	@Modifying
 	@Query(value = "update users set tier_id = :tierId where organization_id = :orgId and tier_id is null", nativeQuery = true)
 	void updateUsersTiers(@Param("tierId") Long tierId, @Param("orgId") Long orgId);
+
+	@Query("SELECT u as user, " +
+			"CASE WHEN f.user.id = :userId THEN true ELSE false END as isFollowing, " +
+			"CASE WHEN f.follower.id = :userId THEN true ELSE false END as isFollowed " +
+			"FROM UserEntity u " +
+			"LEFT JOIN FollowerEntity f ON (u.id = f.user.id AND f.follower.id = :userId) OR (u.id = f.follower.id AND f.user.id = :userId)" +
+			"where u.id <>	:userId" )
+	List<UserListFollowProjection> findUsersWithFollowerStatus(@Param("userId") Long userId);
+
 }

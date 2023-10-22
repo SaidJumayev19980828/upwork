@@ -10,13 +10,13 @@ import com.nasnav.enumerations.PostType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
@@ -201,6 +201,44 @@ public class PostServiceImpl implements PostService {
        return postRepository.findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime.now(), LocalDateTime.now(), page);
     }
 
+    @Override
+    public void saveForLater(Long postId) {
+        BaseUserEntity currentUser = securityService.getCurrentUser();
+        PostEntity post = postRepository.findById(postId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$POST$0001));
+            UserEntity user = userRepository.findById(currentUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
+                post.getSavedByUsers().add(user);
+                postRepository.save(post);
+
+
+    }
+
+
+    @Override
+    public void unSavePost(Long postId) {
+        BaseUserEntity currentUser = securityService.getCurrentUser();
+        PostEntity post = postRepository.findById(postId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$POST$0001));
+        UserEntity user = userRepository.findById(currentUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
+            post.getSavedByUsers().remove(user);
+            postRepository.save(post);
+
+    }
+
+    @Override
+    public PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+        if (!(loggedInUser instanceof UserEntity)) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
+        }
+        UserEntity user = userRepository.findById(loggedInUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
+
+        PageImpl<PostEntity> source = postRepository.getAllBySavedByUsersContains(user, page);
+        List<PostResponseDTO> dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+
+    }
+
+
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
         List<ProductEntity> products = new ArrayList<>();
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
@@ -210,15 +248,16 @@ public class PostServiceImpl implements PostService {
         if (!(loggedInUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
         }
-        dto.getProductsIds().forEach(i -> {
-            Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
-            if (product.isPresent() && Arrays.asList(ProductTypes.STOCK_ITEM,ProductTypes.BUNDLE).contains(product.get().getProductType())) {
-                products.add(product.get());
-            }
-            else {
-                throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,P$PRO$0016,i);
-            }
-        });
+        if (!dto.getIsReview()) {
+            dto.getProductsIds().forEach(i -> {
+                Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
+                if (product.isPresent() && Arrays.asList(ProductTypes.STOCK_ITEM, ProductTypes.BUNDLE).contains(product.get().getProductType())) {
+                    products.add(product.get());
+                } else {
+                    throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, P$PRO$0016, i);
+                }
+            });
+        }
         PostEntity entity = new PostEntity();
         entity.setCreatedAt(LocalDateTime.now());
         entity.setDescription(dto.getDescription());
@@ -262,6 +301,7 @@ public class PostServiceImpl implements PostService {
         });
         PostResponseDTO dto = new PostResponseDTO();
         dto.setId(entity.getId());
+        dto.setCreatedAt(entity.getCreatedAt());
         dto.setDescription(entity.getDescription());
         dto.setStatus(PostStatus.getEnumByValue(entity.getStatus()));
         dto.setType(PostType.getEnumByValue(entity.getType()));
@@ -279,7 +319,6 @@ public class PostServiceImpl implements PostService {
         else {
             dto.setIsLiked(false);
         }
-        dto.setCreatedAt(entity.getCreatedAt());
 
         return dto;
     }

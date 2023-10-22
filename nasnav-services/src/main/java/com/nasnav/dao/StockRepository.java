@@ -45,7 +45,7 @@ public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 
 
 	@Query("SELECT stock from StocksEntity stock "
-			+ " left join stock.productVariantsEntity var "
+			+ " left join stock.productVariantsEntity var"
 			+ " left join var.productEntity prod "
 			+ " where prod.id in :productIds  " )
 	List<StocksEntity> findByProductIdIn(@Param("productIds") List<Long> productIds);

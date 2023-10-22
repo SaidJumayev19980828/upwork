@@ -19,4 +19,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @EntityGraph(attributePaths = {"products","advertisement.organization.bankAccount","user"})
     PageImpl<PostEntity> findAllByAdvertisementIsNotNullAndAdvertisement_FromDateLessThanEqualAndAdvertisement_ToDateGreaterThanEqual(LocalDateTime from, LocalDateTime to, Pageable pageable);
+
+    PageImpl<PostEntity> getAllBySavedByUsersContains(UserEntity userId, Pageable page);
+
+
 }

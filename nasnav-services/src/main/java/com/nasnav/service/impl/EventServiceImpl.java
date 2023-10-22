@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.EventInterestsProjection;
 import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.InfluencerDTO;
@@ -313,7 +314,7 @@ public class EventServiceImpl implements EventService{
     @Override
     public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
         PageRequest page = getQueryPage(start, count);
-        PageImpl<EventProjection> events;
+        PageImpl<EventInterestsProjection> events;
         if(fromDate == null){
             events=  eventRepository.findAllOrderedByStartsAtDesc(page);
         }else {
@@ -331,15 +332,16 @@ public class EventServiceImpl implements EventService{
             organization = organizationRepository.findById(orgId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
         }
-        PageImpl<EventProjection> events= eventRepository.getAllByOrganizationAndInfluencersNull(page,organization);
+        PageImpl<EventInterestsProjection> events= eventRepository.getAllByOrganizationAndInfluencersNull(page,organization);
         List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
         return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
 
     }
 
-    public EventsNewDTO mapEventProjectionToDTO(EventProjection eventProjection) {
+    public EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection) {
 
         EventsNewDTO eventDTO = new EventsNewDTO();
+        EventProjection eventProjection = eventInterestsProjection.getEvent();
         eventDTO.setId(eventProjection.getId());
         eventDTO.setName(eventProjection.getName());
         eventDTO.setDescription(eventProjection.getDescription());
@@ -348,7 +350,7 @@ public class EventServiceImpl implements EventService{
         eventDTO.setEndsAt(eventProjection.getEndsAt());
         eventDTO.setInfluencers(eventProjection.getInfluencers());
         eventDTO.setAttachments(eventProjection.getAttachments());
-        // Map other properties here
+        eventDTO.setInterests(eventInterestsProjection.getInterest());
         OrganizationProjection orgProjection = eventProjection.getOrganization();
         OrganizationNewDTO orgDTO = new OrganizationNewDTO();
         List<String> logo =organizationThemeRepository. getLogoByOrganizationEntity_Id(eventProjection.getOrganization().getId());

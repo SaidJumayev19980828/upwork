@@ -23,4 +23,11 @@ public interface PostService {
 
     PageImpl<PostEntity>  getAllPostsWithinAdvertisement(Integer start, Integer count);
 
+    public void saveForLater(Long postId);
+    public void unSavePost(Long postId);
+
+
+
+    public PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count);
+
     }

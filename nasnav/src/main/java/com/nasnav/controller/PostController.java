@@ -83,4 +83,21 @@ public class PostController {
         postService.approveOrRejectReview(postId, postStatus);
     }
 
+    @PostMapping("/save")
+    public void saveForLater(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
+         postService.saveForLater(postId);
+    }
+
+    @PostMapping("/unsave")
+    public void unSavePost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam long postId){
+        postService.unSavePost(postId);
+    }
+
+    @GetMapping("/saved")
+    public PageImpl<PostResponseDTO> getUserSavedPosts(@RequestHeader(name = "User-Token", required = false) String token,
+                                                     @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                     @RequestParam(required = false, defaultValue = "10") Integer count) {
+        return postService.getUserSavedPosts(start, count);
+    }
+
 }

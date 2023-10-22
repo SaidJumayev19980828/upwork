@@ -8,7 +8,9 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Table(name = "posts")
 @Entity
@@ -68,4 +70,14 @@ public class PostEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private AdvertisementEntity advertisement;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "saved_posts",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+
+    private Set<UserEntity> savedByUsers = new HashSet<>();
+
 }

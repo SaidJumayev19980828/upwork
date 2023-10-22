@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.UserFollow;
+import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
@@ -42,6 +44,11 @@ public class FollowerController {
     public FollowerInfoDTO getFollowerInfo(@RequestHeader(TOKEN_HEADER) String userToken,
                                            @RequestParam Long userId) {
         return followerServcie.getFollowerInfoByUserId(userId);
+    }
+
+    @GetMapping("users/list")
+    public List<UserListFollowProjection> getUsersList(@RequestHeader(TOKEN_HEADER) String userToken) {
+        return followerServcie.getUsersWithFollowerStatus();
     }
 
     @PostMapping
