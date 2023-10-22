@@ -20,7 +20,7 @@ public class EventsNewDTO {
     private String description;
     private EventStatus status;
     private OrganizationNewDTO organization;
-
+    private Long interests;
     // Getters and setters for the above properties
 }
 

@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.UserFollow;
+import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
@@ -17,4 +19,6 @@ public interface FollowerServcie {
     public void followOrUnfollow(long userId,boolean followAction) throws BusinessException;
     public List<UserEntity> getAllFollowingAsUserEntity(long followerId);
     public FollowerInfoDTO getFollowerInfoByUserId(long userId);
+
+    public List<UserListFollowProjection> getUsersWithFollowerStatus();
 }

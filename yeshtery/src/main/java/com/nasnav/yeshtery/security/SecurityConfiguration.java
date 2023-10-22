@@ -190,6 +190,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/event"                   , DELETE    , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/event/list/**"                                , getAllRoles()),
             patternOf( "/v1/event/advertise/all/**"                                , getAllRoles()),
+            patternOf( "/post/save" , POST                              , getAllRoles()),
+            patternOf( "/post/unsave"       ,POST                         , getAllRoles()),
+            patternOf( "/post/saved"        ,GET                        , getAllRoles()),
+            patternOf( "/follow/users/list"        ,GET                        , getAllRoles()),
+            patternOf( "/queue"						,POST						,  setOf(CUSTOMER)),
+            patternOf( "/queue"						,GET						,  getNonCustomersRoles()),
+            patternOf( "/queue/cancel"					,PUT						,  setOf(CUSTOMER)),
+            patternOf( "/queue/accept"					,PUT						,  getNonCustomersRoles()),
+            patternOf( "/queue/reject"					,PUT						,  getNonCustomersRoles()),
+            patternOf( "/queue/logs"					,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 
             patternOf( "/v1/influencer/host/**"             , getAllRoles()),
             //TODO change roles so that the testing process continues the old one is setOf(NASNAV_ADMIN) only

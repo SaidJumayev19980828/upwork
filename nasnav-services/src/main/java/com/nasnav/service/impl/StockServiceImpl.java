@@ -2,6 +2,12 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.dao.*;
+import com.nasnav.dto.EventInterestsProjection;
+import com.nasnav.dto.EventProjection;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.OrganizationNewDTO;
+import com.nasnav.dto.OrganizationProjection;
+import com.nasnav.dto.ProductStockDTO;
 import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
@@ -19,6 +25,7 @@ import com.nasnav.service.model.VariantIdentifier;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
@@ -77,6 +84,8 @@ public class StockServiceImpl implements StockService {
     @Autowired
     private CachingHelper cachingHelper;
 
+	@Autowired
+	private  ProductVariantsRepository productVariantsRepository;
 	@PersistenceContext
     @Autowired
     private EntityManager entityManager;
@@ -742,14 +751,38 @@ public class StockServiceImpl implements StockService {
 	}
 	
 	@Override
-	public Map<Long, List<StocksEntity>>  getProductStocks(Long productId) {
+	public Map<Long, List<ProductStockDTO>>  getProductStocks(Long productId) {
 		List<StocksEntity> stocks  = stockRepo.findByProductIdIn(asList(productId));
+		List<Long> variantIds = productVariantsRepository.findByProductIdAndRemoved(productId);
+
+//		Map<Long, List<StocksEntity>> stocksPerShop = stocks.stream()
+//				.map(stock -> mapStocksEntityToDTO(stock, variantIds))
+//				.collect(Collectors.groupingBy(e -> e.getShopsEntity().getId()));
+
 		Map<Long, List<StocksEntity>> stocksPerShop = stocks.stream()
-				 .collect(Collectors.groupingBy(e -> e.getShopsEntity().getId()));
-		
-        return stocksPerShop;
+				.collect(Collectors.groupingBy(stock -> stock.getShopsEntity().getId()));
+
+		Map<Long, List<ProductStockDTO>> transformedStocksPerShop = stocksPerShop.entrySet().stream()
+				.collect(Collectors.toMap(
+						Map.Entry::getKey,
+						entry -> entry.getValue().stream()
+								.map(stock -> mapStocksEntityToDTO(stock, variantIds))
+								.collect(Collectors.toList())
+				));
+
+		return transformedStocksPerShop;
 	}
-	
+
+	public ProductStockDTO mapStocksEntityToDTO(StocksEntity stock, List<Long> variantIds) {
+		ProductStockDTO productStock = new ProductStockDTO();
+		productStock.setId(stock.getId());
+		productStock.setQuantity(stock.getQuantity());
+		productStock.setCurrency(stock.getCurrency());
+		productStock.setDiscount(stock.getDiscount());
+		productStock.setPrice(stock.getPrice());
+		productStock.setVariantIds(variantIds);
+		return productStock;
+	}
 
 }
 

@@ -323,7 +323,7 @@ public class ProductsController {
 	        return stockService.updateStocks(productStocksDTO);
 	    }
 	   @GetMapping(value = "v2/stock", produces = APPLICATION_JSON_VALUE)
-	    public Map<Long, List<StocksEntity>>getProductStocks(@RequestHeader(name = "User-Token", required = false) String userToken,
+	    public Map<Long, List<ProductStockDTO>>getProductStocks(@RequestHeader(name = "User-Token", required = false) String userToken,
 	    		  @RequestParam(name = "product_id") Long productId) throws BusinessException {
 	        return stockService.getProductStocks(productId);
 	    }

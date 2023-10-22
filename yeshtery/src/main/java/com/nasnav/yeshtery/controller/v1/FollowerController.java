@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
@@ -9,6 +10,8 @@ import com.nasnav.service.FollowerServcie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
@@ -40,6 +43,11 @@ public class FollowerController {
     public FollowerInfoDTO getFollowerInfo(@RequestHeader(TOKEN_HEADER) String userToken,
                                            @RequestParam Long userId) {
         return followerServcie.getFollowerInfoByUserId(userId);
+    }
+
+    @GetMapping("users/list")
+    public List<UserListFollowProjection> getUsersList(@RequestHeader(TOKEN_HEADER) String userToken) {
+        return followerServcie.getUsersWithFollowerStatus();
     }
 
     @PostMapping

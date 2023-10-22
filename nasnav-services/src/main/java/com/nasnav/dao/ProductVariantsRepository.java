@@ -145,4 +145,9 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			" left join variant.productEntity product " +
 			" where feature.id = :featureId and product.organizationId = :orgId")
 	List<Long> findByFeature(@Param("featureId")Integer featureId, @Param("orgId") Long orgId);
+
+
+	@Query("select variant.id from ProductVariantsEntity variant " +
+			" where variant.productEntity.id = :productId and variant.removed = 0")
+	List<Long> findByProductIdAndRemoved(@Param("productId")Long productId);
 }

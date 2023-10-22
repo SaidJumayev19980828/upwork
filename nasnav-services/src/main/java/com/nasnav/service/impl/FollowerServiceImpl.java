@@ -3,6 +3,8 @@ package com.nasnav.service.impl;
 import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.UserFollow;
+import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.response.FollowerDTO;
 import com.nasnav.dto.response.FollowerInfoDTO;
@@ -101,5 +103,12 @@ public class FollowerServiceImpl implements FollowerServcie{
         dto.setFollowingsCount(followerRepository.countAllByFollower_Id(userId));
         dto.setPostsCount(postRepository.countAllByUser_IdAndStatus(userId, PostStatus.APPROVED.getValue()));
         return dto;
+    }
+
+    @Override
+    public List<UserListFollowProjection> getUsersWithFollowerStatus() {
+        BaseUserEntity currentUser = securityService.getCurrentUser();
+        List<UserListFollowProjection> userFollows = userRepository.findUsersWithFollowerStatus(currentUser.getId());
+        return userFollows;
     }
 }
