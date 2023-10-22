@@ -3,6 +3,8 @@ package com.nasnav.service.model.importproduct.context;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.exceptions.ErrorCodes;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -35,5 +37,9 @@ public class Error{
 	public Error(String message, Integer rowNum) {
 		this.message = message;
 		this.rowNum = rowNum;
+	}
+
+	public Error(ErrorCodes errorCode) {
+		this.errorCode = errorCode.name();
 	}
 }

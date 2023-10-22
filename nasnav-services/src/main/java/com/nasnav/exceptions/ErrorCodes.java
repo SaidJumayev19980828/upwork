@@ -464,13 +464,16 @@ public enum ErrorCodes {
 	,FRT$VARS001("Error while processing the file")
 	,FRT$VARS002("Invalid Key Or Error while processing the file ")
 	,CSV$001("Parsing error due to missing headers [%s]")
+	,CSV$002("Invalid data in column: [%s], row number: [%d]")
+	,XLS$001("The following table header(s) not found: [%s]")
+	,XLS$002("Conversion error or invalid header at row: [%d]")
 
 	;
 
 	@Getter
 	@JsonValue
     private final String value;
-	
+
 	@JsonCreator
 	ErrorCodes(String value) {
         this.value = value;
