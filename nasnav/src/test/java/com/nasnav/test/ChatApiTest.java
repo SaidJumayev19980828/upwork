@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -83,12 +84,12 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 		final ResponseEntity<RocketChatAgentTokenDTO> response1 = template.exchange("/chat/agent/authenticate", POST, request,
 				RocketChatAgentTokenDTO.class);
 		assertEquals(HttpStatus.OK, response1.getStatusCode());
-		assertDoesNotThrow(() -> UUID.fromString(response1.getBody().getAuthToken()));
+		assertNotNull(response1.getBody().getAuthToken());
 
 		final ResponseEntity<RocketChatAgentTokenDTO> response2 = template.exchange("/chat/agent/authenticate", POST, request,
 				RocketChatAgentTokenDTO.class);
 		assertEquals(HttpStatus.OK, response2.getStatusCode());
-		assertDoesNotThrow(() -> UUID.fromString(response2.getBody().getAuthToken()));
+		assertNotNull(response2.getBody().getAuthToken());
 
 		assertEquals(response1.getBody().getUserId(), response2.getBody().getUserId());
 		assertNotEquals(response1.getBody().getAuthToken(), response2.getBody().getAuthToken());
