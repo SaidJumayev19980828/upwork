@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Data
 @AllArgsConstructor
@@ -90,7 +92,36 @@ public class ImportProductContext {
 		error.setMessage(message);
 		errors.add(error);
 	}
-	
+
+	public void logNewErrorForCsvInvalidData(String errorMessage, int rowNum, String parsedContent) {
+		ErrorCodes errorCode = ErrorCodes.CSV$002;
+		String columnName = getColumnNameContainsInvalidData(errorMessage);
+		String message = String.format(errorCode.getValue(), columnName, rowNum);
+		Error error = new Error(errorCode);
+		error.setMessage(message);
+		error.setRowNum(rowNum);
+		error.setData(parsedContent);
+		errors.add(error);
+	}
+
+	public void logNewErrorForMissingXlsHeaders(String xlsMissingHeaders, int rowNum) {
+		ErrorCodes errCode = ErrorCodes.XLS$001;
+		Error error = new Error(errCode);
+		String errMsg = String.format(errCode.getValue(), xlsMissingHeaders);
+		error.setMessage(errMsg);
+		error.setRowNum(rowNum);
+		errors.add(error);
+
+	}
+
+	public void logNewXlsConversionError(String rowData, int rowNum, ErrorCodes errorCode) {
+		Error error = new Error(errorCode);
+		error.setRowNum(rowNum);
+		error.setData(rowData);
+		error.setMessage(String.format(errorCode.getValue(),rowNum));
+		errors.add(error);
+
+	}
 	public boolean isSuccess() {
 		return errors.isEmpty();
 	}
@@ -109,7 +140,16 @@ public class ImportProductContext {
 	public void logNewUpdatedProduct(Long id, String name) {
 		updatedProducts.add(new Product(id, name));
 	}
-	
+
+	private String getColumnNameContainsInvalidData(String errMsg) {
+		Pattern pattern = Pattern.compile("columnName=([^,]+)");
+		Matcher matcher = pattern.matcher(errMsg);
+		if(matcher.find())
+			return matcher.group(1);
+
+		return "";
+
+	}
 }
 
 

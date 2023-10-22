@@ -199,6 +199,6 @@ class RowParseErrorHandler implements RowProcessorErrorHandler {
 
 	@Override
 	public void handleError(DataProcessingException error, Object[] inputRow, ParsingContext context) {
-			importContext.logNewError(error, Arrays.toString(inputRow), (int)(context.currentLine())+1);	
+		importContext.logNewErrorForCsvInvalidData(error.getMessage(), (int) context.currentLine(), context.currentParsedContent());
 	}
 }

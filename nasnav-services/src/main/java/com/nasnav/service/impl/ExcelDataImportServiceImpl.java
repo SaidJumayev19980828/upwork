@@ -19,6 +19,7 @@ import javax.validation.Valid;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.FilesUtils;
 import com.nasnav.commons.utils.FunctionalUtils;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -104,10 +105,12 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 			headers.add( cell.getStringCellValue());
 		}
 		Collection<String> originalHeaders = PRODUCT_DATA_TO_COLUMN_MAPPING.values();
-		String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
+		String headerNotFound = originalHeaders
+				.stream()
+				.filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
 		if(!headerNotFound.isEmpty()){
 			ImportProductContext context = new ImportProductContext();
-			context.logNewError("The following table header(s) not found : [ " + headerNotFound + " ]", 1);
+			context.logNewErrorForMissingXlsHeaders(headerNotFound,1);
 			throw new ImportProductException(context);
 		}
 	}
@@ -139,7 +142,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 					try {
 						localBeanUtils.setProperty(line, propertyName, value);
 					} catch (ConversionException ex) {
-						context.logNewError(ex, row.toString(), row.getRowNum());
+						context.logNewXlsConversionError(row.toString(), row.getRowNum() + 1, ErrorCodes.XLS$002);
 					}
 					if (featuresNames.contains(propertyName)) {
 						features.put(propertyName, value.toString());

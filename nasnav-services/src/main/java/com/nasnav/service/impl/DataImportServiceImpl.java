@@ -11,19 +11,16 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.*;
-import com.nasnav.exceptions.*;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
-import com.nasnav.service.CategoryService;
-import com.nasnav.service.DataImportService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ProductServiceTransactions;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.StockService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.*;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
@@ -118,7 +115,7 @@ public class DataImportServiceImpl implements DataImportService {
 			importNonExistingBrands(context);
 			importNonExistingTags(context);
 		}
-    	
+
     	DataImportCachedData cache = createRequiredDataCache(productImportDTOS);
     	
     	validateProductData(productImportDTOS, cache, context);
@@ -190,10 +187,6 @@ public class DataImportServiceImpl implements DataImportService {
 		}
 	}
 
-
-
-
-
 	private IndexedData<String> createErrorMessage(IndexedData<VariantIdentifier> variantId) {
 		return new IndexedData<>(variantId.getIndex()
 					,format("No variant found with id[%s] nor external Id[%s] at row[%d]!"
@@ -202,24 +195,13 @@ public class DataImportServiceImpl implements DataImportService {
 								, variantId.getIndex() + 1));
 	}
 
-	
-	
-	
-	
 	private boolean isNoVariantExistWithId(VariantIdentifier identifier, VariantCache cache) {
 		return !cache.getIdToVariantMap().containsKey(identifier.getVariantId());
 	}
 
-
-
-
-
 	private boolean isNullVariantIdentifier(VariantIdentifier identifiers) {
 		return nonNull(identifiers) && allIsNull(identifiers.getVariantId());
 	}
-
-
-
 
 	private void clearImportContext(ImportProductContext context) {
 		context.getCreatedBrands().clear();
@@ -227,12 +209,8 @@ public class DataImportServiceImpl implements DataImportService {
 		context.getCreatedProducts().clear();
 		context.getUpdatedProducts().clear();
 	}
-    
-    
-    
-    
 
-    private void importNonExistingTags(ImportProductContext context) {
+	private void importNonExistingTags(ImportProductContext context) {
     	
     	Set<String> tagNames = getTagNames(context);
     	
@@ -240,10 +218,6 @@ public class DataImportServiceImpl implements DataImportService {
     	
     	createNonExistingTags(context, tagNames, existingTags);
 	}
-
-
-
-
 
 	private void createNonExistingTags(ImportProductContext context, Set<String> tagNames,
 			Map<String, TagsEntity> existingTags) {
@@ -255,10 +229,6 @@ public class DataImportServiceImpl implements DataImportService {
     	.map(this::createNewtag)
     	.forEach(tag -> logTagCreation(tag, context));
 	}
-
-
-
-
 
 	private Map<String, TagsEntity> getExistingTags(Set<String> tagsNames) {
 		Long orgId = security.getCurrentUserOrganizationId();
@@ -275,19 +245,12 @@ public class DataImportServiceImpl implements DataImportService {
 			 .block();
 	}
 
-
-
-
 	private Set<TagsEntity> findTagsNameLowerCaseInAndOrganizationId(Set<String> tagNamesInLowerCase, Long orgId){
     	if(tagNamesInLowerCase == null || tagNamesInLowerCase.isEmpty()){
     		return emptySet();
 		}
     	return tagsRepo.findByNameLowerCaseInAndOrganizationEntity_Id(tagNamesInLowerCase, orgId);
 	}
-
-
-
-
 
 	private Set<String> getTagNames(ImportProductContext context) {
 		return 
@@ -299,27 +262,20 @@ public class DataImportServiceImpl implements DataImportService {
 			 .collect(toSet())
 			 .block();
 	}
-    
-    
-    
-    
-    private void logTagCreation(TagsEntity tag, ImportProductContext context) {
+
+	private void logTagCreation(TagsEntity tag, ImportProductContext context) {
     	context.logNewTag(tag.getId(), tag.getName());
     }
-    
-    
-    
-    private TagsDTO toTagDTO(String tagName) {
+
+	private TagsDTO toTagDTO(String tagName) {
     	TagsDTO dto = new TagsDTO();
     	dto.setOperation(CREATE.getValue());
     	dto.setName(tagName);
     	dto.setHasCategory(false);
     	return dto;
     }
-    
-    
-    
-    private TagsEntity createNewtag(TagsDTO tag) {
+
+	private TagsEntity createNewtag(TagsDTO tag) {
     	try {
 			return categoryService.createOrUpdateTag(tag);
 		} catch (BusinessException e) {
@@ -327,10 +283,6 @@ public class DataImportServiceImpl implements DataImportService {
 			throw new RuntimeBusinessException(e);
 		}
     }
-
-    
-    
-    
 
 	private void saveToDB(ProductDataLists productsData, ImportProductContext context) throws BusinessException {
 		//save procedure is mutable, so the product data is modified after each step
@@ -340,11 +292,7 @@ public class DataImportServiceImpl implements DataImportService {
 		.map(this::saveVariants)
 		.map(this::saveStocks);
     }
-	
-	
-	
-	
-	
+
 	private ProductDataImportContext saveProducts(ProductDataImportContext context) {
 		ImportProductContext importContext = context.getContext();
 		ProductImportMetadata importMetaData = importContext.getImportMetaData();
@@ -367,9 +315,6 @@ public class DataImportServiceImpl implements DataImportService {
 		return context;
 	}
 
-	
-	
-	
 	private void saveNewProducts(ImportProductContext importContext, List<ProductData> newProducts) {
 		boolean resetTags = importContext.getImportMetaData().isResetTags();
 		List<ProductUpdateDTO> productDtos = getProductUpdateDtoList(newProducts);
@@ -387,11 +332,6 @@ public class DataImportServiceImpl implements DataImportService {
 		saveProductTags(newProducts, resetTags);
 	}
 
-
-
-	
-	
-	
 	private void saveExistingProducts(ImportProductContext importContext, List<ProductData> existingProducts) {
 		ProductImportMetadata importMetaData = importContext.getImportMetaData();
 		boolean updateProductEnabled = importMetaData.isUpdateProduct();
@@ -413,11 +353,6 @@ public class DataImportServiceImpl implements DataImportService {
 		saveProductTags(existingProducts, resetTags);
 	}
 
-
-
-
-	
-	
 	private List<ProductUpdateDTO> getProductUpdateDtoList(List<ProductData> newProducts) {
 		return newProducts
 				.stream()
@@ -425,10 +360,6 @@ public class DataImportServiceImpl implements DataImportService {
 				.collect(toList());
 	}
 
-	
-	
-	
-	
 	private ProductDataImportContext saveVariants(ProductDataImportContext context) {
 		if(context.getContext().getImportMetaData().isInsertNewProducts()) {
 			saveNewProductsVariants(context);
