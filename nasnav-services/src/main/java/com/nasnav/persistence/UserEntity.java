@@ -126,9 +126,10 @@ public class UserEntity extends BaseUserEntity{
         obj.setImage(this.getImage());
         if(this.bankAccount != null)
             obj.setBankAccountId(this.bankAccount.getId());
-        if(this.influencer != null)
+        if(this.influencer != null) {
             obj.setInfluencerId(this.influencer.getId());
             obj.setIsGuided(this.influencer.getIsGuided());
+        }
         return obj;
     }
 }
