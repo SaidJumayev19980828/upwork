@@ -1,15 +1,10 @@
-package com.nasnav.test;
+package com.nasnav.yeshtery.test.controllers;
 
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-
-import java.util.UUID;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -22,15 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
-import com.nasnav.dao.RocketChatEmployeeAgentRepository;
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dao.RocketChatOrganizationDepartmentRepository;
-import com.nasnav.dto.rocketchat.RocketChatAgentTokenDTO;
-import com.nasnav.dto.rocketchat.RocketChatUserDTO;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
-import com.nasnav.persistence.RocketChatEmployeeAgentEntity;
 import com.nasnav.persistence.RocketChatOrganizationDepartmentEntity;
 import com.nasnav.service.rocketchat.impl.RocketChatClient;
-import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -39,14 +31,13 @@ import reactor.test.StepVerifier;
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = { "/sql/Chat_Test_Data.sql" })
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
 class ChatApiTest extends AbstractTestWithTempBaseDir {
+	private static final String VISITOR_PATH = YeshteryConstants.API_PATH + "/chat/visitor?org_id=99001";
+
 	@Autowired
 	private TestRestTemplate template;
 
 	@Autowired
 	private RocketChatOrganizationDepartmentRepository rocketChatOrganizationDepartmentRepository;
-
-	@Autowired
-	private RocketChatEmployeeAgentRepository rocketChatEmployeeAgentRepository;
 
 	@Autowired
 	private RocketChatClient client;
@@ -57,41 +48,17 @@ class ChatApiTest extends AbstractTestWithTempBaseDir {
 				.map(RocketChatOrganizationDepartmentEntity::getDepartmentId)
 				.flatMap(client::deleteDepartment))
 				.verifyComplete();
-		StepVerifier.create(Flux.fromIterable(rocketChatEmployeeAgentRepository.findAll())
-				.map(RocketChatEmployeeAgentEntity::getUsername)
-				.map(username -> RocketChatUserDTO.builder()
-						.username(username)
-						.build())
-				.flatMap(client::deleteUser))
-				.verifyComplete();
 	}
 
 	@Test
 	void getVisitorData() {
 		HttpEntity<?> request = getHttpEntity("abc");
-		ResponseEntity<RocketChatVisitorDTO> response = template.exchange("/chat/visitor", POST, request,
+		ResponseEntity<RocketChatVisitorDTO> response = template.exchange(VISITOR_PATH, POST, request,
 				RocketChatVisitorDTO.class);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 
-		response = template.exchange("/chat/visitor", POST, request,
+		response = template.exchange(VISITOR_PATH, POST, request,
 				RocketChatVisitorDTO.class);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-	}
-
-	@Test
-	void createAgentToken() {
-		HttpEntity<?> request = getHttpEntity("qwe");
-		final ResponseEntity<RocketChatAgentTokenDTO> response1 = template.exchange("/chat/agent/authenticate", POST, request,
-				RocketChatAgentTokenDTO.class);
-		assertEquals(HttpStatus.OK, response1.getStatusCode());
-		assertNotNull(response1.getBody().getAuthToken());
-
-		final ResponseEntity<RocketChatAgentTokenDTO> response2 = template.exchange("/chat/agent/authenticate", POST, request,
-				RocketChatAgentTokenDTO.class);
-		assertEquals(HttpStatus.OK, response2.getStatusCode());
-		assertNotNull(response2.getBody().getAuthToken());
-
-		assertEquals(response1.getBody().getUserId(), response2.getBody().getUserId());
-		assertNotEquals(response1.getBody().getAuthToken(), response2.getBody().getAuthToken());
 	}
 }

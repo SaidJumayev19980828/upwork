@@ -6,4 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface CustomerRocketChatService {
 	public Mono<RocketChatVisitorDTO> getRocketChatVisitorData();
+
+	public Mono<RocketChatVisitorDTO> getRocketChatVisitorData(Long orgId);
 }

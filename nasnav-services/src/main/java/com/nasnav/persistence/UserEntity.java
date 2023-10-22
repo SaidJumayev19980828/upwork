@@ -75,12 +75,6 @@ public class UserEntity extends BaseUserEntity{
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     @JsonIgnore
-    RocketChatCustomerTokenEntity rocketChatTokenEntity;
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    @JsonIgnore
     private BankAccountEntity bankAccount;
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

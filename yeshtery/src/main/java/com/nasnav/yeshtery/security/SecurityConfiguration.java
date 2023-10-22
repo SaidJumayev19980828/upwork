@@ -171,7 +171,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			, patternOf("/v1/user/link_nasnav_users_to_yeshtery_users", POST   , setOf(NASNAV_ADMIN)),
             patternOf( "/v1/videochat/**"                   , POST    , getAllRoles()),
             patternOf( "/v1/videochat/**"                   , GET    , getNonCustomersRoles()),
-            patternOf("/v1/chat/visitor_data"								, GET						, setOf(CUSTOMER)),
+            patternOf("/v1/chat/visitor"								, POST						, setOf(CUSTOMER)),
+            patternOf("/v1/chat/agent/authenticate"							, POST						, getNonNasnavRoles()),
             patternOf("/v1/availability/org/**"                       				, getAllRoles()),
             patternOf("/v1/availability/shop/**"                       				, getAllRoles()),
             patternOf("/v1/availability/user"                       					, setOf(CUSTOMER)),
@@ -411,6 +412,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     	Set<Roles> roles = getAllRoles();
     	roles.remove(Roles.CUSTOMER);
     	return roles;
+    }
+
+	private static Set<Roles> getNonNasnavRoles(){
+    	return setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER,
+				ORGANIZATION_EMPLOYEE, STORE_MANAGER, STORE_EMPLOYEE);
     }
 
     private String[] toArray(Set<Roles> set) {

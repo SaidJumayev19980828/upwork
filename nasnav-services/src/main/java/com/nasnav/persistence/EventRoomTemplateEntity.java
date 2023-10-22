@@ -35,12 +35,6 @@ public class EventRoomTemplateEntity extends RoomTemplateEntity {
 	@Exclude
 	@lombok.ToString.Exclude
 	EventEntity event;
-	
-	@PreRemove
-	private void preRemove() {
-		event.setRoomTemplate(null);
-	}
-
 	public EventRoomStatus getStatus() {
 		if (event.getEndsAt().isBefore(LocalDateTime.now())) {
 			return EventRoomStatus.ENDED;
