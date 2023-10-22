@@ -130,6 +130,7 @@ public class UserEntity extends BaseUserEntity{
             obj.setInfluencerId(this.influencer.getId());
             obj.setIsGuided(this.influencer.getIsGuided());
         }
+
         return obj;
     }
 }
