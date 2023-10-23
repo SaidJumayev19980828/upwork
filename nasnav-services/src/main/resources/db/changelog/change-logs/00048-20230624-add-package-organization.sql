@@ -3,6 +3,7 @@
 --changeset Hussien:add_registered_package_organization_relation dbms:postgresql splitStatements:false failOnError:true
 
 --comment: add registered package organization relation
+DELETE From public.package;
 
 ALTER TABLE package_registered RENAME COLUMN user_id TO creator_employee_id;
 

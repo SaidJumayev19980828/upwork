@@ -128,9 +128,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files"							,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/files/**"),
-						patternOf( "/package/create"					,HttpMethod.POST	, setOf(NASNAV_ADMIN) ),
-						patternOf( "/package/{packageId:\\d+}"			,HttpMethod.PUT		, setOf(NASNAV_ADMIN) ),
-						patternOf( "/package/{packageId:\\d+}"			,HttpMethod.DELETE	, setOf(NASNAV_ADMIN) ),
+						patternOf( "/package/create"					,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/package/complete-profile"		,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/brand"									, setOf(ORGANIZATION_ADMIN)),
@@ -155,6 +155,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/search/**"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/organization/seo"										, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/sub_areas"								, setOf(ORGANIZATION_ADMIN)),
+						patternOf("/subscription/info"						, HttpMethod.GET ,getNonCustomersRoles()),
+						patternOf("/subscription/wert/create"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf("/subscription/stripe/create"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf("/subscription/stripe/changePaymentMethod"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf("/subscription/stripe/cancel"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+						patternOf("/subscription/stripe/changePlan"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
 						patternOf( "/mail/cart/abandoned"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/mail/wishlist/stock"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -276,6 +282,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/files/**"							, HttpMethod.GET)
                         , patternOf("/error/**"							, HttpMethod.GET)
 						, patternOf("/advertisement", HttpMethod.GET)
+						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
 						, patternOf("/frontend/setting", GET)
 						, patternOf("/chat-widget-setting/get-published", GET)
 

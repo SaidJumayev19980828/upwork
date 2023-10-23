@@ -99,11 +99,25 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private PackageRegisteredEntity packageRegistration;
 
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", referencedColumnName = "id")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private EmployeeUserEntity owner;
+
+
     @OneToOne(mappedBy = "organization", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     @JsonIgnore
     private BankAccountEntity bankAccount;
+    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY,cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<SubscriptionEntity> subscriptions;
 
     public OrganizationEntity() {
         id = null;

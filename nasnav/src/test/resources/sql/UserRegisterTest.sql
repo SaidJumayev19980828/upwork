@@ -88,3 +88,8 @@ insert into public.sub_areas ("id",area_id, "name", organization_id) values (888
 
 INSERT INTO public.addresses(id, address_line_1, sub_area_id, area_Id) values(12300003, 'address line', 888001, 100001);
 INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88005, 12300003, false);
+
+
+INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99001,'test 1','test description',1500,30,818,'price_1NzLNBAV4qGEOW4EItZ5eE2p');
+
+INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 159, 99001, 99001, now());

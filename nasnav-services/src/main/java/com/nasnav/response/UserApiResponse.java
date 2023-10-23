@@ -36,6 +36,8 @@ public class UserApiResponse {
 
     @JsonIgnore
     private Cookie cookie;
+    @JsonProperty(value = "package_id")
+    private Long packageId;
 
     public UserApiResponse(Long entityId, String token, List<String> roles, Long organizationId, Long storeId,
                            String name, String email, Cookie cookie) {
@@ -52,6 +54,11 @@ public class UserApiResponse {
     public UserApiResponse(Long entityId, List<ResponseStatus> statuses) {
         this.entityId = entityId;
         this.status = statuses;
+    }
+    public UserApiResponse(Long entityId, Long packageId , List<ResponseStatus> statuses) {
+        this.entityId = entityId;
+        this.status = statuses;
+        this.packageId = packageId;
     }
 
     public UserApiResponse(Long entityId, String orgUrl, String token) {
