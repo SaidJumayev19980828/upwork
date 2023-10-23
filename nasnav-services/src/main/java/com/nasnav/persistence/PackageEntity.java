@@ -3,10 +3,10 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.Set;
 
 @Table(name = "package")
@@ -21,17 +21,29 @@ public class PackageEntity extends DefaultBusinessEntity<Long> {
     private String description;
 
     @Column(name = "price")
-    private BigDecimal price;
+    private BigDecimal price = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "packageEntity")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private CountriesEntity country;
+
+    //Period In Days
+    @Column(name = "period_in_days")
+    private Long periodInDays = 0l;
+
+    @Column(name="stripe_price_id")
+    private String stripePriceId;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "package_service"
+            ,joinColumns = {@JoinColumn(name="package_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="service_id")})
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
-    private Set<ServicesRegisteredInPackage> servicesIncluded = new HashSet<>();
+    private Set<ServiceEntity> services;
 
-    @OneToMany(mappedBy = "packageEntity", fetch = FetchType.LAZY)
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private Set<PackageRegisteredEntity> packageRegistered = new HashSet<>();
 }
