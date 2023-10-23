@@ -234,7 +234,18 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 		byte[] imgData = Files.readAllBytes(img);
 		
-		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+		MockMultipartFile coverPart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile imgsPart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile uploadedImagesPriorities = new MockMultipartFile("uploaded_image_priorities",
+				"uploaded_image_priorities", MediaType.APPLICATION_JSON_VALUE, "[5]".getBytes());
+		
+		MockMultipartFile deletedImages = new MockMultipartFile("deleted_images",
+				"deleted_images", MediaType.APPLICATION_JSON_VALUE, "[2]".getBytes());
+
+		MockMultipartFile updatedImages = new MockMultipartFile("updated_images",
+				"updated_images", MediaType.APPLICATION_JSON_VALUE, "[{\"id\":1,\"priority\":6}]".getBytes());
 
 		NewProductFlowDTO product = createNewProductFlowDummyProduct();
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -245,11 +256,16 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	                        MediaType.APPLICATION_JSON_VALUE,
 	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
 
-		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
-				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add")
+				.file(coverPart)
+				.file(imgsPart)
+				.file(productJson)
+				.file(uploadedImagesPriorities)
+				.file(deletedImages)
+				.file(updatedImages)
+				.header(TOKEN_HEADER, user.getAuthenticationToken()));
 
 		result.andExpect(status().is(200));
-
 	}
 
 	@Test
@@ -319,7 +335,8 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	}
 	private NewProductFlowDTO createNewProductFlowDummyProduct() {
 		NewProductFlowDTO product = new NewProductFlowDTO();
-		product.setOperation(Operation.CREATE);
+		product.setOperation(Operation.UPDATE);
+		product.setProductId(1008L);
 		product.setName("test Product");
 		product.setDescription("Testing creating/updating product");
 		product.setBrandId(101L);

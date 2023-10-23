@@ -1,8 +1,10 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -19,12 +21,21 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +45,7 @@ import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -41,6 +53,7 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @NotThreadSafe
@@ -49,9 +62,14 @@ import static org.springframework.http.HttpStatus.OK;
 public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final Long TEST_VARIANT_ID = 80001L;
+	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
+	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
 
 	private Long TEST_PRODUCT_ID = 1002L;
+
+	@Autowired
+	MockMvc mockMvc;
 
 
 	@Autowired
@@ -422,6 +440,28 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(406, response.getStatusCodeValue());
 	}
 
+	@Test
+	public void NewProductFlowTest() throws Exception {
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
+
+		byte[] imgData = Files.readAllBytes(img);
+		
+		MockMultipartFile filePart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
+
+		JSONObject variant = createProductVariantRequest();
+		  MockMultipartFile variantJson =
+	                new MockMultipartFile(
+	                        "var",
+	                        "var",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        variant.toString().getBytes(StandardCharsets.UTF_8));
+
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/variant").file(filePart)
+				.file(variantJson).header(TOKEN_HEADER, "131415"));
+
+		result.andExpect(status().is(200));
+	}
 
 	private JSONObject createProductVariantRequest() {
 		JSONObject extraAttributes =
@@ -431,6 +471,10 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 				.put("$INV", "you can't see me!");
 		JSONObject features = json().put("234", "37").put("235", "Black");
 
+		return getJsonVariant(extraAttributes, features);
+	}
+
+	private JSONObject getJsonVariant(JSONObject extraAttributes, JSONObject features) {
 		JSONObject json = new JSONObject();
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", JSONObject.NULL);
@@ -446,8 +490,4 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		json.put("weight", 5.5);
 		return json;
 	}
-	
-	
-	
-	
 }
