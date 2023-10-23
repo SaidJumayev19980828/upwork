@@ -1,5 +1,6 @@
 package com.nasnav.service.scheduler;
 
+import com.nasnav.dao.SchedulerTaskRepository;
 import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.BankAccountService;
@@ -9,6 +10,8 @@ import com.nasnav.service.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,15 +19,19 @@ import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.constatnts.EmailConstants.*;
 
 @Service
@@ -35,6 +42,8 @@ public class ScheduleTaskHelper {
     private MailService mailService;
     @Autowired
     private BankAccountService bankAccountService;
+    @Autowired
+    private SchedulerTaskRepository schedulerTaskRepository;
 
     @Autowired
     private DomainService domainService;
@@ -57,6 +66,7 @@ public class ScheduleTaskHelper {
             }
         }
     }
+
     public void addTaskToScheduler(SchedulerTaskEntity schedulerTaskEntity) {
         if (LocalDateTime.now().isBefore(schedulerTaskEntity.getStartsAt())) {
             long initialDelay = LocalDateTime.now()
@@ -119,6 +129,28 @@ public class ScheduleTaskHelper {
         // Get all tasks from DB and reschedule them in case of context restarted
     }
 
+
+
+    public void runScheduleTask() {
+        CompletableFuture.runAsync(this::schularJob, scheduledExecutorService);
+    }
+
+    @Scheduled(cron = "0 1 0 * * ?")
+    public void schularJob(){
+        LocalDateTime startDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+        int page = 0;
+        int pageSize = 10;
+        PageImpl<SchedulerTaskEntity> appointmentEntities;
+        do {
+            PageRequest pageRequest = PageRequest.of(page, pageSize);
+            appointmentEntities = schedulerTaskRepository.findAllByStartsAtBetween(startDateTime, endDateTime, pageRequest);
+            for (SchedulerTaskEntity schedulerTaskEntity : appointmentEntities.getContent()) {
+                addTaskToScheduler(schedulerTaskEntity);
+            }
+            page++;
+        } while (appointmentEntities.hasNext());
+    }
     @Scheduled(cron = "@monthly")
     @Async
     public void run() {
