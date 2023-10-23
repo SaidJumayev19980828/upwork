@@ -34,13 +34,10 @@ public class NavBox
     @Autowired
     private ScheduleTaskHelper scheduleTaskHelper;
 
-//    @Bean
-//    public void runScheduleTask() {
-//        List<SchedulerTaskEntity> appointmentEntities = this.schedulerTaskRepository.findAll();
-//        for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
-//            this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
-//        }
-//    }
+    @Bean
+    public void runScheduleTask() {
+        this.scheduleTaskHelper.runScheduleTask();
+    }
 
     @Bean
     public RestTemplate getRestTemplate() {
