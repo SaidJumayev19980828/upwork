@@ -4,6 +4,7 @@
 
 --comment: add period to package
 
+DELETE From public.package;
 ALTER TABLE public.package ADD COLUMN period_in_days bigint;
 ALTER TABLE public.package ADD COLUMN currency_iso Integer;
 ALTER TABLE public.package ADD COLUMN stripe_price_id text NOT NULL ;
@@ -24,7 +25,8 @@ CREATE SEQUENCE IF NOT EXISTS public.service_seq
     CACHE 1;
 
 ALTER SEQUENCE public.service_seq
-    OWNER TO nasnav;
+    RESTART WITH 10;
+
 
 CREATE TABLE IF NOT EXISTS public.service
 (
@@ -33,18 +35,17 @@ CREATE TABLE IF NOT EXISTS public.service
     name text,
     description text,
     CONSTRAINT service_pkey PRIMARY KEY (id)
-);
+    );
 
 --
--- Name: package_service; Type: TABLE; Schema: public; Owner: nasnav
+-- Name: package_service; Type: TABLE; Schema: public;
 --
 
 CREATE TABLE public.package_service (
-                                     package_id bigint NOT NULL,
-                                     service_id bigint NOT NULL
+                                        package_id bigint NOT NULL,
+                                        service_id bigint NOT NULL
 );
 
-ALTER TABLE public.package_service OWNER TO nasnav;
 
 --comment: Delete services_registered_in_package table
 
@@ -59,8 +60,6 @@ CREATE SEQUENCE IF NOT EXISTS public.subscription_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
-ALTER SEQUENCE public.subscription_seq
-    OWNER TO nasnav;
 
 CREATE TABLE IF NOT EXISTS public.subscription
 (
@@ -77,7 +76,7 @@ CREATE TABLE IF NOT EXISTS public.subscription
     CONSTRAINT subscription_pkey PRIMARY KEY (id),
     CONSTRAINT subscription_package_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.package(id),
     CONSTRAINT subscription_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
-);
+    );
 --comment: Add Owner To Organization Table
 ALTER TABLE public.organizations ADD column owner_id BIGINT NULL;
 ALTER TABLE public.organizations ADD CONSTRAINT organizations_owner_id_fk FOREIGN KEY (owner_id) REFERENCES public.employee_users(id) ON DELETE SET NULL;
@@ -92,8 +91,6 @@ CREATE SEQUENCE IF NOT EXISTS public.stripe_customer_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
-ALTER SEQUENCE public.stripe_customer_seq
-    OWNER TO nasnav;
 
 CREATE TABLE IF NOT EXISTS public.stripe_customer
 (
@@ -102,5 +99,5 @@ CREATE TABLE IF NOT EXISTS public.stripe_customer
     org_id BIGINT,
     CONSTRAINT stripe_customer_pkey PRIMARY KEY (id),
     CONSTRAINT stripe_customer_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
-);
+    );
 
