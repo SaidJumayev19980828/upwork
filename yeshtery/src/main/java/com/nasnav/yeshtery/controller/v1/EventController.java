@@ -49,7 +49,7 @@ public class EventController {
     }
 
     @GetMapping("/list")
-    public PageImpl<EventResponseDto> getEventsForEmployeePageable(@RequestHeader(name = "User-Token", required = false) String token,
+    public PageImpl<EventsNewDTO> getEventsForEmployeePageable(@RequestHeader(name = "User-Token", required = false) String token,
                                                                    @RequestParam(required = false, defaultValue = "0") Integer start,
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                                    @RequestParam(required = false) EventStatus status,

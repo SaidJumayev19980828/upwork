@@ -1,7 +1,6 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
 import com.nasnav.persistence.EventEntity;
 import com.nasnav.persistence.InfluencerEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -72,6 +71,36 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
     PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+
+
+    @Query("SELECT DISTINCT event as event, COUNT(el.id) AS interest " +
+            "FROM EventEntity event " +
+            "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
+            "WHERE event.organization.id = :organizationId " +
+            "AND (:status IS NULL OR event.status = :status) " +
+            "AND (  " +
+            "       ( to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "        to_timestamp(CAST(event.startsAt as text), 'yyyy-MM-dd HH24:MI:SS') >= " +
+            "       to_timestamp(CAST(:fromDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "        ) " +
+            "       AND" +
+            "       ( to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') IS NULL OR " +
+            "    to_timestamp(CAST(event.endsAt as text), 'yyyy-MM-dd HH24:MI:SS') <= " +
+            "    to_timestamp(CAST(:endDate as text), 'yyyy-MM-dd HH24:MI:SS') " +
+            "       )" +
+            ")" +
+            "GROUP BY event.id")
+    PageImpl<EventInterestsProjection> findAllEventsByStatusAndOrganizationIdAndBetweenDateTime(
+            @Param("organizationId") Long organizationId,
+            @Param("status") Integer status,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime fromDate,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endDate,
+            Pageable pageable);
+
+
+
 
 
 }

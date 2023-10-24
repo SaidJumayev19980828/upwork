@@ -26,4 +26,6 @@ public class PostResponseDTO {
     private Long clicksCount;
     private Boolean isLiked;
     private LocalDateTime createdAt;
+    private Boolean isSaved;
+
 }
