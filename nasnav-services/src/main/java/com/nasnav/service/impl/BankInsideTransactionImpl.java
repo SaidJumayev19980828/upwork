@@ -39,7 +39,7 @@ public class BankInsideTransactionImpl implements BankInsideTransactionService {
     @Override
     public void pay(float amount) {
         BankAccountEntity sender = bankAccountService.getLoggedAccount();
-        BankAccountEntity receiver = bankAccountRepository.findByOrganization_Id(appConfig.nasnavOrgId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));
+        BankAccountEntity receiver = bankAccountRepository.findById(appConfig.nasnavOrgId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,BANK$ACC$0002));
         this.transferImpl(sender, receiver, amount);
     }
 
