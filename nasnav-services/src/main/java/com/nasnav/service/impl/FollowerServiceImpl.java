@@ -106,9 +106,9 @@ public class FollowerServiceImpl implements FollowerServcie{
     }
 
     @Override
-    public List<UserListFollowProjection> getUsersWithFollowerStatus() {
+    public PageImpl<UserListFollowProjection> getUsersWithFollowerStatus(Integer start,Integer count ) {
+        PageRequest page = getQueryPage(start, count);
         BaseUserEntity currentUser = securityService.getCurrentUser();
-        List<UserListFollowProjection> userFollows = userRepository.findUsersWithFollowerStatus(currentUser.getId());
-        return userFollows;
+        return  userRepository.findUsersWithFollowerStatus(currentUser.getId(),page);
     }
 }

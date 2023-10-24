@@ -20,5 +20,5 @@ public interface FollowerServcie {
     public List<UserEntity> getAllFollowingAsUserEntity(long followerId);
     public FollowerInfoDTO getFollowerInfoByUserId(long userId);
 
-    public List<UserListFollowProjection> getUsersWithFollowerStatus();
+    public PageImpl<UserListFollowProjection> getUsersWithFollowerStatus(Integer start, Integer count);
 }

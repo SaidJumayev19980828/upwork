@@ -315,13 +315,20 @@ public class PostServiceImpl implements PostService {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (loggedInUser instanceof UserEntity) {
             dto.setIsLiked(postLikesRepository.existsByUser_IdAndPost_Id(loggedInUser.getId(), entity.getId()));
+            dto.setIsSaved(userSaveThatPost (entity.getSavedByUsers(),loggedInUser.getId()));
+
         }
         else {
             dto.setIsLiked(false);
+            dto.setIsSaved(false);
         }
 
         return dto;
     }
 
+
+    private Boolean userSaveThatPost(Set<UserEntity> entity , Long userId) {
+        return entity.stream().filter(user -> user.getId().equals(userId)).findAny().isPresent();
+    }
 
 }

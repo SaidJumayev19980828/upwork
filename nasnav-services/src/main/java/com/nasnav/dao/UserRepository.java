@@ -3,6 +3,8 @@ package com.nasnav.dao;
 import com.nasnav.dto.UserFollow;
 import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.persistence.UserEntity;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -93,6 +95,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 			"FROM UserEntity u " +
 			"LEFT JOIN FollowerEntity f ON (u.id = f.user.id AND f.follower.id = :userId) OR (u.id = f.follower.id AND f.user.id = :userId)" +
 			"where u.id <>	:userId" )
-	List<UserListFollowProjection> findUsersWithFollowerStatus(@Param("userId") Long userId);
+	PageImpl<UserListFollowProjection> findUsersWithFollowerStatus(@Param("userId") Long userId , Pageable pageable);
 
 }

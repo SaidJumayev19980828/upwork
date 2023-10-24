@@ -1,5 +1,6 @@
 package com.nasnav.yeshtery;
 
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,6 +14,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.nasnav.AppConfig;
@@ -22,6 +25,9 @@ import com.nasnav.service.scheduler.ScheduleTaskHelper;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Properties;
 
@@ -39,15 +45,13 @@ public class Yeshtery{
     @Autowired
     private ScheduleTaskHelper scheduleTaskHelper;
 
-//    @Bean
-//    public void runScheduleTask() {
-//        List<SchedulerTaskEntity> appointmentEntities = this.schedulerTaskRepository.findAll();
-//        for(SchedulerTaskEntity schedulerTaskEntity : appointmentEntities){
-//            this.scheduleTaskHelper.addTaskToScheduler(schedulerTaskEntity);
-//        }
-//    }
+    @Bean
+    public void runScheduleTask() {
+        this.scheduleTaskHelper.runScheduleTask();
+    }
 
     @Bean
+
     public RestTemplate getRestTemplate() {
         return new RestTemplate();
     }
@@ -82,6 +86,7 @@ public class Yeshtery{
         application.setDefaultProperties(properties);
         application.run(args);
         //---------------------------------------------------------------
+
     }
 }
 
