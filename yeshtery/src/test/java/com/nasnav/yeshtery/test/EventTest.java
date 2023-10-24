@@ -114,11 +114,11 @@ public class EventTest extends AbstractTestWithTempBaseDir {
     @Test
     public void getAllEvents(){
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
-        ParameterizedTypeReference<RestResponsePage<EventResponseDto>> responseType = new ParameterizedTypeReference<>() {
+        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
         };
         LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
         LocalDateTime toDate = LocalDateTime.now().plusDays(15);
-        ResponseEntity<RestResponsePage<EventResponseDto>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
 

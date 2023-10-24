@@ -46,8 +46,11 @@ public class FollowerController {
     }
 
     @GetMapping("users/list")
-    public List<UserListFollowProjection> getUsersList(@RequestHeader(TOKEN_HEADER) String userToken) {
-        return followerServcie.getUsersWithFollowerStatus();
+    public PageImpl<UserListFollowProjection> getUsersList(@RequestHeader(TOKEN_HEADER) String userToken ,
+                                                           @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                           @RequestParam(required = false, defaultValue = "10") Integer count
+                                                           ) {
+        return followerServcie.getUsersWithFollowerStatus(start,count);
     }
 
     @PostMapping

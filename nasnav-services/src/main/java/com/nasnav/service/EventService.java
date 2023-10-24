@@ -20,7 +20,7 @@ public interface EventService {
     EventResponseDto getEventById(Long eventId);
     List<EventResponseDto> getEventsByOrgIdForUsers(Long orgID, EventStatus status);
     PageImpl<EventResponseDto> getAllEventsForUser(Integer start, Integer count, Date dateFilter);
-    PageImpl<EventResponseDto> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime toDate);
+    PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime toDate);
     List<EventResponseDto> getAdvertisedEvents();
     List<EventResponseDto> getAdvertisedEventsForInfluencer();
     PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count);
