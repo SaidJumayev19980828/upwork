@@ -275,6 +275,25 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.2.0</version>
         </dependency>
+
+        <!--  stripe   begin -->
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>2.9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>23.8.0</version>
+        </dependency>
+        <!--  stripe  end -->
+
         <dependency>
             <groupId>pl.jalokim.propertiestojson</groupId>
             <artifactId>java-properties-to-json</artifactId>
