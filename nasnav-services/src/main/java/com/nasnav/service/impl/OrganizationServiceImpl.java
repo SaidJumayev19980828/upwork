@@ -27,6 +27,7 @@ import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
@@ -130,6 +131,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     private PaymobSourceRepository paymobSourceRepository;
     @Autowired
     private EmployeeUserService employeeUserService;
+    @Autowired
+    private EmployeeUserRepository employeeUserRepository;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -335,7 +338,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         updateAdditionalOrganizationData(organizationDTO, organization);
 
-	    organizationRepository.save(organization);
+        organization = organizationRepository.save(organization);
 
         EmployeeUserWithPassword employeeUserWithPassword = new EmployeeUserWithPassword();
         employeeUserWithPassword.setName(json.getName());
@@ -343,7 +346,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         employeeUserWithPassword.setPassword(json.getPassword());
         employeeUserWithPassword.setRole(Roles.ORGANIZATION_ADMIN.getValue() + "," + Roles.ORGANIZATION_MANAGER.getValue());
         employeeUserWithPassword.setOrgId(organization.getId());
-        employeeUserService.createEmployeeUserWithPassword(employeeUserWithPassword);
+        UserApiResponse userApiResponse = employeeUserService.createEmployeeUserWithPassword(employeeUserWithPassword);
+
+        //Save Owner In Organization
+        EmployeeUserEntity employeeUserEntity = employeeUserRepository.findById(userApiResponse.getEntityId()).get();
+        organization.setOwner(employeeUserEntity);
+        organizationRepository.save(organization);
 
         return new OrganizationResponse(organization.getId(), 0);
     }

@@ -815,6 +815,35 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	public void newUserRegisterWithOtpHasPackageTest() throws MessagingException, IOException {
+		//User Register With OTP
+		JSONObject userJson = createUserRegisterV2Request(null).put("activation_method", "OTP");
+		String body = userJson.toString();
+		HttpEntity<Object> registerRequest = getHttpEntity((Object)body);
+		ResponseEntity<UserApiResponse> registerResponse = template.postForEntity("/user/v2/register", registerRequest, UserApiResponse.class);
+		Assert.assertEquals(201, registerResponse.getStatusCodeValue());
+		Assert.assertTrue(registerResponse.getBody().getPackageId() == 99001);
+		Mockito
+				.verify(mailService)
+				.send(
+						Mockito.eq("organization_1")
+						, Mockito.eq("test@nasnav.com")
+						, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+						, Mockito.anyString()
+						, Mockito.anyMap());
+
+		String email = userJson.getString("email");
+		Long orgId = userJson.getLong("org_id");
+		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
+		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
+		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
+		HttpEntity<ActivateOtpDto> activateRequest = new HttpEntity<ActivateOtpDto>(activationBody);
+		ResponseEntity<UserApiResponse> activateResponse = template.postForEntity("/user/v2/register/otp/activate", activateRequest, UserApiResponse.class);
+		Assert.assertEquals(200, activateResponse.getStatusCodeValue());
+		Assert.assertTrue(activateResponse.getBody().getPackageId() == 99001);
+	}
+
+	@Test
 	public void newUserRegisterWithInvalidOtpTest() throws MessagingException, IOException {
 		JSONObject userJson = registerWithOtpAndAssert();
 		String email = userJson.getString("email");

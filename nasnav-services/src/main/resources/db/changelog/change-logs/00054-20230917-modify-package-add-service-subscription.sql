@@ -100,4 +100,3 @@ CREATE TABLE IF NOT EXISTS public.stripe_customer
     CONSTRAINT stripe_customer_pkey PRIMARY KEY (id),
     CONSTRAINT stripe_customer_organizations_organizations_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE
     );
-
