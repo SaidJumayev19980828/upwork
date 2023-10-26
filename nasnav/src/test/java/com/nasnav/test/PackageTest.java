@@ -96,9 +96,9 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
 
     private Set<ServiceDTO> servicesExample(){
            return Set.of(
-                new ServiceDTO("THREE_SIXTY"),
-                new ServiceDTO("CHAT_SERVICES"),
-                new ServiceDTO("MET_AVERSE")
+                new ServiceDTO("THREE_SIXTY_TEST"),
+                new ServiceDTO("CHAT_SERVICES_TEST"),
+                new ServiceDTO("MET_AVERSE_TEST")
         );
     }
 

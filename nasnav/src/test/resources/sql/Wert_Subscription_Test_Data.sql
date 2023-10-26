@@ -82,10 +82,10 @@ INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso
 INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99004,'test 4','package with missing currency',1.9,30,null,'price_1NzLNGHR4qGEOW4EItZ5eE2p');
 
 --inserting service
-INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY','THREE_SIXTY','THREE_SIXTY Service');
-INSERT INTO public.service(id,code,name,description) values (99002,'MET_AVERSE','MET_AVERSE','MET_AVERSE Service');
-INSERT INTO public.service(id,code,name,description) values (99003,'CHAT_SERVICES','CHAT_SERVICES','CHAT_SERVICES Service');
-INSERT INTO public.service(id,code,name,description) values (99004,'VIRTUAL_LANDS','VIRTUAL_LANDS','VIRTUAL_LANDS Service');
+INSERT INTO public.service(id,code,name,description) values (99001,'THREE_SIXTY_TEST','THREE_SIXTY','THREE_SIXTY Service');
+INSERT INTO public.service(id,code,name,description) values (99002,'MET_AVERSE_TEST','MET_AVERSE','MET_AVERSE Service');
+INSERT INTO public.service(id,code,name,description) values (99003,'CHAT_SERVICES_TEST','CHAT_SERVICES','CHAT_SERVICES Service');
+INSERT INTO public.service(id,code,name,description) values (99004,'VIRTUAL_LANDS_TEST','VIRTUAL_LANDS','VIRTUAL_LANDS Service');
 
 -- Join package & service
 INSERT INTO public.package_service(package_id,service_id) values (99001,99001);
