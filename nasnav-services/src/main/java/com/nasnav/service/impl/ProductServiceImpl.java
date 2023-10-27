@@ -1245,11 +1245,12 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 					.map(s -> setProductShops(s, product360Shops))
 					.map(s -> setProductRating(s, productRatings))
 					.collect(toList());
+			if (searchParam.has_promotions) {
+				Set<Long> productIds = stocks.stream().map(ProductRepresentationObject::getId).collect(toSet());
+				ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), 1L);
+				setProductsPromotions(promotionsDTO, stocks);
+			}
 
-			Set<Long> productIds = stocks.stream().map(ProductRepresentationObject::getId).collect(toSet());
-			ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), 1L);
-			setProductsPromotions(promotionsDTO, stocks);
-			System.out.println("dtos : "+promotionsDTO);
 
 		}
 
