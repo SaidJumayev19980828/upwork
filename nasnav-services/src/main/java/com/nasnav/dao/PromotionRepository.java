@@ -110,9 +110,11 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 
 	@Query("select promo "
 	      + " FROM PromotionsEntity promo "
+		  + " JOIN promo.organization org "
 	      + " WHERE now() between promo.dateStart and promo.dateEnd"
+		  + " AND org.yeshteryState = 1"
 	      + " AND promo.status = 1")
-	List<PromotionsEntity> findAllActivePromotions();
+	List<PromotionsEntity> findAllActiveYeshteryPromotions();
 
 	@Query("select promo"
 	+ " FROM PromotionsEntity promo"
