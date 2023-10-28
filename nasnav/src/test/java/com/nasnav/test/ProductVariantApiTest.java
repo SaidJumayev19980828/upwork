@@ -1,10 +1,8 @@
 package com.nasnav.test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -273,6 +271,29 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		assertInvisibleExtraAttributeIsCreated(saved);
 	}
 
+	@Test
+	public void deleteVariantFeatureValue() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_feature?feature_id=237", DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@Test
+	public void deleteVariantFeatureValueSingleVariant() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_feature?feature_id=237&variant_id=310001",
+				DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@Test
+	public void deleteExtraAttributeValue() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_extra_attribute?extra_attribute_id=337&variant_id=310001",
+				DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
 
 
 	private void assertVariantDataIsPersisted(JSONObject json, ProductVariantsEntity saved, JSONObject extraAtrrJson) {
@@ -474,7 +495,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 				.file(uploadedImagesPriorities)
 				.file(deletedImages)
 				.file(updatedImages)
-				.header(TOKEN_HEADER, "131415"));
+				.header(TOKEN_HEADER,"131415"));
 
 		result.andExpect(status().is(200));
 	}
