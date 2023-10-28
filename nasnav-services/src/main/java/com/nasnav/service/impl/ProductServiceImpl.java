@@ -1038,13 +1038,13 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 			return supplier = () -> promotionRepository.findActivePromosByTypeIdIn(types);
 
 		if(params.yeshtery_products && params.promo_id != null && params.org_id == null )
-			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id);
+			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id, types);
 
 		if(params.has_promotions && params.org_id != null)
 		    return supplier = () -> promotionRepository.findActivePromosByOrgIdInAndTypeIdIn(List.of(params.org_id),types);
 
 		if(params.promo_id != null && params.org_id != null )
-		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id);
+		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id, types);
 
 		return null;
 
