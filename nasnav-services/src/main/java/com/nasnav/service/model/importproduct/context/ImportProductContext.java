@@ -93,14 +93,13 @@ public class ImportProductContext {
 		errors.add(error);
 	}
 
-	public void logNewErrorForCsvInvalidData(String errorMessage, int rowNum, String parsedContent) {
+	public void logNewErrorForCsvInvalidData(String errorMessage, int rowNum) {
 		ErrorCodes errorCode = ErrorCodes.CSV$002;
 		String columnName = getColumnNameContainsInvalidData(errorMessage);
 		String message = String.format(errorCode.getValue(), columnName, rowNum);
 		Error error = new Error(errorCode);
 		error.setMessage(message);
 		error.setRowNum(rowNum);
-		error.setData(parsedContent);
 		errors.add(error);
 	}
 
