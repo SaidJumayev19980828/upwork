@@ -2,14 +2,11 @@ package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-
-import java.util.UUID;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
