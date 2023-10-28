@@ -2,6 +2,7 @@ package com.nasnav.mappers.impl;
 
 import com.nasnav.dto.OrderAssociatedPromotions;
 import com.nasnav.dto.ProductPromotionDto;
+import com.nasnav.dto.PromosConstraints;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.enumerations.PromotionType;
 import com.nasnav.mappers.PromotionMapper;
@@ -15,6 +16,10 @@ import java.util.Objects;
 
 @Component
 public class PromotionMapperImpl implements PromotionMapper {
+
+  private static final   List<Integer> PROMOS_TYPE_IDS = List.of(PromotionType.BUY_X_GET_Y_FROM_BRAND.getValue()
+            , PromotionType.BUY_X_GET_Y_FROM_TAG.getValue()
+            , PromotionType.PROMO_CODE_FROM_PRODUCT.getValue());
     @Override
     public OrderAssociatedPromotions toDto(PromotionsEntity entity) {
         if ( entity == null ) {
@@ -60,7 +65,7 @@ public class PromotionMapperImpl implements PromotionMapper {
         productPromotionDto.setType(mapPromotionType(promotionDTO.getTypeId()));
         productPromotionDto.setCode(promotionDTO.getCode());
         productPromotionDto.setConstrains(promotionDTO.getConstrains());
-
+        productPromotionDto.setAppliedPromotion(getActualPromotion(promotionDTO.getConstrains(), promotionDTO.getTypeId()));
         return productPromotionDto;
     }
 
@@ -70,7 +75,20 @@ public class PromotionMapperImpl implements PromotionMapper {
                 return promotionType.name();
             }
         }
-        return null;
+        return "";
     }
 
+    private String getActualPromotion(PromosConstraints constraints, int promoTypeId) {
+        for(int  typeId : PROMOS_TYPE_IDS){
+            if (typeId == promoTypeId) {
+                String promotion = mapPromotionType(promoTypeId);
+                Integer quantityMin = constraints.getProductQuantityMin();
+                Integer productToGive = constraints.getProductToGive();
+                return promotion.replace("X", String.valueOf(quantityMin))
+                        .replace("Y", String.valueOf(productToGive));
+
+            }
+        }
+        return mapPromotionType(promoTypeId);
+    }
 }

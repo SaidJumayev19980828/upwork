@@ -22,4 +22,5 @@ public class ProductPromotionDto {
     private ZonedDateTime dateEnd;
     private PromosConstraints constrains;
     private Long organizationId;
+    private String appliedPromotion;
 }
