@@ -352,7 +352,7 @@ public class IntegrationApiTest extends AbstractTestWithTempBaseDir {
 					.build();
 		Mono<EventResult<String, String>> eventResult = integrationSrv.pushIntegrationEvent(event, (e, t) -> assertTrue(false));
 		try {
-			eventResult.block();
+			eventResult.block(Duration.ofMillis(50));
 		}catch(Throwable t) {
 			return false;
 		}	
