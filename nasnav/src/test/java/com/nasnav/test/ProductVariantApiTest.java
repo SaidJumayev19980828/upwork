@@ -446,10 +446,21 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
 		byte[] imgData = Files.readAllBytes(img);
-		
-		MockMultipartFile filePart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
 
-		JSONObject variant = createProductVariantRequest();
+		MockMultipartFile imgsPart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile uploadedImagesPriorities = new MockMultipartFile("uploaded_image_priorities",
+				"uploaded_image_priorities", MediaType.APPLICATION_JSON_VALUE, "[5]".getBytes());
+		
+		MockMultipartFile deletedImages = new MockMultipartFile("deleted_images",
+				"deleted_images", MediaType.APPLICATION_JSON_VALUE, "[2]".getBytes());
+
+		MockMultipartFile updatedImages = new MockMultipartFile("updated_images",
+				"updated_images", MediaType.APPLICATION_JSON_VALUE, "[{\"id\":1,\"priority\":6}]".getBytes());
+
+		JSONObject variant = createProductVariantRequest()
+				.put("variant_id", 310002L)
+				.put("operation", Operation.UPDATE.getValue());;
 		  MockMultipartFile variantJson =
 	                new MockMultipartFile(
 	                        "var",
@@ -457,8 +468,13 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	                        MediaType.APPLICATION_JSON_VALUE,
 	                        variant.toString().getBytes(StandardCharsets.UTF_8));
 
-		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/variant").file(filePart)
-				.file(variantJson).header(TOKEN_HEADER, "131415"));
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/variant")
+				.file(variantJson)
+				.file(imgsPart)
+				.file(uploadedImagesPriorities)
+				.file(deletedImages)
+				.file(updatedImages)
+				.header(TOKEN_HEADER, "131415"));
 
 		result.andExpect(status().is(200));
 	}

@@ -34,7 +34,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -43,12 +42,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.nasnav.commons.enums.SortOrder.ASC;
+import static com.nasnav.commons.enums.SortOrder.DESC;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.dto.ProductSortOptions.CREATION_DATE;
 import static com.nasnav.dto.ProductSortOptions.ID;
 import static com.nasnav.dto.ProductSortOptions.NAME;
+import static com.nasnav.dto.ProductSortOptions.PRICE;
+import static com.nasnav.dto.ProductSortOptions.PRIORITY;
+import static com.nasnav.dto.ProductSortOptions.P_NAME;
+import static com.nasnav.dto.ProductSortOptions.UPDATE_DATE;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -114,8 +120,6 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TagsRepository tagsRepo;
-    @Autowired
-    private WebApplicationContext webApplicationContext;
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -1026,6 +1030,38 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(2, res.getTotal().intValue());
 		assertEquals(1001, res.getProducts().get(0).getId().intValue());
 		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+
+		// filter by multiple options
+		param.count = null;
+		param.category_ids = Set.of(201L);
+		param.minPrice = BigDecimal.ZERO;
+		param.maxPrice = BigDecimal.valueOf(1000000L);
+		param.category_name = "category_1";
+		param.sort = ID;
+		param.order = ASC;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		assertEquals(OK, response.getStatusCode());
+		res = response.getBody();
+		assertEquals(2, res.getTotal().intValue());
+		assertEquals(1001, res.getProducts().get(0).getId().intValue());
+		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+		Stream.of(ID,
+				NAME,
+				P_NAME,
+				PRICE,
+				CREATION_DATE,
+				UPDATE_DATE,
+				PRIORITY).forEach(sort -> {
+					Stream.of(ASC, DESC).forEach(order -> {
+						param.sort = sort;
+						param.order = order;
+						ResponseEntity<ProductsResponse> innerResponse = template
+								.getForEntity("/navbox/products?" + param.toString(), ProductsResponse.class);
+						assertEquals(OK, innerResponse.getStatusCode());
+						ProductsResponse body = innerResponse.getBody();
+						assertEquals(2, body.getTotal().intValue());
+					});
+				});
 	}
 
 	@Test
