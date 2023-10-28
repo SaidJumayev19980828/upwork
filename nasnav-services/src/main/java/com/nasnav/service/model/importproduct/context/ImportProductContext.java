@@ -114,11 +114,10 @@ public class ImportProductContext {
 
 	}
 
-	public void logNewXlsConversionError(String rowData, int rowNum, ErrorCodes errorCode) {
+	public void logNewXlsConversionError(String colName, int rowNum, ErrorCodes errorCode) {
 		Error error = new Error(errorCode);
 		error.setRowNum(rowNum);
-		error.setData(rowData);
-		error.setMessage(String.format(errorCode.getValue(),rowNum));
+		error.setMessage(String.format(errorCode.getValue(),rowNum, colName));
 		errors.add(error);
 
 	}

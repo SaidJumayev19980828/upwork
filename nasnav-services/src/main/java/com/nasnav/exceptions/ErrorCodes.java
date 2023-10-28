@@ -466,7 +466,7 @@ public enum ErrorCodes {
 	,CSV$001("Parsing error due to missing headers [%s]")
 	,CSV$002("Invalid data in column: [%s], row number: [%d]")
 	,XLS$001("The following table header(s) not found: [%s]")
-	,XLS$002("Conversion error or invalid header at row: [%d]")
+	,XLS$002("Conversion error or invalid data at row number: [%d], column name: [%s]")
 
 	;
 
