@@ -600,8 +600,12 @@ public class ProductServiceImpl implements ProductService {
 
 		SQLQuery<?> countStocks = getProductsQuery(params, true);
 		String countQuery = countStocks.select(SQLExpressions.countAll).getSQL().getSQL();
-		Long productsCount = template.queryForObject(countQuery, Long.class);
-
+		Long productsCount;
+		try{
+			 productsCount = template.queryForObject(countQuery, Long.class);
+		}catch (Exception e){
+			return new ProductsResponse();
+		}
 		SQLQuery<?> stocks = getProductsQuery(params, false);
 
 		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
@@ -653,7 +657,11 @@ public class ProductServiceImpl implements ProductService {
 			if (order.size() > 1)
 				stocks.orderBy(order.get(1));
 		}
-
+		if (predicateForPromotions.getValue() == null) {
+			if (params.has_promotions == true || !params.promo_id.isEmpty()) {
+				return new SQLQuery<>();
+			}
+		}
 
 		return stocks;
 	}
