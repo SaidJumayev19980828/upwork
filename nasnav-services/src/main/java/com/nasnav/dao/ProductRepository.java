@@ -58,6 +58,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " where p.brand.id = :id and p.removed = 0")
     List<Long> findByBrandId(@Param("id") Long id);
 
+    @Query("select distinct p.id from ProductEntity p " +
+            " where p.brand.id in :brandList and p.removed = 0")
+
+    Set<Long> findByBrandIds(@Param("brandList") Set<Long> brandList);
+
+
 	@Query("SELECT products FROM ProductEntity products "
 			+ " LEFT JOIN FETCH products.productVariants variants "
 			+ " LEFT JOIN FETCH products.tags tags "

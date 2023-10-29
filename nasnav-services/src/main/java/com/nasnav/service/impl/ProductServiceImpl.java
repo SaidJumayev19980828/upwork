@@ -15,12 +15,15 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
+import com.nasnav.dto.response.ItemsPromotionsDTO;
+import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.enumerations.ExtraAttributeType;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.persistence.dto.query.result.ProductRatingData;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
@@ -88,6 +91,8 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.enumerations.ExtraAttributeType.getExtraAttributeType;
 import static com.nasnav.enumerations.ProductFeatureType.STRING;
+import static com.nasnav.enumerations.PromotionType.*;
+import static com.nasnav.enumerations.PromotionType.PROMO_CODE_FROM_PRODUCT;
 import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
 import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -213,12 +218,17 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private SeoService seoService;
 
-	
+	@Autowired
+	private PromotionMapper promotionMapper;
+
+	private final PromotionsService promotionsService;
+
+
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 						  ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-						  StockService stockService, PromotionRepository promotionRepository ) {
+						  StockService stockService, PromotionRepository promotionRepository, PromotionsService promotionsService ) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -227,6 +237,7 @@ public class ProductServiceImpl implements ProductService {
 		this.bundleRepository = bundleRepository;
 		this.stockService = stockService;
 		this.promotionRepository = promotionRepository;
+		this.promotionsService = promotionsService;
 	}
 
 	@Override
@@ -600,7 +611,7 @@ public class ProductServiceImpl implements ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock.booleanValue());
+		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock.booleanValue(), params);
 	}
 
 
@@ -688,6 +699,7 @@ public class ProductServiceImpl implements ProductService {
 
 		return productsQuery;
 	}
+
 
 
 	@Override
@@ -1004,6 +1016,8 @@ public class ProductServiceImpl implements ProductService {
 		if(promotionsListSupplier == null) {
 			return null;
 		}
+
+
 		return promotionsListSupplier.get()
 					.stream()
 					.map(PromotionsEntity::getConstrainsJson).collect(Collectors.toList())
@@ -1013,17 +1027,24 @@ public class ProductServiceImpl implements ProductService {
 
 private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam params) {
 		Supplier<List<PromotionsEntity>> supplier;
+	List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
+			BUY_X_GET_Y_FROM_TAG.getValue(),
+			BUY_X_GET_Y_FROM_PRODUCT.getValue(),
+			PROMO_CODE_FROM_BRAND.getValue(),
+			PROMO_CODE_FROM_TAG.getValue(),
+			PROMO_CODE_FROM_PRODUCT.getValue());
+
 		if(params.yeshtery_products && params.has_promotions && params.org_id == null)
-			return supplier = () -> promotionRepository.findAllActivePromotions();
+			return supplier = () -> promotionRepository.findActivePromosByTypeIdIn(types);
 
 		if(params.yeshtery_products && params.promo_id != null && params.org_id == null )
-			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id);
+			return supplier = () -> promotionRepository.findActivePromosByIds(params.promo_id, types);
 
 		if(params.has_promotions && params.org_id != null)
-		    return supplier = () -> promotionRepository.findActivePromosByOrgIdIn(List.of(params.org_id));
+		    return supplier = () -> promotionRepository.findActivePromosByOrgIdInAndTypeIdIn(List.of(params.org_id),types);
 
 		if(params.promo_id != null && params.org_id != null )
-		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id);
+		    return supplier = () -> promotionRepository.findByIdsAndOrgId(params.promo_id,params.org_id, types);
 
 		return null;
 
@@ -1178,7 +1199,7 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks,
-														  Long productsCount, boolean includeOutOfStock) {
+														  Long productsCount, boolean includeOutOfStock, ProductSearchParam searchParam) {
 		if(stocks != null && !stocks.isEmpty()) {
 			List<Long> stocksIds = stocks.stream()
 					.map(ProductRepresentationObject::getStockId)
@@ -1224,10 +1245,43 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 					.map(s -> setProductShops(s, product360Shops))
 					.map(s -> setProductRating(s, productRatings))
 					.collect(toList());
+			if (searchParam.has_promotions) {
+				Set<Long> productIds = stocks.stream().map(ProductRepresentationObject::getId).collect(toSet());
+				ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), 1L);
+				setProductsPromotions(promotionsDTO, stocks);
+			}
+
+
 		}
 
 		return new ProductsResponse(productsCount, stocks);
 
+	}
+
+	private void setProductsPromotions(ItemsPromotionsDTO itemsPromotionsDTO, List<ProductRepresentationObject> products){
+		for(ProductRepresentationObject product : products){
+			List<PromotionDTO> promotionsPerProduct = getPromotionsPerProduct(product.getId(), itemsPromotionsDTO);
+
+			product.setPromotions(promotionMapper.toProductPromotionDto(promotionsPerProduct));
+		}
+	}
+
+	private List<PromotionDTO> getPromotionsPerProduct(Long productId, ItemsPromotionsDTO itemsPromotionsDTO){
+		Map<Long, PromotionDTO> promotions = itemsPromotionsDTO.getPromotions();
+		Optional<Map.Entry<Long, List<Long>>> firstMatch = itemsPromotionsDTO.getProductPromotionIds()
+				.entrySet()
+				.stream().filter(entry -> Objects.equals(entry.getKey(), productId))
+				.findFirst();
+		if (firstMatch.isPresent()) {
+			List<Long> promotionIdsPerProduct = firstMatch.get().getValue();
+			return promotions.entrySet()
+					.stream()
+					.filter(entry -> promotionIdsPerProduct.contains(entry.getKey()))
+					.map(Map.Entry::getValue)
+					.collect(toList());
+		}
+
+		return emptyList();
 	}
 
 	private ProductRepresentationObject setProductRating(ProductRepresentationObject product, Map<Long, Double> ratings) {
@@ -2941,9 +2995,6 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 		return dto;
 	}
 
-
-
-
 	@Override
 	public boolean updateProductTags(ProductTagDTO productTagDTO) throws BusinessException {
 		validateProductTagDTO(productTagDTO.getProductIds(), productTagDTO.getTagIds());
@@ -3848,7 +3899,7 @@ public VariantUpdateResponse updateVariantV2(
 
 		List<ProductRepresentationObject> result = template.query(allProductQuery.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
-		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock);
+		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock,params);
 	}
 
 
