@@ -658,7 +658,8 @@ public class ProductServiceImpl implements ProductService {
 				stocks.orderBy(order.get(1));
 		}
 		if (predicateForPromotions.getValue() == null) {
-			if (params.has_promotions == true || !params.promo_id.isEmpty()) {
+
+			if (params.has_promotions || params.promo_id != null) {
 				return new SQLQuery<>();
 			}
 		}
