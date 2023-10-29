@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class PromotionMapperImpl implements PromotionMapper {
@@ -84,11 +86,17 @@ public class PromotionMapperImpl implements PromotionMapper {
                 String promotion = mapPromotionType(promoTypeId);
                 Integer quantityMin = constraints.getProductQuantityMin();
                 Integer productToGive = constraints.getProductToGive();
-                return promotion.replace("X", String.valueOf(quantityMin))
-                        .replace("Y", String.valueOf(productToGive));
+                return replaceSecondOccurrence(promotion,String.valueOf(productToGive))
+                        .replace("X", String.valueOf(quantityMin));
 
             }
         }
         return mapPromotionType(promoTypeId);
+    }
+
+    private String replaceSecondOccurrence(String promoType, String replacement) {
+        int first = promoType.indexOf('Y');
+        int second = promoType.indexOf('Y', first + 1);
+       return promoType.substring(0, second) + replacement + promoType.substring(second+1);
     }
 }
