@@ -55,6 +55,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -109,6 +111,8 @@ import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+	private static final Set<ProductSortOptions> REPOSITORY_SORT = Set.of(ProductSortOptions.P_NAME,
+			ProductSortOptions.NAME, ProductSortOptions.ID);
 
 	private Logger logger = LogManager.getLogger();
 
@@ -1122,27 +1126,9 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 	private List<ProductEntity> getProductsByIds(List<Long> productsIds, String order, String sort) {
 		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInOrderByIdAsc(productsIds);
-			} else {
-				products = productRepository.findByIdInOrderByIdDesc(productsIds);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInOrderByNameAsc(productsIds);
-			} else {
-				products = productRepository.findByIdInOrderByNameDesc(productsIds);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInOrderByPnameAsc(productsIds);
-			} else {
-				products = productRepository.findByIdInOrderByPnameDesc(productsIds);
-			}
-		} else {
-			products = productRepository.findByIdIn(productsIds);
+		if (REPOSITORY_SORT.contains(ProductSortOptions.getProductSortOptions(sort))) {
+			Direction direction = order.equals("asc") ? Direction.ASC : Direction.DESC;
+			products = productRepository.findByIdIn(productsIds, Sort.by(direction, sort));
 		}
 		return products;
 	}

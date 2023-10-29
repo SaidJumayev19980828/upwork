@@ -6,6 +6,7 @@ import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -25,14 +26,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             "where p.removed = 0 and v.removed = 0 and p.organizationId = :orgId and p.productType = :type")
     List<ProductEntity> findEmptyProductsByOrganizationIdAndProductType(@Param("orgId") Long orgId,
                                                            @Param("type") Integer type);
-
     List<ProductEntity> findByIdIn(List<Long> ids);
-    List<ProductEntity> findByIdInOrderByIdAsc(List<Long> ids);
-    List<ProductEntity> findByIdInOrderByIdDesc(List<Long> ids);
+    List<ProductEntity> findByIdIn(List<Long> ids, Sort sort);
     List<ProductEntity> findByIdInOrderByNameAsc(List<Long> ids);
-    List<ProductEntity> findByIdInOrderByNameDesc(List<Long> ids);
-    List<ProductEntity> findByIdInOrderByPnameAsc(List<Long> ids);
-    List<ProductEntity> findByIdInOrderByPnameDesc(List<Long> ids);
 
     List<ProductEntity> findByIdInAndOrganizationId(List<Long> ids, Long orgId);
 
