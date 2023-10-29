@@ -10,6 +10,7 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.service.FileService;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -20,6 +21,7 @@ import com.nasnav.service.*;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
 import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.util.MultipartFileUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -924,6 +927,12 @@ public class UserServiceImpl implements UserService {
 		}
 		//display  user Id, url of image
 		return new UserApiResponse(userEntity.getId(), imageUrl, successResponseStatusList);
+	}
+
+	@Override
+	public UserApiResponse processUserAvatar(ImageBase64 image) throws IOException {
+		MultipartFile userAvatar = MultipartFileUtils.convert(image.getBase64Content(), image.getFileName());
+		return updateUserAvatar(userAvatar);
 	}
 
 
