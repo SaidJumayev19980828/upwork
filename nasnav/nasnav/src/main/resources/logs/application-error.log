@@ -1,0 +1,24 @@
+2023-10-25T01:32:28.930+0300 INFO Starting PackageTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7396 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-25T01:32:28.931+0300 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-25T01:32:28.938+0300 INFO No active profile set, falling back to default profiles: default
+2023-10-25T01:32:43.690+0300 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-10-25T01:33:07.264+0300 INFO Starting PackageTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7396 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-25T01:33:07.265+0300 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-25T01:33:07.270+0300 INFO No active profile set, falling back to default profiles: default
+2023-10-25T01:33:12.981+0300 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-10-25T01:35:22.477+0300 INFO Starting PackageTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 1500 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-25T01:35:22.478+0300 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-25T01:35:22.489+0300 INFO No active profile set, falling back to default profiles: default
+2023-10-25T01:35:37.481+0300 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-10-25T01:36:02.799+0300 INFO Starting PackageTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 1500 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-25T01:36:02.799+0300 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-25T01:36:02.800+0300 INFO No active profile set, falling back to default profiles: default
+2023-10-25T01:36:08.303+0300 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-10-30T07:26:20.175+0200 INFO Starting ProductApiTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7216 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-30T07:26:20.177+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-30T07:26:20.181+0200 INFO No active profile set, falling back to default profiles: default
+2023-10-30T07:26:33.369+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-10-30T07:26:49.751+0200 INFO Starting ProductApiTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7216 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-10-30T07:26:49.752+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-10-30T07:26:49.753+0200 INFO No active profile set, falling back to default profiles: default
+2023-10-30T07:26:54.160+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
