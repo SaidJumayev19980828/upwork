@@ -30,6 +30,6 @@ public class ServiceEntity extends DefaultBusinessEntity<Long> {
     @JoinTable(name = "package_service"
             ,joinColumns = {@JoinColumn(name="service_id")}
             ,inverseJoinColumns = {@JoinColumn(name="package_id")})
-    private Set<PackageEntity> packageEntity = new HashSet<>();
+    private Set<PackageEntity> packageEntity = new HashSet<>();;
 
 }

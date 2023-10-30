@@ -538,7 +538,6 @@ public class CartServiceImpl implements CartService {
 
         itemDto.setId(itemData.getId());
         itemDto.setProductId(product.getId());
-        itemDto.setProductDescription(product.getDescription());
         itemDto.setVariantId(variant.getId());
         itemDto.setVariantName(variant.getName());
         itemDto.setProductType(product.getProductType());

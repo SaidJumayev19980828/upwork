@@ -8,7 +8,6 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.CommonUserService;
@@ -35,7 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -240,11 +238,5 @@ public class YeshteryUserController {
     @PostMapping(value = "/recovery/otp-verify", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<RecoveryUserResponse> verifyOtp(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
         return ResponseEntity.ok(userService.activateRecoveryOtp(activateOtp));
-    }
-
-    @PostMapping(value = "userAvatar")
-    public UserApiResponse uploadUserAvatar(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody @Valid ImageBase64 image)
-            throws IOException {
-        return this.nasnavUserService.processUserAvatar(image);
     }
 }
