@@ -10,6 +10,7 @@ import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.*;
 import com.nasnav.service.CsvExcelDataExportService;
 import com.nasnav.service.ImagesBulkService;
@@ -263,6 +264,12 @@ public class ProductsController {
                             @RequestParam Long id) {
         reviewService.approveRate(id);
     }
+
+    @GetMapping(value = "/out-of-stock-products", produces = APPLICATION_JSON_VALUE)
+    public ProductsResponse getOutOfStockProducts(ProductSearchParam productSearchParam, @RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
+        return productService.getOutOfStockProducts(productSearchParam);
+    }
+
 
     @PostMapping(value = "v2/add", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public ProductUpdateResponse createProductV2(
