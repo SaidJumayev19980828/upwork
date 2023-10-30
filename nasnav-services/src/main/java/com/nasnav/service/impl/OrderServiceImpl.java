@@ -2498,7 +2498,7 @@ public class OrderServiceImpl implements OrderService {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForRejection(dto.getSubOrderId(), storeMgr);
 
-//		rejectSubOrderAndMetaOrder(subOrder);
+		rejectSubOrderAndMetaOrder(subOrder);
 
 		sendRejectionEmailToCustomer(subOrder, dto.getRejectionReason());
 	}
@@ -2506,7 +2506,7 @@ public class OrderServiceImpl implements OrderService {
 	private void sendRejectionEmailToCustomer(OrdersEntity subOrder, String rejectionReason) {
 		String orgName = subOrder.getOrganizationEntity().getName();
 		String to = subOrder.getMetaOrder().getUser().getEmail();
-		String subject = format(ORDER_REJECT_SUBJECT, orgName);
+		String subject = format(ORDER_REJECT_SUBJECT, orgName , subOrder.getId());
 		List<String> bcc = getOrganizationManagersEmails(subOrder);
 		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
 		String template = ORDER_REJECT_TEMPLATE;
