@@ -6,13 +6,16 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.PromosConstraints;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.Map;
 
-@Data
+@Getter
+@Setter
 @EqualsAndHashCode
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class PromotionDTO implements Comparable<PromotionDTO> {
