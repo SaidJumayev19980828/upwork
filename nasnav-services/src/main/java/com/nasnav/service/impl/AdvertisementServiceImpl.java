@@ -67,6 +67,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Override
     public AdvertisementDTO create(AdvertisementDTO advertisementDTO) {
         AdvertisementEntity advertisement = advertisementMapper.toEntity(advertisementDTO);
+        advertisement.setName(advertisementDTO.getName());
         if (advertisementDTO.getOrgId() != null) {
             advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
         }
@@ -76,6 +77,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         List<AdvertisementProductDTO> advertisementProductDTOS = advertisementProductService.save(advertisementEntity, advertisementDTO.getProducts());
         AdvertisementDTO dto = advertisementMapper.toDto(advertisementEntity);
         dto.setProducts(advertisementProductDTOS);
+        dto.setName(advertisementEntity.getName());
         return dto;
     }
 
@@ -101,6 +103,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisementRepository.findById(advertisementDTO.getId())
                 .ifPresent(e -> {
                     AdvertisementEntity advertisement = advertisementMapper.toEntity(advertisementDTO);
+                    advertisement.setName(advertisementDTO.getName());
                     if (advertisementDTO.getOrgId() != null) {
                         advertisement.setOrganization(organizationRepository.findOneById(advertisementDTO.getOrgId()));
                     }
@@ -115,6 +118,7 @@ public class AdvertisementServiceImpl implements AdvertisementService {
 
     private AdvertisementDTO toDto(AdvertisementEntity entity) {
         AdvertisementDTO dto = advertisementMapper.toDto(entity);
+        dto.setName(entity.getName());
         dto.setProducts(advertisementProductCollectionMapper.toDto(entity.getAdvertisementProducts()).stream().map(itx -> {
             if (itx.getProductId() != null) {
                 ProductEntity product = productRepository.getById(itx.getProductId());

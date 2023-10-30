@@ -1,5 +1,6 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.persistence.AddonBasketEntity;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,7 +19,8 @@ import javax.persistence.Column;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class BasketItem {
+@EqualsAndHashCode(callSuper=false)
+public class BasketItem extends BaseRepresentationObject {
 
     private Long id;
     @JsonIgnore
@@ -31,6 +34,7 @@ public class BasketItem {
     private Long brandId;
     private String brandName;
     private String brandLogo;
+    @JsonIgnore
     private Map<String, String> variantFeatures;
     private Integer quantity;
     private BigDecimal totalPrice;
@@ -49,6 +53,11 @@ public class BasketItem {
     @JsonIgnore
     private Integer availableStock;
     private List<AddonDetailsDTO> addons;
- 
    	private String specialOrder;
+
+    @JsonAnyGetter
+    public Map<String,String> getVariantFeaturesMap() {
+        return variantFeatures;
+    }
+
 }

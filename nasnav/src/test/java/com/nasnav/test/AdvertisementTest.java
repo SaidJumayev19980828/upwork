@@ -70,6 +70,7 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
                         .put("from_date", LocalDateTime.now().minusYears(10).toString())
                         .put("to_date", LocalDateTime.now().plusYears(20).toString())
                         .put("org_id", 99001)
+                        .put("name" , "advertise test")
                         .put("products",
                                 jsonArray()
                                         .put(0, json()
@@ -130,6 +131,7 @@ class AdvertisementTest extends AbstractTestWithTempBaseDir {
                         .put("from_date", LocalDateTime.now().minusYears(10).toString())
                         .put("to_date", LocalDateTime.now().plusYears(20).toString())
                         .put("org_id", 99001)
+                        .put("name" , "advertise test")
                         .put("products",
                                 jsonArray()
                                         .put(0, json()

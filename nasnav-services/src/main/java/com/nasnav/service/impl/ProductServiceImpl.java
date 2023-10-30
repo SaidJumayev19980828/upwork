@@ -418,6 +418,7 @@ public class ProductServiceImpl implements ProductService {
 
 
 
+
 	private VariantDTO createVariantDto(Long shopId, ProductVariantsEntity variant, List<ProductImageDTO> variantsImages)  {
 		VariantDTO variantObj = new VariantDTO();
 		variantObj.setId(variant.getId());

@@ -16,6 +16,7 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class AdvertisementDTO {
     private Long id;
+    private String name;
     @NotNull
     private Long orgId;
     @NotNull

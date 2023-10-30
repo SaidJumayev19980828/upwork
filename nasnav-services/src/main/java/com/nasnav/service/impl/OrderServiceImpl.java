@@ -81,6 +81,7 @@ import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
 import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
+import static com.nasnav.enumerations.ProductFeatureType.STRING;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
@@ -906,7 +907,7 @@ public class OrderServiceImpl implements OrderService {
 	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
 		BasketItem item = new BasketItem();
 		BeanUtils.copyProperties(originalItem, item);
-
+ 		//TODO [US205] Variant inside Order List
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
 		BrandsEntity brand = product.getBrand();
@@ -925,8 +926,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
 		item.setAddonTotal(entity.getAddonsPrice());
-		item.setAddons(addonService.listItemAddonsPreSave(entity));;
-		item.setSpecialOrder(entity.getSpecialOrder());;
+		item.setAddons(addonService.listItemAddonsPreSave(entity));
+		item.setSpecialOrder(entity.getSpecialOrder());
 
 		return item;
 	}
