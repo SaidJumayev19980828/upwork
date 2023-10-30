@@ -11,6 +11,7 @@ import com.nasnav.enumerations.SubscriptionStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PackageEntity;
+import com.nasnav.persistence.StripeCustomerEntity;
 import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.StripeService;
@@ -18,6 +19,8 @@ import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.stripe.model.Event;
 import com.stripe.model.SetupIntent;
 import com.stripe.model.Subscription;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -52,6 +55,8 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    private static final Logger logger = LogManager.getLogger("Subscription:StripeWebhookSubscriptionServiceImpl");
+
 
     @Override
     public void handleStripeSubscriptionCreated(Event event) throws RuntimeBusinessException {
@@ -80,6 +85,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
     }
     @Override
     public void handleStripeSubscriptionDeleted(Event event) throws RuntimeBusinessException {
+        logger.debug("Delete Subscription...");
         Subscription subscription = (Subscription) stripeService.getStripeObjectFromWebhookEvent(event);
         //check Exists in database
         SubscriptionEntity subscriptionEntityOptional = subscriptionRepository.findByStripeSubscriptionId(subscription.getId()).orElseThrow(
@@ -93,9 +99,13 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         SetupIntent setupIntent = (SetupIntent) stripeService.getStripeObjectFromWebhookEvent(event);
         //Get Customer
         String customerId = setupIntent.getCustomer();
-        OrganizationEntity organization = stripeCustomerRepository.findByCustomerId(customerId).orElseThrow(
-                ()-> new RuntimeBusinessException(NOT_FOUND, STR$WH$0002)).getOrganization();
 
+        StripeCustomerEntity stripeCustomerEntity = stripeCustomerRepository.findByCustomerId(customerId).orElse(null);
+        if(stripeCustomerEntity == null){
+            logger.error("handleStripeSetupIntent: " + ORG$SUB$0006.getValue());
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
+        }
+        OrganizationEntity organization = stripeCustomerEntity.getOrganization();
         //Get Current Subscription Exists in database
         SubscriptionInfoDTO subscriptionInfoDTO = stripeSubscriptionServiceImpl.getSubscriptionInfo(organization);
         if(
@@ -103,6 +113,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
                 !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
                 subscriptionInfoDTO.getSubscriptionEntityId() == null
         ){
+            logger.error("handleStripeSetupIntent: " + ORG$SUB$0006.getValue());
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
@@ -115,11 +126,15 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
 
 
     private void createSubscription(Subscription subscription){
-
+        logger.debug("Create Subscription...");
         String customerId = subscription.getCustomer();
-        OrganizationEntity organization = stripeCustomerRepository.findByCustomerId(customerId).orElseThrow(
-                ()-> new RuntimeBusinessException(NOT_FOUND, STR$WH$0002)).getOrganization();
 
+        StripeCustomerEntity stripeCustomerEntity = stripeCustomerRepository.findByCustomerId(customerId).orElse(null);
+        if(stripeCustomerEntity == null){
+            logger.error("handleStripeSetupIntent: " + STR$WH$0002.getValue());
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0002);
+        }
+        OrganizationEntity organization = stripeCustomerEntity.getOrganization();
 
         PackageEntity packageEntity = stripeService.getPackageByStripeSubscription(subscription);
         //Get Start Date
@@ -139,10 +154,11 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         subscriptionEntity.setStripeSubscriptionId(subscription.getId());
         subscriptionEntity.setStatus(subscription.getStatus());
         subscriptionRepository.save(subscriptionEntity);
-
+        logger.debug("Subscription Created Successfully for : " + organization.getName());
     }
 
     public void updateSubscription(Subscription subscription){
+        logger.debug("Update Subscription...");
         //Package Of the Subscription Received From Webhook
         PackageEntity subscriptionPackage = stripeService.getPackageByStripeSubscription(subscription);
         //Saved Subscription In Database
@@ -159,7 +175,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         savedSubscriptionEntity.setPackageEntity(subscriptionPackage);;
         savedSubscriptionEntity.setStatus(subscription.getStatus());
         subscriptionRepository.save(savedSubscriptionEntity);
-
+        logger.debug("Subscription Updated Successfully for : " + savedSubscriptionEntity.getOrganization().getName());
     }
 
 

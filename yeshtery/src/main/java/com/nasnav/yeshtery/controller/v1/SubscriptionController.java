@@ -6,15 +6,20 @@ import com.nasnav.dto.StripeSubscriptionDTO;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
 import com.nasnav.dto.stripe.StripeConfirmDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.StripeService;
 import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
 import com.stripe.model.Event;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nasnav.exceptions.ErrorCodes.STR$CAL$0004;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -34,6 +39,8 @@ public class SubscriptionController {
     private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     @Autowired
     private StripeService stripeService;
+    private static final Logger logger = LogManager.getLogger("Subscription:SubscriptionController");
+
 
     @GetMapping
     @RequestMapping(value = "info", produces = APPLICATION_JSON_VALUE)
@@ -44,7 +51,7 @@ public class SubscriptionController {
     @PostMapping
     @RequestMapping(value = "wert/create", produces = APPLICATION_JSON_VALUE)
     public SubscriptionDTO wertCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-       return wertSubscriptionService.subscribe(new SubscriptionDTO());
+        return wertSubscriptionService.subscribe(new SubscriptionDTO());
     }
 
 
@@ -56,7 +63,13 @@ public class SubscriptionController {
     @PostMapping
     @RequestMapping(value = "stripe/create", produces = APPLICATION_JSON_VALUE)
     public StripeConfirmDTO stripeCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-        return ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO())).getStripeConfirmDTO();
+        logger.debug("Stripe Create Subscription Starts");
+        StripeSubscriptionDTO stripeSubscriptionDTO = ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO()));
+        if(stripeSubscriptionDTO == null){
+            logger.error("Failed To Subscribe In Stripe");
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0004);
+        }
+        return stripeSubscriptionDTO.getStripeConfirmDTO();
     }
 
     @PostMapping
@@ -81,7 +94,7 @@ public class SubscriptionController {
     public void stripeWebhook(@RequestHeader("Stripe-Signature") String signature, @RequestBody String body) {
         Event event = stripeService.verifyAndGetEventWebhook(signature,body);
         try {
-
+            logger.debug("Webhook: " + event.getType());
             if ("customer.subscription.created".equals(event.getType())) {
                 stripeWebhookSubscriptionService.handleStripeSubscriptionCreated(event);
             }
@@ -97,10 +110,8 @@ public class SubscriptionController {
 
 
         }catch (Exception ex){
-
+            logger.error("Webhook Error : " + ex.getMessage());
         }
     }
-
-
 
 }
