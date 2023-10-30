@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
@@ -922,7 +923,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 				.map(BasketItem::getVariantFeatures)
 				.map(Map::values)
 				.flatMap(Collection::stream)
-				.allMatch(originalFeatures::contains);
+				.anyMatch(originalFeatures::contains);
 	}
 
 

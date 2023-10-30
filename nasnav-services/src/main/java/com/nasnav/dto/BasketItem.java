@@ -34,7 +34,6 @@ public class BasketItem extends BaseRepresentationObject {
     private Long brandId;
     private String brandName;
     private String brandLogo;
-    @JsonIgnore
     private Map<String, String> variantFeatures;
     private Integer quantity;
     private BigDecimal totalPrice;
@@ -54,10 +53,11 @@ public class BasketItem extends BaseRepresentationObject {
     private Integer availableStock;
     private List<AddonDetailsDTO> addons;
    	private String specialOrder;
-
+    @JsonIgnore
+    private Map<String, String> variantFeature;
     @JsonAnyGetter
-    public Map<String,String> getVariantFeaturesMap() {
-        return variantFeatures;
+    public Map<String,String> getVariantFeatureMap() {
+        return variantFeature;
     }
 
 }

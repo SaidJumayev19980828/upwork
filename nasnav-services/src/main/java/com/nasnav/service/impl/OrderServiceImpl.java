@@ -907,7 +907,6 @@ public class OrderServiceImpl implements OrderService {
 	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
 		BasketItem item = new BasketItem();
 		BeanUtils.copyProperties(originalItem, item);
- 		//TODO [US205] Variant inside Order List
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
 		BrandsEntity brand = product.getBrand();
@@ -923,6 +922,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
 		item.setVariantFeatures(parseVariantFeatures(variant, 0));
+		item.setVariantFeature(item.getVariantFeatures());
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
 		item.setAddonTotal(entity.getAddonsPrice());
@@ -2498,7 +2498,7 @@ public class OrderServiceImpl implements OrderService {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForRejection(dto.getSubOrderId(), storeMgr);
 
-		rejectSubOrderAndMetaOrder(subOrder);
+//		rejectSubOrderAndMetaOrder(subOrder);
 
 		sendRejectionEmailToCustomer(subOrder, dto.getRejectionReason());
 	}
