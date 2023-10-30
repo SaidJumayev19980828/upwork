@@ -410,7 +410,34 @@ public class VideoChatServiceImpl implements VideoChatService {
         videoEntity.setStatus(status.getValue());
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
+
+    @Override
+    public VideoChatResponse createGroupVideoChat(Long orgId, Long shopId) {
+        OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
+        orgId = organization.getId();
+        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+        VideoChatResponse response = new VideoChatResponse();
+        if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
+        }
+        if (loggedInUser instanceof UserEntity) {
+            UserEntity userEntity = (UserEntity) loggedInUser;;
+            if(Objects.isNull(userEntity.getInfluencer())){
+                response = createNewVideoSession(userEntity, orgId, shopId);
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public VideoChatResponse getGroupVideoChat(String sessionName, Long orgId){
+        if(Strings.isEmpty(sessionName)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004, orgId);
+        }
+        return getExistingChatSession(sessionName, orgId);
+    }
 }
+
 
 @Data
 @AllArgsConstructor
