@@ -410,6 +410,7 @@ public class VideoChatServiceImpl implements VideoChatService {
         videoEntity.setStatus(status.getValue());
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
+
 }
 
 @Data
