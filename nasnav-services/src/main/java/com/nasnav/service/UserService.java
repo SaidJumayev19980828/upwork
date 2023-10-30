@@ -8,11 +8,13 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface UserService extends CommonUserServiceInterface {
@@ -54,6 +56,7 @@ public interface UserService extends CommonUserServiceInterface {
     RecoveryUserResponse activateRecoveryOtp(ActivateOtpDto activateOtp) throws BusinessException;
 
     UserApiResponse updateUserAvatar(MultipartFile file);
+    UserApiResponse processUserAvatar(ImageBase64 image) throws IOException;
 
 
 }
