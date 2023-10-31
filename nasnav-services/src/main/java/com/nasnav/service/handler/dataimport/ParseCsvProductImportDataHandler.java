@@ -14,6 +14,7 @@ import com.nasnav.service.handler.Handler;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
+import com.nasnav.service.model.importproduct.context.Error;
 import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.csv.CsvParser;
@@ -104,6 +105,7 @@ public class ParseCsvProductImportDataHandler implements Handler<ImportDataComma
             parser.parse(in, encoding);
         } catch (Exception e) {
             log.error("Run CSV Parser", e);
+            context.getErrors().add(new Error(e.getMessage(), null));
             throw new ImportProductException(e, context);
         }
 
