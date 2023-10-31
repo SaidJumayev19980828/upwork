@@ -9,7 +9,7 @@ import com.nasnav.response.VideoChatResponse;
 public interface VideoChatService {
 
     VideoChatResponse createOrJoinSession(String sessionName, Boolean force, Long orgId, Long shopId);
-    VideoChatResponse createGroupVideoChat(Long orgId, Long shopId);
+    VideoChatResponse createGroupVideoChat(String sessionName,Long orgId, Long shopId);
     VideoChatResponse getGroupVideoChat(String sessionName, Long orgId);
 
     VideoChatResponse createOrJoinSessionForUser(String sessionName, Boolean force, Long orgId, Long shopId, UserEntity user);
