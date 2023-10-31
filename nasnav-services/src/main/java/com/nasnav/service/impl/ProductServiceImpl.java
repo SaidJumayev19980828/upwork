@@ -601,8 +601,12 @@ public class ProductServiceImpl implements ProductService {
 
 		SQLQuery<?> countStocks = getProductsQuery(params, true);
 		String countQuery = countStocks.select(SQLExpressions.countAll).getSQL().getSQL();
-		Long productsCount = template.queryForObject(countQuery, Long.class);
-
+		Long productsCount;
+		try{
+			 productsCount = template.queryForObject(countQuery, Long.class);
+		}catch (Exception e){
+			return new ProductsResponse();
+		}
 		SQLQuery<?> stocks = getProductsQuery(params, false);
 
 		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
@@ -654,7 +658,12 @@ public class ProductServiceImpl implements ProductService {
 			if (order.size() > 1)
 				stocks.orderBy(order.get(1));
 		}
+		if (predicateForPromotions.getValue() == null) {
 
+			if (params.has_promotions || params.promo_id != null) {
+				return new SQLQuery<>();
+			}
+		}
 
 		return stocks;
 	}
@@ -1246,9 +1255,9 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 					.map(s -> setProductShops(s, product360Shops))
 					.map(s -> setProductRating(s, productRatings))
 					.collect(toList());
-			if (searchParam.has_promotions) {
+			if (searchParam.has_promotions || searchParam.promo_id != null) {
 				Set<Long> productIds = stocks.stream().map(ProductRepresentationObject::getId).collect(toSet());
-				ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), 1L);
+				ItemsPromotionsDTO promotionsDTO = promotionsService.getPromotionsListFromProductsAndBrandsAndTagsLists(productIds, emptySet(), emptySet(), searchParam.promotions_per_item);
 				setProductsPromotions(promotionsDTO, stocks);
 			}
 

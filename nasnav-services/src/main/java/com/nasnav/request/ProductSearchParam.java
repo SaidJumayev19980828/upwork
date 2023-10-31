@@ -41,6 +41,7 @@ public class ProductSearchParam {
     public List<Long> promo_id;
     public List<BigDecimal> discount;
     public boolean has_promotions;
+    public Long promotions_per_item = 1L;
 
     public void setSort(ProductSortOptions sort) {
         this.sort = sort;
