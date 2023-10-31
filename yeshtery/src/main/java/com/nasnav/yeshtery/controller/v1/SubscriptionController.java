@@ -1,6 +1,7 @@
-package com.nasnav.controller;
+package com.nasnav.yeshtery.controller.v1;
 
 
+import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.StripeSubscriptionDTO;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
@@ -10,25 +11,23 @@ import com.nasnav.service.StripeService;
 import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
-import lombok.AllArgsConstructor;
+import com.stripe.model.Event;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
-import com.stripe.model.Event;
 
-
-import static com.nasnav.exceptions.ErrorCodes.ORG$SUB$0006;
 import static com.nasnav.exceptions.ErrorCodes.STR$CAL$0004;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @CrossOrigin("*")
-@RequestMapping("/subscription")
+@RequestMapping(value = SubscriptionController.API_PATH, produces = APPLICATION_JSON_VALUE)
 public class SubscriptionController {
 
+    static final String API_PATH = YeshteryConstants.API_PATH + "/subscription";
 
     @Autowired
     @Qualifier("wert")
@@ -52,7 +51,7 @@ public class SubscriptionController {
     @PostMapping
     @RequestMapping(value = "wert/create", produces = APPLICATION_JSON_VALUE)
     public SubscriptionDTO wertCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-       return wertSubscriptionService.subscribe(new SubscriptionDTO());
+        return wertSubscriptionService.subscribe(new SubscriptionDTO());
     }
 
 
@@ -114,7 +113,5 @@ public class SubscriptionController {
             logger.error("Webhook Error : " + ex.getMessage());
         }
     }
-
-
 
 }
