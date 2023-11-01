@@ -142,7 +142,7 @@ public class ExcelDataImportServiceImpl extends AbstractCsvExcelDataImportServic
 					try {
 						localBeanUtils.setProperty(line, propertyName, value);
 					} catch (ConversionException ex) {
-						context.logNewXlsConversionError(row.toString(), row.getRowNum() + 1, ErrorCodes.XLS$002);
+						context.logNewXlsConversionError(propertyName, row.getRowNum() + 1, ErrorCodes.XLS$002);
 					}
 					if (featuresNames.contains(propertyName)) {
 						features.put(propertyName, value.toString());

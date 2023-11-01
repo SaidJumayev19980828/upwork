@@ -411,6 +411,8 @@ public class VideoChatServiceImpl implements VideoChatService {
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
 
+}
+
     @Override
     public VideoChatResponse createGroupVideoChat(String sessionName ,Long orgId, Long shopId) {
         GroupVideoChatLogEntity groupVideoChatLogEntity = new GroupVideoChatLogEntity();

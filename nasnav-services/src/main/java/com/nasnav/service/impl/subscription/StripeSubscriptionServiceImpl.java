@@ -18,6 +18,9 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.StripeService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
+import com.stripe.exception.StripeException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -47,6 +50,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    private static final Logger logger = LogManager.getLogger("Subscription:StripeSubscriptionServiceImpl");
 
     @Override
     public boolean checkOrgHasStripeCustomer(){
@@ -92,6 +96,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         Long packageId = packageService.getPackageIdRegisteredInOrg(org);
         if(packageId == null){
+            logger.error("Failed To GetPaymentInfo : Package Id is null");
             throw new RuntimeBusinessException(NOT_FOUND, ORG$SUB$0001);
         }
         PackageEntity packageEntity = packageRepository.findById(packageId).orElseThrow(
@@ -110,9 +115,17 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     }
 
     private StripeConfirmDTO callStripeCreateSubscription() throws RuntimeBusinessException {
-        StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
-        //Create Subscription
-        StripeConfirmDTO stripeConfirmDTO = stripeService.createSubscription( stripeSubscriptionDTO.getStripePriceId() , getOrCreateStripeCustomer());
+        StripeConfirmDTO stripeConfirmDTO = null;
+        try{
+            StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
+            //Create Subscription
+            stripeConfirmDTO = stripeService.createSubscription( stripeSubscriptionDTO.getStripePriceId() , getOrCreateStripeCustomer());
+        }catch (RuntimeBusinessException e){
+            throw e;
+        } catch (Exception e) {
+            logger.error("callStripeCreateSubscription : Exception" + e.getMessage());
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0004);
+        }
         return stripeConfirmDTO;
     }
 

@@ -104,22 +104,26 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 		   + " FROM PromotionsEntity promo "
 	       + " where promo.id in :promoIds"
 	       + " AND promo.organization.id = :orgId"
+		   + " AND promo.typeId in :typeIds"
 	       + " AND now() between promo.dateStart and promo.dateEnd"
 	       + " AND promo.status = 1")
-	List<PromotionsEntity> findByIdsAndOrgId(@Param("promoIds") List<Long> promoIds, @Param("orgId") Long orgId);
+	List<PromotionsEntity> findByIdsAndOrgId(@Param("promoIds") List<Long> promoIds, @Param("orgId") Long orgId, @Param("typeIds") Collection<Integer> typeIds);
 
 	@Query("select promo "
 	      + " FROM PromotionsEntity promo "
+		  + " JOIN promo.organization org "
 	      + " WHERE now() between promo.dateStart and promo.dateEnd"
+		  + " AND org.yeshteryState = 1"
 	      + " AND promo.status = 1")
-	List<PromotionsEntity> findAllActivePromotions();
+	List<PromotionsEntity> findAllActiveYeshteryPromotions();
 
 	@Query("select promo"
 	+ " FROM PromotionsEntity promo"
 	+ " WHERE promo.id in :promoIds"
+	+ " AND promo.typeId in :typeIds"
 	+ " AND now() between promo.dateStart and promo.dateEnd"
 	+ " AND promo.status = 1")
-	List<PromotionsEntity> findActivePromosByIds(@Param("promoIds") Collection<Long> promoIds);
+	List<PromotionsEntity> findActivePromosByIds(@Param("promoIds") Collection<Long> promoIds, @Param("typeIds") Collection<Integer> typeIds);
 
 
 

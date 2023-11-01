@@ -3,6 +3,7 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.response.PromotionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -42,6 +43,8 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private List<ProductImageDTO> images;
     private Double rating;
     private Integer priority;
+    private Long id;
+    private List<ProductPromotionDto> promotions;
 
     public ProductRepresentationObject() {
         images = new ArrayList<>();

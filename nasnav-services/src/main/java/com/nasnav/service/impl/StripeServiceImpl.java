@@ -35,14 +35,15 @@ public class StripeServiceImpl implements StripeService {
     @Autowired
     PackageRepository packageRepository;
 
-    private static final Logger stripeLogger = LogManager.getLogger("Subscription:STRIPE");
+    private static final Logger stripeLogger = LogManager.getLogger("Subscription:StripeService");
 
     @PostConstruct
     public void init() {
         if(StringUtils.isBlankOrNull(appConfig.stripeApiKey)){
-            stripeLogger.error("Fail To Load Api key of Stripe");
+            stripeLogger.error("init : Fail To Load Api key of Stripe");
         }else{
             Stripe.apiKey = appConfig.stripeApiKey;
+            stripeLogger.debug("init : API Key Initialized Successfully");
         }
     }
 
@@ -57,7 +58,9 @@ public class StripeServiceImpl implements StripeService {
             Customer customer = Customer.create(params);
             customerId = customer.getId();
         } catch (StripeException e) {
-            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0003);
+            stripeLogger.error("createCustomer : + " + String.format(STR$CAL$0003.getValue(),email));
+            stripeLogger.error("createCustomer :  Exception : " + e.getMessage());
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0003,email);
         }
 
         return customerId;
@@ -100,7 +103,8 @@ public class StripeServiceImpl implements StripeService {
             }
 
         } catch (StripeException e) {
-            stripeLogger.error("Failed To Create Stripe Subscription :" + e.getMessage());
+            stripeLogger.error("createSubscription : " + STR$CAL$0004.getValue());
+            stripeLogger.error("createSubscription : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0004);
         }
         return stripeConfirmDTO;
@@ -123,6 +127,8 @@ public class StripeServiceImpl implements StripeService {
             stripeConfirmDTO.setClientSecret(setupIntent.getClientSecret());
 //            System.out.println(setupIntent.get());
         } catch (StripeException e) {
+            stripeLogger.error("setupIntent : " + STR$CAL$0002.getValue());
+            stripeLogger.error("setupIntent : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$CAL$0002);
         }
         return stripeConfirmDTO;
@@ -148,6 +154,8 @@ public class StripeServiceImpl implements StripeService {
                             .build();
             Customer customer = resource.update(params);
         } catch (StripeException e) {
+            stripeLogger.error("updateCustomerDefaultPaymentMethod : " + STR$WH$0005.getValue());
+            stripeLogger.error("updateCustomerDefaultPaymentMethod : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$WH$0005);
         }
     }
@@ -160,6 +168,8 @@ public class StripeServiceImpl implements StripeService {
             params.put("default_payment_method", paymentMethodId);
             subscription.update(params);
         } catch (StripeException e) {
+            stripeLogger.error("updateSubscriptionDefaultPaymentMethod : " + STR$WH$0006.getValue());
+            stripeLogger.error("updateSubscriptionDefaultPaymentMethod : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$WH$0006);
         }
     }
@@ -174,6 +184,8 @@ public class StripeServiceImpl implements StripeService {
         try {
             event = Webhook.constructEvent(body, signatureHeader, appConfig.stripeWebhookSecret);
         } catch (Exception e) {
+            stripeLogger.error("verifyAndGetEventWebhook : " + STR$WH$0001.getValue());
+            stripeLogger.error("verifyAndGetEventWebhook : Exception : " + e.getMessage());
             // Invalid payload
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0001);
         }
@@ -191,6 +203,8 @@ public class StripeServiceImpl implements StripeService {
             String priceId = subscriptionItem.getPrice().getId();
             packageEntity = packageRepository.findByStripePriceId(priceId).get();
         }catch (Exception ex){
+            stripeLogger.error("getPackageByStripeSubscription : " + STR$WH$0003.getValue());
+            stripeLogger.error("getPackageByStripeSubscription : Exception : " + ex.getMessage());
             throw new RuntimeBusinessException(NOT_FOUND, STR$WH$0003);
         }
         return packageEntity;
@@ -209,6 +223,8 @@ public class StripeServiceImpl implements StripeService {
                 invoices.get(0).pay();
             }
         }catch (StripeException e){
+            stripeLogger.error("lastOpenInvoicePayRetry : " + STR$WH$0007.getValue());
+            stripeLogger.error("lastOpenInvoicePayRetry : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$WH$0007);
         }
     }
@@ -218,6 +234,8 @@ public class StripeServiceImpl implements StripeService {
             Subscription subscription = Subscription.retrieve(subscriptionId);
             Subscription deletedSubscription = subscription.cancel();
         }catch (StripeException e){
+            stripeLogger.error("cancelSubscription : " + STR$CAL$0001.getValue());
+            stripeLogger.error("cancelSubscription : Exception : " + e.getMessage());
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0001);
         }
     }
@@ -239,9 +257,12 @@ public class StripeServiceImpl implements StripeService {
 
             return subscription.update(params);
         }catch (StripeException e){
+            stripeLogger.error("changePlan : Exception : " + e.getMessage());
             if(e.getMessage().startsWith("No such price")){
+                stripeLogger.error("changePlan : " + String.format(STR$CAL$0006.getValue(),priceId));
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0006,priceId);
             }else {
+                stripeLogger.error("changePlan : " + STR$CAL$0005.getValue());
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE, STR$CAL$0005);
             }
         }

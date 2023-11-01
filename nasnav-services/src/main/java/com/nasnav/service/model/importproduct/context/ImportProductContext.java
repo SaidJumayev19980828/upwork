@@ -93,14 +93,13 @@ public class ImportProductContext {
 		errors.add(error);
 	}
 
-	public void logNewErrorForCsvInvalidData(String errorMessage, int rowNum, String parsedContent) {
+	public void logNewErrorForCsvInvalidData(String errorMessage, int rowNum) {
 		ErrorCodes errorCode = ErrorCodes.CSV$002;
 		String columnName = getColumnNameContainsInvalidData(errorMessage);
 		String message = String.format(errorCode.getValue(), columnName, rowNum);
 		Error error = new Error(errorCode);
 		error.setMessage(message);
 		error.setRowNum(rowNum);
-		error.setData(parsedContent);
 		errors.add(error);
 	}
 
@@ -114,11 +113,10 @@ public class ImportProductContext {
 
 	}
 
-	public void logNewXlsConversionError(String rowData, int rowNum, ErrorCodes errorCode) {
+	public void logNewXlsConversionError(String colName, int rowNum, ErrorCodes errorCode) {
 		Error error = new Error(errorCode);
 		error.setRowNum(rowNum);
-		error.setData(rowData);
-		error.setMessage(String.format(errorCode.getValue(),rowNum));
+		error.setMessage(String.format(errorCode.getValue(),rowNum, colName));
 		errors.add(error);
 
 	}

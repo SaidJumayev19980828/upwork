@@ -81,6 +81,7 @@ import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
 import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
+import static com.nasnav.enumerations.ProductFeatureType.STRING;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
@@ -906,7 +907,6 @@ public class OrderServiceImpl implements OrderService {
 	private BasketItem addProductDataToBasketItem(BasketsEntity entity, BasketItem originalItem) {
 		BasketItem item = new BasketItem();
 		BeanUtils.copyProperties(originalItem, item);
-
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
 		BrandsEntity brand = product.getBrand();
@@ -922,11 +922,12 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
 		item.setVariantFeatures(parseVariantFeatures(variant, 0));
+		item.setVariantFeature(item.getVariantFeatures());
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
 		item.setAddonTotal(entity.getAddonsPrice());
-		item.setAddons(addonService.listItemAddonsPreSave(entity));;
-		item.setSpecialOrder(entity.getSpecialOrder());;
+		item.setAddons(addonService.listItemAddonsPreSave(entity));
+		item.setSpecialOrder(entity.getSpecialOrder());
 
 		return item;
 	}
@@ -2505,7 +2506,7 @@ public class OrderServiceImpl implements OrderService {
 	private void sendRejectionEmailToCustomer(OrdersEntity subOrder, String rejectionReason) {
 		String orgName = subOrder.getOrganizationEntity().getName();
 		String to = subOrder.getMetaOrder().getUser().getEmail();
-		String subject = format(ORDER_REJECT_SUBJECT, orgName);
+		String subject = format(ORDER_REJECT_SUBJECT, orgName , subOrder.getId());
 		List<String> bcc = getOrganizationManagersEmails(subOrder);
 		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
 		String template = ORDER_REJECT_TEMPLATE;

@@ -212,6 +212,8 @@
     </style>
 </head>
 <body>
+ 
+   
 <div class="main">
     <div class="Header">
         <div class="Header-logo">
@@ -219,9 +221,10 @@
             />
         </div>
         <p class="Header-orderSuccess">
-            Hi <span id="user_name" th:text="${userName}"/> <br />
-            We are sorry to inform you that order #<span id="order_id" th:text="${sub.subOrderId}"/> cannot be fulfilled  <br/>
-            <span id="user_name" th:text="${rejectionReason}"/>
+            Dear <span id="user_name" th:text="${userName}"/> <br />
+            We regret to inform you that your recent order  #<span id="order_id" th:text="${sub.subOrderId}"/> has been rejected.  <br/>
+
+            Rejection Reason:   <span id="user_name" th:text="${rejectionReason}"/>
         </p>
     </div>
 
@@ -293,12 +296,16 @@
             </div>
         </div>
         <p class="help">
-            Any further questions or concerns, please look at our FAQ page where
-            we have answered the most common question regarding this topic or
-            write us at
-            <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
+            We apologize for any inconvenience this may cause. <br>
+            Please feel free to reach out to us if you have any questions or if there’s anything else we can assist you with.
+            Thank you for considering  <span id="total" th:text="${orgName}"></span> for your order. <br> 
+            We appreciate your understanding, and we look forward to serving you in the future.
+            Warm regards
+
         </p>
     </div>
+
+
 
     <div class="footer">
         <p>

@@ -82,6 +82,6 @@ class ActivePromotionsTest extends AbstractTestWithTempBaseDir {
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
 		ProductsResponse response = responseEntity.getBody();
 		int totalProducts = response.getProducts().size();
-		assertEquals(4, totalProducts);
+		assertEquals(0, totalProducts);
 	}
 }
