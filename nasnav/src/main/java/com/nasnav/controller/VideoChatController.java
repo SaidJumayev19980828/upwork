@@ -40,4 +40,19 @@ public class VideoChatController {
                              @RequestParam(name = "end_call") Boolean endCall) {
         videoChatService.leaveSession(sessionName, orgId, shopId, endCall);
     }
+
+    @PostMapping(value = "/group/session/create", produces = APPLICATION_JSON_VALUE)
+    public VideoChatResponse createGroupSession(@RequestHeader(name = "User-Token") String userToken,
+                                                @RequestParam(value = "session_name",defaultValue = "") String sessionName,
+                                                @RequestParam(name = "org_id", required = false) Long orgId,
+                                                @RequestParam(name = "shop_id", required = false) Long shopId){
+        return videoChatService.createGroupVideoChat(sessionName,orgId, shopId);
+    }
+
+    @GetMapping(value = "/group/session/get", produces = APPLICATION_JSON_VALUE)
+    public VideoChatResponse joinGroupSession(@RequestHeader(name = "User-Token") String userToken,
+                                              @RequestParam(name = "session_name", required = false) String sessionName,
+                                              @RequestParam(name = "org_id", required = false) Long orgId){
+        return videoChatService.getGroupVideoChat(sessionName, orgId);
+    }
 }

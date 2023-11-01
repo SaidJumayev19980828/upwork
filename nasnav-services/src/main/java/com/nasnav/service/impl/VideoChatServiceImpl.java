@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.VideoChatLogRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.VideoChatLogRepresentationObject;
 import com.nasnav.dto.request.OpenViduCallbackDTO;
 import com.nasnav.enumerations.VideoChatOrgState;
@@ -76,6 +73,9 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Autowired
     private VideoChatLogRepository videoChatLogRepository;
+
+    @Autowired
+    private GroupVideoChatLogRepository groupVideoChatLogRepository;
 
     private ConnectionProperties connectionProperties;
 
@@ -411,7 +411,93 @@ public class VideoChatServiceImpl implements VideoChatService {
         videoChatLogRepository.saveAndFlush(videoEntity);
     }
 
+
+    @Override
+    public VideoChatResponse createGroupVideoChat(String sessionName ,Long orgId, Long shopId) {
+        GroupVideoChatLogEntity groupVideoChatLogEntity = new GroupVideoChatLogEntity();
+        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+        if(!sessionName.isEmpty()){
+            Optional<GroupVideoChatLogEntity> optionalGroupVideoChatLogEntity = groupVideoChatLogRepository.findByName(sessionName);
+            if (optionalGroupVideoChatLogEntity.isPresent()){
+                groupVideoChatLogEntity = optionalGroupVideoChatLogEntity.get();
+                if (loggedInUser instanceof UserEntity) {
+                    List<UserEntity> currentUsers = groupVideoChatLogEntity.getUsers();
+                    currentUsers.add((UserEntity) loggedInUser);
+                    groupVideoChatLogEntity.setUsers(currentUsers);
+                } else if (loggedInUser instanceof EmployeeUserEntity) {
+                    List<EmployeeUserEntity> currentEmployeeUsers = groupVideoChatLogEntity.getEmployeeUsers();
+                    currentEmployeeUsers.add((EmployeeUserEntity) loggedInUser);
+                    groupVideoChatLogEntity.setEmployeeUsers(currentEmployeeUsers);
+                }
+            }
+        }else {
+            OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
+            orgId = organization.getId();
+            ShopsEntity shop = ofNullable(shopId)
+                    .map(shopsRepository::findByIdAndRemoved)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .orElse(null);
+
+            if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
+            }
+            groupVideoChatLogEntity.setShop(shop);
+            groupVideoChatLogEntity.setOrganization(organization);
+
+            if (loggedInUser instanceof UserEntity) {
+                List<UserEntity> currentUsers = new ArrayList<>();
+                currentUsers.add((UserEntity) loggedInUser);
+                groupVideoChatLogEntity.setUsers(currentUsers);
+            } else if (loggedInUser instanceof EmployeeUserEntity) {
+                List<EmployeeUserEntity> currentEmployeeUsers = new ArrayList<>();
+                currentEmployeeUsers.add((EmployeeUserEntity) loggedInUser);
+                groupVideoChatLogEntity.setEmployeeUsers(currentEmployeeUsers);
+            }
+
+        }
+        VideoChatResponse response = createNewGroupVideoSession(groupVideoChatLogEntity,loggedInUser);
+        return response;
+    }
+
+    @Override
+    public VideoChatResponse getGroupVideoChat(String sessionName, Long orgId){
+        if(Strings.isEmpty(sessionName)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0004, orgId);
+        }
+        return getExistingChatSession(sessionName, orgId);
+    }
+
+
+
+    private VideoChatResponse createNewGroupVideoSession(GroupVideoChatLogEntity groupVideoChatLogEntity,BaseUserEntity loggedUser) {
+        try {
+
+            Session session = this.openVidu.createSession(sessionProperties);
+            String sessionName = session.getSessionId();
+            Connection connection = createConnection(session);
+            String token = connection.getToken();
+
+            groupVideoChatLogEntity.setCreatedAt(LocalDateTime.now());
+            groupVideoChatLogEntity.setToken(token);
+            groupVideoChatLogEntity.setName(sessionName);
+            groupVideoChatLogEntity.setIsActive(true);
+            groupVideoChatLogEntity.setStatus(NEW.getValue());
+            groupVideoChatLogEntity = groupVideoChatLogRepository.saveAndFlush(groupVideoChatLogEntity);
+
+            this.sessionsMap.put(sessionName, session);
+            List<UserSessionInfo> sessionInfos = new ArrayList<>();
+            sessionInfos.add(new UserSessionInfo(loggedUser.getId(), false, connection.getConnectionId()));
+            this.mapSessionNamesTokens.put(sessionName, sessionInfos);
+
+            return new VideoChatResponse(token, null, sessionName,groupVideoChatLogEntity.getId() );
+        } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
+        }
+    }
+
 }
+
 
 @Data
 @AllArgsConstructor
