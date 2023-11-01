@@ -111,9 +111,10 @@ public class EventController {
                                                                    @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count ,
                                                                    @RequestParam(required = false, name = "fromDate")
                                                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                                                   LocalDateTime fromDate
+                                                                   LocalDateTime fromDate ,
+                                                                   @RequestParam(required = false ) Long orgId
                                                                    ) {
-        return eventService.getAllEvents(start, count , fromDate);
+        return eventService.getAllEvents(start, count , fromDate , orgId);
     }
 
     @GetMapping("/advertise/all")
