@@ -292,13 +292,19 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate) {
+    public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate , Long orgId) {
         PageRequest page = getQueryPage(start, count);
+        OrganizationEntity organization=null;
         PageImpl<EventInterestsProjection> events;
+
+        if (orgId !=null){
+            organization = organizationRepository.findById(orgId)
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
+        }
         if(fromDate == null){
-            events=  eventRepository.findAllOrderedByStartsAtDesc(page);
+            events=  eventRepository.findAllOrderedByStartsAtDesc(page , organization);
         }else {
-            events = eventRepository.findAllByStartOrderedByStartsAtDesc(fromDate, page);
+            events = eventRepository.findAllByStartOrderedByStartsAtDesc(fromDate, page , organization);
         }
         List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
         return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());

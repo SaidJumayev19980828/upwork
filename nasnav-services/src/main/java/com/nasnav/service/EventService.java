@@ -30,7 +30,7 @@ public interface EventService {
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
-    PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count , LocalDateTime fromDate);
+    PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count , LocalDateTime fromDate, Long orgId);
 
     PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count,Long orgId);
 

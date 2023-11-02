@@ -52,17 +52,15 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
     @Query("SELECT DISTINCT event as event, count(el) as interest FROM EventEntity event JOIN event.influencers influencer " +
             "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
-            "WHERE influencer IS NOT NULL " +
+            "WHERE influencer IS NOT NULL  And (:organization is null or event.organization=:organization) " +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable);
-
-    //Done
+    PageImpl<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable ,@Param("organization") OrganizationEntity organization);
 
     @Query( "SELECT DISTINCT event as event , count(el) as interest  FROM EventEntity event JOIN event.influencers influencer" +
             " LEFT JOIN EventLogsEntity el ON el.event = event.id " +
             " WHERE " +
-            "influencer IS NOT NULL " +
+            "influencer IS NOT NULL  And (:organization is null or event.organization=:organization)  " +
             "AND " +
             "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
             "IS NULL OR " +
@@ -70,7 +68,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+    PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable , @Param("organization") OrganizationEntity organization);
 
 
     @Query("SELECT DISTINCT event as event, COUNT(el.id) AS interest " +
