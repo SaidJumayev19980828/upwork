@@ -5,19 +5,16 @@ import com.nasnav.dto.ProductPromotionDto;
 import com.nasnav.dto.PromosConstraints;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.enumerations.PromotionType;
-import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.persistence.PromotionsEntity;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 @Component
-public class PromotionMapperImpl implements PromotionMapper {
+public class PromotionToDTOImpl implements promotionToDTO {
 
   private static final   List<Integer> PROMOS_TYPE_IDS = List.of(PromotionType.BUY_X_GET_Y_FROM_BRAND.getValue()
             , PromotionType.BUY_X_GET_Y_FROM_TAG.getValue()

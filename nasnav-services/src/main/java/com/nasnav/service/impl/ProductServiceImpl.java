@@ -24,6 +24,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.PromotionMapper;
+import com.nasnav.mappers.impl.promotionToDTO;
 import com.nasnav.persistence.dto.query.result.ProductRatingData;
 import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.*;
@@ -219,7 +220,7 @@ public class ProductServiceImpl implements ProductService {
 	private SeoService seoService;
 
 	@Autowired
-	private PromotionMapper promotionMapper;
+	private promotionToDTO promotionMapper;
 
 	private final PromotionsService promotionsService;
 
