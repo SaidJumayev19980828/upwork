@@ -19,6 +19,7 @@ import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.mappers.PromotionMapper;
+import com.nasnav.mappers.impl.promotionToDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
@@ -194,7 +195,7 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private OrderStatisticService orderStatisticService;
 	@Autowired
-	private PromotionMapper promotionMapper;
+	private promotionToDTO promotionMapper;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
