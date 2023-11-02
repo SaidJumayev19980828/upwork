@@ -17,6 +17,7 @@ import java.util.Map;
 public class CartItem {
 	private Long id;
 	private Long productId;
+	private String productDescription;
 	private Long variantId;
 	private String variantName;
 	private Long stockId;
