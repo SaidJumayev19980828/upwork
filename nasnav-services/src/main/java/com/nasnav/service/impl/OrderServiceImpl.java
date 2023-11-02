@@ -921,7 +921,6 @@ public class OrderServiceImpl implements OrderService {
 
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
-		Map <String , String> variantFeatures = new HashMap<>();
 		item.setVariantFeatures(parseVariantFeatures(variant, 0));
 		item.setSku(variant.getSku());
 		item.setProductCode(variant.getProductCode());
