@@ -258,4 +258,10 @@ public class NavboxController {
 			@RequestParam(name = "type_ids", required = false) Set<Integer> typeIds) {
 		return promotionsService.getActivePublicPromotions(List.of(orgId), typeIds);
 	}
+
+	@GetMapping(value = "promotion/online", produces = APPLICATION_JSON_VALUE)
+	public List<PromotionDTO> getActiveShowingOnlinePromotionsList(
+			@RequestParam(name = "org_id") Long orgId){
+		return promotionsService.getActiveShowingOnlinePromotions(List.of(orgId));
+	}
 }
