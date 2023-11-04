@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.*;
@@ -21,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Sendpulse implements SendpulseInterface{
-	 private String apiUrl = "https://api.sendpulse.com";
+	 private static String apiUrl = "https://api.sendpulse.com";
      private String userId = null;
      private String secret = null;
      private String tokenName = null;
@@ -103,7 +104,7 @@ public class Sendpulse implements SendpulseInterface{
     		 path = path+"?"+postData.toString();
     	 }
     	 URL obj = new URL(this.apiUrl+ "/" + path);
-    	 HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+    	 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
     	 if(useToken && this.tokenName!=null ) {
 			con.setRequestProperty("Authorization", "Bearer " +this.tokenName);
 		 }
