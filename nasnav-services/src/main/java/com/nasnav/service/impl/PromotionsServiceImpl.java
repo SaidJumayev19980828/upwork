@@ -196,6 +196,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setUserName(entity.getCreatedBy().getName());
 		dto.setTypeId(entity.getTypeId());
 		dto.setPriority(entity.getPriority());
+		dto.setShowingOnline(entity.isShowingOnline());
 		return dto;
 	}
 
@@ -344,11 +345,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public Long updatePromotion(PromotionDTO promotion) {
+	public Long updatePromotion(PromotionDTO promotion, boolean showingOnline) {
 		if (promotion.getTypeId() == null) {
 			promotion.setTypeId(0);
 		}
 		validatePromotion(promotion);
+		promotion.setShowingOnline(showingOnline);
 		
 		PromotionsEntity entity = createPromotionsEntity(promotion);
 		return promoRepo.save(entity).getId();
@@ -520,6 +522,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setUserRestricted(0);
 		entity.setTypeId(type);
 		entity.setPriority(priority);
+		entity.setShowingOnline(promotion.isShowingOnline());
 		return entity;
 	}
 
@@ -1230,6 +1233,16 @@ public class PromotionsServiceImpl implements PromotionsService {
 	public List<PromotionDTO> getActivePublicPromotions(Collection<Long> orgIds, Collection<Integer> typeIds) {
 		List<PromotionsEntity> promotions = typeIds != null && !typeIds.isEmpty() ? promoRepo.findActivePromosByOrgIdInAndTypeIdIn(orgIds, typeIds)
 				: promoRepo.findActivePromosByOrgIdIn(orgIds);
+		return getPromotionDTOList(promotions);
+	}
+
+	@Override
+	public List<PromotionDTO> getActiveShowingOnlinePromotions(Collection<Long> orgIds) {
+
+		return getPromotionDTOList(promoRepo.findActiveShowingOnlinePromosByOrgIdIn(orgIds));
+	}
+
+	private List<PromotionDTO> getPromotionDTOList(List<PromotionsEntity> promotions) {
 		return promotions
 				.stream()
 				.map(this::createPromotionDTO)

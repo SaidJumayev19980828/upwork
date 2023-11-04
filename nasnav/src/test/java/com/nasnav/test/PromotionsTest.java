@@ -1006,6 +1006,21 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		assertEquals(List.of(630002L, 630003L), promotionIds);
 	}
 
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Showing_online_promotions.sql"})
+	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+	public void getActiveShowingOnline() {
+		ResponseEntity<List<PromotionDTO>> responseEntity = template
+				.exchange("/navbox/promotion/online?org_id=99001",
+						GET,
+						null,
+						new ParameterizedTypeReference<List<PromotionDTO>>() {});
+		assertEquals(200, responseEntity.getStatusCodeValue());
+		assertEquals(2, responseEntity.getBody().size());
+		List<Long> promosIds = responseEntity.getBody().stream().map(PromotionDTO::getId).sorted().collect(Collectors.toList());
+		assertEquals(List.of(630002L, 630006L), promosIds);
+	}
+
 
 
 	private void changePromoPriority(Long id, int priority) {

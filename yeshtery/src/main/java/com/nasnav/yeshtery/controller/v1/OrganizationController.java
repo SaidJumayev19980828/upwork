@@ -247,8 +247,9 @@ public class OrganizationController {
 
     @PostMapping(value = "promotion", consumes = APPLICATION_JSON_VALUE)
     public Long addPromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
-                             @RequestBody PromotionDTO promotion) {
-        return promotionsService.updatePromotion(promotion);
+                             @RequestBody PromotionDTO promotion
+                            ,@RequestParam(name="showing_online", required = false) boolean showOnline){
+        return promotionsService.updatePromotion(promotion, showOnline);
     }
 
     @DeleteMapping(value = "promotion")
