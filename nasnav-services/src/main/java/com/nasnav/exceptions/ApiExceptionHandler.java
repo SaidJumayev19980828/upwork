@@ -24,26 +24,5 @@ public class ApiExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), e.getHttpStatus());
 
     }
-    @ExceptionHandler(value = {Exception.class})
-    public ResponseEntity<Object> handleException(Exception e) {
-
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-
-    }
-    @ExceptionHandler(value = {MethodArgumentNotValidException.class})
-    public ResponseEntity<Object> handleValidationExceptions(
-            MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return new ResponseEntity<>(errors,HttpStatus.BAD_REQUEST);
-    }
-    @ExceptionHandler({SQLException.class})
-    public ResponseEntity<Object> handleTriggerException(SQLException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
-    }
 
 }
