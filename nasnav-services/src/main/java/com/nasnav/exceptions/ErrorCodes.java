@@ -443,6 +443,8 @@ public enum ErrorCodes {
 
 	,CHAT$EXTERNAL("Chat Server responded with [%d]")
 
+	,CHAT$NOT_CONFIGURED("Chat Server parameters not configured")
+
 	,BANK$ACC$0001("No user or org is provided")
 	,BANK$ACC$0002("an account already exist for this user or org")
 	,BANK$ACC$0003("no account found for the user")
