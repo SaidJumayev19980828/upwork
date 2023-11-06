@@ -26,12 +26,17 @@ VALUES (90, 'test3@nasnav.com','user3','789', 99001,810);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,yeshtery_user_id)
 VALUES (91, 'test4@nasnav.com','user4','258', 99002,811);
 
+-- inserting employees
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token)
+	VALUES (67, 'employee1@nasnav.com', 99001, 'abc');
 
+-- tokens
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '456', now(), null, 89);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '789', now(), null, 90);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '258', now(), null, 91);
 
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, 'abc', now(), 67, null);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -44,6 +49,9 @@ insert into roles(id, name,  organization_id) values(8, 'ORGANIZATION_ADMIN', 99
 insert into roles(id, name,  organization_id) values(9, 'ORGANIZATION_EMPLOYEE', 99002);
 insert into roles(id, name,  organization_id) values(10, 'STORE_EMPLOYEE', 99002);
 insert into roles(id, name,  organization_id) values(11, 'CUSTOMER', 99002);
+
+-- employee roles
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 67, 2);
 
 
 --insert loyalty point transaction entity

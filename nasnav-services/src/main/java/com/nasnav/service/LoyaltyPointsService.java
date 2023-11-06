@@ -53,5 +53,6 @@ public interface LoyaltyPointsService {
     void givePointsToReferrer(UserEntity user, Long orgId);
     void activateReferralPoints(OrdersEntity suborder);
 	List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints();
+	List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPointsByUser(Long userId);
     LoyaltyTierDTO getUserOrgTier();
 }

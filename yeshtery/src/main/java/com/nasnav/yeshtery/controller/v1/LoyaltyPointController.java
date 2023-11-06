@@ -56,6 +56,12 @@ public class LoyaltyPointController {
         return loyaltyPointsService.listOrganizationLoyaltyPoints(orgId);
     }
 
+    
+    @GetMapping(value = "points/list_by_user", produces = APPLICATION_JSON_VALUE)
+    public List<LoyaltyPointTransactionDTO> getLoyaltyPointsByUser(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("user_id") Long userId) {
+        return loyaltyPointsService.listOrganizationLoyaltyPointsByUser(userId);
+    }
+
     @GetMapping(value ="user_tier")
     public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam("org_id") Long orgId){

@@ -3,6 +3,7 @@ package com.nasnav.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.*;
@@ -18,6 +19,9 @@ import com.nasnav.response.LoyaltyUserPointsResponse;
 import com.nasnav.service.LoyaltyPointsService;
 import com.nasnav.service.LoyaltyTierService;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.yeshtery.YeshteryUserService;
+
+import lombok.RequiredArgsConstructor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +34,7 @@ import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.enumerations.LoyaltyPointType.*;
@@ -47,8 +52,10 @@ import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
+@RequiredArgsConstructor
 public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     private static final Logger logger = LogManager.getLogger("LoyaltyPointsService");
+    private final AppConfig config;
     @Autowired
     private SecurityService securityService;
     @Autowired
@@ -392,10 +399,29 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Override
     public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
-        return loyaltyPointTransRepo.findByUser_IdAndOrganization_Id(user.getId(), orgId)
+        return listOrganizationLoyaltyPoints(user.getId(), orgId);
+    }
+
+    private List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long userId, Long orgId) {
+        return loyaltyPointTransRepo.findByUser_IdAndOrganization_Id(userId, orgId)
                 .stream()
                 .map(LoyaltyPointTransactionEntity::getRepresentation)
                 .collect(toList());
+    }
+
+    @Override
+    public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPointsByUser(Long userId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        if (config.isYeshteryInstance) {
+            Set<Long> userIds = userRepo.findByYeshteryUserIdOfUserId(userId).stream().map(UserEntity::getId)
+                    .collect(Collectors.toSet());
+            return loyaltyPointTransRepo.findByUserIdInAndOrganizationId(userIds, orgId)
+                    .stream()
+                    .map(LoyaltyPointTransactionEntity::getRepresentation)
+                    .collect(toList());
+        } else {
+            return listOrganizationLoyaltyPoints(userId, orgId);
+        }
     }
 
     @Override
