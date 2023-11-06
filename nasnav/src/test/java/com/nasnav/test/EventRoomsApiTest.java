@@ -3,7 +3,11 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.dao.EventRoomTemplateRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.EventsRoomNewDTO;
 import com.nasnav.dto.response.EventRoomResponse;
+import com.nasnav.dto.response.PostResponseDTO;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.enumerations.EventRoomStatus;
 import com.nasnav.mappers.EventRoomMapper;
 import com.nasnav.persistence.EventRoomTemplateEntity;
@@ -33,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static com.nasnav.enumerations.EventRoomStatus.*;
@@ -218,6 +223,16 @@ class EventRoomsApiTest extends AbstractTestWithTempBaseDir {
 		body = res.getBody();
 		assertRoomResponse(body, before, after, externalId, "user83@nasnav.com");
 		assertDoesNotThrow(() -> UUID.fromString(externalId));
+	}
+
+	@Test
+	public void getEventRoomTest(){
+		HttpEntity<Object> httpEntity = getHttpEntity("user81");
+		var responseType = new ParameterizedTypeReference<>() {
+		};
+
+		var response = template.exchange("/room/event/all?orgId=99001&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+		assertEquals(200, response.getStatusCode().value());
 	}
 
 	@Test

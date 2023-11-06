@@ -4,18 +4,31 @@ import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostClicksRepository;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.dao.PostRepository;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.request.PostCreationDTO;
+import com.nasnav.dto.response.PostResponseDTO;
+import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -38,16 +51,27 @@ public class PostTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPostTest(){
-        String requestBody =
-                json()
-                        .put("isReview", false)
-                        .put("description", "description msg")
-                        .put("organizationId", 99001L)
-                        .put("productsIds", Arrays.asList(1001))
-                        .toString();
+        ImageBase64 attachment = new ImageBase64();
+        attachment.setFileName("avatar.jpg");
+        attachment.setBase64("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+        attachment.setFileType("image/jpeg");
+        PostCreationDTO postCreationDTO = new PostCreationDTO();
+        postCreationDTO.setIsReview(true);
+        postCreationDTO.setDescription("description msg");
+        postCreationDTO.setOrganizationId(99001L);
+        Set<Long> productsIds = new HashSet<>();
+        productsIds.add(1001L);
+        postCreationDTO.setProductsIds(productsIds);
+        postCreationDTO.setAttachment(attachment);
 
-        HttpEntity<?> json = getHttpEntity(requestBody, "123");
-        ResponseEntity<Void> response = template.postForEntity("/post", json, Void.class);
+        HttpCookie cookie = new HttpCookie("User-Token", "123");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "123");
+
+        HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO,headers);
+
+        ResponseEntity<Void> response = template.postForEntity("/post", request, Void.class);
         assertEquals(200, response.getStatusCode().value());
     }
 
@@ -93,5 +117,35 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Void> response2 = template.postForEntity("/follow?followerId=89&followAction=false", json, Void.class);
         assertEquals(200, response2.getStatusCode().value());
         assertEquals(0,followerRepository.countAllByUser_Id(89).longValue());
+    }
+
+
+
+    @Test
+    public void savePostTest(){
+        Long postId= 2L;
+        HttpEntity<Object> httpEntity = getHttpEntity("123");
+        ResponseEntity<Void> response = template.postForEntity("/post/save?postId=" +postId , httpEntity, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+    @Test
+    public void unsavePostTest(){
+        Long postId= 2L;
+        HttpEntity<Object> httpEntity = getHttpEntity("123");
+        ResponseEntity<Void> response = template.postForEntity("/post/unsave?postId=" +postId , httpEntity, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getSavedPostsTest(){
+        HttpEntity<Object> httpEntity = getHttpEntity("123");
+        ParameterizedTypeReference<RestResponsePage<PostResponseDTO>> responseType = new ParameterizedTypeReference<>() {
+        };
+
+        Integer start = 0;
+        Integer count =10;
+
+        ResponseEntity<RestResponsePage<PostResponseDTO>> response = template.exchange("/post/saved?start=" + start + "&?count=" + count  , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
     }
 }

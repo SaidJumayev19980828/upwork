@@ -7,11 +7,12 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.PostEntity;
 import org.springframework.data.domain.PageImpl;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface PostService {
     public PostResponseDTO getPostById(long id) throws BusinessException;
-    public PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException;
+    public PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException;
     public Long likeOrDisLikePost(long postId, boolean likeAction);
     public void clickOnPost(long postId);
     public void approveOrRejectReview(long postId, PostStatus postStatus);

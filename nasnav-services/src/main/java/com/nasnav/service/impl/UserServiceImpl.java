@@ -929,7 +929,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserApiResponse processUserAvatar(ImageBase64 image) throws IOException {
-		MultipartFile userAvatar = MultipartFileUtils.convert(image.getBase64(), image.getFileName());
+		MultipartFile userAvatar = MultipartFileUtils.convert(image.getBase64(), image.getFileName(), image.getFileType());
 		return updateUserAvatar(userAvatar);
 	}
 

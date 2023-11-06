@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
 @RestController
@@ -63,7 +65,7 @@ public class PostController {
     }
 
     @PostMapping
-    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody PostCreationDTO post) throws BusinessException {
+    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody PostCreationDTO post) throws BusinessException, IOException {
         return postService.createPost(post);
     }
 

@@ -1,8 +1,22 @@
 package com.nasnav.service.impl;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dto.EventInterestsProjection;
+import com.nasnav.dto.EventProjection;
+import com.nasnav.dto.EventRoomProjection;
+import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.EventsRoomNewDTO;
+import com.nasnav.dto.InfluencerProjection;
+import com.nasnav.dto.OrganizationNewDTO;
+import com.nasnav.dto.OrganizationProjection;
+import com.nasnav.persistence.UserEntity;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,6 +44,9 @@ import com.nasnav.service.SecurityService;
 
 import lombok.RequiredArgsConstructor;
 
+import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 @Service
 @RequiredArgsConstructor
 public class EventRoomServiceImpl implements EventRoomService {
@@ -41,6 +58,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 	private final AppConfig config;
 	private final EventRoomMapper mapper;
 	private final EventService eventService;
+	private final OrganizationThemeRepository organizationThemeRepository;
 
 	@Transactional
 	@Override
@@ -56,7 +74,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 	public EventRoomResponse startSession(Long eventId, Optional<RoomSessionDTO> roomSessionDto) {
 		EventRoomTemplateEntity template = getRoomTemplateForUpdate(eventId)
 				.orElseThrow(
-						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
+						() -> new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE, eventId));
 		try {
 			template.start(roomSessionDto.map(RoomSessionDTO::getSessionExternalId).orElse(null));
@@ -73,7 +91,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 	public void suspendSession(Long eventId) {
 		EventRoomTemplateEntity template = getRoomTemplateForUpdate(eventId)
 				.orElseThrow(
-						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
+						() -> new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE, eventId));
 		try {
 			template.suspend();
@@ -90,7 +108,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 		Long employeeOrgId = securityService.getCurrentUserOrganizationId();
 		int affectedRows = roomTemplateRepository.deleteTemplateByEventIdAndEventOrganizationId(eventId, employeeOrgId);
 		if (affectedRows != 1) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE,
+			throw new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE,
 					eventId);
 		}
 	}
@@ -101,7 +119,7 @@ public class EventRoomServiceImpl implements EventRoomService {
 		return getRoomTemplate(eventId)
 				.map(this::toFullResponse)
 				.orElseThrow(
-						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
+						() -> new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound,
 								ROOM_TYPE,
 								eventId));
 	}
@@ -114,13 +132,13 @@ public class EventRoomServiceImpl implements EventRoomService {
 
 		OrganizationEntity requestedOrg = organizationRepository.findById(orgId)
 				.orElseThrow(
-						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound,
+						() -> new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound,
 								orgId));
 		if (!config.isYeshteryInstance || requestedOrg.getYeshteryState() == 1) {
 			rooms = status == null ? roomTemplateRepository.findAllByEventOrganizationId(orgId, pageable)
 					: roomTemplateRepository.findAllByEventOrganizationIdAndStatus(orgId, status, pageable);
 		} else {
-			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
+			throw new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ORG$NotFound, orgId);
 		}
 		return rooms.map(this::toFullResponse);
 	}
@@ -144,10 +162,50 @@ public class EventRoomServiceImpl implements EventRoomService {
 		return rooms.map(this::toFullResponse);
 	}
 
+	@Override
+	public PageImpl<EventsRoomNewDTO> getUserRooms(Long orgId, Integer start, Integer count) {
+
+		Pageable pageable = PagingUtils.getQueryPageAddIdSort(start, count);
+		OrganizationEntity organization=null;
+		if (orgId !=null){
+			organization = organizationRepository.findById(orgId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
+		}
+		PageImpl<EventRoomProjection>   rooms = roomTemplateRepository.findAllByEventOrganization(organization, pageable);
+
+		List<EventsRoomNewDTO> dtos = rooms.getContent().stream().map(this::mapRoomEventProjectionToEventsRoomNewDTO).collect(Collectors.toList());
+		return new PageImpl<>(dtos, rooms.getPageable(), rooms.getTotalElements());
+	}
+
+	public  EventsRoomNewDTO mapRoomEventProjectionToEventsRoomNewDTO(EventRoomProjection eventRoomProjection) {
+		EventsNewDTO eventsDTO = mapEventProjectionToDTO(eventRoomProjection.getEvent(),eventRoomProjection.getInterest());
+		BaseUserEntity loggedInUser = securityService.getCurrentUser();
+		Long influencerId = loggedInUser.getRepresentation().getInfluencerId();
+
+		Boolean canStart= influencerId == null ? false  :userCanStartEvent(eventsDTO.getInfluencers(),influencerId);
+		EventsRoomNewDTO eventsRoom= EventsRoomNewDTO.eventRomBuilder(eventsDTO,canStart,eventRoomProjection.getTemplate().getSceneId(),eventRoomProjection.getTemplate().getData());
+
+		return eventsRoom;
+	}
+	public EventsNewDTO mapEventProjectionToDTO(EventProjection eventProjection ,Long interests)  {
+		OrganizationProjection orgProjection = eventProjection.getOrganization();
+		OrganizationNewDTO orgDTO = new OrganizationNewDTO();
+		List<String> logo =organizationThemeRepository. getLogoByOrganizationEntity_Id(eventProjection.getOrganization().getId());
+		orgDTO.setId(orgProjection.getId());
+		orgDTO.setName(orgProjection.getName());
+		orgDTO.setUri(logo.isEmpty() ? "nasnav-logo.png" : logo.get(0));
+		return EventsNewDTO.buildNewEventsFromEventProjection(eventProjection ,interests , orgDTO);
+
+	}
+
+	private Boolean userCanStartEvent(List<InfluencerProjection> entity , Long userId) {
+		return entity.stream().filter(user -> user.getId().equals(userId)).findAny().isPresent();
+	}
+
 	private Optional<EventRoomTemplateEntity> getRoomTemplateForUpdate(Long eventId) {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
 		if (!eventService.hasInfluencerOrEmployeeAccessToEvent(currentUser, eventId)) {
-			throw new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE,
+			throw new RuntimeBusinessException(NOT_FOUND, ErrorCodes.ROOMS$ROOM$NotFound, ROOM_TYPE,
 					eventId);
 		}
 		return getRoomTemplate(eventId);
@@ -163,8 +221,9 @@ public class EventRoomServiceImpl implements EventRoomService {
 		EventEntity requestedEvent = eventRepository.findById(eventId)
 				.filter(event -> event.getOrganization().equals(userOrg))
 				.orElseThrow(
-						() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, ErrorCodes.G$EVENT$0001, eventId));
+						() -> new RuntimeBusinessException(NOT_FOUND, ErrorCodes.G$EVENT$0001, eventId));
 
+		//TODO : ADD the following line To create Event API
 		EventRoomTemplateEntity template = new EventRoomTemplateEntity();
 		template.setEvent(requestedEvent);
 		return template;
