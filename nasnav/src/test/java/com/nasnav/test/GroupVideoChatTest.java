@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 
 @RunWith(SpringRunner.class)
@@ -91,7 +92,7 @@ public class GroupVideoChatTest extends AbstractTestWithTempBaseDir {
     public void testjoinGroupSession() {
         HttpEntity<?> request = getHttpEntity("131415");
         ResponseEntity<ChatWidgetSettingResponse> result =
-                template.exchange("/videochat/group/session/get?org_id=99001&session_name=testsession", POST, request, ChatWidgetSettingResponse.class);
+                template.exchange("/videochat/group/session/get?org_id=99001&session_name=testsession", GET, request, ChatWidgetSettingResponse.class);
 
         assertEquals(200, result.getStatusCodeValue());
     }
