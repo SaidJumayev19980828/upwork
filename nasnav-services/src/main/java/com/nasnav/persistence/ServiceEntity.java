@@ -23,6 +23,15 @@ public class ServiceEntity extends DefaultBusinessEntity<Long> {
     @Column(name="description")
     private String description;
 
+    @Column(name="light_logo")
+    private String lightLogo;
+
+    @Column(name="dark_logo")
+    private String darkLogo;
+
+    @Column(name="enabled")
+    private Boolean enabled;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JsonIgnore
     @EqualsAndHashCode.Exclude

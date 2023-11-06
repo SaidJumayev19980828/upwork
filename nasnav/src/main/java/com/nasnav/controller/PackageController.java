@@ -26,23 +26,26 @@ public class PackageController {
     }
 
     @PostMapping(value = "create", produces = APPLICATION_JSON_VALUE)
-    public PackageResponse createPackage(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody PackageDTO packageDto) throws Exception {
+    public PackageResponse createPackage(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                         @RequestBody PackageDTO packageDto) throws Exception {
         return packageService.createPackage(packageDto);
     }
 
     @PutMapping("/{packageId}")
-    public PackageResponse updatePackage(@RequestHeader(name = "User-Token", required = false) String token, @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
+    public PackageResponse updatePackage(@RequestHeader(name = "User-Token", required = false) String token,
+                                         @RequestBody PackageDTO packageDto, @PathVariable Long packageId){
         return packageService.updatePackage(packageDto, packageId);
     }
 
     @DeleteMapping(value = "{packageId}")
-    public void removePackage(@RequestHeader(name = "User-Token", required = false) String token,@PathVariable Long packageId) {
+    public void removePackage(@RequestHeader(name = "User-Token", required = false) String token,
+                              @PathVariable Long packageId) {
         packageService.removePackage(packageId);
     }
 
     @PostMapping(value = "register-package-profile", produces = APPLICATION_JSON_VALUE)
     public void registerPackageProfile(@RequestHeader(name = "User-Token", required = false) String token,
-                                       @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) throws Exception {
+                                       @Valid @RequestBody PackageRegisteredByUserDTO packageRegisteredByUserDTO) {
         packageService.registerPackageProfile(packageRegisteredByUserDTO);
     }
 }

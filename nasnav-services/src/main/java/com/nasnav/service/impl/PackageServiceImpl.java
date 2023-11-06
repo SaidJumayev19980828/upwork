@@ -42,13 +42,13 @@ public class PackageServiceImpl implements PackageService {
 
     @Override
     public List<PackageResponse> getPackages() {
-        return packageRepository.findAll().stream().map(packageMapper::toPackageResponse).collect(Collectors.toList());
+        List<PackageEntity> packageEntities = packageRepository.findAll();
+        return packageMapper.entitiesToBeansWithoutList(packageEntities);
     }
 
 
     @Override
     public PackageResponse createPackage(PackageDTO json) throws Exception {
-        PackageResponse packageResponse = new PackageResponse();
         PackageEntity newPackage = new PackageEntity();
         newPackage.setName(json.getName());
         newPackage.setDescription(json.getDescription());
@@ -63,23 +63,36 @@ public class PackageServiceImpl implements PackageService {
            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$CUR$0002,json.getCurrencyIso());
         }
         newPackage.setCountry(country);
-        Set<ServiceEntity> serviceEntitySet = new HashSet<ServiceEntity>();
+        Set<ServiceEntity> serviceEntitySet = new HashSet<>();
+
         if(json.getServices() != null){
+
+            List<String> serviceCodes = json.getServices()
+                    .stream()
+                    .map(ServiceDTO::getCode).collect(Collectors.toList());
+
+            List<ServiceEntity> serviceEntities =
+                    serviceRepository.findAllByCodeIn(serviceCodes).orElseThrow();
+
             for(ServiceDTO serviceDTO : json.getServices()){
-                ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
-                        () -> new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,serviceDTO.getCode())
-                );
-                serviceEntitySet.add(serviceEntity);
+                Optional<ServiceEntity> serviceEntity = serviceEntities.stream()
+                        .filter(s -> s.getCode().equals(serviceDTO.getCode())).findFirst();
+                        if (serviceEntity.isEmpty()){
+                            throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,
+                                    serviceDTO.getCode());
+                        }else {
+                            serviceEntitySet.add(serviceEntity.get());
+                        }
             }
+
         }
         newPackage.setServices(serviceEntitySet);
-        packageResponse.setId(packageRepository.save(newPackage).getId());
-        return packageResponse;
+        packageRepository.save(newPackage);
+        return packageMapper.toPackageResponse(newPackage);
     }
 
     @Override
     public PackageResponse updatePackage(PackageDTO dto, Long packageId) {
-        PackageResponse packageResponse = new PackageResponse();
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
@@ -108,8 +121,9 @@ public class PackageServiceImpl implements PackageService {
         }
 
         entity.setServices(serviceEntitySet);
-        packageResponse.setId(packageRepository.save(entity).getId());
-        return packageResponse;
+        packageRepository.save(entity);
+        return packageMapper.toPackageResponse(entity);
+
     }
     @Override
     @Transactional(rollbackFor = Throwable.class)
@@ -153,7 +167,7 @@ public class PackageServiceImpl implements PackageService {
             return null;
         }
         Optional<OrganizationEntity> organizationEntity = orgRepo.findById(user.getOrganizationId());
-        if(!organizationEntity.isPresent()){
+        if(organizationEntity.isEmpty()){
             return null;
         }
         //Get Package Registered For the organization

@@ -229,6 +229,8 @@ public enum ErrorCodes {
 	,PA$USR$0003("Stripe Price Id Is Missing")
 	,PA$CUR$0002("Currency Not found with iso: [%d]")
 	,PA$SRV$0001("No Service Exist with Code : [%s]")
+	,PA$SRV$0002("No Service Exist with ID : [%s]")
+	,PA$SRV$0003("Service Enabled Status Can`t Be Null")
 
 
 	,ORG$SUB$0001("No Package Registered In Organization")
