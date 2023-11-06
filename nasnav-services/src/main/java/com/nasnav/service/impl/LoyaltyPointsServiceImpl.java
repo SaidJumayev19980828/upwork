@@ -438,6 +438,18 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     @Override
+    public List<LoyaltyPointConfigDTO> listLoyaltyPointConfigsForAllOrganizations() {
+        return loyaltyPointConfigRepo.findByIsActiveAndOrganizationYeshteryStateOrderByCreatedAtDesc(true, 1)
+                .stream()
+                .map(entity -> {
+                    LoyaltyPointConfigDTO dto = entity.getRepresentation();
+                    dto.setConstraints(readConfigJsonStr(entity.getConstraints()));
+                    return dto;
+                })
+                .collect(toList());
+    }
+
+    @Override
     public LoyaltyPointConfigDTO getLoyaltyPointActiveConfig() {
         Long orgId = securityService.getCurrentUserOrganizationId();
         return loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(orgId, true)
