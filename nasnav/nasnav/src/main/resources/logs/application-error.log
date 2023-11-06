@@ -22,3 +22,141 @@
 2023-10-30T07:26:49.752+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
 2023-10-30T07:26:49.753+0200 INFO No active profile set, falling back to default profiles: default
 2023-10-30T07:26:54.160+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-11-05T15:16:05.674+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:05.675+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:05.682+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:13.727+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:13.728+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:13.730+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:15.787+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:15.789+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:15.789+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:19.092+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:19.093+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:19.095+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:21.719+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:21.719+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:21.721+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:23.163+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:23.163+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:23.164+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:24.216+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:24.217+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:24.219+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:25.466+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:25.466+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:25.469+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:26.621+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:26.621+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:26.622+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:27.575+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:27.575+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:27.576+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:28.788+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:28.789+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:28.791+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:32.439+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:32.441+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:32.442+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:34.971+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:34.971+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:34.974+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:36.666+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:36.666+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:36.667+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:38.569+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:38.570+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:38.571+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:40.469+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:40.469+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:40.470+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:41.703+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:41.703+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:41.706+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:43.000+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:43.000+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:43.001+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:44.350+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:44.352+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:44.354+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:48.631+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:48.643+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:48.650+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:50.800+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:50.800+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:50.803+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:54.588+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:54.589+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:54.590+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:56.920+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:56.920+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:56.922+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:16:58.260+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:16:58.260+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:16:58.264+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:17:00.152+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:17:00.154+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:17:00.155+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:17:16.963+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:17:16.963+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:17:16.964+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:17:25.206+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 344 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:17:25.207+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:17:25.207+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:19:48.605+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:19:48.609+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:19:48.619+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:19:53.764+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:19:53.767+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:19:53.769+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:06.455+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:06.456+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:06.458+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:17.521+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:17.523+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:17.526+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:24.374+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:24.374+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:24.375+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:32.692+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:32.693+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:32.695+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:40.079+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:40.080+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:40.082+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:44.785+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:44.793+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:44.794+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:20:53.958+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:20:53.959+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:20:53.960+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:21:01.689+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:21:01.689+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:21:01.691+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:21:10.435+0200 INFO Starting VideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 9372 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:21:10.435+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:21:10.436+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:22:31.444+0200 INFO Starting ChatWidgetSettingTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 13888 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:22:31.446+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:22:31.453+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:22:37.088+0200 INFO Starting ChatWidgetSettingTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 13888 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:22:37.088+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:22:37.090+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:23:10.910+0200 INFO Starting ChatWidgetSettingTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 10192 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:23:10.911+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:23:10.933+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:23:25.924+0200 INFO Starting ChatWidgetSettingTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 10192 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:23:25.926+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:23:25.953+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:59:15.682+0200 INFO Starting GroupVideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7420 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:59:15.685+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:59:15.689+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T15:59:20.725+0200 INFO Starting GroupVideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 7420 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T15:59:20.725+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T15:59:20.728+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T16:00:22.873+0200 INFO Starting GroupVideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 13908 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T16:00:22.875+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T16:00:22.879+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-05T16:00:27.725+0200 INFO Starting GroupVideoChatTest using Java 11.0.19 on DESKTOP-5J20Q7D with PID 13908 (started by Mo'men Tawffik in F:\Ihab Work\NAS-NAV\nasnav-backend\nasnav)
+2023-11-05T16:00:27.725+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-05T16:00:27.728+0200 INFO No active profile set, falling back to default profiles: default
