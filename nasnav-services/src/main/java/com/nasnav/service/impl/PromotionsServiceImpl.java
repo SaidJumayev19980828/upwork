@@ -345,12 +345,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	@Override
-	public Long updatePromotion(PromotionDTO promotion, boolean showingOnline) {
+	public Long updatePromotion(PromotionDTO promotion) {
 		if (promotion.getTypeId() == null) {
 			promotion.setTypeId(0);
 		}
 		validatePromotion(promotion);
-		promotion.setShowingOnline(showingOnline);
+
 		
 		PromotionsEntity entity = createPromotionsEntity(promotion);
 		return promoRepo.save(entity).getId();

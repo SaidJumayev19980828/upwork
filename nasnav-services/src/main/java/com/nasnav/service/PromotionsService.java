@@ -18,7 +18,7 @@ import com.nasnav.persistence.UserEntity;
 public interface PromotionsService {
 	PromotionResponse getPromotions(PromotionSearchParamDTO searchParams);
 
-	Long updatePromotion(PromotionDTO promotion, boolean showingOnline);
+	Long updatePromotion(PromotionDTO promotion);
 
 	AppliedPromotionsResponse calcPromoDiscountForCart(String promoCode, Cart cart);
 
