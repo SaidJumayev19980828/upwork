@@ -448,31 +448,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 								                 .header(TOKEN_HEADER, USER_TOKEN));
 		return result;
 	}
-	
-	
-	
-	
-	
-	
-	
-	private void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
-		FileEntity file = filesRepo.findByUrl(expectedUrl);	
-		OrganizationEntity org = orgRepo.findOneById(orgId);
-		 
-		 assertNotNull("File meta-data was saved to database", file);
-		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
-		 assertEquals("image/png", file.getMimetype());
-		 assertEquals(org, file.getOrganization());
-		 assertEquals(fileName, file.getOriginalFileName());
-		 
-	}
-	
-	
-	
-	
-	
-	
-	
+
 	@Test
 	public void productUpdateImageUploadTest() throws Exception {
 		//create new image 

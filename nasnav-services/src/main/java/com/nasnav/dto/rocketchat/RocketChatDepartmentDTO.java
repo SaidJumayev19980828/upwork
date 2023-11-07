@@ -1,6 +1,5 @@
 package com.nasnav.dto.rocketchat;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

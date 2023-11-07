@@ -17,7 +17,8 @@ import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,15 +91,11 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
 
     //TODO Check Duplication ExcelDataImportServiceImpl
     private List<CsvRow> parseExcelFile(byte[] file, ImportProductContext initialContext, final Long orgId) throws ImportProductException {
-
         List<CsvRow> lines;
-        try {
-            Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(file));
+		try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(file))) {
             Sheet sheet = wb.getSheetAt(0);
-            validateFileHeader(sheet.getRow(0),orgId);
-            lines = readImpDataLines(sheet,orgId);
-
-            wb.close();
+			validateFileHeader(sheet.getRow(0), orgId);
+			lines = readImpDataLines(sheet, orgId, initialContext);
         } catch (ImportProductException ex) {
             log.error("Parse Excel file  ", ex);
             throw new ImportProductException(ex, ex.getContext());
@@ -116,7 +114,7 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
         for (Cell cell : row) {
             headers.add(cell.getStringCellValue());
         }
-        List<String> originalHeaders = new ArrayList<>(CsvExcelDataImportService.CSV_BASE_HEADERS);
+        Collection<String> originalHeaders = CsvExcelDataImportService.CSV_BASE_HEADERS;
         String headerNotFound = originalHeaders.stream().filter(header -> !headers.contains(header)).map(Object::toString).collect(Collectors.joining(","));
         if (!headerNotFound.isEmpty()) {
             ImportProductContext context = new ImportProductContext();
@@ -126,8 +124,10 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
     }
 
     //TODO Check Duplication ExcelDataImportServiceImpl
-    private List<CsvRow> readImpDataLines(Sheet sheet, Long orgId) throws InvocationTargetException, IllegalAccessException {
-
+    private List<CsvRow> readImpDataLines(Sheet sheet, Long orgId, ImportProductContext context)
+			throws InvocationTargetException, IllegalAccessException, ImportProductException {
+		BeanUtilsBean localBeanUtils = new BeanUtilsBean();
+		localBeanUtils.getConvertUtils().register(true, false, 0);
         List<CsvRow> lines = new ArrayList<>();
         List<String> featuresNames = featureRepo.findByOrganizationId(orgId)
                 .stream().map(ProductFeaturesEntity::getName)
@@ -148,7 +148,11 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
                 var propertyName = getColumnHeaderMapping(headerName);
                 Object value = getCellValue(cell);
                 if (value != null) {
-                    BeanUtils.setProperty(line, propertyName, value);
+                    try {
+						localBeanUtils.setProperty(line, propertyName, value);
+					} catch (ConversionException ex) {
+						context.logNewError(ex, row.toString(), row.getRowNum());
+					}
                     if (featuresNames.contains(propertyName)) {
                         features.put(propertyName, value.toString());
                     }
@@ -161,6 +165,8 @@ public class ParseExcelProductImportDataHandler implements Handler<ImportDataCom
             line.setExtraAttributes(extraAttributes);
             lines.add(line);
         }
+        if (!context.getErrors().isEmpty())
+            throw new ImportProductException(context);
         return lines;
     }
 

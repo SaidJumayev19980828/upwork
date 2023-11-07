@@ -1,6 +1,10 @@
 package com.nasnav.service.rocketchat.impl;
 
+import static com.nasnav.exceptions.ErrorCodes.CHAT$NOT_CONFIGURED;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,14 +14,13 @@ import com.nasnav.dto.rocketchat.RocketChatAgentDepartmentsDTO;
 import com.nasnav.dto.rocketchat.RocketChatAgentTokenDTO;
 import com.nasnav.dto.rocketchat.RocketChatConfigDTO;
 import com.nasnav.dto.rocketchat.RocketChatDTOWrapper;
-import com.nasnav.dto.rocketchat.RocketChatDepartmentAgentDTO;
 import com.nasnav.dto.rocketchat.RocketChatDepartmentDTO;
 import com.nasnav.dto.rocketchat.RocketChatVisitorDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.dto.rocketchat.RocketChatResponseWrapper;
 import com.nasnav.dto.rocketchat.RocketChatUpdateDepartmentAgentDTO;
 import com.nasnav.dto.rocketchat.RocketChatUserDTO;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -25,14 +28,15 @@ public class RocketChatClient {
 	private final WebClient webClient;
 
 	public RocketChatClient(AppConfig config) {
-		webClient = WebClient.builder()
+		webClient = StringUtils.isNotBlank(config.rocketChatUrl)? WebClient.builder()
 				.baseUrl(config.rocketChatUrl)
 				.defaultHeader("X-Auth-Token", config.getRocketChatAccessToken())
 				.defaultHeader("X-User-Id", config.getRocketChatUserId())
-				.build();
+				.build() : null;
 	}
 
 	public Mono<RocketChatVisitorDTO> liveChatInit(String token, String department) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatConfigDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 		return webClient.get()
@@ -50,6 +54,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatVisitorDTO> liveChatRegisterVisitor(RocketChatVisitorDTO visitor) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatVisitorDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 		RocketChatDTOWrapper<RocketChatVisitorDTO> wrappedRequest = new RocketChatDTOWrapper<>();
@@ -64,6 +69,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatDepartmentDTO> createDepartment(RocketChatDepartmentDTO department) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatDepartmentDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 		RocketChatDTOWrapper<RocketChatDepartmentDTO> wrappedRequest = new RocketChatDTOWrapper<>();
@@ -77,21 +83,8 @@ public class RocketChatClient {
 				.map(RocketChatResponseWrapper::getData);
 	}
 
-	public Mono<RocketChatDepartmentDTO> updateDepartment(RocketChatDepartmentDTO department) {
-		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatDepartmentDTO>> typeRef = new ParameterizedTypeReference<>() {
-		};
-		RocketChatDTOWrapper<RocketChatDepartmentDTO> wrappedRequest = new RocketChatDTOWrapper<>();
-		wrappedRequest.setData(department);
-		return webClient.put()
-				.uri("/livechat/department/{departmentId}", department.getId())
-				.accept(MediaType.APPLICATION_JSON)
-				.bodyValue(wrappedRequest)
-				.retrieve()
-				.bodyToMono(typeRef)
-				.map(RocketChatResponseWrapper::getData);
-	}
-
 	public Mono<RocketChatDepartmentDTO> getDepartment(String departmentId) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatDepartmentDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 		return webClient.get()
@@ -103,6 +96,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<Void> deleteDepartment(String departmentId) {
+		validateWebClientConfigured();
 		return webClient.delete()
 				.uri("/livechat/department/{departmentId}", departmentId)
 				.accept(MediaType.APPLICATION_JSON)
@@ -111,6 +105,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatUserDTO> createUser(RocketChatUserDTO user) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatUserDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -124,6 +119,7 @@ public class RocketChatClient {
 	}
 
 	Mono<RocketChatUserDTO> getAgent(String agentId) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatUserDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -136,6 +132,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatUserDTO> registerAgent(RocketChatUserDTO user) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatUserDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -158,6 +155,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatAgentTokenDTO> createAgentToken(RocketChatAgentTokenDTO agent) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatAgentTokenDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -171,6 +169,7 @@ public class RocketChatClient {
 	}
 
 	public Mono<RocketChatAgentDepartmentsDTO> getAgentDepartments(String agentId) {
+		validateWebClientConfigured();
 		ParameterizedTypeReference<RocketChatResponseWrapper<RocketChatAgentDepartmentsDTO>> typeRef = new ParameterizedTypeReference<>() {
 		};
 
@@ -183,10 +182,17 @@ public class RocketChatClient {
 	}
 
 	public Mono<Void> deleteUser(RocketChatUserDTO user) {
+		validateWebClientConfigured();
 		return webClient.post()
 				.uri("/users.delete")
 				.bodyValue(user)
 				.retrieve()
 				.bodyToMono(Void.class);
+	}
+
+	private void validateWebClientConfigured() {
+		if (webClient == null) {
+			throw new RuntimeBusinessException(HttpStatus.OK, CHAT$NOT_CONFIGURED);
+		}
 	}
 }

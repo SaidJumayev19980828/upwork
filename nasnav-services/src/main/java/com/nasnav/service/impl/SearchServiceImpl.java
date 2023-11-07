@@ -81,7 +81,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 
 @Service
-public class SearchServiceImpl implements SearchService{
+public class SearchServiceImpl implements SearchService {
 
     private final static Logger logger = LogManager.getLogger();
 

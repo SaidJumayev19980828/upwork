@@ -2,11 +2,16 @@ package com.nasnav.test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.Product360ShopsRepository;
+import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.ShopScenesRequestDTO;
+import com.nasnav.dto.ShopSectionsRequestDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -23,16 +28,21 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;                   
 
 @RunWith(SpringRunner.class)
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql", "/sql/Shop_360_Test_Data.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shop_360_Test_Data.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @NotThreadSafe
 public class ShopThreeSixtyTest extends AbstractTestWithTempBaseDir {
@@ -197,5 +207,33 @@ public class ShopThreeSixtyTest extends AbstractTestWithTempBaseDir {
         var response = template.getForEntity("/360view/shop?shop_id=501", ShopRepresentationObject.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(Long.valueOf(99001), response.getBody().getOrgId());
+    }
+
+    @Test
+    public void postSections() throws IOException, Exception {
+        String sanitizedFileName = StringUtils.getFileNameSanitized(TEST_PHOTO);
+        uploadValidTestImg(TEST_PHOTO, 99002L, sanitizedFileName,
+                99002 + "/" + sanitizedFileName, "131415");
+
+        ShopScenesRequestDTO sceneDTO = new ShopScenesRequestDTO();
+        sceneDTO.setImageUrl(99002 + "/" + sanitizedFileName);
+        sceneDTO.setName("scene");
+        sceneDTO.setPriority(0);
+
+        ShopSectionsRequestDTO sectionDTO = new ShopSectionsRequestDTO();
+        sectionDTO.setImageUrl(99002 + "/" + sanitizedFileName);
+        sectionDTO.setName("section");
+        sectionDTO.setPriority(0);
+        sectionDTO.setShopScenes(List.of(sceneDTO));
+
+        ShopFloorsRequestDTO dto  = new ShopFloorsRequestDTO();
+        dto.setName("floor 1");
+        dto.setNumber(1);
+        dto.setShopSections(List.of(sectionDTO));
+
+        HttpEntity<List<ShopFloorsRequestDTO>> request = new HttpEntity<>(List.of(dto), TestCommons.getHeaders("131415"));
+
+        ResponseEntity<String> response = template.exchange("/360view/sections?shop_id=502", POST, request, String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

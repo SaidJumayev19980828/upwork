@@ -8,20 +8,24 @@ import java.util.stream.Collectors;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-public class ProductFiltersTest extends AbstractTestWithTempBaseDir {
+class ProductFiltersTest extends AbstractTestWithTempBaseDir {
   @Autowired
 	private TestRestTemplate template;
 
@@ -45,4 +49,16 @@ public class ProductFiltersTest extends AbstractTestWithTempBaseDir {
 
 		assertEquals(expectedtagIds, foundTagIds);
   }
+
+	@ParameterizedTest
+	@CsvSource({ "-1,-1", "0,1", "0,1000" })
+	void listVariants(Integer start, Integer count) {
+		ResponseEntity<VariantsResponse> response = template.getForEntity(
+				"/v1/yeshtery/variants?start={start}&count={count}", VariantsResponse.class, start,
+				count);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(7, response.getBody().getTotal());
+		if (start > 0 && count > 0)
+			assertEquals(Math.min(count, 7 - start), response.getBody().getVariants().size());
+	}
 }

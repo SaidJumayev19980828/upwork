@@ -2,11 +2,12 @@ package com.nasnav.test;
 
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.service.AdminService;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
@@ -24,10 +26,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.sql.DataSource;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -222,9 +229,18 @@ public class OrganizationImageApiTest extends AbstractTestWithTempBaseDir {
             }
         }
     }
-    
-    
-    
+
+    @Test
+    public void getImagesInfo() {
+        HttpEntity<Object> request = TestCommons.getHttpEntity("456");
+        ResponseEntity<String> response = template.exchange("/organization/images_info?org_id=99002", GET, request, String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        
+        InputStream targetStream = new ByteArrayInputStream(response.getBody().getBytes());
+        CsvParser parser = new CsvParser(new CsvParserSettings());
+        List<String[]> parsedRows = parser.parseAll(targetStream);
+        assertEquals(1, parsedRows.size());
+    }
 
     @Test
     @Ignore

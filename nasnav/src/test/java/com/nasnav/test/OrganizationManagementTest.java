@@ -9,8 +9,6 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
-import com.nasnav.exceptions.ErrorCodes;
-import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.UserApiResponse;
@@ -23,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +35,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -1016,6 +1016,13 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Object> res = template.postForEntity(NASNAV_EXTRA_ATTRIBUTES_API_PATH + "?operation=update", req, Object.class);
 
         assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+    }
+
+    @Test
+    public void getOrgGateways() {
+        var res = template.getForEntity("/organization/payments?org_id=99001&delivery=delivery", Map.class);
+        assertEquals(OK, res.getStatusCode());
+        assertEquals(4, res.getBody().size());
     }
 
     private ExtraAttributeDTO getExtraAttributesDTO(){

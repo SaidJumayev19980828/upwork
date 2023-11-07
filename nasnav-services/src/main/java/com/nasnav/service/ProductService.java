@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.validation.Valid;
-
 import com.nasnav.persistence.ProductEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,7 +13,6 @@ import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.ProductsFiltersResponse;
@@ -30,8 +27,6 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.BundleResponse;
-import com.nasnav.response.ProductImageDeleteResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
@@ -59,11 +54,6 @@ public interface ProductService {
   void deleteVariants(List<Long> variantIds, Boolean forceDeleteCollectionItems);
 
   ProductsDeleteResponse deleteBundle(Long bundleId) throws BusinessException;
-
-  ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData)
-      throws BusinessException;
-
-  ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException;
 
   BundleResponse getBundles(BundleSearchParam params) throws BusinessException;
 

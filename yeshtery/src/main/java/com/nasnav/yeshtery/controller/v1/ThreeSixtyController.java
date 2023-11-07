@@ -1,6 +1,5 @@
 package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.dto.ShopFloorsRequestDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.ShopThreeSixtyDTO;
@@ -20,10 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_360_PRODUCTS_COUNT;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;

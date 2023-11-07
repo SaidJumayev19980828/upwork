@@ -28,7 +28,7 @@ public class RocketChatUserDTO implements RocketChatWrappedData {
 		return "user";
 	}
 
-	public void setVisitorEmails(List<Map<String, String>> guestEmails) {
+	public void setEmails(List<Map<String, String>> guestEmails) {
 		email = guestEmails.get(0).get("address");
 	}
 }

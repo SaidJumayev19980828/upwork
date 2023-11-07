@@ -3,6 +3,7 @@ package com.nasnav.test;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -12,19 +13,28 @@ import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import com.nasnav.test.helpers.TestHelper;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,24 +44,31 @@ import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.enumerations.ExtraAttributeType.INVISIBLE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static java.util.stream.Collectors.toMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockserver.model.HttpResponse.response;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(SpringRunner.class)
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Product_Variants_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
+class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	private static final Long TEST_VARIANT_ID = 80001L;
+	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
+	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
 
 	private Long TEST_PRODUCT_ID = 1002L;
+
+	@Autowired
+	MockMvc mockMvc;
 
 
 	@Autowired
@@ -69,7 +86,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	private TestHelper helper;
 	
 	@Test
-	public void variantCreateNoAuthNTest() {
+	void variantCreateNoAuthNTest() {
 		HttpEntity<?> request = TestCommons.getHttpEntity("","INVALID TOKEN");
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
@@ -85,7 +102,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantUpdateNoAuthZTest() {
+	void productVariantUpdateNoAuthZTest() {
 		BaseUserEntity user = empRepo.getById(68L); //not an organization admin
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
@@ -103,7 +120,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantCreateMissingOprTest() {
+	void productVariantCreateMissingOprTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();
@@ -120,7 +137,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void addExtraAttributeForProductVariant(){
+	void addExtraAttributeForProductVariant(){
 		BaseUserEntity user = empRepo.getById(69L);
 
 		JSONObject json = getUpdateExtraAttributeRequestBody(1008L, 310008L);
@@ -140,7 +157,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void removeExtraAttributeForProductVariant(){
+	void removeExtraAttributeForProductVariant(){
 		BaseUserEntity user = empRepo.getById(70L);
 
 		JSONObject json = getUpdateExtraAttributeRequestBody(1001L, 310001L);
@@ -171,7 +188,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void productVariantCreateMissingProductTest() {
+	void productVariantCreateMissingProductTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();
@@ -190,7 +207,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantCreateMissingFeaturesTest() {
+	void productVariantCreateMissingFeaturesTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();
@@ -210,7 +227,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantUpdateMissingVariantTest() {
+	void productVariantUpdateMissingVariantTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();
@@ -232,7 +249,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantCreateTest() {
+	void productVariantCreateTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();		
@@ -255,6 +272,40 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		assertInvisibleExtraAttributeIsCreated(saved);
 	}
 
+	@Test
+	void deleteVariantFeatureValue() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_feature?feature_id=237", DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@Test
+	void deleteVariantFeatureValueSingleVariant() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_feature?feature_id=237&variant_id=310001",
+				DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@Test
+	void deleteExtraAttributeValue() {
+		HttpEntity<?> request = getHttpEntity("8895ssf");
+		ResponseEntity<Void> response = template.exchange("/product/variant_extra_attribute?extra_attribute_id=337&variant_id=310001",
+				DELETE, request, Void.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+	}
+
+	@ParameterizedTest
+	@CsvSource({ "99001,-1,-1", "99001,0,1", "99001,0,1000" })
+	void listVariants(Long orgId, Integer start, Integer count) {
+		ResponseEntity<VariantsResponse> response = template.getForEntity(
+				"/navbox/variants?org_id={orgId}&start={start}&count={count}", VariantsResponse.class, orgId, start,
+				count);
+		assertEquals(OK, response.getStatusCode());
+		assertEquals(4, response.getBody().getTotal());
+		if (start > 0 && count > 0)
+			assertEquals(Math.min(count, 4 - start), response.getBody().getVariants().size());
+	}
 
 
 	private void assertVariantDataIsPersisted(JSONObject json, ProductVariantsEntity saved, JSONObject extraAtrrJson) {
@@ -300,7 +351,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 
 
 	@Test
-	public void productVariantUpdateTest() {
+	void productVariantUpdateTest() {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		ProductVariantsEntity before = variantRepo.findById(TEST_VARIANT_ID).get();
@@ -345,7 +396,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantUpdateAdminOfOtherOrgTest() {
+	void productVariantUpdateAdminOfOtherOrgTest() {
 		BaseUserEntity user = empRepo.getById(70L); //admin from another organization
 		
 		JSONObject json = createProductVariantRequest();
@@ -367,7 +418,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantCreateFeaturesFromOtherOrgTest() {
+	void productVariantCreateFeaturesFromOtherOrgTest() {
 		BaseUserEntity user = empRepo.getById(69L); 
 		
 		JSONObject json = createProductVariantRequest();
@@ -389,7 +440,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	
 	@Test
-	public void productVariantCreateFeaturesNotExistsTest() {
+	void productVariantCreateFeaturesNotExistsTest() {
 		BaseUserEntity user = empRepo.getById(69L); 
 		
 		JSONObject json = createProductVariantRequest();
@@ -407,7 +458,7 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void deleteVariants() {
+	void deleteVariants() {
 		var request = getHttpEntity("131415");
 		var response = template.exchange("/product/variant?variant_id=310002&variant_id=310006", DELETE, request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
@@ -416,12 +467,50 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void deleteVariantsInDifferentOrg() {
+	void deleteVariantsInDifferentOrg() {
 		var request = getHttpEntity("131415");
 		var response = template.exchange("/product/variant?variant_id=310001", DELETE, request, String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}
 
+	@Test
+	void NewProductFlowTest() throws Exception {
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
+
+		byte[] imgData = Files.readAllBytes(img);
+
+		MockMultipartFile imgsPart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile uploadedImagesPriorities = new MockMultipartFile("uploaded_image_priorities",
+				"uploaded_image_priorities", MediaType.APPLICATION_JSON_VALUE, "[5]".getBytes());
+		
+		MockMultipartFile deletedImages = new MockMultipartFile("deleted_images",
+				"deleted_images", MediaType.APPLICATION_JSON_VALUE, "[2]".getBytes());
+
+		MockMultipartFile updatedImages = new MockMultipartFile("updated_images",
+				"updated_images", MediaType.APPLICATION_JSON_VALUE, "[{\"id\":1,\"priority\":6}]".getBytes());
+
+		JSONObject variant = createProductVariantRequest()
+				.put("variant_id", 310002L)
+				.put("operation", Operation.UPDATE.getValue());;
+		  MockMultipartFile variantJson =
+	                new MockMultipartFile(
+	                        "var",
+	                        "var",
+	                        MediaType.APPLICATION_JSON_VALUE,
+	                        variant.toString().getBytes(StandardCharsets.UTF_8));
+
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/variant")
+				.file(variantJson)
+				.file(imgsPart)
+				.file(uploadedImagesPriorities)
+				.file(deletedImages)
+				.file(updatedImages)
+				.header(TOKEN_HEADER,"131415"));
+
+		result.andExpect(status().is(200));
+	}
 
 	private JSONObject createProductVariantRequest() {
 		JSONObject extraAttributes =
@@ -431,6 +520,10 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 				.put("$INV", "you can't see me!");
 		JSONObject features = json().put("234", "37").put("235", "Black");
 
+		return getJsonVariant(extraAttributes, features);
+	}
+
+	private JSONObject getJsonVariant(JSONObject extraAttributes, JSONObject features) {
 		JSONObject json = new JSONObject();
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", JSONObject.NULL);
@@ -446,8 +539,4 @@ public class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 		json.put("weight", 5.5);
 		return json;
 	}
-	
-	
-	
-	
 }

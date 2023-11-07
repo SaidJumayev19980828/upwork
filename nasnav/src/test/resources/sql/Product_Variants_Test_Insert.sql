@@ -64,6 +64,17 @@ insert into public.product_variants(id, "name" , product_id ) values(310006, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
 
+-- insert image for products  which should be deleted in tests
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99002, 'img1.jpg', 'img1.jpg');
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99002, 'img11.jpg', 'img11.jpg');
+
+INSERT INTO public.product_images(id, product_id, variant_id, "type", priority, uri)
+VALUES(1, 1002, 310002, 0, 1, 'img1.jpg');
+INSERT INTO public.product_images(id, product_id, variant_id, "type", priority, uri)
+VALUES(2, 1002, 310002, 0, 1, 'img11.jpg');
+
 --inserting additional variants
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)
 VALUES(80001,1002, '{"234": 20, "235": "white"}', 'orginal variant', 'orginal_variant', 'we need to update this in tests', 'BCF559354');
