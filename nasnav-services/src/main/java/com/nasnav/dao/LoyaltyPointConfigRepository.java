@@ -32,4 +32,6 @@ public interface LoyaltyPointConfigRepository extends JpaRepository<LoyaltyPoint
     void deleteSoftDeletedConfigs(@Param("orgId") Long orgId,
                                   @Param("tierId") Long tierId);
 
+
+    List<LoyaltyPointConfigEntity> findByIsActiveAndOrganizationYeshteryStateOrderByCreatedAtDesc(boolean isActive, int yeshteryState);
 }

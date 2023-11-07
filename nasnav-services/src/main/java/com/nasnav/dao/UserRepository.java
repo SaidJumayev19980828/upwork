@@ -69,6 +69,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
 
+	@Query("select user1 from UserEntity user1 join UserEntity user2 on user1.yeshteryUserId = user2.yeshteryUserId "
+	+ "where user2.id = :userId and user2.yeshteryUserId is not null")
+	List<UserEntity> findByYeshteryUserIdOfUserId(Long userId);
+
 	@Query("select u from UserEntity u left join YeshteryUserEntity y on u.yeshteryUserId = CAST (y.referral as int) " +
 			"where y.id = :yeshteryUserId and u.organizationId = :orgId and y.referral is not null ")
 	UserEntity findByReferralUserIdAndOrganizationId(@Param("yeshteryUserId") Long yeshteryUserId,

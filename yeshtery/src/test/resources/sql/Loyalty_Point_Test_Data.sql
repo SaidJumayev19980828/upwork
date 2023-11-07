@@ -3,8 +3,8 @@ INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 INSERT INTO public.addresses(id, address_line_1, phone_number, area_id) values(12300001, 'Ali papa cave', 0, 1);
 
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
-INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
+INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99001, 'organization_1', 818, 1);
+INSERT INTO public.organizations(id, name, currency_iso, yeshtery_state) VALUES (99002, 'organization_2', 818, 1);
 
 
 INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
@@ -79,7 +79,12 @@ INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name"
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
-INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) 
+    VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints)
+    VALUES (2, 'default_tier for org 2', true, now(), 99002, '{"ORDER_ONLINE":0.05}');
 
 insert into public.loyalty_point_config
-values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+    values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, default_tier_id, constraints)
+    values (31002, 'desctiption', 99002, null, true, now(), 2, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
