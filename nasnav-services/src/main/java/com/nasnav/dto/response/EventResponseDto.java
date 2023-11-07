@@ -36,4 +36,5 @@ public class EventResponseDto {
     private EventStatus statusRepresentation;
     private Set<ProductDetailsDTO> products;
     private List<EventResponseDto> relatedEvents;
+    private Integer interests;
 }

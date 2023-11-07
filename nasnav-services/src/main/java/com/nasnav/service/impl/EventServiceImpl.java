@@ -83,6 +83,8 @@ public class EventServiceImpl implements EventService{
             relatedEvents = eventRepository.getRelatedEvents(categoryIds, eventId);
         }
         EventResponseDto dto = toDto(entity);
+        Integer interests= eventLogsRepository.countByEventId(eventId);
+        dto.setInterests(interests);
         dto.setRelatedEvents(relatedEvents.stream().map(this::toDto).collect(Collectors.toList()));
         return dto;
     }
