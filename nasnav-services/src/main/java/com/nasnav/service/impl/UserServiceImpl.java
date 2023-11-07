@@ -252,11 +252,13 @@ public class UserServiceImpl implements UserService {
 		}
 		if (isNotBlankOrNull(userJson.email)){
 			userServicesHelper.validateEmail(userJson.getEmail());
-			userEntity.setEmail(userJson.email);
-			generateResetPasswordToken(userEntity);
-			userEntity = userRepository.saveAndFlush(userEntity);
-			sendRecoveryMail(userEntity);
-			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
+			if(!userJson.getEmail().equals(userEntity.getEmail())) {
+				userEntity.setEmail(userJson.email);
+				generateResetPasswordToken(userEntity);
+				userEntity = userRepository.saveAndFlush(userEntity);
+				sendRecoveryMail(userEntity);
+				successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
+			}
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
