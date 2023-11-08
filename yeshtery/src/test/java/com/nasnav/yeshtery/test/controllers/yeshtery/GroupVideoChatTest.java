@@ -1,11 +1,11 @@
-package com.nasnav.test;
+package com.nasnav.yeshtery.test.controllers.yeshtery;
 
 
 import com.nasnav.dto.response.ChatWidgetSettingResponse;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.VideoChatService;
 import com.nasnav.service.impl.VideoChatServiceImpl;
-import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import io.openvidu.java.client.OpenVidu;
 import io.openvidu.java.client.SessionProperties;
 import lombok.SneakyThrows;
@@ -25,15 +25,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
-
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
-
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
 @RunWith(SpringRunner.class)
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Video_chat_test_data.sql" })
 @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
