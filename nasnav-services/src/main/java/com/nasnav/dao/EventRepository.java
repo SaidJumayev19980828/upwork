@@ -39,10 +39,14 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
 
     Integer countAllByInfluencersContains(InfluencerEntity influencer);
-    @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id,e.influencer_id,e.name,e.description,e.status,e.visible from events e" +
-            " inner join event_products ep on ep.event_id = e.id inner join products p on p.id = ep.product_id " +
+    @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id, " +
+            " influencer.id,e.name,e.description,e.status,e.visible "+
+            "from events e " +
+            "inner join event_products ep on ep.event_id = e.id " +
+            "inner join products p on p.id = ep.product_id " +
+            "left join event_influencers influencer on influencer.event_id=e.id " +
             "where p.category_id in (:categories) and e.visible=true" +
-            " and e.status=0 and e.influencer_id is not null" +
+            " and e.status=0 and influencer.id is not null" +
             " and e.id != :sourceEventId", nativeQuery = true)
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
 

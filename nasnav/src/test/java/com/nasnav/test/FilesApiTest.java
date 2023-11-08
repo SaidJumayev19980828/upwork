@@ -1,11 +1,9 @@
 package com.nasnav.test;
 
-import com.nasnav.AppConfig;
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.jpeg.JpegDirectory;
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +22,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,20 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Files_API_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class FilesApiTest extends AbstractTestWithTempBaseDir {
-	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
-	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
-
-
-	@Autowired
-	private FilesRepository filesRepo;
-
-	@Autowired
-	private OrganizationRepository orgRepo;
-	
-	@Autowired
-	private  MockMvc mockMvc;
-	
 	@Autowired
 	private TestRestTemplate template;
 
@@ -97,21 +84,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals("Nothing saved to DB", 0L, filesRepo.count());		 
 	}
 
-
-
-	private void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
-		FileEntity file = filesRepo.findByUrl(expectedUrl);	
-		OrganizationEntity org = orgRepo.findOneById(orgId);
-		 
-		 assertNotNull("File meta-data was saved to database", file);
-		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
-		 assertEquals("image/png", file.getMimetype());
-		 assertEquals(org, file.getOrganization());
-		 assertEquals(fileName, file.getOriginalFileName());
-	}
-
-
-	
 	@Test
 	public void fileUploadSameNameTest() throws Exception {
 		
@@ -229,29 +201,32 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
 	}
 
-
-
-
-	private ResultActions performFileUpload(String fileName, Long orgId) throws IOException, Exception {
-		String testImgDir = TEST_IMG_DIR;
-		Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();			
-		assertTrue(Files.exists(img));		
-		byte[] imgData = Files.readAllBytes(img);
-		
-		String orgIdStr = orgId == null ? null : orgId.toString();
-		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
-		return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
-											 .file(file)
-											 .header(TOKEN_HEADER, "101112")
-											 .param("org_id",  orgIdStr));
-	}
-	
-	
-	
-	
-	
 	@Test
 	public void downloadFileTest() throws IOException, Exception {
+		//first upload a file 
+		
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
+		
+		 //--------------------------------------------
+		 //Now try to download the file
+
+ 		ResponseEntity<byte[]> response = template.exchange("/files/"+ expectedUrl + "?width=150&height=50&type=jpeg", GET, getHttpEntity(""), byte[].class);
+ 		assertEquals(OK, response.getStatusCode());
+	    assertEquals("image/jpeg", response.getHeaders().getContentType().toString());
+		InputStream targetStream = new ByteArrayInputStream(response.getBody());
+		Metadata metadata = ImageMetadataReader.readMetadata(targetStream);
+		assertTrue(metadata.getFirstDirectoryOfType(JpegDirectory.class).getImageWidth() >= 150);
+		assertTrue(metadata.getFirstDirectoryOfType(JpegDirectory.class).getImageHeight() >= 50);
+	}
+
+	@Test
+	public void downloadResizedImageTest() throws IOException, Exception {
 		//first upload a file 
 		
 		String fileName = TEST_PHOTO;
@@ -272,11 +247,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 	    assertEquals("image/png", response.getHeaders().getContentType().toString());
 	}
 
-
-
-
-
-	
 	@Test
 	public void downloadFileUrlNotExists() throws Exception {		
 		 mockMvc.perform( 
@@ -329,28 +299,6 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
 
-
-
-
-	private void uploadValidTestImg(String fileName, Long orgId, String sanitizedFileName, String expectedUrl)
-			throws Exception, IOException {
-		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
-		
-		Path saveDir = basePath.resolve(orgId.toString());		
-		
-		performFileUpload(fileName, orgId)
-             .andExpect(status().is(200))
-             .andExpect(content().string(expectedUrl));
-		 
-		 assertTrue("Organization directory was created", Files.exists(saveDir));
-		 
-		 try(Stream<Path> files = Files.list(saveDir)){
-			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
-		 }
-		 
-		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
-	}
-
 	@Test
 	@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
 	@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -397,6 +345,20 @@ public class FilesApiTest extends AbstractTestWithTempBaseDir {
 					.andExpect(status().is(200));
 		}
 
+	}
+
+	
+    private void uploadValidTestImg(
+            String fileName,
+            Long orgId,
+            String sanitizedFileName,
+            String expectedUrl)
+            throws Exception, IOException {
+        uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl, "101112");
+    }
+
+	protected ResultActions performFileUpload(String fileName, Long orgId) throws IOException, Exception {
+		return performFileUpload(fileName, orgId, "101112");
 	}
 
 	private List<MockMultipartFile> getValidFiles() {

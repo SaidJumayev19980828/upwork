@@ -36,6 +36,7 @@ import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -74,6 +75,14 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, responseList.getStatusCodeValue());
         assertEquals(1, responseList.getBody().size());
 
+    }
+
+    @Test
+    public void getAllConfig() {
+        ResponseEntity<List> responseList = template.getForEntity("/v1/loyalty/config/all", List.class);
+
+        assertEquals(OK, responseList.getStatusCode());
+        assertEquals(2, responseList.getBody().size());
     }
     
     @Test

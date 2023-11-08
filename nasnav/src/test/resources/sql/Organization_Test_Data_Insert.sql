@@ -71,3 +71,15 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 INSERT INTO public.addresses(id, address_line_1, sub_area_id) values(12300003, 'address line', 888001);
 INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88, 12300003, false);
+
+-- insert payments
+INSERT INTO public.organization_payments(id, organization_id, gateway, account, payment_confirmations)
+	VALUES (1, 99001, 'mcard', 'provider.all.properties', false);
+INSERT INTO public.organization_payments(id, organization_id, gateway, account, payment_confirmations)
+	VALUES (2, 99001, 'upg', 'provider.all.properties', false);
+INSERT INTO public.organization_payments(id, organization_id, gateway, account, payment_confirmations)
+	VALUES (3, 99001, 'rave', 'provider.all.properties', false);
+INSERT INTO public.organization_payments(id, organization_id, gateway, account, payment_confirmations)
+	VALUES (4, 99001, 'cod', 'provider.all.properties', false);
+INSERT INTO public.organization_payments(id, organization_id, gateway, account, payment_confirmations)
+	VALUES (5, 99001, 'paymob', 'provider.all.properties', false);

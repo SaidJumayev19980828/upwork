@@ -288,6 +288,21 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     @Test
+    public void listPointsByUserId() {
+        HttpEntity<?> request = getHttpEntity("abc");
+
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange("/loyalty/points/list_by_user?user_id=88", GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        assertEquals(2, spendablePoints.size());
+
+    }
+
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    @Test
     public void SharePoint() {
         HttpEntity<?> request = getHttpEntity("123");
 

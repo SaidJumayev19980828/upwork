@@ -87,6 +87,19 @@ public class ProductSearchParam {
             for(Integer type: product_type)
                 result += "&product_type="+type;
 
+        if (this.minPrice != null)
+            result += "&minPrice="+this.minPrice;
+
+        if (this.maxPrice != null)
+            result += "&minPrice="+this.maxPrice;
+
+        if (this.category_name != null)
+            result += "&minPrice="+category_name;
+
+        if (this.category_ids != null)
+            for(Long id : category_ids)
+                result += "&category_ids="+id;
+
         if (this.tag_ids != null)
             for(Long tagId: tag_ids)
                 result += "&tag_ids="+tagId;

@@ -44,6 +44,23 @@ class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
 
     }
+
+    @Test
+    void listPointsByUserId() {
+        HttpEntity<?> request = getHttpEntity("abc");
+
+        ResponseEntity<List<LoyaltyPointTransactionDTO>> response = template.exchange(
+                "/v1/loyalty/points/list_by_user?user_id=882", GET, request,
+                new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
+        });
+        Assert.assertEquals(OK, response.getStatusCode());
+
+        List<LoyaltyPointTransactionDTO> spendablePoints = response.getBody().stream().collect(toList());
+        assertEquals(2, spendablePoints.size());
+
+    }
+
+
     @Test
     void SharePoint() {
         HttpEntity<?> request = getHttpEntity("123");

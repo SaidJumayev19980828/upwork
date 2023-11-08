@@ -56,6 +56,12 @@ public class LoyaltyPointController {
         return loyaltyPointsService.listOrganizationLoyaltyPoints(orgId);
     }
 
+    
+    @GetMapping(value = "points/list_by_user", produces = APPLICATION_JSON_VALUE)
+    public List<LoyaltyPointTransactionDTO> getLoyaltyPointsByUser(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam("user_id") Long userId) {
+        return loyaltyPointsService.listOrganizationLoyaltyPointsByUser(userId);
+    }
+
     @GetMapping(value ="user_tier")
     public LoyaltyTierDTO getUserTier(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam("org_id") Long orgId){
@@ -83,6 +89,12 @@ public class LoyaltyPointController {
     @GetMapping(value = "config/list", produces = APPLICATION_JSON_VALUE)
     public List<LoyaltyPointConfigDTO> getLoyaltyPointConfigs(@RequestHeader(name = "User-Token", required = false) String token) {
         return loyaltyPointsService.listLoyaltyPointConfigs();
+    }
+
+
+    @GetMapping(value = "config/all", produces = APPLICATION_JSON_VALUE)
+    public List<LoyaltyPointConfigDTO> getAllLoyaltyPointConfigs() {
+        return loyaltyPointsService.listLoyaltyPointConfigsForAllOrganizations();
     }
 
     @GetMapping(value = "config", produces = APPLICATION_JSON_VALUE)

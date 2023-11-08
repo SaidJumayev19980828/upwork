@@ -2,6 +2,10 @@ package com.nasnav.test.commons.test_templates;
 
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.service.AdminService;
 
 import org.apache.tomcat.util.http.fileupload.FileUtils;
@@ -18,8 +22,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +40,13 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -42,6 +54,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @PropertySource("classpath:test.database.properties")
 @ContextConfiguration(classes = BaseTestConfiguration.class)
 public abstract class AbstractTestWithTempBaseDir {
+	protected static final String TEST_PHOTO = "nasnav--Test_Photo.png";
+
+	protected static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
+
+    @Autowired
+	protected OrganizationRepository orgRepo;
+
+    @Autowired
+	protected FilesRepository filesRepo;
+
     @Autowired
     private AdminService adminService;
 
@@ -49,6 +71,10 @@ public abstract class AbstractTestWithTempBaseDir {
     private AppConfig appConfig;
 
     protected Path basePath;
+
+
+	@Autowired
+	protected  MockMvc mockMvc;
 
     @After
     @AfterEach
@@ -85,6 +111,57 @@ public abstract class AbstractTestWithTempBaseDir {
             e.printStackTrace();
         }
     }
+
+    
+    protected void uploadValidTestImg(
+            String fileName,
+            Long orgId,
+            String sanitizedFileName,
+            String expectedUrl,
+            String userToken)
+            throws Exception, IOException {
+        Path expectedPath = Paths.get("" + orgId).resolve(sanitizedFileName);
+
+		Path saveDir = basePath.resolve(orgId.toString());		
+		
+		performFileUpload(fileName, orgId, userToken)
+             .andExpect(status().is(200))
+             .andExpect(content().string(expectedUrl));
+		 
+		 assertTrue("Organization directory was created", Files.exists(saveDir));
+		 
+		 try(Stream<Path> files = Files.list(saveDir)){
+			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
+		 }
+		 
+		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
+	}
+
+    protected ResultActions performFileUpload(String fileName, Long orgId, String userToken) throws IOException, Exception {
+		String testImgDir = TEST_IMG_DIR;
+		Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();			
+		assertTrue(Files.exists(img));		
+		byte[] imgData = Files.readAllBytes(img);
+		
+		String orgIdStr = orgId == null ? null : orgId.toString();
+		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
+		return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+											 .file(file)
+											 .header(TOKEN_HEADER, userToken)
+											 .param("org_id",  orgIdStr));
+	}
+
+    
+	protected void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
+		FileEntity file = filesRepo.findByUrl(expectedUrl);	
+		OrganizationEntity org = orgRepo.findOneById(orgId);
+		 
+		 assertNotNull("File meta-data was saved to database", file);
+		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
+		 assertEquals("image/png", file.getMimetype());
+		 assertEquals(org, file.getOrganization());
+		 assertEquals(fileName, file.getOriginalFileName());
+	}
 }
 
 @TestConfiguration
@@ -100,4 +177,6 @@ class BaseTestConfiguration {
             ScriptUtils.executeSqlScript(con, new ClassPathResource("/sql/Reset_Sequences.sql"));
         }
     }
+
+    
 }

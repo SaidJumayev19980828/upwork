@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -554,7 +553,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         log.debug(response.getHeaders().get("Set-Cookie").get(0));
     }
 
-    @Ignore("Yeshtery module doesn't has product controller")
     @Test
     public void testUsingSemiExpiredToken() {
         String token = "875488";
@@ -767,7 +765,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(0, userTokensCountAfter.intValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void suspendUserInvalidAuthZ() {
         HttpEntity req = getHttpEntity("invalid token");
@@ -776,7 +773,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(401, res.getStatusCodeValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void suspendUserInvalidAuthN() {
         HttpEntity req = getHttpEntity("192021");
@@ -785,7 +781,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(403, res.getStatusCodeValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void suspendUserInAnotherOrg() {
         HttpEntity req = getHttpEntity("101112");
@@ -794,7 +789,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(404, res.getStatusCodeValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void suspendUserTest() {
         HttpEntity req = getHttpEntity("101112");
@@ -808,7 +802,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(0, userTokensCountAfter.intValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void unsuspendUserTest() {
         HttpEntity req = getHttpEntity("101112");
@@ -819,7 +812,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(201, user.getUserStatus().intValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void suspendUserNotActivatedAccount() {
         HttpEntity req = getHttpEntity("101112");
@@ -830,7 +822,6 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, user.getUserStatus().intValue());
     }
 
-    @Ignore("Suspend not exist in Yeshtery module")
     @Test
     public void unsuspendUserNotActivatedAccount() {
         HttpEntity req = getHttpEntity("101112");
