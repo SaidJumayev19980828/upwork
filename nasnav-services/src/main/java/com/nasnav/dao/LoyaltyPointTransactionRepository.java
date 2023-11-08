@@ -17,6 +17,7 @@ import java.util.Set;
 public interface LoyaltyPointTransactionRepository extends JpaRepository<LoyaltyPointTransactionEntity, Long> {
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId); // used for listing transactions only
+    List<LoyaltyPointTransactionEntity> findByUserIdInAndOrganizationId(Set<Long> userIds, Long orgId);
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValid(Long userId, Long orgId, LocalDateTime startDate,Boolean valid); // used for listing transactions only
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndType(Long userId, Long orgId, Integer type);

@@ -9,6 +9,7 @@ import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.dto.response.navbox.ProductRateRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegistration;
@@ -17,6 +18,7 @@ import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ReviewService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
+import com.nasnav.util.MultipartFileUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,6 +38,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -253,4 +256,11 @@ public class UserController {
             throws BusinessException, ImportProductException {
         return this.userService.updateUserAvatar(file);
     }
+
+    @PostMapping(value = "uploadUserAvatar")
+    public UserApiResponse uploadUserAvatar(@RequestHeader(name = "User-Token", required = true) String token, @RequestBody @Valid ImageBase64 image)
+            throws IOException{
+        return this.userService.processUserAvatar(image);
+    }
+
 }

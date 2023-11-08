@@ -12,9 +12,11 @@ import com.nasnav.util.RandomGenerator;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.AdditionalAnswers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -31,22 +33,28 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class OtpServiceTest extends AbstractTestWithTempBaseDir {
-    @MockBean
+class OtpServiceTest {
+    @Mock
     private UserOtpRepository userOtpRepository;
 
-    @Autowired
     private OtpService otpService;
 
-    @Autowired
-    private AppConfig appConfig;
+    private static AppConfig appConfig = new AppConfig(false);
 
     UserEntity userEntity = buildUserEntity();
 
     UserOtpEntity userOtpEntity;
 
+    @BeforeAll
+    static void init() {
+        appConfig.otpLength = 6;
+        appConfig.otpMaxRetries = 3;
+        appConfig.otpValidDurationInSeconds = 600;
+    }
+
     @BeforeEach
     void reInit() {
+        otpService = new OtpService(userOtpRepository, appConfig);
         userOtpEntity = buildUserOtpEntity();
         Mockito.when(userOtpRepository.save(any(UserOtpEntity.class))).then(AdditionalAnswers.returnsFirstArg());
         Mockito.when(userOtpRepository.findByUserAndType(any(UserEntity.class), any(OtpType.class)))

@@ -88,4 +88,7 @@ public class PromotionsEntity {
 
 	@Column(name = "priority")
 	private Integer priority;
+
+	@Column(name = "showing_online")
+	private boolean showingOnline;
 }

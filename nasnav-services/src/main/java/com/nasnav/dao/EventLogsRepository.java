@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
@@ -29,5 +30,9 @@ public interface EventLogsRepository extends CrudRepository<EventLogsEntity, Lon
     int countInterests(Long influencerId, @DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Long orgId);
    @Query("select COUNT(*) from EventLogsEntity eventLog  JOIN eventLog.event.influencers influencer where influencer.id = :influencerId and CAST(eventLog.attendAt as date) = :dateFilter and (:orgId is null or eventLog.event.organization.id = :orgId)")
 int countAttends(Long influencerId, @DateTimeFormat(pattern="yyyy-MM-dd")Date dateFilter, Long orgId);
+
+
+    @Query("SELECT COUNT(DISTINCT eventLog) FROM EventLogsEntity eventLog left JOIN eventLog.event event WHERE event.id = :eventId")
+    int countByEventId(@Param("eventId") Long eventId);
 
 }

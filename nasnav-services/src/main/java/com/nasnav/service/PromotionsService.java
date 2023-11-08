@@ -39,4 +39,6 @@ public interface PromotionsService {
 	List<PromotionDTO> getActivePublicPromotions(Collection<Long> orgIds, Collection<Integer> typeIds);
 
 	List<PromotionDTO> getYeshteryActivePublicPromotions(Set<Long> orgIds, Collection<Integer> typeIds);
+
+	List<PromotionDTO> getActiveShowingOnlinePromotions(Collection<Long> orgIds);
 }

@@ -8,12 +8,14 @@ import com.nasnav.persistence.PromotionsEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Objects;
 
 
 public interface PromotionMapper {
+
    OrderAssociatedPromotions toDto(PromotionsEntity entity);
    List<ProductPromotionDto> toProductPromotionDto(List<PromotionDTO> entity);
 }

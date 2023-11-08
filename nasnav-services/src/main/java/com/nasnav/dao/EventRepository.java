@@ -39,10 +39,14 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
 
     Integer countAllByInfluencersContains(InfluencerEntity influencer);
-    @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id,e.influencer_id,e.name,e.description,e.status,e.visible from events e" +
-            " inner join event_products ep on ep.event_id = e.id inner join products p on p.id = ep.product_id " +
+    @Query(value = "select distinct(e.id),e.created_at,e.ends_at,e.starts_at,e.organization_id, " +
+            " influencer.id,e.name,e.description,e.status,e.visible "+
+            "from events e " +
+            "inner join event_products ep on ep.event_id = e.id " +
+            "inner join products p on p.id = ep.product_id " +
+            "left join event_influencers influencer on influencer.event_id=e.id " +
             "where p.category_id in (:categories) and e.visible=true" +
-            " and e.status=0 and e.influencer_id is not null" +
+            " and e.status=0 and influencer.id is not null" +
             " and e.id != :sourceEventId", nativeQuery = true)
     List<EventEntity> getRelatedEvents(@Param("categories") List<Long> categories, @Param("sourceEventId") Long sourceEventId);
 
@@ -52,17 +56,15 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
 
     @Query("SELECT DISTINCT event as event, count(el) as interest FROM EventEntity event JOIN event.influencers influencer " +
             "LEFT JOIN EventLogsEntity el ON el.event = event.id " +
-            "WHERE influencer IS NOT NULL " +
+            "WHERE influencer IS NOT NULL  And (:organization is null or event.organization=:organization) " +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable);
-
-    //Done
+    PageImpl<EventInterestsProjection> findAllOrderedByStartsAtDesc(Pageable pageable ,@Param("organization") OrganizationEntity organization);
 
     @Query( "SELECT DISTINCT event as event , count(el) as interest  FROM EventEntity event JOIN event.influencers influencer" +
             " LEFT JOIN EventLogsEntity el ON el.event = event.id " +
             " WHERE " +
-            "influencer IS NOT NULL " +
+            "influencer IS NOT NULL  And (:organization is null or event.organization=:organization)  " +
             "AND " +
             "( to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') " +
             "IS NULL OR " +
@@ -70,7 +72,7 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             "to_timestamp(cast (:startsAt as text), 'yyyy-MM-dd HH24:MI:SS') )" +
             "GROUP BY event.id " +
             "ORDER BY event.startsAt DESC")
-    PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable);
+    PageImpl<EventInterestsProjection> findAllByStartOrderedByStartsAtDesc(@Param("startsAt") LocalDateTime startsAt, Pageable pageable , @Param("organization") OrganizationEntity organization);
 
 
     @Query("SELECT DISTINCT event as event, COUNT(el.id) AS interest " +

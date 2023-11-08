@@ -34,7 +34,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -43,12 +42,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.nasnav.commons.enums.SortOrder.ASC;
+import static com.nasnav.commons.enums.SortOrder.DESC;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.dto.ProductSortOptions.CREATION_DATE;
 import static com.nasnav.dto.ProductSortOptions.ID;
 import static com.nasnav.dto.ProductSortOptions.NAME;
+import static com.nasnav.dto.ProductSortOptions.PRICE;
+import static com.nasnav.dto.ProductSortOptions.PRIORITY;
+import static com.nasnav.dto.ProductSortOptions.P_NAME;
+import static com.nasnav.dto.ProductSortOptions.UPDATE_DATE;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -114,8 +120,6 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private TagsRepository tagsRepo;
-    @Autowired
-    private WebApplicationContext webApplicationContext;
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -234,7 +238,18 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 		byte[] imgData = Files.readAllBytes(img);
 		
-		MockMultipartFile filePart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+		MockMultipartFile coverPart = new MockMultipartFile("cover", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile imgsPart = new MockMultipartFile("imgs", TEST_PHOTO, "image/png", imgData);
+
+		MockMultipartFile uploadedImagesPriorities = new MockMultipartFile("uploaded_image_priorities",
+				"uploaded_image_priorities", MediaType.APPLICATION_JSON_VALUE, "[5]".getBytes());
+		
+		MockMultipartFile deletedImages = new MockMultipartFile("deleted_images",
+				"deleted_images", MediaType.APPLICATION_JSON_VALUE, "[2]".getBytes());
+
+		MockMultipartFile updatedImages = new MockMultipartFile("updated_images",
+				"updated_images", MediaType.APPLICATION_JSON_VALUE, "[{\"id\":1,\"priority\":6}]".getBytes());
 
 		NewProductFlowDTO product = createNewProductFlowDummyProduct();
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -245,11 +260,16 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	                        MediaType.APPLICATION_JSON_VALUE,
 	                        objectMapper.writeValueAsString(product).getBytes(StandardCharsets.UTF_8));
 
-		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add").file(filePart)
-				.file(productJson).header(TOKEN_HEADER, user.getAuthenticationToken()));
+		ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/product/v2/add")
+				.file(coverPart)
+				.file(imgsPart)
+				.file(productJson)
+				.file(uploadedImagesPriorities)
+				.file(deletedImages)
+				.file(updatedImages)
+				.header(TOKEN_HEADER, user.getAuthenticationToken()));
 
 		result.andExpect(status().is(200));
-
 	}
 
 	@Test
@@ -319,7 +339,8 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	}
 	private NewProductFlowDTO createNewProductFlowDummyProduct() {
 		NewProductFlowDTO product = new NewProductFlowDTO();
-		product.setOperation(Operation.CREATE);
+		product.setOperation(Operation.UPDATE);
+		product.setProductId(1008L);
 		product.setName("test Product");
 		product.setDescription("Testing creating/updating product");
 		product.setBrandId(101L);
@@ -1009,6 +1030,38 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 		assertEquals(2, res.getTotal().intValue());
 		assertEquals(1001, res.getProducts().get(0).getId().intValue());
 		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+
+		// filter by multiple options
+		param.count = null;
+		param.category_ids = Set.of(201L);
+		param.minPrice = BigDecimal.ZERO;
+		param.maxPrice = BigDecimal.valueOf(1000000L);
+		param.category_name = "category_1";
+		param.sort = ID;
+		param.order = ASC;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		assertEquals(OK, response.getStatusCode());
+		res = response.getBody();
+		assertEquals(2, res.getTotal().intValue());
+		assertEquals(1001, res.getProducts().get(0).getId().intValue());
+		assertEquals(1005, res.getProducts().get(1).getId().intValue());
+		Stream.of(ID,
+				NAME,
+				P_NAME,
+				PRICE,
+				CREATION_DATE,
+				UPDATE_DATE,
+				PRIORITY).forEach(sort -> {
+					Stream.of(ASC, DESC).forEach(order -> {
+						param.sort = sort;
+						param.order = order;
+						ResponseEntity<ProductsResponse> innerResponse = template
+								.getForEntity("/navbox/products?" + param.toString(), ProductsResponse.class);
+						assertEquals(OK, innerResponse.getStatusCode());
+						ProductsResponse body = innerResponse.getBody();
+						assertEquals(2, body.getTotal().intValue());
+					});
+				});
 	}
 
 	@Test

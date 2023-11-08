@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +28,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,6 +91,20 @@ public class UploadAvatarApiTest extends AbstractTestWithTempBaseDir {
         UserApiResponse responseDto = new Gson().fromJson(res, UserApiResponse.class);
         result.andExpect(status().is(200));
         return responseDto.getImageURL();
+    }
+
+    @Test
+    public void uploadAvatar_Test(){
+        //
+        String requestBody =
+                json()
+                        .put("fileName","avatar.jpg")
+                        .put("base64", "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+                        .toString();
+
+        HttpEntity<?> json = getHttpEntity(requestBody, "12388");
+        ResponseEntity<UserApiResponse> response = template.postForEntity("/user/uploadUserAvatar", json, UserApiResponse.class);
+        assertEquals(200, response.getStatusCode().value());
     }
 
     private void assertUploadedAvatar(String filePath, String token) {
