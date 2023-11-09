@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.EventInterestsProjection;
 import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
@@ -33,5 +34,7 @@ public interface EventService {
     PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count , LocalDateTime fromDate, Long orgId);
 
     PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count,Long orgId);
+
+     EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection);
 
 }

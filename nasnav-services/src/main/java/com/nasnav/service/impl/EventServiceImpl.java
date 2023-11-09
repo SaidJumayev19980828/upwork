@@ -9,12 +9,14 @@ import com.nasnav.dto.OrganizationNewDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
+import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.OrganizationProjection;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.mappers.EventRoomMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
 
@@ -49,10 +51,14 @@ public class EventServiceImpl implements EventService{
     private final EventAttachmentsRepository eventAttachmentsRepository;
     private final InfluencerService influencerService;
     private final OrganizationThemeRepository  organizationThemeRepository;
+    private final EventRoomMapper mapper;
+    private final EventRoomTemplateRepository roomTemplateRepository;
+
 
     @Override
     @Transactional
     public EventResponseDto createEvent(EventForRequestDTO dto) {
+
         InfluencerEntity influencer = null;
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, dto.getOrganizationId())
@@ -67,8 +73,9 @@ public class EventServiceImpl implements EventService{
             if(!Arrays.asList(ProductTypes.STOCK_ITEM,ProductTypes.BUNDLE).contains(productEntity.getProductType()))
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE,P$PRO$0016,id);
         });
-
-        return toDto(eventRepository.save(toEntity(dto, org, null)));
+       EventEntity event = eventRepository.save(toEntity(dto, org, null));
+        saveNewRoomTemplate(event, dto.getRoomTemplate());
+        return toDto(event);
     }
 
     @Override
@@ -240,6 +247,8 @@ public class EventServiceImpl implements EventService{
                 o.setEvent(entity);
             });
         }
+
+
         if(id == null){
             entity.setStatus(EventStatus.PENDING.getValue());
         }
@@ -250,8 +259,14 @@ public class EventServiceImpl implements EventService{
     }
 
 
+    private void saveNewRoomTemplate(EventEntity event, RoomTemplateDTO roomTemplateDTO) {
+        EventRoomTemplateEntity template = new EventRoomTemplateEntity();
+        template.setEvent(event);
+        mapper.updateTemplateEntityfromDTO(roomTemplateDTO, template);
+         roomTemplateRepository.save(template);
+    }
 
-    public EventResponseDto toDto(EventEntity entity){
+        public EventResponseDto toDto(EventEntity entity){
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
         productFetchDTO.setCheckVariants(false);
         productFetchDTO.setIncludeOutOfStock(true);
@@ -326,8 +341,8 @@ public class EventServiceImpl implements EventService{
 
     }
 
+    @Override
     public EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection) {
-
         EventsNewDTO eventDTO = new EventsNewDTO();
         EventProjection eventProjection = eventInterestsProjection.getEvent();
         eventDTO.setId(eventProjection.getId());

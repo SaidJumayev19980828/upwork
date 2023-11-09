@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -79,5 +80,14 @@ public class PostEntity {
     )
 
     private Set<UserEntity> savedByUsers = new HashSet<>();
+
+    public void addAttachment(PostAttachmentsEntity attachment) {
+        if (attachment != null) {
+            if (getAttachments() == null)
+                setAttachments(new ArrayList<>());
+            if (!getAttachments().contains(attachment))
+                getAttachments().add(attachment);
+        }
+    }
 
 }

@@ -1,6 +1,7 @@
 package com.nasnav.dto.request;
 
 import com.nasnav.persistence.PostAttachmentsEntity;
+import com.nasnav.request.ImageBase64;
 import lombok.Data;
 
 import java.util.List;
@@ -13,5 +14,5 @@ public class PostCreationDTO {
     private Long organizationId;
     private Long advertisementId;
     private Set<Long> productsIds;
-    private List<PostAttachmentsEntity> attachments;
+    private ImageBase64 attachment;
 }

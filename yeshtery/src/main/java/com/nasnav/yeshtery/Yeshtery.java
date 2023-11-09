@@ -42,6 +42,7 @@ import java.util.Properties;
 public class Yeshtery{
     @Autowired
     private SchedulerTaskRepository schedulerTaskRepository;
+
     @Autowired
     private ScheduleTaskHelper scheduleTaskHelper;
 

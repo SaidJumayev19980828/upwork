@@ -4,7 +4,10 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.EventRoomProjection;
+import com.nasnav.dto.EventsRoomNewDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,6 +67,7 @@ public class EventRoomController {
 		return metaverseRoomService.getOrgRooms(orgId, status, start, count);
 	}
 
+
 	@GetMapping(value = "/list_for_user")
 	public Page<EventRoomResponse> getAllAccessibleRooms(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
@@ -77,5 +81,13 @@ public class EventRoomController {
 	public void deleteRoomTemplate(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "event_id") Long eventId) {
 		metaverseRoomService.deleteTemplate(eventId);
+	}
+
+
+	@GetMapping(value = "/all")
+	public PageImpl<EventsRoomNewDTO> getAllRooms(@RequestParam(name = "orgId", required = false) Long orgId,
+												   @RequestParam(required = false, defaultValue = "0") Integer start,
+												   @RequestParam(required = false, defaultValue = "10") Integer count) {
+		return metaverseRoomService.getUserRooms(orgId, start, count);
 	}
 }

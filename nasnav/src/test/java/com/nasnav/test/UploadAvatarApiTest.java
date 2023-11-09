@@ -100,6 +100,7 @@ public class UploadAvatarApiTest extends AbstractTestWithTempBaseDir {
                 json()
                         .put("fileName","avatar.jpg")
                         .put("base64", "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+                        .put("fileType", "image/jpeg")
                         .toString();
 
         HttpEntity<?> json = getHttpEntity(requestBody, "12388");

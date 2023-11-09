@@ -11,9 +11,9 @@ import java.io.InputStream;
 import java.util.Base64;
 
 public class MultipartFileUtils {
-    public static MultipartFile convert(String base64Content, String fileName) throws IOException {
+    public static MultipartFile convert(String base64Content, String fileName,String fileType) throws IOException {
         byte[] content = Base64.getDecoder().decode(base64Content);
-        return new Base64MultipartFile(content, fileName);
+        return new Base64MultipartFile(content, fileName , fileType);
     }
 
     private static class Base64MultipartFile implements MultipartFile {
@@ -21,10 +21,11 @@ public class MultipartFileUtils {
         private final String fileName;
         private final String fileType;
 
-        public Base64MultipartFile(byte[] content, String fileName) {
+        public Base64MultipartFile(byte[] content, String fileName,String fileType) {
             this.content = content;
             this.fileName = fileName;
-            this.fileType = "image/jpeg";
+            this.fileType = fileType;
+
         }
 
         @Override

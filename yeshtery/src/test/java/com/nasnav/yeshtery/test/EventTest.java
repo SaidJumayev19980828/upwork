@@ -5,6 +5,9 @@ import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRequestsRepository;
 import com.nasnav.dao.InfluencerRepository;
 import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.request.EventForRequestDTO;
+import com.nasnav.dto.request.PostCreationDTO;
+import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.EventAttachmentsEntity;
@@ -21,7 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -30,8 +35,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
@@ -65,22 +72,36 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         attachment2.setUrl("url2");
         attachment2.setType("Media type2");
         attachment2.setCoin(20L);
-        List<EventAttachmentsEntity> attachments = Arrays.asList(attachment1,attachment2);
-        JSONObject requestBody = json()
-                .put("startsAt","2023-01-28T15:08:39")
-                .put("endsAt","2023-01-29T15:08:39")
-                .put("organizationId","99001")
-                .put("attachments",attachments)
-                .put("name","name")
-                .put("coin",10L)
-                .put("description","description")
-                .put("productsIds",Arrays.asList(1001))
-                .put("influencersIds",Arrays.asList(100,101))
-                .put("visible","false")
-                ;
 
-        ResponseEntity<String> response = template.postForEntity("/v1/event",
-                getHttpEntity(requestBody.toString(), "161718"), String.class);
+        List<EventAttachmentsEntity> attachments = Arrays.asList(attachment1,attachment2);
+        RoomTemplateDTO roomTemplateDTO = new RoomTemplateDTO();
+        roomTemplateDTO.setSceneId("testasc");
+        roomTemplateDTO.setData("This is my room template data.");
+
+        EventForRequestDTO eventForRequestDTO = new EventForRequestDTO();
+       eventForRequestDTO.setOrganizationId(99001L);
+       eventForRequestDTO.setStartsAt(LocalDateTime.now());
+       eventForRequestDTO.setEndsAt(LocalDateTime.now().plusMonths(2));
+       eventForRequestDTO.setName("name");
+       eventForRequestDTO.setDescription("description");
+       Set<Long> productsIds = new HashSet<>();
+       productsIds.add(1001L);
+       eventForRequestDTO.setProductsIds(productsIds);
+        Set<Long> influencersIds = new HashSet<>();
+        productsIds.add(1001L);
+       eventForRequestDTO.setInfluencersIds(influencersIds);
+       eventForRequestDTO.setRoomTemplate(roomTemplateDTO);
+       eventForRequestDTO.setAttachments(attachments);
+       eventForRequestDTO.setCoin(10L);
+       eventForRequestDTO.setVisible(false);
+
+        HttpCookie cookie = new HttpCookie("User-Token", "161718");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "161718");
+        HttpEntity<EventForRequestDTO> request = new HttpEntity<>(eventForRequestDTO,headers);
+
+        ResponseEntity<Void> response = template.postForEntity("/v1/event",request ,Void.class);
         assertEquals(200, response.getStatusCode().value());
     }
 
@@ -128,7 +149,10 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
         };
 
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/all" , HttpMethod.GET, httpEntity, responseType);
+        Long organizationId = 99001L;
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
+
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/all?fromDate=" + fromDate + "&?orgId=" + organizationId  , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
 
     }
