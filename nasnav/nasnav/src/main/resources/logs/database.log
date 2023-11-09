@@ -1,0 +1,16 @@
+2023-11-06T15:25:50.308+0200 DEBUG select integratio0_.id as id1_44_, integratio0_.is_mandatory as is_manda2_44_, integratio0_.type_name as type_nam3_44_ from integration_param_type integratio0_ where integratio0_.is_mandatory=?
+2023-11-06T15:25:50.313+0200 TRACE binding parameter [1] as [BOOLEAN] - [true]
+2023-11-06T15:25:50.334+0200 DEBUG select integratio0_.id as id1_43_, integratio0_.organization_id as organiza2_43_, integratio0_.param_value as param_va3_43_, integratio0_.param_type as param_ty4_43_ from integration_param integratio0_ left outer join integration_param_type integratio1_ on integratio0_.param_type=integratio1_.id where integratio1_.type_name=?
+2023-11-06T15:25:50.335+0200 TRACE binding parameter [1] as [VARCHAR] - [INTEGRATION_MODULE]
+2023-11-06T15:30:42.666+0200 DEBUG select integratio0_.id as id1_44_, integratio0_.is_mandatory as is_manda2_44_, integratio0_.type_name as type_nam3_44_ from integration_param_type integratio0_ where integratio0_.is_mandatory=?
+2023-11-06T15:30:42.671+0200 TRACE binding parameter [1] as [BOOLEAN] - [true]
+2023-11-06T15:30:42.693+0200 DEBUG select integratio0_.id as id1_43_, integratio0_.organization_id as organiza2_43_, integratio0_.param_value as param_va3_43_, integratio0_.param_type as param_ty4_43_ from integration_param integratio0_ left outer join integration_param_type integratio1_ on integratio0_.param_type=integratio1_.id where integratio1_.type_name=?
+2023-11-06T15:30:42.694+0200 TRACE binding parameter [1] as [VARCHAR] - [INTEGRATION_MODULE]
+2023-11-06T15:31:48.131+0200 DEBUG select integratio0_.id as id1_44_, integratio0_.is_mandatory as is_manda2_44_, integratio0_.type_name as type_nam3_44_ from integration_param_type integratio0_ where integratio0_.is_mandatory=?
+2023-11-06T15:31:48.131+0200 TRACE binding parameter [1] as [BOOLEAN] - [true]
+2023-11-06T15:31:48.159+0200 DEBUG select integratio0_.id as id1_43_, integratio0_.organization_id as organiza2_43_, integratio0_.param_value as param_va3_43_, integratio0_.param_type as param_ty4_43_ from integration_param integratio0_ left outer join integration_param_type integratio1_ on integratio0_.param_type=integratio1_.id where integratio1_.type_name=?
+2023-11-06T15:31:48.159+0200 TRACE binding parameter [1] as [VARCHAR] - [INTEGRATION_MODULE]
+2023-11-06T20:44:32.852+0200 DEBUG select integratio0_.id as id1_44_, integratio0_.is_mandatory as is_manda2_44_, integratio0_.type_name as type_nam3_44_ from integration_param_type integratio0_ where integratio0_.is_mandatory=?
+2023-11-06T20:44:32.864+0200 TRACE binding parameter [1] as [BOOLEAN] - [true]
+2023-11-06T20:44:32.899+0200 DEBUG select integratio0_.id as id1_43_, integratio0_.organization_id as organiza2_43_, integratio0_.param_value as param_va3_43_, integratio0_.param_type as param_ty4_43_ from integration_param integratio0_ left outer join integration_param_type integratio1_ on integratio0_.param_type=integratio1_.id where integratio1_.type_name=?
+2023-11-06T20:44:32.900+0200 TRACE binding parameter [1] as [VARCHAR] - [INTEGRATION_MODULE]
