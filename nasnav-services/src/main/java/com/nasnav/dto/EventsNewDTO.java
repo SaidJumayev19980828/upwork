@@ -3,12 +3,17 @@ package com.nasnav.dto;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.persistence.EventAttachmentsEntity;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class EventsNewDTO {
 
     private Long id;
@@ -21,7 +26,23 @@ public class EventsNewDTO {
     private EventStatus status;
     private OrganizationNewDTO organization;
     private Long interests;
-    // Getters and setters for the above properties
+
+
+    public static EventsNewDTO buildNewEventsFromEventProjection (EventProjection eventProjection ,Long interests,OrganizationNewDTO orgDTO) {
+        return EventsNewDTO.builder()
+                .id(eventProjection.getId())
+                .name(eventProjection.getName())
+                .interests(interests)
+                .description(eventProjection.getDescription())
+                .influencers(eventProjection.getInfluencers())
+                .startsAt(eventProjection.getStartsAt())
+                .organization(orgDTO)
+                .attachments(eventProjection.getAttachments())
+                .endsAt(eventProjection.getEndsAt())
+                .status(eventProjection.getStatus())
+                .build();
+    }
+
 }
 
 

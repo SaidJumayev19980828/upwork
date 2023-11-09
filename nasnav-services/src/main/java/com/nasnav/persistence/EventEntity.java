@@ -75,6 +75,7 @@ public class EventEntity {
     private List<ProductEntity> products;
 
 
+
     public void addInfluencer(InfluencerEntity influencer) {
         if (influencer != null) {
             if (getInfluencers() == null)

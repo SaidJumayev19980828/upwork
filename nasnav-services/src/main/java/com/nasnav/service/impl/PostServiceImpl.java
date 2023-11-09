@@ -11,14 +11,18 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.service.*;
+import com.nasnav.util.MultipartFileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,6 +54,8 @@ public class PostServiceImpl implements PostService {
     private FollowerServcie followerServcie;
     @Autowired
     private AdvertisementRepository advertisementRepository;
+    @Autowired
+    private FileService fileService;
 
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
@@ -57,7 +63,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException {
+    public PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException {
         return fromEntityToPostResponseDto(postRepository.save(fromPostCreationDtoToPostEntity(dto)));
     }
 
@@ -239,7 +245,7 @@ public class PostServiceImpl implements PostService {
     }
 
 
-    private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
+    private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) throws IOException {
         List<ProductEntity> products = new ArrayList<>();
         OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
                 () -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, dto.getOrganizationId())
@@ -267,15 +273,19 @@ public class PostServiceImpl implements PostService {
         entity.setStatus(PostStatus.APPROVED.getValue());
         entity.setType(PostType.POST.getValue());
         if(dto.getIsReview()) {
-            if(dto.getAttachments() == null || dto.getAttachments().size() == 0){
+            if(dto.getAttachment() == null ){
                 throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,POST$REVIEW$ATTACHMENT);
             }
             entity.setStatus(PostStatus.PENDING.getValue());
             entity.setType(PostType.REVIEW.getValue());
-            entity.setAttachments(dto.getAttachments());
-            dto.getAttachments().forEach(o -> {
-                o.setPost(entity);
-            });
+            String attachmentUrl = uploadPostAttachment(dto.getAttachment(), org.getId());
+            PostAttachmentsEntity attachment = PostAttachmentsEntity.buildAttachment(attachmentUrl, String.valueOf(PostType.REVIEW));
+            entity.addAttachment(attachment);
+            attachment.setPost(entity);
+//            entity.setAttachments(dto.getAttachments());
+//            dto.getAttachments().forEach(o -> {
+//                o.setPost(entity);
+//            });
         }
         if (dto.getAdvertisementId() != null) {
             Assert.notNull(entity.getUser().getBankAccount(), "user should create bank account first");
@@ -285,6 +295,10 @@ public class PostServiceImpl implements PostService {
         return entity;
     }
 
+    public String uploadPostAttachment(ImageBase64 attachment , Long orgId) throws IOException {
+        MultipartFile attachmentFile = MultipartFileUtils.convert(attachment.getBase64(), attachment.getFileName(), attachment.getFileType());
+        return fileService.saveFile(attachmentFile ,orgId );
+    }
     private PostResponseDTO fromEntityToPostResponseDto(PostEntity entity) {
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
         productFetchDTO.setCheckVariants(false);

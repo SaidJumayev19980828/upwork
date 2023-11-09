@@ -63,4 +63,6 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 --inserting posts
 INSERT INTO public.posts(id,user_id,org_id,type,status) values (1,88,99001,0,1);
 INSERT INTO public.posts(id,user_id,org_id,type,status) values (2,88,99001,1,0);
-
+INSERT INTO public.saved_posts(
+	id, post_id, user_id)
+	VALUES (1, 1, 88);
