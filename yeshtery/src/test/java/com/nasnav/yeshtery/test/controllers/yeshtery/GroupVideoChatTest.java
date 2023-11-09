@@ -77,7 +77,7 @@ public class GroupVideoChatTest extends AbstractTestWithTempBaseDir {
     public void testCreateGroupSession() {
         HttpEntity<?> request = getHttpEntity("131415");
         ResponseEntity<ChatWidgetSettingResponse> result =
-                template.exchange("/videochat/group/session/create?org_id=99001&session_name=testsession&shop_id=502", POST, request, ChatWidgetSettingResponse.class);
+                template.exchange("/v1/videochat/group/session/create?org_id=99001&session_name=testsession&shop_id=502", POST, request, ChatWidgetSettingResponse.class);
 
         assertEquals(200, result.getStatusCodeValue());
     }
@@ -86,7 +86,7 @@ public class GroupVideoChatTest extends AbstractTestWithTempBaseDir {
     public void testjoinGroupSession() {
         HttpEntity<?> request = getHttpEntity("131415");
         ResponseEntity<ChatWidgetSettingResponse> result =
-                template.exchange("/videochat/group/session/get?org_id=99001&session_name=testsession", GET, request, ChatWidgetSettingResponse.class);
+                template.exchange("/v1/videochat/group/session/get?org_id=99001&session_name=testsession", GET, request, ChatWidgetSettingResponse.class);
 
         assertEquals(200, result.getStatusCodeValue());
     }
