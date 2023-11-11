@@ -142,3 +142,6 @@ DELETE FROM public.categories WHERE id between 200 AND 240;
 DELETE FROM public.services_registered_in_package;
 DELETE FROM public.package WHERE id > 99000;
 delete from public.loyalty_point_types where id between  31001 and 31999;
+DELETE FROM public.group_video_chat_log_employee_user;
+DELETE FROM public.group_video_chat_log_user;
+DELETE FROM public.group_video_chat_logs;

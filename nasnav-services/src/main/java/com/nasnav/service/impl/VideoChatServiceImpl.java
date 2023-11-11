@@ -83,6 +83,10 @@ public class VideoChatServiceImpl implements VideoChatService {
 
     @Autowired
     private  NotificationService notificationService;
+    @Autowired
+    private  EmployeeUserRepository employeeUserRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public void initController() {
@@ -422,12 +426,16 @@ public class VideoChatServiceImpl implements VideoChatService {
                 groupVideoChatLogEntity = optionalGroupVideoChatLogEntity.get();
                 if (loggedInUser instanceof UserEntity) {
                     List<UserEntity> currentUsers = groupVideoChatLogEntity.getUsers();
-                    currentUsers.add((UserEntity) loggedInUser);
+                    Optional<UserEntity> optionalUserEntity = userRepository.findById(loggedInUser.getId());
+                    optionalUserEntity.ifPresent(currentUsers::add);
                     groupVideoChatLogEntity.setUsers(currentUsers);
+
                 } else if (loggedInUser instanceof EmployeeUserEntity) {
                     List<EmployeeUserEntity> currentEmployeeUsers = groupVideoChatLogEntity.getEmployeeUsers();
-                    currentEmployeeUsers.add((EmployeeUserEntity) loggedInUser);
+                    Optional<EmployeeUserEntity> optionalEmployeeUserEntity = employeeUserRepository.findById(loggedInUser.getId());
+                    optionalEmployeeUserEntity.ifPresent(currentEmployeeUsers::add);
                     groupVideoChatLogEntity.setEmployeeUsers(currentEmployeeUsers);
+
                 }
             }
         }else {
@@ -447,12 +455,16 @@ public class VideoChatServiceImpl implements VideoChatService {
 
             if (loggedInUser instanceof UserEntity) {
                 List<UserEntity> currentUsers = new ArrayList<>();
-                currentUsers.add((UserEntity) loggedInUser);
+                Optional<UserEntity> optionalUserEntity = userRepository.findById(loggedInUser.getId());
+                optionalUserEntity.ifPresent(currentUsers::add);
                 groupVideoChatLogEntity.setUsers(currentUsers);
+
             } else if (loggedInUser instanceof EmployeeUserEntity) {
                 List<EmployeeUserEntity> currentEmployeeUsers = new ArrayList<>();
-                currentEmployeeUsers.add((EmployeeUserEntity) loggedInUser);
+                Optional<EmployeeUserEntity> optionalEmployeeUserEntity = employeeUserRepository.findById(loggedInUser.getId());
+                optionalEmployeeUserEntity.ifPresent(currentEmployeeUsers::add);
                 groupVideoChatLogEntity.setEmployeeUsers(currentEmployeeUsers);
+
             }
 
         }
@@ -483,7 +495,7 @@ public class VideoChatServiceImpl implements VideoChatService {
             groupVideoChatLogEntity.setName(sessionName);
             groupVideoChatLogEntity.setIsActive(true);
             groupVideoChatLogEntity.setStatus(NEW.getValue());
-            groupVideoChatLogEntity = groupVideoChatLogRepository.saveAndFlush(groupVideoChatLogEntity);
+            groupVideoChatLogEntity = groupVideoChatLogRepository.save(groupVideoChatLogEntity);
 
             this.sessionsMap.put(sessionName, session);
             List<UserSessionInfo> sessionInfos = new ArrayList<>();
@@ -491,7 +503,8 @@ public class VideoChatServiceImpl implements VideoChatService {
             this.mapSessionNamesTokens.put(sessionName, sessionInfos);
 
             return new VideoChatResponse(token, null, sessionName,groupVideoChatLogEntity.getId() );
-        } catch (OpenViduJavaClientException | OpenViduHttpException ex) {
+
+        }catch (OpenViduJavaClientException | OpenViduHttpException ex) {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, VIDEO$PARAM$0005, ex.getMessage());
         }
     }

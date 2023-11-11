@@ -13,6 +13,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,6 +29,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +56,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc(print = MockMvcPrint.LOG_DEBUG)
 @PropertySource("classpath:test.database.properties")
+@ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = BaseTestConfiguration.class)
 public abstract class AbstractTestWithTempBaseDir {
 	protected static final String TEST_PHOTO = "nasnav--Test_Photo.png";
@@ -112,7 +117,7 @@ public abstract class AbstractTestWithTempBaseDir {
         }
     }
 
-    
+
     protected void uploadValidTestImg(
             String fileName,
             Long orgId,
@@ -122,27 +127,27 @@ public abstract class AbstractTestWithTempBaseDir {
             throws Exception, IOException {
         Path expectedPath = Paths.get("" + orgId).resolve(sanitizedFileName);
 
-		Path saveDir = basePath.resolve(orgId.toString());		
-		
+		Path saveDir = basePath.resolve(orgId.toString());
+
 		performFileUpload(fileName, orgId, userToken)
              .andExpect(status().is(200))
              .andExpect(content().string(expectedUrl));
-		 
+
 		 assertTrue("Organization directory was created", Files.exists(saveDir));
-		 
+
 		 try(Stream<Path> files = Files.list(saveDir)){
 			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
 		 }
-		 
+
 		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
 	}
 
     protected ResultActions performFileUpload(String fileName, Long orgId, String userToken) throws IOException, Exception {
 		String testImgDir = TEST_IMG_DIR;
-		Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();			
-		assertTrue(Files.exists(img));		
+		Path img = Paths.get(testImgDir).resolve(fileName).toAbsolutePath();
+		assertTrue(Files.exists(img));
 		byte[] imgData = Files.readAllBytes(img);
-		
+
 		String orgIdStr = orgId == null ? null : orgId.toString();
 		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
 		return mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
@@ -151,11 +156,11 @@ public abstract class AbstractTestWithTempBaseDir {
 											 .param("org_id",  orgIdStr));
 	}
 
-    
+
 	protected void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
-		FileEntity file = filesRepo.findByUrl(expectedUrl);	
+		FileEntity file = filesRepo.findByUrl(expectedUrl);
 		OrganizationEntity org = orgRepo.findOneById(orgId);
-		 
+
 		 assertNotNull("File meta-data was saved to database", file);
 		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
 		 assertEquals("image/png", file.getMimetype());
@@ -178,5 +183,5 @@ class BaseTestConfiguration {
         }
     }
 
-    
+
 }
