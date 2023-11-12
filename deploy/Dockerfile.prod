@@ -1,0 +1,35 @@
+FROM maven:3.8.6-openjdk-11 AS base_jdk
+
+ENV MAVEN_OPTS="-XX:MaxDirectMemorySize=256M"
+
+# build ....................................................................
+
+FROM base_jdk AS builder
+WORKDIR /app
+
+COPY . .
+
+RUN mkdir build
+
+RUN mvn -B --no-transfer-progress -Dmaven.test.skip clean package \
+    && mv nasnav/target/*.jar build/ \
+    && mv yeshtery/target/*.jar build/ \
+    && mv nasnav-services/target/*.jar build/
+
+# runner ...................................................................
+
+#-- Production image, copy all the files and run next
+FROM openjdk:11-jre-slim AS runner
+
+ARG branch
+ENV BASEPATH=/srv/nasnav
+WORKDIR $BASEPATH
+
+COPY --from=builder /app/build/nasnav-1.0.0.jar $BASEPATH
+COPY --from=builder /app/build/nasnav-services-1.0.0.jar $BASEPATH
+COPY --from=builder /app/build/yeshtery-1.0.0.jar $BASEPATH
+
+# COPY nasnav.props/*.properties $BASEPATH/
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "nasnav-1.0.0.jar"]
