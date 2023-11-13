@@ -554,3 +554,19 @@
 2023-11-13T18:37:22.295+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
 2023-11-13T18:37:22.296+0200 INFO No active profile set, falling back to default profiles: default
 2023-11-13T18:37:24.890+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-11-13T21:52:24.262+0200 INFO Starting PackageTest using Java 11.0.20 on DESKTOP-QI4KBCB with PID 14372 (started by Minds in D:\MeetUsVr\NasNav\nasnav)
+2023-11-13T21:52:24.263+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-13T21:52:24.265+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-13T21:52:33.235+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-11-13T21:52:45.781+0200 INFO Starting PackageTest using Java 11.0.20 on DESKTOP-QI4KBCB with PID 14372 (started by Minds in D:\MeetUsVr\NasNav\nasnav)
+2023-11-13T21:52:45.781+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-13T21:52:45.782+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-13T21:52:48.425+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-11-13T21:53:08.704+0200 INFO Starting PackageTest using Java 11.0.20 on DESKTOP-QI4KBCB with PID 16480 (started by Minds in D:\MeetUsVr\NasNav\nasnav)
+2023-11-13T21:53:08.704+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-13T21:53:08.705+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-13T21:53:15.976+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use
+2023-11-13T21:53:28.024+0200 INFO Starting PackageTest using Java 11.0.20 on DESKTOP-QI4KBCB with PID 16480 (started by Minds in D:\MeetUsVr\NasNav\nasnav)
+2023-11-13T21:53:28.024+0200 DEBUG Running with Spring Boot v2.4.4, Spring v5.3.5
+2023-11-13T21:53:28.026+0200 INFO No active profile set, falling back to default profiles: default
+2023-11-13T21:53:31.213+0200 DEBUG Filter 'requestBodyCachingFilter' configured for use

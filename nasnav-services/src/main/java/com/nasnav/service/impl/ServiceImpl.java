@@ -1,20 +1,30 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.dao.OrganizationServicesRepository;
 import com.nasnav.dao.ServiceRepository;
+import com.nasnav.dao.ThemeClassRepository;
+import com.nasnav.dto.OrganizationServicesDto;
 import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.ServiceResponse;
 import com.nasnav.exceptions.CustomException;
 import com.nasnav.mappers.ServiceMapper;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationServicesEntity;
 import com.nasnav.persistence.ServiceEntity;
+import com.nasnav.persistence.ServiceInstanceEntity;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.ServiceInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.nasnav.exceptions.ErrorCodes.PA$SRV$0002;
-import static com.nasnav.exceptions.ErrorCodes.PA$SRV$0003;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -24,6 +34,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class ServiceImpl implements ServiceInterface {
 
     private final ServiceRepository serviceRepository;
+    private final OrganizationServicesRepository organizationServicesRepository;
+    private final SecurityService securityService;
+
     @Override
     public ServiceResponse createService(ServiceDTO service) {
         ServiceEntity serviceEntity = new ServiceEntity();
@@ -74,4 +87,62 @@ public class ServiceImpl implements ServiceInterface {
         List<ServiceEntity> serviceEntities = serviceRepository.findAll();
         return ServiceMapper.INSTANCE.entitiesToBeansWithoutList(serviceEntities);
     }
+
+    @Override
+    public List<OrganizationServicesDto> getOrgServices() {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        List<OrganizationServicesEntity> entities =
+                organizationServicesRepository.findAllByOrgId(org.getId());
+
+        if (entities.isEmpty()){
+            Set<ServiceEntity> services = org.getPackageRegistration().getPackageEntity().getServices();
+            if (services.isEmpty()){
+                throw new CustomException(PA$SRV$0004, org.getId(), NOT_FOUND);
+            }
+            for (ServiceEntity service: services){
+                entities.add(
+                        OrganizationServicesEntity
+                                .builder()
+                                .orgId(org.getPackageRegistration().getPackageEntity().getId())
+                                .serviceId(service.getId())
+                                .enabled(true)
+                                .build()
+                );
+            }
+            organizationServicesRepository.saveAll(entities);
+
+        }
+
+        return ServiceMapper.INSTANCE.orgToBeansWithoutList(entities);
+    }
+
+    @Override
+    public List<OrganizationServicesDto> updateOrgService(List<OrganizationServicesDto> request) {
+
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        organizationServicesRepository.deleteAllByOrgId(org.getId());
+
+        List<OrganizationServicesEntity> entities = new ArrayList<>();
+        Set<ServiceEntity> services = org.getPackageRegistration().getPackageEntity().getServices();
+
+        if (services.isEmpty()){
+            throw new CustomException(PA$SRV$0004, org.getId(), NOT_FOUND);
+        }
+
+        for (OrganizationServicesDto orgService: request){
+            entities.add(
+                    OrganizationServicesEntity
+                            .builder()
+                            .orgId(org.getPackageRegistration().getPackageEntity().getId())
+                            .serviceId(orgService.getServiceId())
+                            .enabled(orgService.getEnabled())
+                            .build()
+            );
+        }
+
+        organizationServicesRepository.saveAll(entities);
+
+        return ServiceMapper.INSTANCE.orgToBeansWithoutList(entities);
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.OrganizationServicesDto;
 import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.ServiceResponse;
 import com.nasnav.exceptions.CustomException;
@@ -89,6 +90,35 @@ public class ServiceController {
             throw e;
         }catch (Exception e){
             log.error("Error while processing Get All Services", e);
+            throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/org")
+    public List<OrganizationServicesDto> getOrgServices(@RequestHeader(name = "User-Token", required = false) String userToken){
+        log.info("Get Organization Services request received ." );
+        try{
+            return serviceImpl.getOrgServices();
+        }catch (CustomException e){
+            log.error("Error while processing Get Organization Services", e);
+            throw e;
+        }catch (Exception e){
+            log.error("Error while processing Get Organization Services", e);
+            throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/org")
+    public List<OrganizationServicesDto> updateOrgServices(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                                           @RequestBody List<OrganizationServicesDto> request){
+        log.info("Update Organization Services request received: {}", request);
+        try{
+            return serviceImpl.updateOrgService(request);
+        }catch (CustomException e){
+            log.error("Error while processing Update Organization Services", e);
+            throw e;
+        }catch (Exception e){
+            log.error("Error while processing Update Organization Services", e);
             throw new CustomException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

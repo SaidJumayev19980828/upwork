@@ -166,7 +166,7 @@ DELETE FROM public.subscription;
 DELETE FROM public.package_service;
 DELETE FROM public.package;
 DELETE FROM public.service;
-DELETE FROM service_instance;
+DELETE FROM public.service_instance;
 DELETE FROM public.countries;
 DELETE FROM public.group_video_chat_log_employee_user;
 DELETE FROM public.group_video_chat_log_user;
