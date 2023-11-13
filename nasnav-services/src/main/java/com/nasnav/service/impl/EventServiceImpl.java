@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,7 +120,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime endDate) {
-        PageRequest page = getQueryPage(start, count);
+        Pageable page = PageRequest.of(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (loggedInUser instanceof EmployeeUserEntity) {
             EmployeeUserEntity employeeUserEntity = (EmployeeUserEntity) loggedInUser;
@@ -310,7 +311,8 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate , Long orgId) {
-        PageRequest page = getQueryPage(start, count);
+        Pageable page = PageRequest.of(start, count);
+
         OrganizationEntity organization=null;
         PageImpl<EventInterestsProjection> events;
 
@@ -329,7 +331,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
-        PageRequest page = getQueryPage(start, count);
+        Pageable page = PageRequest.of(start, count);
         OrganizationEntity organization=null;
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)

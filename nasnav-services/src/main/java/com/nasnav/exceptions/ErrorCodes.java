@@ -502,6 +502,8 @@ public enum ErrorCodes {
 	,XLS$001("The following table header(s) not found: [%s]")
 	,XLS$002("Conversion error or invalid data at row number: [%d], column name: [%s]")
 
+	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
+
 	;
 
 	@Getter

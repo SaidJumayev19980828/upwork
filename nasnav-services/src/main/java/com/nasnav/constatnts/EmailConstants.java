@@ -55,6 +55,9 @@ public final class EmailConstants {
     public static final String NEW_CLIENT_EMAIL_Booked_Appointment_TEMPLATE = "mail_templates/NEW_CLIENT_EMAIL_Booked_Appointment_TEMPLATE.html";
     public static final String NEW_EMPLOYEE_EMAIL_Booked_Appointment_TEMPLATE = "mail_templates/NEW_EMPLOYEE_EMAIL_Booked_Appointment_TEMPLATE.html";
 
+    public static final String CONTACT_US_CUSTOMER_MAIL = "mail_templates/contact_us_customer_mail.html";
+
+    public static final String CONTACT_US_FEEDBACK_MAIL = "mail_templates/contact_us_feedback_mail.html";
 
 
 }

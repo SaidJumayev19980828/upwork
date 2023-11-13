@@ -18,6 +18,8 @@ import java.util.Map;
 public class OrganizationModificationDTO {
     private Long orgId;
     private String description;
+    private String shortDescription;
+    private String openingHours;
     private Integer themeId;
     private String socialTwitter;
     private String socialFacebook;
@@ -25,6 +27,7 @@ public class OrganizationModificationDTO {
     private String socialYoutube;
     private String socialLinkedin;
     private String socialPinterest;
+
     private String socialWhatsapp;
     @JsonProperty("extra_info")
     private Map<?,?> info;

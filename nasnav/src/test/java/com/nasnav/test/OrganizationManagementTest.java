@@ -216,7 +216,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void updateOrganizationInvalidLogoTest() {
-        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"}";
+        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\", \"short_description\":\"test short description\", \"opening_hours\":\"test opening hour\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         map.add("properties", body);
         map.add("logo", databaseCleanup);
