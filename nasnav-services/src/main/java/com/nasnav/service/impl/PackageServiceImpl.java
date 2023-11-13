@@ -144,7 +144,7 @@ public class PackageServiceImpl implements PackageService {
         }
 
         entity.setServices(serviceEntitySet);
-        entity.setServiceInstances(serviceInstanceEntities);
+        entity.getServiceInstances().addAll(serviceInstanceEntities);
         packageRepository.save(entity);
         return packageMapper.toPackageResponse(entity);
 
