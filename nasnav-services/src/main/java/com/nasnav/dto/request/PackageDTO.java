@@ -2,9 +2,11 @@ package com.nasnav.dto.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.response.ServiceInstanceDto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -17,6 +19,7 @@ public class PackageDTO {
     private Long periodInDays;
     private String stripePriceId;
     private Set<ServiceDTO> services;
+    private List<ServiceInstanceDto> serviceInstances;
     private CountryDTO country;
 
 
