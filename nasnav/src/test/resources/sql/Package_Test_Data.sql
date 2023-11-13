@@ -78,8 +78,8 @@ INSERT INTO public.package_service(package_id,service_id) values (99001,99002);
 INSERT INTO public.package_service(package_id,service_id) values (99002,99003);
 INSERT INTO public.package_service(package_id,service_id) values (99002,99004);
 
-INSERT INTO public.service_instance(package_id,service_id,name,description) values (99002,99003,'CHAT_SERVICES','CHAT_SERVICES Service');
-INSERT INTO public.service_instance(package_id,service_id,name,description) values (99002,99004,'VIRTUAL_LANDS','VIRTUAL_LANDS Service');
+INSERT INTO public.service_instance(id,package_id,service_id,name,description) values (1,99002,99003,'CHAT_SERVICES','CHAT_SERVICES Service');
+INSERT INTO public.service_instance(id,package_id,service_id,name,description) values (2,99002,99004,'VIRTUAL_LANDS','VIRTUAL_LANDS Service');
 
 
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 68, 99001, 99001, now());
