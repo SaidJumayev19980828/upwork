@@ -98,5 +98,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Integer priority;
     private boolean enableVideoChat;
     private Long bankAccountId;
+    private String shortDescription;
+    private String openingHours;
 }
 

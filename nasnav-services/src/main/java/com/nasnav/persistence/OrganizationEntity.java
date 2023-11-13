@@ -9,6 +9,7 @@ import lombok.ToString;
 import org.json.JSONObject;
 
 import javax.persistence.*;
+import java.time.LocalTime;
 import java.util.Set;
 
 @Entity
@@ -77,6 +78,13 @@ public class OrganizationEntity implements BaseEntity {
 
     @Column(name = "priority")
     private Integer priority;
+
+    @Column(name = "short_description")
+    private String shortDescription;
+
+    @Column(name = "opening_hours")
+    private String openingHours;
+
 
     @OneToMany(mappedBy = "organizationEntity")
     @JsonIgnore
@@ -167,6 +175,8 @@ public class OrganizationEntity implements BaseEntity {
         obj.setGoogleToken(getGoogleToken());
         obj.setFacebookToken(getFacebookToken());
         obj.setMatomoSiteId(getMatomoId());
+        obj.setShortDescription(getShortDescription());
+        obj.setOpeningHours(getOpeningHours());
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());
         obj.setGoogleAnalyticsSiteId(getGoogleAnalyticsSiteId());

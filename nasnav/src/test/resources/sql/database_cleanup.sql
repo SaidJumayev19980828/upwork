@@ -10,7 +10,7 @@ delete from public.event_products;
 delete from public.event_attachments;
 delete from public.event_influencers;
 delete from public.event_logs;
-
+DELETE from public.contact_us;
 DELETE FROM public.EVENTS;
 delete from public.influencer_categories;
 delete from public.influencers;
@@ -146,6 +146,7 @@ DELETE FROM public.organization_themes_settings where organization_id BETWEEN 99
 DELETE FROM public.organization_theme_classes where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.settings  WHERE organization_id BETWEEN 99000 AND 99999;
+
 DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_subscriptions where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;

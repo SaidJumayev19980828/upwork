@@ -439,6 +439,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         if (json.getDescription() != null) {
             organization.setDescription(json.getDescription());
         }
+        organization.setShortDescription(json.getShortDescription());
+        organization.setOpeningHours(json.getOpeningHours());
         if (json.getInfo() != null) {
             organization.setExtraInfo(new JSONObject(json.getInfo()).toString());
         }
