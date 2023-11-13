@@ -234,11 +234,13 @@ public class UserServicesHelper {
 		}
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
 			validateEmail(employeeUserJson.getEmail());
-			employeeUserEntity.setEmail(employeeUserJson.getEmail());
-			employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
+			if(!employeeUserJson.getEmail().equals(employeeUserEntity.getEmail())) {
+				employeeUserEntity.setEmail(employeeUserJson.getEmail());
+				employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
 
-			sendRecoveryMail(employeeUserEntity);
-			successResponseStatusList.addAll( asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT) );
+				sendRecoveryMail(employeeUserEntity);
+				successResponseStatusList.addAll(asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
+			}
 		}
 
 		if(isNotBlankOrNull(employeeUserJson.getGender())){
