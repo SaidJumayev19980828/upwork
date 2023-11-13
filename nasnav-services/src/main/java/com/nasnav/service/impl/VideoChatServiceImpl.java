@@ -104,7 +104,8 @@ public class VideoChatServiceImpl implements VideoChatService {
     public VideoChatResponse createOrJoinSession(String sessionName, Boolean force, Long orgId, Long shopId) {
         OrganizationEntity organization = validateAndGetOrganization(orgId, shopId);
         orgId = organization.getId();
-        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+//        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
 
         if (Objects.equals(VideoChatOrgState.DISABLED.getValue(), organization.getEnableVideoChat())) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, VIDEO$PARAM$0001, orgId);
@@ -419,7 +420,8 @@ public class VideoChatServiceImpl implements VideoChatService {
     @Override
     public VideoChatResponse createGroupVideoChat(String sessionName ,Long orgId, Long shopId) {
         GroupVideoChatLogEntity groupVideoChatLogEntity = new GroupVideoChatLogEntity();
-        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+//        BaseUserEntity loggedInUser = securityService.getCurrentUserForOrg(orgId);
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if(!sessionName.isEmpty()){
             Optional<GroupVideoChatLogEntity> optionalGroupVideoChatLogEntity = groupVideoChatLogRepository.findByName(sessionName);
             if (optionalGroupVideoChatLogEntity.isPresent()){
