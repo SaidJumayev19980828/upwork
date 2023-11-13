@@ -166,6 +166,7 @@ DELETE FROM public.subscription;
 DELETE FROM public.package_service;
 DELETE FROM public.package;
 DELETE FROM public.service;
+DELETE FROM service_instance;
 DELETE FROM public.countries;
 DELETE FROM public.group_video_chat_log_employee_user;
 DELETE FROM public.group_video_chat_log_user;
@@ -182,6 +183,8 @@ DELETE FROM public.package WHERE id > 99000;
 
 delete from public.loyalty_point_types where id between  31001 and 31999;
 DELETE FROM public.stripe_customer;
+
+
 
 
 
