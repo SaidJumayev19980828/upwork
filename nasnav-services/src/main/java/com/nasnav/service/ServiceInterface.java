@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.OrganizationServicesDto;
 import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.ServiceResponse;
 
@@ -11,4 +12,7 @@ public interface ServiceInterface {
     void deleteService(Long serviceId);
     ServiceResponse getService(Long serviceId);
     List<ServiceResponse> getALlServices();
+    List<OrganizationServicesDto> getOrgServices();
+    List<OrganizationServicesDto> updateOrgService(List<OrganizationServicesDto> request);
+
 }

@@ -11,23 +11,17 @@ import com.nasnav.mappers.PackageMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.PackageService;
 import com.nasnav.service.SecurityService;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +42,7 @@ public class PackageServiceImpl implements PackageService {
 
 
     @Override
-    public PackageResponse createPackage(PackageDTO json) throws Exception {
+    public PackageResponse createPackage(PackageDTO json) {
         PackageEntity newPackage = new PackageEntity();
         newPackage.setName(json.getName());
         newPackage.setDescription(json.getDescription());
@@ -64,7 +58,7 @@ public class PackageServiceImpl implements PackageService {
         }
         newPackage.setCountry(country);
         Set<ServiceEntity> serviceEntitySet = new HashSet<>();
-
+        List<ServiceInstanceEntity> serviceInstanceEntities = new ArrayList<>();
         if(json.getServices() != null){
 
             List<String> serviceCodes = json.getServices()
@@ -82,11 +76,20 @@ public class PackageServiceImpl implements PackageService {
                                     serviceDTO.getCode());
                         }else {
                             serviceEntitySet.add(serviceEntity.get());
+                            serviceInstanceEntities.add(
+                              ServiceInstanceEntity
+                                      .builder()
+                                      .serviceId(serviceEntity.get().getId())
+                                      .name(serviceDTO.getName())
+                                      .description(serviceDTO.getDescription())
+                                      .build()
+                            );
                         }
             }
 
         }
         newPackage.setServices(serviceEntitySet);
+        newPackage.setServiceInstances(serviceInstanceEntities);
         packageRepository.save(newPackage);
         return packageMapper.toPackageResponse(newPackage);
     }
@@ -96,6 +99,7 @@ public class PackageServiceImpl implements PackageService {
         PackageEntity entity = packageRepository.findById(packageId).orElseThrow(
                 () -> new RuntimeBusinessException(NOT_FOUND,PA$USR$0002,packageId)
         );
+        entity.getServiceInstances().clear();
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
@@ -111,16 +115,36 @@ public class PackageServiceImpl implements PackageService {
         entity.setCountry(country);
 
         Set<ServiceEntity> serviceEntitySet = new HashSet<>();
+        List<ServiceInstanceEntity> serviceInstanceEntities = new ArrayList<>();
         if(dto.getServices() != null){
+            List<String> serviceCodes = dto.getServices()
+                    .stream()
+                    .map(ServiceDTO::getCode).collect(Collectors.toList());
+
+            List<ServiceEntity> serviceEntities =
+                    serviceRepository.findAllByCodeIn(serviceCodes).orElseThrow();
             for(ServiceDTO serviceDTO : dto.getServices()){
-                ServiceEntity serviceEntity = serviceRepository.findByCode(serviceDTO.getCode()).orElseThrow(
-                        () -> new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,serviceDTO.getCode())
-                );
-                serviceEntitySet.add(serviceEntity);
+                Optional<ServiceEntity> serviceEntity = serviceEntities.stream()
+                        .filter(s -> s.getCode().equals(serviceDTO.getCode())).findFirst();
+                if (serviceEntity.isEmpty()){
+                    throw new RuntimeBusinessException(NOT_ACCEPTABLE,PA$SRV$0001,
+                            serviceDTO.getCode());
+                }else {
+                    serviceEntitySet.add(serviceEntity.get());
+                    serviceInstanceEntities.add(
+                            ServiceInstanceEntity
+                                    .builder()
+                                    .serviceId(serviceEntity.get().getId())
+                                    .name(serviceDTO.getName())
+                                    .description(serviceDTO.getDescription())
+                                    .build()
+                    );
+                }
             }
         }
 
         entity.setServices(serviceEntitySet);
+        entity.getServiceInstances().addAll(serviceInstanceEntities);
         packageRepository.save(entity);
         return packageMapper.toPackageResponse(entity);
 

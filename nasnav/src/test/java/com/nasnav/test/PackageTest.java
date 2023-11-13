@@ -60,7 +60,7 @@ public class PackageTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<PackageResponse[]> response = template.exchange("/package", GET, null, PackageResponse[].class);
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().length);
-        PackageResponse[] body = (PackageResponse[]) response.getBody();
+        PackageResponse[] body = response.getBody();
         for (PackageResponse pack : body) {
             assertTrue(pack.getId() > 0);
         }
