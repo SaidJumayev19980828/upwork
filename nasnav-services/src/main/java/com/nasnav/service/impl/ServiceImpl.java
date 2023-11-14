@@ -19,10 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -57,12 +54,14 @@ public class ServiceImpl implements ServiceInterface {
     public ServiceResponse updateService(Long serviceId, ServiceDTO service) {
         ServiceEntity serviceEntity = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new CustomException(PA$SRV$0002, serviceId, NOT_FOUND));
-        ServiceEntity updatedEntity = new ServiceEntity();
-        updatedEntity.setId(serviceEntity.getId());
+        ServiceEntity updatedEntity;
         if (service.getEnabled() == null){
             throw new CustomException(PA$SRV$0003.getValue(), BAD_REQUEST);
         }
         updatedEntity =ServiceMapper.INSTANCE.dtoToEntity(service);
+        updatedEntity.setId(serviceEntity.getId());
+        updatedEntity.setPackageEntity(serviceEntity.getPackageEntity());
+
         serviceRepository.save(updatedEntity);
 
         return ServiceMapper.INSTANCE.entityToDto(updatedEntity);
@@ -91,6 +90,9 @@ public class ServiceImpl implements ServiceInterface {
     @Override
     public List<OrganizationServicesDto> getOrgServices() {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
+        if (Objects.isNull(org.getPackageRegistration())){
+            throw new CustomException(ORG$SUB$0001, NOT_FOUND);
+        }
         List<OrganizationServicesEntity> entities =
                 organizationServicesRepository.findAllByOrgId(org.getId());
 
@@ -120,6 +122,9 @@ public class ServiceImpl implements ServiceInterface {
     public List<OrganizationServicesDto> updateOrgService(List<OrganizationServicesDto> request) {
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
+        if (Objects.isNull(org.getPackageRegistration())){
+            throw new CustomException(ORG$SUB$0001, NOT_FOUND);
+        }
         organizationServicesRepository.deleteAllByOrgId(org.getId());
 
         List<OrganizationServicesEntity> entities = new ArrayList<>();

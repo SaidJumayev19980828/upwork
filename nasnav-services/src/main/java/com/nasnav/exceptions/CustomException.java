@@ -22,6 +22,11 @@ public class CustomException extends RuntimeException {
         this.message = format(message.getValue(), args);
         this.httpStatus = httpStatus;
     }
+
+    public CustomException(ErrorCodes message, HttpStatus httpStatus) {
+        this.message = message.getValue();
+        this.httpStatus = httpStatus;
+    }
     
     public CustomException(String message, HttpStatus httpStatus, Throwable cause) {
         super(cause);
