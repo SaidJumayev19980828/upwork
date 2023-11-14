@@ -1,5 +1,7 @@
 package com.nasnav.dto.request;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import javax.persistence.Column;
@@ -7,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ServiceDTO {
     private String code;
     private String name;
