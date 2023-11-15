@@ -65,8 +65,11 @@ public class EmployeeUserEntity extends BaseUserEntity {
                 .map(Role::getName)
                 .collect(toSet())
         );
-        if(this.influencer != null)
+        if(this.influencer != null) {
             obj.setInfluencerId(this.influencer.getId());
+            obj.setIsGuided(this.influencer.getIsGuided());
+            obj.setIsInfluencer(this.influencer.getApproved());
+        }
         return obj;
     }
 }

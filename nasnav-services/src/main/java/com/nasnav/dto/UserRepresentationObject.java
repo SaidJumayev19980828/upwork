@@ -39,7 +39,7 @@ public class UserRepresentationObject {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime tierCreatedAt;
     private String referral;
-    private Boolean isInfluencer;
+    private Boolean isInfluencer = false;
     private LocalDateTime lastLogin;
     private Gender gender;
     private Long BankAccountId;

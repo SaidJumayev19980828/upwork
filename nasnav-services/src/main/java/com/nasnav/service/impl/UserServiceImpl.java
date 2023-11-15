@@ -545,9 +545,6 @@ public class UserServiceImpl implements UserService {
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
 				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-				;
-//				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-//						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);
