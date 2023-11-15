@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.EventInterestsProjection;
 import com.nasnav.dto.EventProjection;
@@ -120,7 +121,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getEventsForEmployee(Integer start, Integer count, EventStatus status, LocalDateTime fromDate, LocalDateTime endDate) {
-        Pageable page = PageRequest.of(start, count);
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (loggedInUser instanceof EmployeeUserEntity) {
             EmployeeUserEntity employeeUserEntity = (EmployeeUserEntity) loggedInUser;
@@ -311,8 +312,7 @@ public class EventServiceImpl implements EventService{
 
     @Override
     public PageImpl<EventsNewDTO> getAllEvents(Integer start, Integer count ,  LocalDateTime fromDate , Long orgId) {
-        Pageable page = PageRequest.of(start, count);
-
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         OrganizationEntity organization=null;
         PageImpl<EventInterestsProjection> events;
 
@@ -325,13 +325,14 @@ public class EventServiceImpl implements EventService{
         }else {
             events = eventRepository.findAllByStartOrderedByStartsAtDesc(fromDate, page , organization);
         }
+
         List<EventsNewDTO> dtos = events.getContent().stream().map(this::mapEventProjectionToDTO).collect(Collectors.toList());
         return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
     }
 
     @Override
     public PageImpl<EventsNewDTO> getAllAdvertisedEvents(Integer start, Integer count, Long orgId) {
-        Pageable page = PageRequest.of(start, count);
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         OrganizationEntity organization=null;
         if (orgId !=null){
             organization = organizationRepository.findById(orgId)

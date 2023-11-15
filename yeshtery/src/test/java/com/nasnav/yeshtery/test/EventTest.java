@@ -148,7 +148,6 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> httpEntity = getHttpEntity("");
         ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
         };
-
         Long organizationId = 99001L;
         LocalDateTime fromDate = LocalDateTime.now().minusDays(15);
 
@@ -161,8 +160,12 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
         ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
         };
-        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/advertise/all" , HttpMethod.GET, httpEntity, responseType);
+        Long organizationId = 99001L;
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/advertise/all?orgId=" + organizationId , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
+
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response2 = template.exchange("/v1/event/advertise/all" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response2.getStatusCode().value());
     }
 
     @Test
