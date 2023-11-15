@@ -73,7 +73,6 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
 
         ResponseEntity<Void> response = template.exchange("/contactUs?orgId=99001" , HttpMethod.POST, request , Void.class);
 
-        ResponseEntity<Void> response = template.exchange("/contactUs?orgId="+orgId , HttpMethod.POST, request ,Void.class);
         assertEquals(200, response.getStatusCode().value());
 
         ResponseEntity<Void> response2 = template.exchange("/contactUs?orgId=99" , HttpMethod.POST, request , Void.class);
