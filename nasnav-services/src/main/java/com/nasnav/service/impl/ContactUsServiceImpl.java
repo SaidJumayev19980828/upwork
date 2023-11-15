@@ -76,7 +76,7 @@ public class ContactUsServiceImpl  implements ContactUsService {
     }
 
 
-    private void sendConatctUsEmails(String sendTo,String orgName,String customerName,String customerEmail,String message , String emailSubject , String mailTemplate) throws MessagingException, IOException {
+    public void sendConatctUsEmails(String sendTo,String orgName,String customerName,String customerEmail,String message , String emailSubject , String mailTemplate) throws MessagingException, IOException {
         Map<String, String> parametersMap = prepareMailContent(orgName,customerName,customerEmail,message,sendTo);
         mailService.send(orgName, sendTo, emailSubject, mailTemplate,parametersMap);
     }
@@ -84,7 +84,7 @@ public class ContactUsServiceImpl  implements ContactUsService {
 
 
 
-    private Map<String, String> prepareMailContent(String orgName,String customerName,String customerEmail,String message,String sendTo) {
+    public Map<String, String> prepareMailContent(String orgName,String customerName,String customerEmail,String message,String sendTo) {
         Map<String, String> parametersMap = new HashMap<>();
         parametersMap.put("#CustomerEmail#", customerEmail);
         parametersMap.put("#CustomerName#", customerName);

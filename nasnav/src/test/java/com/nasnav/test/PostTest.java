@@ -150,11 +150,21 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> httpEntity = getHttpEntity("123");
         ParameterizedTypeReference<RestResponsePage<PostResponseDTO>> responseType = new ParameterizedTypeReference<>() {
         };
-
         Integer start = 0;
         Integer count =10;
-
         ResponseEntity<RestResponsePage<PostResponseDTO>> response = template.exchange("/post/saved?start=" + start + "&?count=" + count  , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
+
+    }
+
+
+    @Test
+    public void getSavedPostsTestWithException(){
+        HttpEntity<Object> httpEntity = getHttpEntity("abcdefg");
+        Integer start = 0;
+        Integer count =10;
+        ResponseEntity<Void> response = template.exchange("/post/saved?start=" + start + "&?count=" + count  , HttpMethod.GET, httpEntity, Void.class);
+        assertEquals(403, response.getStatusCode().value());
+
     }
 }
