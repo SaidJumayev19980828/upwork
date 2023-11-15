@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.ContactUsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.SettingRepository;
@@ -70,18 +71,13 @@ public class ContactUsServiceImpl  implements ContactUsService {
     @Override
     public PageImpl<ContactUsEntity> getContactUsForms(Integer start, Integer count, LocalDateTime fromDate) {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        Pageable page = PageRequest.of(start, count);
-
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         return contactUsRepository.findAllByOrganizationIdAndCreatedAt(orgId,page,fromDate);
     }
 
 
     private void sendConatctUsEmails(String sendTo,String orgName,String customerName,String customerEmail,String message , String emailSubject , String mailTemplate) throws MessagingException, IOException {
-
-
         Map<String, String> parametersMap = prepareMailContent(orgName,customerName,customerEmail,message,sendTo);
-
-
         mailService.send(orgName, sendTo, emailSubject, mailTemplate,parametersMap);
     }
 

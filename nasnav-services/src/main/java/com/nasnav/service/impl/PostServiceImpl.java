@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
@@ -17,6 +18,7 @@ import com.nasnav.util.MultipartFileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -231,7 +233,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PageImpl<PostResponseDTO> getUserSavedPosts(Integer start, Integer count) {
-        PageRequest page = getQueryPage(start, count);
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (!(loggedInUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);

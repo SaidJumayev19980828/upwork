@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostRepository;
 import com.nasnav.dao.UserRepository;
@@ -20,6 +21,7 @@ import com.nasnav.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -107,7 +109,7 @@ public class FollowerServiceImpl implements FollowerServcie{
 
     @Override
     public PageImpl<UserListFollowProjection> getUsersWithFollowerStatus(Integer start,Integer count ) {
-        PageRequest page = getQueryPage(start, count);
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
         BaseUserEntity currentUser = securityService.getCurrentUser();
         return  userRepository.findUsersWithFollowerStatus(currentUser.getId(),page);
     }
