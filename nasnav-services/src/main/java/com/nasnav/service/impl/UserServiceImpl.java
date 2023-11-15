@@ -828,12 +828,18 @@ public class UserServiceImpl implements UserService {
 		PageRequest pageRequest = PagingUtils.getQueryPageAddIdSort(start, count);
 		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
 
+			if(userStatus!=null)
 			customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+			else 
+			customers = userRepository.findAll(pageRequest.first()).toList();
 
 		} else {
 
 			Long orgID = securityService.getCurrentUserOrganizationId();
+			if(userStatus!=null)
 			customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+			else 
+			customers = userRepository.findByOrganizationId(orgID, pageRequest);
 
 		}
 		return customers.stream().map(UserEntity::getRepresentation).collect(toList());
