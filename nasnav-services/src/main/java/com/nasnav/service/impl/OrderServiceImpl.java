@@ -1420,7 +1420,7 @@ public class OrderServiceImpl implements OrderService {
 		if(optimizationResult.getItemsChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004, "s");
 		}
-
+		//Check
 		return optimizationResult.getCart();
 	}
 
@@ -1521,6 +1521,23 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createMetaOrder(dto, org, user);
 
+		return getOrderResponse(order, false);
+	}
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public Order createOrder(CartCheckoutDTO dto, UserEntity user) {
+		BaseUserEntity userAuthed = securityService.getCurrentUser();
+		OrganizationEntity org;
+		if(userAuthed instanceof EmployeeUserEntity) {
+			org= organizationRepository.findById(user.getOrganizationId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, user.getOrganizationId()));
+		}else {
+			org = securityService.getCurrentUserOrganization();
+
+		}
+		cancelAbandonedOrders();
+		validateCartCheckoutDTO(dto);
+		MetaOrderEntity order = createMetaOrder(dto, org, user);
 		return getOrderResponse(order, false);
 	}
 

@@ -18,4 +18,5 @@ public class CartCheckoutDTO {
     private String promoCode;
     private String notes;
     private Set<Long> points;
+    private Long customerId;
 }

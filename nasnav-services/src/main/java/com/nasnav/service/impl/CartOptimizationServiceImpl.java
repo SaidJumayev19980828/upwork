@@ -90,7 +90,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
-		checkIfCartHasEmptyStock();
+		//TODO::moaemn
+		checkIfCartHasEmptyStock(dto.getCustomerId());
 
 		return optimizeCart(dto, yeshteryCart);
 	}
@@ -100,7 +101,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 
 		var optimizedCart = createOptimizedCart(dto);
-		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode());
+		boolean itemsRemoved = isItemsRemoved(optimizedCart, dto.getPromoCode(),dto);
 		var anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var anyItemChanged = isAnyItemChangedAfterOptimization(optimizedCart) || itemsRemoved;
 		var returnedCart = getCartObject(optimizedCart, dto, yeshteryCart);
@@ -129,6 +130,10 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	}
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
 		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode, emptySet(), false).getItems().size();
+	}
+
+	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode , CartCheckoutDTO dto) {
+		return optimizedCart.get().getCartItems().size() != cartService.getCart(dto,promoCode, emptySet(), false).getItems().size();
 	}
 
 	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, CartCheckoutDTO dto, boolean yeshteryCart) {
@@ -178,7 +183,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		var cart = cartService.getCart(dto.getPromoCode(), emptySet(), false);
+		//TODO::  moamen
+		var cart = cartService.getCart(dto,dto.getPromoCode(), emptySet(), false);
 
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}
@@ -207,6 +213,38 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019);
 			}
 			
+		}
+		List<CartItemAddonDetailsEntity> addonsOutOfStock=cartItemAddonDetailsRepo.findOutOfStockCartItemsAddons(userId);
+		if(addonsOutOfStock.size()!=0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$ADDON$0004);
+
+		}
+	}
+
+	private void checkIfCartHasEmptyStock(Long customerId) {
+		Long userId = customerId != null? customerId :securityService.getCurrentUser().getId();
+		int cartItemsCount = cartItemRepo.findCurrentCartItemsByUser_Id(userId).size();
+		List<CartItemEntity> outOfStockCartItems = cartItemRepo.findUserOutOfStockCartItems(userId);
+		List<CartItemEntity> movedItems = new ArrayList<>();
+		if (!outOfStockCartItems.isEmpty()) {
+			for (CartItemEntity item : outOfStockCartItems) {
+				boolean isEmpty = item
+						.getStock()
+						.getProductVariantsEntity()
+						.getStocks()
+						.stream()
+						.filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
+						.findFirst()
+						.isEmpty();
+				if (isEmpty) {
+					movedItems.add(item);
+				}
+			}
+			if (!movedItems.isEmpty() && movedItems.size() == cartItemsCount) {
+				cartService.moveCartItemsToWishlist(movedItems);
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0019);
+			}
+
 		}
 		List<CartItemAddonDetailsEntity> addonsOutOfStock=cartItemAddonDetailsRepo.findOutOfStockCartItemsAddons(userId);
 		if(addonsOutOfStock.size()!=0) {
