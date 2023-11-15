@@ -1578,9 +1578,18 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
-	public void listCustomersPageableSuccess() throws IOException {
+	public void listCustomersPageableSuccessWStatus() throws IOException {
 		HttpEntity<?> req = getHttpEntity("101112");
 		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=200", GET, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
+		assertFalse(userList.isEmpty());
+	}
+
+	@Test
+	public void listCustomersPageableSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30", GET, req, String.class);
 		assertEquals(200, res.getStatusCodeValue());
 		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
 		assertFalse(userList.isEmpty());
