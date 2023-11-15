@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.request.ContactUsFeedBackRequestDto;
 import com.nasnav.dto.request.ContactUsRequestDto;
 import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.persistence.ContactUsEntity;
 import com.nasnav.service.ContactUsService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -32,7 +33,6 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
-@AutoConfigureWebTestClient
 @NotThreadSafe
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Contact_US_TEST_DATA.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -41,19 +41,15 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private TestRestTemplate template;
 
-    @Autowired
-    private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
-    private ContactUsService contactUsService;
+
 
     @Test
     public void testContactUsMail() throws Exception {
         ContactUsRequestDto requestDto = new ContactUsRequestDto("John Doe", "john@example.com", "Hello");
-        Long orgId = 99001L;
 
         HttpCookie cookie = new HttpCookie("User-Token", "161718");
         HttpHeaders headers = new HttpHeaders();
@@ -61,9 +57,11 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
         headers.add("User-Token", "161718");
         HttpEntity<ContactUsRequestDto> request = new HttpEntity<>(requestDto,headers);
 
-
-        ResponseEntity<Void> response = template.exchange("/contactUs?orgId=99001" , HttpMethod.POST, request ,Void.class);
+        ResponseEntity<Void> response = template.exchange("/contactUs?orgId=99001" , HttpMethod.POST, request , Void.class);
         assertEquals(200, response.getStatusCode().value());
+
+        ResponseEntity<Void> response2 = template.exchange("/contactUs?orgId=99" , HttpMethod.POST, request , Void.class);
+        assertEquals(NOT_FOUND, response2.getStatusCode());
 
     }
 
@@ -90,6 +88,16 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
         };
         ResponseEntity<ContactUsEntity> response = template.exchange("/contactUs?formId=1" , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
+    }
+
+
+    @Test
+    public void testGetContactUsWithException() throws Exception {
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<ContactUsEntity> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<ContactUsEntity> response = template.exchange("/contactUs?formId=100" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
 
