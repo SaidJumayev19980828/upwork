@@ -1,21 +1,22 @@
 package com.nasnav.service.impl;
 
-import java.util.List;
-
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
-import org.springframework.stereotype.Service;
-import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.LoyaltyTierEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.SecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static com.nasnav.exceptions.ErrorCodes.NOTIUSER$0006;
+import static com.nasnav.exceptions.ErrorCodes.U$0001;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -29,19 +30,30 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 	@Override
 	public Order checkoutCart(CartCheckoutDTO dto) {
 		BaseUserEntity userAuthed = securityService.getCurrentUser();
+		Long userId;
 		if(userAuthed instanceof EmployeeUserEntity) {
-			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+			userId= getCustomerId(dto);
+		}else {
+			userId = userAuthed.getId();
 		}
-		Long userId = userAuthed.getId();
+
 		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmount(orderService.countOrdersByUserId(userId));
-		UserEntity userEntity = userRepository.findById(userId).orElseThrow();
+		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
 		userEntity.setTier(loyaltyTierEntity);
 		userRepository.save(userEntity);
-		return orderService.createOrder(dto);
+		return orderService.createOrder(dto,userEntity);
 	}
 
 	@Override
 	public Order checkoutYeshteryCart(CartCheckoutDTO dto) {
 		return orderService.createYeshteryOrder(dto);
 	}
+
+	public Long getCustomerId( CartCheckoutDTO dto) {
+        if(dto.getCustomerId() != null) {
+            return dto.getCustomerId();
+        }
+        throw new RuntimeBusinessException(NOT_FOUND, NOTIUSER$0006);
+    }
+
 }

@@ -26,7 +26,7 @@ import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 
 @RestController
-@RequestMapping(OrganizationController.API_PATH)
+@RequestMapping(ContactUsController.API_PATH)
 @RequiredArgsConstructor
 public class ContactUsController {
     static final String API_PATH = YeshteryConstants.API_PATH +"/contactUs";

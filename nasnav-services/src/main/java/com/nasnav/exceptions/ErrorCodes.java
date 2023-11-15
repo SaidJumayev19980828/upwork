@@ -504,7 +504,7 @@ public enum ErrorCodes {
 	,XLS$002("Conversion error or invalid data at row number: [%d], column name: [%s]")
 
 	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
-
+	,NOTIUSER$0006("We can not find customer Id With Body Request")
 	;
 
 	@Getter

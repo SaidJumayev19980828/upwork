@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,7 +94,7 @@ import lombok.RequiredArgsConstructor;
 public class CartServiceImpl implements CartService {
 
     private static final Logger logger = LogManager.getLogger();
-
+    private final UserRepository userRepository;
     private final SecurityService securityService;
     private final PromotionsService promoService;
     private final OrganizationRepository organizationRepo;
@@ -136,6 +137,16 @@ public class CartServiceImpl implements CartService {
         }
         return getUserCart(user.getId(), promoCode, points, yeshteryCart);
     }
+
+    @Override
+    public Cart getCart(CartCheckoutDTO dto, String promoCode, Set<Long> points, boolean yeshteryCart) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+             user = userRepository.findById(dto.getCustomerId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,dto.getCustomerId()));
+        }
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
+    }
+
 
     @Override
     public Cart getUserCart(Long userId) {

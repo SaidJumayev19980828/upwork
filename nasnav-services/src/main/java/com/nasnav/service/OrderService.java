@@ -74,6 +74,9 @@ public interface OrderService {
 
 	Order createOrder(CartCheckoutDTO dto);
 
+	Order createOrder(CartCheckoutDTO dto, UserEntity user);
+
+
 	Integer countOrdersByUserId(Long userId);
 
 	String trackOrder(Long orderId);

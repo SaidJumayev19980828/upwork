@@ -174,9 +174,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/param/**"									, setOf(NASNAV_ADMIN)),
 						patternOf( "/integration/dictionary"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/errors"									, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
-						patternOf( "/integration/**"										, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/**"										, setOf(NASNAV_ADMIN))
+						,patternOf( "/cart/checkout", POST ,getAllRoles()),
 						patternOf( "/cart/{userId:\\d+}"		,GET						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/cart/**"											, setOf(CUSTOMER)),
+						patternOf( "/cart/**"											, setOf(CUSTOMER )),
 						patternOf( "/pickup/**"											, setOf(CUSTOMER)),
 						patternOf( "/wishlist/{userId:\\d+}"		,GET					, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/wishlist/**"										, setOf(CUSTOMER)),
@@ -236,7 +237,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/follow/users/list"        ,GET                        , getAllRoles()),
 
 			patternOf( "/**")
-						);
+
+
+	);
 
    
    

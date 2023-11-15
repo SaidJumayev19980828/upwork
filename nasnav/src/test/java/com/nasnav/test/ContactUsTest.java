@@ -1,16 +1,14 @@
 package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.request.ContactUsFeedBackRequestDto;
 import com.nasnav.dto.request.ContactUsRequestDto;
-import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.ContactUsEntity;
 import com.nasnav.service.ContactUsService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
-import org.elasticsearch.rest.RestResponse;
+import org.hibernate.annotations.NotFound;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,21 +20,16 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @AutoConfigureWebTestClient
@@ -78,18 +71,17 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
     public void testContactUsFeedbackMail() throws Exception {
         ContactUsFeedBackRequestDto requestDto = new ContactUsFeedBackRequestDto("Feedback message", 1L);
 
-
         HttpCookie cookie = new HttpCookie("User-Token", "161718");
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cookie", cookie.toString());
         headers.add("User-Token", "161718");
         HttpEntity<ContactUsFeedBackRequestDto> request = new HttpEntity<>(requestDto,headers);
 
-
         ResponseEntity<Void> response = template.exchange("/contactUs/feedback" , HttpMethod.POST, request ,Void.class);
         assertEquals(200, response.getStatusCode().value());
 
     }
+
 
     @Test
     public void testGetContactUs() throws Exception {
@@ -99,6 +91,7 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<ContactUsEntity> response = template.exchange("/contactUs?formId=1" , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
+
 
     @Test
     public void testGetAllForms() throws Exception {

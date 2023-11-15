@@ -476,6 +476,36 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
 	}
 
+//	@Test
+//	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+//	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+//	public void checkoutWithEmployeeToken() {
+//
+//		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
+//
+//		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+//		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+//		assertEquals(200, res.getStatusCodeValue());
+//	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithEmployeeTokenWithException() {
+		JSONObject body = new JSONObject();
+		Map<String, String> additionalData = new HashMap<>();
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", SERVICE_ID);
+		body.put("additional_data", additionalData);
+		body.put("notes", "come after dinner");
+
+
+		HttpEntity<?> request = getHttpEntity(body.toString(), "101112");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(404, res.getStatusCodeValue());
+	}
+
+
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -780,7 +810,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 
-		assertEquals(FORBIDDEN, response.getStatusCode());
+		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
 
 	@Test
@@ -1236,6 +1266,17 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		return body;
 	}
 
+	private JSONObject createCartCheckoutBodyForCompleteCycleTestForEmployeeUser() {
+		JSONObject body = new JSONObject();
+		Map<String, String> additionalData = new HashMap<>();
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", SERVICE_ID);
+		body.put("additional_data", additionalData);
+		body.put("notes", "come after dinner");
+		body.put("customerId",88L);
+		return body;
+	}
+
 	//@Test test ignored as auto optimization changes are not acceptable now
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -1272,6 +1313,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(500, res.getStatusCodeValue());
 	}
+
 
 	private void clearWarehouseOptimizationParameters() {
 		OrganizationCartOptimizationEntity entity = 
