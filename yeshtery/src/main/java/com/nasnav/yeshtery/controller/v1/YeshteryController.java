@@ -297,7 +297,6 @@ public class YeshteryController {
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
     ) {
-        //TODO:: pagination
         return categoryService.getYeshteryOrganizationsTags( start,  count ,  categoryName, orgId);
     }
 

@@ -92,9 +92,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
-		//TODO::moaemn
 		checkIfCartHasEmptyStock(dto.getCustomerId());
-
 		return optimizeCart(dto, yeshteryCart);
 	}
 

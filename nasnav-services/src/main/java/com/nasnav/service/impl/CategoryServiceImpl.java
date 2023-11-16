@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
@@ -235,7 +236,7 @@ public class CategoryServiceImpl implements CategoryService {
 
 	@Override
 	public PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId) {
-		Pageable page = PageRequest.of(start, count);
+		Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
 
 		Set<Long> orgIdList = new HashSet<>();
     	if (orgId == null) {
