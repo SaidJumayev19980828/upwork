@@ -38,7 +38,11 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.*;
@@ -265,6 +269,7 @@ public class UserServiceImpl implements UserService {
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
 		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+		userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
 		Long userId = userRepository.saveAndFlush(userEntity).getId();
 		if (successResponseStatusList.isEmpty()) {
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
