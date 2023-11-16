@@ -17,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_ACCEPTABLE;
 import static org.junit.Assert.assertEquals;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -66,7 +67,8 @@ public class CartTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Cart> response =
                 template.exchange("/v1/cart/item?item_id=" + itemId, DELETE, request, Cart.class);
 
-        assertEquals(FORBIDDEN, response.getStatusCode());
+        assertEquals(
+                406, response.getStatusCode().value());
     }
 
     @Test

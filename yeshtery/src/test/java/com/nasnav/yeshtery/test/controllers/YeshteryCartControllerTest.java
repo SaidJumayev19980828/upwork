@@ -368,7 +368,7 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Cart> response =
                 template.exchange(YESHTERY_CART_ITEM_API_PATH + "?item_id=" + itemId, DELETE, request, Cart.class);
 
-        Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+        Assert.assertEquals(406, response.getStatusCode().value());
     }
 
     private JSONObject createCartItem(Long stockId, Integer quantity) {
