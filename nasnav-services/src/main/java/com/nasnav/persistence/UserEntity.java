@@ -123,6 +123,7 @@ public class UserEntity extends BaseUserEntity{
         if(this.influencer != null) {
             obj.setInfluencerId(this.influencer.getId());
             obj.setIsGuided(this.influencer.getIsGuided());
+            obj.setIsInfluencer(this.influencer.getApproved());
         }
 
         return obj;

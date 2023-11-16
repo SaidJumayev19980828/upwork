@@ -181,6 +181,10 @@ public class UserDTOs {
         @JsonProperty("birth_date")
         private String birthDate;
 
+        @Schema(example = "08/08/2010")
+        @JsonProperty("date_of_birth")
+        private String dateOfBirth;
+
         @Schema(example = "01012345678")
         @JsonProperty("phone_number")
         private String phoneNumber;

@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
@@ -38,7 +39,11 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.nasnav.commons.utils.StringUtils.*;
@@ -265,6 +270,10 @@ public class UserServiceImpl implements UserService {
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
 		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+
+			if(!StringUtils.validDateTime(userJson.getDateOfBirth()))
+				userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
+
 		Long userId = userRepository.saveAndFlush(userEntity).getId();
 		if (successResponseStatusList.isEmpty()) {
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
@@ -545,9 +554,6 @@ public class UserServiceImpl implements UserService {
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
 				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
-				;
-//				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-//						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);

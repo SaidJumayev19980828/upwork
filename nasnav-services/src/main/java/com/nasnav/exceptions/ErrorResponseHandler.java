@@ -37,12 +37,13 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 
 import java.io.FileNotFoundException;
+import java.time.DateTimeException;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 @RestControllerAdvice
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
@@ -81,10 +82,18 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 		return new ResponseEntity<>(new ImageImportBulkErrorResponse(e.getErrors()), INTERNAL_SERVER_ERROR);
 	}
 
-	
-	
-	
-	
+	@ExceptionHandler(DateTimeParseException.class)
+	@ResponseBody
+	public ResponseEntity<ErrorResponseDTO> handleDateTimeException(DateTimeParseException e, WebRequest requestInfo, HttpServletRequest request) {
+		logException(requestInfo, request, e);
+		ErrorCodes errCode = ErrorCodes.DATE$TIME$0002;
+		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(errCode.getValue(), errCode.name());
+		return new ResponseEntity<>(errorResponseDTO, BAD_REQUEST);
+	}
+
+
+
+
 	@ExceptionHandler(RuntimeBusinessException.class)
 	@ResponseBody
 	public ResponseEntity<ErrorResponseDTO> handleBusinessExceptionInterface(RuntimeBusinessException e, WebRequest requestInfo , HttpServletRequest request) {
