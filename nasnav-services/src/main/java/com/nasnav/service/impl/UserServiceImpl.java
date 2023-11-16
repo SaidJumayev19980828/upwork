@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
@@ -269,7 +270,10 @@ public class UserServiceImpl implements UserService {
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
 		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
-		userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
+
+			if(!StringUtils.validDateTime(userJson.getDateOfBirth()))
+				userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
+
 		Long userId = userRepository.saveAndFlush(userEntity).getId();
 		if (successResponseStatusList.isEmpty()) {
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);

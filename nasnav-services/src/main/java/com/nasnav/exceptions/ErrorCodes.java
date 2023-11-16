@@ -403,6 +403,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0019("organization(s) [%s] not found in yeshtery")
 
 	,DATE$TIME$0001("Invalid date time field [%s]")
+	,DATE$TIME$0002("Invalid date time format")
 
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	,ORG$SETTING$0002("No setting type exists with [%d]!")
