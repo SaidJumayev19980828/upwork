@@ -5,6 +5,8 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.service.model.IdAndNamePair;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -20,7 +22,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     List<TagsEntity> findByIdIn(List<Long> ids);
     List<TagsEntity> findByOrganizationEntity_Id(Long orgId);
     List<TagsEntity> findByOrganizationEntity_IdOrderByPriorityDesc(Long orgId);
-    List<TagsEntity> findByOrganizationEntity_IdInOrderByPriorityDesc(Set<Long> orgIds);
+    PageImpl<TagsEntity> findByOrganizationEntity_IdInOrderByPriorityDesc(Set<Long> orgIds , Pageable pageable);
     Optional<TagsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdIn(List<Long> tagsIds);
     List<TagsEntity> findByCategoriesEntity_IdInAndOrganizationEntity_Id(List<Long> tagsIds, Long orgId);
@@ -34,7 +36,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
             " order by t.priority desc")
     List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdOrderPriorityDesc(@Param("categoryName") String categoryName,
                                                                                           @Param("orgId") Long orgId);
-    List<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(String categoryName, Set<Long> orgIds);
+    PageImpl<TagsEntity> findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(String categoryName, Set<Long> orgIds, Pageable pageable);
 
     @Query("SELECT tag FROM TagsEntity tag " +
             " LEFT JOIN tag.organizationEntity org " +

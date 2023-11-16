@@ -144,7 +144,7 @@ public class CartServiceImpl implements CartService {
         if(user instanceof EmployeeUserEntity) {
              user = userRepository.findById(dto.getCustomerId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,dto.getCustomerId()));
         }
-        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
+        return getUserCart(user.getId(),user.getOrganizationId(), promoCode, points, yeshteryCart);
     }
 
 
@@ -169,6 +169,10 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getUserCart(Long userId, String promoCode, Set<Long> points, boolean yeshteryCart) {
         return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId(), points, yeshteryCart);
+    }
+
+    public Cart getUserCart(Long userId,Long orgId ,String promoCode, Set<Long> points, boolean yeshteryCart) {
+        return  getUserCart(userId, promoCode, orgId, points, yeshteryCart);
     }
     
     
@@ -523,6 +527,7 @@ public class CartServiceImpl implements CartService {
     private CartItem createCartItemDto(CartItemEntity itemData) {
         CartItem itemDto = new CartItem();
 
+
         StocksEntity stock = itemData.getStock();
         ProductVariantsEntity variant = stock.getProductVariantsEntity();
         ProductEntity product = variant.getProductEntity();
@@ -534,6 +539,7 @@ public class CartServiceImpl implements CartService {
         Map<String,String> variantFeatures = ofNullable(productService.parseVariantFeatures(variant, 0))
                 .orElse(new HashMap<>());
         Map<String,Object> additionalData = cartServiceHelper.getAdditionalDataAsMap(itemData.getAdditionalData());
+
 
         itemDto.setBrandId( brand.getId());
         itemDto.setBrandLogo(brand.getLogo());
@@ -715,13 +721,10 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
-            BaseUserEntity user = securityService.getCurrentUser();
-            if(user instanceof EmployeeUserEntity) {
-                throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-            }
+    public Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart,Long userId){
+            BaseUserEntity user = getUser(userId);
             cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
-            return getUserCart(user.getId(), promoCode, points, yeshteryCart);
+            return getUserCart(user.getId(),user.getOrganizationId() ,promoCode, points, yeshteryCart);
     }
 
     @Scheduled(fixedRate = 864000000)
@@ -822,4 +825,16 @@ public class CartServiceImpl implements CartService {
 		}
 		return list;
 	}
+
+
+    private BaseUserEntity getUser(Long userId) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            if (userId==null) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, NOTIUSERPARAM$0006);
+            }
+            return userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
+        }
+        return user;
+    }
 }

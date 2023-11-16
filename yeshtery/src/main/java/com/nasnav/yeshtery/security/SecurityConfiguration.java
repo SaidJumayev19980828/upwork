@@ -161,6 +161,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/logout_all"						, getAllRoles() )
             , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
             , patternOf( "/v1/cart/{userId:\\d+}"		,GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))
+            , patternOf( "/v1/cart/item"			,DELETE					, getAllRoles())
             , patternOf( "/v1/cart/**"								, setOf(CUSTOMER))
             , patternOf( "/v1/pickup/**"							    , setOf(CUSTOMER))
             , patternOf( "/v1/wishlist/{userId:\\d+}"		,GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))

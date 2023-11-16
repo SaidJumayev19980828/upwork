@@ -196,6 +196,9 @@ public class OrderServiceImpl implements OrderService {
 	private OrderStatisticService orderStatisticService;
 	@Autowired
 	private promotionToDTO promotionMapper;
+	@Autowired
+	private  UserRepository userRepository;
+
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -2230,7 +2233,7 @@ public class OrderServiceImpl implements OrderService {
 		Long orgId = org.getId();
 		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems, orgId);
 
-		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org, yeshteryOrder);
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems, org, yeshteryOrder , dto.getCustomerId());
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
 		subOrder.setSubTotal(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
@@ -2347,10 +2350,17 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+	private BaseUserEntity getUser(Long userId) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			return userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
+		}
+		return user;
+	}
 
 	private OrdersEntity createSubOrder(AddressesEntity shippingAddress, CartItemsForShop cartItems,
-										OrganizationEntity org, boolean yeshteryOrder) {
-		UserEntity user = (UserEntity) securityService.getCurrentUser();
+										OrganizationEntity org, boolean yeshteryOrder, Long userId) {
+		UserEntity user = (UserEntity) getUser(userId);
 
 		if (yeshteryOrder) {
 			user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), org.getId())
