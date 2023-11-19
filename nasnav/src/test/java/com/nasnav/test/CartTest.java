@@ -382,6 +382,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteCartItemSuccess() {
+		//Test
 		Long itemsCountBefore = cartItemRepo.countByUser_Id(88L);
 		Long itemId = cartItemRepo.findCurrentCartItemsByUser_Id(88L).get(0).getId();
 		HttpEntity<?> request =  getHttpEntity("123");
@@ -391,6 +392,19 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(OK, response.getStatusCode());
 		assertEquals(itemsCountBefore - 1 , response.getBody().getItems().size());
 	}
+
+	@Test
+	public void deleteCartItemWithEmployeeTokenAndException() {
+		//Test
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(88L);
+		Long itemId = cartItemRepo.findCurrentCartItemsByUser_Id(88L).get(0).getId();
+		HttpEntity<?> request =  getHttpEntity("101112");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/item?item_id=" + itemId, DELETE, request, Cart.class);
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
 
 	@Test
 	public void removeCartNoAuthz() {
@@ -476,22 +490,20 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
 	}
 
-//	@Test
-//	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
-//	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-//	public void checkoutWithEmployeeToken() {
-//
-//		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
-//
-//		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
-//		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
-//		assertEquals(200, res.getStatusCodeValue());
-//	}
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_15.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithEmployeeToken() {
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+	}
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void checkoutWithEmployeeTokenWithException() {
+	public void checkoutWithEmployeeTokenWithoutCustomerIdAndException() {
 		JSONObject body = new JSONObject();
 		Map<String, String> additionalData = new HashMap<>();
 		body.put("customer_address", 12300001);

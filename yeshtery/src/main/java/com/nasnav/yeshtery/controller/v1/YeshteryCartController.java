@@ -65,8 +65,11 @@ public class YeshteryCartController {
     public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
                                @RequestParam("item_id") Long itemId,
                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
-                               @RequestParam(required = false) Set<Long> points) {
-        return cartService.deleteYeshteryCartItem(itemId, promoCode, points, true);
+                               @RequestParam(required = false) Set<Long> points,
+                               @RequestParam(value = "user_id", required = false) Long userId
+
+    ) {
+        return cartService.deleteYeshteryCartItem(itemId, promoCode, points, true , userId);
     }
 
     @PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)

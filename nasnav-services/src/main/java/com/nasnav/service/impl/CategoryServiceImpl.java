@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.commons.utils.FunctionalUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
@@ -22,6 +23,9 @@ import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.jgrapht.traverse.BreadthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
@@ -230,20 +235,23 @@ public class CategoryServiceImpl implements CategoryService {
 	}
 
 	@Override
-	public List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId) {
-    	Set<Long> orgIdList = new HashSet<>();
+	public PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId) {
+		Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+
+		Set<Long> orgIdList = new HashSet<>();
     	if (orgId == null) {
 			orgIdList = orgRepo.findIdByYeshteryState(1);
 		} else {
 			orgIdList = orgRepo.findIdByYeshteryStateAndOrganizationId(1, orgId);
 		}
-		List<TagsEntity> tagsEntities;
+		PageImpl<TagsEntity> tagsEntities;
 		if(isBlankOrNull(categoryName)) {
-			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList);
+			tagsEntities = orgTagsRepo.findByOrganizationEntity_IdInOrderByPriorityDesc(orgIdList ,page);
 		} else {
-			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList);
+			tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdInOrderByPriorityDesc(categoryName, orgIdList,page);
 		}
-		return toTagsDTO(tagsEntities);
+		return new PageImpl<>(toTagsDTO(tagsEntities.getContent()), tagsEntities.getPageable(), tagsEntities.getTotalElements());
+
 	}
 
 	private List<TagsRepresentationObject> toTagsDTO(List<TagsEntity> tagsEntities) {

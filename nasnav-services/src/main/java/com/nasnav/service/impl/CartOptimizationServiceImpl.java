@@ -8,10 +8,10 @@ import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.UserAddressRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
-import com.nasnav.dto.response.LoyaltyPointsCartResponseDto;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
@@ -34,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -49,6 +48,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
 @Service
@@ -86,13 +86,13 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	private LoyaltyPointsService loyaltyPointsService;
     @Autowired
 	private CartItemAddonDetailsRepository cartItemAddonDetailsRepo;
-	
+
+	@Autowired
+	private  UserRepository userRepository;
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
-		//TODO::moaemn
 		checkIfCartHasEmptyStock(dto.getCustomerId());
-
 		return optimizeCart(dto, yeshteryCart);
 	}
 
@@ -268,11 +268,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	private Optimizer getOptimizerData(CartCheckoutDTO dto) {
 		var shippingServiceId = dto.getServiceId();
-
+		Long orgId = retrieveOrgId(dto.getCustomerId());
 		var shippingServiceOptimizer =
-				getCartOptimizationStrategyForShippingService(shippingServiceId);
+				getCartOptimizationStrategyForShippingService(shippingServiceId,orgId);
 		var organizationCartOptimizer =
-				getCartOptimizationStrategyForOrganization();
+				getCartOptimizationStrategyForOrganization(orgId);
 		var defaultOptimizer = Optional.of(new Optimizer(DEFAULT_OPTIMIZER, "{}"));
 		
 		return firstExistingValueOf(
@@ -282,7 +282,15 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006));
 	}
 	
-	
+public Long retrieveOrgId(Long userId){
+
+	BaseUserEntity userAuthed = securityService.getCurrentUser();
+	if(userAuthed instanceof EmployeeUserEntity) {
+		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
+		return  userEntity.getOrganizationId() ;
+	}
+		return  userAuthed.getOrganizationId();
+}
 
 	private Optional<Optimizer> createOptimizerData(OrganizationCartOptimizationEntity entity){
 		return ofNullable(entity)
@@ -324,6 +332,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.flatMap(this::createOptimizerData);
 	}
 
+	private Optional<Optimizer> getCartOptimizationStrategyForOrganization(Long orgId){
+		return orgCartOptimizerRepo
+				.findOrganizationDefaultOptimizationStrategy(orgId)
+				.flatMap(this::createOptimizerData);
+	}
 	
 	
 	public Optional<Optimizer> getCartOptimizationStrategyForShippingService(String shippingServiceId){
@@ -332,7 +345,11 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.findByShippingServiceIdAndOrganization_Id(shippingServiceId, orgId)
 				.flatMap(this::createOptimizerData);
 	}
-
+	public Optional<Optimizer> getCartOptimizationStrategyForShippingService(String shippingServiceId,Long orgId){
+		return orgCartOptimizerRepo
+				.findByShippingServiceIdAndOrganization_Id(shippingServiceId, orgId)
+				.flatMap(this::createOptimizerData);
+	}
 
 
 	@Override

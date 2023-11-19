@@ -291,9 +291,13 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/tags", produces = APPLICATION_JSON_VALUE)
-    public List<TagsRepresentationObject> getTags(@RequestParam(value = "category_name", required = false) String categoryName,
-                                                  @RequestParam(value = "org_id", required = false) Long orgId) {
-        return categoryService.getYeshteryOrganizationsTags(categoryName, orgId);
+    public PageImpl<TagsRepresentationObject> getTags(
+            @RequestParam(value = "category_name", required = false) String categoryName,
+            @RequestParam(value = "org_id", required = false) Long orgId,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+    ) {
+        return categoryService.getYeshteryOrganizationsTags( start,  count ,  categoryName, orgId);
     }
 
     @GetMapping(value = "/tag", produces = APPLICATION_JSON_VALUE)

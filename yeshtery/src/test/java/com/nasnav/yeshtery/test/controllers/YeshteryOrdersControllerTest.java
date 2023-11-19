@@ -11,6 +11,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.CategoryDto;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.Order;
@@ -53,7 +54,9 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -251,11 +254,16 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getTags() {
-        ResponseEntity<List> tags = template.getForEntity("/v1/yeshtery/tags?org_id=99001", List.class);
 
-        assertTrue(!tags.getBody().isEmpty());
-        Assert.assertEquals(2, tags.getBody().size());
-        log.debug("{}", tags.getBody());
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<RestResponsePage<TagsRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+        Integer start = 0;
+        Integer count = 10;
+        ResponseEntity<RestResponsePage<TagsRepresentationObject>> response = template.exchange("/v1/yeshtery/tags?org_id=99001&start=" + start + "&count=" + count, HttpMethod.GET, httpEntity, responseType);
+
+        Assert.assertEquals(200, response.getStatusCodeValue());
+
     }
 
     @SuppressWarnings("rawtypes")

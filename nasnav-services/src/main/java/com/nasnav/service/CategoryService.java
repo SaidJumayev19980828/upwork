@@ -10,6 +10,7 @@ import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dto.CategoryDTO;
@@ -47,7 +48,7 @@ public interface CategoryService {
   //    @CacheResult(cacheName = "organizations_tags")
   List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName);
 
-  List<TagsRepresentationObject> getYeshteryOrganizationsTags(String categoryName, Long orgId);
+  PageImpl<TagsRepresentationObject> getYeshteryOrganizationsTags(Integer start, Integer count , String categoryName, Long orgId);
 
   List<TagsTreeNodeDTO> getOrganizationTagsTree(Long orgId) throws BusinessException;
 

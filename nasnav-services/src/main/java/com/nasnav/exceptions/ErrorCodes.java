@@ -506,6 +506,8 @@ public enum ErrorCodes {
 
 	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
 	,NOTIUSER$0006("We can not find customer Id With Body Request")
+	,NOTIUSERPARAM$0006("We can not find customer Id With Request Param")
+
 	;
 
 	@Getter

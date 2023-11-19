@@ -3,9 +3,13 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.TagsRepresentationObject;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
@@ -15,17 +19,15 @@ import static java.util.Optional.ofNullable;
 
 @Table(name = "tags")
 @Entity
-@Data
-
+@Setter
+@Getter
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
     public TagsEntity() {
         allowReward = false;
     }
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @Column(name = "name")
     private String name;
