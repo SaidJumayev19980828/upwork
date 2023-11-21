@@ -6,6 +6,7 @@ import java.util.Map;
 import com.nasnav.dto.UserCartInfo;
 import com.nasnav.dto.request.RequestType;
 import com.nasnav.dto.response.ProductStatisticsInfo;
+import com.nasnav.dto.response.VideoCallStatsResponse;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.UserEntity;
@@ -26,5 +27,8 @@ public interface StatisticsService {
   List<UserCartInfo> getUsersAbandonedCarts();
 
   UserCartInfo toUserCartInfo(Map.Entry<UserEntity, List<CartItemEntity>> map);
+
+  VideoCallStatsResponse getVideoCallStats();
+
 
 }

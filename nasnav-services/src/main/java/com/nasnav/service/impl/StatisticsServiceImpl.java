@@ -2,19 +2,27 @@ package com.nasnav.service.impl;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.UserCartInfo;
+import com.nasnav.dto.VideoCallDetailsDto;
+import com.nasnav.dto.VideoCallStatsDto;
 import com.nasnav.dto.request.RequestType;
+import com.nasnav.dto.response.CallQueueDTO;
 import com.nasnav.dto.response.OrderStatisticsInfo;
 import com.nasnav.dto.response.ProductStatisticsInfo;
+import com.nasnav.dto.response.VideoCallStatsResponse;
 import com.nasnav.dto.response.navbox.StatisticsCartItem;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.mappers.CallQueueMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartStatisticsData;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.StatisticsService;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,29 +33,26 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.dto.request.RequestType.COUNT;
+import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 
 @Service
+@RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
 
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private ProductService productService;
 
-    @Autowired
-    private OrdersRepository ordersRepo;
-    @Autowired
-    private MetaOrderRepository metaOrderRepo;
-    @Autowired
-    private CartItemRepository cartItemRepo;
-    @Autowired
-    private UserRepository userRepo;
-    @Autowired
-    private UserTokenRepository tokenRepo;
+    private final SecurityService securityService;
+    private final ProductService productService;
+    private final OrdersRepository ordersRepo;
+    private final MetaOrderRepository metaOrderRepo;
+    private final CartItemRepository cartItemRepo;
+    private final UserRepository userRepo;
+    private final UserTokenRepository tokenRepo;
+    private final VideoChatLogRepository videoChatLogRepository;
+    private final CallQueueRepository callQueueRepository;
 
     @Override
     public List<Map<String,Object>> getOrderStatistics(List<OrderStatus> statuses, RequestType type, Integer months) {
@@ -176,6 +181,77 @@ public class StatisticsServiceImpl implements StatisticsService {
         return info;
     }
 
+    @Override
+    public VideoCallStatsResponse getVideoCallStats() {
+        List<CallQueueEntity> totalCalls = callQueueRepository.findTodayTotalCalls();
+        Integer answeredCalls = Math.toIntExact(
+                        totalCalls
+                                .stream()
+                                .map(CallQueueEntity::getStatus)
+                                .filter(c -> c.equals(2))
+                                .count()
+                );
+        Integer waitingCalls = Math.toIntExact(
+                totalCalls
+                        .stream()
+                        .map(CallQueueEntity::getStatus)
+                        .filter(c -> c.equals(0))
+                        .count()
+        );
+
+        List<CallQueueEntity> scheduledEntities = callQueueRepository.findScheduledCalls();
+
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof UserEntity){
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,G$USR$0001);
+        }
+        EmployeeUserEntity employee = (EmployeeUserEntity) user;
+
+        List<CallQueueEntity> upcomingEntities = callQueueRepository.findUpcomingCalls(employee.getId());
+
+        List<VideoCallDetailsDto> scheduledCalls = new ArrayList<>();
+        List<VideoCallDetailsDto> upcomingCalls = new ArrayList<>();
+
+        for (CallQueueEntity entity : scheduledEntities){
+            scheduledCalls.add(
+                    VideoCallDetailsDto
+                            .builder()
+                            .userId(entity.getUser().getId())
+                            .userName(entity.getUser().getName())
+                            .userEmail(entity.getUser().getEmail())
+                            .employeeName(null)
+                            .organizationName(entity.getOrganization().getName())
+                            .joinsAt(entity.getJoinsAt())
+                            .build()
+            );
+        }
+        for (CallQueueEntity entity : upcomingEntities){
+            upcomingCalls.add(
+                    VideoCallDetailsDto
+                            .builder()
+                            .userId(entity.getUser().getId())
+                            .userName(entity.getUser().getName())
+                            .userEmail(entity.getUser().getEmail())
+                            .employeeName(employee.getName())
+                            .organizationName(entity.getOrganization().getName())
+                            .joinsAt(entity.getJoinsAt())
+                            .build()
+            );
+        }
+
+        return VideoCallStatsResponse
+                .builder()
+                .totalWaitingCalls(waitingCalls)
+                .todayStats(VideoCallStatsDto
+                        .builder()
+                        .todayTotalCalls(totalCalls.size())
+                        .todayAnsweredCalls(answeredCalls)
+                        .build())
+                .scheduledCalls(scheduledCalls)
+                .upcomingCalls(upcomingCalls)
+                .build();
+    }
+
     private StatisticsCartItem toCartItem(CartItemEntity entity) {
         var item = new StatisticsCartItem();
         StocksEntity stock = entity.getStock();
@@ -217,5 +293,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private Integer getWeekNumber(Integer week) {
         return ofNullable(week).orElseGet(() -> now().get(ChronoField.ALIGNED_WEEK_OF_MONTH));
     }
+
+
 }
 
