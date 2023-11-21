@@ -6,6 +6,7 @@ import com.univocity.parsers.annotations.Validate;
 import lombok.Data;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,7 +35,6 @@ public class EventForRequestDTO {
 
     private Long coin;
 
-    @NotNull
-    @Valid
-    private RoomTemplateDTO roomTemplate;
+    @NotBlank(message = "\"scene_id\" must not be blank or null")
+    private String sceneId;
 }

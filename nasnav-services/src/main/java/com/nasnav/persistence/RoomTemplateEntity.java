@@ -28,7 +28,7 @@ public class RoomTemplateEntity extends DefaultBusinessEntity<Long> {
 	@Column(name = "scene_id", nullable = false)
 	String sceneId;
 
-	@Column(name = "data", nullable = false)
+	@Column(name = "data", nullable = true)
 	String data;
 
 	@OneToOne(mappedBy = "template", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)

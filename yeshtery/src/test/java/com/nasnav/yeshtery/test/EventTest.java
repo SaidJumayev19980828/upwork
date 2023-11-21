@@ -74,9 +74,6 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         attachment2.setCoin(20L);
 
         List<EventAttachmentsEntity> attachments = Arrays.asList(attachment1,attachment2);
-        RoomTemplateDTO roomTemplateDTO = new RoomTemplateDTO();
-        roomTemplateDTO.setSceneId("testasc");
-        roomTemplateDTO.setData("This is my room template data.");
 
         EventForRequestDTO eventForRequestDTO = new EventForRequestDTO();
        eventForRequestDTO.setOrganizationId(99001L);
@@ -90,7 +87,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         Set<Long> influencersIds = new HashSet<>();
         productsIds.add(1001L);
        eventForRequestDTO.setInfluencersIds(influencersIds);
-       eventForRequestDTO.setRoomTemplate(roomTemplateDTO);
+       eventForRequestDTO.setSceneId("testasc");
        eventForRequestDTO.setAttachments(attachments);
        eventForRequestDTO.setCoin(10L);
        eventForRequestDTO.setVisible(false);

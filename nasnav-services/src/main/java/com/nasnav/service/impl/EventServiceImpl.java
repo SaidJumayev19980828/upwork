@@ -76,7 +76,7 @@ public class EventServiceImpl implements EventService{
                 throw new RuntimeBusinessException(NOT_ACCEPTABLE,P$PRO$0016,id);
         });
        EventEntity event = eventRepository.save(toEntity(dto, org, null));
-        saveNewRoomTemplate(event, dto.getRoomTemplate());
+        saveNewRoomTemplate(event, dto.getSceneId());
         return toDto(event);
     }
 
@@ -261,12 +261,13 @@ public class EventServiceImpl implements EventService{
     }
 
 
-    private void saveNewRoomTemplate(EventEntity event, RoomTemplateDTO roomTemplateDTO) {
+    private void saveNewRoomTemplate(EventEntity event,String sceneId) {
         EventRoomTemplateEntity template = new EventRoomTemplateEntity();
         template.setEvent(event);
-        mapper.updateTemplateEntityfromDTO(roomTemplateDTO, template);
+        template.setSceneId(sceneId);
          roomTemplateRepository.save(template);
     }
+
 
         public EventResponseDto toDto(EventEntity entity){
         ProductFetchDTO productFetchDTO = new ProductFetchDTO();
