@@ -241,7 +241,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/service/{id:\\d+}"           ,GET                         , setOf(NASNAV_ADMIN)),
 			patternOf( "/service/org"                 ,GET                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf( "/service/org"                 ,PUT                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
-
+			patternOf("/contactUs/**",GET,getAllRoles()),
 			patternOf( "/**")
 
 
@@ -295,8 +295,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
 						, patternOf("/frontend/setting", GET)
 						, patternOf("/chat-widget-setting/get-published", GET)
-						, patternOf("/contactUs")
-						, patternOf("/contactUs/**")
+						, patternOf("/contactUs**",POST)
 
                  );
 

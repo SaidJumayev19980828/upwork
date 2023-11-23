@@ -122,7 +122,7 @@ public class ContactUsTest extends AbstractTestWithTempBaseDir {
         HttpEntity<Object> httpEntity = getHttpEntity("101112");
         ParameterizedTypeReference<RestResponsePage<ContactUsEntity>> responseType = new ParameterizedTypeReference<>() {
         };
-        ResponseEntity<RestResponsePage<ContactUsEntity>> response = template.exchange("/contactUs/all?fromDate=2023-11-11T17:58:26.746741&start=0&count=1" , HttpMethod.GET, httpEntity, responseType);
+        ResponseEntity<RestResponsePage<ContactUsEntity>> response = template.exchange("/contactUs/all?fromDate=2023-11-11T17:58:26.746741&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
 
