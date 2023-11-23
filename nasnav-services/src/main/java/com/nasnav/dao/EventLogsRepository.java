@@ -40,8 +40,6 @@ int countAttends(Long influencerId, @DateTimeFormat(pattern="yyyy-MM-dd")Date da
     int countByEventId(@Param("eventId") Long eventId);
 
 
-    PageImpl<EventLogsEntity> findAllByEventStartsAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime , Pageable page);
-
     @Query("SELECT Distinct NEW com.nasnav.dto.InterestEventInfo(e.startsAt ,e.name , e.id ,o.id ,o.name," +
             "COALESCE(u.id, emp.id), COALESCE(u.name, emp.name), COALESCE(u.email, emp.email)) " +
             "FROM EventLogsEntity el " +

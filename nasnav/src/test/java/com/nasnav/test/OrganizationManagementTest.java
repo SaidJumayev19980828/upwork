@@ -1,5 +1,6 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -7,6 +8,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -215,10 +218,31 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    public void updateOrganizationInvalidLogoTest() {
-        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\",\"name\":\"test org\", \"short_description\":\"test short description\", \"opening_hours\":\"test opening hour\"}";
+    public void updateOrganizationInvalidLogoTest() throws JsonProcessingException {
+        OrganizationModificationDTO organizationModificationDTO = new OrganizationModificationDTO();
+        organizationModificationDTO.setName("Example Organization");
+        organizationModificationDTO.setOrgId(123L);
+        organizationModificationDTO.setDescription("Example description");
+        organizationModificationDTO.setShortDescription("Short description");
+        organizationModificationDTO.setOpeningHours("9:00 AM - 5:00 PM");
+        organizationModificationDTO.setThemeId(1);
+        organizationModificationDTO.setSocialTwitter("twitter-handle");
+        organizationModificationDTO.setSocialFacebook("facebook-handle");
+        organizationModificationDTO.setSocialInstagram("instagram-handle");
+        organizationModificationDTO.setSocialYoutube("youtube-handle");
+        organizationModificationDTO.setSocialLinkedin("linkedin-handle");
+        organizationModificationDTO.setSocialPinterest("pinterest-handle");
+        organizationModificationDTO.setSocialWhatsapp("whatsapp-number");
+        Map<String, Object> infoMap = new HashMap<>();
+        infoMap.put("key1", "value1");
+        infoMap.put("key2", "value2");
+        organizationModificationDTO.setInfo(infoMap);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonString = objectMapper.writeValueAsString(organizationModificationDTO);
+
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
-        map.add("properties", body);
+        map.add("properties", jsonString);
         map.add("logo", databaseCleanup);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);

@@ -21,9 +21,4 @@ public class InterestEventInfo {
     private Long userId;
     private String userName;
     private String userEmail;
-//    private Long employeeId;
-//    private String employeeName;
-//    private String employeeEmail;
-
-
 }
