@@ -170,7 +170,7 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<String> response = template.postForEntity("/v1/event/interset/100",
                 getHttpEntity("", "123"), String.class);
         assertEquals(200, response.getStatusCode().value());
-        assertTrue(eventLogsRepository.existsByEvent_IdAndUser_IdOrEmployee_Id(100L,88L,88L));
+        assertTrue(eventLogsRepository.existsByEvent_IdAndUser_IdOrEvent_IdAndEmployee_Id(100L,88L,100L,88L));
     }
 
     @Test

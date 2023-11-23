@@ -204,7 +204,7 @@ public class EventServiceImpl implements EventService{
         EventEntity event = eventRepository.findById(eventId).
                 orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId));
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        if(eventLogsRepository.existsByEvent_IdAndUser_IdOrEmployee_Id(eventId,loggedInUser.getId(),loggedInUser.getId())){
+        if(eventLogsRepository.existsByEvent_IdAndUser_IdOrEvent_IdAndEmployee_Id(eventId,loggedInUser.getId(),eventId,loggedInUser.getId())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE,EVENT$HAS$INTEREST$0006,eventId);
         }
         EventLogsEntity entity = new EventLogsEntity();
