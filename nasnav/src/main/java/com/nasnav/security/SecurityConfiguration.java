@@ -289,6 +289,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
 						, patternOf("/frontend/setting", GET)
 						, patternOf("/chat-widget-setting/get-published", GET)
+						, patternOf("/contactUs")
+						, patternOf("/contactUs/**")
 
                  );
 

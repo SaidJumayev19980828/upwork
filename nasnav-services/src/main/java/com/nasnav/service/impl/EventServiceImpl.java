@@ -26,14 +26,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
+import static com.nasnav.constatnts.EmailConstants.INTEREST_MAIL;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -55,6 +61,7 @@ public class EventServiceImpl implements EventService{
     private final OrganizationThemeRepository  organizationThemeRepository;
     private final EventRoomMapper mapper;
     private final EventRoomTemplateRepository roomTemplateRepository;
+    private final MailService mailService;
 
 
     @Override
@@ -193,7 +200,7 @@ public class EventServiceImpl implements EventService{
     }
 
     @Override
-    public void intersetEventForUser(Long eventId) {
+    public void intersetEventForUser(Long eventId) throws MessagingException, IOException {
         EventEntity event = eventRepository.findById(eventId).
                 orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$EVENT$0001,eventId));
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
@@ -211,6 +218,8 @@ public class EventServiceImpl implements EventService{
         entity.setInterestedAt(LocalDateTime.now());
         entity.setCreatedAt(LocalDateTime.now());
         eventLogsRepository.save(entity);
+        sendInterestEmail(event.getStartsAt(),event.getName(),event.getOrganization().getName(), loggedInUser.getName(), loggedInUser.getEmail(),INTEREST_MAIL, "Event Interest");
+
     }
 
     private EventEntity toEntity(EventForRequestDTO dto, OrganizationEntity org,  Long id){
@@ -387,6 +396,29 @@ public class EventServiceImpl implements EventService{
             dto.setUserType("Employee");
         }
         return dto;
+    }
+
+    @Async
+    @Override
+    public void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject) throws MessagingException, IOException {
+        LocalDate eventDate =  startAt.toLocalDate();
+        LocalTime eventTime = startAt.toLocalTime();
+        Map<String, String> parametersMap = prepareMailContent(eventName,userName,eventDate,eventTime);
+        mailService.send(orgName, userEmail, emailSubject, mailTemplate,parametersMap);
+    }
+
+
+
+
+    public Map<String, String> prepareMailContent(String eventName,String userName,LocalDate eventDate,
+                                                  LocalTime eventTime) {
+        Map<String, String> parametersMap = new HashMap<>();
+        parametersMap.put("#EventName#", eventName);
+        parametersMap.put("#CustomerName#", userName);
+        parametersMap.put("#EventDate#", String.valueOf(eventDate));
+        parametersMap.put("#EventTime#",String.valueOf(eventTime));
+        parametersMap.put("#EventLink#","https://www.nasnav.com/");
+        return parametersMap;
     }
 
     @Override

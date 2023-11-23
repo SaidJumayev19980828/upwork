@@ -276,6 +276,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         ,              patternOf( "/v1/event/all/**"                                , GET)
                         , patternOf("/v1/chat-widget-setting/get-published", GET)
                         , patternOf("/v1/loyalty/config/all"		, GET)
+                        , patternOf("/v1/contactUs")
+                        , patternOf("/v1/contactUs/**")
                         );
 
     AuthenticationProvider provider;

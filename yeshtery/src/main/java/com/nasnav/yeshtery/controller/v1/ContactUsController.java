@@ -34,17 +34,17 @@ public class ContactUsController {
 
 
     @PostMapping
-    public void contactUsMail(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody ContactUsRequestDto request, @RequestParam Long orgId) throws MessagingException, IOException {
+    public void contactUsMail(@RequestHeader(value = TOKEN_HEADER , required = false) String userToken, @RequestBody ContactUsRequestDto request, @RequestParam Long orgId) throws MessagingException, IOException {
         contactUsService.sendContactUsEmail(request,orgId);
     }
 
     @PostMapping("/feedback")
-    public void contactUsFeedbackMail(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody ContactUsFeedBackRequestDto request) throws MessagingException, IOException {
+    public void contactUsFeedbackMail(@RequestHeader(value = TOKEN_HEADER , required = false) String userToken, @RequestBody ContactUsFeedBackRequestDto request) throws MessagingException, IOException {
         contactUsService.sendFeedbackEmail(request);
     }
 
     @GetMapping
-    public ContactUsEntity getContactUs(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam Long formId) {
+    public ContactUsEntity getContactUs(@RequestHeader(value = TOKEN_HEADER , required = false) String userToken, @RequestParam Long formId) {
         return contactUsService.getContactUsFormById(formId);
     }
 
