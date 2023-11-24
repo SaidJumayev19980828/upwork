@@ -12,6 +12,8 @@ import com.nasnav.persistence.EventEntity;
 
 import org.springframework.data.domain.PageImpl;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +29,7 @@ public interface EventService {
     PageImpl<EventInterestDTO> getInterestsByEventId(Long eventId,Integer start, Integer count);
     void updateEvent(EventForRequestDTO dto, Long eventId);
     void deleteEvent(Long eventId, Boolean force);
-    void intersetEventForUser(Long eventId);
+    void intersetEventForUser(Long eventId) throws MessagingException, IOException;
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
@@ -37,4 +39,5 @@ public interface EventService {
 
      EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection);
 
+     void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject) throws MessagingException, IOException;
 }

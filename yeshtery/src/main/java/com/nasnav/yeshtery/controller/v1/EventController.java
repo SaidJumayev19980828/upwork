@@ -13,8 +13,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
+
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -101,7 +104,7 @@ public class EventController {
 
     @PostMapping("/interset/{eventId}")
     public void intersetForUser(@RequestHeader(name = "User-Token", required = false) String token,
-                                @PathVariable Long eventId){
+                                @PathVariable Long eventId) throws MessagingException, IOException {
         eventService.intersetEventForUser(eventId);
     }
 

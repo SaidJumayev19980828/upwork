@@ -1,10 +1,15 @@
 package com.nasnav.service.scheduler;
 
+import com.nasnav.dao.EventLogsRepository;
 import com.nasnav.dao.SchedulerTaskRepository;
+import com.nasnav.dto.InterestEventInfo;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EventLogsEntity;
 import com.nasnav.persistence.SchedulerTaskEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.BankAccountService;
 import com.nasnav.service.DomainService;
+import com.nasnav.service.EventService;
 import com.nasnav.service.MailService;
 import com.nasnav.service.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,16 +27,11 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.constatnts.EmailConstants.*;
 
 @Service
@@ -49,10 +49,13 @@ public class ScheduleTaskHelper {
     private DomainService domainService;
     @Autowired
     private  OrganizationService orgService;
+    @Autowired
+    private EventLogsRepository eventLogsRepository;
+    @Autowired
+    private EventService  eventService;
 
     private ScheduledExecutorService scheduledExecutorService;
     public ScheduleTaskHelper(TaskScheduler scheduler) {
-
         this.scheduler = scheduler;
         this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     }
@@ -135,6 +138,9 @@ public class ScheduleTaskHelper {
         CompletableFuture.runAsync(this::schularJob, scheduledExecutorService);
     }
 
+    public void runInterestReminderMail() {
+        CompletableFuture.runAsync(this::interestReminderMailJob, scheduledExecutorService);
+    }
     @Scheduled(cron = "0 1 0 * * ?")
     public void schularJob(){
         LocalDateTime startDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
@@ -157,6 +163,40 @@ public class ScheduleTaskHelper {
         bankAccountService.setAllAccountsOpeningBalance();
     }
 
+    @Scheduled(cron = "0 1 0 * * ?")
+    public void interestReminderMailJob(){
+        LocalDateTime startDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+        LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+        int page = 0;
+        int pageSize = 10;
+        PageImpl<InterestEventInfo> reminderMail;
+        do {
+            PageRequest pageRequest = PageRequest.of(page, pageSize);
+            reminderMail = eventLogsRepository.findOrganizationUserDTOByIdAndEventStartsToday(startDateTime, endDateTime, pageRequest);
+            for (InterestEventInfo reminder : reminderMail.getContent()) {
+                System.out.println(reminder.getStartAt());
+                addReminderToScheduler(reminder);
+            }
+            page++;
+        } while (reminderMail.hasNext());
+    }
+
+    public void addReminderToScheduler(InterestEventInfo reminder) {
+        if (LocalDateTime.now().plusMinutes(30).isBefore(reminder.getStartAt())) {
+            long initialDelay = LocalDateTime.now()
+                    .until(reminder.getStartAt().minusMinutes(30), ChronoUnit.MILLIS);
+            System.out.println(initialDelay);
+            System.out.println(LocalDateTime.now());
+            ScheduledFuture<?> scheduledTask = scheduledExecutorService.schedule(() -> {
+                try {
+                    eventService.sendInterestEmail(reminder.getStartAt(),reminder.getEventName(), reminder.getOrganizationName(),  reminder.getUserName(), reminder.getUserEmail(), INTEREST_REMINDER_MAIL , "Gentle Reminder For Event");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }, initialDelay, TimeUnit.MILLISECONDS);
+            jobsMap.put(reminder.getEventId(), scheduledTask);
+        }
+    }
 }
 
 

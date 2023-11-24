@@ -27,21 +27,21 @@ public class EventLogsEntity {
     @Column(name = "attend_at")
     private LocalDateTime attendAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private EventEntity event;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
     @JoinColumn(name = "user_id", nullable = true)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
     @JoinColumn(name = "employee_id", nullable = true)
     @JsonIgnore
     @EqualsAndHashCode.Exclude

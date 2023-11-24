@@ -16,6 +16,7 @@ import java.util.Map;
 @JsonIgnoreProperties
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class OrganizationModificationDTO {
+    private String name;
     private Long orgId;
     private String description;
     private String shortDescription;

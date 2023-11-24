@@ -59,5 +59,9 @@ public final class EmailConstants {
 
     public static final String CONTACT_US_FEEDBACK_MAIL = "mail_templates/contact_us_feedback_mail.html";
 
+    public static final String INTEREST_MAIL= "mail_templates/Interest_Mail.html";
+
+    public static final String INTEREST_REMINDER_MAIL= "mail_templates/Interest_reminder_mail.html";
+
 
 }

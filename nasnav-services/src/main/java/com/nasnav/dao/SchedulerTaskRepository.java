@@ -14,7 +14,5 @@ import java.util.List;
 public interface SchedulerTaskRepository extends JpaRepository<SchedulerTaskEntity,Long> {
     List<SchedulerTaskEntity> findAllByAvailability(AvailabilityEntity availabilityEntity);
     List<SchedulerTaskEntity> findAllByAvailabilityIn(List<AvailabilityEntity> availabilityEntities);
-
-    //TODO
     PageImpl<SchedulerTaskEntity> findAllByStartsAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime , Pageable page);
 }

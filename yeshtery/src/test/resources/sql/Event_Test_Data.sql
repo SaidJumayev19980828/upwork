@@ -64,3 +64,6 @@ INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visibl
 INSERT INTO public.events(id,created_at,starts_at,ends_at,organization_id,visible,name,description,status) values(104,now(),CURRENT_DATE - INTERVAL '12 day',CURRENT_DATE + INTERVAL '12 day',99001,false,'name','desc',0);
 
 INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influencer_id,status) values(100,now(),now(),now(),100,100,0);
+INSERT INTO public.event_logs(
+	id, created_at, interested_at, attend_at, event_id, employee_id)
+	VALUES (99,CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day',CURRENT_DATE + INTERVAL '7 day', 101 , 71);

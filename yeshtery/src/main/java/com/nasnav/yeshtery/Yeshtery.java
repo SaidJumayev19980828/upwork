@@ -39,6 +39,7 @@ import java.util.Properties;
 @EnableJpaRepositories(basePackages = {"com.nasnav.yeshtery.dao"})
 @EntityScan("com.nansav.persistence")
 @ComponentScan({"com.nasnav"})
+@EnableAsync
 public class Yeshtery{
     @Autowired
     private SchedulerTaskRepository schedulerTaskRepository;
@@ -49,7 +50,9 @@ public class Yeshtery{
     @Bean
     public void runScheduleTask() {
         this.scheduleTaskHelper.runScheduleTask();
+        this.scheduleTaskHelper.runInterestReminderMail();
     }
+
 
     @Bean
 

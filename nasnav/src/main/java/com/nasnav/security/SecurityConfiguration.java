@@ -241,62 +241,63 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/service/{id:\\d+}"           ,GET                         , setOf(NASNAV_ADMIN)),
 			patternOf( "/service/org"                 ,GET                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf( "/service/org"                 ,PUT                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
-
+			patternOf("/contactUs/**",GET,getAllRoles()),
 			patternOf( "/**")
 
 
 	);
 
+   
+   
+    private List<AuthPattern> PUBLIC_URLS =
+            	asList(
+						patternOf("/callbacks/**")
+					    , patternOf("/360view/**"						, HttpMethod.GET)
+						, patternOf("/room/shop"								, GET)
+						, patternOf("/room/shop/list"						, GET)
+						, patternOf("/room/event"								, GET)
+						, patternOf("/room/event/list"						, GET)
+            			, patternOf("/navbox/**")
+                        , patternOf("/user/recover")
+                        , patternOf("/user/recovery/otp-verify")
+                        , patternOf("/user/login/**")
+                        , patternOf("/user/register")
+						, patternOf("/user/v2/register")
+						, patternOf("/user/v2/register/activate")
+						, patternOf("/user/v2/register/otp/activate")
+						, patternOf("/user/v2/employee/otp/activate")
+						, patternOf("/user/v2/register/activate/resend")
+						, patternOf( "/user/subscribe")
+						, patternOf( "/user/subscribe/activate")
+						, patternOf("/employee-user-heart-beats-logs/list-active-employee", GET)
+                        , patternOf("/payment/**")
+                        , patternOf("/product/bundles"					, HttpMethod.GET)
+                        , patternOf("/package"					    , HttpMethod.GET)
+                        , patternOf("/product/info"					, HttpMethod.GET)
+                        , patternOf("/product/image"					, HttpMethod.GET)
+                        , patternOf("/product/variant"					, HttpMethod.GET)
+		                , patternOf("/organization/payments"			, HttpMethod.GET)
+						,patternOf( "/organization/register"		    ,HttpMethod.POST)
+                        , patternOf("/organization/brands"				, HttpMethod.GET)
+                        , patternOf("/organization/products_features"	, HttpMethod.GET)
+                        , patternOf("/swagger**/**")		//for development only
+                        , patternOf("/webjars/**")		//for development only
+                        , patternOf("/v3/api-docs/**")		//for development only
+                        , patternOf("/csrf/**")		//for development only
+                        , patternOf("/favicon.ico")
+                        , patternOf("/static/**")
+						, patternOf("/icons/**")
+                        , patternOf("/js/**")
+                        , patternOf("/css/**")
+                        , patternOf("/files/**"							, HttpMethod.GET)
+                        , patternOf("/error/**"							, HttpMethod.GET)
+						, patternOf("/advertisement", HttpMethod.GET)
+						, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
+						, patternOf("/frontend/setting", GET)
+						, patternOf("/chat-widget-setting/get-published", GET)
+						, patternOf("/contactUs**",POST)
 
-
-	private List<AuthPattern> PUBLIC_URLS =
-			asList(
-					patternOf("/callbacks/**")
-					, patternOf("/360view/**"						, HttpMethod.GET)
-					, patternOf("/room/shop"								, GET)
-					, patternOf("/room/shop/list"						, GET)
-					, patternOf("/room/event"								, GET)
-					, patternOf("/room/event/list"						, GET)
-					, patternOf("/navbox/**")
-					, patternOf("/user/recover")
-					, patternOf("/user/recovery/otp-verify")
-					, patternOf("/user/login/**")
-					, patternOf("/user/register")
-					, patternOf("/user/v2/register")
-					, patternOf("/user/v2/register/activate")
-					, patternOf("/user/v2/register/otp/activate")
-					, patternOf("/user/v2/employee/otp/activate")
-					, patternOf("/user/v2/register/activate/resend")
-					, patternOf( "/user/subscribe")
-					, patternOf( "/user/subscribe/activate")
-					, patternOf("/employee-user-heart-beats-logs/list-active-employee", GET)
-					, patternOf("/payment/**")
-					, patternOf("/product/bundles"					, HttpMethod.GET)
-					, patternOf("/package"					    , HttpMethod.GET)
-					, patternOf("/product/info"					, HttpMethod.GET)
-					, patternOf("/product/image"					, HttpMethod.GET)
-					, patternOf("/product/variant"					, HttpMethod.GET)
-					, patternOf("/organization/payments"			, HttpMethod.GET)
-					,patternOf( "/organization/register"		    ,HttpMethod.POST)
-					, patternOf("/organization/brands"				, HttpMethod.GET)
-					, patternOf("/organization/products_features"	, HttpMethod.GET)
-					, patternOf("/swagger**/**")		//for development only
-					, patternOf("/webjars/**")		//for development only
-					, patternOf("/v3/api-docs/**")		//for development only
-					, patternOf("/csrf/**")		//for development only
-					, patternOf("/favicon.ico")
-					, patternOf("/static/**")
-					, patternOf("/icons/**")
-					, patternOf("/js/**")
-					, patternOf("/css/**")
-					, patternOf("/files/**"							, HttpMethod.GET)
-					, patternOf("/error/**"							, HttpMethod.GET)
-					, patternOf("/advertisement", HttpMethod.GET)
-					, patternOf("/subscription/stripe/webhook"			,HttpMethod.POST)
-					, patternOf("/frontend/setting", GET)
-					, patternOf("/chat-widget-setting/get-published", GET)
-
-			);
+                 );
 
 	AuthenticationProvider provider;
 

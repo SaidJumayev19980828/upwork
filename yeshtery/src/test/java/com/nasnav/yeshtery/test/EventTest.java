@@ -42,6 +42,7 @@ import java.util.Set;
 
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -170,7 +171,15 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<String> response = template.postForEntity("/v1/event/interset/100",
                 getHttpEntity("", "123"), String.class);
         assertEquals(200, response.getStatusCode().value());
-        assertTrue(eventLogsRepository.existsByEvent_IdAndUser_IdOrEmployee_Id(100L,88L,88L));
+        assertTrue(eventLogsRepository.existsByEvent_IdAndUser_IdOrEvent_IdAndEmployee_Id(100L,88L,100L,88L));
+    }
+
+
+    @Test
+    public void interestForUserWithException() {
+        ResponseEntity<String> response = template.postForEntity("/v1/event/interset/101",
+                getHttpEntity("", "192021"), String.class);
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
 
     @Test
