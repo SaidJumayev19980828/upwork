@@ -753,11 +753,7 @@ public class StockServiceImpl implements StockService {
 	@Override
 	public Map<Long, List<ProductStockDTO>>  getProductStocks(Long productId) {
 		List<StocksEntity> stocks  = stockRepo.findByProductIdIn(asList(productId));
-		List<Long> variantIds = productVariantsRepository.findByProductIdAndRemoved(productId);
 
-//		Map<Long, List<StocksEntity>> stocksPerShop = stocks.stream()
-//				.map(stock -> mapStocksEntityToDTO(stock, variantIds))
-//				.collect(Collectors.groupingBy(e -> e.getShopsEntity().getId()));
 
 		Map<Long, List<StocksEntity>> stocksPerShop = stocks.stream()
 				.collect(Collectors.groupingBy(stock -> stock.getShopsEntity().getId()));
@@ -766,20 +762,22 @@ public class StockServiceImpl implements StockService {
 				.collect(Collectors.toMap(
 						Map.Entry::getKey,
 						entry -> entry.getValue().stream()
-								.map(stock -> mapStocksEntityToDTO(stock, variantIds))
+								.map(stock -> mapStocksEntityToDTO(stock))
 								.collect(Collectors.toList())
 				));
 
 		return transformedStocksPerShop;
 	}
 
-	public ProductStockDTO mapStocksEntityToDTO(StocksEntity stock, List<Long> variantIds) {
+	public ProductStockDTO mapStocksEntityToDTO(StocksEntity stock) {
 		ProductStockDTO productStock = new ProductStockDTO();
 		productStock.setId(stock.getId());
 		productStock.setQuantity(stock.getQuantity());
 		productStock.setCurrency(stock.getCurrency());
 		productStock.setDiscount(stock.getDiscount());
 		productStock.setPrice(stock.getPrice());
+		List<Long> variantIds = productVariantsRepository.findVariantIdByStockId(stock.getId());
+
 		productStock.setVariantIds(variantIds);
 		return productStock;
 	}

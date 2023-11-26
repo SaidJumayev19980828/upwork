@@ -150,4 +150,15 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("select variant.id from ProductVariantsEntity variant " +
 			" where variant.productEntity.id = :productId and variant.removed = 0")
 	List<Long> findByProductIdAndRemoved(@Param("productId")Long productId);
+
+
+
+
+	@Query("SELECT DISTINCT variant.id FROM ProductVariantsEntity variant"
+			+ " inner JOIN variant.stocks stock"
+			+ " LEFT JOIN  variant.featureValues featureValues"
+			+ " LEFT JOIN  featureValues.feature feature"
+			+ " WHERE stock.id = :stockId AND variant.removed = 0")
+	List<Long> findVariantIdByStockId(@Param("stockId") Long stockId);
+
 }
