@@ -9,8 +9,11 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.NewProductFlowDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockUpdateDTO;
+import com.nasnav.dto.request.ContactUsRequestDto;
 import com.nasnav.persistence.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
@@ -311,8 +314,41 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	          assertNotNull(response.getBody());
 	          assertEquals(res.get("name"), "product_1");
-	    } 
-	
+	    }
+
+
+	@Test
+	public void PostProductStocks(){
+		BaseUserEntity user = empUserRepo.getById(69L);
+		ProductStocksDTO stockDto= new ProductStocksDTO();
+		stockDto.setShopId(501L);
+		StockUpdateDTO stockUpdateDTO = new StockUpdateDTO();
+		stockUpdateDTO.setQuantity(10);
+		stockUpdateDTO.setPrice(BigDecimal.valueOf(10));
+		stockUpdateDTO.setCurrency(1);
+		stockUpdateDTO.setDiscount(BigDecimal.valueOf(2));
+		stockUpdateDTO.setUnit("pcs");
+		stockUpdateDTO.setVariantId(310006L);
+		stockUpdateDTO.setShopId(501L);
+		stockDto.setStocks(Collections.singletonList(stockUpdateDTO));
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("User-Token", user.getAuthenticationToken());
+		HttpEntity<ProductStocksDTO> request = new HttpEntity<>(stockDto,headers);
+		ResponseEntity<Void> response = template.exchange("/product/v2/stock?product_id=1001" , HttpMethod.POST, request , Void.class);
+		assertEquals(200, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void GetProductStocks(){
+		BaseUserEntity user = empUserRepo.getById(69L);
+		HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
+		ResponseEntity<String> response = template.exchange("/product/v2/stock?product_id=1001", GET, json, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		JSONObject res = new JSONObject(response.getBody());
+		assertNotNull(response.getBody());
+	}
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
 		TestCase.assertEquals(id , saved.getId());
 		TestCase.assertEquals(product.get("name"), saved.getName());

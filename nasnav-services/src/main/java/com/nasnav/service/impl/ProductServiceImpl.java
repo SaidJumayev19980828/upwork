@@ -2612,6 +2612,11 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 		setProductProperties(productRep, product);
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 		productRep.setTags(productTags);
+		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, new ArrayList<>(product.getProductVariants()));
+		String coverImg = imgService.getProductCoverImage( product.getId() );
+		if (productsAndVariantsImages != null )
+			productRep.setImageUrl( coverImg );
+		productRep.setImages(productsAndVariantsImages);
 		productRep.setHidden(isHidden);
 		getDefaultProductStock(product, includeOutOfStock)
 				.ifPresent(stk -> setDefaultStockData(productRep, stk));

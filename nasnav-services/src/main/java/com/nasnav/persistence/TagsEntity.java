@@ -30,7 +30,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tags_seq")
+    @SequenceGenerator(name = "tags_seq", sequenceName = "tags_id_seq")
     private Long id;
 
 

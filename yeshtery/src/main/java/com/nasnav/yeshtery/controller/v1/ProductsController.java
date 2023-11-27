@@ -2,7 +2,19 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.nasnav.dto.*;
+import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.NewProductFlowDTO;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
+import com.nasnav.dto.ProductStockDTO;
+import com.nasnav.dto.ProductStocksDTO;
+import com.nasnav.dto.ProductTagDTO;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
 import com.nasnav.dto.request.product.RelatedItemsDTO;
@@ -11,23 +23,35 @@ import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
-import com.nasnav.response.*;
+import com.nasnav.response.BundleResponse;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.ProductsDeleteResponse;
+import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.CsvExcelDataExportService;
 import com.nasnav.service.ImagesBulkService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.ReviewService;
-
+import com.nasnav.service.StockService;
 import lombok.RequiredArgsConstructor;
-
-import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
@@ -36,8 +60,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
@@ -60,6 +82,8 @@ public class ProductsController {
     private CsvExcelDataExportService excelDataExportService;
     @Autowired
     private ReviewService reviewService;
+    @Autowired
+    private StockService stockService;
     
     @PostMapping(value = "info", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,
@@ -263,6 +287,27 @@ public class ProductsController {
     public void rateProduct(@RequestHeader(name = "User-Token", required = false) String token,
                             @RequestParam Long id) {
         reviewService.approveRate(id);
+    }
+    @GetMapping(value = "v2/productdata",produces=APPLICATION_JSON_VALUE)
+    public ProductDetailsDTO getProductData(@RequestHeader(name = "User-Token", required = false) String token,
+                                            @RequestParam(name = "product_id") Long productId) throws BusinessException {
+        var params = new ProductFetchDTO(productId);
+
+        params.setCheckVariants(false);
+        params.setIncludeOutOfStock(true);
+        params.setOnlyYeshteryProducts(false);
+        return productService.getProductData(params);
+    }
+
+    @PostMapping(value = "v2/stock", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public Long updateStock(@RequestHeader(name = "User-Token", required = false) String userToken,
+                            @RequestBody ProductStocksDTO productStocksDTO) throws BusinessException {
+        return stockService.updateStocks(productStocksDTO);
+    }
+    @GetMapping(value = "v2/stock", produces = APPLICATION_JSON_VALUE)
+    public Map<Long, List<ProductStockDTO>>getProductStocks(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                                            @RequestParam(name = "product_id") Long productId) throws BusinessException {
+        return stockService.getProductStocks(productId);
     }
 
     @GetMapping(value = "/out-of-stock-products", produces = APPLICATION_JSON_VALUE)
