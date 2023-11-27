@@ -1,7 +1,12 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.ApiCallsRepository;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.ApiLogsEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -10,8 +15,6 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.stream.Collectors;
 
 @Component
 public class ApiLogInterceptor implements HandlerInterceptor {
@@ -24,6 +27,14 @@ public class ApiLogInterceptor implements HandlerInterceptor {
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+		String origin = "*";
+		if(!StringUtils.isBlank(request.getHeader("origin"))) {
+			origin = request.getHeader("origin");
+		}
+
+		response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE, PATCH");
+		response.setHeader("Access-Control-Allow-Headers", "X-Auth-Token, Content-Type, Authorization, Cache-Control, X-Requested-With");
+		response.setHeader("Access-Control-Allow-Origin", origin);
 		HttpServletRequest requestCacheWrapperObject = new ContentCachingRequestWrapper(request);
 		ApiLogsEntity apiLogsEntity = prepareLogEntity(requestCacheWrapperObject, response);
 		saveApiLogs(apiLogsEntity);
