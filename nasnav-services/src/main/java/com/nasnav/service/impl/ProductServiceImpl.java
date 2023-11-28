@@ -2462,7 +2462,13 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 			extraAttributesEntity.setExtraAttribute(matchedOrgExtraAttr);
 			extraAttributesEntity.setVariant(entity);
-			extraAttributesEntity.setValue(newExtraAttr.getValue());
+			Object attrValue = newExtraAttr.getValue();
+			if (attrValue instanceof String) {
+				extraAttributesEntity.setValue((String) attrValue);
+			} else {
+
+				extraAttributesEntity.setValue(attrValue.toString());
+			}
 			allExtraAttributes.add(extraAttributesEntity);
 		}
 		return allExtraAttributes;
