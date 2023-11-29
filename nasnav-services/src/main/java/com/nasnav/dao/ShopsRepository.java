@@ -1,6 +1,8 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.ShopsEntity;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -23,8 +25,14 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
             " where org.id = :orgId and shop.removed = :removed order by shop.priority desc")
     List<ShopsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(@Param("orgId") Long organizationId,
                                                                                @Param("removed") Integer removed);
-    
-    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(Long organizationId, Integer removed, Integer isWarehouse);
+
+    @Query("select shop from ShopsEntity shop" +
+            " left join fetch shop.organizationEntity org" +
+            " where org.id = :orgId and shop.removed = :removed order by shop.priority desc")
+    PageImpl<ShopsEntity> findPageableByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(@Param("orgId") Long organizationId,
+                                                                                   @Param("removed") Integer removed, Pageable page);
+
+    PageImpl<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(Long organizationId, Integer removed, Integer isWarehouse ,  Pageable page);
 
     @Query(value = "select * from shops s where s.lng between :minLong and :maxLong and s.lat between :minLat and :maxLat and s.organization_id = :orgId" +
             " and s.id in (select st.shop_id from stocks st join Product_Variants v " +

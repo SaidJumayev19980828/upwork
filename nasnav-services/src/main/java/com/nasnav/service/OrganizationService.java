@@ -13,6 +13,7 @@ import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,7 +53,7 @@ public interface OrganizationService {
 
     Optional<String> getOrganizationSettingValue(Long orgId, Settings setting);
 
-    List<ShopRepresentationObject> getOrganizationShops();
+    PageImpl<ShopRepresentationObject> getOrganizationShops(Integer start, Integer count);
 
     String getOrgLogo(Long orgId);
 

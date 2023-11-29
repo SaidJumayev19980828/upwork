@@ -2466,8 +2466,8 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 			if (attrValue instanceof String) {
 				extraAttributesEntity.setValue((String) attrValue);
 			} else {
-
-				extraAttributesEntity.setValue(attrValue.toString());
+				LinkedHashMap map = (LinkedHashMap) attrValue;
+				extraAttributesEntity.setValue(map.get("value").toString());
 			}
 			allExtraAttributes.add(extraAttributesEntity);
 		}

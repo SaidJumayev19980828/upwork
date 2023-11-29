@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -77,8 +78,12 @@ public class NavboxController {
 	}
 
 	@GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
-	public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
-		return shopService.getOrganizationShops(orgId, false);
+	public PageImpl<ShopRepresentationObject> getShopsByOrganization(
+			@RequestParam(name = "org_id") Long orgId,
+	  		@RequestParam(required = false, defaultValue = "0") Integer start,
+			@RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+	) {
+		return shopService.getOrganizationShops(orgId, false,start,count);
 	}
 
 	@GetMapping(value = "/shop", produces = APPLICATION_JSON_VALUE)

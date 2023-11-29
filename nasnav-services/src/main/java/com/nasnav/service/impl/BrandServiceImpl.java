@@ -1,5 +1,6 @@
 package com.nasnav.service.impl;
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.cache.annotation.CacheResult;
@@ -98,11 +100,14 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority){
-        return brandsRepository.findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(orgIds, 0, minPriority)
-                .stream()
+    public PageImpl<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority ,Integer start ,Integer count){
+        Pageable page =new CustomOffsetAndLimitPageRequest(start,count);
+        PageImpl<BrandsEntity> brandsPageable=
+        brandsRepository.findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(orgIds, 0, minPriority,page);
+        List<Organization_BrandRepresentationObject> brands = brandsPageable.getContent().stream()
                 .map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                 .collect(toList());
+        return new PageImpl<>(brands, brandsPageable.getPageable(), brandsPageable.getTotalElements());
     }
 
 

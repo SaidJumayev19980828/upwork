@@ -13,5 +13,5 @@ public class ProductStockDTO {
     private BigDecimal price ;
     private TransactionCurrency currency;
     private BigDecimal discount;
-    private List<Long> variantIds;
+    private Long variantId;
 }

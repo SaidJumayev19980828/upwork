@@ -776,9 +776,8 @@ public class StockServiceImpl implements StockService {
 		productStock.setCurrency(stock.getCurrency());
 		productStock.setDiscount(stock.getDiscount());
 		productStock.setPrice(stock.getPrice());
-		List<Long> variantIds = productVariantsRepository.findVariantIdByStockId(stock.getId());
-
-		productStock.setVariantIds(variantIds);
+		Long variantId = productVariantsRepository.findVariantIdByStockId(stock.getId());
+		productStock.setVariantId(variantId);
 		return productStock;
 	}
 
