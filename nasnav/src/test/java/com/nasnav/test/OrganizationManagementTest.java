@@ -10,6 +10,7 @@ import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
@@ -619,12 +620,11 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
     @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void getOrganizationShops() throws Exception {
         HttpEntity<?> req = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = 
-        		template.exchange("/organization/shops", GET, req, String.class);
-        
-        assertEquals(200, res.getStatusCodeValue());
-        
-        List<ShopRepresentationObject> services = objectMapper.readValue(res.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        ParameterizedTypeReference<RestResponsePage<ShopRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<RestResponsePage<ShopRepresentationObject>> res = template.exchange("/organization/shops?start=0&count=10" , HttpMethod.GET, req, responseType);
+        assertEquals(200, res.getStatusCode().value());
+        List<ShopRepresentationObject> services = res.getBody().getContent();
         assertEquals(2, services.size());
         Set<Long> fetchedIds = 
         		services

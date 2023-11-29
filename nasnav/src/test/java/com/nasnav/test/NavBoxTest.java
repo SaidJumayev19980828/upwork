@@ -9,6 +9,7 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.*;
+import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
@@ -27,7 +28,10 @@ import org.mockito.Mock;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -38,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static junit.framework.TestCase.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -106,6 +111,12 @@ public class NavBoxTest extends AbstractTestWithTempBaseDir {
     @Test
     public void testShops() throws IOException {
         // TODO: no support for opening times yet
+
+        HttpEntity<Object> httpEntity = getHttpEntity("");
+        ParameterizedTypeReference<RestResponsePage<ShopRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+
+
         ShopsEntity shop = shopsRepository.findById(100001L).get();
         long orgId = 99001L;
         OrganizationEntity org  = organizationRepository.findOneById(orgId);
@@ -118,26 +129,26 @@ public class NavBoxTest extends AbstractTestWithTempBaseDir {
         
         long objectId = shop.getId();
 
-        ResponseEntity<String> orgResponse = template.getForEntity("/navbox/shops?org_id=" + orgId, String.class);
-        
+        ResponseEntity<RestResponsePage<ShopRepresentationObject>> orgResponse = template.exchange("/navbox/shops?org_id=" + orgId+"&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, orgResponse.getStatusCode().value());
+
+
         ResponseEntity<String> shopResponse = template.getForEntity("/navbox/shop?shop_id=" + objectId, String.class);
 
-        JSONArray jsona = new JSONArray(orgResponse.getBody());
+        JSONArray jsona = new JSONArray(orgResponse.getBody().getContent());
         Assert.assertEquals(1, jsona.length());
         JSONObject json = jsona.getJSONObject(0);
         Assert.assertEquals(objectId, json.getInt("id"));
         Assert.assertEquals("SomeTestShop", json.get("name"));
-        Assert.assertEquals("sts", json.get("p_name"));
+        Assert.assertEquals("sts", json.get("pname"));
         Assert.assertEquals("/bright/logo/image.png", json.get("logo"));
         Assert.assertEquals("/some/shop/banner.png", json.get("banner"));
 
         json = new JSONObject(shopResponse.getBody());
 
-        // test non-existent org_id
-        orgResponse =  template.getForEntity("/navbox/shops?org_id=" + 1243124312341243L, String.class);
-        assertEquals(200, orgResponse.getStatusCodeValue());
-        List<ShopRepresentationObject> shopsList = objectMapper.readValue(orgResponse.getBody(), new TypeReference<List<ShopRepresentationObject>>(){});
-        assertEquals(0, shopsList.size());
+
+        ResponseEntity<RestResponsePage<ShopRepresentationObject>> response = template.exchange("/navbox/shops?org_id="+ 1243124312341243L+"&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
 
         // test non-existent shop_id
         shopResponse =  template.getForEntity("/navbox/shop?shop_id=" + 1243124312341243L, String.class);

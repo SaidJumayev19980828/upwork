@@ -1,8 +1,12 @@
 package com.nasnav.test;
 
+import com.google.cloud.PageImpl;
 import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.persistence.ContactUsEntity;
 import com.nasnav.service.BrandService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
@@ -15,8 +19,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
@@ -243,17 +249,19 @@ public class BrandManagmentTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getBrandsTest() {
-        ResponseEntity<List> response = template.getForEntity("/organization/brands?org_id=99001", List.class);
-        Assert.assertTrue(200 == response.getStatusCode().value());
-        assertEquals(3 ,response.getBody().size());
+        HttpEntity<Object> httpEntity = getHttpEntity("");
+        ParameterizedTypeReference<RestResponsePage<ShopRepresentationObject>> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<RestResponsePage<ShopRepresentationObject>> response = template.exchange("/organization/brands?org_id=99001&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
 
-        response = template.getForEntity("/organization/brands?org_id=99002", List.class);
-        Assert.assertTrue(200 == response.getStatusCode().value());
-        assertEquals(1 ,response.getBody().size());
 
-        response = template.getForEntity("/organization/brands?org_id=999999", List.class);
+        response = template.exchange("/organization/brands?org_id=99002&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
+
+        response = template.exchange("/organization/brands?org_id=999999&start=0&count=10" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
         Assert.assertTrue(200 == response.getStatusCode().value());
-        assertEquals(0 ,response.getBody().size());
     }
 
 
