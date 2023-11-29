@@ -80,7 +80,6 @@ public class UserController {
     }
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
-    @CrossOrigin("*")
     public void sendEmailRecoveryToEmplyee(@RequestParam String email,
             @RequestParam(value = "org_id", required = false) Long orgId,
             @RequestParam boolean employee) {
