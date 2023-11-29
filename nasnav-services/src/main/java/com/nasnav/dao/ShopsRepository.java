@@ -27,7 +27,7 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
                                                                                @Param("removed") Integer removed);
 
     @Query("select shop from ShopsEntity shop" +
-            " left join fetch shop.organizationEntity org" +
+            " left join  shop.organizationEntity org" +
             " where org.id = :orgId and shop.removed = :removed order by shop.priority desc")
     PageImpl<ShopsEntity> findPageableByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(@Param("orgId") Long organizationId,
                                                                                    @Param("removed") Integer removed, Pageable page);
