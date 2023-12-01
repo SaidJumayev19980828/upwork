@@ -64,7 +64,7 @@ public class SubscriptionController {
     @PostMapping
     @RequestMapping(value = "stripe/create", produces = APPLICATION_JSON_VALUE)
     public StripeConfirmDTO stripeCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-        logger.debug("Stripe Create Subscription Starts");
+        logger.info("Stripe Create Subscription Starts");
         StripeSubscriptionDTO stripeSubscriptionDTO = ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO()));
         if(stripeSubscriptionDTO == null){
             logger.error("Failed To Subscribe In Stripe");
@@ -95,7 +95,7 @@ public class SubscriptionController {
     public void stripeWebhook(@RequestHeader("Stripe-Signature") String signature, @RequestBody String body) {
         Event event = stripeService.verifyAndGetEventWebhook(signature,body);
         try {
-            logger.debug("Webhook: " + event.getType());
+            logger.info("Webhook: " + event.getType());
             if ("customer.subscription.created".equals(event.getType())) {
                 stripeWebhookSubscriptionService.handleStripeSubscriptionCreated(event);
             }

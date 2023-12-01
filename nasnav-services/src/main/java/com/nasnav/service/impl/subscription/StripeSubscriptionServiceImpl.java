@@ -138,6 +138,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
 
         SubscriptionInfoDTO subscriptionInfoDTO = getSubscriptionInfo();
         if(!subscriptionInfoDTO.isSubscribed()){
+            logger.error("Setup Intent : " + ORG$SUB$0006);
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         StripeConfirmDTO stripeConfirmDTO = stripeService.setupIntent(getOrCreateStripeCustomer());
@@ -153,6 +154,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
                 !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
                 subscriptionInfoDTO.getSubscriptionEntityId() == null
         ){
+            logger.error("Cancel Subscription : " + ORG$SUB$0006);
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         SubscriptionEntity subscriptionEntity = subscriptionRepository.findById(subscriptionInfoDTO.getSubscriptionEntityId()).get();
@@ -167,6 +169,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
                         !subscriptionInfoDTO.getType().equals(SubscriptionMethod.STRIPE.getValue()) ||
                         subscriptionInfoDTO.getSubscriptionEntityId() == null
         ){
+            logger.error("Change Plan : " + ORG$SUB$0006);
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SUB$0006);
         }
         StripeSubscriptionDTO stripeSubscriptionDTO = (StripeSubscriptionDTO) getPaymentInfo(new StripeSubscriptionDTO());
