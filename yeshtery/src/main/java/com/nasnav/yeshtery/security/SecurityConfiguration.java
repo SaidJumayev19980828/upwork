@@ -160,6 +160,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             , patternOf( "/v1/user/logout"							, getAllRoles() )
             , patternOf( "/v1/user/logout_all"						, getAllRoles() )
             , patternOf( "/v1/user/suspend"						    , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN))
+            ,patternOf( "/v1/cart/checkout", POST ,getAllRoles())
             , patternOf( "/v1/cart/{userId:\\d+}"		,GET		, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER))
             , patternOf( "/v1/cart/item"			,DELETE					, getAllRoles())
             , patternOf( "/v1/cart/**"								, setOf(CUSTOMER))
@@ -202,6 +203,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/queue/accept"					,PUT						,  getNonCustomersRoles()),
             patternOf( "/queue/reject"					,PUT						,  getNonCustomersRoles()),
             patternOf( "/queue/logs"					,GET						,  setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+
 
             patternOf( "/v1/influencer/host/**"             , getAllRoles()),
             //TODO change roles so that the testing process continues the old one is setOf(NASNAV_ADMIN) only

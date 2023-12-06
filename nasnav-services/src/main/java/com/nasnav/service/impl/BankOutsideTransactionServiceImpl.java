@@ -59,6 +59,20 @@ public class BankOutsideTransactionServiceImpl implements BankOutsideTransaction
         bankAccountActivityService.addActivity(bankAccountEntity, amount, isDeposit, null, entity);
     }
 
+
+    @Override
+    @Transactional
+    public void depositCoins(float amount) {
+        BankAccountEntity bankAccountEntity = bankAccountService.getLoggedAccount();
+        BankOutsideTransactionEntity entity = new BankOutsideTransactionEntity();
+        entity.setAccount(bankAccountEntity);
+        entity.setActivityDate(LocalDateTime.now());
+            entity.setAmountIn(amount);
+            entity.setAmountOut(0F);
+        outsideTransactionRepository.save(entity);
+        bankAccountActivityService.addActivity(bankAccountEntity, amount, true, null, entity);
+    }
+
     @Override
     public Boolean validateDepositOrWithdrawalIsDone(String hashBC, float amount) {
         OutsideTransactionValidatorDTO dto = new OutsideTransactionValidatorDTO(hashBC, String.valueOf(amount));

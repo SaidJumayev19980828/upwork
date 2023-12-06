@@ -4,7 +4,6 @@ import com.nasnav.enumerations.TransactionCurrency;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 public class ProductStockDTO {
@@ -13,5 +12,5 @@ public class ProductStockDTO {
     private BigDecimal price ;
     private TransactionCurrency currency;
     private BigDecimal discount;
-    private Long variantId;
+    private Long variant_id;
 }

@@ -51,6 +51,12 @@ public class BankController {
         bankOutsideTransactionService.depositOrWithdrawal(amount, isDeposit, blockChainKey);
     }
 
+    @PostMapping("/transaction/deposit")
+    public void depositCoins(@RequestHeader(name = "User-Token", required = false) String token,
+                             @RequestParam float amount) {
+        bankOutsideTransactionService.depositCoins(amount);
+    }
+
     @PostMapping("/transaction/in")
     public void insideTransaction(@RequestHeader(name = "User-Token", required = false) String token,
                                   @RequestParam long receiverAccountId,

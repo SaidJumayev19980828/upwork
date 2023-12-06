@@ -2620,8 +2620,10 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 		productRep.setTags(productTags);
 		List<ProductImageDTO> productsAndVariantsImages = getProductImageDTOS(product, new ArrayList<>(product.getProductVariants()));
 		String coverImg = imgService.getProductCoverImage( product.getId() );
-		if (productsAndVariantsImages != null )
-			productRep.setImageUrl( coverImg );
+		if (coverImg == null && productsAndVariantsImages.size() > 0) {
+			coverImg = productsAndVariantsImages.get(0).getImagePath();
+		}
+		productRep.setImageUrl(coverImg);
 		productRep.setImages(productsAndVariantsImages);
 		productRep.setHidden(isHidden);
 		getDefaultProductStock(product, includeOutOfStock)

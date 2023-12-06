@@ -224,7 +224,7 @@ public class CartServiceImpl implements CartService {
 
         if (item.getQuantity().equals(0)) {
             if (cartItem.getId() != null) {
-                return deleteCartItem(cartItem.getId(), promoCode, points, yeshteryCart);
+                return deleteCartItem(cartItem.getId(), promoCode, points, yeshteryCart,null);
             } else {
                 return getUserCart(user.getId(), promoCode, points, yeshteryCart);
             }
@@ -342,12 +342,8 @@ public class CartServiceImpl implements CartService {
 
 
     @Override
-    public Cart deleteCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
-        BaseUserEntity user = securityService.getCurrentUser();
-        if(user instanceof EmployeeUserEntity) {
-            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-        }
-
+    public Cart deleteCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart,Long userId){
+        BaseUserEntity user = getUser(userId);
         cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
         cartItemAddonDetailsRepository.deleteByCartItemEntity_Id(itemId);
 

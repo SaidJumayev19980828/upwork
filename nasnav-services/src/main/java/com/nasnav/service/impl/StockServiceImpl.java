@@ -2,11 +2,6 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.dao.*;
-import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
-import com.nasnav.dto.EventsNewDTO;
-import com.nasnav.dto.OrganizationNewDTO;
-import com.nasnav.dto.OrganizationProjection;
 import com.nasnav.dto.ProductStockDTO;
 import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.StockUpdateDTO;
@@ -25,7 +20,6 @@ import com.nasnav.service.model.VariantIdentifier;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
@@ -777,7 +771,7 @@ public class StockServiceImpl implements StockService {
 		productStock.setDiscount(stock.getDiscount());
 		productStock.setPrice(stock.getPrice());
 		Long variantId = productVariantsRepository.findVariantIdByStockId(stock.getId());
-		productStock.setVariantId(variantId);
+		productStock.setVariant_id(variantId);
 		return productStock;
 	}
 
