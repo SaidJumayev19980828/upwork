@@ -148,6 +148,11 @@ public class BankAccountServiceImpl implements BankAccountService {
     }
 
     @Override
+    public BankAccountEntity getAccountByWalletAddress(String walletAddress) {
+        return  bankAccountRepository.findByWalletAddress(walletAddress);
+    }
+
+    @Override
     public Boolean checkAccountExistence(Long accountId) {
         Boolean isExist = false;
         if(accountId != null){
@@ -163,5 +168,12 @@ public class BankAccountServiceImpl implements BankAccountService {
             }
         }
         return isExist;
+    }
+
+    @Override
+    public BankAccountEntity assignWalletAddress(String walletAddress) {
+        BankAccountEntity account = getLoggedAccount();
+        account.setWalletAddress(walletAddress);
+       return bankAccountRepository.save(getLoggedAccount());
     }
 }

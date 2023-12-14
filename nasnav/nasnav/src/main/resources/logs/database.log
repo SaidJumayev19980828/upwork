@@ -14,3 +14,4 @@
 2023-11-06T20:44:32.864+0200 TRACE binding parameter [1] as [BOOLEAN] - [true]
 2023-11-06T20:44:32.899+0200 DEBUG select integratio0_.id as id1_43_, integratio0_.organization_id as organiza2_43_, integratio0_.param_value as param_va3_43_, integratio0_.param_type as param_ty4_43_ from integration_param integratio0_ left outer join integration_param_type integratio1_ on integratio0_.param_type=integratio1_.id where integratio1_.type_name=?
 2023-11-06T20:44:32.900+0200 TRACE binding parameter [1] as [VARCHAR] - [INTEGRATION_MODULE]
+2023-12-14T18:11:30.841+0200 WARN HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!

@@ -1,9 +1,11 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.response.*;
+import com.nasnav.persistence.BankAccountEntity;
 import com.nasnav.service.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,11 +53,7 @@ public class BankController {
         bankOutsideTransactionService.depositOrWithdrawal(amount, isDeposit, blockChainKey);
     }
 
-    @PostMapping("/transaction/deposit")
-    public void depositCoins(@RequestHeader(name = "User-Token", required = false) String token,
-                             @RequestParam float amount) {
-        bankOutsideTransactionService.depositCoins(amount);
-    }
+
 
     @PostMapping("/transaction/in")
     public void insideTransaction(@RequestHeader(name = "User-Token", required = false) String token,
@@ -98,6 +96,23 @@ public class BankController {
     @GetMapping("/account/summary")
     public BankBalanceSummaryDTO getAccountSummary(@RequestHeader(name = "User-Token", required = false) String token) {
         return bankAccountActivityService.getAccountSummary();
+    }
+
+
+    @PostMapping("/assign-wallet-address")
+    public BankAccountEntity assignWalletAddress(@RequestHeader(name = "User-Token", required = false) String token,@RequestParam String walletAddress) {
+        return bankAccountService.assignWalletAddress(walletAddress);
+    }
+
+    @PostMapping("/transaction/deposit")
+    public void depositCoins(@RequestHeader(name = "User-Token", required = false) String token,
+                             @RequestParam String txHash) {
+        bankOutsideTransactionService.depositCoins(txHash);
+    }
+
+    @PostMapping(value = "/deposit/bc", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void depositFromBlockChain(@RequestBody DepositBlockChainRequest depositRequest) {
+        bankOutsideTransactionService.depositCoinsFromBC(depositRequest);
     }
 
 }

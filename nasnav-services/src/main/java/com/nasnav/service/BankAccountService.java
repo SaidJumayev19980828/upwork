@@ -13,5 +13,8 @@ public interface BankAccountService {
     public void lockOrUnlockAccount(long accountId, boolean isLocked);
     public BankAccountDetailsDTO toDto(BankAccountEntity entity);
     public BankAccountEntity getLoggedAccount();
+    public BankAccountEntity getAccountByWalletAddress(String walletAddress);
     public Boolean checkAccountExistence(Long accountId);
+    BankAccountEntity assignWalletAddress (String walletAddress);
+
 }

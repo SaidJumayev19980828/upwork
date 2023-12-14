@@ -17,4 +17,5 @@ public interface BankAccountActivityService {
     public PageImpl<BankActivityDetailsDTO> getHistory(Integer start, Integer count);
     public BankBalanceSummaryDTO getAccountSummary();
     public void addActivity(BankAccountEntity accountEntity, float amount, boolean isDeposit, BankInsideTransactionEntity insideTransactionEntity, BankOutsideTransactionEntity outsideTransactionEntity);
+
 }

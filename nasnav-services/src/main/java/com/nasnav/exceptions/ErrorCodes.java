@@ -487,6 +487,8 @@ public enum ErrorCodes {
 	,BANK$ACC$0005("the account have not enough balance")
 	,BANK$ACC$0006("No reservation with id: [%d]")
 	,BANK$ACC$0007("this transaction is done before")
+	,BANK$ACC$0008("The provide Api key is Not Valid, check it again")
+
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
 	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
