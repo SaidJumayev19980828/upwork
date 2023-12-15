@@ -172,8 +172,9 @@ public enum ErrorCodes {
 	,THEME$0004("uid is already used by another theme!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
-	,ORG$THEME$0002("Removed theme is used by organizations %s!"),
-	ORG$CREATE$001("Provided p_name is already used by another organization")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+	,ORG$CREATE$001("Provided p_name is already used by another organization")
+	,ORG$CREATE$002("Failed To Set Owner User To Organization")
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")

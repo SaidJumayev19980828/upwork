@@ -282,7 +282,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(registerDto.getName(), employee.getName());
         assertTrue(passwordEncoder.matches(registerDto.getPassword(), employee.getEncryptedPassword()));
         assertEquals(registerDto.getEmail(), employee.getEmail());
-
+        assertEquals(org.getOwner().getId(), employee.getId());
         final EmployeeUserOtpEntity employeeUserOtpEntity = employeeUserOtpRepository.findByUser(employee).orElseThrow(
                         () -> new IllegalStateException("it should return only 1 otp")
                 );
