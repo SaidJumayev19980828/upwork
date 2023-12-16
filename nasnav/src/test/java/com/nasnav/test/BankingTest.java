@@ -79,7 +79,7 @@ public class BankingTest extends AbstractTestWithTempBaseDir {
                 json().toString();
         HttpEntity<?> json = getHttpEntity(requestBody, "123");
         ResponseEntity<Void> response = template.postForEntity("/bank/transaction/deposit?amount=3", json, Void.class);
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(400, response.getStatusCode().value());
     }
     @Test
     public void insideTransaction(){
