@@ -35,7 +35,7 @@ public class StripeServiceImpl implements StripeService {
     @Autowired
     PackageRepository packageRepository;
 
-    private static final Logger stripeLogger = LogManager.getLogger("Subscription:StripeService");
+    private static final Logger stripeLogger = LogManager.getLogger(StripeServiceImpl.class);
 
     @PostConstruct
     public void init() {

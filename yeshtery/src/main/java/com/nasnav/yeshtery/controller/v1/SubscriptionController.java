@@ -39,7 +39,7 @@ public class SubscriptionController {
     private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     @Autowired
     private StripeService stripeService;
-    private static final Logger logger = LogManager.getLogger("Subscription:SubscriptionController");
+    private static final Logger logger = LogManager.getLogger(SubscriptionController.class);
 
 
     @GetMapping

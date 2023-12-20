@@ -55,7 +55,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    private static final Logger logger = LogManager.getLogger("Subscription:StripeWebhookSubscriptionServiceImpl");
+    private static final Logger logger = LogManager.getLogger(StripeWebhookSubscriptionServiceImpl.class);
 
 
     @Override

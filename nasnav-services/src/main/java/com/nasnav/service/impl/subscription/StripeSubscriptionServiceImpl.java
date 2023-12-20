@@ -50,7 +50,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    private static final Logger logger = LogManager.getLogger("Subscription:StripeSubscriptionServiceImpl");
+    private static final Logger logger = LogManager.getLogger(StripeSubscriptionServiceImpl.class);
 
     @Override
     public boolean checkOrgHasStripeCustomer(){
