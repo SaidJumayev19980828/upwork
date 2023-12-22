@@ -27,6 +27,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.transaction.Transactional;
+
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
@@ -66,6 +68,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
      * Used to create customer if not exist
      * @return the id of the customer
      */
+    @Transactional
     public String getOrCreateStripeCustomer(){
         StripeCustomerEntity stripeCustomerEntity = null;
         //Check Stripe Customer Exist for organization

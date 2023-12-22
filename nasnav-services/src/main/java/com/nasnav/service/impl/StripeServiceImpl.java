@@ -71,7 +71,7 @@ public class StripeServiceImpl implements StripeService {
     public StripeConfirmDTO createSubscription(String stripePriceId , String customerId){
         StripeConfirmDTO stripeConfirmDTO = null;
         try {
-            stripeLogger.info(String.format("createSubscription : For customerId : %s , To stripePriceId :" , customerId,stripePriceId));
+            stripeLogger.info(String.format("createSubscription : For customerId : %s , To stripePriceId : %s----------------------------" , customerId,stripePriceId));
             SubscriptionCreateParams.PaymentSettings paymentSettings =
                     SubscriptionCreateParams.PaymentSettings
                             .builder()

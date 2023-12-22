@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -65,6 +66,7 @@ public class WertSubscriptionServiceImpl extends SubscriptionServiceImpl impleme
     }
 
     @Override
+    @Transactional
     public SubscriptionDTO subscribe(SubscriptionDTO subscriptionDTO) throws RuntimeBusinessException {
         subscriptionDTO = super.subscribe(subscriptionDTO);
         subscriptionDTO = getPaymentInfo(subscriptionDTO);

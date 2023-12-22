@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -59,6 +60,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
 
 
     @Override
+    @Transactional
     public void handleStripeSubscriptionCreated(Event event) throws RuntimeBusinessException {
         Subscription subscription = (Subscription) stripeService.getStripeObjectFromWebhookEvent(event);
         //check Exists in database
@@ -72,6 +74,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
 
     }
     @Override
+    @Transactional
     public void handleStripeSubscriptionUpdated(Event event) throws RuntimeBusinessException {
         Subscription subscription = (Subscription) stripeService.getStripeObjectFromWebhookEvent(event);
         //check Exists in database
@@ -86,6 +89,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
 
     }
     @Override
+    @Transactional
     public void handleStripeSubscriptionDeleted(Event event) throws RuntimeBusinessException {
         logger.info("Delete Subscription...");
         Subscription subscription = (Subscription) stripeService.getStripeObjectFromWebhookEvent(event);
@@ -96,7 +100,9 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         //update
         updateSubscription(subscription);
     }
+
     @Override
+    @Transactional
     public void handleStripeSetupIntent(Event event) throws RuntimeBusinessException {
         logger.info("Setup Intent... ");
         SetupIntent setupIntent = (SetupIntent) stripeService.getStripeObjectFromWebhookEvent(event);
@@ -127,7 +133,6 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         stripeService.updateSubscriptionDefaultPaymentMethod(subscriptionEntity.getStripeSubscriptionId(),setupIntent.getPaymentMethod());
         stripeService.lastOpenInvoicePayRetry(customerId,subscriptionEntity.getStripeSubscriptionId());
     }
-
 
     private void createSubscription(Subscription subscription){
         logger.info("Create Subscription...");
@@ -161,6 +166,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
         logger.info("Subscription Created Successfully for : " + organization.getName());
     }
 
+    @Transactional
     public void updateSubscription(Subscription subscription){
         logger.info("Update Subscription...");
         //Package Of the Subscription Received From Webhook
