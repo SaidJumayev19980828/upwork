@@ -135,5 +135,5 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 	List<PromotionsEntity> findActivePromosByIds(@Param("promoIds") Collection<Long> promoIds, @Param("typeIds") Collection<Integer> typeIds);
 
 
-	Optional<PromotionsEntity> findByName(String promoCode);
+	Optional<PromotionsEntity> findByCode(String promoCode);
 }

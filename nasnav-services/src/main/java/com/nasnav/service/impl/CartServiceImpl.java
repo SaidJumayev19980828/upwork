@@ -40,7 +40,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -185,7 +184,7 @@ public class CartServiceImpl implements CartService {
                 cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
             } else {
                 // Attempt to find a promotion entity by name
-                Optional<PromotionsEntity> getPromoCode = promotionRepo.findByName(promoCode);
+                Optional<PromotionsEntity> getPromoCode = promotionRepo.findByCode(promoCode);
 
                 // Check if the promotion entity is present
                 if (getPromoCode.isEmpty()) {

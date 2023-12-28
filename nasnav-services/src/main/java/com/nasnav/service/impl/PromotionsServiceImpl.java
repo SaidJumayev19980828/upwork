@@ -44,7 +44,6 @@ import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.PromotionType;
 import com.nasnav.persistence.*;
 import com.nasnav.request.PromotionsSearchParams;
-import com.nasnav.service.CartService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.PromotionsService;
 import com.nasnav.service.SecurityService;
@@ -1379,7 +1378,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Override
 	public void updatePromoUsageAndCheckLimit(String promoCode) {
 		// Attempt to find a promotion entity by name
-		PromotionsEntity getPromoCode = promoRepo.findByName(promoCode)
+		PromotionsEntity getPromoCode = promoRepo.findByCode(promoCode)
 				.orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, $001$PROMO$));
 
 		// Get the current usage limiter count
