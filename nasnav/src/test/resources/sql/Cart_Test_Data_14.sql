@@ -134,16 +134,16 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 -- insert promotions
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630001, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa_7', '{"applied_to_brands": [102], "applied_to_users": [88]}', '{"amount":100.55}', 69, now(), 7);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630001, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa_7', '{"applied_to_brands": [102], "applied_to_users": [88]}', '{"amount":100.55}', 69, now(), 7,1);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
 VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa_77', '{"applied_to_brands": [102], "applied_to_users": [89]}', '{"amount":100.55}', 69, now(), 7);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa_0', '{"applied_to_users": [88]}', '{"percentage":10.99}', 69, now(), 0);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa_0', '{"applied_to_users": [88]}', '{"percentage":10.99}', 69, now(), 0,6);
 
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
