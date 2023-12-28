@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +20,7 @@ public interface LoyaltyPointTransactionRepository extends JpaRepository<Loyalty
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_Id(Long userId, Long orgId); // used for listing transactions only
     List<LoyaltyPointTransactionEntity> findByUserIdInAndOrganizationId(Set<Long> userIds, Long orgId);
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValid(Long userId, Long orgId, LocalDateTime startDate,Boolean valid); // used for listing transactions only
+    List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndIsValidAndStartDateBeforeAndPointsGreaterThanOrderByCreatedAtAsc(Long userId, Long orgId, Boolean valid, LocalDateTime startDate, BigDecimal points);
 
     List<LoyaltyPointTransactionEntity> findByUser_IdAndOrganization_IdAndType(Long userId, Long orgId, Integer type);
 

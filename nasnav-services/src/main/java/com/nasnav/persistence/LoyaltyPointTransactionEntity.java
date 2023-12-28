@@ -6,8 +6,10 @@ import com.nasnav.enumerations.LoyaltyPointType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.hibernate.annotations.Cascade;
 import org.springframework.beans.BeanUtils;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -77,11 +79,19 @@ public class LoyaltyPointTransactionEntity {
     @lombok.ToString.Exclude
     private MetaOrderEntity metaOrder;
 
-    @OneToMany(mappedBy = "transaction", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "transaction")
+    @Cascade({CascadeType.SAVE_UPDATE, CascadeType.LOCK})
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<LoyaltySpentTransactionEntity> spentTransactions;
+
+    @OneToMany(mappedBy = "reverseTransaction")
+    @Cascade({CascadeType.SAVE_UPDATE, CascadeType.LOCK})
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<LoyaltySpentTransactionEntity> reverseTransaction;
 
     private Integer type;
 
