@@ -42,6 +42,7 @@ public class PromotionDTO implements Comparable<PromotionDTO> {
 	private LocalDateTime createdOn;
 	private Integer priority;
 	private boolean showingOnline;
+	private Integer usageLimiterCount;
 
 	@Override
 	public int compareTo(PromotionDTO promo) {

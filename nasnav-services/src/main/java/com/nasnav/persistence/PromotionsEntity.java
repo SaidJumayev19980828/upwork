@@ -91,4 +91,7 @@ public class PromotionsEntity {
 
 	@Column(name = "showing_online")
 	private boolean showingOnline;
+
+	@Column(name ="usage_limiter_count")
+	private Integer usageLimiterCount;
 }

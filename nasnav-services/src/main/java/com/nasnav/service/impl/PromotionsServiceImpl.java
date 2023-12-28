@@ -18,8 +18,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.beans.BeanUtils.copyProperties;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -523,6 +522,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		entity.setTypeId(type);
 		entity.setPriority(priority);
 		entity.setShowingOnline(promotion.isShowingOnline());
+		entity.setUsageLimiterCount(promotion.getUsageLimiterCount()); //<<<<It determines the number of times the promo can be used
 		return entity;
 	}
 
@@ -1056,15 +1056,32 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var minQtyToApplyPromo = getProductQuantityMin(constrains);
 		var giftQty = getProductQuantityToGive(constrains);
 		var minPrice = getMinProductPrice(applicableItems);
-		return applicableItems
-				.stream()
-				.map(PromoItemDto::getQuantity)
-				.reduce(Integer::sum)
-				.map(totalQty -> getProductQuantityToGiveInDiscount(totalQty, minQtyToApplyPromo, giftQty).multiply(minPrice))
-				.orElse(ZERO);
+
+		BigDecimal applicableDiscount = validateApplicableDiscountWithMinPrice(applicableItems);
+		// Compare the total price with minPrice
+		if (applicableDiscount.compareTo(minPrice) >= 0) {
+			// Apply discount calculation if total price is greater than or equal to minPrice
+			return applicableItems
+					.stream()
+					.map(PromoItemDto::getQuantity)
+					.reduce(Integer::sum)
+					.map(totalQty -> getProductQuantityToGiveInDiscount(totalQty, minQtyToApplyPromo, giftQty).multiply(minPrice))
+					.orElse(BigDecimal.ZERO);
+		} else {
+			// Return zero discount if total price is less than minPrice
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$EXCEPTION);
+		}
 	}
 
 
+	public BigDecimal validateApplicableDiscountWithMinPrice(List<PromoItemDto> applicableItems) {
+		// Sum the total price of all applicable items
+		return  applicableItems
+				.stream()
+				.map(item -> (item.getPrice().subtract(item.getDiscount())).multiply(BigDecimal.valueOf(item.getQuantity())))
+				.reduce(BigDecimal::add)
+				.orElse(BigDecimal.ZERO);
+	}
 
 	private BigDecimal calcPriceAfterDiscount(PromoItemDto item) {
 		var price = ofNullable(item.getPrice()).orElse(ZERO);
@@ -1357,6 +1374,30 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromoCalcResult doNothingCalc(PromoInfoContainer info){
 		return emptyResult();
+	}
+
+	@Override
+	public void updatePromoUsageAndCheckLimit(String promoCode) {
+		// Attempt to find a promotion entity by name
+		PromotionsEntity getPromoCode = promoRepo.findByName(promoCode)
+				.orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, $001$PROMO$));
+
+		// Get the current usage limiter count
+		int currentCount = getPromoCode.getUsageLimiterCount();
+
+		// Check if the current count is greater than 0
+		if (currentCount <= 0) {
+			// Throw an exception indicating that the promo can't be used
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, $002$PROMO$);
+		}
+
+		// Subtract 1 from the current count
+		int updatedCount = currentCount - 1;
+
+		// Set the updated count back to the promotion entity
+		getPromoCode.setUsageLimiterCount(updatedCount);
+		// Save the updated promotion entity
+		promoRepo.save(getPromoCode);
 	}
 
 }

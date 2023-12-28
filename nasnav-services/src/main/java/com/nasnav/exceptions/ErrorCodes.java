@@ -510,7 +510,9 @@ public enum ErrorCodes {
 	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
 	,NOTIUSER$0006("We can not find customer Id With Body Request")
 	,NOTIUSERPARAM$0006("We can not find customer Id With Request Param")
-
+	,PROMO$EXCEPTION("Discount is bigger than the min price")
+	,$001$PROMO$("Promo not found")
+	,$002$PROMO$("This promo can't be used. Usage limit reached.")
 	;
 
 	@Getter

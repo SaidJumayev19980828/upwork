@@ -10,10 +10,10 @@ import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.OrderService;
+import com.nasnav.service.PromotionsService;
 import com.nasnav.service.SecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import static com.nasnav.exceptions.ErrorCodes.NOTIUSER$0006;
 import static com.nasnav.exceptions.ErrorCodes.U$0001;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -26,6 +26,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 	private final OrderService orderService;
 	private final LoyaltyTierServiceImp tierServiceImp;
 	private final UserRepository userRepository;
+	private final PromotionsService promotionsService;
 
 	@Override
 	public Order checkoutCart(CartCheckoutDTO dto) {
@@ -41,7 +42,9 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
 		userEntity.setTier(loyaltyTierEntity);
 		userRepository.save(userEntity);
-		return orderService.createOrder(dto,userEntity);
+		Order order = orderService.createOrder(dto,userEntity);
+		promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());
+		return order;
 	}
 
 	@Override

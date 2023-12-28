@@ -40,6 +40,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -183,7 +184,18 @@ public class CartServiceImpl implements CartService {
                 cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
                 cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
             } else {
-                cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+                // Attempt to find a promotion entity by name
+                Optional<PromotionsEntity> getPromoCode = promotionRepo.findByName(promoCode);
+
+                // Check if the promotion entity is present
+                if (getPromoCode.isEmpty()) {
+                    // Promotion entity not found, throw an exception with the specified message
+                    throw new RuntimeBusinessException(NOT_FOUND, $001$PROMO$);
+                }
+                // Get the promotion entity
+                PromotionsEntity promoEntity = getPromoCode.get();
+
+                cart.setPromos(promoService.calcPromoDiscountForCart(promoEntity.getUsageLimiterCount()>0?promoCode:null, cart));
             }
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
@@ -198,6 +210,9 @@ public class CartServiceImpl implements CartService {
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
     }
+
+
+
 
     @Override
     public Cart addCartItem(CartItem item, String promoCode, Set<Long> points, boolean yeshteryCart){
