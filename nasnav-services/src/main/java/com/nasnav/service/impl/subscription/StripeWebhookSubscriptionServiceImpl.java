@@ -1,7 +1,6 @@
 package com.nasnav.service.impl.subscription;
 
-import com.drew.lang.StringUtil;
-import com.nasnav.commons.utils.StringUtils;
+
 import com.nasnav.dao.PackageRepository;
 import com.nasnav.dao.StripeCustomerRepository;
 import com.nasnav.dao.SubscriptionRepository;
@@ -19,8 +18,8 @@ import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.stripe.model.Event;
 import com.stripe.model.SetupIntent;
 import com.stripe.model.Subscription;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -56,7 +55,7 @@ public class StripeWebhookSubscriptionServiceImpl implements StripeWebhookSubscr
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    private static final Logger logger = LogManager.getLogger(StripeWebhookSubscriptionServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(StripeWebhookSubscriptionServiceImpl.class);
 
 
     @Override

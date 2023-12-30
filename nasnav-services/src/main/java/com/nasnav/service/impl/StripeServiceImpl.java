@@ -10,10 +10,11 @@ import com.nasnav.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
+import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
 import com.stripe.param.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class StripeServiceImpl implements StripeService {
     @Autowired
     PackageRepository packageRepository;
 
-    private static final Logger stripeLogger = LogManager.getLogger(StripeServiceImpl.class);
+    private static final Logger stripeLogger = LoggerFactory.getLogger(StripeServiceImpl.class);
 
     @PostConstruct
     public void init() {

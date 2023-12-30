@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 
+import com.nasnav.NasNavMailSender;
 import com.nasnav.dto.StripeSubscriptionDTO;
 import com.nasnav.dto.SubscriptionDTO;
 import com.nasnav.dto.SubscriptionInfoDTO;
@@ -10,16 +11,14 @@ import com.nasnav.service.StripeService;
 import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
-import lombok.AllArgsConstructor;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import com.stripe.model.Event;
 
 
-import static com.nasnav.exceptions.ErrorCodes.ORG$SUB$0006;
 import static com.nasnav.exceptions.ErrorCodes.STR$CAL$0004;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -40,7 +39,7 @@ public class SubscriptionController {
     private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     @Autowired
     private StripeService stripeService;
-    private static final Logger logger = LogManager.getLogger(SubscriptionController.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
 
     @GetMapping

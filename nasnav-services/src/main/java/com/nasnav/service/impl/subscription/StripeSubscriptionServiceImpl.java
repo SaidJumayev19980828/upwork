@@ -18,17 +18,12 @@ import com.nasnav.service.SecurityService;
 import com.nasnav.service.StripeService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
-import com.stripe.exception.StripeException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import javax.transaction.Transactional;
-
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
@@ -52,7 +47,7 @@ public class StripeSubscriptionServiceImpl extends SubscriptionServiceImpl imple
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    private static final Logger logger = LogManager.getLogger(StripeSubscriptionServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(StripeSubscriptionServiceImpl.class);
 
     @Override
     public boolean checkOrgHasStripeCustomer(){
