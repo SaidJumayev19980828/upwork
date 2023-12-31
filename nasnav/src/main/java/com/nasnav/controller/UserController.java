@@ -158,8 +158,11 @@ public class UserController {
     }
 
     @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
-    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken) {
-        return userService.getUserList();
+    public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                        @RequestParam (value = "paging_start", required = false) Integer start,
+                                        @RequestParam (value = "paging_count", required = false) Integer count,
+                                        @RequestParam (value = "user_status", required = false) Integer userStatus) {
+        return userService.getUserList(start,count,userStatus);
     }
     
     

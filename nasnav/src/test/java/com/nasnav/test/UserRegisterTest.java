@@ -1587,7 +1587,14 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertFalse(userList.isEmpty());
 	}
 
-
+	@Test
+	public void listCustomersPageableSuccess() throws IOException {
+		HttpEntity<?> req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=002", GET, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
+		assertFalse(userList.isEmpty());
+	}
 
 	@Test
 	public void listCustomersNoAuthN() throws IOException {
