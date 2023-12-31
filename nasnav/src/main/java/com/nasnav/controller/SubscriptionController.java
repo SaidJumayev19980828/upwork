@@ -93,6 +93,8 @@ public class SubscriptionController {
     @PostMapping(value = "/stripe/webhook")
     public void stripeWebhook(@RequestHeader("Stripe-Signature") String signature, @RequestBody String body) {
         logger.info("stripe webhook request start");
+        logger.info("stripe webhook: Signature : " + signature );
+        logger.info("stripe webhook: body : " + body);
 
         Event event = stripeService.verifyAndGetEventWebhook(signature,body);
         try {
