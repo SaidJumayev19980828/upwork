@@ -57,13 +57,13 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 
 --insert loyalty point transaction entity
 INSERT INTO public.loyalty_point_transactions(id,user_id,points,org_id,start_date,type,amount)values(1,88,5,99001,now() - INTERVAL '2 DAY',2,10);
-INSERT INTO public.loyalty_point_transactions(id,user_id,points,org_id,start_date,type,amount)values(2,89,10,99002,now() - INTERVAL '2 DAY',3,20);
+--INSERT INTO public.loyalty_point_transactions(id,user_id,points,org_id,start_date,type,amount)values(2,89,10,99002,now() - INTERVAL '2 DAY',3,20);
 INSERT INTO public.loyalty_point_transactions(id,user_id,points,org_id,start_date,type,amount)values(3,88,20,99001,now() - INTERVAL '2 DAY',3,30);
 INSERT INTO public.loyalty_point_transactions(id,user_id,points,org_id,start_date,type,amount)values(4,89,30,99002,now() - INTERVAL '2 DAY',2,40);
 
 --insert loyalty spent transaction entity
 INSERT INTO public.loyalty_spent_transactions(id,transaction_id,reverse_transaction_id)values(1,1,3);
-INSERT INTO public.loyalty_spent_transactions(id,transaction_id,reverse_transaction_id)values(2,2,4);
+--INSERT INTO public.loyalty_spent_transactions(id,transaction_id,reverse_transaction_id)values(2,2,4);
 
 --insert settings
 INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
