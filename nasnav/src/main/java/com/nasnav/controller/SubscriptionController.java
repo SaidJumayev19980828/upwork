@@ -111,8 +111,6 @@ public class SubscriptionController {
             else if ("setup_intent.succeeded".equals(event.getType())) {
                 stripeWebhookSubscriptionService.handleStripeSetupIntent(event);
             }
-
-
         }catch (Exception ex){
             logger.error("Webhook Error : " + ex.getMessage());
         }
