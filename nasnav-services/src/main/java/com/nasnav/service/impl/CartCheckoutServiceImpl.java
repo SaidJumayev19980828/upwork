@@ -43,7 +43,9 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		userEntity.setTier(loyaltyTierEntity);
 		userRepository.save(userEntity);
 		Order order = orderService.createOrder(dto,userEntity);
-		promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());
+		if(dto.getPromoCode() != null ){
+			promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());
+		}
 		return order;
 	}
 

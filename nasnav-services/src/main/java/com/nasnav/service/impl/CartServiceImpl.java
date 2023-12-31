@@ -183,18 +183,7 @@ public class CartServiceImpl implements CartService {
                 cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
                 cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
             } else {
-                // Attempt to find a promotion entity by name
-                Optional<PromotionsEntity> getPromoCode = promotionRepo.findByCode(promoCode);
-
-                // Check if the promotion entity is present
-                if (getPromoCode.isEmpty()) {
-                    // Promotion entity not found, throw an exception with the specified message
-                    throw new RuntimeBusinessException(NOT_FOUND, $001$PROMO$);
-                }
-                // Get the promotion entity
-                PromotionsEntity promoEntity = getPromoCode.get();
-
-                cart.setPromos(promoService.calcPromoDiscountForCart(promoEntity.getUsageLimiterCount()>0?promoCode:null, cart));
+                applyPromoCodeToCart(promoCode, cart);
             }
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
@@ -208,6 +197,23 @@ public class CartServiceImpl implements CartService {
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
+    }
+
+    private void applyPromoCodeToCart(String promoCode, Cart cart) {
+        // Attempt to find a promotion entity by name
+        Optional<PromotionsEntity> getPromoCode = promotionRepo.findByCode(promoCode);
+
+        // Check if the promotion entity is present
+        if (getPromoCode.isEmpty()) {
+            // Promotion entity not found, set an error message in the cart promos
+            cart.getPromos().setError("Not found promo code [" + promoCode + "]");
+            return;
+        }
+
+        // Promotion entity found, proceed with applying the promo code to the cart
+        PromotionsEntity promoEntity = getPromoCode.get();
+        cart.setPromos(promoService.calcPromoDiscountForCart(
+                promoEntity.getUsageLimiterCount() > 0 ? promoCode : null, cart));
     }
 
 
