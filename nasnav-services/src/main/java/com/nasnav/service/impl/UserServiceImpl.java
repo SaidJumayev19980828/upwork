@@ -3,24 +3,56 @@ package com.nasnav.service.impl;
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.PagingUtils;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.AreaRepository;
+import com.nasnav.dao.CommonUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.SubAreaRepository;
+import com.nasnav.dao.UserAddressRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.UserSubscriptionRepository;
+import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dto.ActivationMethod;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
-import com.nasnav.enumerations.LoyaltyEvents;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.AreasEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.LoyaltyTierEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.SubAreasEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserOtpEntity;
+import com.nasnav.persistence.UserSubscriptionEntity;
+import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.*;
+import com.nasnav.service.DomainService;
+import com.nasnav.service.FileService;
+import com.nasnav.service.LoyaltyPointsService;
+import com.nasnav.service.LoyaltyTierService;
+import com.nasnav.service.MailService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.PackageService;
+import com.nasnav.service.RoleService;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.UserService;
+import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
-import com.nasnav.service.helpers.UserServicesHelper;
+import com.nasnav.util.MultipartFileUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +61,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,15 +69,56 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
-import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EmailConstants.*;
-import static com.nasnav.enumerations.Roles.*;
-import static com.nasnav.enumerations.UserStatus.*;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_URL_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.OTP_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.OTP_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.USER_SUBSCRIPTION_TEMPLATE;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
+import static com.nasnav.enumerations.UserStatus.ACCOUNT_SUSPENDED;
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.E$USR$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0003;
+import static com.nasnav.exceptions.ErrorCodes.SUBAREA$001;
+import static com.nasnav.exceptions.ErrorCodes.SUBAREA$002;
+import static com.nasnav.exceptions.ErrorCodes.U$0001;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0004;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0014;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0015;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0001;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0007;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0008;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0009;
+import static com.nasnav.exceptions.ErrorCodes.U$STATUS$0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0006;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
@@ -56,7 +128,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
@@ -85,19 +160,17 @@ public class UserServiceImpl implements UserService {
 
 	private final SubAreaRepository subAreaRepo;
 
-	private final LoyaltyCoinsDropService loyaltyCoinsDropService;
-
 	private final MetaOrderRepository metaOrderRepository;
 
 	private final LoyaltyTierService loyaltyTierService;
-
-	private final LoyaltyBoosterRepository loyaltyBoosterRepository;
 
 	private final OtpService otpService;
 
 	private final FileService fileService;
 
-	private LoyaltyPointsService loyaltyPointsService;
+	private final PackageService packageService;
+
+	private final LoyaltyPointsService loyaltyPointsService;
 
 	private UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if(userJson.getActivationMethod() == null){
@@ -116,8 +189,9 @@ public class UserServiceImpl implements UserService {
 		} else {
 			sendActivationMail(user, userJson.getRedirectUrl());
 		}
-
-		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
+		//Get Package Registered In Organization
+		Long packageId = packageService.getPackageIdRegisteredInOrg(user);
+		return new UserApiResponse(user.getId(),packageId, asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 	@Override
 	public UserApiResponse registerUserReferral(UserDTOs.UserRegistrationObjectV2 userJson, Long referrer) {
@@ -254,27 +328,23 @@ public class UserServiceImpl implements UserService {
 		}
 		if (isNotBlankOrNull(userJson.email)){
 			userServicesHelper.validateEmail(userJson.getEmail());
-			userEntity.setEmail(userJson.email);
-			generateResetPasswordToken(userEntity);
-			userEntity = userRepository.saveAndFlush(userEntity);
-			sendRecoveryMail(userEntity);
-			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
-		}
-		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
-			updateUserBoosterByFamilyMember(userEntity.getId());
-		}
-		if (isNotBlankOrNull(userJson.getTierId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-		}
-		if (isNotBlankOrNull(userJson.getFamilyId())) {
-			loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
+			if(!userJson.getEmail().equals(userEntity.getEmail())) {
+				userEntity.setEmail(userJson.email);
+				generateResetPasswordToken(userEntity);
+				userEntity = userRepository.saveAndFlush(userEntity);
+				sendRecoveryMail(userEntity);
+				successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
+			}
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
 				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
 		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+
+			if(!StringUtils.validDateTime(userJson.getDateOfBirth()))
+				userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
+
 		Long userId = userRepository.saveAndFlush(userEntity).getId();
 		if (successResponseStatusList.isEmpty()) {
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
@@ -539,7 +609,8 @@ public class UserServiceImpl implements UserService {
 	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
 		BaseUserEntity user;
-		if (securityService.currentUserIsCustomer() || userId == null || userId.equals(currentUser.getId())) {
+
+		if ( securityService.currentUserIsCustomer() || userId == null ) {
 			return getUserRepresentationWithUserRoles(currentUser);
 		} else {
 			Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());
@@ -553,8 +624,7 @@ public class UserServiceImpl implements UserService {
 					if (!List.of(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER).contains(userHighestRole))
 						throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0014);
 				}
-				user = commonUserRepo.getByIdAndOrganizationIdAndRoles(userId, currentUser.getOrganizationId(), isEmployee, roles)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
+				user=commonUserRepo.findById(userId,isEmployee).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 			}
 		}
 		return getUserRepresentationWithUserRoles(user);
@@ -573,10 +643,6 @@ public class UserServiceImpl implements UserService {
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
 		Long orgId = user.getOrganizationId();
 		Long userId = user.getId();
-		if (userId > 0 && loyaltyCoinsDropService.getByOrganizationIdAndTypeId(orgId,
-				LoyaltyEvents.SIGN_UP.getValue().intValue()) != null) {
-			loyaltyCoinsDropService.giveUserCoinsSignUp(user);
-		}
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
@@ -851,17 +917,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserByFamilyId(Long familyId, Long userId) {
-		if (userId > 0 && familyId > 0) {
-			userRepository.updateUserWithFamilyId(familyId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getFamily().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewFamilyMember(userEntity);
-			}
-		}
-	}
-
-	@Override
 	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
 		if (tierId <= 0) {
 			tierId = getTierIdByUserOrders(orgId, userId);
@@ -869,15 +924,7 @@ public class UserServiceImpl implements UserService {
 		if (userId > 0 && tierId > 0) {
 			userRepository.updateUserTier(tierId, userId);
 			UserEntity userEntity = userRepository.findById(userId).get();
-			if (userEntity.getTier().getId() > 0) {
-				loyaltyCoinsDropService.giveUserCoinsNewTier(userEntity);
-			}
 		}
-	}
-
-	@Override
-	public List<UserEntity> getUsersByFamilyId(Long familyId) {
-		return userRepository.findByFamily_Id(familyId);
 	}
 
 	private Long getTierIdByUserOrders(Long orgId, Long userId) {
@@ -888,40 +935,6 @@ public class UserServiceImpl implements UserService {
 		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
 				.map(LoyaltyTierEntity::getId)
 				.orElse(-1L);
-	}
-
-	private void updateUserBoosterByFamilyMember(Long userId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		UserEntity userEntity = getUserEntityById(userId);
-		Long familyId = userEntity.getFamily().getId();
-		if (familyId < 0) {
-			return;
-		}
-		List<UserEntity> familyUsers = userRepository.getByFamily_IdAndOrganizationId(familyId, orgId);
-		Integer familyCount = familyUsers.size();
-		if (familyCount == 0) {
-			return;
-		}
-		LoyaltyBoosterEntity loyaltyBoosterEntity = null;
-		LoyaltyBoosterEntity userLoyaltyBoosterEntity = null;
-		List<LoyaltyBoosterEntity> boosterList = new ArrayList<>();
-		if (userEntity.getBooster() != null) {
-			userLoyaltyBoosterEntity = userEntity.getBooster();
-		}
-		boosterList = loyaltyBoosterRepository.getAllByLinkedFamilyMember(familyCount + 1);
-		if (boosterList.isEmpty()) {
-			boosterList = loyaltyBoosterRepository.getAllByNumberFamilyChildren(familyCount);
-		}
-		if (boosterList.size() > 0) {
-			loyaltyBoosterEntity = boosterList.get(boosterList.size() - 1);
-			if (userLoyaltyBoosterEntity != null && userLoyaltyBoosterEntity != loyaltyBoosterEntity) {
-				if (userLoyaltyBoosterEntity.getLevelBooster() > loyaltyBoosterEntity.getLevelBooster()) {
-					return;
-				}
-			}
-			userEntity.setBooster(loyaltyBoosterEntity);
-		}
-		userRepository.save(userEntity);
 	}
 
 	private void sendUserOtp(UserEntity userEntity, String otp) {
@@ -978,7 +991,11 @@ public class UserServiceImpl implements UserService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$EMP$0004, activateOtpDto.getEmail()));
 		otpService.validateOtp(activateOtpDto.getOtp(), user, OtpType.REGISTER);
 		activateUserInDB(user);
-		return securityService.login(user, false);
+		//Get Package Registered In Organization
+		Long packageId = packageService.getPackageIdRegisteredInOrg(user);
+		UserApiResponse userApiResponse = securityService.login(user, false);
+		userApiResponse.setPackageId(packageId);
+		return userApiResponse;
 	}
 
 	@Transactional
@@ -1009,6 +1026,12 @@ public class UserServiceImpl implements UserService {
 		}
 		//display  user Id, url of image
 		return new UserApiResponse(userEntity.getId(), imageUrl, successResponseStatusList);
+	}
+
+	@Override
+	public UserApiResponse processUserAvatar(ImageBase64 image) throws IOException {
+		MultipartFile userAvatar = MultipartFileUtils.convert(image.getBase64(), image.getFileName(), image.getFileType());
+		return updateUserAvatar(userAvatar);
 	}
 
 
