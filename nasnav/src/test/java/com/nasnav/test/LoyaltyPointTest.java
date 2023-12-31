@@ -306,7 +306,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     public void SharePoint() {
         HttpEntity<?> request = getHttpEntity("123");
 
-        ResponseEntity<Void> response = template.exchange("/loyalty/share_points?point_id=2&email=test2@nasnav.com&points=9",
+        ResponseEntity<Void> response = template.exchange("/loyalty/share_points?org_id=31&email=test2@nasnav.com&points=9",
                 POST,
                 request,Void.class);
         Assert.assertEquals(OK, response.getStatusCode());
