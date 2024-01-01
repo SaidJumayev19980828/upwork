@@ -185,10 +185,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         Integer totalPoints = 0;
         for(LoyaltyPointTransactionEntity pt : userTrx){
             totalPoints+=pt.getPoints().intValue();
-            List<LoyaltySpentTransactionEntity> allReverseTrx = loyaltySpendTransactionRepo.findAllByTransaction_Id(pt.getId());
-            for(LoyaltySpentTransactionEntity negativePt : allReverseTrx){
-                totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
-            }
+//            List<LoyaltySpentTransactionEntity> allReverseTrx = loyaltySpendTransactionRepo.findAllByTransaction_Id(pt.getId());
+//            for(LoyaltySpentTransactionEntity negativePt : allReverseTrx){
+//                totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
+//            }
         }
         return new LoyaltyUserPointsResponse(totalPoints);
     }
@@ -645,16 +645,16 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return loyaltyPointTransRepo
                 .getSpendablePointsByUserIdAndOrgIds(currentUser.getYeshteryUserId(), orgIds)
                 .stream()
-                .map(t -> {
-                    BigDecimal spentPoints = t.getSpentTransactions()
-                            .stream()
-                            .filter(Objects::nonNull)
-                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
-                            .map(LoyaltyPointTransactionEntity::getPoints)
-                            .reduce(ZERO, BigDecimal::add);
-                    t.setPoints(t.getPoints().subtract(spentPoints));
-                    return t;
-                })
+//                .map(t -> {
+//                    BigDecimal spentPoints = t.getSpentTransactions()
+//                            .stream()
+//                            .filter(Objects::nonNull)
+//                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
+//                            .map(LoyaltyPointTransactionEntity::getPoints)
+//                            .reduce(ZERO, BigDecimal::add);
+//                    t.setPoints(t.getPoints().subtract(spentPoints));
+//                    return t;
+//                })
                 .map(LoyaltyPointTransactionEntity::getRepresentation)
                 .collect(toList());
     }
