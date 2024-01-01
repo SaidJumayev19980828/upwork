@@ -195,6 +195,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		dto.setTypeId(entity.getTypeId());
 		dto.setPriority(entity.getPriority());
 		dto.setShowingOnline(entity.isShowingOnline());
+		dto.setUsageLimiterCount(entity.getUsageLimiterCount());
 		return dto;
 	}
 
