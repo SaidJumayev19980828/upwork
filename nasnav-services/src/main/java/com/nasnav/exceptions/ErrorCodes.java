@@ -258,6 +258,7 @@ public enum ErrorCodes {
 	,STR$WH$0005("Stripe Webhook : Failed To Update Customer Default Payment Method")
 	,STR$WH$0006("Stripe Webhook : Failed To Update Subscription Default Payment Method")
 	,STR$WH$0007("Stripe Webhook : Failed To PayRetry Invoice of Subscription")
+	,STR$WH$0008("Stripe Webhook : Failed To Deserialize Event Object")
 
 
 

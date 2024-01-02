@@ -26,7 +26,7 @@ public interface LoyaltyPointsService {
     void createLoyaltyPointTransaction(OrdersEntity order, LoyaltyPointType type, BigDecimal pointsAmount);
     void createYeshteryLoyaltyPointTransaction(MetaOrderEntity yeshteryMetaOrder, LoyaltyPointType type, BigDecimal pointsAmount);
     void redeemPoints(Long orderId, String code);
-    void sharePoints(Long pointId, String email , BigDecimal points);
+    void sharePoints(Long orgId, String email , BigDecimal points);
     List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long orgId );
     List<LoyaltyPointConfigDTO> listLoyaltyPointConfigs();
     LoyaltyPointConfigDTO getLoyaltyPointActiveConfig();

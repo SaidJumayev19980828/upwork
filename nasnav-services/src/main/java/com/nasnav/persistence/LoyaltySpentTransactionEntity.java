@@ -25,7 +25,7 @@ public class LoyaltySpentTransactionEntity {
 	@lombok.ToString.Exclude
 	private LoyaltyPointTransactionEntity transaction;
 
-	@OneToOne(fetch = LAZY)
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name="reverse_transaction_id", referencedColumnName = "id")
 	@JsonIgnore
 	@EqualsAndHashCode.Exclude

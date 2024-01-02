@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.criteria.AbstractCriteriaQueryBuilder;
 import com.nasnav.commons.criteria.data.CrieteriaQueryResults;
@@ -244,6 +245,7 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, VIDEO$PARAM$0003));
     }
 
+
     private VideoChatResponse createNewVideoSession(UserEntity loggedInUser, Long orgId, Long shopId) {
         OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, orgId));
@@ -253,7 +255,6 @@ public class VideoChatServiceImpl implements VideoChatService {
                 .map(Optional::get)
                 .orElse(null);
         try {
-
             Session session = this.openVidu.createSession(sessionProperties);
             String sessionName = session.getSessionId();
             Connection connection = createConnection(session);
@@ -352,6 +353,20 @@ public class VideoChatServiceImpl implements VideoChatService {
         } catch (JsonProcessingException e) {
             // empty
         }
+    }
+    @Override
+    public Map<String, String> getVideoChatCredentials() {
+        List<Map<String, String>> videoChatCredentials = new ArrayList<>();
+        JsonObject sessionPropertiesMap = sessionProperties.toJson();
+        String openViduUrl = appConfig.openViduUrl;
+        String openViduSecret = appConfig.openViduSecret;
+        Map<String, String> credentials = new HashMap<>();
+            credentials.put("openViduUrl", openViduUrl);
+            credentials.put("openViduSecret", openViduSecret);
+            credentials.put("sessionId", "sessionId");
+            credentials.put("token", "token");
+            credentials.put("sessionProperties", sessionPropertiesMap.toString());
+        return credentials;
     }
 
     private void handleSessionDestroyed(OpenViduCallbackDTO dto) {

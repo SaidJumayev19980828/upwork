@@ -60,7 +60,7 @@ public class UserController {
     private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
     private final CommonUserService commonUserService;
     @Autowired
-	private UserService userService;
+    private UserService userService;
     @Autowired
     private EmployeeUserService employeeUserService;
     @Autowired
@@ -81,16 +81,16 @@ public class UserController {
 
     @GetMapping(value = "recover", params = "employee=true", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToEmplyee(@RequestParam String email,
-            @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam boolean employee) {
+                                           @RequestParam(value = "org_id", required = false) Long orgId,
+                                           @RequestParam boolean employee) {
         employeeUserService.sendEmailRecovery(email);
     }
 
     @GetMapping(value = "recover", produces = APPLICATION_JSON_VALUE)
     public void sendEmailRecoveryToUser(@RequestParam String email,
-            @RequestParam(value = "org_id", required = false) Long orgId,
-            @RequestParam boolean employee,
-            @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
+                                        @RequestParam(value = "org_id", required = false) Long orgId,
+                                        @RequestParam boolean employee,
+                                        @RequestParam(value = "activation_method", defaultValue = "VERIFICATION_LINK") ActivationMethod activationMethod) {
         userService.sendEmailRecovery(email, orgId, activationMethod);
     }
 
@@ -106,13 +106,13 @@ public class UserController {
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) {
         UserApiResponse userApiResponse = securityService.login(login, DISABLED);
         response.addCookie(userApiResponse.getCookie());
-    	return userApiResponse;
+        return userApiResponse;
     }
 
     @PostMapping(value = "logout")
     public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String headerToken,
-            @CookieValue(name = "User-Token", required = false) String cookieToken,
-            HttpServletResponse response) {
+                                  @CookieValue(name = "User-Token", required = false) String cookieToken,
+                                  HttpServletResponse response) {
         UserApiResponse userApiResponse = securityService.logout(headerToken, cookieToken);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
@@ -138,7 +138,7 @@ public class UserController {
 
     @PostMapping("notification-token")
     public void updateNotificationToken(@RequestHeader(name = "User-Token") String userToken,
-            @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
+                                        @Schema(example = "YYYYYYYYYY:XXXXXXXXXXXX") @RequestBody String notificationToken) {
         securityService.setCurrentUserNotificationToken(userToken, notificationToken);
     }
 
@@ -151,21 +151,21 @@ public class UserController {
 
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
     public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                      @RequestParam (value = "org_id", required = false) Long orgId,
-                                      @RequestParam (value = "shop_id", required = false) Long storeId,
-                                      @RequestParam (value = "role", required = false) String role) {
+                                                      @RequestParam (value = "org_id", required = false) Long orgId,
+                                                      @RequestParam (value = "shop_id", required = false) Long storeId,
+                                                      @RequestParam (value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
 
     @GetMapping(value = "list/customer", produces = APPLICATION_JSON_VALUE)
     public List<UserRepresentationObject> getCustomersList(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                        @RequestParam (value = "paging_start", required = false) Integer start,
-                                        @RequestParam (value = "paging_count", required = false) Integer count,
-                                        @RequestParam (value = "user_status", required = false) Integer userStatus) {
+                                                           @RequestParam (value = "paging_start", required = false) Integer start,
+                                                           @RequestParam (value = "paging_count", required = false) Integer count,
+                                                           @RequestParam (value = "user_status", required = false) Integer userStatus) {
         return userService.getUserListByStatusPaging( start, count, userStatus);
     }
-    
-    
+
+
     @Operation(description = "Log in user using a social login token, "
             + "mainly used as a redirect destination at the end of the OAuth2 login process", summary = "userSocialLogin")
     @ApiResponses(value = {
@@ -180,7 +180,7 @@ public class UserController {
     @PostMapping(value = "v2/register", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ResponseStatus(CREATED)
     public UserApiResponse registerUserV2(@RequestBody UserDTOs.UserRegistrationObjectV2 userJson,
-            @RequestParam(required = false) Long referrer) throws BusinessException {
+                                          @RequestParam(required = false) Long referrer) throws BusinessException {
         return this.userService.registerUserReferral(userJson, referrer);
     }
 
@@ -214,17 +214,17 @@ public class UserController {
 
     @PostMapping(value = "suspend", params = "is_employee=true")
     public void suspendEmployeeAccount(@RequestHeader(name = "User-Token", required = false) String token,
-            @RequestParam(value = "user_id") Long userId,
-            @RequestParam(defaultValue = "false") Boolean suspend,
-            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+                                       @RequestParam(value = "user_id") Long userId,
+                                       @RequestParam(defaultValue = "false") Boolean suspend,
+                                       @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
         employeeUserService.suspendEmployeeAccount(userId, suspend);
     }
 
     @PostMapping(value = "suspend")
     public void suspendUserAccount(@RequestHeader(name = "User-Token", required = false) String token,
-            @RequestParam(value = "user_id") Long userId,
-            @RequestParam(defaultValue = "false") Boolean suspend,
-            @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
+                                   @RequestParam(value = "user_id") Long userId,
+                                   @RequestParam(defaultValue = "false") Boolean suspend,
+                                   @RequestParam(name = "is_employee", defaultValue = "false") Boolean isEmployee) {
         userService.suspendUserAccount(userId, suspend);
     }
 
@@ -241,7 +241,7 @@ public class UserController {
 
     @GetMapping(value="/review", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<ProductRateRepresentationObject> getVariantsRatings(@RequestHeader (name = "User-Token", required = false) String token,
-                                                                   @RequestParam(value = "variant_ids") Set<Long> variantIds) {
+                                                                    @RequestParam(value = "variant_ids") Set<Long> variantIds) {
         return reviewService.getUserProductsRatings(variantIds);
     }
 

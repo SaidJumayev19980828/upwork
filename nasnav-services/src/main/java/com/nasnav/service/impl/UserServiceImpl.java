@@ -178,7 +178,7 @@ public class UserServiceImpl implements UserService {
 		}
 		validateNewUserRegistration(userJson);
 
-		UserEntity user = createNewUserEntity(userJson);		
+		UserEntity user = createNewUserEntity(userJson);
 		setUserAsDeactivated(user);
 		generateResetPasswordToken(user);
 		user = userRepository.saveAndFlush(user);
@@ -206,7 +206,7 @@ public class UserServiceImpl implements UserService {
 		if (referrerEntity != null)
 			loyaltyPointsService.givePointsToReferrer(referrerEntity, orgId);
 	}
-	
+
 	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if (!Boolean.TRUE.equals(userJson.confirmationFlag)) {
 			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0015, userJson.confirmationFlag);
@@ -223,7 +223,7 @@ public class UserServiceImpl implements UserService {
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
 		}
-		
+
 		if (userJson.getActivationMethod() == ActivationMethod.VERIFICATION_LINK)
 			validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
 	}
@@ -237,7 +237,7 @@ public class UserServiceImpl implements UserService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0004, redirectUrl);
 		}
 	}
-	
+
 
 
 
@@ -285,7 +285,7 @@ public class UserServiceImpl implements UserService {
 		} catch (URISyntaxException e) {
 			logger.error(e, e);
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0004, redirectUrl);
-		}		
+		}
 	}
 
 
@@ -308,8 +308,8 @@ public class UserServiceImpl implements UserService {
 		user.setUserStatus(NOT_ACTIVATED.getValue());
 	}
 
-	
-	
+
+
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
 		UserEntity userEntity = (UserEntity)user;
@@ -338,12 +338,12 @@ public class UserServiceImpl implements UserService {
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "shop_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
-				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
+				asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 
 		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
 
-			if(!StringUtils.validDateTime(userJson.getDateOfBirth()))
-				userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
+		if(!StringUtils.validDateTime(userJson.getDateOfBirth()))
+			userEntity.setDateOfBirth(LocalDateTime.parse(userJson.getDateOfBirth()));
 
 		Long userId = userRepository.saveAndFlush(userEntity).getId();
 		if (successResponseStatusList.isEmpty()) {
@@ -453,8 +453,8 @@ public class UserServiceImpl implements UserService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		SubAreasEntity subArea =
 				subAreaRepo
-				.findByIdAndOrganization_Id(subAreaId, orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
+						.findByIdAndOrganization_Id(subAreaId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$001, subAreaId, orgId));
 		address.setSubAreasEntity(subArea);
 		if(isNull(addressDTO.getAreaId())){
 			address.setAreasEntity(subArea.getArea());
@@ -469,12 +469,12 @@ public class UserServiceImpl implements UserService {
 	private void validateSubAreaMatchesGivenArea(AddressDTO addressDTO, AddressesEntity address, Long subAreaId, SubAreasEntity subArea) {
 		Long givenAreaId =
 				ofNullable(address.getAreasEntity())
-				.map(AreasEntity::getId)
-				.orElse(addressDTO.getAreaId());
+						.map(AreasEntity::getId)
+						.orElse(addressDTO.getAreaId());
 		Long subAreaParentId =
 				ofNullable(subArea.getArea())
 						.map(AreasEntity::getId)
-				.orElse(null);
+						.orElse(null);
 		if(!Objects.equals(givenAreaId, subAreaParentId)){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SUBAREA$002, subAreaId, givenAreaId);
 		}
@@ -523,18 +523,18 @@ public class UserServiceImpl implements UserService {
 	}
 
 
-	
-	
-	
+
+
+
 	private void generateResetPasswordToken(UserEntity userEntity) {
 		String generatedToken = generateResetPasswordToken();
 		userEntity.setResetPasswordToken(generatedToken);
 		userEntity.setResetPasswordSentAt(now());
 	}
 
-	
-	
-	
+
+
+
 	private void sendRecoveryMail(UserEntity userEntity) {
 		String userName = ofNullable(userEntity.getName()).orElse("User");
 		String orgName = orgRepo.getOne(userEntity.getOrganizationId()).getName();
@@ -577,7 +577,7 @@ public class UserServiceImpl implements UserService {
 		userServicesHelper.validateNewPassword(data.password);
 		userServicesHelper.validateToken(data.token);
 		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token)
-								.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
 
 		userServicesHelper.checkResetPasswordTokenExpiry(userEntity.getResetPasswordSentAt());
 		userEntity.setResetPasswordToken(null);
@@ -599,7 +599,7 @@ public class UserServiceImpl implements UserService {
 		tokenEntity.setToken(generateUUIDToken());
 		return userTokenRepo.save(tokenEntity).getToken();
 	}
-	
+
 	/* get user own info or other user info
 	for customer, get his own info only
 	for nasnav admin, get requested user info regardless of its roles or organization
@@ -638,7 +638,7 @@ public class UserServiceImpl implements UserService {
 
 		checkUserActivation(user);
 		validateActivationRedirectUrl(redirect, user.getOrganizationId());
-		
+
 		activateUserInDB(user);
 		// using securityService.getCurrentUserOrganizationId() causes the api to fail because no current user exists
 		Long orgId = user.getOrganizationId();
@@ -655,13 +655,13 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 	}
 
-	
-	
+
+
 	private RedirectView redirectUser(String authToken, String loginUrl) {
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
 		attributes.addAttribute("auth_token", authToken);
-		
-		RedirectView redirectView = new RedirectView();	
+
+		RedirectView redirectView = new RedirectView();
 		redirectView.setUrl(loginUrl);
 		redirectView.setAttributesMap(attributes);
 
@@ -681,9 +681,9 @@ public class UserServiceImpl implements UserService {
 		if (!isUserDeactivated(user))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0008);
 	}
-	
-	
-	
+
+
+
 
 	private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
 		UserRepresentationObject userRepObj = user.getRepresentation();
@@ -692,8 +692,8 @@ public class UserServiceImpl implements UserService {
 		userRepObj.setLastLogin(securityService.getLastLoginForUser(user));
 		return userRepObj;
 	}
-	
-	
+
+
 	private List<AddressRepObj> getUserAddresses(Long userId){
 		return userAddressRepo
 				.findByUser_Id(userId)
@@ -703,8 +703,8 @@ public class UserServiceImpl implements UserService {
 				.collect(toList());
 	}
 
-	
-	
+
+
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
 		final BeanWrapper src = new BeanWrapperImpl(userJson);
 		List<String> nullProperties = new ArrayList<>();
@@ -726,7 +726,7 @@ public class UserServiceImpl implements UserService {
 		Long orgId = accountInfo.getOrgId();
 		BaseUserEntity baseUser = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
 		validateActivationEmailResend(accountInfo, baseUser);
-		
+
 		UserEntity user = (UserEntity)baseUser;
 		if(isUserDeactivated(user)) {
 			generateResetPasswordToken(user);
@@ -754,7 +754,7 @@ public class UserServiceImpl implements UserService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
 		}else if(resendRequestedTooSoon(accountInfo)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0003, email);
-		}			 		
+		}
 	}
 
 
@@ -773,7 +773,7 @@ public class UserServiceImpl implements UserService {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
-		
+
 		activateUserInDB(user);
 		return securityService.login(user, false);
 	}
@@ -895,17 +895,17 @@ public class UserServiceImpl implements UserService {
 		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
 
 			if(userStatus!=null)
-			customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
-			else 
-			customers = userRepository.findAll(pageRequest.first()).toList();
+				customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+			else
+				customers = userRepository.findAll(pageRequest.first()).toList();
 
 		} else {
 
 			Long orgID = securityService.getCurrentUserOrganizationId();
 			if(userStatus!=null)
-			customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
-			else 
-			customers = userRepository.findByOrganizationId(orgID, pageRequest);
+				customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+			else
+				customers = userRepository.findByOrganizationId(orgID, pageRequest);
 
 		}
 		return customers.stream().map(UserEntity::getRepresentation).collect(toList());

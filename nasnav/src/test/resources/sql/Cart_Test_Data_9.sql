@@ -129,7 +129,7 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 -- insert promotions
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
-VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now(), 7);
+VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now(), 2);
 
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)

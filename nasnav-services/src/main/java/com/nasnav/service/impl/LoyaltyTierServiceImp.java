@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
-import com.nasnav.dto.LoyaltyConfigConstraint;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
@@ -18,15 +17,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
 import static com.nasnav.exceptions.ErrorCodes.*;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -138,6 +134,10 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         LoyaltyTierEntity entity = getOrCreateTierEntity(tier);
         if (isUpdateOperation(tier) && !isInactiveTier(entity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0002, tier.getId());
+        } else if (isCreateOperation(tier)) {
+            deactivateExistingTiers();
+        } else if (isUpdateOperation(tier) && isActiveTier(tier)) {
+            deactivateExistingTiers();
         }
         if (tier.getIsActive() != null) {
             entity.setIsActive(tier.getIsActive());
@@ -193,9 +193,26 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
                 .flatMap(tierId -> tierRepository.findByIdAndOrganization_Id(tierId, orgId))
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0019, id));
     }
+    private List<LoyaltyTierEntity> getExistingTierByStatus(Boolean isActive) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return  tierRepository.findByOrganization_IdAndIsActive(orgId, isActive);
+    }
+    private void deactivateExistingTiers() {
+        List<LoyaltyTierEntity> existingActiveTiers = getExistingTierByStatus(true);
+        existingActiveTiers.forEach(loyaltyTierEntity -> {
+            loyaltyTierEntity.setIsActive(false);
+            tierRepository.save(loyaltyTierEntity);
+        });
+    }
 
     private boolean isUpdateOperation(LoyaltyTierDTO tier) {
         return tier.getOperation().equals("update");
+    }
+    private boolean isCreateOperation(LoyaltyTierDTO tier) {
+        return tier.getOperation().equals("create");
+    }
+    private boolean isActiveTier(LoyaltyTierDTO tier) {
+        return Objects.equals(true, tier.getIsActive());
     }
 
     private boolean isInactiveTier(LoyaltyTierEntity tier) {

@@ -140,7 +140,10 @@ public class StripeServiceImpl implements StripeService {
 
     @Override
     public StripeObject getStripeObjectFromWebhookEvent(Event event){
-        StripeObject stripeObject = event.getDataObjectDeserializer().getObject().get();
+        stripeLogger.info("Stripe Object From Webhook Event : Start Deserializer");
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject().orElseThrow(
+                () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, STR$WH$0008)
+        );
         stripeLogger.info(String.format("Stripe Object From Webhook Event : %s " , stripeObject.toString()));
         return stripeObject;
     }
