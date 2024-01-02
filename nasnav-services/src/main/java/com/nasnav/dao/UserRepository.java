@@ -3,7 +3,6 @@ package com.nasnav.dao;
 import com.nasnav.persistence.UserEntity;
 
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -39,9 +38,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> findByOrganizationId(Long orgId);
 
-	List<UserEntity> findByOrganizationId(Long orgId, Pageable pageable);
-	
-	List<UserEntity> findByOrganizationIdAndUserStatus(Long orgId,Integer userStatus, Pageable pageable);
+	List<UserEntity> findByOrganizationIdandStatusPaged(Long orgId,Integer userStatus,PageRequest  pageRequest);
 
 	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id where u.organizationId = :orgId")
 	Set<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId);
@@ -94,7 +91,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	List<UserEntity> findByTier_Id(Long tierId);
 
 	
-	List<UserEntity> findAllUsersByUserStatus(Integer userStatus,PageRequest  pageRequest);
+	List<UserEntity> findAllUsersByStatusPaged(Integer userStatus,PageRequest  pageRequest);
 
 	@Transactional
 	@Modifying

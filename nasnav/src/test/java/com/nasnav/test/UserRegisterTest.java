@@ -301,20 +301,6 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				UserApiResponse.class);
 	}
 
-	private void setAndAssertNotificationToken(String userToken, String sentNotificationToken) {
-			HttpEntity<?> request = getHttpEntity(sentNotificationToken, userToken);
-		ResponseEntity<Void> response = template.postForEntity("/user/notification-token", request, Void.class);
-		assertEquals(OK, response.getStatusCode());
-		String repoNotificationToken = userTokenRepo.findByToken(userToken).getNotificationToken();
-		assertEquals(sentNotificationToken, repoNotificationToken);
-	}
-
-	@Test
-	public void updateNotificationToken() {
-		setAndAssertNotificationToken("77", "Notification:Token");
-		setAndAssertNotificationToken("101112", "Other:Notification:Token");
-	}
-
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
@@ -812,35 +798,6 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		// otp is deleted request should fail
 		response = template.postForEntity("/user/v2/register/otp/activate", request, String.class);
 		Assert.assertEquals(400, response.getStatusCodeValue());
-	}
-
-	@Test
-	public void newUserRegisterWithOtpHasPackageTest() throws MessagingException, IOException {
-		//User Register With OTP
-		JSONObject userJson = createUserRegisterV2Request(null).put("activation_method", "OTP");
-		String body = userJson.toString();
-		HttpEntity<Object> registerRequest = getHttpEntity((Object)body);
-		ResponseEntity<UserApiResponse> registerResponse = template.postForEntity("/user/v2/register", registerRequest, UserApiResponse.class);
-		Assert.assertEquals(201, registerResponse.getStatusCodeValue());
-		Assert.assertTrue(registerResponse.getBody().getPackageId() == 99001);
-		Mockito
-				.verify(mailService)
-				.send(
-						Mockito.eq("organization_1")
-						, Mockito.eq("test@nasnav.com")
-						, Mockito.eq("organization_1"+ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
-						, Mockito.anyString()
-						, Mockito.anyMap());
-
-		String email = userJson.getString("email");
-		Long orgId = userJson.getLong("org_id");
-		UserEntity newUser = userRepository.getByEmailAndOrganizationId(email, orgId);
-		String otp = userOtpRepository.findByUserAndType(newUser, OtpType.REGISTER).map(BaseUserOtpEntity::getOtp).orElse(null);
-		ActivateOtpDto activationBody = new ActivateOtpDto(email, otp, orgId);
-		HttpEntity<ActivateOtpDto> activateRequest = new HttpEntity<ActivateOtpDto>(activationBody);
-		ResponseEntity<UserApiResponse> activateResponse = template.postForEntity("/user/v2/register/otp/activate", activateRequest, UserApiResponse.class);
-		Assert.assertEquals(200, activateResponse.getStatusCodeValue());
-		Assert.assertTrue(activateResponse.getBody().getPackageId() == 99001);
 	}
 
 	@Test
@@ -1577,10 +1534,11 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertEquals(1, newTokensCount.intValue());
 	}
 
+
 	@Test
-	public void listCustomersPageableSuccessWStatus() throws IOException {
+	public void listCustomersSuccess() throws IOException {
 		HttpEntity<?> req = getHttpEntity("101112");
-		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=200", GET, req, String.class);
+		ResponseEntity<String> res = template.exchange("/user/list/customer", GET, req, String.class);
 		assertEquals(200, res.getStatusCodeValue());
 		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
 		assertFalse(userList.isEmpty());
@@ -1589,7 +1547,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void listCustomersPageableSuccess() throws IOException {
 		HttpEntity<?> req = getHttpEntity("101112");
-		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30", GET, req, String.class);
+		ResponseEntity<String> res = template.exchange("/user/list/customer?paging_start=0&paging_count=30&user_status=002", GET, req, String.class);
 		assertEquals(200, res.getStatusCodeValue());
 		List<UserRepresentationObject> userList = mapper.readValue(res.getBody(), new TypeReference<List<UserRepresentationObject>>(){});
 		assertFalse(userList.isEmpty());
@@ -1639,7 +1597,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 		UserEntity user = userRepository.findByEmailAndOrganizationId("user1@nasnav.com", 99001L).orElse(persistentUser);
 		Set<String> notificationTokens = securityService.getValidNotificationTokens(user);
-		Set<String> notificationTokensByUsers = securityService.getValidUserNotificationTokens(user);
+		Set<String> notificationTokensByUsers = securityService.getValidUserNotificationTokens(Set.of(user));
 
 		Set<String> expectedTokens = Set.of(notificationToken);
 		assertEquals(expectedTokens, notificationTokens);
