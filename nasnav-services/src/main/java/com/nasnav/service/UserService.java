@@ -41,6 +41,8 @@ public interface UserService extends CommonUserServiceInterface {
 
     RedirectView activateSubscribedEmail(String token, Long orgId);
 
+     List<UserRepresentationObject>  getUserListByStatusPaging(Integer start, Integer count, Integer userStatus);
+
     List<UserRepresentationObject> getUserList();
 
     List<UserEntity> getYeshteryUsersByAllowReward(Boolean allowReward);

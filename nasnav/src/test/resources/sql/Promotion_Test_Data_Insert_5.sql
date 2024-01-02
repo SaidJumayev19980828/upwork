@@ -71,8 +71,8 @@ INSERT INTO public.organization_shipping_service(shipping_service_id, organizati
 
 -- inserting promotions
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id, priority)
-VALUES(630000, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0}', '{"percentage":60}', 69, now(), 0, 0);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id, priority , usage_limiter_count)
+VALUES(630000, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0}', '{"percentage":60}', 69, now(), 0, 0,9);
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
 VALUES(630001, 'Shipping promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":10}', '{"percentage":50}', 69, now(), 1);

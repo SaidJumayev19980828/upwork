@@ -172,8 +172,9 @@ public enum ErrorCodes {
 	,THEME$0004("uid is already used by another theme!")
 
 	,ORG$THEME$0001("Removed classes has a theme[%d] assigned to org[%d]!")
-	,ORG$THEME$0002("Removed theme is used by organizations %s!"),
-	ORG$CREATE$001("Provided p_name is already used by another organization")
+	,ORG$THEME$0002("Removed theme is used by organizations %s!")
+	,ORG$CREATE$001("Provided p_name is already used by another organization")
+	,ORG$CREATE$002("Failed To Set Owner User To Organization")
 
 	,ORG$FTR$0001("Invalid feature name! The feature name can't be null or Empty!")
 	,ORG$FTR$0002("Invalid feature name! The feature name is already used!")
@@ -486,6 +487,8 @@ public enum ErrorCodes {
 	,BANK$ACC$0005("the account have not enough balance")
 	,BANK$ACC$0006("No reservation with id: [%d]")
 	,BANK$ACC$0007("this transaction is done before")
+	,BANK$ACC$0008("The provide Api key is Not Valid, check it again")
+
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
 	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
@@ -507,7 +510,9 @@ public enum ErrorCodes {
 	,G$CONTACT$0001("No Contact-Us form exists with id[%d]!")
 	,NOTIUSER$0006("We can not find customer Id With Body Request")
 	,NOTIUSERPARAM$0006("We can not find customer Id With Request Param")
-
+	,PROMO$EXCEPTION("Discount is bigger than the min price")
+	,$001$PROMO$("Promo not found")
+	,$002$PROMO$("This promo can't be used. Usage limit reached.")
 	;
 
 	@Getter

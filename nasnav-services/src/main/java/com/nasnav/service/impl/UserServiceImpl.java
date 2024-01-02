@@ -2,25 +2,56 @@ package com.nasnav.service.impl;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.PagingUtils;
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.AreaRepository;
+import com.nasnav.dao.CommonUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.SubAreaRepository;
+import com.nasnav.dao.UserAddressRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.UserSubscriptionRepository;
+import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dto.ActivationMethod;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.request.ImageBase64;
-import com.nasnav.service.FileService;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.AreasEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.LoyaltyTierEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.SubAreasEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserOtpEntity;
+import com.nasnav.persistence.UserSubscriptionEntity;
+import com.nasnav.persistence.UserTokensEntity;
+import com.nasnav.request.ImageBase64;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.*;
+import com.nasnav.service.DomainService;
+import com.nasnav.service.FileService;
+import com.nasnav.service.LoyaltyPointsService;
+import com.nasnav.service.LoyaltyTierService;
+import com.nasnav.service.MailService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.PackageService;
+import com.nasnav.service.RoleService;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.UserService;
+import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.otp.OtpService;
 import com.nasnav.service.otp.OtpType;
-import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.util.MultipartFileUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.client.utils.URIBuilder;
@@ -29,6 +60,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,18 +71,54 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
-import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.constatnts.EmailConstants.*;
-import static com.nasnav.enumerations.Roles.*;
-import static com.nasnav.enumerations.UserStatus.*;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.CHANGE_PASSWORD_URL_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.OTP_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.OTP_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
+import static com.nasnav.constatnts.EmailConstants.USER_SUBSCRIPTION_TEMPLATE;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
+import static com.nasnav.enumerations.UserStatus.ACCOUNT_SUSPENDED;
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.E$USR$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0003;
+import static com.nasnav.exceptions.ErrorCodes.SUBAREA$001;
+import static com.nasnav.exceptions.ErrorCodes.SUBAREA$002;
+import static com.nasnav.exceptions.ErrorCodes.U$0001;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0004;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0014;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0015;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0001;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0007;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0008;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0009;
+import static com.nasnav.exceptions.ErrorCodes.U$STATUS$0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0006;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
@@ -60,7 +128,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
@@ -816,6 +887,28 @@ public class UserServiceImpl implements UserService {
 				.stream()
 				.map(UserEntity::getRepresentation)
 				.collect(toList());
+	}
+
+	public List<UserRepresentationObject> getUserListByStatusPaging(Integer start, Integer count, Integer userStatus) {
+		List<UserEntity> customers = null;
+		PageRequest pageRequest = PagingUtils.getQueryPageAddIdSort(start, count);
+		if (securityService.currentUserHasRole(NASNAV_ADMIN)) {
+
+			if(userStatus!=null)
+			customers = userRepository.findAllUsersByUserStatus(userStatus, pageRequest);
+			else 
+			customers = userRepository.findAll(pageRequest.first()).toList();
+
+		} else {
+
+			Long orgID = securityService.getCurrentUserOrganizationId();
+			if(userStatus!=null)
+			customers = userRepository.findByOrganizationIdAndUserStatus(orgID, userStatus, pageRequest);
+			else 
+			customers = userRepository.findByOrganizationId(orgID, pageRequest);
+
+		}
+		return customers.stream().map(UserEntity::getRepresentation).collect(toList());
 	}
 
 	@Override

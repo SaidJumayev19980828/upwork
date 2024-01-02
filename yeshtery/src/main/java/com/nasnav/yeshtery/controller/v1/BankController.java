@@ -1,20 +1,42 @@
-package com.nasnav.controller;
+package com.nasnav.yeshtery.controller.v1;
 
-import com.nasnav.dto.response.*;
+
+import com.nasnav.commons.YeshteryConstants;
+import com.nasnav.dto.response.BankAccountDTO;
+import com.nasnav.dto.response.BankAccountDetailsDTO;
+import com.nasnav.dto.response.BankActivityDetailsDTO;
+import com.nasnav.dto.response.BankBalanceSummaryDTO;
+import com.nasnav.dto.response.BankReservationDTO;
+import com.nasnav.dto.response.DepositBlockChainRequest;
 import com.nasnav.persistence.BankAccountEntity;
-import com.nasnav.service.*;
+import com.nasnav.service.BankAccountActivityService;
+import com.nasnav.service.BankAccountService;
+import com.nasnav.service.BankInsideTransactionService;
+import com.nasnav.service.BankOutsideTransactionService;
+import com.nasnav.service.BankReservationService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @RestController
-@RequestMapping("/bank")
+@RequestMapping(value = BankController.API_PATH, produces = APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 @CrossOrigin("*")
 public class BankController {
+    static final String API_PATH = YeshteryConstants.API_PATH + "/bank";
     private final BankAccountService bankAccountService;
     private final BankAccountActivityService bankAccountActivityService;
     private final BankOutsideTransactionService bankOutsideTransactionService;
@@ -23,7 +45,7 @@ public class BankController {
 
     @PostMapping("/account")
     public BankAccountDetailsDTO createAccount(@RequestHeader(name = "User-Token", required = false) String token,
-                                                @RequestBody BankAccountDetailsDTO dto) {
+                                               @RequestBody BankAccountDetailsDTO dto) {
         return bankAccountService.createAccount(dto);
     }
 
@@ -34,8 +56,8 @@ public class BankController {
 
     @PutMapping("/account")
     public void lockOrUnlockAccount(@RequestHeader(name = "User-Token", required = false) String token,
-                                     @RequestParam long accountId,
-                                     @RequestParam boolean isLocked) {
+                                    @RequestParam long accountId,
+                                    @RequestParam boolean isLocked) {
         bankAccountService.lockOrUnlockAccount(accountId, isLocked);
     }
 
@@ -64,7 +86,7 @@ public class BankController {
 
     @PostMapping("/pay")
     public void pay(@RequestHeader(name = "User-Token", required = false) String token,
-                                  @RequestParam long amount) {
+                    @RequestParam long amount) {
         bankInsideTransactionService.pay(amount);
     }
 
@@ -76,7 +98,7 @@ public class BankController {
 
     @GetMapping("/account/reservation")
     public BankReservationDTO getReservationById(@RequestHeader(name = "User-Token", required = false) String token,
-                                                       @RequestParam long reservationId) {
+                                                 @RequestParam long reservationId) {
         return bankReservationService.getReservationById(reservationId);
     }
 
@@ -100,7 +122,7 @@ public class BankController {
 
 
     @PostMapping("/assign-wallet-address")
-    public BankAccountEntity assignWalletAddress(@RequestHeader(name = "User-Token", required = false) String token,@RequestParam String walletAddress) {
+    public BankAccountEntity assignWalletAddress(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam String walletAddress) {
         return bankAccountService.assignWalletAddress(walletAddress);
     }
 

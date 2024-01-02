@@ -18,7 +18,7 @@ public interface BrandService {
   PageImpl<Organization_BrandRepresentationObject> getYeshteryBrands(Integer start, Integer count, Long orgId,
       Set<Long> brandIds);
 
-  List<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority);
+  PageImpl<Organization_BrandRepresentationObject> getOrganizationBrands(List<Long> orgIds, Integer minPriority,Integer start,Integer count);
 
   void changeBrandsPriority(List<BrandIdAndPriority> dto);
 

@@ -41,4 +41,6 @@ public interface PromotionsService {
 	List<PromotionDTO> getYeshteryActivePublicPromotions(Set<Long> orgIds, Collection<Integer> typeIds);
 
 	List<PromotionDTO> getActiveShowingOnlinePromotions(Collection<Long> orgIds);
+
+	void updatePromoUsageAndCheckLimit(String  promoCode);
 }

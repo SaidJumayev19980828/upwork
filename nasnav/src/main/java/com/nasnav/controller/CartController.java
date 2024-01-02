@@ -61,13 +61,18 @@ public class CartController {
 		return cartService.addNasnavCartItems(items, promoCode, points, false);
 	}
 
+
 	@DeleteMapping(value = "/item", produces=APPLICATION_JSON_VALUE)
-	public Cart deleteCartItem(@RequestHeader(TOKEN_HEADER) String userToken,
+	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String token,
 							   @RequestParam("item_id") Long itemId,
 							   @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
-							   @RequestParam(required = false) Set<Long> points) {
-		return cartService.deleteCartItem(itemId, promoCode, points, false);
+							   @RequestParam(required = false) Set<Long> points,
+							   @RequestParam(value = "user_id", required = false) Long userId
+
+	) {
+		return cartService.deleteCartItem(itemId, promoCode, points, false, userId);
 	}
+
 
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {

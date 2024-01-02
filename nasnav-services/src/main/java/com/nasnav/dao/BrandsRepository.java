@@ -18,7 +18,7 @@ import java.util.Set;
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
     List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
-	List<BrandsEntity> findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(List<Long> orgIds, Integer removed, Integer minPriority);
+	PageImpl<BrandsEntity> findByOrganizationEntity_IdInAndRemovedAndPriorityGreaterThanEqualOrderByPriorityDesc(List<Long> orgIds, Integer removed, Integer minPriority,Pageable page);
     Optional<BrandsEntity> findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
 	@Query("select b from BrandsEntity b " +

@@ -128,24 +128,24 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 -- insert promotions
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
+VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now(), 7);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'MORE_GREEEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"percentage":10.99}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
+VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'MORE_GREEEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"percentage":10.99}', 69, now(),5);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630004, 'BYE BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED_HEART', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
+VALUES(630004, 'BYE BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED_HEART', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now(),6);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630005, 'SCAM', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'SCAM_GREEEEEEED', '{"cart_amount_min":10000 }', '{"percentage":10.99}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
+VALUES(630005, 'SCAM', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'SCAM_GREEEEEEED', '{"cart_amount_min":10000 }', '{"percentage":10.99}', 69, now(),8);
 
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630006, 'DISAPPOINTMENT', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa', '{"cart_amount_min":0, "discount_value_max":10 }', '{"percentage":10.99}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, usage_limiter_count)
+VALUES(630006, 'DISAPPOINTMENT', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa', '{"cart_amount_min":0, "discount_value_max":10 }', '{"percentage":10.99}', 69, now(),10);
 
 --used promos
 INSERT INTO public.promotions_codes_used(promotion_id, user_id, "time")VALUES(630004, 88, now());

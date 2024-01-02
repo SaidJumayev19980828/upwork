@@ -23,7 +23,7 @@ public interface CartService {
     Cart addCartItem(CartItem item, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart addNasnavCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);
     Cart addYeshteryCartItems(List<CartItem> items, String promoCode, Set<Long>points, boolean yeshteryCart);
-    Cart deleteCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart deleteCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart,Long userId);
     Cart deleteYeshteryCartItem(Long itemId, String promoCode, Set<Long>points, boolean yeshteryCart , Long userId );
     BigDecimal calculateCartTotal(Cart cart);
     List<ShopFulfillingCart> getSelectedShopsThatCanProvideCartItems(List<Long> shops);

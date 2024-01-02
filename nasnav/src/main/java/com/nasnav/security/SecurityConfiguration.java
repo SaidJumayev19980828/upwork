@@ -296,6 +296,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/frontend/setting", GET)
 						, patternOf("/chat-widget-setting/get-published", GET)
 						, patternOf("/contactUs**",POST)
+						, patternOf("/bank/deposit/bc**",POST)
+
 
                  );
 

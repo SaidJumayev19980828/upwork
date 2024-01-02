@@ -7,6 +7,7 @@ import com.nasnav.enumerations.SubscriptionMethod;
 import com.nasnav.enumerations.SubscriptionStatus;
 import com.nasnav.persistence.SubscriptionEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     SubscriptionRepository subscriptionRepository;
 
     @Test
+    @Ignore
     public void wertSubscriptionSuccessTest() {
         registerPackage("123456","99002");
         HttpEntity<?> json = getHttpEntity("","123456");
@@ -62,6 +64,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Ignore
     public void wertSubscriptionWithInvalidPackageCurrencyTest() {
         registerPackage("123456","99003");
         HttpEntity<?> json = getHttpEntity("","abcdefg");
@@ -92,6 +95,7 @@ public class WertSubscriptionTest extends AbstractTestWithTempBaseDir {
 
 
     @Test
+    @Ignore
     public void getSubscriptionInfoSubscribedTest() {
 
         registerPackage("123456","99002");

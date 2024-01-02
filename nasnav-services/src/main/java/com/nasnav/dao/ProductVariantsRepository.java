@@ -159,6 +159,6 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			+ " LEFT JOIN  variant.featureValues featureValues"
 			+ " LEFT JOIN  featureValues.feature feature"
 			+ " WHERE stock.id = :stockId AND variant.removed = 0")
-	List<Long> findVariantIdByStockId(@Param("stockId") Long stockId);
+	Long findVariantIdByStockId(@Param("stockId") Long stockId);
 
 }

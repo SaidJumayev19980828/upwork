@@ -10,10 +10,11 @@ import com.nasnav.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.*;
+import com.stripe.net.ApiResource;
 import com.stripe.net.Webhook;
 import com.stripe.param.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class StripeServiceImpl implements StripeService {
     @Autowired
     PackageRepository packageRepository;
 
-    private static final Logger stripeLogger = LogManager.getLogger("Subscription:StripeService");
+    private static final Logger stripeLogger = LoggerFactory.getLogger(StripeServiceImpl.class);
 
     @PostConstruct
     public void init() {
@@ -43,7 +44,7 @@ public class StripeServiceImpl implements StripeService {
             stripeLogger.error("init : Fail To Load Api key of Stripe");
         }else{
             Stripe.apiKey = appConfig.stripeApiKey;
-            stripeLogger.debug("init : API Key Initialized Successfully");
+            stripeLogger.info("init : API Key Initialized Successfully");
         }
     }
 
@@ -71,6 +72,7 @@ public class StripeServiceImpl implements StripeService {
     public StripeConfirmDTO createSubscription(String stripePriceId , String customerId){
         StripeConfirmDTO stripeConfirmDTO = null;
         try {
+            stripeLogger.info(String.format("createSubscription : For customerId : %s , To stripePriceId : %s----------------------------" , customerId,stripePriceId));
             SubscriptionCreateParams.PaymentSettings paymentSettings =
                     SubscriptionCreateParams.PaymentSettings
                             .builder()
@@ -115,7 +117,8 @@ public class StripeServiceImpl implements StripeService {
     public StripeConfirmDTO setupIntent(String customerId){
         StripeConfirmDTO stripeConfirmDTO = null;
         try {
-        SetupIntentCreateParams params =
+            stripeLogger.info(String.format("setupIntent : For customerId : %s" , customerId));
+            SetupIntentCreateParams params =
             SetupIntentCreateParams.builder()
                     .setCustomer(customerId)
                     .setAutomaticPaymentMethods(
@@ -137,7 +140,9 @@ public class StripeServiceImpl implements StripeService {
 
     @Override
     public StripeObject getStripeObjectFromWebhookEvent(Event event){
-        return event.getDataObjectDeserializer().getObject().get();
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject().get();
+        stripeLogger.info(String.format("Stripe Object From Webhook Event : %s " , stripeObject.toString()));
+        return stripeObject;
     }
 
     @Override
@@ -213,6 +218,7 @@ public class StripeServiceImpl implements StripeService {
 
     public void lastOpenInvoicePayRetry(String customerId , String subscriptionId){
         try {
+            stripeLogger.info(String.format("Open Last Invoice To Retry Pay : For customerId : %s , To subscriptionId :" , customerId,subscriptionId));
             Map<String, Object> params = new HashMap<>();
             params.put("customer", customerId);
             params.put("subscription", subscriptionId);

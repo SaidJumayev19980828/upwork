@@ -1,9 +1,8 @@
 package com.nasnav.dao;
 
-import com.nasnav.dto.UserFollow;
-import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.persistence.UserEntity;
-import org.springframework.data.domain.PageImpl;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -40,6 +39,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> findByOrganizationId(Long orgId);
 
+	List<UserEntity> findByOrganizationId(Long orgId, Pageable pageable);
+	
+	List<UserEntity> findByOrganizationIdAndUserStatus(Long orgId,Integer userStatus, Pageable pageable);
+
 	@Query("select u from UserEntity u join YeshteryUserEntity yu on u.yeshteryUserId = yu.id where u.organizationId = :orgId")
 	Set<UserEntity> findAllLinkedToYeshteryUserByOrgId(Long orgId);
 
@@ -63,15 +66,15 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	UserEntity getYeshteryUserByEmail(@Param("email")String email,
 									  @Param("orgId")Long orgId);
 
-	@Modifying
+	List<UserEntity> getByFamily_IdAndOrganizationId(Long familyId, Long orgId);
+
+	@Query("update UserEntity user set user.family.id = :familyId where user.id = :userId")
+	void updateUserWithFamilyId(@Param("familyId") Long familyId, @Param("userId") Long userId);
+
 	@Query("update UserEntity user set user.tier.id = :tierId where user.id = :userId")
 	void updateUserTier(@Param("tierId") Long tierId, @Param("userId") Long userId);
 
 	List<UserEntity> findByYeshteryUserId(Long yeshteryUserId);
-
-	@Query("select user1 from UserEntity user1 join UserEntity user2 on user1.yeshteryUserId = user2.yeshteryUserId "
-	+ "where user2.id = :userId and user2.yeshteryUserId is not null")
-	List<UserEntity> findByYeshteryUserIdOfUserId(Long userId);
 
 	@Query("select u from UserEntity u left join YeshteryUserEntity y on u.yeshteryUserId = CAST (y.referral as int) " +
 			"where y.id = :yeshteryUserId and u.organizationId = :orgId and y.referral is not null ")
@@ -79,6 +82,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 													 @Param("orgId") Long orgId);
 
     void deleteByYeshteryUserId(Long yeshteryUserId);
+
+    List<UserEntity> findByFamily_Id(Long familyId);
 
     Optional<UserEntity> findByEmailAndOrganizationId(String email, Long orgId);
 
@@ -88,17 +93,11 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> findByTier_Id(Long tierId);
 
+	
+	List<UserEntity> findAllUsersByUserStatus(Integer userStatus,PageRequest  pageRequest);
+
 	@Transactional
 	@Modifying
 	@Query(value = "update users set tier_id = :tierId where organization_id = :orgId and tier_id is null", nativeQuery = true)
 	void updateUsersTiers(@Param("tierId") Long tierId, @Param("orgId") Long orgId);
-
-	@Query("SELECT u as user, " +
-			"CASE WHEN f.user.id = :userId THEN true ELSE false END as isFollowing, " +
-			"CASE WHEN f.follower.id = :userId THEN true ELSE false END as isFollowed " +
-			"FROM UserEntity u " +
-			"LEFT JOIN FollowerEntity f ON (u.id = f.user.id AND f.follower.id = :userId) OR (u.id = f.follower.id AND f.user.id = :userId)" +
-			"where u.id <>	:userId" )
-	PageImpl<UserListFollowProjection> findUsersWithFollowerStatus(@Param("userId") Long userId , Pageable pageable);
-
 }

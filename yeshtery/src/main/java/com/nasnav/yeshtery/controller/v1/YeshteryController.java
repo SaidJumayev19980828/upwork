@@ -262,8 +262,12 @@ public class YeshteryController {
     }
 
     @GetMapping(value = "/shops", produces = APPLICATION_JSON_VALUE)
-    public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
-        return shopService.getOrganizationShops(orgId, false);
+    public PageImpl<ShopRepresentationObject> getShopsByOrganization(
+            @RequestParam(name = "org_id") Long orgId,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+    ) {
+        return shopService.getOrganizationShops(orgId, false , start,count);
     }
 
     @Operation(description =  "return seo keywords", summary = "getSeo")

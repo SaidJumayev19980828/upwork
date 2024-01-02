@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ShopIdAndPriority;
@@ -21,6 +22,8 @@ import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ import javax.cache.annotation.CacheResult;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
@@ -78,21 +82,21 @@ public class ShopServiceImpl implements ShopService {
     
     @Override
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
-    public List<ShopRepresentationObject> getOrganizationShops(Long organizationId, boolean showWarehouses) {
+    public PageImpl<ShopRepresentationObject> getOrganizationShops(Long organizationId, boolean showWarehouses,Integer start, Integer count) {
     	//TODO this filtering is better to be done in the where condition of a single jpa query similar to
     	//similar to ProductRepository.find360Collections
     	//but i was in hurry
-    	List<ShopsEntity> shopsEntities = emptyList();
+        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
+
+        PageImpl<ShopsEntity> shopsEntities ;
     	if(showWarehouses) {
-    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(organizationId, 0);
+    		shopsEntities = shopsRepository.findPageableByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(organizationId, 0,page);
     	}else {
-    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(organizationId, 0, 0);
+    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouseOrderByPriorityDesc(organizationId, 0, 0,page);
     	}
 
-        return shopsEntities
-        		.stream()
-        		.map(shopsEntity -> (ShopRepresentationObject) shopsEntity.getRepresentation())
-        		.collect(toList());
+        List<ShopRepresentationObject> dtos = shopsEntities.getContent().stream().map(shopsEntity -> (ShopRepresentationObject) shopsEntity.getRepresentation()).collect(Collectors.toList());
+        return new PageImpl<>(dtos, shopsEntities.getPageable(), shopsEntities.getTotalElements());
     }
     
     

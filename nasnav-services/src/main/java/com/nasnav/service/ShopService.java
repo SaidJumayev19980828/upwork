@@ -7,6 +7,7 @@ import com.nasnav.dto.request.ShopIdAndPriority;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.response.ShopResponse;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.cache.annotation.CacheResult;
@@ -18,7 +19,7 @@ import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 
 public interface ShopService {
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
-    List<ShopRepresentationObject> getOrganizationShops(Long organizationId, boolean showWarehouses);
+    PageImpl<ShopRepresentationObject> getOrganizationShops(Long organizationId, boolean showWarehouses, Integer start, Integer count);
 
     //    @CacheResult(cacheName = "shops_by_id")
     ShopRepresentationObject getShopById(Long shopId);

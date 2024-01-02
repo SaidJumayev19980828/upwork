@@ -12,8 +12,8 @@ import com.nasnav.service.StripeWebhookSubscriptionService;
 import com.nasnav.service.subscription.StripeSubscriptionService;
 import com.nasnav.service.subscription.SubscriptionService;
 import com.stripe.model.Event;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +39,7 @@ public class SubscriptionController {
     private StripeWebhookSubscriptionService stripeWebhookSubscriptionService;
     @Autowired
     private StripeService stripeService;
-    private static final Logger logger = LogManager.getLogger("Subscription:SubscriptionController");
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
 
     @GetMapping
@@ -63,7 +63,7 @@ public class SubscriptionController {
     @PostMapping
     @RequestMapping(value = "stripe/create", produces = APPLICATION_JSON_VALUE)
     public StripeConfirmDTO stripeCreateSubscription(@RequestHeader(name = "User-Token", required = false) String userToken){
-        logger.debug("Stripe Create Subscription Starts");
+        logger.info("Stripe Create Subscription Starts");
         StripeSubscriptionDTO stripeSubscriptionDTO = ((StripeSubscriptionDTO) stripeSubscriptionService.subscribe(new SubscriptionDTO()));
         if(stripeSubscriptionDTO == null){
             logger.error("Failed To Subscribe In Stripe");
@@ -92,9 +92,10 @@ public class SubscriptionController {
 
     @PostMapping(value = "/stripe/webhook")
     public void stripeWebhook(@RequestHeader("Stripe-Signature") String signature, @RequestBody String body) {
+        logger.info("stripe webhook request start");
         Event event = stripeService.verifyAndGetEventWebhook(signature,body);
         try {
-            logger.debug("Webhook: " + event.getType());
+            logger.info("stripe webhook: " + event.getType());
             if ("customer.subscription.created".equals(event.getType())) {
                 stripeWebhookSubscriptionService.handleStripeSubscriptionCreated(event);
             }

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -20,6 +21,7 @@ import com.nasnav.dto.response.*;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -114,10 +116,15 @@ public class OrganizationController {
     }
 
     @GetMapping(value = "brands", produces = APPLICATION_JSON_VALUE)
-    public List<Organization_BrandRepresentationObject> getOrganizationBrands(@RequestParam(value = "org_id") List<Long> orgIds,
-                                                                              @RequestParam(value = "min_priority", defaultValue = "0", required = false) Integer minPriority) {
-        return brandService.getOrganizationBrands(orgIds, minPriority);
+    public PageImpl<Organization_BrandRepresentationObject> getOrganizationBrands(
+            @RequestParam(value = "org_id") List<Long> orgIds,
+            @RequestParam(value = "min_priority", defaultValue = "0", required = false) Integer minPriority,
+            @RequestParam(value = "page", defaultValue = "0", required = false) Integer start,
+            @RequestParam(value = "count", defaultValue = DEFAULT_PAGING_COUNT, required = false) Integer count
+    ) {
+        return brandService.getOrganizationBrands(orgIds, minPriority, start, count);
     }
+
 
     @PostMapping(value = "brand", produces = APPLICATION_JSON_VALUE, consumes = {"multipart/form-data"})
     public OrganizationResponse updateBrandData(@RequestHeader (name = "User-Token", required = false) String userToken,
@@ -334,8 +341,12 @@ public class OrganizationController {
     }
 
     @GetMapping(value = "shops")
-    public List<ShopRepresentationObject> getAllShops(@RequestHeader (name = "User-Token", required = false) String userToken){
-        return orgService.getOrganizationShops();
+    public PageImpl<ShopRepresentationObject> getAllShops(
+            @RequestHeader (name = "User-Token", required = false) String userToken,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+    ){
+        return orgService.getOrganizationShops( start ,count);
     }
 
     @GetMapping(value = "subscribed_users", produces = APPLICATION_JSON_VALUE)

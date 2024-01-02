@@ -183,7 +183,7 @@ public class CartServiceImpl implements CartService {
                 cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
                 cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
             } else {
-                cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+                applyPromoCodeToCart(promoCode, cart);
             }
         } else {
             cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
@@ -198,6 +198,26 @@ public class CartServiceImpl implements CartService {
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
     }
+
+    private void applyPromoCodeToCart(String promoCode, Cart cart) {
+        // Attempt to find a promotion entity by name
+        Optional<PromotionsEntity> getPromoCode = promotionRepo.findByCode(promoCode);
+
+        // Check if the promotion entity is present
+        if (getPromoCode.isEmpty()) {
+            // Promotion entity not found, set an error message in the cart promos
+            cart.getPromos().setError("Not found promo code [" + promoCode + "]");
+            return;
+        }
+
+        // Promotion entity found, proceed with applying the promo code to the cart
+        PromotionsEntity promoEntity = getPromoCode.get();
+        cart.setPromos(promoService.calcPromoDiscountForCart(
+                promoEntity.getUsageLimiterCount() > 0 ? promoCode : null, cart));
+    }
+
+
+
 
     @Override
     public Cart addCartItem(CartItem item, String promoCode, Set<Long> points, boolean yeshteryCart){
@@ -224,7 +244,7 @@ public class CartServiceImpl implements CartService {
 
         if (item.getQuantity().equals(0)) {
             if (cartItem.getId() != null) {
-                return deleteCartItem(cartItem.getId(), promoCode, points, yeshteryCart);
+                return deleteCartItem(cartItem.getId(), promoCode, points, yeshteryCart,null);
             } else {
                 return getUserCart(user.getId(), promoCode, points, yeshteryCart);
             }
@@ -342,12 +362,8 @@ public class CartServiceImpl implements CartService {
 
 
     @Override
-    public Cart deleteCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart){
-        BaseUserEntity user = securityService.getCurrentUser();
-        if(user instanceof EmployeeUserEntity) {
-            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
-        }
-
+    public Cart deleteCartItem(Long itemId, String promoCode, Set<Long> points, boolean yeshteryCart,Long userId){
+        BaseUserEntity user = getUser(userId);
         cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
         cartItemAddonDetailsRepository.deleteByCartItemEntity_Id(itemId);
 

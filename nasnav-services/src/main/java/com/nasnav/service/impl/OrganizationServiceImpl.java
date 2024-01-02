@@ -1,6 +1,7 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -41,6 +42,7 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -326,6 +328,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
+    @Transactional
     public OrganizationResponse registerOrganization(RegisterDto json) throws Exception {
         OrganizationEntity organization;
         OrganizationCreationDTO organizationDTO = new OrganizationCreationDTO();
@@ -350,6 +353,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         //Save Owner In Organization
         EmployeeUserEntity employeeUserEntity = employeeUserRepository.findById(userApiResponse.getEntityId()).get();
+        if(employeeUserEntity == null){
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ORG$CREATE$002);
+        }
         organization.setOwner(employeeUserEntity);
         organizationRepository.save(organization);
 
@@ -908,9 +914,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
     @Override
-    public List<ShopRepresentationObject> getOrganizationShops() {
+    public PageImpl<ShopRepresentationObject> getOrganizationShops(Integer start, Integer count) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shopService.getOrganizationShops(orgId, true);
+		return shopService.getOrganizationShops(orgId, true, start,count);
 	}
 
 	@Override

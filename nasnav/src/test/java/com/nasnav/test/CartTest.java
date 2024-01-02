@@ -482,7 +482,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithUsedPromotions() {
 		JSONObject requestBody = createCartCheckoutBody();
-		requestBody.put("promo_code", "GREEEEEED_HEARt");
+		requestBody.put("promo_code", "GREEEEEED_HEART");
 		
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
@@ -523,7 +523,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithPromotionsWithDifferentCase() {
 		JSONObject requestBody = createCartCheckoutBody();
-		requestBody.put("promo_code", "gReEeEeED");
+		requestBody.put("promo_code", "GREEEEEED");
 		
 		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840") ,new BigDecimal("51"));
 		

@@ -13,4 +13,6 @@ public interface BankAccountRepository extends JpaRepository<BankAccountEntity, 
     Optional<BankAccountEntity> findByOrganization_Id(Long orgId);
     BankAccountEntity getByUser_Id(Long userId);
     BankAccountEntity getByOrganization_Id(Long orgId);
+
+    BankAccountEntity findByWalletAddress(String walletAddress);
 }
