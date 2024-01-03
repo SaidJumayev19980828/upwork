@@ -280,6 +280,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/loyalty/config/all"		, GET)
                         , patternOf("/v1/contactUs")
                         , patternOf("/v1/contactUs/**")
+                        , patternOf("/v1/bank/deposit/bc**",POST)
                         );
 
     AuthenticationProvider provider;
