@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.enumerations.FileType;
+import com.nasnav.request.OrderSearchParam;
 import com.nasnav.service.CsvExcelDataExportService;
 import com.nasnav.commons.YeshteryConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,17 @@ public class DataExportController {
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Xlsx.xlsx")
+				.body(s.toByteArray());
+	}
+
+	@GetMapping(value = { "/orders", "/orders/csv" })
+	@ResponseBody
+	public ResponseEntity<byte[]> generateOrdersCsv(@RequestHeader(TOKEN_HEADER) String token,
+													OrderSearchParam params) throws Exception {
+		ByteArrayOutputStream s = csvExportService.generateOrdersFile(params);
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=orders_Csv.csv")
 				.body(s.toByteArray());
 	}
 }

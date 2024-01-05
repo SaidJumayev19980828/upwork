@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import com.nasnav.enumerations.ImageFileTemplateType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.OrderSearchParam;
 
 public interface CsvExcelDataExportService {
 
@@ -14,4 +15,7 @@ public interface CsvExcelDataExportService {
 	ByteArrayOutputStream generateProductsFile(Long shopId, Boolean addDataValidate) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException, IOException;
 	ByteArrayOutputStream generateProductsImagesFile() throws IOException;
 
+	ByteArrayOutputStream generateOrdersFile(OrderSearchParam params) throws IOException, BusinessException;
+
 }
+

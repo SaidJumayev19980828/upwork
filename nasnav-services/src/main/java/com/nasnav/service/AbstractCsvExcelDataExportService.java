@@ -3,10 +3,14 @@ package com.nasnav.service;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.enumerations.ImageFileTemplateType;
+import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
+import com.nasnav.service.model.importproduct.csv.OrderRow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -21,6 +25,7 @@ import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.enumerations.ImageFileTemplateType.EMPTY;
 import static com.nasnav.enumerations.ImageFileTemplateType.PRODUCTS_WITH_NO_IMGS;
 import static com.nasnav.service.CsvExcelDataImportService.IMG_CSV_BASE_HEADERS;
+import static com.nasnav.service.CsvExcelDataImportService.ORDER_DATA_COLUMN;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
@@ -43,6 +48,8 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
 
     @Autowired
     protected ProductRepository productRepo;
+    @Autowired
+    protected OrderService orderService;
 
     protected Boolean addExcelDataValidation;
 
@@ -51,12 +58,17 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
         Long orgId = security.getCurrentUserOrganizationId();
         this.addExcelDataValidation = addExcelDataValidation;
         List<String> headers = importService.getProductImportTemplateHeaders();
-
         List<CsvRow> products = exportService.exportProductsData(orgId, shopId);
-
         return buildProductsFile(headers, products);
     }
 
+    @Override
+    public ByteArrayOutputStream generateOrdersFile(OrderSearchParam params) throws IOException {
+        this.addExcelDataValidation = false;
+        OrdersListResponse orders = exportService.exportOrdersData(params);
+        return buildOrdersFile(ORDER_DATA_COLUMN,mapOrdersToOrderRows(orders.getOrders()));
+
+    }
 
     @Override
     public ByteArrayOutputStream generateImagesTemplate(ImageFileTemplateType type) throws IOException{
@@ -99,6 +111,7 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
         return buildProductWithNoImgsFile(headers, variants);
     }
 
+    protected abstract ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException;
 
     protected abstract ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException;
 
@@ -118,4 +131,9 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     protected abstract ByteArrayOutputStream writeFileHeaders(List<String> headers) throws IOException ;
 
     protected abstract ByteArrayOutputStream buildProductWithNoImgsFile(List<String> headers, List<VariantWithNoImagesDTO> variants) throws IOException;
+
+
+    private List<OrderRow> mapOrdersToOrderRows(List<DetailedOrderRepObject> orders) {
+        return orders.stream().map(OrderRow::new).collect(toList());
+    }
 }

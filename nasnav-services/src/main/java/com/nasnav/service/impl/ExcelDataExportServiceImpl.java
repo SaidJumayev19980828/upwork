@@ -1,22 +1,14 @@
 package com.nasnav.service.impl;
 
-import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
-import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
-import static java.util.Optional.ofNullable;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
 import com.nasnav.commons.converters.Converters;
 import com.nasnav.commons.converters.DtoToCsvRowMapper;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.service.AbstractCsvExcelDataExportService;
 import com.nasnav.service.helpers.ExcelDataFormatter;
 import com.nasnav.service.helpers.ExcelDataValidator;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
+import com.nasnav.service.model.importproduct.csv.OrderRow;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
@@ -27,9 +19,19 @@ import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.VariantWithNoImagesDTO;
-import com.nasnav.service.model.importproduct.csv.CsvRow;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.ORDER_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
+import static java.util.Optional.ofNullable;
 
 @Service("excel")
 public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportService{
@@ -41,24 +43,67 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 	@Autowired
 	private ExcelDataFormatter excelDataFormatter;
 
+	@Override
+	protected ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException {
+		return writeOrderFileResult(headers, orders);
+	}
+
 	protected ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException {
 
 		return writeFileResult(headers, products);
 	}
 
 	protected ByteArrayOutputStream buildImagesFile(List<String> headers,
-												   List<ProductImageDTO> images) throws IOException {
+													List<ProductImageDTO> images) throws IOException {
 		headers = headers
 				.stream()
 				.collect(Collectors.toCollection(ArrayList::new));
 		return writeFileResult(headers, images);
 	}
 
+
+	protected ByteArrayOutputStream writeOrderFileResult(List<String> headers, List<?> data) throws IOException {
+		DtoToCsvRowMapper dtoToCsvRowMapper = data.stream()
+				.findAny()
+				.map(Converters::getDtoToCsvRowConverterForBean)
+				.orElse(null);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		XSSFSheet sheet = workbook.createSheet("Orders");
+
+		writeFileHeaders(headers, sheet);
+
+		Map<Integer, String> indexToHeader = new HashMap<>();
+		BidiMap map = ofNullable(dtoToCsvRowMapper)
+				.map(DtoToCsvRowMapper::getColumnMapping)
+				.map(TreeBidiMap::new)
+				.orElse(new TreeBidiMap(ORDER_DATA_TO_COLUMN_MAPPING));
+
+		for(int i =0; i< headers.size(); i++) {
+			if (map.containsValue(headers.get(i))) {
+				indexToHeader.put(i, map.getKey((headers.get(i))) +"");
+			}
+			else {
+				indexToHeader.put(i, headers.get(i));
+			}
+		}
+
+		if(dtoToCsvRowMapper == null)
+			data.forEach(line ->  createNewRow(sheet, indexToHeader, (CsvRow) line));
+		else
+			data.forEach(line ->  createNewRow(sheet, indexToHeader, dtoToCsvRowMapper.map(line)));
+		workbook.write(bos);
+		workbook.close();
+
+		return bos;
+	}
+
+
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, List<?> data) throws IOException {
 		DtoToCsvRowMapper dtoToCsvRowMapper = data.stream()
-														.findAny()
-														.map(Converters::getDtoToCsvRowConverterForBean)
-														.orElse(null);
+				.findAny()
+				.map(Converters::getDtoToCsvRowConverterForBean)
+				.orElse(null);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		XSSFWorkbook workbook = new XSSFWorkbook();
 		XSSFSheet sheet = workbook.createSheet("NasNavProducts");
@@ -67,9 +112,9 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 
 		Map<Integer, String> indexToHeader = new HashMap<>();
 		BidiMap map = ofNullable(dtoToCsvRowMapper)
-						.map(DtoToCsvRowMapper::getColumnMapping)
-						.map(TreeBidiMap::new)
-						.orElse(new TreeBidiMap(PRODUCT_DATA_TO_COLUMN_MAPPING));
+				.map(DtoToCsvRowMapper::getColumnMapping)
+				.map(TreeBidiMap::new)
+				.orElse(new TreeBidiMap(PRODUCT_DATA_TO_COLUMN_MAPPING));
 
 		for(int i =0; i< headers.size(); i++) {
 			if (map.containsValue(headers.get(i))) {
@@ -90,7 +135,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 			excelDataFormatter.addConditionalFormattingToSheet(sheet);
 			excelDataFormatter.addStyleFormattingToSheet(sheet);
 		}
- 		workbook.write(bos);
+		workbook.write(bos);
 		workbook.close();
 
 		return bos;
@@ -117,7 +162,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 				if (line.getFeatures().get(columnName) != null) {
 					value = line.getFeatures().get(columnName);
 				} else if (line.getExtraAttributes().get(columnName) != null) {
-						value = line.getExtraAttributes().get(columnName);
+					value = line.getExtraAttributes().get(columnName);
 				} else {
 					value = BeanUtils.getProperty(line, columnName);
 				}
@@ -152,4 +197,6 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 
 		return bos;
 	}
+
+
 }
