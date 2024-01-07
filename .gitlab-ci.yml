@@ -42,7 +42,9 @@ test:maven:
     - meetusvr
     - docker
   only:
-    - review
+    - java-17-migration
+    - nasnav-develop
+    - tests
     - merge_requests
 
 test:coverage:
@@ -66,7 +68,9 @@ test:coverage:
     - meetusvr
     - docker
   only:
-    - review
+    - java-17-migration
+    - nasnav-develop
+    - tests
     - merge_requests
 
 

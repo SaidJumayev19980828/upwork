@@ -1,54 +1,72 @@
 package com.nasnav.service.impl;
 
-import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
-import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.VariantWithNoImagesDTO;
+import com.nasnav.service.AbstractCsvExcelDataExportService;
+import com.nasnav.service.helpers.OrderCsvRowWriterProcessor;
+import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
+import com.nasnav.service.model.importproduct.csv.OrderRow;
+import com.univocity.parsers.common.fields.ColumnMapping;
+import com.univocity.parsers.common.processor.BeanWriterProcessor;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
+import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Service;
-
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.VariantWithNoImagesDTO;
-import com.nasnav.service.AbstractCsvExcelDataExportService;
-import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
-import com.nasnav.service.model.importproduct.csv.CsvRow;
-import com.univocity.parsers.common.fields.ColumnMapping;
-import com.univocity.parsers.common.processor.BeanWriterProcessor;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.ORDER_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvExcelDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
 
 
 @Service("csv")
 public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 	protected ByteArrayOutputStream buildProductsFile(List<String> headers,
-			   List<CsvRow> products) {
+													  List<CsvRow> products) {
 		BeanWriterProcessor<CsvRow> processor = createProductsRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
 
 		return writeFileResult(headers, settings, products);
 	}
 
+	protected  ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException{
+		BeanWriterProcessor<OrderRow> processor = createOrdersRowProcessor();
+		CsvWriterSettings settings = createWritterSettings(processor);
+		return writeFileResult(headers, settings, orders);
+
+	}
+
 	protected ByteArrayOutputStream buildImagesFile(List<String> headers,
-												   List<ProductImageDTO> images) {
+													List<ProductImageDTO> images) {
 		BeanWriterProcessor<ProductImageDTO> processor = createProductImgsRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
 
 		return writeFileResult(headers, settings, images);
 	}
 
+
 	private BeanWriterProcessor<CsvRow> createProductsRowProcessor() {
 		ColumnMapping mapper = createCsvAttrToColMapping(PRODUCT_DATA_TO_COLUMN_MAPPING);
 
 		BeanWriterProcessor<CsvRow> rowProcessor = new ProductCsvRowWriterProcessor(CsvRow.class);
+		rowProcessor.setColumnMapper(mapper);
+		rowProcessor.setStrictHeaderValidationEnabled(true);
+		return rowProcessor;
+	}
+
+
+	private BeanWriterProcessor<OrderRow> createOrdersRowProcessor() {
+		ColumnMapping mapper = createCsvAttrToColMapping(ORDER_DATA_TO_COLUMN_MAPPING);
+		BeanWriterProcessor<OrderRow> rowProcessor = new OrderCsvRowWriterProcessor(OrderRow.class);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
@@ -70,7 +88,7 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 	private CsvWriterSettings createWritterSettings(BeanWriterProcessor<?> rowProcessor) {
 		CsvWriterSettings settings = new CsvWriterSettings();
-		settings.setRowWriterProcessor(rowProcessor);		
+		settings.setRowWriterProcessor(rowProcessor);
 		settings.setMaxCharsPerColumn(-1);
 		settings.setQuoteAllFields(true);
 		return settings;
@@ -82,20 +100,21 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 		return mapping;
 	}
 
+
+
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
-		Writer outputWriter = new OutputStreamWriter(csvOutStream);
+		Writer outputWriter = new OutputStreamWriter(csvOutStream, StandardCharsets.UTF_8);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
-
 		writer.writeHeaders(headers.stream().toArray(String[]::new));
 		writer.processRecordsAndClose(data);
 		return csvOutStream;
 	}
 
 	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
-		
+
 		ColumnMapping mapper = createCsvAttrToColMapping(IMG_DATA_TO_COLUMN_MAPPING);
-		
+
 		BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor = new BeanWriterProcessor<>(VariantWithNoImagesDTO.class);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);

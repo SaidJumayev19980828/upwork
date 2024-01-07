@@ -28,8 +28,8 @@ public class AppConfig {
     @Value("${environment.hostname}")   public String environmentHostName;
     @Value("${email.url.emp_recover}")  public String empMailRecoveryUrl = "";
     
-    @Value("${openvidu_url}") public String openViduUrl = "";
-    @Value("${openvidu_secret}") public String openViduSecret = "";
+    @Value("${openvidu_url}") public String openViduUrl ;
+    @Value("${openvidu_secret}") public String openViduSecret ;
     @Value("${otp.valid-duration-in-seconds:600}")
     public int otpValidDurationInSeconds;
     @Value("${otp.length:6}")

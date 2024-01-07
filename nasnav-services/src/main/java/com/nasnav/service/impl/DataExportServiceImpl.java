@@ -1,16 +1,28 @@
 package com.nasnav.service.impl;
 
-import com.nasnav.dao.*;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.querydsl.sql.*;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
 import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAttribute;
+import com.nasnav.querydsl.sql.QBrands;
+import com.nasnav.querydsl.sql.QProductVariants;
+import com.nasnav.querydsl.sql.QProducts;
+import com.nasnav.querydsl.sql.QStocks;
+import com.nasnav.querydsl.sql.QUnits;
+import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.DataExportService;
 import com.nasnav.service.ImportExportHelper;
+import com.nasnav.service.OrderService;
 import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
@@ -33,20 +45,23 @@ import java.util.Set;
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.exceptions.ErrorCodes.S$0006;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class DataExportServiceImpl implements DataExportService{
 	@Autowired
 	private JdbcTemplate template;
-	
+
 	@Autowired
 	private TagsRepository tagsRepo;
 	@Autowired
@@ -71,6 +86,8 @@ public class DataExportServiceImpl implements DataExportService{
 	@Autowired
 	protected ImportExportHelper helper;
 
+	@Autowired
+	private OrderService orderService;
 
 	@Override
 	public List<CsvRow> exportProductsData(Long orgId, Long shopId) {
@@ -105,6 +122,11 @@ public class DataExportServiceImpl implements DataExportService{
 				.collect(toList());
 	}
 
+	@Override
+	public OrdersListResponse exportOrdersData(OrderSearchParam params)  {
+		params.setUseCount(false);
+		return orderService.getAllOrdersList(params);
+	}
 
 
 	private void validateShopId(Long orgId, Long shopId) {
@@ -144,9 +166,9 @@ public class DataExportServiceImpl implements DataExportService{
 	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
 		var productIds =
 				result
-				.stream()
-				.map(ProductExportedData::getProductId)
-				.collect(toList()); 
+						.stream()
+						.map(ProductExportedData::getProductId)
+						.collect(toList());
 		return divideToBatches(productIds, 500)
 				.stream()
 				.map(tagsRepo::getTagsByProductIdIn)
@@ -164,15 +186,15 @@ public class DataExportServiceImpl implements DataExportService{
 			, Map<String, String> emptyFeatureValuesMap
 			, Map<String, String> emptyExtraAttributesMap) {
 		var row = createCsvRow(productData);
-		
+
 		setTags(row, productData, productTags);
 		setFeatures(row, productData, features, emptyFeatureValuesMap);
 		setExtraAttributes(row, productData, extraAttributes, emptyExtraAttributesMap);
 		return row;
 	}
-	
-	
-	
+
+
+
 	private void setExtraAttributes(CsvRow row, ProductExportedData productData, Map<Long, Map<String, String>> extraAttributes,
 									Map<String, String> emptyExtraAttributesMap) {
 		var extraAttrMap  =
@@ -195,32 +217,32 @@ public class DataExportServiceImpl implements DataExportService{
 							 Map<String, String> emptyFeatureValuesMap) {
 		Map<String, String> features =
 				ofNullable(productData)
-				.map(ProductExportedData::getVariantId)
-				.map(featuresMap::get)
-				.orElse(new HashMap<>());
+						.map(ProductExportedData::getVariantId)
+						.map(featuresMap::get)
+						.orElse(new HashMap<>());
 		for(Map.Entry<String, String> e : emptyFeatureValuesMap.entrySet()) {
 			if (!features.containsKey(e.getKey()))
 				features.put(e.getKey(), e.getValue());
 		}
-		
+
 		row.setFeatures(features);
 	}
-	
-	
-	
+
+
+
 	private Map<String,String> toFreaturesMap(JSONObject json, Map<Integer, ProductFeaturesEntity> featuresMap){
 		Map<String,String> features = new  HashMap<>();
 		for(var key : json.keySet()) {
 			Optional.of(key)
-			.map(Integer::valueOf)
-			.map(featuresMap::get)
-			.map(ProductFeaturesEntity::getName)
-			.ifPresent( name -> features.put(name, json.getString(key)));
+					.map(Integer::valueOf)
+					.map(featuresMap::get)
+					.map(ProductFeaturesEntity::getName)
+					.ifPresent( name -> features.put(name, json.getString(key)));
 		}
 		return features;
 	}
-	
-	
+
+
 
 	private Optional<JSONObject> toFeaturesJson(String jsonStr) {
 		try {
@@ -231,10 +253,10 @@ public class DataExportServiceImpl implements DataExportService{
 		}
 	}
 
-	
-	
-	
-	
+
+
+
+
 	private CsvRow createCsvRow(ProductExportedData data) {
 		var row = new CsvRow();
 		row.setBarcode(data.getBarcode());
@@ -259,7 +281,7 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private void setTags(CsvRow row, ProductExportedData productData,
-			Map<Long, List<ProductTagsBasicData>> productTags) {
+						 Map<Long, List<ProductTagsBasicData>> productTags) {
 		var tagsList = getTagsNames(productData.getProductId(), productTags);
 		if(tagsList.size() > 0) {
 			var tags = toTagsString(tagsList);
@@ -269,9 +291,9 @@ public class DataExportServiceImpl implements DataExportService{
 		}
 	}
 
-	
-	
-	
+
+
+
 
 	private List<String> getTagsNames(Long productId, Map<Long, List<ProductTagsBasicData>> productTags) {
 		return ofNullable(productId)
@@ -294,25 +316,25 @@ public class DataExportServiceImpl implements DataExportService{
 
 		var fromClause = getProductsBaseQuery(queryFactory, orgId, shopId);
 		SQLQuery<?> productsQuery = fromClause.select(
-											stock.quantity,
-											stock.price,
-											stock.discount,
-											unit.name.as("unit_name"),
-											product.organizationId.as("organization_id"),
-											variant.id.as("variant_id"),
-											variant.barcode.as("barcode"),
-											brand.name.as("brand"),
-											variant.description.as("description"),
-											variant.name.as("name"),
-											product.id.as("product_id"),
-											product.hide.as("hide"),
-											variant.sku.as("sku"),
-											variant.productCode.as("product_code"),
-											variant.weight.as("weight"),
-											SQLExpressions.rowNumber()
-													.over()
-													.partitionBy(product.id)
-													.orderBy(stock.price).as("row_num"));
+				stock.quantity,
+				stock.price,
+				stock.discount,
+				unit.name.as("unit_name"),
+				product.organizationId.as("organization_id"),
+				variant.id.as("variant_id"),
+				variant.barcode.as("barcode"),
+				brand.name.as("brand"),
+				variant.description.as("description"),
+				variant.name.as("name"),
+				product.id.as("product_id"),
+				product.hide.as("hide"),
+				variant.sku.as("sku"),
+				variant.productCode.as("product_code"),
+				variant.weight.as("weight"),
+				SQLExpressions.rowNumber()
+						.over()
+						.partitionBy(product.id)
+						.orderBy(stock.price).as("row_num"));
 
 		var stocks = queryFactory.from(productsQuery.as("total_products"));
 
@@ -334,20 +356,20 @@ public class DataExportServiceImpl implements DataExportService{
 
 		var fromClause = getOrganizationProductsBaseQuery(queryFactory, orgId);
 		SQLQuery<?> productsQuery = fromClause
-											.distinct()
-											.select(
-											unit.name.as("unit_name"),
-											product.organizationId.as("organization_id"),
-											variant.id.as("variant_id"),
-											variant.barcode.as("barcode"),
-											brand.name.as("brand"),
-											variant.description.as("description"),
-											variant.name.as("name"),
-											product.id.as("product_id"),
-											product.hide.as("hide"),
-											variant.sku.as("sku"),
-											variant.productCode.as("product_code"),
-											variant.weight.as("weight"));
+				.distinct()
+				.select(
+						unit.name.as("unit_name"),
+						product.organizationId.as("organization_id"),
+						variant.id.as("variant_id"),
+						variant.barcode.as("barcode"),
+						brand.name.as("brand"),
+						variant.description.as("description"),
+						variant.name.as("name"),
+						product.id.as("product_id"),
+						product.hide.as("hide"),
+						variant.sku.as("sku"),
+						variant.productCode.as("product_code"),
+						variant.weight.as("weight"));
 
 		var stocks = queryFactory.from(productsQuery.as("total_products"));
 
@@ -404,6 +426,7 @@ public class DataExportServiceImpl implements DataExportService{
 						.and(product.removed.eq(0))
 						.and(variant.removed.eq(0)));
 	}
-	
+
 
 }
+

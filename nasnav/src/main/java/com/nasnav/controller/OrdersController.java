@@ -52,7 +52,8 @@ public class OrdersController {
 	@GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
 	public OrdersListResponse getOrdersList(@RequestHeader(TOKEN_HEADER) String userToken,
                                             OrderSearchParam params) throws BusinessException {
-		return orderService.getOrdersList(params);
+		return orderService.getOrdersListPageable(params);
+
 	}
 
 	@GetMapping(value = "/filters", produces = APPLICATION_JSON_VALUE)

@@ -24,11 +24,11 @@ public interface OrderService {
 
 
 
-     class OrderValue {
-		 public  BigDecimal amount;
-		 public  TransactionCurrency currency;
+	class OrderValue {
+		public  BigDecimal amount;
+		public  TransactionCurrency currency;
 
-		 public String toString() {
+		public String toString() {
 			if (amount == null) {
 				return "NULL";
 			}
@@ -42,7 +42,7 @@ public interface OrderService {
 
 	void updateExistingOrder(OrderJsonDto orderJson);
 
-	 DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
+	DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
 	void finalizeOrder(Long orderId);
 
@@ -50,9 +50,9 @@ public interface OrderService {
 
 	void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 
-	 OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode);
+	OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode);
 
-	 ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
+	ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id, boolean yeshteryMetaorder);
 
@@ -60,11 +60,11 @@ public interface OrderService {
 
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
-	 OrderValue getMetaOrderTotalValue(long metaOrderId);
+	OrderValue getMetaOrderTotalValue(long metaOrderId);
 
-	 void rejectOrder(OrderRejectDTO dto);
+	void rejectOrder(OrderRejectDTO dto);
 
-	 void cancelOrder(Long metaOrderId, boolean yeshteryMetaOrder);
+	void cancelOrder(Long metaOrderId, boolean yeshteryMetaOrder);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
@@ -86,6 +86,11 @@ public interface OrderService {
 	OrdersListResponse getYeshteryOrdersList(OrderSearchParam params) throws BusinessException;
 
 	OrdersListResponse getOrdersList(OrderSearchParam params) throws BusinessException;
+
+	OrdersListResponse getOrdersListPageable(OrderSearchParam params) throws BusinessException;
+
+	OrdersListResponse getAllOrdersList(OrderSearchParam params);
+
 
 	OrdersFiltersResponse getOrdersAvailableFilters (OrderSearchParam orderSearchParam) throws BusinessException;
 

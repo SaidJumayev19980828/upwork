@@ -4,10 +4,7 @@ import static java.util.Arrays.asList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.validation.Valid;
 
@@ -25,51 +22,99 @@ public interface CsvExcelDataImportService {
 	String IMG_CSV_HEADER_EXTERNAL_ID = "external_id";
 	String IMG_CSV_HEADER_BARCODE = "barcode";
 	String IMG_CSV_HEADER_IMAGE_FILE = "image_file";
-	
-	List<String> IMG_CSV_BASE_HEADERS = 
+
+	List<String> IMG_CSV_BASE_HEADERS =
 			asList(
-				IMG_CSV_HEADER_VARIANT_ID
-				, IMG_CSV_HEADER_EXTERNAL_ID
-				, IMG_CSV_HEADER_BARCODE
-				, IMG_CSV_HEADER_IMAGE_FILE);
-	
+					IMG_CSV_HEADER_VARIANT_ID
+					, IMG_CSV_HEADER_EXTERNAL_ID
+					, IMG_CSV_HEADER_BARCODE
+					, IMG_CSV_HEADER_IMAGE_FILE);
+
 	Map<String,String> PRODUCT_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
-					.put("name", "product_name")
-					.put("barcode", "barcode")
-					.put("tags", "tags")
-					.put("brand", "brand")
-					.put("price", "price")
-					.put("quantity", "quantity")
-					.put("description", "description")
-					.put("variantId", "variant_id")
-					.put("externalId", "external_id")
-					.put("productGroupKey", "product_group_key")
-					.put("discount", "discount")
-					.put("sku", "sku")
-					.put("productCode", "product_code")
-					.put("unit", "unit")
-					.put("weight", "weight")
-					.getMap();
+			.put("name", "product_name")
+			.put("barcode", "barcode")
+			.put("tags", "tags")
+			.put("brand", "brand")
+			.put("price", "price")
+			.put("quantity", "quantity")
+			.put("description", "description")
+			.put("variantId", "variant_id")
+			.put("externalId", "external_id")
+			.put("productGroupKey", "product_group_key")
+			.put("discount", "discount")
+			.put("sku", "sku")
+			.put("productCode", "product_code")
+			.put("unit", "unit")
+			.put("weight", "weight")
+			.getMap();
+
+
+	public static final List<String> ORDER_DATA_COLUMN = List.of(
+			"orderId",
+			"shopName",
+			"shippingService",
+			"trackNumber",
+			"totalQuantity",
+			"userName",
+			"total",
+			"paymentStatus",
+			"status",
+			"shippingStatus",
+			"discount",
+			"createdAt",
+			"deliveryDate",
+			"addressLine2",
+			"latitude",
+			"longitude",
+			"postalCode",
+			"phoneNumber",
+			"area",
+			"city",
+			"country"
+	);
+
+	Map<String, String> ORDER_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
+			.put("orderId", "orderId")
+			.put("shop", "shopName")
+			.put("shipping", "shippingService")
+			.put("trackingNumber", "trackNumber")
+			.put("totalQuantity", "totalQuantity")
+			.put("userName", "userName")
+			.put("total", "total")
+			.put("paymentStatus", "paymentStatus")
+			.put("status", "status")
+			.put("shippingStatus", "shippingStatus")
+			.put("discount", "discount")
+			.put("createdAt", "createdAt")
+			.put("deliveryDate", "deliveryDate")
+			.put("addressLine2", "addressLine2")
+			.put("latitude", "latitude")
+			.put("longitude", "longitude")
+			.put("postalCode", "postalCode")
+			.put("phoneNumber", "phoneNumber")
+			.put("area", "area")
+			.put("city", "city")
+			.put("country", "country")
+			.getMap();
 
 	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = ImmutableMap.<String, String>builder()
-													.put("variantId", "variant_id")
-													.put("externalId", "external_id")
-													.put("barcode", "barcode")
-													.put("productName", "product_name")
-													.put("productId", "product_id")
-													.put("imagePath", "image_path")
-													.build();
+			.put("variantId", "variant_id")
+			.put("externalId", "external_id")
+			.put("barcode", "barcode")
+			.put("productName", "product_name")
+			.put("productId", "product_id")
+			.put("imagePath", "image_path")
+			.build();
 
 	Map<String, String> PRODUCT_DATA_SPECIAL_MAPPING = MapBuilder.<String, String>map()
-									.put("variant_id","variantId")
-									.put("product_name","name")
-									.put("external_id","externalId")
-									.put("product_group_key","productGroupKey")
-									.put("product_code","productCode")
+			.put("variant_id","variantId")
+			.put("product_name","name")
+			.put("external_id","externalId")
+			.put("product_group_key","productGroupKey")
+			.put("product_code","productCode")
 			.getMap();
 	Set<String> CSV_BASE_HEADERS = new HashSet<String>(PRODUCT_DATA_TO_COLUMN_MAPPING.values());
-	
-	
+
 	ImportProductContext importProductList(
 			@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException ;
