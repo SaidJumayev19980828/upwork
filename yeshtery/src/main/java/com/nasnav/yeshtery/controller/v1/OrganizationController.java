@@ -3,6 +3,7 @@ package com.nasnav.yeshtery.controller.v1;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.RegisterDto;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
@@ -367,5 +368,9 @@ public class OrganizationController {
                                                @RequestParam(value = "city_id", required = false) Long cityId,
                                                @RequestParam(value = "country_id", required = false) Long countryId){
         return addressService.getOrgSubAreas(areaId, cityId, countryId);
+    }
+    @PostMapping(value = "register", produces = APPLICATION_JSON_VALUE)
+    public OrganizationResponse registerOrganization(@RequestBody RegisterDto registerDto) throws Exception {
+        return orgService.registerOrganization(registerDto);
     }
 }
