@@ -211,6 +211,7 @@ public enum ErrorCodes {
 	,ORG$LOY$0023("Tier is linked to [%d] users!")
 	,ORG$LOY$0024("No active config for org with id [%d] !")
 	,ORG$LOY$0025("the available points are not enough !")
+	,ORG$LOY$0026("the Tier id [%d] have Active config with id [%d]!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,SUBAREA$001("No Sub-Area exists with ID:[%d] for organization[%d]!")

@@ -33,5 +33,4 @@ public interface LoyaltyTierRepository extends JpaRepository<LoyaltyTierEntity, 
     void deleteByTierName(String tierName);
 
     Optional<LoyaltyTierEntity> findByIdAndOrganization_Id(Long id, Long orgId);
-    List<LoyaltyTierEntity> findByOrganization_IdAndIsActive(Long id, Boolean isActive);
 }
