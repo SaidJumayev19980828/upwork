@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
@@ -66,6 +67,7 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     public ByteArrayOutputStream generateOrdersFile(OrderSearchParam params) throws IOException {
         this.addExcelDataValidation = false;
         OrdersListResponse orders = exportService.exportOrdersData(params);
+        System.out.println("orders length" + orders.getTotal());
         return buildOrdersFile(ORDER_DATA_COLUMN,mapOrdersToOrderRows(orders.getOrders()));
 
     }
@@ -134,6 +136,41 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
 
 
     private List<OrderRow> mapOrdersToOrderRows(List<DetailedOrderRepObject> orders) {
-        return orders.stream().map(OrderRow::new).collect(toList());
+        return orders.stream().map(this::ordersToOrderRows).collect(toList());
     }
+
+
+    private OrderRow ordersToOrderRows(DetailedOrderRepObject orders) {
+        OrderRow orderRow = new OrderRow();
+        orderRow.setOrderId(orders.getOrderId());
+        orderRow.setUserName(orders.getUserName());
+        orderRow.setShopName(orders.getShopName());
+        orderRow.setShipping(orders.getShipping());
+        orderRow.setShippingService(orders.getShippingService());
+        orderRow.setPaymentOperator(orders.getPaymentOperator());
+        orderRow.setSubtotal(orders.getSubtotal());
+        orderRow.setTotal(orders.getTotal());
+        orderRow.setCurrency(orders.getCurrency());
+        orderRow.setNotes(orders.getNotes());
+        orderRow.setStatus(orders.getStatus());
+        orderRow.setTotalQuantity(orders.getTotalQuantity());
+        orderRow.setPaymentStatus(orders.getPaymentStatus());
+        orderRow.setShippingStatus(orders.getShippingStatus());
+        orderRow.setDiscount(orders.getDiscount());
+        orderRow.setCreationDate(orders.getCreatedAt());
+        if (orders.getShippingAddress() != null) {
+            AddressRepObj shippingAddress = orders.getShippingAddress();
+            orderRow.setFlatNumber(shippingAddress.getFlatNumber());
+            orderRow.setBuildingNumber(shippingAddress.getBuildingNumber());
+            orderRow.setPhoneNumber(shippingAddress.getPhoneNumber());
+            orderRow.setArea(shippingAddress.getArea());
+            orderRow.setCity(shippingAddress.getCity());
+            orderRow.setCountry(shippingAddress.getCountry());
+            orderRow.setSubArea(shippingAddress.getSubArea());
+            orderRow.setAddressLine1(shippingAddress.getAddressLine1());
+            orderRow.setAddressLine2(shippingAddress.getAddressLine2());
+        }
+        return orderRow;
+    }
+
 }
