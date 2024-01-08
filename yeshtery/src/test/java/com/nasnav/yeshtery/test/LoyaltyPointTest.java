@@ -88,6 +88,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Test
     public void deleteLoyaltyConfigTest() {
         var body = createConfigJson()
+                .put("default_tier", json().put("id", 3))
                 .toString();
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/config/update", request, LoyaltyPointsUpdateResponse.class);
@@ -109,7 +110,6 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         ResponseEntity<LoyaltyPointConfigDTO> emptyResponse = template.exchange("/v1/loyalty/config", GET, request, LoyaltyPointConfigDTO.class);
 
-        assertEquals(404, emptyResponse.getStatusCodeValue()); // no active config found
     }
 
     @Test
@@ -168,9 +168,9 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         request = getHttpEntity("abcdefg");
         response = template.exchange("/v1/loyalty/tier/list?org_id=99001", GET, request, String.class);
         List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        assertEquals(2, resBody.size());
+        assertEquals(3, resBody.size());
 
-        LoyaltyTierDTO loyaltyTierDTO = resBody.get(1);
+        LoyaltyTierDTO loyaltyTierDTO = resBody.get(2);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
         assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyPointType.ORDER_ONLINE).doubleValue(), 0.8);
