@@ -248,4 +248,9 @@ public class YeshteryUserController {
 
         return this.nasnavUserService.processUserAvatar(image);
     }
+
+    @PostMapping(value = "v2/employee/otp/activate", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserApiResponse> activateEmployeeUser(@Valid @RequestBody ActivateOtpDto activateOtp) throws BusinessException {
+        return ResponseEntity.ok(employeeUserService.activateUserAccount(activateOtp));
+    }
 }
