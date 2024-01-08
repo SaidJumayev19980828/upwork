@@ -124,7 +124,6 @@ public class DataExportServiceImpl implements DataExportService{
 
 	@Override
 	public OrdersListResponse exportOrdersData(OrderSearchParam params)  {
-		params.setUseCount(false);
 		return orderService.getAllOrdersList(params);
 	}
 

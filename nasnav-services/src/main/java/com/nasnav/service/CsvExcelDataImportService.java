@@ -48,54 +48,61 @@ public interface CsvExcelDataImportService {
 			.put("weight", "weight")
 			.getMap();
 
-
 	public static final List<String> ORDER_DATA_COLUMN = List.of(
 			"orderId",
-			"shopName",
-			"shippingService",
-			"trackNumber",
-			"totalQuantity",
 			"userName",
+			"shopName",
+			"shipping",
+			"shippingService",
+			"paymentOperator",
+			"subtotal",
 			"total",
-			"paymentStatus",
+			"currency",
+			"notes",
 			"status",
+			"totalQuantity",
+			"paymentStatus",
 			"shippingStatus",
 			"discount",
-			"createdAt",
-			"deliveryDate",
-			"addressLine2",
-			"latitude",
-			"longitude",
-			"postalCode",
+			"creationDate",
+			"flatNumber",
+			"buildingNumber",
 			"phoneNumber",
 			"area",
 			"city",
-			"country"
+			"country",
+			"subArea",
+			"addressLine1",
+			"addressLine2"
 	);
 
-	Map<String, String> ORDER_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
+	Map<String,String> ORDER_DATA_TO_COLUMN_MAPPING = ImmutableMap.<String, String>builder()
 			.put("orderId", "orderId")
-			.put("shop", "shopName")
-			.put("shipping", "shippingService")
-			.put("trackingNumber", "trackNumber")
-			.put("totalQuantity", "totalQuantity")
 			.put("userName", "userName")
+			.put("shopName", "shopName")
+			.put("shipping", "shipping")
+			.put("shippingService", "shippingService")
+			.put("paymentOperator", "paymentOperator")
+			.put("subtotal", "subtotal")
 			.put("total", "total")
-			.put("paymentStatus", "paymentStatus")
+			.put("currency", "currency")
+			.put("notes", "notes")
 			.put("status", "status")
+			.put("totalQuantity", "totalQuantity")
+			.put("paymentStatus", "paymentStatus")
 			.put("shippingStatus", "shippingStatus")
 			.put("discount", "discount")
-			.put("createdAt", "createdAt")
-			.put("deliveryDate", "deliveryDate")
-			.put("addressLine2", "addressLine2")
-			.put("latitude", "latitude")
-			.put("longitude", "longitude")
-			.put("postalCode", "postalCode")
+			.put("creationDate", "creationDate")
+			.put("flatNumber", "flatNumber")
+			.put("buildingNumber", "buildingNumber")
 			.put("phoneNumber", "phoneNumber")
 			.put("area", "area")
 			.put("city", "city")
 			.put("country", "country")
-			.getMap();
+			.put("subArea", "subArea")
+			.put("addressLine1", "addressLine1")
+			.put("addressLine2", "addressLine2")
+		.build();
 
 	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = ImmutableMap.<String, String>builder()
 			.put("variantId", "variant_id")

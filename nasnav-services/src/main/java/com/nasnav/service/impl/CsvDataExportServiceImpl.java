@@ -103,10 +103,11 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
+		System.out.println("data to csv file " +  data.size());
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
 		Writer outputWriter = new OutputStreamWriter(csvOutStream, StandardCharsets.UTF_8);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
-		writer.writeHeaders(headers.stream().toArray(String[]::new));
+		writer.writeHeaders(headers.toArray(String[]::new));
 		writer.processRecordsAndClose(data);
 		return csvOutStream;
 	}
