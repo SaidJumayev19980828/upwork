@@ -116,7 +116,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
                 setConfigDefaultTier(dto.getDefaultTier().getId(), org.getId(), entity);
             }
         } else {
-            loyaltyPointConfigRepo.setAllOrgConfigsAsInactive(org.getId());
+            //Solve bug not to inActivate other Config
+            //loyaltyPointConfigRepo.setAllOrgConfigsAsInactive(org.getId());
+            Optional<LoyaltyPointConfigEntity> defaultTierActiveConfig = loyaltyPointConfigRepo.findByDefaultTier_IdAndIsActive(dto.getDefaultTier().getId(), true);
+            if (defaultTierActiveConfig.isPresent()){
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE,ORG$LOY$0026,dto.getDefaultTier().getId(),defaultTierActiveConfig.get().getId());
+            }
 
             entity.setIsActive(true);
             entity.setOrganization(org);
@@ -185,10 +190,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         Integer totalPoints = 0;
         for(LoyaltyPointTransactionEntity pt : userTrx){
             totalPoints+=pt.getPoints().intValue();
-//            List<LoyaltySpentTransactionEntity> allReverseTrx = loyaltySpendTransactionRepo.findAllByTransaction_Id(pt.getId());
-//            for(LoyaltySpentTransactionEntity negativePt : allReverseTrx){
-//                totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
-//            }
+            List<LoyaltySpentTransactionEntity> allReverseTrx = loyaltySpendTransactionRepo.findAllByTransaction_Id(pt.getId());
+            for(LoyaltySpentTransactionEntity negativePt : allReverseTrx){
+                totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
+            }
         }
         return new LoyaltyUserPointsResponse(totalPoints);
     }
@@ -645,17 +650,16 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return loyaltyPointTransRepo
                 .getSpendablePointsByUserIdAndOrgIds(currentUser.getYeshteryUserId(), orgIds)
                 .stream()
-//                .map(t -> {
-//                    BigDecimal spentPoints = t.getSpentTransactions()
-//                            .stream()
-//                            .filter(Objects::nonNull)
-//                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
-//                            .map(LoyaltyPointTransactionEntity::getPoints)
-//                            .reduce(ZERO, BigDecimal::add);
-//                    t.setPoints(t.getPoints().subtract(spentPoints));
-//                    return t;
-//                })
-                .map(LoyaltyPointTransactionEntity::getRepresentation)
+                .map(t -> {
+                    BigDecimal spentPoints = t.getSpentTransactions()
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(LoyaltySpentTransactionEntity::getReverseTransaction)
+                            .map(LoyaltyPointTransactionEntity::getPoints)
+                            .reduce(ZERO, BigDecimal::add);
+                    t.setPoints(t.getPoints().subtract(spentPoints));
+                    return t;
+                }).map(LoyaltyPointTransactionEntity::getRepresentation)
                 .collect(toList());
     }
 
@@ -667,12 +671,11 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
         UserEntity currentUser = (UserEntity) baseUser;
         return loyaltyPointTransRepo.getSpendablePointsByUserIdAndOrgId(currentUser.getYeshteryUserId(), orgId).stream()
-//                .map(t -> {
-//            BigDecimal spentPoints = t.getSpentTransactions().stream().filter(Objects::nonNull).map(LoyaltySpentTransactionEntity::getReverseTransaction).map(LoyaltyPointTransactionEntity::getPoints).reduce(ZERO, BigDecimal::add);
-//            t.setPoints(t.getPoints().subtract(spentPoints));
-//            return t;
-//        })
-                .map(LoyaltyPointTransactionEntity::getRepresentation).collect(toList());
+                .map(t -> {
+            BigDecimal spentPoints = t.getSpentTransactions().stream().filter(Objects::nonNull).map(LoyaltySpentTransactionEntity::getReverseTransaction).map(LoyaltyPointTransactionEntity::getPoints).reduce(ZERO, BigDecimal::add);
+            t.setPoints(t.getPoints().subtract(spentPoints));
+            return t;
+        }).map(LoyaltyPointTransactionEntity::getRepresentation).collect(toList());
     }
 
     @Override
@@ -717,7 +720,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Transactional
     public void sharePoints(Long orgId, String email, BigDecimal points) {
 
-        List<LoyaltyPointTransactionEntity> validLoyaltyPointTrans = getPointsTransByUserAndOrg(orgId);
+        List<LoyaltyPointTransactionDTO> validLoyaltyPointTrans = getPointsTransByUserAndOrg(orgId);
         BigDecimal totalPoints = calculateTotalPoints(validLoyaltyPointTrans);
 
         if (points.compareTo(totalPoints) >= 0) {
@@ -725,27 +728,39 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
 
         UserEntity user = userRepo.getByEmailAndOrganizationId(email, orgId);
+        Optional<OrganizationEntity> org = organizationRepository.findById(orgId);
 
         if (!(user instanceof UserEntity)) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0010, email);
         }
         LoyaltyPointType type = LoyaltyPointType.getLoyaltyPointType(5);
 
-        LoyaltyPointTransactionEntity spendPoint = createLoyaltyPointTransaction(validLoyaltyPointTrans.get(0).getOrganization(), user, points, validLoyaltyPointTrans.get(0).getEndDate());
+        LoyaltyPointTransactionEntity spendPoint = createLoyaltyPointTransaction(org.get(), user, points, validLoyaltyPointTrans.get(0).getEndDate());
         spendPoint.setType(type.getValue());
         spendPoint.setIsValid(true);
         loyaltyPointTransRepo.save(spendPoint);
         deductAndCreateLoyaltySpendTransaction(validLoyaltyPointTrans,spendPoint);
     }
 
-    private List<LoyaltyPointTransactionEntity> getPointsTransByUserAndOrg(Long orgId) {
+    private List<LoyaltyPointTransactionDTO> getPointsTransByUserAndOrg(Long orgId) {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         List<LoyaltyPointTransactionEntity> validPointsTrans = loyaltyPointTransRepo.findByUser_IdAndOrganization_IdAndIsValidAndStartDateBeforeAndPointsGreaterThanOrderByCreatedAtAsc
                 (currentUser.getId(), orgId, true, LocalDateTime.now(), BigDecimal.valueOf(0));
-        return validPointsTrans;
+
+        List<LoyaltyPointTransactionDTO> validPointsTransDTOs = validPointsTrans.stream().map(LoyaltyPointTransactionEntity::getRepresentation).collect(toList());
+        validPointsTrans.forEach(t -> {
+            BigDecimal spentPoints = t.getSpentTransactions().stream().filter(Objects::nonNull).map(LoyaltySpentTransactionEntity::getReverseTransaction).map(LoyaltyPointTransactionEntity::getPoints).reduce(ZERO, BigDecimal::add);
+            validPointsTransDTOs.forEach(loyaltyPointTransactionDTO -> {
+                if (loyaltyPointTransactionDTO.getId() == t.getId()){
+                    loyaltyPointTransactionDTO.setPoints(t.getPoints().subtract(spentPoints));
+                }
+            });
+
+        });
+        return validPointsTransDTOs;
     }
 
-    private BigDecimal calculateTotalPoints(List<LoyaltyPointTransactionEntity> validPointsTrans) {
+    private BigDecimal calculateTotalPoints(List<LoyaltyPointTransactionDTO> validPointsTrans) {
         BigDecimal totalPoints = new BigDecimal(0);
         for (int i = 0; i < validPointsTrans.size(); i++) {
             totalPoints = totalPoints.add(new BigDecimal(String.valueOf(validPointsTrans.get(i).getPoints())));
@@ -754,25 +769,25 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     @Transactional
-    private void deductAndCreateLoyaltySpendTransaction(List<LoyaltyPointTransactionEntity> validPointsTrans, LoyaltyPointTransactionEntity spendPoint) {
+    private void deductAndCreateLoyaltySpendTransaction(List<LoyaltyPointTransactionDTO> validPointsTrans, LoyaltyPointTransactionEntity spendPoint) {
         BigDecimal deductedPoints = spendPoint.getPoints();
-        for (LoyaltyPointTransactionEntity validPointsTransaction : validPointsTrans) {
+        for (LoyaltyPointTransactionDTO validPointsTransaction : validPointsTrans) {
             if (deductedPoints.compareTo(validPointsTransaction.getPoints()) > 0) {
                 deductedPoints = new BigDecimal(String.valueOf(deductedPoints.subtract(validPointsTransaction.getPoints())));
-                validPointsTransaction.setPoints(new BigDecimal(0));
+//                validPointsTransaction.setPoints(new BigDecimal(0));
 //                validPointsTransaction.setIsValid(false);
 //                validPointsTransaction.setEndDate(LocalDateTime.now());
-                loyaltyPointTransRepo.save(validPointsTransaction);
+//                loyaltyPointTransRepo.save(validPointsTransaction);
                 LoyaltySpentTransactionEntity spentPointTrans = new LoyaltySpentTransactionEntity();
-                spentPointTrans.setTransaction(validPointsTransaction);
+                spentPointTrans.setTransaction(loyaltyPointTransRepo.findById(validPointsTransaction.getId()).get());
                 spentPointTrans.setReverseTransaction(spendPoint);
                 loyaltySpendTransactionRepo.save(spentPointTrans);
             } else {
                 BigDecimal diff = new BigDecimal(String.valueOf(validPointsTransaction.getPoints().subtract(deductedPoints)));
-                validPointsTransaction.setPoints(diff);
-                loyaltyPointTransRepo.save(validPointsTransaction);
+//                validPointsTransaction.setPoints(diff);
+//                loyaltyPointTransRepo.save(validPointsTransaction);
                 LoyaltySpentTransactionEntity spentPointTrans = new LoyaltySpentTransactionEntity();
-                spentPointTrans.setTransaction(validPointsTransaction);
+                spentPointTrans.setTransaction(loyaltyPointTransRepo.findById(validPointsTransaction.getId()).get());
                 spentPointTrans.setReverseTransaction(spendPoint);
                 loyaltySpendTransactionRepo.save(spentPointTrans);
                 break;

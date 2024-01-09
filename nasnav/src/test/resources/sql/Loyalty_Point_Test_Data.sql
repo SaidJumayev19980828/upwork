@@ -80,6 +80,7 @@ INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name"
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, organization_id, constraints) VALUES (2, 'Gold', true, now(), 99001, '{"ORDER_ONLINE":0.05}');
 
 insert into public.loyalty_point_config
 values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');

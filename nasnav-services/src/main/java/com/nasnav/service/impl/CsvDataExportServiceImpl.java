@@ -1,5 +1,7 @@
 package com.nasnav.service.impl;
 
+import com.google.gson.Gson;
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.service.AbstractCsvExcelDataExportService;
@@ -38,9 +40,10 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 		return writeFileResult(headers, settings, products);
 	}
 
-	protected  ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException{
-		BeanWriterProcessor<OrderRow> processor = createOrdersRowProcessor();
+	protected  ByteArrayOutputStream buildOrdersFile(List<String> headers, List<DetailedOrderRepObject> orders) throws IOException{
+		BeanWriterProcessor<DetailedOrderRepObject> processor = createOrdersRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
+		System.out.println("build Orders File length" + orders.size());
 		return writeFileResult(headers, settings, orders);
 
 	}
@@ -64,9 +67,9 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 	}
 
 
-	private BeanWriterProcessor<OrderRow> createOrdersRowProcessor() {
+	private BeanWriterProcessor<DetailedOrderRepObject> createOrdersRowProcessor() {
 		ColumnMapping mapper = createCsvAttrToColMapping(ORDER_DATA_TO_COLUMN_MAPPING);
-		BeanWriterProcessor<OrderRow> rowProcessor = new OrderCsvRowWriterProcessor(OrderRow.class);
+		BeanWriterProcessor<DetailedOrderRepObject> rowProcessor = new OrderCsvRowWriterProcessor(DetailedOrderRepObject.class);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
@@ -104,6 +107,9 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
 		System.out.println("data to csv file " +  data.size());
+		Gson gson = new Gson();
+		System.out.println(gson.toJson(data));
+		System.out.println("writeFileResult");
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
 		Writer outputWriter = new OutputStreamWriter(csvOutStream, StandardCharsets.UTF_8);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
