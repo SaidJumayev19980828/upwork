@@ -122,8 +122,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 		setPromotionDefaultParams(params);
 		CrieteriaQueryResults<PromotionsEntity> results = criteriaQueryBuilder.getResultList(params, true);
 		List<PromotionDTO> promotions = results.getResultList().stream()
-					.map(this::createPromotionDTO)
-					.collect(toList());
+				.map(this::createPromotionDTO)
+				.collect(toList());
 		Long total = results.getResultCount();
 
 		return new PromotionResponse(total, promotions);
@@ -170,7 +170,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 			searchParams.setCount(1000);
 		}
 	}
-	
+
 	private PromotionDTO createPromotionDTO(PromotionsEntity entity) {
 		ZoneId zoneId = ZoneId.of("UTC");
 		PromotionDTO dto = new PromotionDTO();
@@ -199,7 +199,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		return dto;
 	}
 
-	
+
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
 		try {
@@ -221,8 +221,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
 		}
 	}
-	
-	
+
+
 
 	private Map<String, Object> setNumbersAsBigDecimals(Map<String, Object> initialData) {
 		return initialData
@@ -231,10 +231,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.map(this::doSetNumbersAsBigDecimals)
 				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
-	
-	
-	
-	
+
+
+
+
 	@SuppressWarnings("unchecked")
 	private Map.Entry<String,Object> doSetNumbersAsBigDecimals(Map.Entry<String, Object> entry){
 		return ofNullable(entry.getValue())
@@ -254,25 +254,25 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromotionsSearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
 
-		Optional<Integer> status = 
+		Optional<Integer> status =
 				ofNullable(searchParams)
-				.map(PromotionSearchParamDTO::getStatus)
-				.flatMap(PromotionStatus::getPromotionStatus)
-				.map(PromotionStatus::getValue);
-		
-		Optional<LocalDateTime> startTime = 
+						.map(PromotionSearchParamDTO::getStatus)
+						.flatMap(PromotionStatus::getPromotionStatus)
+						.map(PromotionStatus::getValue);
+
+		Optional<LocalDateTime> startTime =
 				ofNullable(searchParams)
-				.map(PromotionSearchParamDTO::getStartTime)
-				.flatMap(EntityUtils::parseTimeString);
-		
-		Optional<LocalDateTime> endTime = 
+						.map(PromotionSearchParamDTO::getStartTime)
+						.flatMap(EntityUtils::parseTimeString);
+
+		Optional<LocalDateTime> endTime =
 				ofNullable(searchParams)
-				.map(PromotionSearchParamDTO::getEndTime)
-				.flatMap(EntityUtils::parseTimeString);
-		
-		Optional<Long> id = 
+						.map(PromotionSearchParamDTO::getEndTime)
+						.flatMap(EntityUtils::parseTimeString);
+
+		Optional<Long> id =
 				ofNullable(searchParams)
-				.map(PromotionSearchParamDTO::getId);
+						.map(PromotionSearchParamDTO::getId);
 
 		Integer start = searchParams.getStart();
 		Integer count = searchParams.getCount();
@@ -296,19 +296,19 @@ public class PromotionsServiceImpl implements PromotionsService {
 			Predicate predicate = builder.equal(root.get("status"), searchParams.status.get());
 			predicates.add(predicate);
 		}
-		
+
 		if(searchParams.id.isPresent()) {
 			Predicate predicate = builder.equal(root.get("id"), searchParams.id.get());
 			predicates.add(predicate);
 		}
 
 		predicates.add(builder.equal(root.get("organization").get("id"), orgId));
-		
-		Predicate isPromotionInTimeWindowPredicate = 
+
+		Predicate isPromotionInTimeWindowPredicate =
 				createPromotionInTimeWindowPerdicate(builder, root, searchParams);
-		
+
 		predicates.add(isPromotionInTimeWindowPredicate);
-		
+
 		return predicates;
 	}
 
@@ -323,17 +323,17 @@ public class PromotionsServiceImpl implements PromotionsService {
 	 * NOT(DP < SW OR DW < SP)
 	 * */
 	private Predicate createPromotionInTimeWindowPerdicate(CriteriaBuilder builder, Root<PromotionsEntity> root,
-			PromotionsSearchParams searchParams) {
+														   PromotionsSearchParams searchParams) {
 		LocalDateTime searchWindowStart = searchParams.startTime.orElse(now().minusYears(1000));
 		LocalDateTime searchWindowEnd = searchParams.endTime.orElse(now().plusYears(1000));
 		Path<LocalDateTime> promotionPeriodStart = root.get("dateStart");
 		Path<LocalDateTime> promotionPeriodEnd = root.get("dateEnd");
-		
-		Predicate noIntersectionCondition1 = 
+
+		Predicate noIntersectionCondition1 =
 				builder.lessThan(promotionPeriodEnd, searchWindowStart);
-		Predicate noIntersectionCondition2 = 
+		Predicate noIntersectionCondition2 =
 				builder.lessThan(builder.literal(searchWindowEnd), promotionPeriodStart);
-		Predicate isPromotionInTimeWindowPredicate = 
+		Predicate isPromotionInTimeWindowPredicate =
 				builder.not(builder.or(noIntersectionCondition1, noIntersectionCondition2));
 		return isPromotionInTimeWindowPredicate;
 	}
@@ -350,7 +350,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		}
 		validatePromotion(promotion);
 
-		
+
 		PromotionsEntity entity = createPromotionsEntity(promotion);
 		return promoRepo.save(entity).getId();
 	}
@@ -483,26 +483,26 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromotionsEntity createPromotionsEntity(PromotionDTO promotion) {
 		PromotionsEntity entity = getOrCreatePromotionEntity(promotion);
-		
+
 		if(isUpdateOperation(promotion)	&& !isInactivePromo(entity)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
-						, PROMO$PARAM$0005, promotion.getId());
+					, PROMO$PARAM$0005, promotion.getId());
 		}
-		
+
 		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
 		OrganizationEntity organization = securityService.getCurrentUserOrganization();
-		
+
 		Integer status = getPromotionStatus(promotion.getStatus());
 
 		Integer type = PromotionType.getPromotionType(promotion.getTypeId()).getValue();
 		Integer priority =
 				ofNullable(promotion.getPriority())
-				.orElse(0);
+						.orElse(0);
 
-		String codeUpperCase = 
+		String codeUpperCase =
 				ofNullable(promotion.getCode())
-				.map(String::toUpperCase)
-				.orElse(null);
+						.map(String::toUpperCase)
+						.orElse(null);
 
 
 		entity.setCode(codeUpperCase);
@@ -536,18 +536,18 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private PromotionsEntity getOrCreatePromotionEntity(PromotionDTO promotion) {
 		return ofNullable(promotion)
-						.map(PromotionDTO::getId)
-						.map(this::getExistingPromotion)
-						.orElseGet(PromotionsEntity::new);
+				.map(PromotionDTO::getId)
+				.map(this::getExistingPromotion)
+				.orElseGet(PromotionsEntity::new);
 	}
-	
-	
+
+
 	private PromotionsEntity getExistingPromotion(Long id){
 		return ofNullable(id)
 				.flatMap(promoRepo::findById)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
-											, PROMO$PARAM$0007, id));
-	} 
+						, PROMO$PARAM$0007, id));
+	}
 
 
 
@@ -612,10 +612,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		if(isUpdateOperation(promotion)) {
 			return promoRepo.existsByCodeAndOrganization_IdAndIdNotAndActiveNow(
-					 promotion.getCode(), orgId, promotion.getId());
+					promotion.getCode(), orgId, promotion.getId());
 		}else {
 			return promoRepo.existsByCodeAndOrganization_IdAndActiveNow(
-					 promotion.getCode(), orgId);
+					promotion.getCode(), orgId);
 		}
 	}
 
@@ -638,8 +638,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 			var result = calc.getCalcFunction().apply(info);
 			var calculatorDiscount =
 					ofNullable(result)
-					.map(PromoCalcResult::getDiscount)
-					.orElse(getTotalDiscount(result));
+							.map(PromoCalcResult::getDiscount)
+							.orElse(getTotalDiscount(result));
 
 			if(calculatorWasApplied(result, calculatorDiscount)){
 				removeConsumedItems(itemsState, result);
@@ -712,9 +712,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.findByOrganization_IdAndTypeIdNotIn(orgId, asList(SHIPPING.getValue()), normalizedPromoCode);
 		if (promos.isEmpty()) {
 			promos = promoRepo
-				.findByOrganization_IdAndTypeIdNotIn(securityService.getCurrentUserOrganizationId(),
-						asList(SHIPPING.getValue()),
-						normalizedPromoCode);
+					.findByOrganization_IdAndTypeIdNotIn(securityService.getCurrentUserOrganizationId(),
+							asList(SHIPPING.getValue()),
+							normalizedPromoCode);
 		}
 		if (promoCode != null && !promoCode.equals("")&& promos.size() == 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0008, promoCode);
@@ -749,14 +749,14 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var constrains = readJsonStrAsMap(promo.getConstrainsJson());
 		var percent =
 				getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
-				.orElse(ZERO);
+						.orElse(ZERO);
 
 		var maxDiscount = getOptionalBigDecimal(constrains, DISCOUNT_AMOUNT_MAX);
 
 		var discount =
 				percent
-				.multiply(new BigDecimal("0.01"))
-				.multiply(cartTotal);
+						.multiply(new BigDecimal("0.01"))
+						.multiply(cartTotal);
 
 		return maxDiscount
 				.filter(max -> discount.compareTo(max) >= 0)
@@ -772,10 +772,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private void validatePromoCode(String promoCode, PromotionsEntity promo, BigDecimal cartTotal) {
 		if(!isPromoValidForTheCart(promo, cartTotal)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
-						, PROMO$PARAM$0009, promoCode);
+					, PROMO$PARAM$0009, promoCode);
 		}else if(promoAlreadyUsedByUser(promo)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
-						, PROMO$PARAM$0010, promoCode);
+					, PROMO$PARAM$0010, promoCode);
 		}
 	}
 
@@ -796,9 +796,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private boolean isPromoValidForTheCart(PromotionsEntity promo, BigDecimal cartTotal) {
 		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
-		BigDecimal minAmount = 
+		BigDecimal minAmount =
 				getOptionalBigDecimal(constrains, MIN_AMOUNT_PROP)
-				.orElse(ZERO);
+						.orElse(ZERO);
 		return cartTotal.compareTo(minAmount) >= 0;
 	}
 
@@ -891,7 +891,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		PromotionsCodesUsedEntity usedPromotion = new PromotionsCodesUsedEntity();
 		usedPromotion.setPromotion(promotion);
 		usedPromotion.setUser(user);
-		usedPromotion.setTime(now());		
+		usedPromotion.setTime(now());
 		usedPromoRepo.save(usedPromotion);
 	}
 
@@ -913,7 +913,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		PromotionsEntity promo =
 				promoRepo
-					.findByIdAndOrganization_Id(promotionId, orgId)
+						.findByIdAndOrganization_Id(promotionId, orgId)
 						.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
 								, PROMO$PARAM$0007, promotionId));
 
@@ -958,18 +958,18 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private List<PromoItemDto> getAllowedProductsPerBrand(PromoInfoContainer promoInfoContainer, PromosConstraints constraints) {
 		var allowedBrands = constraints.getBrands();
 		return promoInfoContainer
-						.items
-						.stream()
-						.filter(i -> allowedBrands.contains(i.getBrandId()))
-						.collect(toList());
+				.items
+				.stream()
+				.filter(i -> allowedBrands.contains(i.getBrandId()))
+				.collect(toList());
 	}
 
 	private List<PromoItemDto> getAllowedProductsPerProducts(PromoInfoContainer promoInfoContainer, Set<Long> allowedProducts) {
 		return promoInfoContainer
-						.items
-						.stream()
-						.filter(i -> allowedProducts.contains(i.getProductId()))
-						.collect(toList());
+				.items
+				.stream()
+				.filter(i -> allowedProducts.contains(i.getProductId()))
+				.collect(toList());
 	}
 
 
@@ -1052,26 +1052,20 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private BigDecimal calculateBuyXGetYDiscountValue(List<PromoItemDto> applicableItems, PromosConstraints constrains) {
-		var minQtyToApplyPromo = getProductQuantityMin(constrains);
-		var giftQty = getProductQuantityToGive(constrains);
-		var minPrice = getMinProductPrice(applicableItems);
-
-		BigDecimal applicableDiscount = validateApplicableDiscountWithMinPrice(applicableItems);
-		// Compare the total price with minPrice
-		if (applicableDiscount.compareTo(minPrice) >= 0) {
-			// Apply discount calculation if total price is greater than or equal to minPrice
-			return applicableItems
-					.stream()
-					.map(PromoItemDto::getQuantity)
-					.reduce(Integer::sum)
-					.map(totalQty -> getProductQuantityToGiveInDiscount(totalQty, minQtyToApplyPromo, giftQty).multiply(minPrice))
-					.orElse(BigDecimal.ZERO);
-		} else {
-			// Return zero discount if total price is less than minPrice
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$EXCEPTION);
+	public static BigDecimal calculateBuyXGetYDiscountValue(List<PromoItemDto> applicableItems, PromosConstraints constraints) {
+		int giftQty = constraints.getProductToGive();
+		int productQuantityMin = constraints.getProductQuantityMin();
+		BigDecimal totalDiscount = BigDecimal.ZERO;
+		for (PromoItemDto cartItem : applicableItems) {
+			if (cartItem.getQuantity() > giftQty && cartItem.getQuantity() > productQuantityMin) {
+				BigDecimal discount = cartItem.getDiscount();
+				BigDecimal itemPrice = cartItem.getPrice().subtract(discount);
+				totalDiscount = totalDiscount.add(itemPrice.multiply(BigDecimal.valueOf(giftQty)));
+			}
 		}
+		return totalDiscount;
 	}
+
 
 
 	public BigDecimal validateApplicableDiscountWithMinPrice(List<PromoItemDto> applicableItems) {
@@ -1104,7 +1098,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private Map<Long, List<Long>> convertPromotionsMapToPromotionIdsMap(Map<Long, SortedSet<PromotionDTO>> source,
-			Long limitPerItem) {
+																		Long limitPerItem) {
 		return source.entrySet()
 				.stream()
 				.map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()
@@ -1137,10 +1131,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private ItemsPromotionsDTO createItemsPromotionsDTO(
-		Map<Long, SortedSet<PromotionDTO>> productPromotionsMap,
-		Map<Long, SortedSet<PromotionDTO>> brandPromotionsMap,
-		Map<Long, SortedSet<PromotionDTO>> tagPromotionsMap,
-		Long limitPerItem
+			Map<Long, SortedSet<PromotionDTO>> productPromotionsMap,
+			Map<Long, SortedSet<PromotionDTO>> brandPromotionsMap,
+			Map<Long, SortedSet<PromotionDTO>> tagPromotionsMap,
+			Long limitPerItem
 	) {
 		List<Set<PromotionDTO>> promotionsFromMaps = new LinkedList<>();
 
@@ -1167,7 +1161,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	 */
 	@Override
 	public ItemsPromotionsDTO getPromotionsListFromProductsAndBrandsAndTagsLists(Set<Long> productIds, Set<Long> brandIds,
-			Set<Long> tagIds, Long limitPerItem) {
+																				 Set<Long> tagIds, Long limitPerItem) {
 
 		List<PromotionDTO> promotions = getActivePublicPromotionsWithBrandsOrTagsOrProductsConstrains();
 		List<ProductEntity> products = productRepo.findProductsByProductIdsOrBrandIdsOrTagIds(productIds, brandIds, tagIds);
@@ -1219,8 +1213,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private void addPromotionToRelatedIds(PromotionDTO promotion, Function<PromosConstraints, Set<Long>> getitemIds,
-			Map<Long, List<PromotionDTO>> itemIdToPromotionsMap,
-			Long limitPerItem) {
+										  Map<Long, List<PromotionDTO>> itemIdToPromotionsMap,
+										  Long limitPerItem) {
 		Optional<PromosConstraints> constrains = Optional.ofNullable(promotion.getConstrains());
 		Set<Long> itemIds = constrains.map(getitemIds).orElse(emptySet());
 		List<PromotionDTO> promosRelatedToId = null;
@@ -1232,9 +1226,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 
 	private void getRelatedIdsFromPromotions(List<PromotionDTO> promotionsPrimaryList,
-			Map<Long, List<PromotionDTO>> tagsIdAndPromotionMap,
-			Map<Long, List<PromotionDTO>> brandsIdAndPromotionMap,
-			Map<Long, List<PromotionDTO>> productsIdAndPromotionMap, Long limitPerItem) {
+											 Map<Long, List<PromotionDTO>> tagsIdAndPromotionMap,
+											 Map<Long, List<PromotionDTO>> brandsIdAndPromotionMap,
+											 Map<Long, List<PromotionDTO>> productsIdAndPromotionMap, Long limitPerItem) {
 
 		for (PromotionDTO promo : promotionsPrimaryList) {
 			if (TAGS_PROMOTION_TYPES.contains(PromotionType.getPromotionType(promo.getTypeId()))) {
@@ -1279,11 +1273,11 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private List<PromotionDTO> getActivePublicPromotionsWithBrandsOrTagsOrProductsConstrains() {
 		List<Integer> types = asList(BUY_X_GET_Y_FROM_BRAND.getValue(),
-						BUY_X_GET_Y_FROM_TAG.getValue(),
-						BUY_X_GET_Y_FROM_PRODUCT.getValue(),
-						PROMO_CODE_FROM_BRAND.getValue(),
-						PROMO_CODE_FROM_TAG.getValue(),
-						PROMO_CODE_FROM_PRODUCT.getValue());
+				BUY_X_GET_Y_FROM_TAG.getValue(),
+				BUY_X_GET_Y_FROM_PRODUCT.getValue(),
+				PROMO_CODE_FROM_BRAND.getValue(),
+				PROMO_CODE_FROM_TAG.getValue(),
+				PROMO_CODE_FROM_PRODUCT.getValue());
 		return promoRepo.findActivePromosByTypeIdIn(types)
 				.stream()
 				.map(this::createPromotionDTO)
@@ -1298,10 +1292,20 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private BigDecimal getDiscount(BigDecimal value, PromotionsEntity promo) {
 		var discountData = readJsonStrAsMap(promo.getDiscountJson());
-		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-				.orElse(calcDiscount(promo, value));
+		Optional<BigDecimal> discountAmount = getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT);
+		return	discountAmount.isPresent() ? getDiscountForCartAmount(value , promo) : calcDiscount(promo, value) ;
 	}
 
+	private BigDecimal getDiscountForCartAmount(BigDecimal value, PromotionsEntity promo) {
+		var discountData = readJsonStrAsMap(promo.getDiscountJson());
+		BigDecimal discountAmount = (BigDecimal) discountData.get("amount");
+		if (value.compareTo(discountAmount) > 0 )
+			return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+					.orElse(calcDiscount(promo, value));
+		else
+			//TODO : we need discuss with Ghazi and Mohamed Ali to add log property with the response to let the user know why that promotion did not apply here
+			return ZERO;
+	}
 
 
 	private void decreasePromoUsageLimit(PromotionsEntity promo) {
@@ -1324,7 +1328,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var consumedItems = consumeAllItems(promo);
 		return ofNullable(promo)
 				.filter(i -> isPromoValidForTheCart(i.promo, totalCartValue))
-				.map(i -> getDiscount(totalCartValue, i.promo))
+				.map(i -> getDiscountForCartAmount(totalCartValue, i.promo))
 				.map(discount -> new PromoCalcResult(discount, consumedItems))
 				.orElse(emptyResult());
 	}
