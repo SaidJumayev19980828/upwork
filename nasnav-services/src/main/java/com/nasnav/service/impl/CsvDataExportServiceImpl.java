@@ -1,14 +1,16 @@
 package com.nasnav.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
+import com.nasnav.payments.paymob.OrderResponse;
+import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.AbstractCsvExcelDataExportService;
 import com.nasnav.service.helpers.OrderCsvRowWriterProcessor;
 import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
-import com.nasnav.service.model.importproduct.csv.OrderRow;
 import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanWriterProcessor;
 import com.univocity.parsers.csv.CsvWriter;
@@ -20,9 +22,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.nasnav.service.CsvExcelDataImportService.IMG_DATA_TO_COLUMN_MAPPING;
 import static com.nasnav.service.CsvExcelDataImportService.ORDER_DATA_TO_COLUMN_MAPPING;
@@ -43,8 +48,16 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 	protected  ByteArrayOutputStream buildOrdersFile(List<String> headers, List<DetailedOrderRepObject> orders) throws IOException{
 		BeanWriterProcessor<DetailedOrderRepObject> processor = createOrdersRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
-		System.out.println("build Orders File length" + orders.size());
-		return writeFileResult(headers, settings, orders);
+		System.out.println("build Orders File length " + orders.size());
+		List<DetailedOrderRepObject> ordersList = new ArrayList<>(orders.stream()
+                .collect(Collectors.toMap(
+                        DetailedOrderRepObject::getOrderId,
+                        Function.identity(),
+                        (existing, replacement) -> existing
+                ))
+                .values());
+		System.out.println(ordersList.size());
+		return writeFileResult(headers, settings, ordersList);
 
 	}
 
@@ -111,7 +124,7 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 		System.out.println(gson.toJson(data));
 		System.out.println("writeFileResult");
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
-		Writer outputWriter = new OutputStreamWriter(csvOutStream, StandardCharsets.UTF_8);
+		Writer outputWriter = new OutputStreamWriter(csvOutStream);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
 		writer.writeHeaders(headers.toArray(String[]::new));
 		writer.processRecordsAndClose(data);

@@ -67,7 +67,7 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     public ByteArrayOutputStream generateOrdersFile(OrderSearchParam params) throws IOException {
         this.addExcelDataValidation = false;
         OrdersListResponse orders = exportService.exportOrdersData(params);
-        System.out.println("orders length" + orders.getTotal());
+        System.out.println("orders length" + orders.getOrders().size());
         Gson gson = new Gson();
         System.out.println(gson.toJson(orders.getOrders()));
         System.out.println("generateOrdersFile");
