@@ -2,6 +2,7 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.converters.Converters;
 import com.nasnav.commons.converters.DtoToCsvRowMapper;
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.service.AbstractCsvExcelDataExportService;
@@ -44,7 +45,7 @@ public class ExcelDataExportServiceImpl extends AbstractCsvExcelDataExportServic
 	private ExcelDataFormatter excelDataFormatter;
 
 	@Override
-	protected ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException {
+	protected ByteArrayOutputStream buildOrdersFile(List<String> headers, List<DetailedOrderRepObject> orders) throws IOException {
 		return writeOrderFileResult(headers, orders);
 	}
 

@@ -1,9 +1,9 @@
 package com.nasnav.service;
 
+import com.google.gson.Gson;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
@@ -68,7 +68,10 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
         this.addExcelDataValidation = false;
         OrdersListResponse orders = exportService.exportOrdersData(params);
         System.out.println("orders length" + orders.getTotal());
-        return buildOrdersFile(ORDER_DATA_COLUMN,mapOrdersToOrderRows(orders.getOrders()));
+        Gson gson = new Gson();
+        System.out.println(gson.toJson(orders.getOrders()));
+        System.out.println("generateOrdersFile");
+        return buildOrdersFile(ORDER_DATA_COLUMN,orders.getOrders());
 
     }
 
@@ -113,7 +116,7 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
         return buildProductWithNoImgsFile(headers, variants);
     }
 
-    protected abstract ByteArrayOutputStream buildOrdersFile(List<String> headers, List<OrderRow> orders) throws IOException;
+    protected abstract ByteArrayOutputStream buildOrdersFile(List<String> headers, List<DetailedOrderRepObject> orders) throws IOException;
 
     protected abstract ByteArrayOutputStream buildProductsFile(List<String> headers, List<CsvRow> products) throws IOException;
 
@@ -135,42 +138,5 @@ public abstract class AbstractCsvExcelDataExportService implements CsvExcelDataE
     protected abstract ByteArrayOutputStream buildProductWithNoImgsFile(List<String> headers, List<VariantWithNoImagesDTO> variants) throws IOException;
 
 
-    private List<OrderRow> mapOrdersToOrderRows(List<DetailedOrderRepObject> orders) {
-        return orders.stream().map(this::ordersToOrderRows).collect(toList());
-    }
-
-
-    private OrderRow ordersToOrderRows(DetailedOrderRepObject orders) {
-        OrderRow orderRow = new OrderRow();
-        orderRow.setOrderId(orders.getOrderId());
-        orderRow.setUserName(orders.getUserName());
-        orderRow.setShopName(orders.getShopName());
-        orderRow.setShipping(orders.getShipping());
-        orderRow.setShippingService(orders.getShippingService());
-        orderRow.setPaymentOperator(orders.getPaymentOperator());
-        orderRow.setSubtotal(orders.getSubtotal());
-        orderRow.setTotal(orders.getTotal());
-        orderRow.setCurrency(orders.getCurrency());
-        orderRow.setNotes(orders.getNotes());
-        orderRow.setStatus(orders.getStatus());
-        orderRow.setTotalQuantity(orders.getTotalQuantity());
-        orderRow.setPaymentStatus(orders.getPaymentStatus());
-        orderRow.setShippingStatus(orders.getShippingStatus());
-        orderRow.setDiscount(orders.getDiscount());
-        orderRow.setCreationDate(orders.getCreatedAt());
-        if (orders.getShippingAddress() != null) {
-            AddressRepObj shippingAddress = orders.getShippingAddress();
-            orderRow.setFlatNumber(shippingAddress.getFlatNumber());
-            orderRow.setBuildingNumber(shippingAddress.getBuildingNumber());
-            orderRow.setPhoneNumber(shippingAddress.getPhoneNumber());
-            orderRow.setArea(shippingAddress.getArea());
-            orderRow.setCity(shippingAddress.getCity());
-            orderRow.setCountry(shippingAddress.getCountry());
-            orderRow.setSubArea(shippingAddress.getSubArea());
-            orderRow.setAddressLine1(shippingAddress.getAddressLine1());
-            orderRow.setAddressLine2(shippingAddress.getAddressLine2());
-        }
-        return orderRow;
-    }
 
 }

@@ -1,5 +1,6 @@
 package com.nasnav.service.helpers;
 
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.importproduct.csv.OrderRow;
 import com.univocity.parsers.common.NormalizedString;
@@ -15,15 +16,15 @@ import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
-public class OrderCsvRowWriterProcessor extends BeanWriterProcessor<OrderRow> {
-    public OrderCsvRowWriterProcessor(Class<OrderRow> beanType) {
+public class OrderCsvRowWriterProcessor extends BeanWriterProcessor<DetailedOrderRepObject> {
+    public OrderCsvRowWriterProcessor(Class<DetailedOrderRepObject> beanType) {
         super(beanType);
     }
 
 
 
     @Override
-    public Object[] write(OrderRow input, NormalizedString[] headers, int[] indexesToWrite) {
+    public Object[] write(DetailedOrderRepObject input, NormalizedString[] headers, int[] indexesToWrite) {
         List<Object> rowData = asList(super.write(input, headers, indexesToWrite));
         return rowData.toArray();
     }
