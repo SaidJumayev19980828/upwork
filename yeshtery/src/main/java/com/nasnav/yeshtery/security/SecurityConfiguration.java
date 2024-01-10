@@ -113,6 +113,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/admin/**"	   	 							, setOf(NASNAV_ADMIN) ),
             patternOf( "/v1/files"							, DELETE , setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/files/**"),
+            patternOf( "/v1/package/create"					,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+            patternOf( "/v1/package/{packageId:\\d+}"			,HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf( "/v1/package/register-package-profile"		,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
             patternOf( "/v1/organization/info"						, setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/organization/brand"						, setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/organization/image"				, POST	, setOf(ORGANIZATION_ADMIN)),
@@ -134,6 +138,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf( "/v1/organization/search/**"					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
             patternOf( "/v1/organization/seo"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf( "/v1/organization/sub_areas"					, setOf(ORGANIZATION_ADMIN)),
+            patternOf("/v1/subscription/info"						, HttpMethod.GET ,getNonCustomersRoles()),
+            patternOf("/v1/subscription/wert/create"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf("/v1/subscription/stripe/create"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf("/v1/subscription/stripe/changePaymentMethod"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf("/v1/subscription/stripe/cancel"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
+            patternOf("/v1/subscription/stripe/changePlan"			, HttpMethod.POST,setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER) ),
             patternOf( "/v1/mail/cart/abandoned"						, setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/mail/wishlist/stock"						, setOf(ORGANIZATION_ADMIN)),
             patternOf( "/v1/upload/**"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
@@ -253,6 +263,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/product/variant"				    , GET)
                         , patternOf("/v1/organization/payments"			, GET)
                         , patternOf("/v1/organization/brands"			    , GET)
+                        , patternOf( "/v1/organization/register"		    ,HttpMethod.POST)
+                        , patternOf("/v1/subscription/stripe/webhook"			,HttpMethod.POST)
                         , patternOf("/v1/organization/products_features"	, GET)
                         , patternOf("/v1/files/**"					    , GET)
                         , patternOf("/error/**"							, GET)
