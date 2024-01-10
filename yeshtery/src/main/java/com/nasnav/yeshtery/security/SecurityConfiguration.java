@@ -280,7 +280,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/user/subscribe")
                         , patternOf("/v1/user/subscribe/activate")
 						, patternOf("/v1/employee-user-heart-beats-logs/list-active-employee", GET)
-                        ,patternOf( "/organization/register"		    ,HttpMethod.POST)
+                        ,patternOf( "/v1/organization/register"		    ,HttpMethod.POST)
 
                         , patternOf("/v1/frontend/setting", GET)
                         ,              patternOf( "/v1/event/all/**"                                , GET)
