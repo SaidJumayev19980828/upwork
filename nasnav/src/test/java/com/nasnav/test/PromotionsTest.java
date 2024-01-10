@@ -720,7 +720,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 601L, 3);
 		Cart res = createCartForUser(req, 601L, 3);
-		var discount = getCartDiscount(null);
+		var discount = getCartDiscount("RMFc");
 
 		assertEquals(100, discount.intValue());
 	}
@@ -732,7 +732,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 	public void getCartWithTotalCartValuePromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		Cart res = createCartForUser(req, 602L, 8);
-		var discount = getCartDiscount(null);
+		var discount = getCartDiscount("Total cart value promo");
 
 		assertEquals(80, discount.intValue());
 	}
@@ -745,7 +745,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		createCartForUser(req, 602L, 1);
 		createCartForUser(req, 603L, 8);
 		Cart res = createCartForUser(req, 604L, 1);
-		var discount = getCartDiscount(null);
+		var discount = getCartDiscount("Total cart items promo");
 		assertEquals(100, discount.intValue());
 	}
 
@@ -788,8 +788,9 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 	public void orderWithBuyXGetYPromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 601L, 3);
-		String requestBody = createCheckoutDTO().toString();
-		req = new HttpEntity<>(requestBody, req.getHeaders());
+		JSONObject requestBody = createCheckoutDTO();
+		requestBody.put("promo_code","RMFc");
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
@@ -806,8 +807,9 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 	public void orderWithTotalCartValuePromo() {
 		HttpEntity<?> req = getHttpEntity("123");
 		createCartForUser(req, 602L, 8);
-		String requestBody = createCheckoutDTO().toString();
-		req = new HttpEntity<>(requestBody, req.getHeaders());
+		JSONObject requestBody = createCheckoutDTO();
+		requestBody.put("promo_code","Total cart value promo");
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
@@ -826,8 +828,9 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		createCartForUser(req, 602L, 1);
 		createCartForUser(req, 603L, 4);
 		createCartForUser(req, 604L, 5);
-		String requestBody = createCheckoutDTO().toString();
-		req = new HttpEntity<>(requestBody, req.getHeaders());
+		JSONObject requestBody = createCheckoutDTO();
+		requestBody.put("promo_code","Total cart items promo");
+		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
@@ -848,16 +851,16 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		createCartForUser(req, 603L, 1);
 
 		var requestBody = createCheckoutDTO();
-		requestBody.put("promo_code", "GREEEEEED");
+		requestBody.put("promo_code", "RMFc");
 		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		Order order = res.getBody();
 
-		assertTrue(340 == order.getDiscount().intValue());
+		assertTrue(100 == order.getDiscount().intValue());
 		assertTrue(400 == order.getSubtotal().intValue());
 		assertTrue(6.38 == order.getShipping().doubleValue());
-		assertTrue("total is subTotal - discount + shipping", 66.38 == order.getTotal().doubleValue());
+		assertTrue("total is subTotal - discount + shipping", 306.38 == order.getTotal().doubleValue());
 	}
 
 
@@ -875,6 +878,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		createCartForUser(req, 603L, 1);
 
 		var requestBody = createCheckoutDTO();
+		requestBody.put("promo_code","RMFc");
 		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
@@ -900,6 +904,7 @@ public class PromotionsTest extends AbstractTestWithTempBaseDir {
 		createCartForUser(req, 602L, 1);
 
 		var requestBody = createCheckoutDTO();
+		requestBody.put("promo_code", "RMFc");
 		req = new HttpEntity<>(requestBody.toString(), req.getHeaders());
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", req, Order.class);
 		assertEquals(200, res.getStatusCodeValue());

@@ -1328,7 +1328,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		var consumedItems = consumeAllItems(promo);
 		return ofNullable(promo)
 				.filter(i -> isPromoValidForTheCart(i.promo, totalCartValue))
-				.map(i -> getDiscountForCartAmount(totalCartValue, i.promo))
+				.map(i -> getDiscount(totalCartValue, i.promo))
 				.map(discount -> new PromoCalcResult(discount, consumedItems))
 				.orElse(emptyResult());
 	}

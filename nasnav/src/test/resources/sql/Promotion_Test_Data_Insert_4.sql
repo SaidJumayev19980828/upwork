@@ -68,37 +68,42 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);
 
 -- inserting promotions
+
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630001, 'Shipping promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":10}', '{"percentage":50}', 69, now(), 1);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(301199, 'RMFc', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'RMFc', '{"product_quantity_min":1,"product_to_give":1,"applied_to_brands":[101,102]}', '{"percentage":50}', 69, now(), 2,100);
+
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(6300011, 'Shipping promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_amount_min":200}', '{"percentage":75}', 69, now(), 1);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630001, 'Shipping promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'Shipping promo', '{"discount_value_max":100,"cart_amount_min":10}', '{"percentage":50}', 69, now(), 1,100);
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630002, 'Total cart value promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100, "cart_amount_min":800}', '{"percentage":10}', 69, now(), 3);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(6300011, 'Shipping promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'Shipping promo2', '{"discount_value_max":100,"cart_amount_min":200}', '{"percentage":75}', 69, now(), 1,100);
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null, '{"discount_value_max":100,"cart_quantity_min":10}', '{"percentage":10}', 69, now(), 4);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630002, 'Total cart value promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'Total cart value promo', '{"discount_value_max":100, "cart_amount_min":800}', '{"percentage":10}', 69, now(), 3,100);
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null,
-        '{"discount_value_max":100,
-         "cart_quantity_min":2,
-         "applied_to_products":[1001],
-         "product_quantity_min" : 3,
-         "product_to_give": 1}', null, 69, now(), 6);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630003, 'Total cart items promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'Total cart items promo', '{"discount_value_max":100,"cart_quantity_min":10}', '{"percentage":10}', 69, now(), 4,100);
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id)
-VALUES(630006, 'buy X get Y promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, null,
-        '{"discount_value_max":100,
-         "cart_quantity_min":2,
-         "applied_to_products":[1001, 1002],
-         "product_quantity_min" : 10,
-         "product_to_give": 5}', null, 69, now(), 6);
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630004, 'buy X get Y promo', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'buy X get Y promo',
+       '{"discount_value_max":100,
+        "cart_quantity_min":2,
+        "applied_to_products":[1001],
+        "product_quantity_min" : 3,
+        "product_to_give": 1}', null, 69, now(), 6,100);
 INSERT INTO public.promotions
-(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630005, 'promo code', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on, type_id,usage_limiter_count)
+VALUES(630006, 'buy X get Y promo2', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'buy X get Y promo2',
+       '{"discount_value_max":100,
+        "cart_quantity_min":2,
+        "applied_to_products":[1001, 1002],
+        "product_quantity_min" : 10,
+        "product_to_give": 5}', null, 69, now(), 6,100);
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on,usage_limiter_count)
+VALUES(630005, 'promo code', 99001, now(), now() + INTERVAL '200 DAY', 1, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now(),100);
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
