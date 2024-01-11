@@ -22,13 +22,17 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -50,31 +54,94 @@ public class PostTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private FollowerRepository followerRepository;
 
+
     @Test
     public void createPostTest(){
-        ImageBase64 attachment = new ImageBase64();
-        attachment.setFileName("avatar.jpg");
-        attachment.setBase64("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
-        attachment.setFileType("image/jpeg");
-        PostCreationDTO postCreationDTO = new PostCreationDTO();
-        postCreationDTO.setIsReview(true);
-        postCreationDTO.setDescription("description msg");
-        postCreationDTO.setOrganizationId(99001L);
-        Set<Long> productsIds = new HashSet<>();
-        productsIds.add(1001L);
-        postCreationDTO.setProductsIds(productsIds);
-        postCreationDTO.setAttachment(attachment);
-
+        PostCreationDTO postCreationDTO = createPostCreationDTO();
+        postCreationDTO.setIsReview(false);
         HttpCookie cookie = new HttpCookie("User-Token", "123");
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cookie", cookie.toString());
         headers.add("User-Token", "123");
-
         HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO,headers);
-
         ResponseEntity<Void> response = template.postForEntity("/post", request, Void.class);
         assertEquals(200, response.getStatusCode().value());
     }
+
+    @Test
+    public void createReviewPostTest(){
+       PostCreationDTO postCreationDTO = createPostCreationDTO();
+        addAttachment(postCreationDTO);
+        HttpCookie cookie = new HttpCookie("User-Token", "123");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "123");
+        HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO,headers);
+        ResponseEntity<Void> response = template.postForEntity("/post", request, Void.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createPostTestException() {
+        PostCreationDTO postCreationDTO = createPostCreationDTO();
+
+        postCreationDTO.setShopId(501L);
+        ResponseEntity<Void> response1 = sendPostRequest(postCreationDTO);
+        assertEquals(HttpStatus.BAD_REQUEST, response1.getStatusCode());
+
+        // Set valid shopId but provide empty attachments to trigger 404 Not Found
+        postCreationDTO.setShopId(5010L);
+        addAttachment(postCreationDTO);
+        ResponseEntity<Void> response2 = sendPostRequest(postCreationDTO);
+        assertEquals(HttpStatus.NOT_FOUND, response2.getStatusCode());
+
+        // Add an invalid productId to trigger 406 Not Acceptable
+        Set<Long> productsIds = postCreationDTO.getProductsIds();
+        productsIds.add(100000001L);
+        postCreationDTO.setProductsIds(productsIds);
+        postCreationDTO.setIsReview(false);
+        ResponseEntity<Void> response3 = sendPostRequest(postCreationDTO);
+        assertEquals(HttpStatus.NOT_ACCEPTABLE, response3.getStatusCode());
+
+
+    }
+
+    private PostCreationDTO createPostCreationDTO() {
+        PostCreationDTO postCreationDTO = new PostCreationDTO();
+        postCreationDTO.setDescription("description msg");
+        postCreationDTO.setOrganizationId(99001L);
+        postCreationDTO.setProductsIds(new HashSet<>(Collections.singletonList(1001L)));
+        postCreationDTO.setShopId(501L);
+        postCreationDTO.setRating((short) 2);
+        postCreationDTO.setProductName("test");
+        postCreationDTO.setIsReview(true);
+        return postCreationDTO;
+    }
+
+    private void addAttachment(PostCreationDTO postCreationDTO) {
+        List<ImageBase64> attachments = new ArrayList<>();
+        ImageBase64 attachment = new ImageBase64();
+        attachment.setFileName("avatar.jpg");
+        attachment.setBase64("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+        attachment.setFileType("image/jpeg");
+        attachments.add(attachment);
+        postCreationDTO.setAttachment(attachments);
+    }
+
+    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO) {
+        return sendPostRequest(postCreationDTO, new HttpHeaders());
+    }
+
+    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO, HttpHeaders headers) {
+        HttpCookie cookie = new HttpCookie("User-Token", "123");
+        headers.add("Cookie", cookie.toString());
+        headers.add("User-Token", "123");
+
+        HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO, headers);
+
+        return template.postForEntity("/post", request, Void.class);
+    }
+
 
     @Test
     public void likeorDislikePostTest(){

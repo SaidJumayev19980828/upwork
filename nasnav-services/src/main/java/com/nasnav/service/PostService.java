@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface PostService {
     public PostResponseDTO getPostById(long id) throws BusinessException;
-    public PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException;
+     PostResponseDTO createPost(PostCreationDTO dto) throws BusinessException, IOException;
     public Long likeOrDisLikePost(long postId, boolean likeAction);
     public void clickOnPost(long postId);
     public void approveOrRejectReview(long postId, PostStatus postStatus);

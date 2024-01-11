@@ -59,6 +59,9 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private ShopService shopService;
+
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
         return fromEntityToPostResponseDto(postRepository.findById(id).orElseThrow(() -> new BusinessException("No Post with this id can be found", "", HttpStatus.NOT_FOUND)));
@@ -246,55 +249,112 @@ public class PostServiceImpl implements PostService {
 
     }
 
-
     private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) throws IOException {
+        BaseUserEntity loggedInUser = securityService.getCurrentUser();
+
+        if (!(loggedInUser instanceof UserEntity)) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
+        }
+        List<ProductEntity> products = getProducts(dto);
+
+        OrganizationEntity org = getOrganization(dto.getOrganizationId());
+
+        PostEntity entity = buildPostEntity(dto, products, org, (UserEntity) loggedInUser);
+
+        if (dto.getIsReview()) {
+            handleReviewAttachments(dto, org, entity);
+        }
+
+        handleAdvertisement(dto, entity);
+
+        return entity;
+    }
+
+    private List<ProductEntity> getProducts(PostCreationDTO dto) {
         List<ProductEntity> products = new ArrayList<>();
-        OrganizationEntity org = organizationRepository.findById(dto.getOrganizationId()).orElseThrow(
-                () -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, dto.getOrganizationId())
-        );
+        OrganizationEntity org = getOrganization(dto.getOrganizationId());
+
+        if (!dto.getIsReview()) {
+            dto.getProductsIds().forEach(productId -> {
+                Optional<ProductEntity> product = getProductByIdAndOrganization(productId, org.getId());
+                validateAndAddProduct(products, product);
+            });
+        }
+
+        return products;
+    }
+
+    private OrganizationEntity getOrganization(Long organizationId) {
+        return organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, organizationId));
+    }
+
+    private UserEntity getLoggedInUser() {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
         if (!(loggedInUser instanceof UserEntity)) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
         }
-        if (!dto.getIsReview()) {
-            dto.getProductsIds().forEach(i -> {
-                Optional<ProductEntity> product = productRepository.findByIdAndOrganizationId(i, org.getId());
-                if (product.isPresent() && Arrays.asList(ProductTypes.STOCK_ITEM, ProductTypes.BUNDLE).contains(product.get().getProductType())) {
-                    products.add(product.get());
-                } else {
-                    throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, P$PRO$0016, i);
-                }
-            });
+        return (UserEntity) loggedInUser;
+    }
+
+    private Optional<ProductEntity> getProductByIdAndOrganization(Long productId, Long orgId) {
+        return productRepository.findByIdAndOrganizationId(productId, orgId);
+    }
+
+    private void validateAndAddProduct(List<ProductEntity> products, Optional<ProductEntity> product) {
+        if (product.isPresent() && Arrays.asList(ProductTypes.STOCK_ITEM, ProductTypes.BUNDLE).contains(product.get().getProductType())) {
+            products.add(product.get());
+        } else {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, P$PRO$0016, product.map(ProductEntity::getId).orElse(null));
         }
+    }
+
+    private PostEntity buildPostEntity(PostCreationDTO dto, List<ProductEntity> products, OrganizationEntity org, UserEntity loggedInUser) {
         PostEntity entity = new PostEntity();
         entity.setCreatedAt(LocalDateTime.now());
         entity.setDescription(dto.getDescription());
         entity.setOrganization(org);
-        entity.setUser((UserEntity) loggedInUser);
+        entity.setUser(loggedInUser);
         entity.setProducts(products);
         entity.setStatus(PostStatus.APPROVED.getValue());
         entity.setType(PostType.POST.getValue());
-        if(dto.getIsReview()) {
-            if(dto.getAttachment() == null ){
-                throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE,POST$REVIEW$ATTACHMENT);
-            }
-            entity.setStatus(PostStatus.PENDING.getValue());
-            entity.setType(PostType.REVIEW.getValue());
-            String attachmentUrl = uploadPostAttachment(dto.getAttachment(), org.getId());
-            PostAttachmentsEntity attachment = PostAttachmentsEntity.buildAttachment(attachmentUrl, String.valueOf(PostType.REVIEW));
-            entity.addAttachment(attachment);
-            attachment.setPost(entity);
-//            entity.setAttachments(dto.getAttachments());
-//            dto.getAttachments().forEach(o -> {
-//                o.setPost(entity);
-//            });
+        return entity;
+    }
+
+    private void handleReviewAttachments(PostCreationDTO dto, OrganizationEntity org, PostEntity post) {
+        if (dto.getAttachment()!= null && dto.getAttachment().isEmpty()) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, POST$REVIEW$ATTACHMENT);
         }
+        post.setProductName(dto.getProductName());
+        post.setRating(dto.getRating());
+        post.setShop(shopService.shopById(dto.getShopId()));
+        post.setStatus(PostStatus.PENDING.getValue());
+        post.setType(PostType.REVIEW.getValue());
+        createAttachmentEntities(dto.getAttachment(),org,post);
+    }
+    private void createAttachmentEntities(List<ImageBase64> attachments, OrganizationEntity org, PostEntity entity) {
+         attachments.forEach(attachment -> {
+                    try {
+                         createAttachmentEntity(attachment, org, entity);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+         });
+    }
+
+    private void createAttachmentEntity(ImageBase64 attachment, OrganizationEntity org, PostEntity entity) throws IOException {
+        String attachmentUrl = uploadPostAttachment(attachment, org.getId());
+        PostAttachmentsEntity attachmentEntity = PostAttachmentsEntity.buildAttachment(attachmentUrl, String.valueOf(PostType.REVIEW));
+        entity.addAttachment(attachmentEntity);
+    }
+
+
+
+    private void handleAdvertisement(PostCreationDTO dto, PostEntity entity) {
         if (dto.getAdvertisementId() != null) {
             Assert.notNull(entity.getUser().getBankAccount(), "user should create bank account first");
             entity.setAdvertisement(advertisementRepository.getOne(dto.getAdvertisementId()));
         }
-
-        return entity;
     }
 
     public String uploadPostAttachment(ImageBase64 attachment , Long orgId) throws IOException {
@@ -325,6 +385,7 @@ public class PostServiceImpl implements PostService {
         dto.setLikesCount(postLikesRepository.countAllByPost_Id(entity.getId()));
         dto.setClicksCount(postClicksRepository.getClicksCountByPost(entity.getId()));
         dto.setProducts(productDetailsDTOS);
+
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         dto.setUser(entity.getUser().getRepresentation());
 
@@ -338,7 +399,11 @@ public class PostServiceImpl implements PostService {
             dto.setIsLiked(false);
             dto.setIsSaved(false);
         }
-
+    if (dto.getType().equals(PostType.REVIEW)) {
+        dto.setRating(entity.getRating());
+        dto.setShop(entity.getShop().getRepresentation());
+        dto.setProductName(entity.getProductName());
+    }
         return dto;
     }
 

@@ -59,7 +59,7 @@ public class PostEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<PostAttachmentsEntity> attachments;
+    private List<PostAttachmentsEntity> attachments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     @ToString.Exclude
@@ -78,16 +78,26 @@ public class PostEntity {
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-
     private Set<UserEntity> savedByUsers = new HashSet<>();
+
+    @Column(name= "product_name")
+    private String productName;
+
+    @Column(name= "ratings")
+    private short rating;
+
+    @ManyToOne
+    @JoinColumn(name = "shop")
+    private ShopsEntity shop;
+
 
     public void addAttachment(PostAttachmentsEntity attachment) {
         if (attachment != null) {
-            if (getAttachments() == null)
-                setAttachments(new ArrayList<>());
             if (!getAttachments().contains(attachment))
                 getAttachments().add(attachment);
+            attachment.setPost(this);
         }
     }
+
 
 }

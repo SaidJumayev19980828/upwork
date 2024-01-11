@@ -106,10 +106,7 @@ public class ShopServiceImpl implements ShopService {
 //    @CacheResult(cacheName = "shops_by_id")
     @Override
     public ShopRepresentationObject getShopById(Long shopId) {
-        ShopRepresentationObject shopRepObj = shopsRepository.findByIdAndRemoved(shopId)
-                .map(shop -> (ShopRepresentationObject) shop.getRepresentation())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopId));
-
+        ShopRepresentationObject shopRepObj = shopById(shopId).getRepresentation();
         List<OrganizationImagesRepresentationObject> images = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360)
                 .stream()
                 .map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
@@ -118,10 +115,13 @@ public class ShopServiceImpl implements ShopService {
 
         return  shopRepObj;
     }
-    
-    
-    
-    
+
+    @Override
+    public ShopsEntity shopById(Long shopId) {
+        return shopsRepository.findByIdAndRemoved(shopId).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, S$0002, shopId));
+    }
+
+
     @Override
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) {

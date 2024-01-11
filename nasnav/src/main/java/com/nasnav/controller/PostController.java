@@ -7,8 +7,10 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping(value = "/post", produces = APPLICATION_JSON_VALUE)
 @CrossOrigin("*")
+@Validated
 public class PostController {
     @Autowired
     private PostService postService;
@@ -65,7 +68,7 @@ public class PostController {
     }
 
     @PostMapping
-    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody PostCreationDTO post) throws BusinessException, IOException {
+    public PostResponseDTO createPost(@RequestHeader(TOKEN_HEADER) String userToken,@Valid @RequestBody PostCreationDTO post) throws BusinessException, IOException {
         return postService.createPost(post);
     }
 

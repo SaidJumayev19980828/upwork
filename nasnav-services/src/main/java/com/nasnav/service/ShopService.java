@@ -4,6 +4,7 @@ import com.nasnav.dto.CityIdAndName;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.ShopIdAndPriority;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.request.LocationShopsParam;
 import com.nasnav.response.ShopResponse;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,6 +24,8 @@ public interface ShopService {
 
     //    @CacheResult(cacheName = "shops_by_id")
     ShopRepresentationObject getShopById(Long shopId);
+    ShopsEntity shopById(Long shopId);
+
 
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     ShopResponse shopModification(ShopJsonDTO shopJson);
