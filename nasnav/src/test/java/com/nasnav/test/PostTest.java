@@ -4,15 +4,12 @@ import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostClicksRepository;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.dao.PostRepository;
-import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.request.PostCreationDTO;
 import com.nasnav.dto.response.PostResponseDTO;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
-
-import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;

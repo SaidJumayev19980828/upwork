@@ -216,11 +216,9 @@ public class PostServiceImpl implements PostService {
     public void saveForLater(Long postId) {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         PostEntity post = postRepository.findById(postId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$POST$0001));
-            UserEntity user = userRepository.findById(currentUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
-                post.getSavedByUsers().add(user);
-                postRepository.save(post);
-
-
+        UserEntity user = userRepository.findById(currentUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
+        post.getSavedByUsers().add(user);
+        postRepository.save(post);
     }
 
 

@@ -84,7 +84,7 @@ public class PostEntity {
     private String productName;
 
     @Column(name= "ratings")
-    private short rating;
+    private Short rating;
 
     @ManyToOne
     @JoinColumn(name = "shop")
