@@ -1,12 +1,8 @@
 package com.nasnav.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
-import com.nasnav.payments.paymob.OrderResponse;
-import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.AbstractCsvExcelDataExportService;
 import com.nasnav.service.helpers.OrderCsvRowWriterProcessor;
 import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
@@ -48,17 +44,14 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 	protected  ByteArrayOutputStream buildOrdersFile(List<String> headers, List<DetailedOrderRepObject> orders) throws IOException{
 		BeanWriterProcessor<DetailedOrderRepObject> processor = createOrdersRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
-		System.out.println("build Orders File length " + orders.size());
 		List<DetailedOrderRepObject> ordersList = new ArrayList<>(orders.stream()
-                .collect(Collectors.toMap(
-                        DetailedOrderRepObject::getOrderId,
-                        Function.identity(),
-                        (existing, replacement) -> existing
-                ))
-                .values());
-		System.out.println(ordersList.size());
+				.collect(Collectors.toMap(
+						DetailedOrderRepObject::getOrderId,
+						Function.identity(),
+						(existing, replacement) -> existing
+				))
+				.values());
 		return writeFileResult(headers, settings, ordersList);
-
 	}
 
 	protected ByteArrayOutputStream buildImagesFile(List<String> headers,
@@ -119,12 +112,8 @@ public class CsvDataExportServiceImpl extends AbstractCsvExcelDataExportService{
 
 
 	protected ByteArrayOutputStream writeFileResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
-		System.out.println("data to csv file " +  data.size());
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(data));
-		System.out.println("writeFileResult");
 		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
-		Writer outputWriter = new OutputStreamWriter(csvOutStream);
+		Writer outputWriter = new OutputStreamWriter(csvOutStream, StandardCharsets.UTF_8);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
 		writer.writeHeaders(headers.toArray(String[]::new));
 		writer.processRecordsAndClose(data);

@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.util.List;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
@@ -35,7 +37,7 @@ import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON_VALUE;
         public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
                                              @RequestParam Long orgId ,
                                              @RequestParam Long shopId
-        ) {
+        ) throws MessagingException, IOException {
             return callQueueService.enterQueue(orgId,shopId);
         }
 

@@ -61,6 +61,7 @@ import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 import static com.nasnav.enumerations.SettingsType.PRIVATE;
 import static com.nasnav.enumerations.SettingsType.PUBLIC;
 import static com.nasnav.exceptions.ErrorCodes.*;
@@ -610,6 +611,14 @@ public class OrganizationServiceImpl implements OrganizationService {
     public List<OrganizationEntity> getYeshteryOrgs() {
         return organizationRepository.findByYeshteryState(1);
     }
+
+    @Override
+    public String getOrganizationEmail(Long orgId) {
+        return settingRepo.findBySettingNameAndOrganization_Id(ORG_EMAIL.name(), orgId)
+                .map(SettingEntity::getSettingValue)
+                .orElse(config.mailSenderAddress);
+    }
+
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());

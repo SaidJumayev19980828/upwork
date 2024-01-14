@@ -63,5 +63,8 @@ public final class EmailConstants {
 
     public static final String INTEREST_REMINDER_MAIL= "mail_templates/Interest_reminder_mail.html";
 
+    public static final String ENTER_QUEUE_CALL_CUSTOMER_TEMPLATE_PATH = "mail_templates/enter_queue_call_customer.html";
+    public static final String ENTER_QUEUE_CALL_EMPLOYEE_TEMPLATE_PATH = "mail_templates/enter_queue_call_employee.html";
+
 
 }

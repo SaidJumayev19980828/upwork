@@ -6,6 +6,8 @@ import com.nasnav.enumerations.CallQueueStatus;
 import com.nasnav.response.VideoChatResponse;
 import org.springframework.data.domain.PageImpl;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.util.List;
 
 public interface CallQueueService {
@@ -14,7 +16,7 @@ public interface CallQueueService {
      * @param orgId
      * @return
      */
-    public CallQueueStatusDTO enterQueue(Long orgId , Long shopId);
+    public CallQueueStatusDTO enterQueue(Long orgId , Long shopId) throws MessagingException, IOException;
 
     /**
      * user decided to kick himself out of the queue upon his will

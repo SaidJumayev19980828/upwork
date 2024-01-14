@@ -9,6 +9,7 @@ import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.SettingEntity;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
 import com.nasnav.response.OrganizationResponse;
@@ -19,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+
+import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
@@ -68,4 +71,6 @@ public interface OrganizationService {
     List<YeshteryOrganizationDTO> getYeshteryOrganizations(List<Long> categoryIds);
 
     List<OrganizationEntity> getYeshteryOrgs();
+
+    String getOrganizationEmail(Long orgId);
 }

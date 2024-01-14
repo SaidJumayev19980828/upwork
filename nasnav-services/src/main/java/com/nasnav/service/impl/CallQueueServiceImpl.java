@@ -13,6 +13,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.VideoChatResponse;
 import com.nasnav.service.CallQueueService;
+import com.nasnav.service.MailService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.VideoChatService;
@@ -22,18 +23,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
+import static com.nasnav.constatnts.EmailConstants.ENTER_QUEUE_CALL_CUSTOMER_TEMPLATE_PATH;
+import static com.nasnav.constatnts.EmailConstants.ENTER_QUEUE_CALL_EMPLOYEE_TEMPLATE_PATH;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.lang.String.format;
 
 @Service
 public class CallQueueServiceImpl implements CallQueueService {
@@ -52,49 +61,74 @@ public class CallQueueServiceImpl implements CallQueueService {
     private VideoChatService videoChatService;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private  MailService mailService;
+
 
     @Override
     @Transactional
-    public CallQueueStatusDTO enterQueue(Long orgId,Long shopId) {
+    public CallQueueStatusDTO enterQueue(Long orgId, Long shopId) throws MessagingException, IOException {
         UserEntity userEntity = getUser();
-        OrganizationEntity organizationEntity = organizationRepository.findById(orgId)
-                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,G$ORG$0001,orgId));
-        ShopsEntity shop = shopsRepository.findById(shopId)
-                .orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,S$0002,shopId));
+        OrganizationEntity organizationEntity = getOrganizationById(orgId);
+        ShopsEntity shop = getShopById(shopId);
+        rejectOverlappingQueue(userEntity);
+        Set<String> notificationTokens = securityService.getValidNotificationTokens(userEntity);
+        if (notificationTokens.isEmpty()) {
+            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, userEntity.getId());
+        }
+        CallQueueEntity entity = createNewQueueEntry(userEntity, organizationEntity, shop);
+        notifyQueue(orgId);
+        String response = createQueueResponseJson(userEntity, entity);
+        notifyOrganizationEmployees(orgId, response);
+        sendMails(userEntity,organizationEntity);
+        return getQueueStatus(orgId, entity);
+    }
+
+    private OrganizationEntity getOrganizationById(Long orgId) {
+        return organizationRepository.findById(orgId)
+                .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, orgId));
+    }
+
+    private ShopsEntity getShopById(Long shopId) {
+        return shopsRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, S$0002, shopId));
+    }
+
+    private void rejectOverlappingQueue(UserEntity userEntity) {
         CallQueueEntity entity = callQueueRepository.getByUser_IdAndStatus(userEntity.getId(), CallQueueStatus.OPEN.getValue());
-        if (entity != null){
+        if (entity != null) {
             entity.setStatus(CallQueueStatus.REJECTED.getValue());
             entity.setReason("User Overlapped the queue");
             entity.setEndsAt(LocalDateTime.now());
             callQueueRepository.save(entity);
         }
+    }
 
-        Set<String> notificationTokens = securityService.getValidNotificationTokens(userEntity);
-        if (notificationTokens.isEmpty()) {
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, ErrorCodes.NOTIF$0003, userEntity.getId());
-        }
-
-        entity = new CallQueueEntity();
-
+    private CallQueueEntity createNewQueueEntry(UserEntity userEntity, OrganizationEntity organizationEntity, ShopsEntity shop) {
+        CallQueueEntity entity = new CallQueueEntity();
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
         entity.setShop(shop);
         entity.setStatus(CallQueueStatus.OPEN.getValue());
-
-        entity = callQueueRepository.save(entity);
-
-
-        notifyQueue(orgId);
-        String response = new JSONObject()
-                .put("userName",userEntity.getName())
-                .put("queueId",entity.getId())
-                .put("joinsAt",entity.getJoinsAt())
-                .toString();
-        notificationService.sendMessageToOrganizationEmplyees(orgId, new PushMessageDTO<>("Customer Joining the Queue",response, NotificationType.ORGANIZATION_QUEUE_UPDATES));
-
-        return getQueueStatus(orgId, entity);
+        return callQueueRepository.save(entity);
     }
+
+    private String createQueueResponseJson(UserEntity userEntity, CallQueueEntity entity) {
+        return new JSONObject()
+                .put("userName", userEntity.getName())
+                .put("queueId", entity.getId())
+                .put("joinsAt", entity.getJoinsAt())
+                .toString();
+    }
+
+    private void notifyOrganizationEmployees(Long orgId, String response) {
+        notificationService.sendMessageToOrganizationEmplyees(
+                orgId,
+                new PushMessageDTO<>("Customer Joining the Queue", response, NotificationType.ORGANIZATION_QUEUE_UPDATES)
+        );
+    }
+
 
     @Override
     public void quitQueue() {
@@ -268,4 +302,26 @@ public class CallQueueServiceImpl implements CallQueueService {
         }
         return (EmployeeUserEntity) loggedInUser;
     }
+
+    @Async
+    private void sendMails(UserEntity user, OrganizationEntity organization) throws MessagingException, IOException {
+        String organizationMail =  organizationService.getOrganizationEmail(organization.getId());
+        String organizationMailSubject =format("Urgent: Client %s Video Call Request - Immediate Action Required", user.getName());
+        Map<String, String> parametersMap = prepareMailContent(organization.getName(), user.getName());
+        executeMail(organization.getName(),user.getEmail(),"Assistance in Progress",ENTER_QUEUE_CALL_CUSTOMER_TEMPLATE_PATH,parametersMap);
+        executeMail(organization.getName(),organizationMail,organizationMailSubject,ENTER_QUEUE_CALL_EMPLOYEE_TEMPLATE_PATH,parametersMap);
+    }
+
+    public Map<String, String> prepareMailContent(String orgName, String customerName) {
+        Map<String, String> parametersMap = new HashMap<>();
+        parametersMap.put("#Client#", customerName);
+        parametersMap.put("#Organization#", orgName);
+        return parametersMap;
+    }
+
+    private void executeMail(String orgName , String sendTo , String emailSubject , String mailTemplate , Map<String,String> parametersMap) throws MessagingException, IOException {
+        mailService.send(orgName, sendTo, emailSubject, mailTemplate,parametersMap);
+
+    }
+
 }

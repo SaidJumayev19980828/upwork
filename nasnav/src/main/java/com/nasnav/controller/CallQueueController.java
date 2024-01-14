@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.util.List;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
@@ -26,7 +28,7 @@ public class CallQueueController {
     public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
                                          @RequestParam Long orgId ,
                                          @RequestParam Long shopId
-                                         ) {
+                                         ) throws MessagingException, IOException {
         return callQueueService.enterQueue(orgId,shopId);
     }
 
