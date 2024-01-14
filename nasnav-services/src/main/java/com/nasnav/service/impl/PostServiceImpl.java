@@ -399,7 +399,9 @@ public class PostServiceImpl implements PostService {
         }
     if (dto.getType().equals(PostType.REVIEW)) {
         dto.setRating(entity.getRating());
-        dto.setShop(entity.getShop().getRepresentation());
+        if (entity.getShop() != null) {
+            dto.setShop(entity.getShop().getRepresentation());
+        }
         dto.setProductName(entity.getProductName());
     }
         return dto;
