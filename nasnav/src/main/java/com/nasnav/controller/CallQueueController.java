@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
@@ -27,7 +28,7 @@ public class CallQueueController {
     @PostMapping
     public CallQueueStatusDTO enterQueue(@RequestHeader(TOKEN_HEADER) String userToken,
                                          @RequestParam Long orgId ,
-                                         @RequestParam Long shopId
+                                         @RequestParam(required = false) Long shopId
                                          ) throws MessagingException, IOException {
         return callQueueService.enterQueue(orgId,shopId);
     }

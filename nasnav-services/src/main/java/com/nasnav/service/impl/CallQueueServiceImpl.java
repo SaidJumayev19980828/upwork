@@ -1,5 +1,7 @@
 package com.nasnav.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.CallQueueRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -70,7 +72,10 @@ public class CallQueueServiceImpl implements CallQueueService {
     public CallQueueStatusDTO enterQueue(Long orgId, Long shopId) throws MessagingException, IOException {
         UserEntity userEntity = getUser();
         OrganizationEntity organizationEntity = getOrganizationById(orgId);
-        ShopsEntity shop = getShopById(shopId);
+        ShopsEntity shop = Optional.ofNullable(shopId)
+                .map(this :: getShopById)
+                .orElse(null);
+
         rejectOverlappingQueue(userEntity);
         Set<String> notificationTokens = securityService.getValidNotificationTokens(userEntity);
         if (notificationTokens.isEmpty()) {
@@ -109,7 +114,9 @@ public class CallQueueServiceImpl implements CallQueueService {
         entity.setJoinsAt(LocalDateTime.now());
         entity.setUser(userEntity);
         entity.setOrganization(organizationEntity);
-        entity.setShop(shop);
+        if (shop != null) {
+            entity.setShop(shop);
+        }
         entity.setStatus(CallQueueStatus.OPEN.getValue());
         return callQueueRepository.save(entity);
     }
@@ -151,34 +158,42 @@ public class CallQueueServiceImpl implements CallQueueService {
 
         VideoChatResponse userResponse = videoChatService.createOrJoinSessionForUser(null, force, entity.getOrganization().getId(), null, entity.getUser());
 
-        String notificationUserContent = new JSONObject()
+        Long shopId = Optional.ofNullable(entity.getShop())
+                .map(ShopsEntity::getId)
+                .orElse(null);
+        String employeeName = getEmployee().getName();
+        String employeeImage = getEmployee().getImage();
+        String employeeEmail = getEmployee().getEmail();
+        String employeeRole = getEmployee().getRoles().stream().map(Role::getName)
+                .collect(Collectors.joining(", "));
+        String notificationTitle= "Employee Accept the Call";
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode notificationUserContent = objectMapper.createObjectNode()
                 .put("sessionToken",userResponse.getSessionToken())
                 .put("sessionName",userResponse.getSessionName())
-                .put("employeeName",getEmployee().getName())
-                .put("employeeImage",getEmployee().getImage())
-                .put("employeeEmail",getEmployee().getEmail())
-                .put("employeeRole",getEmployee().getRoles().stream().map(role -> role.getName())
-                        .collect(Collectors.joining(", ")))
-                .put("shopId",entity.getShop().getId())
-                .toString();
+                .put("employeeName",employeeName)
+                .put("employeeImage",employeeImage)
+                .put("employeeEmail",employeeEmail)
+                .put("employeeRole",employeeRole)
+                .put("shopId",shopId);
 
-        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>("Employee Accept the Call", notificationUserContent,NotificationType.START_CALL));
+
+        notificationService.sendMessage(entity.getUser(), new PushMessageDTO<>(notificationTitle, notificationUserContent.toString(),NotificationType.START_CALL));
 
         entity.setStatus(CallQueueStatus.LIVE.getValue());
         entity.setStartsAt(LocalDateTime.now());
         entity.setEmployee(getEmployee());
         callQueueRepository.saveAndFlush(entity);
 
-        String notificationContent = new JSONObject()
+        JsonNode notificationContent = objectMapper.createObjectNode()
                 .put("sessionToken",userResponse.getSessionToken())
                 .put("sessionName",userResponse.getSessionName())
-                .put("employeeName",entity.getEmployee().getName())
-                .put("employeeImage",entity.getEmployee().getImage())
-                .put("employeeRole",entity.getEmployee().getRoles().stream().map(role -> role.getName())
-                        .collect(Collectors.joining(", ")))
-                .put("shopId",entity.getShop().getId())
-                .toString();
-        notificationService.sendMessageToOrganizationEmplyees(entity.getOrganization().getId(), new PushMessageDTO<>("Employee Accept the Call",notificationContent, NotificationType.START_CALL));
+                .put("employeeName",employeeName)
+                .put("employeeImage",employeeImage)
+                .put("employeeRole",employeeRole)
+                .put("shopId",shopId);
+        notificationService.sendMessageToOrganizationEmplyees(entity.getOrganization().getId(), new PushMessageDTO<>(notificationTitle,notificationContent.toString(), NotificationType.START_CALL));
 
         notifyQueue(entity.getOrganization().getId());
 
