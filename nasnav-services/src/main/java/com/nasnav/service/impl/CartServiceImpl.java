@@ -191,14 +191,18 @@ public class CartServiceImpl implements CartService {
         if (points != null && points.size() > 0) {
             cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
         } else {
-            
+
         }
-        
+        decidePromotionApplied(cart,promoCode);
         cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
         cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
         return cart;
     }
-
+    private void decidePromotionApplied(Cart cart , String promoCode) {
+        if (cart.getPromos().getTotalDiscount().compareTo(ZERO) <= 0){
+            cart.getPromos().setError("Failed to apply promo code ["+promoCode+"]");
+        }
+    }
     private void applyPromoCodeToCart(String promoCode, Cart cart) {
         // Attempt to find a promotion entity by name
         Optional<PromotionsEntity> getPromoCode = promotionRepo.findByCode(promoCode);
