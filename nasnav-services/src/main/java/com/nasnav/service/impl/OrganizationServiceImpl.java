@@ -374,7 +374,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         organization.setName(json.getName());
         organization.setPname(json.getPname());
         organization.setEnableVideoChat(0);
-        organization.setYeshteryState(0);
+        organization.setYeshteryState(1);
         organization.setPriority(0);
         return organization;
     }

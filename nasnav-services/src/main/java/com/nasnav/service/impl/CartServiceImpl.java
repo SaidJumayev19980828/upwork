@@ -199,7 +199,7 @@ public class CartServiceImpl implements CartService {
         return cart;
     }
     private void decidePromotionApplied(Cart cart , String promoCode) {
-        if (cart.getPromos().getTotalDiscount().compareTo(ZERO) <= 0 && promoCode != null && !promoCode.equals("")){
+        if (cart.getPromos().getTotalDiscount().compareTo(ZERO) <= 0 && promoCode != null && !promoCode.isEmpty()){
             cart.getPromos().setError("Failed to apply promo code ["+promoCode+"]");
         }
     }
