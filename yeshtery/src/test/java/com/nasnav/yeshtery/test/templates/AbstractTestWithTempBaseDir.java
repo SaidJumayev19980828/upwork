@@ -19,10 +19,14 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,6 +89,32 @@ public abstract class AbstractTestWithTempBaseDir {
             e.printStackTrace();
         }
     }
+
+    /**
+     * This is a workaround to fix the difference between postgres uri on developer host AND CI pipeline.
+     */
+    @DynamicPropertySource
+    static void redisProperties(DynamicPropertyRegistry registry) {
+        if (isPostgresReachableOnLocalhost()) { // On Developer's Host
+            registry.add("db.uri", () -> "jdbc:postgresql://localhost:5432/nasnav-tests");
+            registry.add("spring.liquibase.url", () -> "jdbc:postgresql://localhost:5432/nasnav-tests");
+        } else { //ON  CI pipeline
+            registry.add("db.uri", () -> "jdbc:postgresql://postgres/nasnav-tests");
+            registry.add("spring.liquibase.url", () -> "jdbc:postgresql://postgres/nasnav-tests");
+        }
+    }
+
+    private static boolean isPostgresReachableOnLocalhost() {
+        try {
+            try (Socket soc = new Socket()) {
+                soc.connect(new InetSocketAddress("localhost", 5432), 5000);
+            }
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
 }
 
 @TestConfiguration

@@ -260,7 +260,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createBundleUnAuthZTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(68L); //this user is not an organization admin
+		BaseUserEntity user = empUserRepo.getUserById(68L); //this user is not an organization admin
 		
 		JSONObject bundle = createNewDummyProduct();
 		
@@ -274,7 +274,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createBundleTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L); 
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		
 		JSONObject bundle = createNewDummyProduct();
 		
@@ -354,7 +354,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertNotNull("assert bundle already exists", bundleRepo.existsById(bundleId));
 		assertNotNull("assert bundle has a virtual stock", stockId);
 
-		BaseUserEntity user = empUserRepo.getById(69L); 
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		ResponseEntity<ProductsDeleteResponse> response = deleteBundle(bundleId, user);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -427,7 +427,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
 		
 
-		BaseUserEntity user = empUserRepo.getById(68L); //doesn't have delete rights
+		BaseUserEntity user = empUserRepo.getUserById(68L); //doesn't have delete rights
 		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
 		
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -445,7 +445,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		assertFalse("assert id is NOT for a bundle", bundleRepo.existsById(bundleId));
 		
 
-		BaseUserEntity user = empUserRepo.getById(69L); 
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
 		
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());				
@@ -468,7 +468,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -529,7 +529,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(NOT_ORG_ADMIN);
+		BaseUserEntity user = empUserRepo.getUserById(NOT_ORG_ADMIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -557,7 +557,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(OTHER_ORG_ADMIN); 
+		BaseUserEntity user = empUserRepo.getUserById(OTHER_ORG_ADMIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -585,7 +585,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -610,7 +610,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("operation", Operation.ADD.getValue());
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -635,7 +635,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("operation", Operation.ADD.getValue());
 		reqJson.put("bundle_id", bundleId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -663,7 +663,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -692,7 +692,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -723,7 +723,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -755,7 +755,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -791,7 +791,7 @@ public class BundlesApiTest extends AbstractTestWithTempBaseDir {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_AMDIN);
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 

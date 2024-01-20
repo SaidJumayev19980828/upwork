@@ -1,83 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.18</version>
+    </parent>
 
     <groupId>com.nasnav</groupId>
     <artifactId>backend</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <liquibase.version>4.25.1</liquibase.version>
+        <postgresql.version>42.6.0</postgresql.version>
+
+    </properties>
     <modules>
         <module>nasnav</module>
         <module>nasnav-services</module>
         <module>yeshtery</module>
+        <module>report-aggregate</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.nasnav</groupId>
+                <artifactId>nasnav-services</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nasnav</groupId>
+                <artifactId>nasnav</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nasnav</groupId>
+                <artifactId>yeshtery</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
+
         <dependency>
-            <groupId>com.nasnav</groupId>
-            <artifactId>nasnav-services</artifactId>
-            <version>1.0.0</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
         </dependency>
-        <dependency>
-            <groupId>com.nasnav</groupId>
-            <artifactId>nasnav</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.nasnav</groupId>
-            <artifactId>yeshtery</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+
     </dependencies>
 
     <build>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.3</version>
+                <version>${jacoco.version}</version>
                 <configuration>
                     <append>true</append>
                 </configuration>
                 <executions>
                     <execution>
                         <id>prepare-before-test</id>
-                        <phase>pre-test</phase>
+                        <phase>initialize</phase>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>merge-tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>merge</goal>
-                        </goals>
                         <configuration>
-                            <fileSets>
-                                <fileSet>
-                                  <directory>${project.basedir}/nasnav/target</directory>
-                                  <directory>${project.basedir}/yeshtery/target</directory>
-                                  <includes>
-                                    <include>*.exec</include>
-                                  </includes>
-                                </fileSet>
-                              </fileSets>
+                            <excludes>
+                                <exclude>com.gargoylesoftware.htmlunit.css.*</exclude>
+                            </excludes>
                         </configuration>
-                    </execution>
-                    <execution>
-                        <id>post-unit-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
-</project> 
+</project>

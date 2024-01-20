@@ -1,4 +1,4 @@
-FROM maven:3.8.6-openjdk-11 AS base_jdk
+FROM maven:3.8.5-openjdk-17 AS base_jdk
 
 ENV MAVEN_OPTS="-XX:MaxDirectMemorySize=256M"
 

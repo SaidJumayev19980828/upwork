@@ -267,7 +267,7 @@ public class CategoryServiceImpl implements CategoryService {
 		@CacheResult(cacheName = ORGANIZATIONS_TAG_TREES)
     public List<TagsTreeNodeDTO> getOrganizationTagsTree(Long orgId) throws BusinessException {
 
-        OrganizationEntity org = orgRepo.getOne(orgId);
+        OrganizationEntity org = orgRepo.getReferenceById(orgId);
         if (org == null)
             throw new BusinessException(
             		"Provided org_id doesn't match any existing organization"

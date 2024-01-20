@@ -795,7 +795,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_API_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getProductImagesTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		Long productId = 1008L;
 		Set<ProductImgDetailsDTO> expectedData = getExpectedProductImgs(productId);
 		
@@ -856,7 +856,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void getProductImagesNoAuthNTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(70L);
+		BaseUserEntity user = empUserRepo.getUserById(70L);
 		Long productId = 1008L;
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
@@ -876,7 +876,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void getProductImagesAnotherOrgAdminTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(71L);
+		BaseUserEntity user = empUserRepo.getUserById(71L);
 		Long productId = 1008L;
 		
 		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
@@ -895,7 +895,7 @@ public class ProductImageApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void getProductImagesNonExistingProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(68L);
+		BaseUserEntity user = empUserRepo.getUserById(68L);
 		Long productId = 105487845408L;
 		
 		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());

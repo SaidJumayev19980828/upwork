@@ -26,14 +26,17 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +58,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc(print = MockMvcPrint.LOG_DEBUG)
-@PropertySource("classpath:test.database.properties")
+@TestPropertySource(locations = "classpath:test.database.properties")
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = BaseTestConfiguration.class)
 public abstract class AbstractTestWithTempBaseDir {
@@ -167,6 +170,32 @@ public abstract class AbstractTestWithTempBaseDir {
 		 assertEquals(org, file.getOrganization());
 		 assertEquals(fileName, file.getOriginalFileName());
 	}
+
+
+    /**
+     * This is a workaround to fix the difference between postgres uri on developer host AND CI pipeline.
+     */
+    @DynamicPropertySource
+    static void redisProperties(DynamicPropertyRegistry registry) {
+        if (isPostgresReachableOnLocalhost()) { // On Developer's Host
+            registry.add("db.uri", () -> "jdbc:postgresql://localhost:5432/nasnav-tests");
+            registry.add("spring.liquibase.url", () -> "jdbc:postgresql://localhost:5432/nasnav-tests");
+        } else { //ON  CI pipeline
+            registry.add("db.uri", () -> "jdbc:postgresql://postgres/nasnav-tests");
+            registry.add("spring.liquibase.url", () -> "jdbc:postgresql://postgres/nasnav-tests");
+        }
+    }
+
+    private static boolean isPostgresReachableOnLocalhost() {
+        try {
+            try (Socket soc = new Socket()) {
+                soc.connect(new InetSocketAddress("localhost", 5432), 5000);
+            }
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
 }
 
 @TestConfiguration

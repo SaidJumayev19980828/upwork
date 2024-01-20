@@ -23,13 +23,5 @@ public class ErrorFallbackController implements ErrorController{
 		
 	    response.setStatus(statusCode);
     }
-	
-	
-	
-
-	@Override
-	public String getErrorPath() {
-		return "/error";
-	}
 
 }

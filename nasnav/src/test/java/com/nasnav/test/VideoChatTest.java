@@ -21,6 +21,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 
@@ -33,6 +34,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 @Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = { "/sql/Video_chat_test_data.sql" })
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = { "/sql/database_cleanup.sql" })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class VideoChatTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired

@@ -1,0 +1,123 @@
+= Nasnav Documentation and Development Guide
+:hardbreaks:
+
+== Migration to JAVA-17 scope
+
+Spring Boot migration:: Migration of spring-boot from version 2.4.4 to 2.7.18 and dependent libraries
+* Hibernate
+* Liquibase
+* PosgreSQL Driver
+* etc.
+
+JAVA-17 Migration:: Update java version to 17
+* Update POM files to comply with java 17
+* Update JAVA in the CI
+* Update dockerfile to use java-17 as base image
+
+Code Update:: Re-implement all necessary broken code due to migration.
+
+Testing:: Update all tests
+* Junit 4 tests
+* Junit 5 tests
+* Spring boot test configuration
+* Liquibase tests configuration
+* Properties file update for tests
+
+Swagger:: Start the Application and check swaggers are working as expected
+
+== Development Configuration
+
+=== Development host setup
+
+* Java 17
+* Maven 3.8+
+* Postgres DB running on port 5234
+** Create local Postgres DB `jdbc:postgresql://localhost:5432/nasnav`
+** User name: `nasnav`
+** Password: `nasnav`
+** Initialize with the DB Dum here link:postgres-dev.sql[Postgres Dump for developer localhost] (To be updated on regular basis)
+* IDE (IntelliJ, VS Code, Eclipse,...)
+* Here under an example of compliant Maven and Java setup
++
+[source,bash]
+----
+ mvn -v
+Apache Maven 3.9.5 (57804ffe001d7215b5e7bcb531cf83df38f93546)
+Maven home: ~/.sdkman/candidates/maven/current
+Java version: 17.0.4.1, vendor: Eclipse Adoptium, runtime: ~/.sdkman/candidates/java/17.0.4.1-tem
+
+----
+* Run the application
+* Go to the local swagger link.
+
+=== Testing
+
+* Testing Requirements
+** Postgres DB on url `jdbc:postgresql://localhost:5432/nasnav-tests`
+** DB user name `nasnav`
+** DB password `nasnav`
+* Compile the project and run tests
++
+[source,bash]
+----
+mvn clean compile test
+----
+
+== Continuous Improvements
+
+=== Refactor Logging handling
+=== Refactor Properties Management
+=== Refactor Cyclic dependency
+
+* Cyclic dependencies
+
+The project contains numerous cyclic dependency, which is not recommended way of developing.
+To continue using this cyclic dependencies as-is in the code, we must set property `spring.main.allow-circular-references=true` in application.properties.
+Hereunder stacktrace for one circular dependency..
+
+[source,log]
+----
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+The dependencies of some of the beans in the application context form a cycle:
+
+┌─────┐
+|  navBox (field private com.nasnav.service.scheduler.ScheduleTaskHelper com.nasnav.NavBox.scheduleTaskHelper)
+↑     ↓
+|  scheduleTaskHelper (field private com.nasnav.service.MailService com.nasnav.service.scheduler.ScheduleTaskHelper.mailService)
+↑     ↓
+|  mailServiceImpl defined in file [/home/icomma/dev/nasnav/nasnav-backend/nasnav-services/target/classes/com/nasnav/service/impl/MailServiceImpl.class]
+↑     ↓
+|  nasNavMailSender (field private com.nasnav.AppConfig com.nasnav.NasNavMailSender.config)
+└─────┘
+
+
+Action:
+
+Relying upon circular references is discouraged and they are prohibited by default. Update your application to remove the dependency cycle between beans. As a last resort, it may be possible to break the cycle automatically by setting spring.main.allow-circular-references to true.
+
+----
+
+
+== Git Flow
+. Create branch from master
+. Implement the feature
+. Implement tests
+. Create a merge request to `nasnav-develop`
+. Code review and feedbacks
+. Implement Review if necessary
+. Merge into nasnav-develop
+. Deploy into DEV environment
+. Test with Frontend App
+. Create a merge request to `develop`
+. Merge into develop
+. Deploy into UAT
+. Test with Frontend App
+
+== AsciiDoc Syntax Quick Reference
+Here is the https://docs.asciidoctor.org/asciidoc/latest/document/header/[AsciiDoc Syntax Quick Reference]. You can use it to update the current file and write outstanding technical and functional documentation.

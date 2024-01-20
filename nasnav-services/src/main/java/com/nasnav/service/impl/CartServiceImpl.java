@@ -831,7 +831,7 @@ public class CartServiceImpl implements CartService {
 					addon=new CartItemAddonDetailsEntity();
 				}
 				AddonStocksEntity addonstock = ofNullable(dto.getAddonStockId())
-						.map(id -> addonStockRepository.getOne(dto.getAddonStockId()))
+						.map(id -> addonStockRepository.getReferenceById(dto.getAddonStockId()))
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$ADDON$0002,
 								dto.getAddonStockId()));
 				validateAddonItem(addonstock, cartItem.getQuantity(),cartItem.getStock().getShopsEntity().getId());

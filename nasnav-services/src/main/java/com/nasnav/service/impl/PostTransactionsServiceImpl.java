@@ -22,7 +22,7 @@ public class PostTransactionsServiceImpl implements PostTransactionsService {
     public void saveTransactionsCoins(Long postId, Long coins) {
         PostTransactions transactions = new PostTransactions();
         transactions.setPaidCoins(coins);
-        transactions.setPost(postRepository.getOne(postId));
+        transactions.setPost(postRepository.getReferenceById(postId));
         transactions.setTransactionDate(LocalDateTime.now());
         postTransactionsRepository.save(transactions);
     }

@@ -62,7 +62,7 @@ public class RaveService {
 
 	public RaveAccount getMerchantAccount(int orgPaymentId) throws BusinessException {
 		try {
-			OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getOne(orgPaymentId);
+			OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getReferenceById(orgPaymentId);
 			RaveAccount merchantAccount = new RaveAccount(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), orgPaymentId);
 			return merchantAccount;
 		} catch (Exception ex) {

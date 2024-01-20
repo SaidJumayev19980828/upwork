@@ -98,7 +98,7 @@ public class PaymentUpgTest extends AbstractTestWithTempBaseDir {
 		log.debug("Order: {}", orderId);
 		HtmlPage page = webClient
 				.getPage("http://localhost:" + randomServerPort + "/payment/misr/test/upglightbox?order_id=5&" + orderId);
-		assertTrue(page.asText().contains("PAY NOW"));
+		assertTrue(page.getBody().getTextContent().contains("PAY NOW"));
 		assertTrue(page.getWebResponse().getContentAsString().contains("callPaySky"));
 		assertTrue(page.getWebResponse().getContentAsString().contains("SecureHash"));
 		HtmlButton payNow = (HtmlButton)page.getByXPath("//button").get(0);

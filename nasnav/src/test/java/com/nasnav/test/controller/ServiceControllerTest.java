@@ -1,13 +1,12 @@
 package com.nasnav.test.controller;
 
-import com.nasnav.WebConfig;
 import com.nasnav.dto.request.ServiceDTO;
 import com.nasnav.dto.response.ServiceResponse;
 import com.nasnav.service.ServiceInterface;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -51,17 +50,17 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                             .add("User-Token", "abcdefg");
                     return execution.execute(request, body);
                 }));
-        url = "http://localhost:"+ serverPort +"/service";
+        url = "http://localhost:" + serverPort + "/service";
 
         lenient().when(serviceInterface.createService(any(ServiceDTO.class))).thenReturn(new ServiceResponse());
-        lenient().when(serviceInterface.updateService(anyLong(),any(ServiceDTO.class))).thenReturn(new ServiceResponse());
+        lenient().when(serviceInterface.updateService(anyLong(), any(ServiceDTO.class))).thenReturn(new ServiceResponse());
         lenient().doNothing().when(serviceInterface).deleteService(anyLong());
         lenient().when(serviceInterface.getService(anyLong())).thenReturn(new ServiceResponse());
         lenient().when(serviceInterface.getALlServices()).thenReturn(new ArrayList<>());
 
     }
 
-    public ServiceDTO serviceDTO(){
+    public ServiceDTO serviceDTO() {
         ServiceDTO service = new ServiceDTO();
         service.setCode("testCode");
         service.setDescription("desc");
@@ -83,7 +82,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                 }));
 
         assertEquals(HttpStatus.OK,
-                (restTemplate.exchange(url, HttpMethod.POST,  new HttpEntity<>(serviceDTO), ServiceResponse.class))
+                (restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(serviceDTO), ServiceResponse.class))
                         .getStatusCode());
     }
 
@@ -98,7 +97,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                 }));
 
         assertEquals(HttpStatus.OK,
-                (restTemplate.exchange(url+"/1", HttpMethod.PUT,  new HttpEntity<>(serviceDTO), ServiceResponse.class))
+                (restTemplate.exchange(url + "/1", HttpMethod.PUT, new HttpEntity<>(serviceDTO), ServiceResponse.class))
                         .getStatusCode());
     }
 
@@ -113,7 +112,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                 }));
 
         assertEquals(HttpStatus.OK,
-                (restTemplate.exchange(url+"/1", HttpMethod.DELETE,  null, ServiceResponse.class))
+                (restTemplate.exchange(url + "/1", HttpMethod.DELETE, null, ServiceResponse.class))
                         .getStatusCode());
     }
 
@@ -128,7 +127,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                 }));
 
         assertEquals(HttpStatus.OK,
-                (restTemplate.exchange(url+"/1", HttpMethod.GET,  null, ServiceResponse.class))
+                (restTemplate.exchange(url + "/1", HttpMethod.GET, null, ServiceResponse.class))
                         .getStatusCode());
     }
 
@@ -143,7 +142,7 @@ public class ServiceControllerTest extends AbstractTestWithTempBaseDir {
                 }));
 
         assertEquals(HttpStatus.OK,
-                (restTemplate.exchange(url, HttpMethod.GET,  null, ArrayList.class))
+                (restTemplate.exchange(url, HttpMethod.GET, null, ArrayList.class))
                         .getStatusCode());
     }
 

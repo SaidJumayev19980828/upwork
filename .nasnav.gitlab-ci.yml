@@ -21,18 +21,18 @@ test:maven:
   interruptible: true
   services:
     - postgres:15.2-alpine
-  image: maven:3.8.6-openjdk-11
+  image: maven:3.8.5-openjdk-17
   script:
     - mvn --version
     - cp ./deploy/properties-test/* ./nasnav/src/main/resources/
     - cp ./deploy/properties-test/* ./yeshtery/src/main/resources/
     - mvn -B test
-    - ./coverage.sh target/site/jacoco-aggregate/jacoco.csv
+    - ./coverage.sh report-aggregate/target/site/jacoco-aggregate/jacoco.csv
   coverage: '/Code coverage: \d+\.\d+/'
   artifacts:
     when: always
     paths:
-      - target/site/jacoco-aggregate/jacoco.xml
+      - report-aggregate/target/site/jacoco-aggregate/jacoco.xml
     reports:
       junit:
         - nasnav/target/surefire-reports/TEST-*.xml
@@ -53,17 +53,17 @@ coverage:
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
   script:
     # convert report from jacoco to cobertura, using relative project path
-    - 'python /opt/cover2cover.py target/site/jacoco-aggregate/jacoco.xml
+    - 'python /opt/cover2cover.py $CI_PROJECT_DIR/report-aggregate/target/site/jacoco-aggregate/jacoco.xml
         $CI_PROJECT_DIR/nasnav-services/src/main/java/
         $CI_PROJECT_DIR/nasnav/src/main/java/
         $CI_PROJECT_DIR/yeshtery/src/main/java/
-        > target/site/cobertura.xml'
+        > $CI_PROJECT_DIR/report-aggregate/target/site/cobertura.xml'
   needs: ["test:maven"]
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: target/site/cobertura.xml
+        path: report-aggregate/target/site/cobertura.xml
   tags:
     - test
   only:

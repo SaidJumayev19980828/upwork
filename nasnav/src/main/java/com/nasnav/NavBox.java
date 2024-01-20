@@ -68,7 +68,8 @@ public class NavBox
         properties.put("server.compression.min-response-size", 1024);
         properties.put("springdoc.swagger-ui.docExpansion", "none");
         properties.put("springdoc.writer-with-order-by-keys", true);
-        
+        properties.put("server.error.path", "/error");
+        properties.put("spring.main.allow-circular-references", true);
         //---------------------------------------------------------------
         
         SpringApplication application = new SpringApplication(NavBox.class);

@@ -110,7 +110,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void getProductFeaturesTypes() throws IOException {
-		BaseUserEntity user = empRepo.getById(68L);
+		BaseUserEntity user = empRepo.getUserById(68L);
 		HttpEntity<?> request = getHttpEntity(user.getAuthenticationToken());
 		var response =
 				template.exchange("/organization/products_features/types"
@@ -148,7 +148,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureUpdateNoAuthZTest() {
-		BaseUserEntity user = empRepo.getById(68L);
+		BaseUserEntity user = empRepo.getUserById(68L);
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 
@@ -166,7 +166,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureCreateMissingParamTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.remove("operation");
@@ -186,7 +186,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureCreateNonValidOprTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.put("operation", "NOT VALID");
@@ -205,7 +205,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureCreateInvalidNameTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.put("name", JSONObject.NULL);
@@ -226,7 +226,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureCreateOptionalParamAbsentTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.remove("p_name");
@@ -248,7 +248,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureUpdateNonExistingFeatureIdTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.put("operation", "update");
@@ -269,7 +269,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureUpdateMissingFeatureIdTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.put("operation", "update");
@@ -290,7 +290,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void productFeatureUpdateInvalidUserTest() {
-		BaseUserEntity user = empRepo.getById(70L); //Organization admin, but for another organization
+		BaseUserEntity user = empRepo.getUserById(70L); //Organization admin, but for another organization
 		Integer id = TEST_FEATURE_ID;
 
 		var json = createProductFeatureRequest();
@@ -311,7 +311,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void productFeatureCreateWithDuplicateNameTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		var json = createProductFeatureRequest();
 		json.put("name", "Shoe size");
@@ -330,7 +330,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void productFeatureCreateWithDuplicateNameInOtherOrgTest() {
-		BaseUserEntity user = empRepo.getById(70L);
+		BaseUserEntity user = empRepo.getUserById(70L);
 
 		var json = createProductFeatureRequest();
 		json.put("name", "Shoe color");
@@ -385,7 +385,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 
 	private Optional<ProductFeaturesEntity> postProductFeature(JSONObject json) {
-		var user = empRepo.getById(69L);
+		var user = empRepo.getUserById(69L);
 		var request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 
 		var response =
@@ -429,7 +429,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void productFeatureUpdateTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		Integer id = TEST_FEATURE_ID;
 
 		var featureBefore = featureRepo.findById(id).get();
@@ -596,7 +596,7 @@ public class ProductFeaturesApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void updateFeatureDeleted(){
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		Integer id = 237;
 
 		var featureExists = featureRepo.existsById(id);

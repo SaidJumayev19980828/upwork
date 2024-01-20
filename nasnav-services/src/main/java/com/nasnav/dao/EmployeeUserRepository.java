@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import javax.annotation.Nonnull;
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,7 +38,10 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 
 	Optional<EmployeeUserEntity> getByResetPasswordToken(String resetPasswordToken);
 
-	EmployeeUserEntity getById(Long id);
+	default EmployeeUserEntity getUserById(@Nonnull Long id){
+		return findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("EmployeeUserEntity with ID '%s' not found".formatted(id)));
+	}
 
 	List<EmployeeUserEntity> findByOrganizationId(Long orgId);
 

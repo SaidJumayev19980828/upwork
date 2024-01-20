@@ -13,7 +13,6 @@ import com.nasnav.dto.ProductStocksDTO;
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.StockUpdateDTO;
-import com.nasnav.dto.request.ContactUsRequestDto;
 import com.nasnav.persistence.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
@@ -126,7 +125,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
-		BaseUserEntity user = empUserRepo.getById(68L);
+		BaseUserEntity user = empUserRepo.getUserById(68L);
 
 		JSONObject productJson = createNewDummyProduct();
 
@@ -149,7 +148,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProductTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 
@@ -177,7 +176,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void updateProductTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		Long id = 1001L;
 		ProductEntity originalProduct =  productRepository.findById(id).get();
 
@@ -235,7 +234,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void NewProductFlowTest() throws Exception {
-    	BaseUserEntity user = empUserRepo.getById(69L);
+    	BaseUserEntity user = empUserRepo.getUserById(69L);
 		String testImgDir = TEST_IMG_DIR;
 		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
@@ -277,7 +276,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void NewProductUpdateWithoutTagsOrKeyWords() throws Exception {
-    	BaseUserEntity user = empUserRepo.getById(69L);
+    	BaseUserEntity user = empUserRepo.getUserById(69L);
 		String testImgDir = TEST_IMG_DIR;
 		Path img = Paths.get(testImgDir).resolve(TEST_PHOTO).toAbsolutePath();
 
@@ -305,7 +304,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 	
 	    @Test
 	    public void GetNewProductFlowTest(){
-	    	BaseUserEntity user = empUserRepo.getById(69L);
+	    	BaseUserEntity user = empUserRepo.getUserById(69L);
 	    	  HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
 	          ResponseEntity<String> response = template.exchange("/product/v2/productdata?product_id=1001", GET, json, String.class);
 	   
@@ -319,7 +318,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void PostProductStocks(){
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		ProductStocksDTO stockDto= new ProductStocksDTO();
 		stockDto.setShopId(501L);
 		StockUpdateDTO stockUpdateDTO = new StockUpdateDTO();
@@ -342,7 +341,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void GetProductStocks(){
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		HttpEntity<?> json = getHttpEntity(user.getAuthenticationToken());
 		ResponseEntity<String> response = template.exchange("/product/v2/stock?product_id=1001", GET, json, String.class);
 		assertEquals(200, response.getStatusCodeValue());
@@ -394,7 +393,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutDefaultPnameTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("p_name",JSONObject.NULL);  //set pname to null, so that it will be auto-generated from product name
@@ -416,7 +415,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutNullBrand() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("brand_id", JSONObject.NULL);
@@ -431,7 +430,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutNonExistingBrand() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("brand_id", 99999L);
@@ -445,7 +444,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutInvalidBrand() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("brand_id", 102L); // this brand is for another organization 
@@ -459,7 +458,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutNullName() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("name", JSONObject.NULL);
@@ -474,7 +473,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void updateProdcutNonExistingOperationField() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.remove("operation");
@@ -488,7 +487,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutNonExistingNameField() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.remove("name");
@@ -505,7 +504,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createProdcutNonExistingBrandIdField() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.remove("brand_id");
@@ -520,7 +519,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void updateProdcutNonExistingIdField() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		JSONObject product = createNewDummyProduct();
 		product.put("operation", Operation.UPDATE.getValue());
@@ -562,7 +561,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		Long productId = 1008L;
 
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
@@ -579,7 +578,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteMultipleProductsTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		List<Long> productIds = new ArrayList<>();
 		productIds.add(1008L);
 		productIds.add(1007L);
@@ -594,7 +593,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteNonExistingProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 77771008L;
 
@@ -614,7 +613,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void softDeleteProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1008L;
 		List<Long> variantIds = getVariantsIdList(productId);
@@ -634,7 +633,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void softDeleteBundleTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1010L;
 		List<Long> variantIds = getVariantsIdList(productId);
@@ -809,7 +808,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInvalidUserRoleTest() {
-		BaseUserEntity user = empUserRepo.getById(68L); //this user has NASNAV_ADMIN Role
+		BaseUserEntity user = empUserRepo.getUserById(68L); //this user has NASNAV_ADMIN Role
 
 		Long productId = 1006L;
 
@@ -827,7 +826,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInvalidUserOrgTest() {
-		EmployeeUserEntity user = empUserRepo.getById(69L); //set another organization for the user
+		EmployeeUserEntity user = empUserRepo.getUserById(69L); //set another organization for the user
 		user.setOrganizationId(99001L);
 		empUserRepo.save(user);
 
@@ -866,7 +865,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductHasStocksTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1006L;
 		List<StocksEntity> stocks = stockRepo.findByProductIdAndShopsId(productId, 502L);
@@ -887,7 +886,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInConfirmedOrdersTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1014L;
 		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);
@@ -911,7 +910,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInBundleTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1003L;
 
@@ -932,7 +931,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void deleteProductInRemovedBundleTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 
 		Long productId = 1012L;
 
@@ -1218,7 +1217,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
     @Test
     public void updateTagsTest() {
     	//assign two tags to two products
-    	BaseUserEntity user = empUserRepo.getById(69L);
+    	BaseUserEntity user = empUserRepo.getUserById(69L);
 
     	List<Long> productIds = asList(1013L, 1014L);
     	List<Long> tagsIds = asList(5002L, 5003L);
@@ -1520,7 +1519,7 @@ public class ProductApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void testGetOutOfStockProducts() {
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getUserById(69L);
 		ProductSearchParam param = new ProductSearchParam();
 		param.org_id = 99003L;
 		HttpEntity<Object> request = getHttpEntity(user.getAuthenticationToken());

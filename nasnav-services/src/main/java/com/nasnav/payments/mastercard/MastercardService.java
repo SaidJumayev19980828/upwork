@@ -86,7 +86,7 @@ public class MastercardService {
     public MastercardAccount getMerchantAccount(int orgPaymentId) throws BusinessException {
         try {
             MastercardAccount merchantAccount = new MastercardAccount();
-            OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getOne(orgPaymentId);
+            OrganizationPaymentGatewaysEntity gateway = orgPaymentGatewaysRep.getReferenceById(orgPaymentId);
             merchantAccount.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), orgPaymentId);
             return merchantAccount;
         } catch (Exception ex) {

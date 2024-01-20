@@ -3,7 +3,6 @@ package com.nasnav.test;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 
-import org.elasticsearch.common.collect.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +16,8 @@ import com.nasnav.service.handler.Handler;
 import com.nasnav.service.handler.chain.process.ImportDataHandlingChainProcess;
 import com.nasnav.service.model.importproduct.context.Error;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
+
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class ImportDataHandlingChainProcessTest {

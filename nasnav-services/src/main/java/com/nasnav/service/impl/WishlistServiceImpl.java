@@ -157,7 +157,7 @@ public class WishlistServiceImpl implements WishlistService{
     @Override
     public Wishlist getWishlist(Long userId,Boolean isYeshtery) {
         Long orgIdToUserAuth = securityService.getCurrentUserOrganizationId();
-        Long organizationId  = userRepo.getOne(userId).getOrganizationId();
+        Long organizationId  = userRepo.getReferenceById(userId).getOrganizationId();
         if(Boolean.FALSE.equals(isYeshtery) && !orgIdToUserAuth.equals(organizationId)){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0005, organizationId);
         }

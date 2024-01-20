@@ -88,7 +88,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockUnAuthZTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(NOT_ORG_MANAGER); //this user is not an organization admin
+		BaseUserEntity user = empUserRepo.getUserById(NOT_ORG_MANAGER); //this user is not an organization admin
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
@@ -109,7 +109,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockOtherOrgManagerTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(OTHER_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(OTHER_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
@@ -129,7 +129,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockOtherShopManagerTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(OTHER_STORE_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(OTHER_STORE_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
@@ -149,7 +149,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void createStockSameOrgMgrButOtherShopMgrTest() throws JsonProcessingException{
 		//This user is Organization manager, but also a shop manager for another shop
-		BaseUserEntity user = empUserRepo.getById(OTHER_VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(OTHER_VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
@@ -169,7 +169,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingShopIdTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("shop_id");
@@ -191,7 +191,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingVariantIdTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("variant_id");
@@ -212,7 +212,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingQuantityAndPriceTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
@@ -235,7 +235,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingPriceTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
@@ -258,7 +258,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingCurrencyTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
@@ -279,7 +279,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingQuntityOnlyTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
@@ -300,7 +300,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockMissingPriceAndCurrencyOnlyTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("price");
@@ -322,7 +322,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockInvalidCurrencyTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("currency", -140);
@@ -344,7 +344,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockInvalidPriceTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("price", -140);
@@ -363,7 +363,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void createStockInvalidDiscountTest() {
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER);
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("discount", 1001);
@@ -382,7 +382,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockNonExistingShopIdTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("shop_id", 1111111L);
@@ -405,7 +405,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	public void createStockNonExistingVariantIdTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("variant_id", 1111111L);
@@ -432,7 +432,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 		long countBefore = stockRepo.countByProductVariantsEntity_Id(TEST_VARIANT_ID);
 		assertEquals("No stock should exist for the test product variant", 0L, countBefore);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
@@ -468,7 +468,7 @@ public class ShopStockUpdateTest extends AbstractTestWithTempBaseDir {
 		StocksEntity stockBefore = helper.getStockFullData(TEST_EXISTING_STOCK_ID);
 		assertNotNull("stock should exist for the test product variant", stockBefore);
 		
-		BaseUserEntity user = empUserRepo.getById(VALID_ORG_MANAGER); 
+		BaseUserEntity user = empUserRepo.getUserById(VALID_ORG_MANAGER);
 		
 		JSONObject updateReq = createStockUpdateReq();	//only update quantity
 		updateReq.put("variant_id", TEST_EXISTING_STOCK_VARIANT_ID);

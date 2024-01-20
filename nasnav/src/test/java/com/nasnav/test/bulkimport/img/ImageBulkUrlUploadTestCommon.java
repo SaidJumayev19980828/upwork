@@ -28,7 +28,7 @@ public class ImageBulkUrlUploadTestCommon {
     private Resource img2;
     
 
-	public  String initImgsMockServer(MockServerRule mockServerRule) throws Exception {		
+	public  String initImgsMockServer(MockServerRule mockServerRule) throws Exception {
 		prepareMockRequests(mockServerRule);
 		return mockServerUrl + ":"+ mockServerRule.getPort();
 	}

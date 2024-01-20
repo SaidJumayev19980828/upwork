@@ -1,0 +1,77 @@
+{
+  "id": 1,
+  "name": "Baklava with Pistachio",
+  "image_url": "2/12-102-0006-.png",
+  "price": 188.5,
+  "prices": null,
+  "brand_id": 1,
+  "category_id": null,
+  "barcode": "12-102-0006",
+  "description": "Baklava Dough - Imported Ghee - Pistachio - Syrup",
+  "discount": 0,
+  "currency": 1,
+  "stock_id": 1,
+  "multiple_variants": false,
+  "hidden": false,
+  "default_variant_features": {},
+  "tags": [
+    {
+      "id": 35,
+      "name": "Oriental",
+      "alias": "Oriental",
+      "metadata": "{\"cover\":\"2/tsp5098.jpg\"}",
+      "priority": 0,
+      "allowReward": false,
+      "minimumTierId": null,
+      "p_name": "35-oriental",
+      "category_id": 2,
+      "org_id": 2
+    }
+  ],
+  "creation_date": "2023-08-03T12:18:15.866984",
+  "update_date": "2023-08-03T12:18:15.866989",
+  "quantity": null,
+  "has_360_view": null,
+  "product_type": 0,
+  "product_code": null,
+  "sku": null,
+  "organization_id": 2,
+  "images": [
+    {
+      "id": 38,
+      "priority": 0,
+      "url": "2/12-102-0006-.png"
+    }
+  ],
+  "rating": null,
+  "priority": 0,
+  "promotions": null,
+  "variants": [
+    {
+      "id": 1,
+      "barcode": "12-102-0006",
+      "name": "Baklava with Pistachio",
+      "description": "Baklava Dough - Imported Ghee - Pistachio - Syrup",
+      "sku": null,
+      "product_code": null,
+      "stocks": [
+        {
+          "id": 1,
+          "shop_id": 1,
+          "quantity": 9999,
+          "price": 188.5,
+          "discount": 0,
+          "unit": "500gm",
+          "currency_value": "EGP"
+        }
+      ],
+      "images": [],
+      "extra_attributes": []
+    }
+  ],
+  "variant_features": [],
+  "bundle_items": [],
+  "keywords": null,
+  "p_name": "baklava-with-pistachio",
+  "shop_360s": []
+}

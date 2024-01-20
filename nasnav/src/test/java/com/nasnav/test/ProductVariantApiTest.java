@@ -103,7 +103,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantUpdateNoAuthZTest() {
-		BaseUserEntity user = empRepo.getById(68L); //not an organization admin
+		BaseUserEntity user = empRepo.getUserById(68L); //not an organization admin
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 		
@@ -121,7 +121,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantCreateMissingOprTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("operation");
@@ -138,7 +138,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	void addExtraAttributeForProductVariant(){
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 
 		JSONObject json = getUpdateExtraAttributeRequestBody(1008L, 310008L);
 
@@ -158,7 +158,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	void removeExtraAttributeForProductVariant(){
-		BaseUserEntity user = empRepo.getById(70L);
+		BaseUserEntity user = empRepo.getUserById(70L);
 
 		JSONObject json = getUpdateExtraAttributeRequestBody(1001L, 310001L);
 
@@ -189,7 +189,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	void productVariantCreateMissingProductTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("product_id");
@@ -208,7 +208,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantCreateMissingFeaturesTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("features");
@@ -228,7 +228,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantUpdateMissingVariantTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.put("operation", Operation.UPDATE.getValue());
@@ -250,7 +250,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantCreateTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();		
 		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
@@ -352,7 +352,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	void productVariantUpdateTest() {
-		BaseUserEntity user = empRepo.getById(69L);
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		ProductVariantsEntity before = variantRepo.findById(TEST_VARIANT_ID).get();
 		
@@ -397,7 +397,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantUpdateAdminOfOtherOrgTest() {
-		BaseUserEntity user = empRepo.getById(70L); //admin from another organization
+		BaseUserEntity user = empRepo.getUserById(70L); //admin from another organization
 		
 		JSONObject json = createProductVariantRequest();
 		json.put("operation", UPDATE.getValue());
@@ -419,7 +419,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantCreateFeaturesFromOtherOrgTest() {
-		BaseUserEntity user = empRepo.getById(69L); 
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"236\": 37, \"235\": \"BLack\"}");
@@ -441,7 +441,7 @@ class ProductVariantApiTest extends AbstractTestWithTempBaseDir {
 	
 	@Test
 	void productVariantCreateFeaturesNotExistsTest() {
-		BaseUserEntity user = empRepo.getById(69L); 
+		BaseUserEntity user = empRepo.getUserById(69L);
 		
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"888888\": \"37\", \"235\": \"BLack\"}");
