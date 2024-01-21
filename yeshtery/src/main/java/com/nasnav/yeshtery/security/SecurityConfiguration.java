@@ -295,6 +295,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         ,patternOf( "/v1/organization/register"		    ,HttpMethod.POST)
 
                         , patternOf("/v1/frontend/setting", GET)
+                        ,patternOf( "/v1/package"					, GET)
                         ,              patternOf( "/v1/event/all/**"                                , GET)
                         , patternOf("/v1/chat-widget-setting/get-published", GET)
                         , patternOf("/v1/loyalty/config/all"		, GET)
