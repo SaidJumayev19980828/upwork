@@ -116,6 +116,12 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     @Override
+    public LoyaltyTierEntity getTierByAmountAndOrganizationId(Integer amount, Long organizationId){
+        return tierRepository.getByAmountAndOrganization_id(amount, organizationId);
+    }
+
+
+    @Override
     public UserRepresentationObject changeUserTier(Long userId, Long tierId) {
         Long orgId = securityService.getCurrentUserOrganizationId();
 

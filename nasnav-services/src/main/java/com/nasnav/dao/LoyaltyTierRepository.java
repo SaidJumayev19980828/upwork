@@ -22,9 +22,18 @@ public interface LoyaltyTierRepository extends JpaRepository<LoyaltyTierEntity, 
     List<LoyaltyTierEntity> getByOrganization_IdAndIsSpecial(Long orgId, Boolean isSpecial);
 
     @Query("select tier from LoyaltyTierEntity tier" +
-            " where tier.noOfPurchaseFrom >= :amount AND tier.noOfPurchaseTo <= :amount" +
+            " where tier.noOfPurchaseFrom <= :amount AND tier.noOfPurchaseTo >= :amount" +
             " order by tier.id asc")
     LoyaltyTierEntity getByAmount(@Param("amount") Integer amount);
+
+
+    @Query("select tier from LoyaltyTierEntity tier" +
+            " where tier.noOfPurchaseFrom <= :amount AND tier.noOfPurchaseTo >= :amount" +
+            " AND tier.organization.id = :organizationId")
+    LoyaltyTierEntity getByAmountAndOrganization_id(Integer amount, Long organizationId);
+
+
+
 
     Optional<LoyaltyTierEntity> findByTierName(String tierName);
 

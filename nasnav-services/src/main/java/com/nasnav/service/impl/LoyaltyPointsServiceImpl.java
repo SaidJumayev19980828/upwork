@@ -313,10 +313,6 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         OrganizationEntity org = order.getOrganizationEntity();
         ShopsEntity shop = order.getShopsEntity();
 
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE).orElse(null);
-        if (config == null) {
-            return;
-        }
         Optional<UserEntity> userEntityOp = userRepo.findById(order.getUserId());
         if (userEntityOp.isEmpty()) {
             return;
@@ -325,6 +321,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         if (userEntity.getTier() == null) {
             return;
         }
+
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(userEntity.getTier().getId()).orElse(null);
+        if (config == null) {
+            return;
+        }
+
         BigDecimal points = calculatePoints(config, userEntity.getTier(), pointsAmount, ORDER_ONLINE);
         createLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
     }
@@ -473,7 +475,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
                                                Long userId,
                                                OrganizationEntity org) {
         UserEntity user = userRepo.findById(userId).get();
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), true)
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId( user.getTier().getId())
                 .orElse(null);
         if (config == null) {
             return new SpentPointsInfo();
@@ -525,7 +527,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         for (Map.Entry<Long, BigDecimal> e : orgWithTotalPriceMap.entrySet()) {
 
             OrganizationEntity org = organizationRepository.findById(e.getKey()).get();
-            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), true)
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId( user.getTier().getId())
                     .orElse(null);
             if (config == null) {
                 continue;
@@ -546,7 +548,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
         if (yeshteryCart) {
             Long yeshteryOrgId = getYeshteryOrgId();
-            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(yeshteryOrgId, true)
+            LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(user.getTier().getId())
                     .orElse(null);
             if (config != null) {
                 OrganizationEntity org = organizationRepository.findById(yeshteryOrgId).get();

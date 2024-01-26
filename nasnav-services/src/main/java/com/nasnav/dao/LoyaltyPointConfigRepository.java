@@ -12,6 +12,13 @@ import java.util.Optional;
 
 public interface LoyaltyPointConfigRepository extends JpaRepository<LoyaltyPointConfigEntity, Long> {
 
+    @Query("SELECT loyaltyConfig FROM LoyaltyPointConfigEntity loyaltyConfig" +
+            " WHERE loyaltyConfig.isActive = true AND loyaltyConfig.defaultTier.id = :id" +
+            " AND loyaltyConfig.defaultTier.isActive = true"
+
+    )
+    Optional<LoyaltyPointConfigEntity> findActiveConfigTierByTierId(Long id);
+
     Optional<LoyaltyPointConfigEntity> findByIdAndOrganization_IdAndIsActive(Long id, Long orgId, Boolean isActive);
 
 
