@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Table(name = "event_logs")
 @Entity
@@ -47,5 +48,16 @@ public class EventLogsEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private EmployeeUserEntity employee;
+
+    public boolean isInfluencer() {
+        return Optional.ofNullable(getUser())
+                .map(UserEntity::getInfluencer)
+                .map(InfluencerEntity::getApproved)
+                .orElseGet(() -> Optional.ofNullable(getEmployee())
+                        .map(EmployeeUserEntity::getInfluencer)
+                        .map(InfluencerEntity::getApproved)
+                        .orElse(false));
+    }
+
 
 }

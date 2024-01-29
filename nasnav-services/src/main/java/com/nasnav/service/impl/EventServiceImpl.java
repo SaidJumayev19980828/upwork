@@ -237,7 +237,6 @@ public class EventServiceImpl implements EventService{
                 entity.addInfluencer(influencerEntity);
             });
         }
-//        entity.setInfluencer(influencer);
         entity.setCoin(entity.getInfluencers() == null || entity.getInfluencers().isEmpty() ?  dto.getCoin() : null);
         entity.setProducts(products);
         entity.setName(dto.getName());
@@ -297,10 +296,6 @@ public class EventServiceImpl implements EventService{
         dto.setStartsAt(entity.getStartsAt());
         dto.setEndsAt(entity.getEndsAt());
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
-//        if(entity.getInfluencer() != null){
-//            dto.setInfluencer(influencerService.toInfluencerDto(entity.getInfluencer()));
-//        }
-
         if ( entity.getInfluencers()!= null && !entity.getInfluencers().isEmpty()){
             List<InfluencerDTO> influencers = new ArrayList<>();
             entity.getInfluencers().forEach(influencer -> {
@@ -387,6 +382,7 @@ public class EventServiceImpl implements EventService{
             dto.setImage(entity.getUser().getImage());
             dto.setUserId(entity.getUser().getId());
             dto.setUserType("Customer");
+            dto.setInfluencer(entity.isInfluencer());
         }
         else {
             dto.setEmail(entity.getEmployee().getEmail());
@@ -394,9 +390,11 @@ public class EventServiceImpl implements EventService{
             dto.setImage(entity.getEmployee().getImage());
             dto.setUserId(entity.getEmployee().getId());
             dto.setUserType("Employee");
+            dto.setInfluencer(entity.isInfluencer());
         }
         return dto;
     }
+
 
     @Async
     @Override

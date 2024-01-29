@@ -10,10 +10,13 @@ import com.nasnav.dto.request.PostCreationDTO;
 import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.response.RestResponsePage;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EventAttachmentsEntity;
 import com.nasnav.persistence.EventEntity;
+import com.nasnav.persistence.EventLogsEntity;
 import com.nasnav.persistence.EventRequestsEntity;
 import com.nasnav.persistence.InfluencerEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -166,6 +169,27 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         assertEquals(200, response2.getStatusCode().value());
     }
 
+    @Test
+    public void test_user_is_approved_influencer_employee_is_null() {
+        EventLogsEntity eventLogsEntity = new EventLogsEntity();
+        UserEntity userEntity = new UserEntity();
+        InfluencerEntity influencerEntity = new InfluencerEntity();
+        influencerEntity.setApproved(true);
+        userEntity.setInfluencer(influencerEntity);
+        eventLogsEntity.setUser(userEntity);
+
+        assertTrue(eventLogsEntity.isInfluencer());
+    }
+    @Test
+    public void test_user_is_approved_influencer_user_is_null() {
+        EventLogsEntity eventLogsEntity = new EventLogsEntity();
+        EmployeeUserEntity employee = new EmployeeUserEntity();
+        InfluencerEntity influencerEntity = new InfluencerEntity();
+        influencerEntity.setApproved(true);
+        employee.setInfluencer(influencerEntity);
+        eventLogsEntity.setEmployee(employee);
+        assertTrue(eventLogsEntity.isInfluencer());
+    }
     @Test
     public void interestForUser() {
         ResponseEntity<String> response = template.postForEntity("/v1/event/interset/100",

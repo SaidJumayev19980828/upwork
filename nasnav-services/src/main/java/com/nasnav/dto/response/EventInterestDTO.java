@@ -13,4 +13,5 @@ public class EventInterestDTO {
     private String image;
     private String userType;
     private LocalDateTime date;
+    private Boolean influencer;
 }
