@@ -1697,6 +1697,7 @@ public class OrderServiceImpl implements OrderService {
 
 		cancelAbandonedOrders();
 		validateCartCheckoutDTO(dto);
+
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
 
 		return getOrderResponse(order, true);

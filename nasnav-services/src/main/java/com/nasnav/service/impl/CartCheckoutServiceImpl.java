@@ -51,7 +51,22 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 
 	@Override
 	public Order checkoutYeshteryCart(CartCheckoutDTO dto) {
+		upgradeUserTierByOrderAmounts(dto);
 		return orderService.createYeshteryOrder(dto);
+	}
+
+	private void upgradeUserTierByOrderAmounts(CartCheckoutDTO dto) {
+		BaseUserEntity userAuthed = securityService.getCurrentUser();
+		Long userId;
+		if(userAuthed instanceof EmployeeUserEntity) {
+			userId= getCustomerId(dto);
+		}else {
+			userId = userAuthed.getId();
+		}
+		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(orderService.countOrdersByUserId(userId), userAuthed.getOrganizationId());
+		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
+		userEntity.setTier(loyaltyTierEntity);
+		userRepository.save(userEntity);
 	}
 
 	public Long getCustomerId( CartCheckoutDTO dto) {
