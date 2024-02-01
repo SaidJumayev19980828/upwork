@@ -37,11 +37,12 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 		}else {
 			userId = userAuthed.getId();
 		}
-
-		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(orderService.countOrdersByUserId(userId), userAuthed.getOrganizationId());
 		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
-		userEntity.setTier(loyaltyTierEntity);
-		userRepository.save(userEntity);
+		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(orderService.countOrdersByUserId(userId), userAuthed.getOrganizationId());
+		if(loyaltyTierEntity != null ) {
+			userEntity.setTier(loyaltyTierEntity);
+			userRepository.save(userEntity);
+		}
 		Order order = orderService.createOrder(dto,userEntity);
 		if(dto.getPromoCode() != null ){
 			promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());
@@ -64,6 +65,9 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 			userId = userAuthed.getId();
 		}
 		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(orderService.countOrdersByUserId(userId), userAuthed.getOrganizationId());
+		if(loyaltyTierEntity == null) {
+			return;
+		}
 		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
 		userEntity.setTier(loyaltyTierEntity);
 		userRepository.save(userEntity);
