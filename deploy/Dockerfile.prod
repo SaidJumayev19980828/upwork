@@ -19,7 +19,7 @@ RUN mvn -B --no-transfer-progress -Dmaven.test.skip clean package \
 # runner ...................................................................
 
 #-- Production image, copy all the files and run next
-FROM openjdk:11-jre-slim AS runner
+FROM eclipse-temurin:17-jre-jammy AS runner
 
 ARG branch
 ENV BASEPATH=/srv/nasnav
