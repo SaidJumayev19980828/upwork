@@ -492,7 +492,7 @@ public enum ErrorCodes {
 	,BANK$ACC$0006("No reservation with id: [%d]")
 	,BANK$ACC$0007("this transaction is done before")
 	,BANK$ACC$0008("The provide Api key is Not Valid, check it again")
-
+	,BANK$TRANS$0001("Insufficient Fund for that Customer")
 
 	,ROOMS$ROOM$NotFound("No Room Template found with %s id [%d]")
 	,ROOMS$ROOM$InvalidStatus("room status can't be changed from %s to %s")
@@ -519,7 +519,7 @@ public enum ErrorCodes {
 	,$002$PROMO$("This promo can't be used. Usage limit reached.")
 	,SCRAPPING$001("You should upload Scrapping file if you want the process to be manual")
 	,SCRAPPING$002("No Web Scraping record found for that Organization  with id [%s]")
-
+	,$001$REFERRAL$("No Referral Wallet Found for that User %d.")
 	;
 
 	@Getter
