@@ -1,5 +1,6 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
@@ -11,6 +12,7 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.persistence.*;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
@@ -49,12 +51,14 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
@@ -89,6 +93,9 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	private TestRestTemplate template;
 
 	@Autowired
+	private ObjectMapper mapper;
+
+	@Autowired
 	private AppConfig config;
 
 	@Autowired
@@ -113,9 +120,6 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	UserOtpRepository userOtpRepository;
 	@Autowired
 	private UserSubscriptionRepository subsRepo;
-
-	@Autowired
-	private ObjectMapper mapper;
 	
 	@MockBean
 	private MailService mailService;
@@ -125,6 +129,9 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private SecurityService securityService;
+
+	@Autowired
+	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
 
 	private String uniqueAddress = "630f3256-59bb-4b87-9600-60e64d028d68";
 
@@ -209,7 +216,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 	
-	
+
 	public void testSameEmailAndOrgId() {
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 5}", null);
@@ -225,6 +232,67 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		log.debug("{}", response.getBody());
 		Assert.assertTrue(response.getBody().getStatus().contains(EMAIL_EXISTS));
 		Assert.assertEquals(406, response.getStatusCode().value());
+		// Delete this user
+		userService.deleteUser(userId);
+	}
+
+	@Test
+	public void testNewRegisterUserIsOnTierIfMinimumOrdersZero() throws JsonProcessingException {
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true," +
+						"\"org_id\":\"99001\",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+				null);
+
+
+		ResponseEntity<String> responseString = template.postForEntity("/user/v2/register", userJson,
+				String.class);
+
+		UserApiResponse userApiResponse = mapper.readValue(responseString.getBody(), new TypeReference<>(){});
+
+		// get userId for deletion after test
+		Long userId = userApiResponse.getEntityId();
+
+		UserEntity newRegisteredUser =  userRepository.findById(userId).get();
+
+		assertEquals(Long.valueOf(5), newRegisteredUser.getTier().getId());
+
+		// Delete this user
+		userService.deleteUser(userId);
+	}
+
+
+	@Test
+	public void testNewRegisterUserWithReferrer() throws JsonProcessingException {
+		Long referredUserId = 88001L;
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"name\":\"Ahmed\",\"email\":\"new_email@nasnav.com\",\"password\":\"123456\",\"confirmation_flag\":true," +
+						"\"org_id\":\"99001\",\"redirect_url\":\"https://www.tooawsome.com/activate\"}",
+				null);
+
+
+		ResponseEntity<String> responseString = template.postForEntity("/user/v2/register?referrer="+ referredUserId, userJson,
+				String.class);
+
+		UserApiResponse userApiResponse = mapper.readValue(responseString.getBody(), new TypeReference<>(){});
+
+		// get userId for deletion after test
+		Long userId = userApiResponse.getEntityId();
+
+		UserEntity referredUser =  userRepository.findById(referredUserId).get();
+
+		List<LoyaltyPointTransactionEntity> loyaltyPointTransactionEntityList =
+							loyaltyPointTransactionRepository.findByUser_IdAndOrganization_IdAndType(referredUserId, referredUser.getOrganizationId(), LoyaltyPointType.REFERRAL.getValue());
+
+		assertEquals(1, loyaltyPointTransactionEntityList.size());
+		assertEquals(new BigDecimal("7.00"), loyaltyPointTransactionEntityList.get(0).getPoints());
+		assertEquals(new BigDecimal("100"), loyaltyPointTransactionEntityList.get(0).getAmount());
+
+		// Delete transaction
+		loyaltyPointTransactionRepository.deleteAllById(loyaltyPointTransactionEntityList
+					.stream()
+					.map(LoyaltyPointTransactionEntity::getId)
+				.collect(Collectors.toUnmodifiableList())
+				);
 		// Delete this user
 		userService.deleteUser(userId);
 	}

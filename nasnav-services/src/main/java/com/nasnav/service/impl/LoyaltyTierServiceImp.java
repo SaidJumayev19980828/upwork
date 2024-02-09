@@ -86,11 +86,6 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     @Override
-    public List<LoyaltyTierEntity> getTiersBetweenAmountFromTo(Integer amountFrom, Integer amountTo) {
-        return tierRepository.getByAmountFromAndTo(amountFrom, amountTo);
-    }
-
-    @Override
     public List<LoyaltyTierDTO> getTiers(Boolean isSpecial) {
         Long orgId = securityService.getCurrentUserOrganizationId();
         List<LoyaltyTierEntity> tierList =
@@ -111,13 +106,8 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
     }
 
     @Override
-    public LoyaltyTierEntity getTierByAmount(Integer amount) {
-        return tierRepository.getByAmount(amount);
-    }
-
-    @Override
     public LoyaltyTierEntity getTierByAmountAndOrganizationId(Integer amount, Long organizationId){
-        return tierRepository.getByAmountAndOrganization_id(amount, organizationId);
+        return tierRepository.getActiveByAmountInRangeAndOrganization_id(amount, organizationId);
     }
 
 

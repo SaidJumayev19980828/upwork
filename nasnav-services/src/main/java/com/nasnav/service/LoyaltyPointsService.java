@@ -56,4 +56,6 @@ public interface LoyaltyPointsService {
 	List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPointsByUser(Long userId);
     LoyaltyTierDTO getUserOrgTier();
 	List<LoyaltyPointConfigDTO> listLoyaltyPointConfigsForAllOrganizations();
+
+
 }

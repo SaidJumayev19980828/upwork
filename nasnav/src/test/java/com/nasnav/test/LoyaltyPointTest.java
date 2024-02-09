@@ -10,12 +10,12 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
-import com.nasnav.dto.response.RedeemPointsOfferDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
-import com.nasnav.persistence.LoyaltyPointConfigEntity;
-import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.response.*;
 import com.nasnav.service.LoyaltyPointsService;
+import com.nasnav.service.UserService;
+import com.nasnav.service.impl.LoyaltyPointsServiceImpl;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -32,6 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,8 +43,7 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.stream.Collectors.toList;
 import static org.json.JSONObject.NULL;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.OK;
@@ -72,6 +72,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     @Autowired
     private LoyaltyPointsService loyaltyPointsService;
+
+    @Autowired
+    private LoyaltyPointsServiceImpl loyaltyPointsServiceImpl;
+
+    @Autowired
+    private UserService userService;
 
 
     @Test
@@ -261,12 +267,15 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert_1.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
     @Test
     public void getUserPoints() {
         var request = getHttpEntity("123");
-        var response = template.exchange("/loyalty/points", GET, request, String.class);
+
+        var response = template.exchange("/loyalty/points", GET, request, LoyaltyUserPointsResponse.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertTrue(response.getBody().contains("points"));
+        assertEquals(15, response.getBody().getPoints());
     }
 
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
@@ -345,6 +354,58 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         assertEquals(4, spendablePoints.get(0).getId());
         assertEquals(1, spendablePoints.size());
+    }
+
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert_1.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    @Test
+    public void getNotSpentLoyaltyTransactionsRepo(){
+        List<LoyaltyPointTransactionEntity> notSpentLoyaltyPoints = transactionRepo.findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValidAndTypeLessThan(88L, 99001L, LocalDateTime.now(), true, LoyaltyPointType.SPEND_IN_ORDER.getValue());
+        assertEquals(notSpentLoyaltyPoints.size(), 2);
+        assertNotEquals(notSpentLoyaltyPoints.get(0).getType(), LoyaltyPointType.SPEND_IN_ORDER.getValue());
+    }
+
+    @Test
+    public void getTierByAmountInRange(){
+        LoyaltyTierEntity defaultTier = tierRepository.getActiveByAmountInRangeAndOrganization_id(1, 99001L);
+        assertEquals("default_tier", defaultTier.getTierName());
+        assertTrue(defaultTier.getIsActive());
+        LoyaltyTierEntity goldTier = tierRepository.getActiveByAmountInRangeAndOrganization_id(10, 99001L);
+        assertEquals("Gold", goldTier.getTierName() );
+        assertTrue(defaultTier.getIsActive());
+
+    }
+
+    @Test
+    public void calculatePoints() {
+        LoyaltyTierEntity loyaltyTier = new LoyaltyTierEntity();
+        loyaltyTier.setId(1L);
+        loyaltyTier.setConstraints("{\"ORDER_ONLINE\":0.05}");
+        LoyaltyPointConfigEntity config = new LoyaltyPointConfigEntity();
+        config.setId(31001L);
+        config.setConstraints("{\"ORDER_ONLINE\":{\"ratio_from\":7, \"ratio_to\":1}}");
+
+        BigDecimal points = loyaltyPointsServiceImpl.
+                calculatePoints(config, loyaltyTier,
+                BigDecimal.valueOf(1000L), LoyaltyPointType.ORDER_ONLINE);
+
+        assertEquals(new BigDecimal("350.00"), points);
+    }
+
+
+    @Transactional
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_tier_and_orders_data.sql"})
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    @Test
+    public void updateUserTierToNextTier(){
+        userService.updateUserByTierIdAndOrgId(88L, 99001L);
+
+        UserEntity userEntity = userRepository.findById(88L).get();
+
+        LoyaltyTierEntity actualSecondTier = userEntity.getTier();
+
+        assertEquals(Long.valueOf(2), actualSecondTier.getId());
+        assertEquals("Second_tier", actualSecondTier.getTierName());
     }
 
 }

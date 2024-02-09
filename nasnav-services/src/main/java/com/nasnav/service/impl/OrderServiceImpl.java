@@ -657,7 +657,7 @@ public class OrderServiceImpl implements OrderService {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
 		updateOrderStatus(order, FINALIZED);
-		userService.updateUserByTierIdAndOrgId(0L, order.getUserId(), order.getOrganizationEntity().getId());
+		userService.updateUserByTierIdAndOrgId( order.getUserId(), order.getOrganizationEntity().getId());
 	}
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
@@ -1699,22 +1699,12 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		cancelAbandonedOrders();
-		upgradeUserTierByOrderAmounts(dto, user);
 		validateCartCheckoutDTO(dto);
 		MetaOrderEntity order = createYeshteryMetaOrder(dto);
 
 		return getOrderResponse(order, true);
 	}
 
-	private void upgradeUserTierByOrderAmounts(CartCheckoutDTO dto, BaseUserEntity userAuthed) {
-		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(countOrdersByUserId(userAuthed.getId()), userAuthed.getOrganizationId());
-		if(loyaltyTierEntity == null) {
-			return;
-		}
-		UserEntity userEntity = userRepository.findById(userAuthed.getId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userAuthed.getId()));
-		userEntity.setTier(loyaltyTierEntity);
-		userRepository.save(userEntity);
-	}
 
 	@Override
 	public List<MetaOrderBasicInfo> getYeshteryMetaOrderList() {

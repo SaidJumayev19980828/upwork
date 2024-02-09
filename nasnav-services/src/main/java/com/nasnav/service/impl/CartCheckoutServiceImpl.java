@@ -38,11 +38,7 @@ public class CartCheckoutServiceImpl implements CartCheckoutService {
 			userId = userAuthed.getId();
 		}
 		UserEntity userEntity = userRepository.findById(userId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,userId));
-		LoyaltyTierEntity loyaltyTierEntity = tierServiceImp.getTierByAmountAndOrganizationId(orderService.countOrdersByUserId(userId), userAuthed.getOrganizationId());
-		if(loyaltyTierEntity != null ) {
-			userEntity.setTier(loyaltyTierEntity);
-			userRepository.save(userEntity);
-		}
+
 		Order order = orderService.createOrder(dto,userEntity);
 		if(dto.getPromoCode() != null ){
 			promotionsService.updatePromoUsageAndCheckLimit(dto.getPromoCode());

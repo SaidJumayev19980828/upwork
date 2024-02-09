@@ -186,7 +186,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Override
     public LoyaltyUserPointsResponse getUserPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
-        List<LoyaltyPointTransactionEntity> userTrx = loyaltyPointTransRepo.findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValid(user.getId(),orgId,LocalDateTime.now(),true);
+        List<LoyaltyPointTransactionEntity> userTrx = loyaltyPointTransRepo.findByUser_IdAndOrganization_IdAndStartDateBeforeAndIsValidAndTypeLessThan(user.getId(),orgId,LocalDateTime.now(),true, SPEND_IN_ORDER.getValue());
         Integer totalPoints = 0;
         for(LoyaltyPointTransactionEntity pt : userTrx){
             totalPoints+=pt.getPoints().intValue();
@@ -331,7 +331,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         createLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
     }
 
-    private BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
+    public BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
         return loyaltyTierService.readTierJsonStr(entity.getConstraints()).get(type);
     }
 
@@ -350,7 +350,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         createLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
     }
 
-    private BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyPointType type) {
+    public BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyPointType type) {
         BigDecimal coefficient = getTierCoefficientByType(tier, type);
 
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
@@ -387,9 +387,12 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount, Boolean valid) {
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findByOrganization_IdAndIsActive(org.getId(), TRUE)
+        if (user.getTier() == null) {
+            return;
+        }
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(user.getTier().getId())
                 .orElse(null);
-        if (config == null || user.getTier() == null) {
+        if (config == null) {
             return;
         }
         BigDecimal points = calculatePoints(config, user.getTier(), amount, type);

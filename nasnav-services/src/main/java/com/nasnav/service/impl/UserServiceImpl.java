@@ -181,6 +181,12 @@ public class UserServiceImpl implements UserService {
 		UserEntity user = createNewUserEntity(userJson);
 		setUserAsDeactivated(user);
 		generateResetPasswordToken(user);
+
+		LoyaltyTierEntity loyaltyTier = loyaltyTierService.getTierByAmountAndOrganizationId(0, userJson.getOrgId());
+		if(loyaltyTier != null) {
+			user.setTier(loyaltyTier);
+		}
+
 		user = userRepository.saveAndFlush(user);
 
 		if (userJson.getActivationMethod() == ActivationMethod.OTP) {
@@ -917,22 +923,19 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserByTierIdAndOrgId(Long tierId, Long userId, Long orgId) {
-		if (tierId <= 0) {
-			tierId = getTierIdByUserOrders(orgId, userId);
-		}
-		if (userId > 0 && tierId > 0) {
+	public void updateUserByTierIdAndOrgId(Long userId, Long orgId) {
+		Long tierId = getTierIdByUserOrders(orgId, userId);
+		if(tierId != null && tierId > 0) {
 			userRepository.updateUserTier(tierId, userId);
-			UserEntity userEntity = userRepository.findById(userId).get();
 		}
 	}
 
-	private Long getTierIdByUserOrders(Long orgId, Long userId) {
+	public Long getTierIdByUserOrders(Long orgId, Long userId) {
 		if (orgId < 0) {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 		Integer orderCount = metaOrderRepository.countByUser_IdAndOrganization_IdAAndFinalizeStatus(userId, orgId);
-		return ofNullable(loyaltyTierService.getTierByAmount(orderCount))
+		return ofNullable(loyaltyTierService.getTierByAmountAndOrganizationId(orderCount, orgId))
 				.map(LoyaltyTierEntity::getId)
 				.orElse(-1L);
 	}

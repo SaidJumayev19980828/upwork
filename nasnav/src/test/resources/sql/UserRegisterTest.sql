@@ -17,14 +17,22 @@ INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) 
 INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(55003, 'tooawsome.com', 99001);
 
 
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (5, 'default_tier', true, now(), 0, 5, 99001, '{"ORDER_ONLINE":0.05, "REFERRAL":0.01},');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (6, 'Gold', true, now(), 6, 10, 99001,'{"ORDER_ONLINE":0.05}');
+
+insert into public.loyalty_point_config
+values (31001, 'description', 99001, 501, true, now(), 5, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1},"REFERRAL":{"ratio_from":7,"ratio_to":1,"expiry":null,"amount":100}}');
+insert into public.loyalty_point_config
+values (31002, 'description2', 99001, 501, true, now(), 6, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
-    VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, tier_id,encrypted_password, user_status)
+    VALUES (88001, 'user1@nasnav.com','user1','123', 99001, 5,'$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
     VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
-INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password, user_status)
-    VALUES (88003, 'user2@nasnav.com','user2','789', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, tier_id, encrypted_password, user_status)
+    VALUES (88003, 'user2@nasnav.com','user2','789', '+021092154875','/urls/images/fdsafag23.jpg',  99001, 5,'$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88004, 'not.activated@nasnav.com','not activated','951', 99001, '963', 200, 'sfdsdfd81');
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status,
@@ -93,3 +101,4 @@ INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12
 INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso,stripe_price_id) values (99001,'test 1','test description',1500,30,818,'price_1NzLNBAV4qGEOW4EItZ5eE2p');
 
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 159, 99001, 99001, now());
+
