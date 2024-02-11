@@ -61,5 +61,6 @@ public interface UserService extends CommonUserServiceInterface {
 
     UserApiResponse processUserAvatar(ImageBase64 image) throws IOException;
 
+     UserEntity getByEmailAndOrganizationId(String email, Long organizationId);
 
 }
