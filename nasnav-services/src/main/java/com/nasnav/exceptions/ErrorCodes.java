@@ -23,7 +23,7 @@ public enum ErrorCodes {
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
 	, U$LOG$0009("Email is already subscribed!")
-	, U$LOG$0010("No user found with email [%email]!")
+	, U$LOG$0010("No user found with email [%s]!")
 	, U$LOG$0011("Need activation method !")
 
 	,U$IMG$0001("File with the same content already exists!")
@@ -440,6 +440,11 @@ public enum ErrorCodes {
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
 	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")
 
+
+	,REF$PARAM$0001("Invalid referral code type_id[%d]!")
+	,REF$PARAM$0002("Couldn't find referral with id [%d]!")
+	,REF$PARAM$0003("Couldn't find referral code [%s] for this organization!")
+	,REF$PARAM$0004("Invalid referral code Status value[%d]!")
 
 	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
 	,VIDEO$PARAM$0002("Invalid user type!")

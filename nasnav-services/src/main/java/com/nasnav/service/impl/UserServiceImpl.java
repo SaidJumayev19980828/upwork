@@ -98,27 +98,7 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.UserStatus.ACCOUNT_SUSPENDED;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.E$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
-import static com.nasnav.exceptions.ErrorCodes.GEN$0003;
-import static com.nasnav.exceptions.ErrorCodes.SUBAREA$001;
-import static com.nasnav.exceptions.ErrorCodes.SUBAREA$002;
-import static com.nasnav.exceptions.ErrorCodes.U$0001;
-import static com.nasnav.exceptions.ErrorCodes.U$EMP$0004;
-import static com.nasnav.exceptions.ErrorCodes.U$EMP$0014;
-import static com.nasnav.exceptions.ErrorCodes.U$EMP$0015;
-import static com.nasnav.exceptions.ErrorCodes.U$LOG$0001;
-import static com.nasnav.exceptions.ErrorCodes.U$LOG$0007;
-import static com.nasnav.exceptions.ErrorCodes.U$LOG$0008;
-import static com.nasnav.exceptions.ErrorCodes.U$LOG$0009;
-import static com.nasnav.exceptions.ErrorCodes.U$STATUS$0001;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0006;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
@@ -748,8 +728,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 
-
-
 	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
@@ -1037,6 +1015,13 @@ public class UserServiceImpl implements UserService {
 		MultipartFile userAvatar = MultipartFileUtils.convert(image.getBase64(), image.getFileName(), image.getFileType());
 		return updateUserAvatar(userAvatar);
 	}
+
+	@Override
+	public UserEntity getByEmailAndOrganizationId(String email, Long organizationId) throws RuntimeBusinessException{
+		return userRepository.getByEmailAndOrganizationId(email, organizationId);
+
+	}
+
 
 
 }
