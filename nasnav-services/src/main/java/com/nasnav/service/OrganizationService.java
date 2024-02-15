@@ -32,6 +32,8 @@ public interface OrganizationService {
 
     OrganizationRepresentationObject getOrganizationById(Long organizationId, Integer yeshteryState);
 
+    OrganizationEntity getOrganizationById(Long organizationId);
+
     OrganizationResponse createOrganization(OrganizationCreationDTO json) throws BusinessException;
 
     OrganizationResponse registerOrganization(RegisterDto json) throws Exception;

@@ -86,7 +86,7 @@ public class OrganizationEntity implements BaseEntity {
     private String openingHours;
 
 
-    @OneToMany(mappedBy = "organizationEntity")
+    @OneToMany(mappedBy = "organizationEntity",fetch = FetchType.EAGER)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude

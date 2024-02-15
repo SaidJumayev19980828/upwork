@@ -515,6 +515,7 @@ public enum ErrorCodes {
 	,PROMO$EXCEPTION("Discount is bigger than the min price")
 	,$001$PROMO$("Promo not found")
 	,$002$PROMO$("This promo can't be used. Usage limit reached.")
+	,SCRAPPING$001("You should upload Scrapping file if you want the process to be manual")
 	;
 
 	@Getter

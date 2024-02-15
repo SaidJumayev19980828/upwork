@@ -178,17 +178,20 @@ public class OrganizationServiceImpl implements OrganizationService {
             organizationEntity = organizationRepository.findByIdAndYeshteryState(organizationId, yeshteryState)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
         } else {
-            organizationEntity = organizationRepository.findById(organizationId)
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+            organizationEntity = getOrganizationById(organizationId);
         }
 
         return getOrganizationAdditionalData(organizationEntity);
     }
 
-    
-    
-    
-    
+    @Override
+    public OrganizationEntity getOrganizationById(Long organizationId) {
+        return   organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0001, organizationId));
+
+    }
+
+
     private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
         OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
 

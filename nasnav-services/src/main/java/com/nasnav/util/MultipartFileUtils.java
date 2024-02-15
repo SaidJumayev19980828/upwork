@@ -15,7 +15,6 @@ public class MultipartFileUtils {
         byte[] content = Base64.getDecoder().decode(base64Content);
         return new Base64MultipartFile(content, fileName , fileType);
     }
-
     private static class Base64MultipartFile implements MultipartFile {
         private final byte[] content;
         private final String fileName;
