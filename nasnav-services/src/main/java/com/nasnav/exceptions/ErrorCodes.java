@@ -434,6 +434,8 @@ public enum ErrorCodes {
 	,INTG$EVENT$0001("Failed to create instance of event of type[%s]!")
 
 	,LOY$PARAM$0004("Invalid loyalty points type_id[%d]!")
+	,LOY$PARAM$0005("Loyalty points is not applicable to the current user!")
+	,LOY$PARAM$0006("Point amount should be greater than zero!")
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
 	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")

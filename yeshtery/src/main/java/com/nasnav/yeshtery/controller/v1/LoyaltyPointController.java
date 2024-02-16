@@ -28,7 +28,7 @@ public class LoyaltyPointController {
     @GetMapping(value ="points")
     public LoyaltyUserPointsResponse getUserPoints(@RequestHeader(name = "User-Token", required = false) String token,
                                                    @RequestParam("org_id") Long orgId){
-        return loyaltyPointsService.getUserPoints(orgId);
+        return loyaltyPointsService.loyaltyUserPoints(orgId);
     }
 
     @GetMapping(value ="spendable_points")
@@ -37,7 +37,7 @@ public class LoyaltyPointController {
     }
     @PostMapping(value ="share_points")
     public void sharePoints(@RequestHeader(name = "User-Token", required = false) String token , @RequestParam("org_id")  Long orgId , @RequestParam("email")  String email ,@RequestParam("points") BigDecimal points){
-         loyaltyPointsService.sharePoints(orgId ,email,points);
+         loyaltyPointsService.sharePointsBetweenUsers(orgId ,email,points);
     }
 
 

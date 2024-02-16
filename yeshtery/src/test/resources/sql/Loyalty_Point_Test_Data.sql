@@ -90,3 +90,10 @@ insert into public.loyalty_point_config
     values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
 insert into public.loyalty_point_config(id, description, organization_id, shop_id, is_active, created_at, default_tier_id, constraints)
     values (31002, 'desctiption', 99002, null, true, now(), 2, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+
+
+
+INSERT INTO public.user_loyalty_points(
+	id, balance, created_at, version, user_id)
+	VALUES
+	 (1, 2000, now(), 1, 88);

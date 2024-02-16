@@ -58,4 +58,14 @@ public interface LoyaltyPointsService {
 	List<LoyaltyPointConfigDTO> listLoyaltyPointConfigsForAllOrganizations();
 
 
-}
+
+
+
+
+
+    LoyaltyUserPointsResponse loyaltyUserPoints();
+    LoyaltyUserPointsResponse loyaltyUserPoints(Long orgId);
+
+    void sharePointsBetweenUsers(Long orgId, String email, BigDecimal points);
+
+    }

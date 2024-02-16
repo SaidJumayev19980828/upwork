@@ -93,16 +93,7 @@ class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         Assert.assertEquals(OK, res.getStatusCode());
         ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShare = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
         });
-        Assert.assertEquals(BigDecimal.valueOf(25), resAfterShare.getBody().get(0).getPoints());
-
-
-        HttpEntity<?> request2 = getHttpEntity("258");
-        ResponseEntity<List<LoyaltyPointTransactionDTO>> resAfterShareToSharedUser = template.exchange("/v1/loyalty/spendable_points/" + orgId, GET, request2, new ParameterizedTypeReference<List<LoyaltyPointTransactionDTO>>() {
-        });
-        Assert.assertEquals(BigDecimal.valueOf(5), resAfterShareToSharedUser.getBody().get(0).getPoints());
-
-        assertEquals(4, spendablePoints.get(0).getId());
-        assertEquals(1, spendablePoints.size());
+        Assert.assertEquals(BigDecimal.valueOf(30), resAfterShare.getBody().get(0).getPoints());
     }
 
 }

@@ -69,3 +69,10 @@ INSERT INTO public.settings(id, setting_name, setting_value, organization_id, ty
 VALUES (1, 'RETURN_DAYS_LIMIT', '0', 99001, 0);
 INSERT INTO public.settings(id, setting_name, setting_value, organization_id, type)
 VALUES (99002, 'RETURN_DAYS_LIMIT', '0', 99002, 0);
+
+
+INSERT INTO public.user_loyalty_points(
+	id, balance, created_at, version, user_id)
+	VALUES
+	 (1, 2000, now(), 1, 88),
+	 (2, 6000, now(), 1, 89);

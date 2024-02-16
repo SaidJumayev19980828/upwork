@@ -9,7 +9,9 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.OrganizationPoints;
@@ -38,6 +40,9 @@ import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.enumerations.LoyaltyPointType.*;
+import static com.nasnav.enumerations.LoyaltyTransactions.ONLINE_ORDER;
+import static com.nasnav.enumerations.LoyaltyTransactions.SHARE_POINTS;
+import static com.nasnav.enumerations.LoyaltyTransactions.TRANSFER_POINTS;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.Settings.RETURN_DAYS_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
@@ -45,7 +50,6 @@ import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.impl.OrderReturnServiceImpl.MAX_RETURN_TIME_WINDOW;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.math.BigDecimal.ONE;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -88,6 +92,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     @Autowired
     private LoyaltyTierRepository loyaltyTierRepository;
+
+    @Autowired
+    private UserLoyaltyPointsRepository  userLoyaltyPointsRepository;
 
     @Override
     public LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(LoyaltyPointConfigDTO dto) {
@@ -177,12 +184,42 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return new LoyaltyPointDeleteResponse(true, entity.getId());
     }
 
+    @Deprecated
     @Override
     public LoyaltyUserPointsResponse getUserPoints() {
         Long orgId = securityService.getCurrentUserOrganizationId();
         return getUserPoints(orgId);
     }
+    @Override
+    public LoyaltyUserPointsResponse loyaltyUserPoints() {
+        UserEntity user = getCurrentUserWithOrganization();
+        int balance = getUserLoyaltyPointsBalance(user);
+        return new LoyaltyUserPointsResponse(balance);
+    }
 
+    @Override
+    public LoyaltyUserPointsResponse loyaltyUserPoints(Long orgId) {
+        UserEntity user = getCurrentUserWithOrg(orgId);
+        int balance = getUserLoyaltyPointsBalance(user);
+        return new LoyaltyUserPointsResponse(balance);
+    }
+
+    private UserEntity getCurrentUserWithOrganization() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return getCurrentUserWithOrg(orgId);
+    }
+
+    private int getUserLoyaltyPointsBalance(UserEntity user) {
+        return getUserLoyaltyPoints(user).map(points -> points.getBalance().intValueExact()).orElse(0);
+    }
+
+    private  Optional<UserLoyaltyPoints>  getUserLoyaltyPoints(UserEntity user) {
+       return userLoyaltyPointsRepository.findByUser(user);
+    }
+
+
+
+    @Deprecated
     @Override
     public LoyaltyUserPointsResponse getUserPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
@@ -211,7 +248,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     private UserEntity getCurrentUserWithOrg(Long orgId) {
         BaseUserEntity baseUser = null;
-        
+
         try {
             baseUser = securityService.getCurrentUserForOrg(orgId);
         } catch (IllegalStateException e) {
@@ -275,7 +312,33 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
+    private LoyaltyPointsUpdateResponse addLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org,
+                                                                     UserEntity user,
+                                                                     MetaOrderEntity yeshteryMetaOrder,
+                                                                     OrdersEntity order, BigDecimal points,
+                                                                     BigDecimal amount, Integer expiry) {
+        UserLoyaltyPoints  userPoints = getUserLoyaltyPoints(user).orElse(buildBasicEntity(user,points));
+        UserLoyaltyTransactions entity = addLoyaltyPointTransaction(org,points);
+        entity.setShop(shop);
+        entity.setOrder(order);
+        entity.setMetaOrder(yeshteryMetaOrder);
+        entity.setType(ONLINE_ORDER.name());
+        entity.setDescription(ONLINE_ORDER.getDescription());
+        entity.setCreatedAt(LocalDateTime.now());
+        userPoints.addTransactions(entity);
 
+        userLoyaltyPointsRepository.save(userPoints);
+        return new LoyaltyPointsUpdateResponse(entity.getId());
+    }
+
+    private UserLoyaltyPoints buildBasicEntity(UserEntity user, BigDecimal amount){
+        UserLoyaltyPoints  entity = new UserLoyaltyPoints();
+        entity.depositPoints(amount);
+        entity.setUser(user);
+        entity.setCreatedAt(LocalDateTime.now());
+        return entity;
+    }
+    @Deprecated
     private LoyaltyPointTransactionEntity createLoyaltyPointTransaction(OrganizationEntity org,
                                                                         UserEntity user,
                                                                         BigDecimal points,
@@ -292,6 +355,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return entity;
     }
 
+    private UserLoyaltyTransactions addLoyaltyPointTransaction(OrganizationEntity org,BigDecimal points) {
+        UserLoyaltyTransactions entity = new UserLoyaltyTransactions();
+        entity.setAmount(points);
+        entity.setOrganization(org);
+        entity.setCreatedAt(calculateTransactionStartDate(org));
+        return entity;
+    }
     private LocalDateTime calculateTransactionStartDate(OrganizationEntity org) {
         int returnExpirySetting = settingRepo.findBySettingNameAndOrganization_Id(RETURN_DAYS_LIMIT.name(), org.getId())
                 .map(SettingEntity::getSettingValue)
@@ -328,7 +398,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
 
         BigDecimal points = calculatePoints(config, userEntity.getTier(), pointsAmount, ORDER_ONLINE);
-        createLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
+        addLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
     }
 
     public BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
@@ -347,7 +417,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
             return;
         }
         BigDecimal points = calculatePoints(config, user.getTier(), pointsAmount, ORDER_ONLINE);
-        createLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
+        addLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
     }
 
     public BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyPointType type) {
@@ -406,6 +476,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         transaction.setIsValid(valid);
         loyaltyPointTransRepo.save(transaction);
     }
+
 
 
     @Override
@@ -729,6 +800,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
     }
 
+    @Deprecated
     @Override
     @Transactional
     public void sharePoints(Long orgId, String email, BigDecimal points) {
@@ -753,6 +825,19 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         spendPoint.setIsValid(true);
         loyaltyPointTransRepo.save(spendPoint);
         deductAndCreateLoyaltySpendTransaction(validLoyaltyPointTrans,spendPoint);
+    }
+
+    @Override
+    @Transactional
+    public void sharePointsBetweenUsers(Long orgId, String email, BigDecimal points) {
+        UserEntity senderUser = getCurrentUserWithOrganization();
+        OrganizationEntity org = organizationRepository.findById(orgId).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, G$ORG$0002));
+        userLoyaltyPointsRepository.save(processTransaction(senderUser, points , TRANSFER_POINTS ,org,null,null,null));
+        UserEntity receiverUser = userRepo.getByEmailAndOrganizationId(email, orgId);
+        if (receiverUser == null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0010, email);
+        }
+        userLoyaltyPointsRepository.save(  processTransaction(receiverUser, points , SHARE_POINTS ,org,null,null,null));
     }
 
     private List<LoyaltyPointTransactionDTO> getPointsTransByUserAndOrg(Long orgId) {
@@ -840,4 +925,60 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return getUserSpendablePointsForOrganization(orgId);
     }
 
+
+   private UserLoyaltyPoints processTransaction(UserEntity userId, BigDecimal points, LoyaltyTransactions type , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder ) {
+       UserLoyaltyPoints userPoints = getUserPoints(userId, type);
+       userPoints.addTransactions(buildTransaction(points, org, shop, order, yeshteryMetaOrder, type));
+       switch (type) {
+            case ADD_ORDER:
+            case SHARE_POINTS:
+            case REFERRAL_POINTS:
+                userPoints.depositPoints(points);
+                break;
+            case TRANSFER_POINTS:
+            case REDEEM_POINTS:
+            case ONLINE_ORDER:
+            case PICKUP_FROM_SHOP:
+                validateAndProcessWithdraw(points,userPoints);
+                break;
+        }
+        return userPoints;
+
+    }
+
+    private UserLoyaltyPoints  getUserPoints(UserEntity userId ,LoyaltyTransactions type  ) {
+      return   userLoyaltyPointsRepository.findByUser(userId)
+                .orElseGet(() -> {
+                    if (type == LoyaltyTransactions.ADD_ORDER ||
+                            type == LoyaltyTransactions.SHARE_POINTS ||
+                            type == LoyaltyTransactions.REFERRAL_POINTS) {
+                        return buildBasicEntity(userId, BigDecimal.ZERO);
+                    } else {
+                        throw new RuntimeBusinessException(NOT_FOUND,U$0001);
+                    }
+                });
+    }
+
+    private void validateAndProcessWithdraw(BigDecimal amount, UserLoyaltyPoints userPoints){
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeBusinessException(BAD_REQUEST,LOY$PARAM$0006);
+        }
+        if (amount.compareTo(userPoints.getBalance()) > 0) {
+            throw new RuntimeBusinessException(METHOD_NOT_ALLOWED, ORG$LOY$0025);
+        }
+        userPoints.withdrawBalance(amount);
+    }
+
+    private UserLoyaltyTransactions buildTransaction(BigDecimal points , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder, LoyaltyTransactions type ){
+    UserLoyaltyTransactions entity = new UserLoyaltyTransactions();
+        entity.setAmount(points);
+        entity.setOrganization(org);
+        entity.setShop(shop);
+        entity.setOrder(order);
+        entity.setMetaOrder(yeshteryMetaOrder);
+        entity.setType(type.name());
+        entity.setDescription(type.getDescription());
+        entity.setCreatedAt(LocalDateTime.now());
+        return entity;
+    }
 }
