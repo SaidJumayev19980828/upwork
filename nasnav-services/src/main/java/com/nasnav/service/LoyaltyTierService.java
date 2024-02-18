@@ -21,4 +21,6 @@ public interface LoyaltyTierService {
     List<LoyaltyTierDTO> getTiers(Boolean isSpecial);
 
     HashMap<LoyaltyPointType, BigDecimal> readTierJsonStr(String jsonStr);
+    LoyaltyTierEntity getActiveDefaultTier( Long organizationId);
+
 }

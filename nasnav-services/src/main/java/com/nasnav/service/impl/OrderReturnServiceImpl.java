@@ -27,6 +27,7 @@ import com.nasnav.service.ProductService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShippingManagementService;
 import com.nasnav.service.StockService;
+import com.nasnav.service.UserService;
 import com.nasnav.service.model.mail.MailAttachment;
 import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShippingDetails;
@@ -133,6 +134,8 @@ public class OrderReturnServiceImpl implements OrderReturnService{
     @Autowired
     private StockService stockService;
 
+    @Autowired
+    private UserService  userService;
 
     private Map<ReturnRequestStatus, Set<ReturnRequestStatus>> orderReturnStateMachine;
 
@@ -190,6 +193,7 @@ public class OrderReturnServiceImpl implements OrderReturnService{
                 returnRequestRepo
                         .findByReturnRequestId(requestId, orgId)
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, requestId));
+        userService.updateUserByTierIdAndOrgId(request.getMetaOrder().getUser().getId(), request.getMetaOrder().getUser().getRepresentation().getOrganizationId());
         sendReturnRequestConfirmationEmail(requestUpdated, trackers);
     }
 

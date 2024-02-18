@@ -250,7 +250,7 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " LEFT JOIN  stock.productVariantsEntity variant "
 			+ " LEFT JOIN  variant.productEntity product "
 			+ " WHERE usr.id =:userId AND org.id = :orgId"
-			+ " AND meta.status = 8 ")
+			+ " AND meta.status in (2,5,8)")
 	Integer countByUser_IdAndOrganization_IdAAndFinalizeStatus(@Param("userId") Long userId,
 														  @Param("orgId") Long orgId);
 	@Query("SELECT distinct new com.nasnav.dto.MetaOrderBasicInfo(" +

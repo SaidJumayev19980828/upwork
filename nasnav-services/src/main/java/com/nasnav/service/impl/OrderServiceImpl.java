@@ -253,7 +253,7 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity metaOrder = order.getMetaOrder();
 		if(isAllOtherOrdersHaveStatus(order.getId(), metaOrder, orderStatus)) {
 			metaOrder.setStatus(orderStatus.getValue());
-			metaOrderRepo.save(metaOrder);
+			metaOrderRepo.saveAndFlush(metaOrder);
 		}
 		updateYeshteryMetaOrderIfExists(metaOrder, orderStatus);
 	}
@@ -265,7 +265,7 @@ public class OrderServiceImpl implements OrderService {
 
 			if (isAllOtherSubMetaOrdersHaveStatus(subMetaOrders, orderStatus)) {
 				yeshteryMetaOrder.setStatus(orderStatus.getValue());
-				metaOrderRepo.save(yeshteryMetaOrder);
+				metaOrderRepo.saveAndFlush(yeshteryMetaOrder);
 			}
 		}
 	}
@@ -657,7 +657,6 @@ public class OrderServiceImpl implements OrderService {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
 		updateOrderStatus(order, FINALIZED);
-		userService.updateUserByTierIdAndOrgId( order.getUserId(), order.getOrganizationEntity().getId());
 	}
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
@@ -698,7 +697,7 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0001, currentStatus.name(), newStatus.name());
 		}
 		orderEntity.setStatus(newStatus.getValue());
-		return ordersRepository.save(orderEntity);
+		return ordersRepository.saveAndFlush(orderEntity);
 	}
 
 	private MetaOrderEntity updateOrderStatus(MetaOrderEntity metaOrderEntity, OrderStatus newStatus) {
@@ -708,7 +707,7 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0001, currentStatus.name(), newStatus.name());
 		}
 		metaOrderEntity.setStatus(newStatus.getValue());
-		return metaOrderRepo.save(metaOrderEntity);
+		return metaOrderRepo.saveAndFlush(metaOrderEntity);
 	}
 
 	private void returnOrderToStocks(OrdersEntity order) {
@@ -1197,8 +1196,8 @@ public class OrderServiceImpl implements OrderService {
 	public OrderConfirmResponseDTO confirmOrder(Long orderId, String pinCode) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
-
 		confirmSubOrderAndMetaOrder(subOrder);
+		userService.updateUserByTierIdAndOrgId(subOrder.getUserId(), subOrder.getOrganizationEntity().getId());
 
 		return shippingMgrService
 				.requestShipment(subOrder)

@@ -76,6 +76,12 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         return getTierRepresentation(e);
     }
 
+    @Override
+    public LoyaltyTierEntity getActiveDefaultTier( Long organizationId){
+        return tierRepository.getActiveDefaultTierAndOrganization_id(organizationId);
+    }
+
+
     public HashMap<LoyaltyPointType, BigDecimal> readTierJsonStr(String jsonStr){
         try {
             return objectMapper.readValue(jsonStr, new TypeReference<HashMap<LoyaltyPointType, BigDecimal>>() {});

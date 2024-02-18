@@ -19,6 +19,22 @@ public interface LoyaltyTierRepository extends JpaRepository<LoyaltyTierEntity, 
             " AND tier.isActive = true AND tier.organization.id = :organizationId")
     LoyaltyTierEntity getActiveByAmountInRangeAndOrganization_id(Integer amount, Long organizationId);
 
+    @Query(value = """
+                SELECT
+                                 id, tier_name, is_active, is_special, created_at,
+                                 no_of_purchase_from, no_of_purchase_to, selling_price,
+                                 organization_id, booster_id, cash_back_percentage, constraints
+                                 FROM
+                                 public.loyalty_tier
+                                 where is_active = true AND organization_id = :organizationId
+                                 ORDER BY
+                                 no_of_purchase_from
+                                 LIMIT
+                                 1
+            """, nativeQuery = true )
+    LoyaltyTierEntity getActiveDefaultTierAndOrganization_id( Long organizationId);
+
+
     Optional<LoyaltyTierEntity> findByTierName(String tierName);
 
     @Transactional

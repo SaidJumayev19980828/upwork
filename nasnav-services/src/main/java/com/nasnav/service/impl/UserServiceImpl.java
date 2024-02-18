@@ -182,7 +182,8 @@ public class UserServiceImpl implements UserService {
 		setUserAsDeactivated(user);
 		generateResetPasswordToken(user);
 
-		LoyaltyTierEntity loyaltyTier = loyaltyTierService.getTierByAmountAndOrganizationId(0, userJson.getOrgId());
+		LoyaltyTierEntity loyaltyTier = loyaltyTierService.getActiveDefaultTier(userJson.getOrgId());
+
 		if(loyaltyTier != null) {
 			user.setTier(loyaltyTier);
 		}
