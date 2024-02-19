@@ -5,7 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
 
-public interface SocialRepository extends CrudRepository<SocialEntity, Integer> {
+public interface SocialRepository extends CrudRepository<SocialEntity, Long> {
 
     Optional<SocialEntity> findOneByOrganizationEntity_Id(Long OrganizationEntity_Id);
 }

@@ -36,6 +36,8 @@ public class QSocialLinks extends com.querydsl.sql.RelationalPathBase<QSocialLin
 
     public final StringPath pinterest = createString("pinterest");
 
+    public final StringPath tiktok = createString("tiktok");
+
     public final StringPath twitter = createString("twitter");
 
     public final StringPath youtube = createString("youtube");
@@ -76,6 +78,7 @@ public class QSocialLinks extends com.querydsl.sql.RelationalPathBase<QSocialLin
         addMetadata(linkedin, ColumnMetadata.named("linkedin").withIndex(6).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(5).ofType(Types.BIGINT).withSize(19));
         addMetadata(pinterest, ColumnMetadata.named("pinterest").withIndex(8).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(tiktok, ColumnMetadata.named("tiktok").withIndex(9).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(twitter, ColumnMetadata.named("twitter").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(youtube, ColumnMetadata.named("youtube").withIndex(7).ofType(Types.VARCHAR).withSize(2147483647));
     }

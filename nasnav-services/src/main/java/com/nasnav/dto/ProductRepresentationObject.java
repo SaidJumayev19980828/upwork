@@ -1,12 +1,11 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.nasnav.dto.response.PromotionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +14,7 @@ import java.util.Map;
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper=true)
+@JsonPropertyOrder({ "image_url", "categoryId", "price" })
 public class ProductRepresentationObject extends ProductBaseInfo{
     
     private BigDecimal price;

@@ -108,6 +108,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         String linkedinUrl = "https://www.linkedin.com/";
         String pinterestUrl = "https://www.pinterest.com/";
         String whatsappUrl = "https://www.whatsapp.com/";
+        String tiktokUrl = "https://www.tiktok.com/";
         String body = json()
                 .put("description", "this company is old and unique")
                 .put("social_twitter", twitterUrl)
@@ -116,6 +117,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
                 .put("social_youtube", youtubeUrl)
                 .put("social_linkedin", linkedinUrl)
                 .put("social_pinterest", pinterestUrl)
+                .put("social_tiktok",tiktokUrl)
                 .put("social_whatsapp", whatsappUrl)
                 .toString();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
@@ -133,6 +135,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         assertEquals(linkedinUrl, socialEntity.getLinkedin());
         assertEquals(pinterestUrl, socialEntity.getPinterest());
         assertEquals(whatsappUrl, socialEntity.getWhatsapp());
+        assertEquals(tiktokUrl,socialEntity.getTiktok());
     }
 
     @Test
@@ -233,6 +236,7 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
         organizationModificationDTO.setSocialYoutube("youtube-handle");
         organizationModificationDTO.setSocialLinkedin("linkedin-handle");
         organizationModificationDTO.setSocialPinterest("pinterest-handle");
+        organizationModificationDTO.setSocialTiktok("tiktok-handle");
         organizationModificationDTO.setSocialWhatsapp("whatsapp-number");
         Map<String, Object> infoMap = new HashMap<>();
         infoMap.put("key1", "value1");

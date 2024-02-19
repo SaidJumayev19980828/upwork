@@ -28,7 +28,7 @@ public class OrganizationModificationDTO {
     private String socialYoutube;
     private String socialLinkedin;
     private String socialPinterest;
-
+    private String socialTiktok;
     private String socialWhatsapp;
     @JsonProperty("extra_info")
     private Map<?,?> info;

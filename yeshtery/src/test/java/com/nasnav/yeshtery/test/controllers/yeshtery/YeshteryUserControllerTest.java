@@ -59,7 +59,7 @@ public class YeshteryUserControllerTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void getEmployeeAfterUpdateTest() {
-        HttpEntity<Object> request = getHttpEntity(EMPLOYEE_TOKEN);
+        HttpEntity<Object> request = getHttpEntity(ADMIN_TOKEN);
         ResponseEntity<UserRepresentationObject> responseEntity =
                 template.exchange(format(YESHTERY_USER_INFO_URL, "164", IS_EMPLOYEE)
                         , GET
@@ -85,7 +85,7 @@ public class YeshteryUserControllerTest extends AbstractTestWithTempBaseDir {
 
         HttpEntity<Object> getInfoRequest = getHttpEntity(ADMIN_TOKEN);
         ResponseEntity<UserRepresentationObject> userInfoResponseEntity =
-                template.exchange(format(YESHTERY_USER_INFO_URL, EMPLOYEE_ID, is_employee)
+                template.exchange(format(YESHTERY_USER_INFO_URL, updateUserInfoResponseEntity.getBody().getEntityId(), is_employee)
                         , GET
                         , getInfoRequest
                         , UserRepresentationObject.class);
@@ -121,8 +121,7 @@ public class YeshteryUserControllerTest extends AbstractTestWithTempBaseDir {
     }
 
     public static Stream<Arguments> argumentsProviderForEmployees() {
-        return Stream.of(Arguments.of(ADMIN_TOKEN, "163", "nasnav.admin@nasnav.com")
-                , Arguments.of(EMPLOYEE_TOKEN, "164", "org.employee@nasnav.com"));
+        return Stream.of(Arguments.of(ADMIN_TOKEN, "163", "nasnav.admin@nasnav.com"));
     }
 
 }

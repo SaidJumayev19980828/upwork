@@ -377,7 +377,7 @@ public class YeshteryUserServiceImpl implements YeshteryUserService {
     public UserRepresentationObject getYeshteryUserData(Long userId, Boolean isEmployee) {
         BaseUserEntity currentUser = securityService.getCurrentUser();
         BaseUserEntity user;
-        if (securityService.currentUserIsCustomer() || userId == null || userId.equals(currentUser.getId())) {
+        if (securityService.currentUserIsCustomer() || userId == null) {
             return getUserRepresentationWithUserRoles(currentUser);
         } else {
             Roles userHighestRole = roleService.getEmployeeHighestRole(currentUser.getId());

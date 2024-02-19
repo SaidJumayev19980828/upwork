@@ -28,9 +28,10 @@ public class OrganizationServiceHelper  {
         String youtube = json.getSocialYoutube();
         String linkedin = json.getSocialLinkedin();
         String pinterest = json.getSocialPinterest();
+        String tiktok    =json.getSocialTiktok();
         String whatsapp = json.getSocialWhatsapp();
 
-        if (allIsNull(instagram, twitter, facebook, youtube, linkedin, pinterest, whatsapp)){
+        if (allIsNull(instagram, twitter, facebook, youtube, linkedin, pinterest, tiktok,whatsapp)){
             return empty();
         }
 
@@ -46,30 +47,25 @@ public class OrganizationServiceHelper  {
         validateAndSetYoutubeUrl(youtube, socialEntity);
         validateAndSetLinkedIn(linkedin, socialEntity);
         validateAndSetPinterest(pinterest, socialEntity);
+        validateAndSetTiktok(tiktok,socialEntity);
         validateAndSetWhatsapp(whatsapp, socialEntity);
 
         return Optional.of(socialEntity);
     }
 
     private void validateAndSetTwitterUrl(String url, SocialEntity socialEntity) {
-        if (url != null) {
-            if (url.equals("")) {
-                socialEntity.setTwitter(null);
-            }
-            else {
-                socialEntity.setTwitter(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setTwitter(url);
+        }else {
+            socialEntity.setTwitter(null);
         }
     }
 
     private void validateAndSetFacebookUrl(String url, SocialEntity socialEntity) {
-        if (url != null) {
-            if (url.equals("")) {
-                socialEntity.setFacebook(null);
-            }
-            else {
-                socialEntity.setFacebook(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setFacebook(url);
+        }else {
+            socialEntity.setFacebook(null);
         }
     }
 
@@ -84,46 +80,42 @@ public class OrganizationServiceHelper  {
     }
 
     private void validateAndSetYoutubeUrl(String url, SocialEntity socialEntity) {
-        if (url != null){
-            if (url.equals("")) {
-                socialEntity.setYoutube(null);
-            }
-            else {
-                socialEntity.setYoutube(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setYoutube(url);
+        }else {
+            socialEntity.setYoutube(null);
         }
     }
 
     private void validateAndSetLinkedIn(String url, SocialEntity socialEntity) {
-        if (url != null){
-            if (url.equals("")) {
-                socialEntity.setLinkedin(null);
-            }
-            else {
-                socialEntity.setLinkedin(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setLinkedin(url);
+        }else {
+            socialEntity.setLinkedin(null);
         }
     }
 
     private void validateAndSetPinterest(String url, SocialEntity socialEntity) {
-        if (url != null){
-            if (url.equals("")) {
-                socialEntity.setPinterest(null);
-            }
-            else {
-                socialEntity.setPinterest(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setPinterest(url);
+        }else {
+            socialEntity.setPinterest(null);
+        }
+    }
+
+    private void validateAndSetTiktok(String url, SocialEntity socialEntity) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setTiktok(url);
+        }else {
+            socialEntity.setTiktok(null);
         }
     }
 
     private void validateAndSetWhatsapp(String url, SocialEntity socialEntity) {
-        if (url != null){
-            if (url.equals("")) {
-                socialEntity.setWhatsapp(null);
-            }
-            else {
-                socialEntity.setWhatsapp(url);
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(url)) {
+            socialEntity.setWhatsapp(url);
+        }else {
+            socialEntity.setWhatsapp(null);
         }
     }
 }
