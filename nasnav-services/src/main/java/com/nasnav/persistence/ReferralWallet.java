@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -25,9 +26,10 @@ public class ReferralWallet {
     private Long id;
 
     @Column(nullable = false)
-    private BigDecimal balance;
+    private BigDecimal balance = new BigDecimal("0.00");
 
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Version
@@ -36,22 +38,6 @@ public class ReferralWallet {
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private UserEntity user;
-
-
-    @OneToMany(mappedBy = "referralWallet", cascade = CascadeType.ALL, orphanRemoval = true ,fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Set<ReferralWalletTransaction> transactions= new HashSet<>();
-
-
-
-
-    public void addTransactions(ReferralWalletTransaction transactions) {
-        if (transactions != null) {
-            if (!getTransactions().contains(transactions))
-                getTransactions().add(transactions);
-            transactions.setReferralWallet(this);
-        }
-    }
 
 
     public void depositBalance(BigDecimal amount) {

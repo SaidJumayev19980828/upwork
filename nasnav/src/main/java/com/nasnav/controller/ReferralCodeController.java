@@ -1,12 +1,10 @@
-package com.nasnav.yeshtery.controller.v1;
+package com.nasnav.controller;
 
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
-import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.service.ReferralCodeService;
-import com.nasnav.service.ReferralSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,19 +18,6 @@ public class ReferralCodeController {
     @Autowired
     private ReferralCodeService referralCodeService;
 
-    @Autowired
-    private ReferralSettingsService referralSettingsService;
-
-    @PostMapping("/organization/settings")
-    public ReferralSettingsDto createSettings(@RequestBody ReferralSettingsDto referralSettingsDto){
-        return referralSettingsService.create(referralSettingsDto);
-    }
-
-    @PostMapping("/sendOtp")
-    public void send(@RequestParam("phoneNumber") String phoneNumber,
-                     @RequestParam(value = "parentReferralCode", required = false) String parenReferralCode) {
-        referralCodeService.send(phoneNumber, parenReferralCode);
-    }
 
     @GetMapping("/list")
     public PaginatedResponse<ReferralCodeDto> getList(@RequestParam(value = "pageNo", required = false) Integer pageNo,
@@ -55,18 +40,24 @@ public class ReferralCodeController {
        return referralCodeService.create(referralCodeDto);
     }
 
-    @PostMapping("/accept/{referralCode}")
-    public void accept(@PathVariable String referralCode, @RequestParam("referral_token") String token) {
-         referralCodeService.validateReferralOtp(token);
+
+    @PostMapping("/sendOtp")
+    public void send(@RequestParam("phoneNumber") String phoneNumber,
+                     @RequestParam(value = "parentReferralCode", required = false) String parentReferralCode) {
+         referralCodeService.send(phoneNumber, parentReferralCode);
     }
 
-
+    @PostMapping("/validateOtp/{referral_token}")
+    public void validate(@PathVariable("referral_token") String token) {
+        referralCodeService.validateReferralOtp(token);
+    }
 
 
     @PutMapping
     public void update(@RequestBody ReferralCodeDto referralCodeDto) {
         referralCodeService.update(referralCodeDto);
     }
+
 
     @GetMapping("/activate/{referralCode}")
     public void activate(@PathVariable("referralCode") String referralCode){

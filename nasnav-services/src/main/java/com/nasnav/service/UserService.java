@@ -63,4 +63,6 @@ public interface UserService extends CommonUserServiceInterface {
 
      UserEntity getByEmailAndOrganizationId(String email, Long organizationId);
 
+     String getMobileByIdAndOrganizationId(Long userId, Long organizationId);
+
 }

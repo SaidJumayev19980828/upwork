@@ -10,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static javax.persistence.FetchType.LAZY;
 
@@ -28,11 +29,8 @@ public class ReferralCodeEntity {
     @Column(name = "referral_code")
     private String referralCode;
 
-    @Column(name = "start_date")
-    private LocalDateTime startDate;
-
-    @Column(name = "end_date")
-    private LocalDateTime endDate;
+    @Column(name = "parent_referral_code")
+    private String parentReferralCode;
 
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "org_id")
@@ -51,18 +49,15 @@ public class ReferralCodeEntity {
     @Column(name = "status")
     private Integer status;
 
-    @Column(name = "constraints")
-    private String constraints;
+    @ManyToOne
+    @JoinColumn(name = "settings_id")
+    private ReferralSettings settings;
 
+    @Column(name = "accept_token")
+    private String acceptReferralToken;
 
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @Column(name = "created_by")
-    @JsonIgnore
-    @EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
-    private Long createdBy;
 
 }

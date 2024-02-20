@@ -2,11 +2,12 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.ReferralWalletRepository;
-import com.nasnav.dao.ReferralWalletTransactionRepository;
-import com.nasnav.enumerations.WalletTransactions;
+import com.nasnav.dao.ReferralTransactionRepository;
+import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ReferralCodeEntity;
 import com.nasnav.persistence.ReferralWallet;
-import com.nasnav.persistence.ReferralWalletTransaction;
+import com.nasnav.persistence.ReferralTransactions;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.ReferralWalletService;
 import lombok.RequiredArgsConstructor;
@@ -25,19 +26,22 @@ import static com.nasnav.exceptions.ErrorCodes.BANK$TRANS$0001;
 public class ReferralWalletServiceImplementation implements ReferralWalletService {
 
     private final ReferralWalletRepository referralWalletRepository;
-    private final ReferralWalletTransactionRepository referralWalletTransactionRepository;
+    private final ReferralTransactionRepository referralTransactionRepository;
+
     @Override
-    public ReferralWallet create(UserEntity user, BigDecimal openingBalance) {
+    public ReferralWallet create(ReferralCodeEntity referralCode, BigDecimal openingBalance) {
         ReferralWallet referralWallet = new ReferralWallet();
-        referralWallet.setUser(user);
+        referralWallet.setUser(referralCode.getUser());
         referralWallet.depositBalance(openingBalance);
-        referralWallet.addTransactions(buildDepositTransaction(openingBalance,WalletTransactions.DEPOSIT,true));
-        return referralWalletRepository.save(referralWallet);
+        ReferralTransactions referralTransactions = buildDepositTransaction(referralCode.getUser(), openingBalance, null, referralCode, referralWallet, ReferralTransactionsType.ACCEPT_REFERRAL_CODE);
+        referralTransactionRepository.save(referralTransactions);
+        return referralWallet;
     }
 
     @Override
-    public ReferralWallet getWalletByUser(UserEntity user) {
-        return referralWalletRepository.findByUserId(user).orElseThrow(()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,$001$REFERRAL$,user.getId()));
+    public ReferralWallet getWalletByUserId(Long userId) {
+        return referralWalletRepository.findByUserId(userId).orElseThrow(
+                ()-> new RuntimeBusinessException(HttpStatus.NOT_FOUND,$001$REFERRAL$,userId));
     }
 
     @Override
@@ -47,36 +51,39 @@ public class ReferralWalletServiceImplementation implements ReferralWalletServic
     }
 
     @Override
-    public PageImpl<ReferralWalletTransaction> getTransactions(UserEntity user, int start, int count) {
-        Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
-        return referralWalletTransactionRepository.findByReferralWallet(getWalletByUser(user),page);
-    }
-
-    @Override
-    public ReferralWallet deposit(UserEntity user, BigDecimal amount) {
-        ReferralWallet wallet = getWalletByUser(user);
+    public ReferralWallet deposit(Long orderId, BigDecimal amount, ReferralCodeEntity referralCode, ReferralTransactionsType type) {
+        ReferralWallet wallet = getWalletByUserId(referralCode.getUser().getId());
         wallet.depositBalance(amount);
-        wallet.addTransactions(buildDepositTransaction(amount, WalletTransactions.DEPOSIT, false));
-        return referralWalletRepository.save(wallet);
+        referralTransactionRepository.save(buildDepositTransaction(referralCode.getUser(), amount, orderId, referralCode, wallet, type));
+        return wallet;
     }
 
     @Override
-    public ReferralWallet withdraw(UserEntity user, BigDecimal amount) {
-        ReferralWallet wallet = getWalletByUser(user);
+    public ReferralWallet withdraw(UserEntity user, Long orderId, BigDecimal amount, ReferralTransactionsType type)  {
+        ReferralWallet wallet = getWalletByUserId(user.getId());
         validateWithdraw(amount, wallet.getBalance());
         wallet.withdrawBalance(amount);
-        wallet.addTransactions(buildDepositTransaction(amount, WalletTransactions.WITHDRAWAL, false));
+        ReferralTransactions referralTransactions = buildDepositTransaction(user, amount, orderId, null, wallet,type);
         return referralWalletRepository.save(wallet);
     }
 
+    @Override
+    public Long addReferralTransaction(UserEntity user, BigDecimal amount, Long orderId, ReferralCodeEntity referralCodeEntity, ReferralTransactionsType transactionType, boolean description) {
+        return referralTransactionRepository.save(buildDepositTransaction(user, amount, orderId, referralCodeEntity, null,transactionType)).getId();
+    }
 
-    private ReferralWalletTransaction buildDepositTransaction(BigDecimal amount, WalletTransactions transactionType, boolean openingBalance) {
-        ReferralWalletTransaction transaction = new ReferralWalletTransaction();
+
+    private ReferralTransactions buildDepositTransaction(UserEntity user, BigDecimal amount, Long orderId, ReferralCodeEntity referralCodeEntity, ReferralWallet referralWallet, ReferralTransactionsType transactionType) {
+        ReferralTransactions transaction = new ReferralTransactions();
         transaction.setAmount(amount);
+        transaction.setUser(user);
+        transaction.setOrderId(orderId);
         transaction.setType(transactionType);
-        transaction.setDescription(openingBalance);
+        transaction.setReferralCodeEntity(referralCodeEntity);
+        transaction.setReferralWallet(referralWallet);
         return transaction;
     }
+
 
 
     private void validateWithdraw(BigDecimal amount, BigDecimal balance) {

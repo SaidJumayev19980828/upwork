@@ -31,4 +31,5 @@ public class Order {
     private String status;
     private Boolean isCancelable;
     private String notes;
+    private String referralCode;
 }
