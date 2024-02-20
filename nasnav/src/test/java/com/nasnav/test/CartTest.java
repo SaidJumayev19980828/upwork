@@ -486,6 +486,19 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithReferralCodeDiscount() {
+		JSONObject requestBody = createCartCheckoutBodyWithReferralCode();
+		BigDecimal exceptedDiscount = new BigDecimal("93.00");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3058"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithPromotions() {
@@ -731,7 +744,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		JSONObject requestBody = createCartCheckoutBody();
 
 		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
-		
+
 		return body;
 	}
 
@@ -922,6 +935,19 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 
 
 
+		return body;
+	}
+
+	private JSONObject createCartCheckoutBodyWithReferralCode() {
+		JSONObject body = new JSONObject();
+		Map<String, String> additionalData = new HashMap<>();
+		additionalData.put("name", "Shop");
+		additionalData.put("value", "14");
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", "TEST");
+		body.put("additional_data", additionalData);
+		body.put("notes", USELESS_NOTE);
+		body.put("referralCode", "abcdfg");
 		return body;
 	}
 

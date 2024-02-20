@@ -126,6 +126,9 @@ public class OrdersEntity implements BaseEntity{
 
 	private BigDecimal discounts;
 
+	@Column(name = "applied_referral_code")
+	private String appliedReferralCode;
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();

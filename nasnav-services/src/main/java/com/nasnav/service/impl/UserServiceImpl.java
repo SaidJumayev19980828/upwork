@@ -1022,6 +1022,14 @@ public class UserServiceImpl implements UserService {
 
 	}
 
+	public String getMobileByIdAndOrganizationId(Long userId, Long organizationId){
+		return userRepository.findPhoneNumberByIdAndOrganizationId(userId, organizationId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, userId));
+
+
+	}
+
+
 
 
 }

@@ -25,22 +25,7 @@ import com.nasnav.persistence.dto.query.result.CartCheckoutDTO;
 import com.nasnav.persistence.dto.query.result.optimizeCartDTO;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
-import com.nasnav.service.AddonService;
-import com.nasnav.service.CartOptimizationService;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.MailService;
-import com.nasnav.service.OrderEmailServiceHelper;
-import com.nasnav.service.OrderReturnService;
-import com.nasnav.service.OrderService;
-import com.nasnav.service.OrderServiceHelper;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.ShippingManagementService;
-import com.nasnav.service.StockService;
-import com.nasnav.service.UserService;
-import com.nasnav.service.OrderStatisticService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrdersFiltersHelper;
 import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -113,6 +98,9 @@ public class OrderServiceImpl implements OrderService {
 	private final UserServicesHelper userServicesHelper;
 	private final Logger logger = LogManager.getLogger();
 	private OrdersFiltersHelper ordersFiltersHelper;
+
+	@Autowired
+	private ReferralCodeService referralCodeService;
 
 	@Autowired
 	private LoyaltyTierServiceImp tierServiceImp;
@@ -654,6 +642,10 @@ public class OrderServiceImpl implements OrderService {
 	private void finalizeSubOrder(OrdersEntity order) {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
+		if(order.getAppliedReferralCode() != null && !order.getAppliedReferralCode().isEmpty()) {
+			referralCodeService.saveReferralTransactionForOrderDiscount(order);
+			referralCodeService.shareRevenueForOrder(order);
+		}
 		updateOrderStatus(order, FINALIZED);
 		userService.updateUserByTierIdAndOrgId( order.getUserId(), order.getOrganizationEntity().getId());
 	}
@@ -2135,7 +2127,9 @@ public class OrderServiceImpl implements OrderService {
 
 		Long userId = getSuborderUserId(subOrders);
 		SpentPointsInfo spentPointsInfo = addPointsDiscount(userId, dto, subOrders, org);
-
+		if(dto.getReferralCode() != null && !dto.getReferralCode().isEmpty()) {
+			referralCodeService.addReferralDiscountForSubOrders(dto.getReferralCode(), subOrders, userId);
+		}
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
@@ -2164,7 +2158,7 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
 		}
-		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(),spentPointsInfo);
+		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
 	}
 
 	private Long getSuborderUserId(Set<OrdersEntity> subOrders) {

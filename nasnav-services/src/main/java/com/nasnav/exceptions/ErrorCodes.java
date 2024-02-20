@@ -444,8 +444,11 @@ public enum ErrorCodes {
 
 	,REF$PARAM$0001("Invalid referral code type_id[%d]!")
 	,REF$PARAM$0002("Couldn't find referral with id [%d]!")
-	,REF$PARAM$0003("Couldn't find referral code [%s] for this organization!")
+	,REF$PARAM$0003("Couldn't find referral code [%s] for user!")
 	,REF$PARAM$0004("Invalid referral code Status value[%d]!")
+	,REF$PARAM$0005("referral accept token doesn't exist!")
+	,REF$PARAM$0006("the OTP not sent successfully!")
+	,REF$PARAM$0007("There is no referral code for user to accept!")
 
 	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
 	,VIDEO$PARAM$0002("Invalid user type!")

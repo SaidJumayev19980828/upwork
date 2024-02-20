@@ -12,6 +12,6 @@ import java.util.Optional;
 @Repository
 public interface ReferralWalletRepository extends JpaRepository<ReferralWallet, Long> {
 
-    Optional<ReferralWallet> findByUserId(UserEntity userId);
+    Optional<ReferralWallet> findByUserId(Long userId);
     PageImpl<ReferralWallet> findAll(Pageable page);
 }

@@ -14,16 +14,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 @Getter
 @AllArgsConstructor
 public enum ReferralCodeType {
-    FIRST_USED_VALUE(1),
-    SHARE_REVENUE_PERCENTAGE(2),
-    ORDER_DISCOUNT_PERCENTAGE(3);
-
-    private int value;
-
-    public static ReferralCodeType getType(Integer value) {
-        return Arrays.stream(ReferralCodeType.values())
-                .filter(p -> Objects.equals(p.value, value))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0001, value));
-    }
+    REFERRAL_ACCEPT_REVENUE,
+    SHARE_REVENUE_PERCENTAGE,
+    ORDER_DISCOUNT_PERCENTAGE;
 }
