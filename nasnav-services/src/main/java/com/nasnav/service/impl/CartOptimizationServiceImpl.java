@@ -23,6 +23,7 @@ import com.nasnav.service.LoyaltyPointsService;
 import com.nasnav.service.PromotionsService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.cart.optimizers.*;
+import com.nasnav.shipping.services.mylerz.webclient.dto.Zone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
@@ -128,12 +130,14 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0018);
 		}
 	}
+
+	@Deprecated
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode) {
 		return optimizedCart.get().getCartItems().size() != cartService.getCart(promoCode, emptySet(), false).getItems().size();
 	}
 
 	private boolean isItemsRemoved(Optional<OptimizedCart> optimizedCart, String promoCode , CartCheckoutDTO dto) {
-		return optimizedCart.get().getCartItems().size() != cartService.getCart(dto,promoCode, emptySet(), false).getItems().size();
+		return optimizedCart.get().getCartItems().size() != cartService.getCart(dto,promoCode, BigDecimal.ZERO, false).getItems().size();
 	}
 
 	private Cart getCartObject(Optional<OptimizedCart> optimizedCart, CartCheckoutDTO dto, boolean yeshteryCart) {
@@ -148,8 +152,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
-		returnedCart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(returnedCart.getItems(), dto.
-				getPoints(), yeshteryCart));
+		returnedCart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(returnedCart.getItems(), dto.getRequestedPoints(), yeshteryCart));
 
 		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount().add(returnedCart.getPoints().getTotalDiscount()));
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
@@ -184,8 +187,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 		var config = helper.getOptimizerConfig(optimizerData.getConfigurationJson(), optimizer);
 		var parameters = optimizer.createCartOptimizationParameters(dto);
-		//TODO::  moamen
-		var cart = cartService.getCart(dto,dto.getPromoCode(), emptySet(), false);
+		var cart = cartService.getCart(dto,dto.getPromoCode(), BigDecimal.ZERO, false);
 
 		return optimizer.createOptimizedCart(parameters, config, cart);
 	}

@@ -7,7 +7,6 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
@@ -17,14 +16,13 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.mappers.PromotionMapper;
 import com.nasnav.mappers.impl.promotionToDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
 import com.nasnav.persistence.dto.query.result.StockAdditionalData;
-import com.nasnav.persistence.dto.query.result.StockBasicData;
+import com.nasnav.persistence.dto.query.result.CartCheckoutDTO;
+import com.nasnav.persistence.dto.query.result.optimizeCartDTO;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
 import com.nasnav.service.AddonService;
@@ -67,14 +65,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.constatnts.EmailConstants.*;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.enumerations.LoyaltyPointType.ORDER_ONLINE;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
@@ -82,7 +78,6 @@ import static com.nasnav.enumerations.OrderSortOptions.CREATION_DATE;
 import static com.nasnav.enumerations.OrderSortOptions.QUANTITY;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
-import static com.nasnav.enumerations.ProductFeatureType.STRING;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.Settings.STOCK_ALERT_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
@@ -183,6 +178,9 @@ public class OrderServiceImpl implements OrderService {
 	private LoyaltyPointTransactionRepository loyaltyPointTransactionRepository;
 	@Autowired
 	private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
+
+	@Autowired
+	private UserLoyaltyPointsRepository userLoyaltyPointsRepository;
 
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -1373,13 +1371,10 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user) {
-
+	public MetaOrderEntity createMetaOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user) {
 		AddressesEntity userAddress = getAddressById(dto.getAddressId(), user.getId());
-
-		CartItemsGroupedById checkOutData = getAndValidateCheckoutData(dto, org);
-		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto, org, (UserEntity) user);
-		return order;
+		CartCheckoutDTO checkOutData = getAndValidateCheckoutData(dto, org);
+		return createOrder( checkOutData, userAddress, dto, org, (UserEntity) user);
 	}
 
 	private AddressesEntity getAddressById(Long addressId, Long userId) {
@@ -1388,29 +1383,51 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(null);
 	}
 
-	private CartItemsGroupedById getAndValidateCheckoutData(CartCheckoutDTO checkoutDto, OrganizationEntity org) {
+
+	private CartCheckoutDTO getAndValidateCheckoutData(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, OrganizationEntity org) {
 		//TODO: this should be moved to checkOut main method, and then passes
 		//the optimized cart to the rest of the logic.
-		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto, false);
+		optimizeCartDTO userCartItems = optimizedCheckoutDataList(checkoutDto, false);
 
-		validateCartCheckoutItems(userCartItems, org);
+		validateCartCheckoutItems(userCartItems.getCartCheckoutData(), org);
 
-		shippingMgrService.validateCartForShipping(userCartItems, checkoutDto, org.getId());
+		shippingMgrService.validateCartForShipping(userCartItems.getCartCheckoutData(), checkoutDto, org.getId());
 
-		return userCartItems
+		var test =  userCartItems.getCartCheckoutData()
 				.stream()
 				.collect(collectingAndThen(
 						groupingBy(CartCheckoutData::getShopId)
 						, CartItemsGroupedById::new));
+
+		CartCheckoutDTO cartCheckoutDTO = new CartCheckoutDTO();
+		cartCheckoutDTO.setCartCheckoutData(test);
+		cartCheckoutDTO.setDiscount(userCartItems.getDiscount());
+		cartCheckoutDTO.setTotal(userCartItems.getTotal());
+		return cartCheckoutDTO;
+
 	}
 
-	private List<CartCheckoutData> getOptimizedCheckoutDataList(CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
+	private optimizeCartDTO optimizedCheckoutDataList(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
 		Cart optimizedCart = optimizeCartForCheckout(checkoutDto, yeshteryCart);
-		return createCheckoutData(optimizedCart);
+		List<CartCheckoutData> result = createCheckoutData(optimizedCart);
+		optimizeCartDTO optimizeResult = new optimizeCartDTO();
+		optimizeResult.setCartCheckoutData(result);
+		optimizeResult.setDiscount(optimizedCart.getDiscount());
+		optimizeResult.setTotal(optimizedCart.getTotal());
+		optimizeResult.setSubTotal(optimizedCart.getSubtotal());
+		return optimizeResult;
 	}
 
-	private CartItemsGroupedByOrgId getAndValidateCheckoutDataByOrgId(CartCheckoutDTO checkoutDto) {
-		List<CartCheckoutData> userCartItems = getOptimizedCheckoutDataList(checkoutDto, true);
+	private Cart optimizedCart(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
+		return optimizeCartForCheckout(checkoutDto, yeshteryCart);
+	}
+	private List<CartCheckoutData> optimizedCheckoutDataList(Cart cart) {
+		return createCheckoutData(cart);
+	}
+
+
+
+	private CartItemsGroupedByOrgId getAndValidateCheckoutDataByOrgId(List<CartCheckoutData> userCartItems) {
 
 		CartItemsGroupedById result = userCartItems
 				.stream()
@@ -1428,7 +1445,7 @@ public class OrderServiceImpl implements OrderService {
 		return value.stream().collect(collectingAndThen(groupingBy(CartCheckoutData::getShopId), CartItemsGroupedById::new));
 	}
 
-	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
+	private Cart optimizeCartForCheckout(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, boolean yeshteryCart) {
 		CartOptimizeResponseDTO optimizationResult =
 				cartOptimizationService.validateAndOptimizeCart(checkoutDto, yeshteryCart);
 		if(optimizationResult.getTotalChanged()) {
@@ -1524,7 +1541,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public Order createOrder(CartCheckoutDTO dto) {
+	public Order createOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -1543,7 +1560,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public Order createOrder(CartCheckoutDTO dto, UserEntity user) {
+	public Order createOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto, UserEntity user) {
 		BaseUserEntity userAuthed = securityService.getCurrentUser();
 		OrganizationEntity org;
 		if(userAuthed instanceof EmployeeUserEntity) {
@@ -1596,8 +1613,9 @@ public class OrderServiceImpl implements OrderService {
 		return filtersResponse;
 	}
 
+
 	@Override
-	public MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto) {
+	public MetaOrderEntity createYeshteryMetaOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
@@ -1619,7 +1637,10 @@ public class OrderServiceImpl implements OrderService {
 
 		metaOrderRepo.save(order);
 		// 1- group Items per org
-		CartItemsGroupedByOrgId checkOutData = getAndValidateCheckoutDataByOrgId(dto);
+
+		 Cart cart = optimizedCart(dto,true);
+		 discounts = discounts.add(cart.getDiscount());
+		 CartItemsGroupedByOrgId checkOutData = getAndValidateCheckoutDataByOrgId(optimizedCheckoutDataList (cart));
 
 		// 2- create metaorder per org ... just call createOrder method
 		Set<MetaOrderEntity> subMetaOrders = createMetaOrders(checkOutData, dto);
@@ -1632,10 +1653,10 @@ public class OrderServiceImpl implements OrderService {
 		addYeshteryPointsDiscount(dto, order);
 
 		// 5- calculate totals and discounts
-		subTotal = subMetaOrders.stream().map(MetaOrderEntity::getSubTotal).reduce(ZERO, BigDecimal::add);
+		subTotal = cart.getSubtotal();
 		shippingFeeTotal = subMetaOrders.stream().map(MetaOrderEntity::getShippingTotal).reduce(ZERO, BigDecimal::add);
-		total = subMetaOrders.stream().map(MetaOrderEntity::getGrandTotal).reduce(ZERO, BigDecimal::add);
-		discounts = subMetaOrders.stream().map(MetaOrderEntity::getDiscounts).reduce(ZERO, BigDecimal::add);
+		total = shippingFeeTotal.add(cart.getTotal());
+		discounts = discounts.add(subMetaOrders.stream().map(MetaOrderEntity::getDiscounts).reduce(ZERO, BigDecimal::add));
 		order.setGrandTotal(total);
 		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
@@ -1647,7 +1668,7 @@ public class OrderServiceImpl implements OrderService {
 		return order;
 	}
 
-	private void addYeshteryPointsDiscount(CartCheckoutDTO dto, MetaOrderEntity order) {
+	private void addYeshteryPointsDiscount(com.nasnav.dto.request.cart.CartCheckoutDTO dto, MetaOrderEntity order) {
 		Set<OrdersEntity> suborders = order
 				.getSubMetaOrders()
 				.stream()
@@ -1678,7 +1699,7 @@ public class OrderServiceImpl implements OrderService {
 		loyaltySpendTransactionRepo.saveAll(spentPointsRef);
 	}
 
-	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, CartCheckoutDTO dto) {
+	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 		AddressesEntity address = getAddressById(dto.getAddressId(), user.getId());
 		Set<MetaOrderEntity> yeshteryOrders = checkOutData
@@ -1691,7 +1712,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public Order createYeshteryOrder(CartCheckoutDTO dto) {
+	public Order createYeshteryOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -1717,12 +1738,12 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 	}
 
-	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, Long orgId) {
+	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Long orgId) {
 		OrganizationEntity org = organizationRepository.findOneById(orgId);
 		return createYeshteryOrder(shopCartsMap, address, dto, org);
 	}
 
-	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, OrganizationEntity org) {
+	private MetaOrderEntity createYeshteryOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org) {
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 		Optional<PromotionsEntity> promotion=
 				ofNullable(dto.getPromoCode())
@@ -1744,7 +1765,7 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.save(order);
 	}
 
-	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
+	private void validateCartCheckoutDTO(com.nasnav.dto.request.cart.CartCheckoutDTO dto){
 		/*if (dto.getAddressId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
 		}*/
@@ -1962,11 +1983,11 @@ public class OrderServiceImpl implements OrderService {
 		return subOrder;
 	}
 
-	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, OrganizationEntity org, UserEntity user) {
+	private MetaOrderEntity createOrder(CartCheckoutDTO shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org, UserEntity user) {
 		return createOrder(shopCartsMap, address, dto, org.getId(), user);
 	}
 
-	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto, Long orgId, UserEntity user) {
+	private MetaOrderEntity createOrder(CartCheckoutDTO shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Long orgId, UserEntity user) {
 
 		OrganizationEntity org = organizationRepository.findById(orgId).get();
 		Optional<PromotionsEntity> promotion =
@@ -1975,13 +1996,47 @@ public class OrderServiceImpl implements OrderService {
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
 
-		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap, org);
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap.getCartCheckoutData(), org);
 		SubordersAndDiscountsInfo data = createSubOrders(cartDividedByShop, address, dto, org);
 
-		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
+		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes() ,shopCartsMap.getDiscount(),shopCartsMap.getTotal(),shopCartsMap.getSubTotal());
 		promotion.ifPresent(order::addPromotion);
-		return metaOrderRepo.save(order);
+		metaOrderRepo.saveAndFlush(order);
+		if ( dto.getRequestedPoints()  != null &&  dto.getRequestedPoints().compareTo(ZERO) > 0)
+			savePointTransaction(user, dto.getRequestedPoints(), org, order);
+		return order;
 	}
+
+	private void savePointTransaction(UserEntity user , BigDecimal points , OrganizationEntity org ,MetaOrderEntity order){
+		userLoyaltyPointsRepository.save(loyaltyPointsService.processTransaction(user, points, LoyaltyTransactions.ONLINE_ORDER, org, null, null, order));
+	}
+
+	// TODO Apply here the points
+	private MetaOrderEntity createMetaOrder(SubordersAndDiscountsInfo data, OrganizationEntity org, UserEntity user, String notes, BigDecimal TotalDiscounts, BigDecimal cartTotal ,BigDecimal cartSubTotal) {
+		Set<OrdersEntity> subOrders = data.getSubOrders();
+		List<PromotionsEntity> appliedPromos = data.getAppliedPromos().stream().map(AppliedPromo::getEntity).toList();
+		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
+		BigDecimal total = cartTotal.add(shippingFeeTotal);
+		MetaOrderEntity order = new MetaOrderEntity();
+		order.setOrganization(org);
+		order.setUser(user);
+		order.setStatus(CLIENT_CONFIRMED.getValue());
+		order.setGrandTotal(total);
+		order.setSubTotal(subTotalCalculation(cartSubTotal, subOrders));
+		order.setShippingTotal(shippingFeeTotal);
+		order.setDiscounts(TotalDiscounts);
+		order.setNotes(notes);
+		subOrders.forEach(order::addSubOrder);
+		appliedPromos.forEach(order::addPromotion);
+		return order;
+	}
+
+	private BigDecimal subTotalCalculation(BigDecimal cartSubTotal , Set<OrdersEntity> subOrders){
+		if( cartSubTotal  != null && cartSubTotal.compareTo(ZERO)>0)
+			return cartSubTotal;
+		return calculateSubTotal(subOrders);
+	}
+
 
 	private MetaOrderEntity createMetaOrder(SubordersAndDiscountsInfo data, OrganizationEntity org, UserEntity user, String orderNotes) {
 		Set<OrdersEntity> subOrders = data.getSubOrders();
@@ -1993,7 +2048,6 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
 		BigDecimal total = calculateTotal(subOrders);
 		BigDecimal discounts = calculateDiscounts(subOrders);
-
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
@@ -2072,7 +2126,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private SubordersAndDiscountsInfo createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
-													  CartCheckoutDTO dto, OrganizationEntity org) {
+													  com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org) {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 						.stream()
@@ -2091,11 +2145,11 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setTotal(calculateTotal(subOrder));
 			ordersRepository.save(subOrder);
 		}
-		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
+		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(),spentPointsInfo);
 	}
 
 	private SubordersAndDiscountsInfo createYeshterySubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
-															  CartCheckoutDTO dto, OrganizationEntity org) {
+															  com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org) {
 		Set<OrdersEntity> subOrders =
 				cartDividedByShop
 						.stream()
@@ -2114,7 +2168,7 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
 		}
-		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
+		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(),spentPointsInfo);
 	}
 
 	private Long getSuborderUserId(Set<OrdersEntity> subOrders) {
@@ -2126,14 +2180,14 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, G$ORG$0002));
 	}
 
-	private List<ShippingOfferDTO> getShippingOffersForCheckout(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
+	private List<ShippingOfferDTO> getShippingOffersForCheckout(com.nasnav.dto.request.cart.CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		return subOrders
 				.stream()
 				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
 				.collect(collectingAndThen(toList(), list -> shippingMgrService.getOffersFromOrganizationShippingServices(list, orgId)));
 	}
 
-	private AppliedPromotionsResponse addPromoDiscounts(CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
+	private AppliedPromotionsResponse addPromoDiscounts(com.nasnav.dto.request.cart.CartCheckoutDTO dto, Set<OrdersEntity> subOrders, Long orgId) {
 		BigDecimal subTotal =
 				subOrders
 						.stream()
@@ -2161,7 +2215,7 @@ public class OrderServiceImpl implements OrderService {
 		return promoDiscountData;
 	}
 
-	private SpentPointsInfo addPointsDiscount(Long userId, CartCheckoutDTO dto, Set<OrdersEntity> subOrders, OrganizationEntity org) {
+	private SpentPointsInfo addPointsDiscount(Long userId, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Set<OrdersEntity> subOrders, OrganizationEntity org) {
 		BigDecimal totalWithoutShipping = getSubordersTotalWithoutShipping(subOrders);
 		return loyaltyPointsService.applyPointsOnOrders(dto.getPoints(), subOrders, totalWithoutShipping, userId, org);
 	}
@@ -2243,7 +2297,7 @@ public class OrderServiceImpl implements OrderService {
 		return subTotal.add(shippingFee).subtract(discount);
 	}
 
-	private OrdersEntity createSubOrder(CartItemsForShop cartItems, AddressesEntity shippingAddress, CartCheckoutDTO dto,
+	private OrdersEntity createSubOrder(CartItemsForShop cartItems, AddressesEntity shippingAddress, com.nasnav.dto.request.cart.CartCheckoutDTO dto,
 										OrganizationEntity org, boolean yeshteryOrder) {
 		Long orgId = org.getId();
 		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems, orgId);
@@ -2393,7 +2447,7 @@ public class OrderServiceImpl implements OrderService {
 		return subOrder;
 	}
 
-	private ShipmentEntity createShipment(OrdersEntity subOrder, CartCheckoutDTO dto, List<ShippingOfferDTO> shippingOffers) {
+	private ShipmentEntity createShipment(OrdersEntity subOrder, com.nasnav.dto.request.cart.CartCheckoutDTO dto, List<ShippingOfferDTO> shippingOffers) {
 		ShipmentEntity shipment = new ShipmentEntity();
 		shipment.setSubOrder(subOrder);
 		shipment.setStatus(DRAFT.getValue());

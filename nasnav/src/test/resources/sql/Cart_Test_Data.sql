@@ -41,9 +41,19 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '5289361', now(), 71, null);
 
+
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (1, 'default_tier', true, now(), 1, 5, 99001, '{"ORDER_ONLINE":0.05}');
+INSERT INTO public.loyalty_tier(id, tier_name, is_active, created_at, no_of_purchase_from, no_of_purchase_to, organization_id, constraints) VALUES (2, 'Gold', true, now(), 6, 10, 99001,'{"ORDER_ONLINE":0.05}');
+
+
+insert into public.loyalty_point_config
+values (31001, 'description', 99001, 501, true, now(), 1, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+insert into public.loyalty_point_config
+values (31002, 'description_2', 99001, 501, true, now(), 2, '{"ORDER_ONLINE":{"ratio_from":7, "ratio_to":1}}');
+
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,tier_id)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001,2);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (89, 'test2@nasnav.com','user2','456', 99001);
 
@@ -130,3 +140,9 @@ INSERT INTO public.cart_items (id, stock_id, cover_image, variant_features, quan
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+
+INSERT INTO public.user_loyalty_points(
+	id, balance, created_at, version, user_id)
+	VALUES
+	 (1, 2000, now(), 1, 88),
+	 (2, 6000, now(), 1, 89);

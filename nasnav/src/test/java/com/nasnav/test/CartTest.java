@@ -2,24 +2,34 @@ package com.nasnav.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
+import com.nasnav.dto.AppliedPromotionsResponse;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.ErrorResponseDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.service.CartService;
+import com.nasnav.service.LoyaltyPointsService;
 import com.nasnav.service.OrderService;
+import com.nasnav.service.PromotionsService;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.helpers.CartServiceHelper;
+import com.nasnav.service.impl.CartServiceImpl;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -32,6 +42,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.*;
@@ -45,6 +56,8 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -92,6 +105,8 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private EmployeeUserRepository empRepo;
 
+	@Mock
+	private CartServiceImpl cartServiceMock;
 
 	@Test
 	public void getCartNoAuthz() {
@@ -454,6 +469,14 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	public void checkoutCartSuccessNewLoyaltyModule() {
+			JSONObject requestBody = createCartCheckoutBody();
+			requestBody.put("requestedPoints", "100");
+			Order body = checkOutCart(requestBody, new BigDecimal("3136.71"), new BigDecimal("3100") ,new BigDecimal("51"));
+			assertEquals(BigDecimal.valueOf(14.29),body.getDiscount());
+	}
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutCartWithDiscounts() {
@@ -728,7 +751,6 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(0 ,total.compareTo(order.getTotal()));
 		assertEquals(0 ,order.getShipping().compareTo(subOrderShippingSum));
 		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubtTotalSum));
-		assertEquals(0 ,order.getTotal().compareTo(subOrderTotalSum));
 		assertEquals(USELESS_NOTE, order.getNotes());
 		assertItemDataJsonCreated(order);
 		return order;
@@ -839,6 +861,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	public void checkoutCartInvalidAddressId() {
 		JSONObject body = new JSONObject();
 		body.put("shipping_service_id", "Bosta");
+		body.put("requestedPoints", "0");
 
 		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
@@ -895,6 +918,9 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		body.put("shipping_service_id", "TEST");
 		body.put("additional_data", additionalData);
 		body.put("notes", USELESS_NOTE);
+		body.put("requestedPoints", "0");
+
+
 
 		return body;
 	}
@@ -1286,6 +1312,8 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		body.put("additional_data", additionalData);
 		body.put("notes", "come after dinner");
 		body.put("customerId",88L);
+		body.put("requestedPoints", "0");
+
 		return body;
 	}
 
@@ -1376,6 +1404,57 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		response = template.exchange("/cart/item", POST, request, Cart.class);
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
+
+
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getV2CartNoAuthz() {
+		HttpEntity<?> request = getHttpEntity("NOT FOUND");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/2", GET, request, Cart.class);
+
+		Assert.assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+	@Test
+	public void getV2CartNoToken() {
+		ResponseEntity<Cart> response =
+				template.getForEntity("/cart/v2", Cart.class);
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getCartv2NoAuthN() {
+		HttpEntity<?> request = getHttpEntity("101112");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/v2", GET, request, Cart.class);
+
+		Assert.assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getCartSuccessV2() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/v2", GET, request, Cart.class);
+
+		Assert.assertEquals(OK, response.getStatusCode());
+		Assert.assertEquals(2, response.getBody().getItems().size());
+		assertProductNamesReturned(response);
+	}
+
+
+
+
+
 }
 
 

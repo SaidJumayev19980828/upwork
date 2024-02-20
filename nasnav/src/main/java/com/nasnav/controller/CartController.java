@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -33,6 +34,7 @@ public class CartController {
 	private CartOptimizationService cartOptimizeService;
 
 
+	@Deprecated
 	@GetMapping(produces=APPLICATION_JSON_VALUE)
 	public Cart getCart(@RequestHeader(TOKEN_HEADER) String userToken,
 						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
@@ -40,6 +42,13 @@ public class CartController {
 		return cartService.getCart(promoCode, points, false);
 	}
 
+
+	@GetMapping(value = "/v2",produces=APPLICATION_JSON_VALUE)
+	public Cart getCartVersionTwo(@RequestHeader(TOKEN_HEADER) String userToken,
+						@RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+						@RequestParam(required = false) BigDecimal points) {
+		return cartService.getCart(promoCode, points, false);
+	}
 	@GetMapping(value = "/{userId}",produces=APPLICATION_JSON_VALUE)
 	public Cart getCartWithUserId(@PathVariable Long userId) {
 		return cartService.getUserCart(userId,false);

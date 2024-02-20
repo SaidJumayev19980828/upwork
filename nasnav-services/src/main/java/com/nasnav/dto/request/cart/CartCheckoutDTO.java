@@ -3,6 +3,7 @@ package com.nasnav.dto.request.cart;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,5 +19,7 @@ public class CartCheckoutDTO {
     private String promoCode;
     private String notes;
     private Set<Long> points;
+
+    private BigDecimal requestedPoints;
     private Long customerId;
 }

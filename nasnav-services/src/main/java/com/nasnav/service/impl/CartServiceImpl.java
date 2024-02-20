@@ -139,10 +139,30 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    public Cart getCart(String promoCode, BigDecimal points, boolean yeshteryCart) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+        }
+        return getUserCart(user.getId(), promoCode, points, yeshteryCart);
+    }
+
+
+    @Deprecated
+    @Override
     public Cart getCart(CartCheckoutDTO dto, String promoCode, Set<Long> points, boolean yeshteryCart) {
         BaseUserEntity user = securityService.getCurrentUser();
         if(user instanceof EmployeeUserEntity) {
              user = userRepository.findById(dto.getCustomerId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,dto.getCustomerId()));
+        }
+        return getUserCart(user.getId(),user.getOrganizationId(), promoCode, points, yeshteryCart);
+    }
+
+    @Override
+    public Cart getCart(CartCheckoutDTO dto, String promoCode, BigDecimal points, boolean yeshteryCart) {
+        BaseUserEntity user = securityService.getCurrentUser();
+        if(user instanceof EmployeeUserEntity) {
+            user = userRepository.findById(dto.getCustomerId()).orElseThrow(()-> new RuntimeBusinessException(NOT_FOUND, U$0001,dto.getCustomerId()));
         }
         return getUserCart(user.getId(),user.getOrganizationId(), promoCode, points, yeshteryCart);
     }
@@ -163,19 +183,48 @@ public class CartServiceImpl implements CartService {
         if(!userExists){
             throw new RuntimeBusinessException(NOT_FOUND, E$USR$0002);
         }
-        return getUserCart(userId, null, authUserOrgId, emptySet(), false);
+        return getUserCart(userId, null, authUserOrgId, ZERO, false);
     }
 
     @Override
     public Cart getUserCart(Long userId, String promoCode, Set<Long> points, boolean yeshteryCart) {
         return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId(), points, yeshteryCart);
     }
+    @Override
+    public Cart getUserCart(Long userId, String promoCode, BigDecimal points, boolean yeshteryCart) {
+        return  getUserCart(userId, promoCode, securityService.getCurrentUserOrganizationId(), points, yeshteryCart);
+    }
 
     public Cart getUserCart(Long userId,Long orgId ,String promoCode, Set<Long> points, boolean yeshteryCart) {
         return  getUserCart(userId, promoCode, orgId, points, yeshteryCart);
     }
-    
-    
+
+    public Cart getUserCart(Long userId,Long orgId ,String promoCode, BigDecimal points, boolean yeshteryCart) {
+        return  getUserCart(userId, promoCode, orgId, points, yeshteryCart);
+    }
+
+
+    private Cart getUserCart(Long userId, String promoCode, Long orgId, BigDecimal points, boolean yeshteryCart) {
+        Cart cart = getUserCart(userId);
+        if (promoCode != null && !promoCode.isEmpty()) {
+            if (!promotionRepo.existsByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)) {
+                cart.setPromos(promoService.calcPromoDiscountForCart(null, cart));
+                cart.getPromos().setError("Failed to apply promo code ["+ promoCode+"]");
+            } else {
+                applyPromoCodeToCart(promoCode, cart);
+            }
+        } else {
+            cart.setPromos(promoService.calcPromoDiscountForCart(promoCode, cart));
+        }
+        if (points != null && points.compareTo(ZERO) > 0) {
+            cart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(cart.getItems(), points, yeshteryCart));
+        }
+        decidePromotionApplied(cart,promoCode);
+        cart.setDiscount(cart.getPromos().getTotalDiscount().add(cart.getPoints().getTotalDiscount()));
+        cart.setTotal(cart.getSubtotal().subtract(cart.getDiscount()));
+        return cart;
+    }
+
     private Cart getUserCart(Long userId, String promoCode, Long orgId, Set<Long> points, boolean yeshteryCart) {
         Cart cart = getUserCart(userId);
         if (promoCode != null && !promoCode.equals("")) {
@@ -408,7 +457,7 @@ public class CartServiceImpl implements CartService {
         //it uses an additional query but gives more insurance than calculating variants from
         //cartItemsStocks
         Set<Long> cartItemVariants =
-                getCart(null, emptySet(), false)
+                getCart(null, ZERO, false)
                         .getItems()
                         .stream()
                         .map(CartItem::getVariantId)

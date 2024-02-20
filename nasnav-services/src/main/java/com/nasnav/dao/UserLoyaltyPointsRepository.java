@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface UserLoyaltyPointsRepository extends JpaRepository<UserLoyaltyPoints, Long> {
 
     Optional<UserLoyaltyPoints> findByUser(UserEntity userId);
+    Optional<UserLoyaltyPoints> findByUser_id(Long userId);
+
 }

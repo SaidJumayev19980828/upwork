@@ -16,7 +16,13 @@ import java.util.Set;
 public interface CartService {
     AppliedPromotionsResponse getCartPromotions(String promoCode);
     Cart getCart(String promoCode, Set<Long>points, boolean yeshteryCart);
+    Cart getCart(String promoCode, BigDecimal points, boolean yeshteryCart);
+
     Cart getCart(CartCheckoutDTO dto , String promoCode, Set<Long>points, boolean yeshteryCart);
+
+    Cart getCart(CartCheckoutDTO dto , String promoCode, BigDecimal points, boolean yeshteryCart);
+
+    Cart getUserCart(Long userId, String promoCode, BigDecimal points, boolean yeshteryCart);
     Cart getUserCart(Long userId);
     Cart getUserCart(Long userId,Boolean isYeshtery);
     Cart getUserCart(Long userId, String promoCode, Set<Long>points, boolean yeshteryCart);

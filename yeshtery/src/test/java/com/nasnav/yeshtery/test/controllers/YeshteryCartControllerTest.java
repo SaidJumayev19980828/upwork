@@ -8,7 +8,9 @@ import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.service.CartService;
 import com.nasnav.service.OrderService;
+import com.nasnav.yeshtery.controller.v1.YeshteryCartController;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import com.nasnav.commons.YeshteryConstants;
 import net.jcip.annotations.NotThreadSafe;
@@ -16,6 +18,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -42,6 +45,8 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -82,6 +87,11 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     private EmployeeUserRepository empRepo;
 
 
+    @Mock
+    private CartService cartService;
+    @Mock
+    private YeshteryCartController  yeshteryCartController;
+
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -94,6 +104,16 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getV2CartNoAuthz() {
+        HttpEntity<?> request = getHttpEntity("NOT FOUND");
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH + "/2", GET, request, Cart.class);
+
+        Assert.assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
+    @Test
 	public void getCartNoToken() {
         ResponseEntity<Cart> response =
         		template.getForEntity("/cart", Cart.class);
@@ -101,6 +121,13 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 
+    @Test
+    public void getV2CartNoToken() {
+        ResponseEntity<Cart> response =
+                template.getForEntity("/cart/v2", Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
 
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
@@ -113,6 +140,30 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         Assert.assertEquals(FORBIDDEN, response.getStatusCode());
     }
 
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getCartv2NoAuthN() {
+        HttpEntity<?> request = getHttpEntity("101112");
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH + "/v2", GET, request, Cart.class);
+
+        Assert.assertEquals(FORBIDDEN, response.getStatusCode());
+    }
+
+
+    @Test
+    @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
+    @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+    public void getCartSuccessV2() {
+        HttpEntity<?> request = getHttpEntity("123");
+        ResponseEntity<Cart> response =
+                template.exchange(YESHTERY_CART_API_PATH + "/v2", GET, request, Cart.class);
+
+        Assert.assertEquals(OK, response.getStatusCode());
+        Assert.assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
+    }
     @Test
     @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Cart_Test_Data.sql"})
     @Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
@@ -803,5 +854,6 @@ public class YeshteryCartControllerTest extends AbstractTestWithTempBaseDir {
         response = template.exchange(YESHTERY_CART_ITEM_API_PATH, POST, request, Cart.class);
         Assert.assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
+
 
 }

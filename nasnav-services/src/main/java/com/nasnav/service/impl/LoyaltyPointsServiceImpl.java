@@ -653,6 +653,94 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return new AppliedPointsResponse(totalDiscount, appliedPoints);
     }
 
+    @Override
+    public AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, BigDecimal totalPointsAmount, boolean yeshteryCart) {
+        if (totalPointsAmount == null || totalPointsAmount.compareTo(BigDecimal.ZERO) <= 0 ) {
+            return new AppliedPointsResponse(BigDecimal.ZERO, Collections.emptyList());
+        }
+
+        List<AppliedPoints> appliedPoints = new ArrayList<>();
+        Map<Long, BigDecimal> orgWithTotalPriceMap = new HashMap<>();
+        BigDecimal totalPrice = BigDecimal.ZERO; // Use BigDecimal.ZERO
+
+        for (CartItem item : items) {
+            BigDecimal price = item.getPrice();
+            BigDecimal discount = ofNullable(item.getDiscount()).orElse(BigDecimal.ZERO); // Use BigDecimal.ZERO instead of ZERO
+            BigDecimal quantity = new BigDecimal(item.getQuantity());
+            BigDecimal total = (price.subtract(discount)).multiply(quantity);
+
+            orgWithTotalPriceMap.merge(item.getOrgId(), total, BigDecimal::add); // Use merge() to simplify logic
+            totalPrice = totalPrice.add(total);
+        }
+
+        UserEntity user = (UserEntity) securityService.getCurrentUser();
+        if (null != user.getTier()) {
+            for (Map.Entry<Long, BigDecimal> e : orgWithTotalPriceMap.entrySet()) {
+                OrganizationEntity org = organizationRepository.findById(e.getKey()).orElse(null);
+                if (org == null) {
+                    continue;
+                }
+
+                LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(user.getTier().getId()).orElse(null);
+                if (config == null) {
+                    continue;
+                }
+
+                if (yeshteryCart) {
+                    // Update user for Yeshtery cart
+                    user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), e.getKey())
+                            .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, e.getKey()));
+                }
+
+                appliedPoints.addAll(calculatePointsDiscountAndCreateSpendTransactions(
+                        config,
+                        totalPrice,
+                        totalPointsAmount)); // Pass total points amount directly
+            }
+
+            if (yeshteryCart) {
+                Long yeshteryOrgId = getYeshteryOrgId();
+                LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(user.getTier().getId()).orElse(null);
+                if (config != null) {
+                    OrganizationEntity org = organizationRepository.findById(yeshteryOrgId).orElse(null);
+                    if (org != null) {
+                        user = userRepo.findByYeshteryUserIdAndOrganizationId(user.getYeshteryUserId(), yeshteryOrgId)
+                                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$LOY$0014, yeshteryOrgId));
+                        appliedPoints.addAll(calculatePointsDiscountAndCreateSpendTransactions(
+                                config,
+                                totalPrice,
+                                totalPointsAmount)); // Pass total points amount directly
+                    }
+                }
+            }
+        }
+
+        BigDecimal totalDiscount = appliedPoints.stream().map(AppliedPoints::getDiscount).reduce(BigDecimal.ZERO, BigDecimal::add); // Use BigDecimal.ZERO instead of ZERO
+
+        return new AppliedPointsResponse(totalDiscount, appliedPoints);
+    }
+
+
+
+    private List<AppliedPoints> calculatePointsDiscountAndCreateSpendTransactions(LoyaltyPointConfigEntity config,
+                                                                                  BigDecimal totalWithoutShipping,
+                                                                                  BigDecimal totalPointsAmount // Pass total points amount directly
+                                                                                  ) {
+        List<AppliedPoints> res = new ArrayList<>();
+
+        BigDecimal total = BigDecimal.ZERO; // Use BigDecimal.ZERO instead of ZERO
+
+        LoyaltyConfigConstraint constraint = getConfigConstraint(config, ORDER_ONLINE); // Assuming the constraint retrieval method signature
+
+        BigDecimal to = ofNullable(constraint.getRatioTo()).orElse(BigDecimal.ZERO);
+        BigDecimal from = ofNullable(constraint.getRatioFrom()).orElse(BigDecimal.ZERO);
+        BigDecimal tmp = (totalPointsAmount.multiply(to)).divide(from, 2, RoundingMode.HALF_EVEN);
+        res.add(new AppliedPoints(null, tmp)); // Add applied points to the result list
+
+        return res;
+    }
+
+
     private List<AppliedPoints> calculatePointsDiscountAndCreateSpendTransactions(LoyaltyPointConfigEntity config,
                                                                                   BigDecimal totalWithoutShipping,
                                                                                   UserEntity user,
@@ -926,7 +1014,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
 
-   private UserLoyaltyPoints processTransaction(UserEntity userId, BigDecimal points, LoyaltyTransactions type , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder ) {
+    @Override
+   public UserLoyaltyPoints processTransaction(UserEntity userId, BigDecimal points, LoyaltyTransactions type , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder ) {
        UserLoyaltyPoints userPoints = getUserPoints(userId, type);
        userPoints.addTransactions(buildTransaction(points, org, shop, order, yeshteryMetaOrder, type));
        switch (type) {

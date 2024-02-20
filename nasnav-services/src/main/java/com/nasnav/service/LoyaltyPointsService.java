@@ -7,6 +7,7 @@ import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.OrganizationPoints;
 import com.nasnav.response.LoyaltyPointDeleteResponse;
@@ -67,5 +68,9 @@ public interface LoyaltyPointsService {
     LoyaltyUserPointsResponse loyaltyUserPoints(Long orgId);
 
     void sharePointsBetweenUsers(Long orgId, String email, BigDecimal points);
+
+     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, BigDecimal points, boolean yeshteryCart);
+
+    UserLoyaltyPoints processTransaction(UserEntity userId, BigDecimal points, LoyaltyTransactions type , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder );
 
     }

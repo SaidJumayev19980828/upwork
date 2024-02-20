@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -33,10 +34,18 @@ public class YeshteryCartController {
     @Autowired
     private CartOptimizationService cartOptimizationService;
 
+    @Deprecated
     @GetMapping(produces= APPLICATION_JSON_VALUE)
     public Cart getYeshteryCart(@RequestHeader(name = "User-Token", required = false) String token,
                                 @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
                                 @RequestParam(required = false) Set<Long> points) {
+        return cartService.getCart(promoCode, points, true);
+    }
+
+    @GetMapping(value = "/v2",produces= APPLICATION_JSON_VALUE)
+    public Cart getYeshteryCartVersionTwo(@RequestHeader(name = "User-Token", required = false) String token,
+                                @RequestParam(value = "promo", required = false, defaultValue = "") String promoCode,
+                                @RequestParam(required = false) BigDecimal points) {
         return cartService.getCart(promoCode, points, true);
     }
 
