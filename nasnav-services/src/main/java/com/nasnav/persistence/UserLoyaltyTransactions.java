@@ -1,11 +1,14 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
+import com.nasnav.enumerations.LoyaltyPointType;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.beans.BeanUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,7 +27,7 @@ import java.time.LocalDateTime;
 import static javax.persistence.FetchType.LAZY;
 
 
-@Entity(name = "user_loyalty_transactions")
+@Entity
 @Table(name = "user_loyalty_transactions")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -77,6 +80,31 @@ public class UserLoyaltyTransactions {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_loyalty_points", nullable = false, foreignKey = @ForeignKey(name = "fk_user_loyalty_points"))
+    @JsonIgnore
     private UserLoyaltyPoints userLoyaltyPoints;
+
+
+    public LoyaltyPointTransactionDTO getRepresentation() {
+        LoyaltyPointTransactionDTO dto = new LoyaltyPointTransactionDTO();
+        BeanUtils.copyProperties(this, dto);
+
+        dto.setType(getType());
+        if (shop != null) {
+            dto.setShopId(shop.getId());
+            dto.setShopName(shop.getName());
+            dto.setShopLogo(shop.getLogo());
+        }
+
+        if(order != null)
+            dto.setOrderId(order.getId());
+
+        if (metaOrder != null)
+            dto.setMetaOrderId(metaOrder.getId());
+
+        if(organization != null)
+            dto.setOrgId(organization.getId());
+
+        return dto;
+    }
 
 }

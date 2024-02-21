@@ -9,7 +9,6 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -21,7 +20,6 @@ import com.nasnav.response.LoyaltyUserPointsResponse;
 import com.nasnav.service.LoyaltyPointsService;
 import com.nasnav.service.LoyaltyTierService;
 import com.nasnav.service.SecurityService;
-import com.nasnav.service.yeshtery.YeshteryUserService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,9 +38,12 @@ import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.enumerations.LoyaltyPointType.*;
-import static com.nasnav.enumerations.LoyaltyTransactions.ONLINE_ORDER;
+import static com.nasnav.enumerations.LoyaltyTransactions.ORDER_ONLINE;
+import static com.nasnav.enumerations.LoyaltyTransactions.REFERRAL;
 import static com.nasnav.enumerations.LoyaltyTransactions.SHARE_POINTS;
 import static com.nasnav.enumerations.LoyaltyTransactions.TRANSFER_POINTS;
+import static com.nasnav.enumerations.LoyaltyTransactions.PICKUP_FROM_SHOP;
+
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.Settings.RETURN_DAYS_LIMIT;
 import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
@@ -67,6 +68,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
     @Autowired
     private LoyaltyPointTransactionRepository loyaltyPointTransRepo;
+
     @Autowired
     private LoyaltySpendTransactionRepository loyaltySpendTransactionRepo;
 
@@ -96,6 +98,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Autowired
     private UserLoyaltyPointsRepository  userLoyaltyPointsRepository;
 
+    @Autowired
+    private UserLoyaltyTransactionsRepository loyaltyTransactionsRepository;
     @Override
     public LoyaltyPointsUpdateResponse updateLoyaltyPointConfig(LoyaltyPointConfigDTO dto) {
         validateLoyaltyPointConfigDTO(dto);
@@ -290,12 +294,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return ofNullable(userEntity.getTier())
                 .map(entity -> {
                     LoyaltyTierDTO dto = entity.getRepresentation();
-                    dto.setConstraints(loyaltyTierService.readTierJsonStr(entity.getConstraints()));
+                    dto.setConstraints(loyaltyTierService.readTierJson(entity.getConstraints()));
                     return dto;
                 }).
                 orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0021, userEntity.getId()));
     }
 
+    @Deprecated
     @Override
     public LoyaltyPointsUpdateResponse createLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org,
                                                                      UserEntity user,
@@ -308,27 +313,18 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         entity.setUser(user);
         entity.setOrder(order);
         entity.setMetaOrder(yeshteryMetaOrder);
-        entity.setType(ORDER_ONLINE.getValue());
+        entity.setType(null);
         loyaltyPointTransRepo.save(entity);
         return new LoyaltyPointsUpdateResponse(entity.getId());
     }
     private LoyaltyPointsUpdateResponse addLoyaltyPointTransaction(ShopsEntity shop, OrganizationEntity org,
                                                                      UserEntity user,
                                                                      MetaOrderEntity yeshteryMetaOrder,
-                                                                     OrdersEntity order, BigDecimal points,
-                                                                     BigDecimal amount, Integer expiry) {
-        UserLoyaltyPoints  userPoints = getUserLoyaltyPoints(user).orElse(buildBasicEntity(user,points));
-        UserLoyaltyTransactions entity = addLoyaltyPointTransaction(org,points);
-        entity.setShop(shop);
-        entity.setOrder(order);
-        entity.setMetaOrder(yeshteryMetaOrder);
-        entity.setType(ONLINE_ORDER.name());
-        entity.setDescription(ONLINE_ORDER.getDescription());
-        entity.setCreatedAt(LocalDateTime.now());
-        userPoints.addTransactions(entity);
+                                                                     OrdersEntity order, BigDecimal points) {
 
+       UserLoyaltyPoints userPoints =  processTransaction(user, points, ORDER_ONLINE,org,shop,order,yeshteryMetaOrder);
         userLoyaltyPointsRepository.save(userPoints);
-        return new LoyaltyPointsUpdateResponse(entity.getId());
+        return new LoyaltyPointsUpdateResponse(userPoints.getId());
     }
 
     private UserLoyaltyPoints buildBasicEntity(UserEntity user, BigDecimal amount){
@@ -398,11 +394,11 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         }
 
         BigDecimal points = calculatePoints(config, userEntity.getTier(), pointsAmount, ORDER_ONLINE);
-        addLoyaltyPointTransaction(shop, org, userEntity, null, order, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
+        addLoyaltyPointTransaction(shop, org, userEntity, null, order, points);
     }
 
-    public BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyPointType type) {
-        return loyaltyTierService.readTierJsonStr(entity.getConstraints()).get(type);
+    public BigDecimal getTierCoefficientByType(LoyaltyTierEntity entity, LoyaltyTransactions type) {
+        return loyaltyTierService.readTierJson(entity.getConstraints()).get(type);
     }
 
     @Override
@@ -417,10 +413,10 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
             return;
         }
         BigDecimal points = calculatePoints(config, user.getTier(), pointsAmount, ORDER_ONLINE);
-        addLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points, pointsAmount, getConfigConstraint(config, type).getExpiry());
+        addLoyaltyPointTransaction(null, org, user, yeshteryMetaOrder, null, points);
     }
 
-    public BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyPointType type) {
+    public BigDecimal calculatePoints(LoyaltyPointConfigEntity config, LoyaltyTierEntity tier, BigDecimal amount, LoyaltyTransactions type) {
         BigDecimal coefficient = getTierCoefficientByType(tier, type);
 
         LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
@@ -456,7 +452,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         activateReferralPoints(order);
     }
 
-    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyPointType type, BigDecimal amount, Boolean valid) {
+    private void prepareLoyaltyPointTransaction(UserEntity user, OrganizationEntity org, LoyaltyTransactions type, BigDecimal amount, Boolean valid) {
         if (user.getTier() == null) {
             return;
         }
@@ -466,15 +462,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
             return;
         }
         BigDecimal points = calculatePoints(config, user.getTier(), amount, type);
-        LoyaltyConfigConstraint constraint = getConfigConstraint(config, type);
-        LoyaltyPointTransactionEntity transaction = createLoyaltyPointTransaction(org,
-                user,
-                points,
-                constraint.getAmount(),
-                constraint.getExpiry());
-        transaction.setType(type.getValue());
-        transaction.setIsValid(valid);
-        loyaltyPointTransRepo.save(transaction);
+        userLoyaltyPointsRepository.save(processTransaction(user,points, type,org,null,null,null));
     }
 
 
@@ -486,11 +474,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     }
 
     private List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPoints(Long userId, Long orgId) {
-        return loyaltyPointTransRepo.findByUser_IdAndOrganization_Id(userId, orgId)
+        return loyaltyTransactionsRepository.findByUser_IdAndOrganization_Id(userId, orgId)
                 .stream()
-                .map(LoyaltyPointTransactionEntity::getRepresentation)
+                .map(UserLoyaltyTransactions::getRepresentation)
                 .collect(toList());
     }
+
+
 
     @Override
     public List<LoyaltyPointTransactionDTO> listOrganizationLoyaltyPointsByUser(Long userId) {
@@ -542,6 +532,32 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
                     return dto;
                 })
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$LOY$0024, orgId));
+    }
+
+    @Override
+    public  SpentPointsInfo applyPointsOnOrders(BigDecimal points , Set<OrdersEntity> subOrders, BigDecimal totalWithoutShipping, Long userId, OrganizationEntity org){
+        UserEntity user = userRepo.findById(userId).get();
+        if(user.getTier() == null) {
+            return new SpentPointsInfo();
+        }
+        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId( user.getTier().getId())
+                .orElse(null);
+        if (config == null) {
+            return new SpentPointsInfo();
+        }
+
+        BigDecimal total =
+                calculatePointsDiscountAndCreateSpendTransactions(
+                        config,
+                        totalWithoutShipping,
+                        points)
+                        .stream()
+                        .map(AppliedPoints::getDiscount)
+                        .reduce(ZERO, BigDecimal::add);
+
+        BigDecimal suborderPointsDiscount = total.divide(new BigDecimal(subOrders.size()));
+        subOrders.forEach(s -> s.setDiscounts(s.getDiscounts().add(suborderPointsDiscount)));
+        return new SpentPointsInfo();
     }
 
     @Override
@@ -722,21 +738,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
 
 
 
-    private List<AppliedPoints> calculatePointsDiscountAndCreateSpendTransactions(LoyaltyPointConfigEntity config,
-                                                                                  BigDecimal totalWithoutShipping,
-                                                                                  BigDecimal totalPointsAmount // Pass total points amount directly
-                                                                                  ) {
+    private List<AppliedPoints> calculatePointsDiscountAndCreateSpendTransactions(
+            LoyaltyPointConfigEntity config, BigDecimal totalWithoutShipping, BigDecimal totalPointsAmount) {
         List<AppliedPoints> res = new ArrayList<>();
-
-        BigDecimal total = BigDecimal.ZERO; // Use BigDecimal.ZERO instead of ZERO
-
-        LoyaltyConfigConstraint constraint = getConfigConstraint(config, ORDER_ONLINE); // Assuming the constraint retrieval method signature
-
+        LoyaltyConfigConstraint constraint = getConfigConstraint(config, ORDER_ONLINE);
         BigDecimal to = ofNullable(constraint.getRatioTo()).orElse(BigDecimal.ZERO);
         BigDecimal from = ofNullable(constraint.getRatioFrom()).orElse(BigDecimal.ZERO);
         BigDecimal tmp = (totalPointsAmount.multiply(to)).divide(from, 2, RoundingMode.HALF_EVEN);
-        res.add(new AppliedPoints(null, tmp)); // Add applied points to the result list
-
+        res.add(new AppliedPoints(null, tmp));
         return res;
     }
 
@@ -793,9 +802,24 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return readConfigJsonStr(entity.getConstraints()).getOrDefault(type, null);
     }
 
+    private LoyaltyConfigConstraint getConfigConstraint(LoyaltyPointConfigEntity entity, LoyaltyTransactions type) {
+        return readConfigJson(entity.getConstraints()).getOrDefault(type, null);
+    }
+
     private HashMap<LoyaltyPointType, LoyaltyConfigConstraint> readConfigJsonStr(String jsonStr) {
         try {
             return objectMapper.readValue(jsonStr, new TypeReference<HashMap<LoyaltyPointType, LoyaltyConfigConstraint>>() {
+            });
+        } catch (Exception e) {
+            logger.error(e, e);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$JSON$0001, jsonStr);
+        }
+    }
+
+
+    private HashMap<LoyaltyTransactions, LoyaltyConfigConstraint> readConfigJson(String jsonStr) {
+        try {
+            return objectMapper.readValue(jsonStr, new TypeReference<HashMap<LoyaltyTransactions, LoyaltyConfigConstraint>>() {
             });
         } catch (Exception e) {
             logger.error(e, e);
@@ -1019,14 +1043,14 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
        UserLoyaltyPoints userPoints = getUserPoints(userId, type);
        userPoints.addTransactions(buildTransaction(points, org, shop, order, yeshteryMetaOrder, type));
        switch (type) {
-            case ADD_ORDER:
+            case ORDER_ONLINE:
             case SHARE_POINTS:
-            case REFERRAL_POINTS:
+            case REFERRAL:
                 userPoints.depositPoints(points);
                 break;
             case TRANSFER_POINTS:
             case REDEEM_POINTS:
-            case ONLINE_ORDER:
+            case SPEND_IN_ORDER:
             case PICKUP_FROM_SHOP:
                 validateAndProcessWithdraw(points,userPoints);
                 break;
@@ -1038,9 +1062,9 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     private UserLoyaltyPoints  getUserPoints(UserEntity userId ,LoyaltyTransactions type  ) {
       return   userLoyaltyPointsRepository.findByUser(userId)
                 .orElseGet(() -> {
-                    if (type == LoyaltyTransactions.ADD_ORDER ||
+                    if (type == LoyaltyTransactions.ORDER_ONLINE ||
                             type == LoyaltyTransactions.SHARE_POINTS ||
-                            type == LoyaltyTransactions.REFERRAL_POINTS) {
+                            type == LoyaltyTransactions.REFERRAL) {
                         return buildBasicEntity(userId, BigDecimal.ZERO);
                     } else {
                         throw new RuntimeBusinessException(NOT_FOUND,U$0001);

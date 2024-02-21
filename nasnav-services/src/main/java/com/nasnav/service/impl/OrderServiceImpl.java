@@ -655,6 +655,7 @@ public class OrderServiceImpl implements OrderService {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
 		updateOrderStatus(order, FINALIZED);
+		userService.updateUserByTierIdAndOrgId( order.getUserId(), order.getOrganizationEntity().getId());
 	}
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
@@ -2008,10 +2009,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void savePointTransaction(UserEntity user , BigDecimal points , OrganizationEntity org ,MetaOrderEntity order){
-		userLoyaltyPointsRepository.save(loyaltyPointsService.processTransaction(user, points, LoyaltyTransactions.ONLINE_ORDER, org, null, null, order));
+		userLoyaltyPointsRepository.save(loyaltyPointsService.processTransaction(user, points, LoyaltyTransactions.ORDER_ONLINE, org, null, null, order));
 	}
 
-	// TODO Apply here the points
 	private MetaOrderEntity createMetaOrder(SubordersAndDiscountsInfo data, OrganizationEntity org, UserEntity user, String notes, BigDecimal TotalDiscounts, BigDecimal cartTotal ,BigDecimal cartSubTotal) {
 		Set<OrdersEntity> subOrders = data.getSubOrders();
 		List<PromotionsEntity> appliedPromos = data.getAppliedPromos().stream().map(AppliedPromo::getEntity).toList();
@@ -2217,7 +2217,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private SpentPointsInfo addPointsDiscount(Long userId, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Set<OrdersEntity> subOrders, OrganizationEntity org) {
 		BigDecimal totalWithoutShipping = getSubordersTotalWithoutShipping(subOrders);
-		return loyaltyPointsService.applyPointsOnOrders(dto.getPoints(), subOrders, totalWithoutShipping, userId, org);
+		BigDecimal points = dto.getRequestedPoints();
+		return points != null && points.compareTo(ZERO) > 0 ? loyaltyPointsService.applyPointsOnOrders(points, subOrders, totalWithoutShipping, userId, org): new SpentPointsInfo()  ;
 	}
 
 	private BigDecimal getSubordersTotalWithoutShipping(Set<OrdersEntity> subOrders) {

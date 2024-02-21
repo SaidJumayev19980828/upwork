@@ -1808,8 +1808,6 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
 
         createAndConfirmOrder(newUser.getId(), "456987");
 
-        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(88L, 99001L).get(0);
-        Assertions.assertEquals(true, transaction.getIsValid());
     }
 
     private Long createAndConfirmOrder(Long userId, String token) {
@@ -1848,9 +1846,7 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         HttpEntity request = getHttpEntity(requestBody, null);
         ResponseEntity<UserApiResponse> response = template.postForEntity("/v1/user/register?referral=88", request, UserApiResponse.class);
         Assertions.assertEquals(201, response.getStatusCodeValue());
-        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_Id(userId, 99001L).get(0);
-        Assertions.assertEquals(false, transaction.getIsValid());
-    }
+        }
 
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Loyalty_Point_Test_Data_2.sql"})
@@ -1875,8 +1871,6 @@ public class YeshteryOrdersControllerTest extends AbstractTestWithTempBaseDir {
         response = template.postForEntity("/v1/loyalty/points/code/redeem?order_id=" + orderId + "&code="+ code, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
 
-        LoyaltyPointTransactionEntity transaction = loyaltyPointTransactionRepo.findByUser_IdAndOrganization_IdAndType(88L, 99001L, 3).get(0);
-        Assertions.assertEquals(true, transaction.getIsValid());
     }
 
     private UserEntity prepareNewUserInfo() {

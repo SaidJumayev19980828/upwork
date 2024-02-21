@@ -11,6 +11,7 @@ import com.nasnav.dto.request.LoyaltyPointConfigDTO;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.persistence.*;
 import com.nasnav.response.*;
 import com.nasnav.service.LoyaltyPointsService;
@@ -195,7 +196,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         LoyaltyTierDTO loyaltyTierDTO = resBody.get(2);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
-        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyPointType.ORDER_ONLINE).doubleValue(), 0.8);
+        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyTransactions.ORDER_ONLINE).doubleValue(), 0.8);
 
         tierRepository.deleteById(loyaltyTierDTO.getId());
     }
@@ -378,7 +379,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         BigDecimal points = loyaltyPointsServiceImpl.
                 calculatePoints(config, loyaltyTier,
-                BigDecimal.valueOf(1000L), LoyaltyPointType.ORDER_ONLINE);
+                BigDecimal.valueOf(1000L), LoyaltyTransactions.ORDER_ONLINE);
 
         assertEquals(new BigDecimal("350.00"), points);
     }

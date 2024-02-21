@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum LoyaltyTransactions {
-    ADD_ORDER("Add points after completing an order"),
+    ORDER_ONLINE("Add points after completing an order"),
     SHARE_POINTS("Add points after sharing points between users"),
-    REFERRAL_POINTS("Add points as referral points"),
+    REFERRAL("Add points as referral points"),
     TRANSFER_POINTS("Transfer points to another user"),
     REDEEM_POINTS("Redeem points"),
-    ONLINE_ORDER("Use points to buy an online order"),
+    SPEND_IN_ORDER("Use points to buy an online order"),
     PICKUP_FROM_SHOP("Use points to Pickup from shop");
 
     private final String description;

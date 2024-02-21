@@ -31,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -266,7 +265,6 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 
 	@Test
-	@Ignore
 	public void testNewRegisterUserWithReferrer() throws JsonProcessingException {
 		Long referredUserId = 88001L;
 		HttpEntity<Object> userJson = getHttpEntity(
@@ -279,17 +277,13 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				String.class);
 
 		UserApiResponse userApiResponse = mapper.readValue(responseString.getBody(), new TypeReference<>(){});
-
+		UserEntity referredUser =  userRepository.findById(referredUserId).get();
 		// get userId for deletion after test
 		Long userId = userApiResponse.getEntityId();
 
-
-
-
-		UserLoyaltyPoints userpoints = userLoyaltyPointsRepository.findByUser_id(userApiResponse.getEntityId()).get();
+		UserLoyaltyPoints userpoints = userLoyaltyPointsRepository.findByUser(referredUser).get();
 		assertEquals(new BigDecimal("7.00"), userpoints.getBalance());
-
-	}
+		}
 
 
 	@Test

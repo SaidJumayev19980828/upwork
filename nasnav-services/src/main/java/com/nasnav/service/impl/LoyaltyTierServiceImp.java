@@ -7,6 +7,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
@@ -91,6 +92,15 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         }
     }
 
+    public HashMap<LoyaltyTransactions, BigDecimal> readTierJson(String jsonStr){
+        try {
+            return objectMapper.readValue(jsonStr, new TypeReference<HashMap<LoyaltyTransactions, BigDecimal>>() {});
+        } catch (Exception e) {
+            logger.error(e,e);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$JSON$0001, jsonStr);
+        }
+    }
+
     @Override
     public List<LoyaltyTierDTO> getTiers(Boolean isSpecial) {
         Long orgId = securityService.getCurrentUserOrganizationId();
@@ -107,7 +117,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
 
     private LoyaltyTierDTO getTierRepresentation(LoyaltyTierEntity entity) {
         LoyaltyTierDTO dto = entity.getRepresentation();
-        dto.setConstraints(readTierJsonStr(entity.getConstraints()));
+        dto.setConstraints(readTierJson(entity.getConstraints()));
         return dto;
     }
 
@@ -161,7 +171,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         return tierRepository.save(entity);
     }
 
-    private String serializeDTO(Map<LoyaltyPointType, BigDecimal> dto) {
+    private String serializeDTO(Map<LoyaltyTransactions, BigDecimal> dto) {
         try {
             return objectMapper.writeValueAsString(dto);
         } catch (JsonProcessingException e) {
@@ -169,6 +179,7 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
             return "{}";
         }
     }
+
 
     private LoyaltyTierEntity getOrCreateTierEntity(LoyaltyTierDTO tiers) {
         return ofNullable(tiers)

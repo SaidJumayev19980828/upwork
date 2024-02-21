@@ -76,3 +76,10 @@ INSERT INTO public.user_loyalty_points(
 	VALUES
 	 (1, 2000, now(), 1, 88),
 	 (2, 6000, now(), 1, 89);
+
+INSERT INTO public.user_loyalty_transactions(
+	id, amount, created_at, type, description, user_loyalty_points, org_id)
+	VALUES
+	 (1, 10, now(), 'SHARE_POINTS', 'test',  1,  99001),
+	 (2, 20, now(), 'SHARE_POINTS', 'test',  1,  99001)
+	 ;

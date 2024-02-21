@@ -9,16 +9,20 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.LoyaltyPointConfigEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.*;
 import com.nasnav.service.LoyaltyPointsService;
+import com.nasnav.service.LoyaltyTierService;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +62,9 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
     @Autowired
     private UserRepository userRepository;
 
+
+    @Autowired
+    private LoyaltyTierService tierService;
 
     @Test
     public void createLoyaltyPointConfigInvalidConstraints() {
@@ -173,7 +181,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         LoyaltyTierDTO loyaltyTierDTO = resBody.get(2);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
-        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyPointType.ORDER_ONLINE).doubleValue(), 0.8);
+        assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyTransactions.ORDER_ONLINE).doubleValue(), 0.8);
 
         tierRepository.deleteById(loyaltyTierDTO.getId());
     }
@@ -229,5 +237,25 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         var response = template.exchange("/v1/loyalty/points?org_id=99001", GET, request, String.class);
         assertEquals(404, response.getStatusCodeValue());
         assertTrue(response.getBody().contains(ORG$LOY$0014.name()));
+    }
+
+
+    @Test
+    public void test_throw_exception_invalid_key_type() {
+        String jsonStr = "{\"TRANSACTION_A\": \"invalid_value\"}";
+        assertThrows(RuntimeBusinessException.class, () -> tierService.readTierJson(jsonStr));
+    }
+    @Test
+    public void test_throw_exception_invalid_value_type() {
+        String jsonStr = "{\"TRANSACTION_A\": \"invalid_value\"}";
+        assertThrows(RuntimeBusinessException.class, () -> tierService.readTierJson(jsonStr));
+    }
+    @Test
+    public void test_parse_valid_json_single_key_value_pair() {
+        String jsonStr = "{\"PICKUP_FROM_SHOP\": 0.5}";
+        HashMap<LoyaltyTransactions, BigDecimal> result = tierService.readTierJson(jsonStr);
+        HashMap<LoyaltyTransactions, BigDecimal> expected = new HashMap<>();
+        expected.put(LoyaltyTransactions.PICKUP_FROM_SHOP, new BigDecimal("0.5"));
+        assertEquals(expected, result);
     }
 }

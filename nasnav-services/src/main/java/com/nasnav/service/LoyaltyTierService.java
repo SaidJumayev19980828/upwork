@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
+import com.nasnav.enumerations.LoyaltyTransactions;
 import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.response.LoyaltyTierUpdateResponse;
 
@@ -21,6 +22,9 @@ public interface LoyaltyTierService {
     List<LoyaltyTierDTO> getTiers(Boolean isSpecial);
 
     HashMap<LoyaltyPointType, BigDecimal> readTierJsonStr(String jsonStr);
+
+    HashMap<LoyaltyTransactions, BigDecimal> readTierJson(String jsonStr);
+
     LoyaltyTierEntity getActiveDefaultTier( Long organizationId);
 
 }

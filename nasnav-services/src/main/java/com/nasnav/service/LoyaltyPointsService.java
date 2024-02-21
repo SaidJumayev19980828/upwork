@@ -41,6 +41,8 @@ public interface LoyaltyPointsService {
 
     String generateUserShopPinCode(Long shopId);
 
+    SpentPointsInfo applyPointsOnOrders(BigDecimal points, Set<OrdersEntity> subOrders, BigDecimal totalWithoutShipping,
+                                        Long userId, OrganizationEntity org);
     SpentPointsInfo applyPointsOnOrders(Set<Long> points, Set<OrdersEntity> subOrders, BigDecimal totalWithoutShipping,
                                         Long userId, OrganizationEntity org);
 
@@ -69,8 +71,8 @@ public interface LoyaltyPointsService {
 
     void sharePointsBetweenUsers(Long orgId, String email, BigDecimal points);
 
-     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, BigDecimal points, boolean yeshteryCart);
-
     UserLoyaltyPoints processTransaction(UserEntity userId, BigDecimal points, LoyaltyTransactions type , OrganizationEntity org , ShopsEntity shop , OrdersEntity order, MetaOrderEntity yeshteryMetaOrder );
+
+     AppliedPointsResponse calculateCartPointsDiscount(List<CartItem> items, BigDecimal points, boolean yeshteryCart);
 
     }

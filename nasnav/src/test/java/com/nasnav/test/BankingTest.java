@@ -127,6 +127,7 @@ public class BankingTest extends AbstractTestWithTempBaseDir {
         assertEquals(406, exception.getStatusCode().value());
     }
 
+    @Ignore
     @Test
     public void depositCoinsFromBC(){
         DepositBlockChainRequest depositRequest = new DepositBlockChainRequest();

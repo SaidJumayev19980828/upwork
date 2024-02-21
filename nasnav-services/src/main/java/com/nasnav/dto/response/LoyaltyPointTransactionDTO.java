@@ -26,4 +26,5 @@ public class LoyaltyPointTransactionDTO {
     private String shopName;
     private String shopLogo;
     private Boolean gotOnline;
+    private String description;
 }
