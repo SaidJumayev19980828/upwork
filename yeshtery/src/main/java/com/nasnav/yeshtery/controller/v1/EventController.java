@@ -14,6 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
+import javax.ws.rs.PathParam;
 
 import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
@@ -118,6 +119,14 @@ public class EventController {
                                                                    @RequestParam(required = false ) Long orgId
                                                                    ) {
         return eventService.getAllEvents(start, count , fromDate , orgId);
+    }
+
+    @GetMapping("/getEventByName/{name}")
+    public PageImpl<EventResponseDto> getEventsByName(@PathVariable("name") String name,
+                                                      @RequestParam(required = false, defaultValue = "0") Integer start,
+                                                      @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count
+    ) {
+        return eventService.getEventByName(name,start,count);
     }
 
     @GetMapping("/advertise/all")

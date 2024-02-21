@@ -14,6 +14,7 @@ import com.nasnav.persistence.EventLogsEntity;
 import com.nasnav.persistence.EventRequestsEntity;
 import com.nasnav.persistence.InfluencerEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.service.impl.EventServiceImpl;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -140,6 +142,23 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/list?fromDate=" + fromDate + "&toDate=" + toDate, HttpMethod.GET, httpEntity, responseType);
         assertEquals(200, response.getStatusCode().value());
     }
+
+    @Test
+    public void getEventsByName(){
+        HttpEntity<Object> httpEntity = getHttpEntity("101112");
+        ParameterizedTypeReference<RestResponsePage<EventsNewDTO>> responseType = new ParameterizedTypeReference<>() {
+        };
+        ResponseEntity<RestResponsePage<EventsNewDTO>> response = template.exchange("/v1/event/getEventByName/name" , HttpMethod.GET, httpEntity, responseType);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getEventByNameService(){
+        Object page = null;
+        PageImpl<EventEntity> entity = eventRepository.findByName("name", null);
+        assertFalse(entity.isEmpty());
+    }
+
 
     @Test
     public void getAllEventsForUnAuth(){

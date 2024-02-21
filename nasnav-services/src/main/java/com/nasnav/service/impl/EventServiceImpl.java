@@ -10,7 +10,6 @@ import com.nasnav.dto.OrganizationNewDTO;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductFetchDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
-import com.nasnav.dto.request.RoomTemplateDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.dto.OrganizationProjection;
@@ -406,6 +405,13 @@ public class EventServiceImpl implements EventService{
     }
 
 
+    @Override
+    public PageImpl<EventResponseDto> getEventByName(String name, Integer start, Integer count) {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventEntity> events = eventRepository.findByName(name, page);
+        List<EventResponseDto> dtos = events.getContent().stream().map(this::toDto).toList();
+        return new PageImpl<>(dtos, events.getPageable(), events.getTotalElements());
+    }
 
 
     public Map<String, String> prepareMailContent(String eventName,String userName,LocalDate eventDate,

@@ -30,6 +30,7 @@ public interface EventService {
     void updateEvent(EventForRequestDTO dto, Long eventId);
     void deleteEvent(Long eventId, Boolean force);
     void intersetEventForUser(Long eventId) throws MessagingException, IOException;
+    PageImpl<EventResponseDto> getEventByName(String name,Integer start, Integer count);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, Long eventId);
     boolean hasInfluencerOrEmployeeAccessToEvent(BaseUserEntity user, EventEntity event);
     EventResponseDto toDto(EventEntity entity);
@@ -40,4 +41,5 @@ public interface EventService {
      EventsNewDTO mapEventProjectionToDTO(EventInterestsProjection eventInterestsProjection);
 
      void sendInterestEmail(LocalDateTime startAt,String eventName ,String orgName ,String userName,String userEmail ,String mailTemplate , String emailSubject) throws MessagingException, IOException;
+
 }

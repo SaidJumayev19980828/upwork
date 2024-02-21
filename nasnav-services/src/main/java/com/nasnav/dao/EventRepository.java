@@ -101,9 +101,8 @@ public interface EventRepository extends CrudRepository<EventEntity, Long>, JpaS
             LocalDateTime endDate,
             Pageable pageable);
 
-
-
-
+    @Query("select event from EventEntity event where event.name =:name")
+    PageImpl<EventEntity> findByName(String name,Pageable page);
 
 }
 
