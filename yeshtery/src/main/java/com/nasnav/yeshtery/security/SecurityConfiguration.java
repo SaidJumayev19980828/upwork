@@ -240,7 +240,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             patternOf("/v1/chat-widget-setting/create",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/chat-widget-setting/publish",POST, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
             patternOf("/v1/chat-widget-setting/get-unpublished",GET, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-			patternOf("/**")
+            patternOf("/v1/organization/add/image/type",POST),
+            patternOf( "/v1/organization/delete/image/type",DELETE),
+            patternOf( "/v1/organization/update/image/type",POST),
+            patternOf( "/v1/organization/images/types",GET),
+            patternOf("/**")
+
     );
 
    
@@ -302,7 +307,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/v1/contactUs")
                         , patternOf("/v1/contactUs/**")
                         , patternOf("/v1/bank/deposit/bc**",POST)
-                        );
+                       );
 
     AuthenticationProvider provider;
 

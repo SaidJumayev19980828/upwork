@@ -183,7 +183,7 @@ public enum ErrorCodes {
 	,ORG$IMG$0001("No Image exists with id [%d]!")
 	,ORG$IMG$0002("No Image exists with url [%s]!")
 	,ORG$IMG$0003("Must provide either image_id or url!")
-
+    ,ORG$IMG$0004("No Image Type exists with id [%d]!")
 	,CAT$0001("Provided parent category[%d] doesn't exit!")
 	,CAT$0002("Missing or invalid category ID!")
 

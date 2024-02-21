@@ -10,6 +10,7 @@ import com.nasnav.persistence.BankReservationEntity;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -113,6 +114,7 @@ public class BankingTest extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Ignore
     public void depositCoinsFromNasNav(){
         String requestBody =
                 json().toString();

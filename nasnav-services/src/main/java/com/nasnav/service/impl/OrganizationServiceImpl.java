@@ -1,12 +1,12 @@
 package com.nasnav.service.impl;
 
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.UserDTOs.*;
 import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.organization.ImageTypeDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
@@ -16,7 +16,6 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -25,10 +24,7 @@ import com.nasnav.payments.rave.RaveAccount;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.*;
 import com.nasnav.request.SitemapParams;
-import com.nasnav.response.DomainOrgIdResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.UserApiResponse;
+import com.nasnav.response.*;
 import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
@@ -136,6 +132,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     private EmployeeUserService employeeUserService;
     @Autowired
     private EmployeeUserRepository employeeUserRepository;
+    @Autowired
+    ImageTypeRepository imageTypeRepository;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -622,6 +620,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orElse(config.mailSenderAddress);
     }
 
+
     private YeshteryOrganizationDTO toYeshteryOrganizationDto(OrganizationEntity org) {
         YeshteryOrganizationDTO dto = new YeshteryOrganizationDTO();
         dto.setId(org.getId());
@@ -1105,5 +1104,37 @@ public class OrganizationServiceImpl implements OrganizationService {
             return orgObj;
         }
         return getOrganizationById(id, yeshteryState);
+    }
+    @Override
+    public ImageTypeResponse createImageType(ImageTypeDto imageTypeDto) {
+        ImageType imageType = new ImageType();
+        imageType.setType_id(imageTypeDto.getType_id());
+        imageType.setLabel(imageTypeDto.getLabel());
+        imageType.setOrganizationId(imageTypeDto.getOrganization_id());
+        imageType.setText(imageTypeDto.getText());
+        ImageType savedImageType= imageTypeRepository.save(imageType);
+        return new ImageTypeResponse(savedImageType.getType_id(),savedImageType.getOrganizationId(),savedImageType.getLabel(),savedImageType.getText());
+    }
+
+    @Override
+    public void updateImageType(ImageTypeDto imageTypeDto) {
+     var imageType= imageTypeRepository.findById(imageTypeDto.getType_id())
+             .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$IMG$0004, imageTypeDto.getType_id()));
+           imageType.setText(imageTypeDto.getText());
+           imageType.setLabel(imageTypeDto.getLabel());
+           imageType.setOrganizationId(imageTypeDto.getOrganization_id());
+           imageTypeRepository.save(imageType);
+
+    }
+
+    @Override
+    public List<ImageType> getImagesTypes(Long organizationId) {
+       return imageTypeRepository.findAllByOrganizationId(organizationId);
+    }
+
+
+    @Override
+    public void deleteImageType(Long typeId) {
+        imageTypeRepository.deleteById(typeId);
     }
 }

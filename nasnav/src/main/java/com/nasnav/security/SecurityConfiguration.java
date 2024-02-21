@@ -242,6 +242,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/service/org"                 ,GET                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf( "/service/org"                 ,PUT                         , setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 			patternOf("/contactUs/**",GET,getAllRoles()),
+			patternOf("/organization/add/image/type",POST),
+			patternOf( "/organization/delete/image/type",DELETE),
+			patternOf( "/organization/update/image/type",POST),
+			patternOf( "/organization/images/types",GET),
 			patternOf( "/**")
 
 

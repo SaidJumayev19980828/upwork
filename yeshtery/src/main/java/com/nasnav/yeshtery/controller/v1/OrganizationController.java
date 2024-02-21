@@ -4,21 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
-import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
+import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.ImageType;
 import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
+import com.nasnav.response.*;
 import com.nasnav.service.*;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
@@ -53,7 +49,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @CrossOrigin("*") // allow all origins
 @RequiredArgsConstructor
 public class OrganizationController {
-    static final String API_PATH = YeshteryConstants.API_PATH +"/organization";
+    static final String API_PATH = YeshteryConstants.API_PATH +"/organization/";
 
     private final FeaturesService featuresService;
 
@@ -373,4 +369,27 @@ public class OrganizationController {
     public OrganizationResponse registerOrganization(@RequestBody RegisterDto registerDto) throws Exception {
         return orgService.registerOrganization(registerDto);
     }
+    @PostMapping(value = "add/image/type", produces = APPLICATION_JSON_VALUE)
+    public ImageTypeResponse addImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                          @Valid @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+       return orgService.createImageType(imageTypeDto);
+    }
+    @DeleteMapping(value = "delete/image/type")
+    public void deleteImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                @RequestParam("type_id") Long typeId) throws BusinessException {
+        orgService.deleteImageType(typeId);
+    }
+
+    @PostMapping(value = "update/image/type")
+    public void updateImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                               @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+        orgService.updateImageType(imageTypeDto);
+    }
+
+    @GetMapping(value = "images/types")
+    public List<ImageType> getImagesType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                         @RequestParam("org_id") Long organizationId) throws BusinessException {
+        return orgService.getImagesTypes(organizationId);
+    }
+
 }

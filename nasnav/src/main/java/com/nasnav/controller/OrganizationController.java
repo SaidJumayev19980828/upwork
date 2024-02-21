@@ -17,7 +17,9 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.response.*;
+import com.nasnav.persistence.ImageType;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,10 +58,6 @@ import com.nasnav.dto.SubAreasRepObj;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.dto.ThemeClassDTO;
-import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
-import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.enumerations.ProductFeatureType;
@@ -402,4 +400,29 @@ public class OrganizationController {
                                                @RequestParam(value = "country_id", required = false) Long countryId){
         return addressService.getOrgSubAreas(areaId, cityId, countryId);
     }
+
+    @PostMapping(value = "/add/image/type", produces = APPLICATION_JSON_VALUE)
+    public void addImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                             @Valid @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+        orgService.createImageType(imageTypeDto);
+    }
+
+    @DeleteMapping(value = "/delete/image/type")
+    public void deleteImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                @RequestParam("type_id") Long typeId) throws BusinessException {
+        orgService.deleteImageType(typeId);
+    }
+
+    @PostMapping(value = "/update/image/type")
+    public void updateImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                               @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+        orgService.updateImageType(imageTypeDto);
+    }
+
+    @GetMapping(value = "/images/types")
+    public List<ImageType> getImagesType(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                         @RequestParam("org_id") Long organizationId) throws BusinessException {
+        return orgService.getImagesTypes(organizationId);
+    }
+
 }

@@ -2,16 +2,18 @@ package com.nasnav.service;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.organization.ImageTypeDto;
 import com.nasnav.dto.request.organization.OrganizationCreationDTO;
 import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ImageType;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.SettingEntity;
 import com.nasnav.request.SitemapParams;
 import com.nasnav.response.DomainOrgIdResponse;
+import com.nasnav.response.ImageTypeResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import org.springframework.data.domain.PageImpl;
@@ -20,8 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
-
-import static com.nasnav.enumerations.Settings.ORG_EMAIL;
 
 public interface OrganizationService {
     List<OrganizationRepresentationObject> listOrganizations();
@@ -75,4 +75,12 @@ public interface OrganizationService {
     List<OrganizationEntity> getYeshteryOrgs();
 
     String getOrganizationEmail(Long orgId);
+
+    void deleteImageType(Long typeId);
+
+    ImageTypeResponse createImageType(ImageTypeDto imageTypeDto);
+
+    void updateImageType(ImageTypeDto imageTypeDto);
+
+    List<ImageType> getImagesTypes(Long organizationId);
 }
