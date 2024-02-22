@@ -2,27 +2,45 @@ package com.nasnav.test;
 
 
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.ReferralCodeRepo;
 import com.nasnav.dao.ReferralTransactionRepository;
+import com.nasnav.dao.ReferralWalletRepository;
+import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralTransactionsType;
+import com.nasnav.integration.MobileOTPService;
+import com.nasnav.integration.smsMis.dto.OTPDto;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ReferralCodeEntity;
 import com.nasnav.persistence.ReferralTransactions;
 import com.nasnav.persistence.ReferralWallet;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralWalletService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
+import org.elasticsearch.core.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.List;
 
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -44,6 +62,18 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     @Autowired
     private ReferralTransactionRepository referralTransactionRepository;
 
+    @MockBean
+    private MobileOTPService mobileOTPService;
+
+    @Autowired
+    private TestRestTemplate template;
+
+    @Autowired
+    private ReferralCodeRepo referralCodeRepo;
+
+    @Autowired
+    private ReferralWalletRepository referralWalletRepo;
+
     @Test
     @Transactional
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data.sql"})
@@ -53,7 +83,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         referralCodeService.shareRevenueForOrder(ordersEntity);
 
-        ReferralWallet referralWallet = referralWalletService.getWalletByUserId(89L);
+        ReferralWallet referralWallet = referralWalletService.getWalletByUserId(88L);
         assertEquals(new BigDecimal("28.00"), referralWallet.getBalance());
 
         List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByReferralWallet_Id(500L);
@@ -79,6 +109,51 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(new BigDecimal("6.00"), referralTransactions.get(0).getAmount());
     }
 
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_1.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpAndreferralCreatedButNotActive(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=abcdfg",
+                 request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+
+        assertNotNull(referralCodeEntity.getAcceptReferralToken());
+        assertNotNull(referralCodeEntity.getParentReferralCode());
+        assertNotNull(referralCodeEntity.getReferralCode());
+        assertEquals(1, ReferralCodeStatus.IN_ACTIVE.getValue());
+
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void validateOTPAndReferralCodeActivatedAndWalletForUserWithAwardCreated(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/validateOtp/rtyuiu",
+                request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+        assertEquals(ReferralCodeStatus.ACTIVE.getValue(), referralCodeEntity.getStatus());
+
+        ReferralWallet referralWallet = referralWalletRepo.findByUserId(89L).get();
+        assertNotNull(referralWallet);
+        assertEquals(new BigDecimal("20.00"), referralWallet.getBalance());
+
+        List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByReferralWallet_Id(referralWallet.getId());
+        assertEquals(1, referralTransactions.size());
+        assertEquals(ReferralTransactionsType.ACCEPT_REFERRAL_CODE, referralTransactions.get(0).getType());
+
+    }
 
 
 }

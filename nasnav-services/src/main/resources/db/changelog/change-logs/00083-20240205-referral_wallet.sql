@@ -54,12 +54,10 @@ CREATE TABLE IF NOT EXISTS public.referral_codes
 (
     id bigint NOT NULL,
     referral_code character varying(6) COLLATE pg_catalog."default" NOT NULL,
-    parent_referral_code character varying(6) COLLATE pg_catalog."default" NOT NULL,
+    parent_referral_code character varying(6) COLLATE pg_catalog."default",
     org_id bigint NOT NULL,
     user_id bigint NOT NULL,
-    constraints text COLLATE pg_catalog."default" NOT NULL,
     settings_id bigint NOT NULL,
-    created_by bigint NOT NULL,
     status integer NOT NULL DEFAULT 0,
     created_at timestamp without time zone DEFAULT now(),
     accept_token text COLLATE pg_catalog."default",
@@ -92,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.referral_transactions
     referral_wallet_id bigint,
     user_id bigint NOT NULL,
     order_id bigint,
-    referral_id bigint NOT NULL,
+    referral_id bigint,
     CONSTRAINT referral_transactions_pkey PRIMARY KEY (id),
     CONSTRAINT fk_referral_id FOREIGN KEY (referral_id)
     REFERENCES public.referral_codes (id) MATCH SIMPLE
@@ -119,5 +117,5 @@ ALTER TABLE public.referral_transactions_id_seq OWNER TO nasnav;
 ALTER TABLE referral_transactions ALTER COLUMN id SET DEFAULT nextval('referral_transactions_id_seq');
 
 
--- ALTER TABLE orders ADD COLUMN applied_referral_code character varying COLLATE pg_catalog."default";
-
+ALTER TABLE orders ADD COLUMN applied_referral_code character varying COLLATE pg_catalog."default";
+ALTER TABLE IF EXISTS public.meta_orders ADD COLUMN referral_withdraw_amount numeric DEFAULT 0.0;

@@ -39,7 +39,7 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 VALUES (90, 'user3@nasnav.com','user3','789', 99003);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null, 89);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502, 201);
@@ -76,8 +76,11 @@ insert into public.roles(id, name,  organization_id) values(6, 'STORE_MANAGER', 
 insert into public.roles(id, name,  organization_id) values(7, 'ORGANIZATION_MANAGER', 99001);
 
 
-INSERT INTO public.addresses(id, address_line_1,area_id,sub_area_id) values(12300001, 'address line',1 , 888002);
+INSERT INTO public.addresses(id, address_line_1,area_id,sub_area_id) values(12300001, 'address line',1 , 888001);
+INSERT INTO public.addresses(id, address_line_1,area_id,sub_area_id) values(12300002, 'address line2',1 , 888002);
+
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+INSERT INTO public.User_addresses values(12300002, 89, 12300002, false);
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
@@ -125,12 +128,8 @@ INSERT INTO public.referral_settings(id, org_id, constraints, created_at) VALUES
 
 -- inserting a wallet for user for referral Codes
 INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20, 1, 88);
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (501, 20, 1, 89);
-
-
 
 -- insert referral code that is valid
 INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
 VALUES (500, 'abcdfg', 99001, 88, 200, 2, now(), 'qwerty');
-INSERT INTO public.referral_codes(id, referral_code, parent_referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
-VALUES (501, 'asdfgh', 'abcdfg', 99001, 89, 200, 2, now(), 'rtyuiu');
+

@@ -25,7 +25,6 @@ public interface ReferralCodeMapper {
 
     ReferralCodeEntity map(ReferralCodeDto referralCodeDto);
 
-    @Mapping(source = "user.email", target = "referrerEmail")
     ReferralCodeDto map(ReferralCodeEntity referralCodeEntity);
 
    List<ReferralCodeDto> map(List<ReferralCodeEntity> referralCodeEntity);
@@ -41,8 +40,6 @@ public interface ReferralCodeMapper {
                 .build();
     };
 
-
-
     default Integer map(ReferralCodeStatus status) {
         return status.getValue();
     }
@@ -51,23 +48,5 @@ public interface ReferralCodeMapper {
         return ReferralCodeStatus.getStatus(status);
     }
 
-
-    default String map(Map<ReferralCodeType, BigDecimal> storyInfo) throws JsonProcessingException {
-        if (Objects.nonNull(storyInfo)) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            String result = objectMapper.writeValueAsString(storyInfo);
-            return result;
-        }
-        return null;
-    }
-
-    default Map<ReferralCodeType, BigDecimal> map(String referralCodeConstrains) throws IOException {
-        if (Objects.nonNull(referralCodeConstrains)) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<ReferralCodeType, BigDecimal> result = objectMapper.readValue(referralCodeConstrains, new TypeReference<Map<ReferralCodeType, BigDecimal>>() {});
-            return result;
-        }
-        return null;
-    }
 
 }

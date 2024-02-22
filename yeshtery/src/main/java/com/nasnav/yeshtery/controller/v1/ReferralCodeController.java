@@ -40,6 +40,11 @@ public class ReferralCodeController {
         return referralCodeService.getList(pageNo, pageSize);
     }
 
+    @GetMapping
+    public ReferralCodeDto get(){
+        return referralCodeService.getForUser();
+    }
+
     @GetMapping("/{id}")
     public ReferralCodeDto get(@PathVariable("id") Long id){
        return referralCodeService.get(id);
@@ -50,10 +55,6 @@ public class ReferralCodeController {
         return referralCodeService.get(code);
     }
 
-    @PostMapping
-    public ReferralCodeCreateResponse create(@RequestBody ReferralCodeDto referralCodeDto) {
-       return referralCodeService.create(referralCodeDto);
-    }
 
     @PostMapping("/accept/{referralCode}")
     public void accept(@PathVariable String referralCode, @RequestParam("referral_token") String token) {

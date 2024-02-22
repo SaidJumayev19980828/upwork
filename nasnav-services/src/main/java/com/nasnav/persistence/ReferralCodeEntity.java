@@ -56,6 +56,7 @@ public class ReferralCodeEntity {
     @Column(name = "accept_token")
     private String acceptReferralToken;
 
+
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;

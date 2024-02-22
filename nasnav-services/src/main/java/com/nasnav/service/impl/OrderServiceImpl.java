@@ -1985,6 +1985,7 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
 		promotion.ifPresent(order::addPromotion);
 		metaOrderRepo.saveAndFlush(order);
+		referralCodeService.withDrawFromReferralWallet(order);
 		savePointTransaction(user, dto.getRequestedPoints(), org, order);
 		return order;
 	}
@@ -2036,6 +2037,14 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
 		BigDecimal total = calculateTotal(subOrders);
 		BigDecimal discounts = calculateDiscounts(subOrders);
+		BigDecimal referralBalanceWithdraw = ZERO;
+		if(data.isPayFromReferralBalance()){
+			referralBalanceWithdraw = referralCodeService.calculateTheWithdrawValueFromReferralBalance(user.getId(), subTotal);
+			if(referralBalanceWithdraw.compareTo(ZERO) > 0) {
+				discounts = discounts.add(referralBalanceWithdraw);
+				total = total.subtract(discounts);
+			}
+		}
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
@@ -2045,6 +2054,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setShippingTotal(shippingFeeTotal);
 		order.setDiscounts(discounts);
 		order.setNotes(orderNotes);
+		order.setReferralWithdrawAmount(referralBalanceWithdraw);
 		subOrders.forEach(order::addSubOrder);
 		appliedPromos.forEach(order::addPromotion);
 
@@ -2127,6 +2137,7 @@ public class OrderServiceImpl implements OrderService {
 
 		Long userId = getSuborderUserId(subOrders);
 		SpentPointsInfo spentPointsInfo = addPointsDiscount(userId, dto, subOrders, org);
+
 		if(dto.getReferralCode() != null && !dto.getReferralCode().isEmpty()) {
 			referralCodeService.addReferralDiscountForSubOrders(dto.getReferralCode(), subOrders, userId);
 		}
@@ -2135,7 +2146,7 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setTotal(calculateTotal(subOrder));
 			ordersRepository.save(subOrder);
 		}
-		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(),spentPointsInfo);
+		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo, dto.isPayFromReferralBalance());
 	}
 
 	private SubordersAndDiscountsInfo createYeshterySubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
@@ -2158,7 +2169,7 @@ public class OrderServiceImpl implements OrderService {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
 		}
-		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo);
+		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo, dto.isPayFromReferralBalance());
 	}
 
 	private Long getSuborderUserId(Set<OrdersEntity> subOrders) {
@@ -2757,6 +2768,7 @@ class SubordersAndDiscountsInfo{
 	private Set<OrdersEntity> subOrders;
 	private List<AppliedPromo> appliedPromos;
 	private SpentPointsInfo spentPointsInfo;
+	private boolean payFromReferralBalance = false;
 
 	SubordersAndDiscountsInfo() {
 		subOrders = new HashSet<>();

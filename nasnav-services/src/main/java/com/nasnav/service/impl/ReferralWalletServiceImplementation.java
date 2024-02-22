@@ -64,6 +64,7 @@ public class ReferralWalletServiceImplementation implements ReferralWalletServic
         validateWithdraw(amount, wallet.getBalance());
         wallet.withdrawBalance(amount);
         ReferralTransactions referralTransactions = buildDepositTransaction(user, amount, orderId, null, wallet,type);
+        referralTransactionRepository.save(referralTransactions);
         return referralWalletRepository.save(wallet);
     }
 
