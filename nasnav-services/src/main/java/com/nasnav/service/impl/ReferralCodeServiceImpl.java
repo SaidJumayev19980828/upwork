@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.ReferralCodeRepo;
 import com.nasnav.dao.ReferralSettingsRepo;
+import com.nasnav.dao.ReferralTransactionRepository;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
+import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
@@ -45,10 +47,8 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     private static final Logger logger = LogManager.getLogger("ReferralCodeService");
 
-
     @Autowired
     private ObjectMapper objectMapper;
-
 
     private final ReferralCodeMapper referralCodeMapper;
 
@@ -60,32 +60,32 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     private final SecurityService securityService;
 
-    private final EmployeeUserService employeeUserService;
-
     private final ReferralWalletService referralWalletService;
-
 
     private final MobileOTPService mobileOTPService;
 
     private final ReferralSettingsRepo referralSettingsRepo;
 
+    private final ReferralTransactionRepository referralTransactionRepo;
 
     @Override
-    public ReferralCodeDto get(Long id) {
+    public ReferralCodeDto getForUser() {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
-
+        Long userId = securityService.getCurrentUser().getId();
         return referralCodeMapper.map(
-                referralCodeRepo.findByIdAndOrganization_Id(id, currentOrganizationId)
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0002, id))
+                referralCodeRepo.findByUser_IdAndOrganization_Id(userId, currentOrganizationId)
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0008))
         );
     }
+    //TODO get wallet amount(earned - Share revenue)
+    //number of user registered with referral
+    // order discounts total
 
     @Override
     public ReferralCodeDto get(String referralCode) {
        return referralCodeMapper.map(referralCodeRepo.findByReferralCode(referralCode)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode))
                );
-
     }
 
     public PaginatedResponse<ReferralCodeDto> getList(int pageNo, int pageSize){
@@ -97,38 +97,17 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         );
     }
 
-
-    @Override
-    public ReferralCodeCreateResponse create(ReferralCodeDto referralCodeDto) {
-        Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
-
-        UserEntity userEntity = userService.getByEmailAndOrganizationId(referralCodeDto.getReferrerEmail(), currentOrganizationId);
-        if(userEntity == null){
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0010, referralCodeDto.getReferrerEmail());
-        }
-
-        OrganizationEntity currentOrganizationEntity = new OrganizationEntity();
-        currentOrganizationEntity.setId(organizationService.getOrganizationById(currentOrganizationId, 0).getId());
-
-        ReferralCodeEntity newReferralCodeEntity = referralCodeMapper.map(referralCodeDto);
-        newReferralCodeEntity.setReferralCode(generate(6));
-        newReferralCodeEntity.setOrganization(currentOrganizationEntity);
-        newReferralCodeEntity.setUser(userEntity);
-
-        referralCodeRepo.save(newReferralCodeEntity);
-
-        return ReferralCodeCreateResponse.builder()
-                .id(newReferralCodeEntity.getId())
-                .referralCode(newReferralCodeEntity.getReferralCode())
-                .build();
-    }
-
     public void send(String phoneNumber, String parentReferralCode) {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
         UserEntity user = (UserEntity) securityService.getCurrentUser();
-        ReferralCodeEntity existReferralCodeEntity = null;
+
+       if(referralCodeRepo.existsByUser_IdAndOrganization_Id(user.getId(), currentOrganizationId)){
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0009);
+       }
+
+        ReferralCodeEntity existParentReferralCodeEntity = null;
         if(parentReferralCode != null && !parentReferralCode.isEmpty()) {
-            existReferralCodeEntity= referralCodeRepo.findByReferralCodeAndOrganization_id(parentReferralCode, currentOrganizationId)
+            existParentReferralCodeEntity= referralCodeRepo.findByReferralCodeAndOrganization_id(parentReferralCode, currentOrganizationId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, parentReferralCode));
         }
        String referralToken = generateReferralCodeToken();
@@ -139,16 +118,16 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
        referralCodeEntity.setAcceptReferralToken(referralToken);
        referralCodeEntity.setSettings(referralSettingsRepo.findByOrganization_Id(currentOrganizationId).get());
        referralCodeEntity.setStatus(ReferralCodeStatus.IN_ACTIVE.getValue());
-       if(existReferralCodeEntity != null){
-           referralCodeEntity.setParentReferralCode(existReferralCodeEntity.getReferralCode());
+       if(existParentReferralCodeEntity != null){
+           referralCodeEntity.setParentReferralCode(existParentReferralCodeEntity.getReferralCode());
        }
-       referralCodeRepo.save(referralCodeEntity);
-        String  responseStatus = mobileOTPService.send(new OTPDto(phoneNumber, referralToken, referralToken));
+        String  responseStatus = mobileOTPService.send(new OTPDto(phoneNumber, referralToken, "Your Referral OTP: " + referralToken));
         if(!responseStatus.equals("Success")) {
            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0006);
         }
         referralCodeRepo.save(referralCodeEntity);
     }
+
 
     @Override
     public void update(ReferralCodeDto referralCodeDto) {
@@ -159,22 +138,22 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     @Override
     public void activate(String referralCode) {
-//        ReferralCodeEntity existReferralCode =  referralCodeRepo.findByReferralCode(referralCode)
-//                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode));
-//
-//        existReferralCode.setStatus(ReferralCodeStatus.ACTIVE.getValue());
-//
-//        referralCodeRepo.save(existReferralCode);
+        ReferralCodeEntity existReferralCode =  referralCodeRepo.findByReferralCode(referralCode)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode));
+
+        existReferralCode.setStatus(ReferralCodeStatus.ACTIVE.getValue());
+
+        referralCodeRepo.save(existReferralCode);
     }
 
     @Override
     public void deActivate(String referralCode) {
-//        ReferralCodeEntity existReferralCode =  referralCodeRepo.findByReferralCode(referralCode)
-//                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode));
-//
-//        existReferralCode.setStatus(ReferralCodeStatus.IN_ACTIVE.getValue());
-//
-//        referralCodeRepo.save(existReferralCode);
+        ReferralCodeEntity existReferralCode =  referralCodeRepo.findByReferralCode(referralCode)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode));
+
+        existReferralCode.setStatus(ReferralCodeStatus.IN_ACTIVE.getValue());
+
+        referralCodeRepo.save(existReferralCode);
     }
 
     @Override
@@ -213,7 +192,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     @Override
     @Transactional
-    public String validateReferralOtp(String referralOtpToken) {
+    public ReferralCodeDto validateReferralOtp(String referralOtpToken) {
        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByAcceptReferralToken(referralOtpToken)
                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0003));
        if(!securityService.getCurrentUser().getId().equals(referralCodeEntity.getUser().getId())) {
@@ -226,7 +205,8 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
        referralCodeRepo.save(referralCodeEntity);
        BigDecimal openingValue = readConfigJsonStr(referralCodeEntity.getSettings().getConstraints()).get(ReferralCodeType.REFERRAL_ACCEPT_REVENUE);
        referralWalletService.create(referralCodeEntity, openingValue);
-       return  referralCodeEntity.getReferralCode();
+
+       return  referralCodeMapper.map(referralCodeEntity);
     }
 
     public void addReferralDiscountForSubOrders(String referralCode, Set<OrdersEntity> subOrders, Long userId) {
@@ -260,6 +240,21 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         return shareRevenueAmount;
     }
 
+    @Override
+    public BigDecimal calculateTheWithdrawValueFromReferralBalance(Long userId, BigDecimal orderAmount){
+        ReferralWallet referralWallet = referralWalletService.getWalletByUserId(userId);
+        if(referralWallet.getBalance().compareTo(orderAmount) > 0){
+            return orderAmount;
+        }
+        return referralWallet.getBalance();
+    }
+    @Override
+    public void withDrawFromReferralWallet(MetaOrderEntity order){
+        referralWalletService.withdraw(order.getUser(), order.getId(),
+                order.getReferralWithdrawAmount(), ReferralTransactionsType.ORDER_WITHDRAWAL);
+    }
+
+
     public BigDecimal getReferralConfigValue(String referralCode, ReferralCodeType type) {
         ReferralCodeEntity existingReferralCode = referralCodeRepo.findByReferralCode(referralCode)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, referralCode));
@@ -273,6 +268,15 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         BigDecimal discountValue =  ordersEntity.getSubTotal().multiply(referralDiscountPercentage).setScale(2, RoundingMode.FLOOR);
         return referralWalletService.addReferralTransaction(ordersEntity.getMetaOrder().getUser(), discountValue, ordersEntity.getId(), existingReferralCode,
                 ReferralTransactionsType.ORDER_DISCOUNT, false);
+    }
+
+    @Override
+    public ReferralStatsDto getStats(){
+        Long currentUserId = securityService.getCurrentUser().getId();
+        return ReferralStatsDto.builder()
+                .totalEarningFromReferral(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_SHARE_REVENUE.name(), currentUserId))
+                .numberOfReferred(referralCodeRepo.countChildReferralCodesByUserIdAndIsActive(currentUserId, ReferralCodeStatus.ACTIVE.getValue()))
+                .build();
     }
 
     public String generateRandomToken(){
@@ -289,5 +293,8 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$JSON$0001, jsonStr);
         }
     }
+
+
+
 
 }

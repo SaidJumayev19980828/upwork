@@ -54,7 +54,7 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
         HttpEntity<OTPResponse> requestBody = new HttpEntity<>(headers);
         OTPResponse response = restTemplate.postForObject(buildUrlParameters(otpDto), requestBody, OTPResponse.class);
 
-        if(response.code().equals("4901")) {
+        if(response.code().equals("1901")) {
             return "Success";
         }
         return null;

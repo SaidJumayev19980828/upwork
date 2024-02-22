@@ -83,6 +83,11 @@ public class MetaOrderEntity implements BaseEntity {
     @ToString.Exclude
     private Set<MetaOrderEntity> subMetaOrders;
 
+    @Column(name = "referral_withdraw_amount")
+    @Exclude
+    @ToString.Exclude
+    private BigDecimal referralWithdrawAmount;
+
 
     @Override
     public BaseRepresentationObject getRepresentation() {

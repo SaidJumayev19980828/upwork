@@ -23,4 +23,6 @@ public class CartCheckoutDTO {
     private BigDecimal requestedPoints;
     private Long customerId;
     private String referralCode;
+
+    private boolean payFromReferralBalance = false;
 }
