@@ -9,5 +9,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface WebScrapingLogRepository extends JpaRepository<WebScrapingLog, Long> {
-    PageImpl<WebScrapingLog> findAllByOrganizationOrderByCreatedAtDesc(OrganizationEntity organization, Pageable pageable);
+    PageImpl<WebScrapingLog> findAllByOrganizationAndLogTypeOrderByCreatedAtDesc(OrganizationEntity organization,String logType , Pageable pageable);
 }

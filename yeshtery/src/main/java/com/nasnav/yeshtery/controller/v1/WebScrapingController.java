@@ -3,15 +3,18 @@ package com.nasnav.yeshtery.controller.v1;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.WebScrapingRequest;
+import com.nasnav.enumerations.ScrapingTypes;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.WebScrapingLog;
 import com.nasnav.service.WebScrapingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,17 +39,17 @@ public class WebScrapingController {
 
 
     @PostMapping
-    public String scrapeDataFromUrl(@Valid @RequestBody WebScrapingRequest scraping) throws JsonProcessingException {
+    public String scrapeDataFromUrl(@RequestHeader(name = "User-Token") String userToken, @Valid @RequestBody WebScrapingRequest scraping) throws JsonProcessingException {
          webScrapingService.scrapeDataFromUrl(scraping);
         return "Your web scraping request has been received and is being processed.";
     }
 
     @PostMapping("/file")
     public  WebScrapingLog scrapeData(
+            @RequestHeader(name = "User-Token") String userToken,
             @RequestParam("manualCollect") Boolean manualCollect,
             @RequestParam("bootName") String bootName,
-            @RequestParam("bootName") Long orgId,
-
+            @RequestParam("orgId") Long orgId,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) throws BusinessException, SQLException, IOException, InvocationTargetException, IllegalAccessException {
             return  webScrapingService.scrapeDataFromFile(manualCollect, bootName, orgId ,file);
@@ -54,10 +57,20 @@ public class WebScrapingController {
 
     @GetMapping
     public PageImpl<WebScrapingLog> getScrapingLogs(
+            @RequestHeader(name = "User-Token") String userToken,
             @RequestParam(required = false, defaultValue = "0") Integer start,
             @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
-            @RequestParam(required = false) Long orgId
+            @RequestParam(required = false) Long orgId ,
+            @RequestParam(required = false) ScrapingTypes type
     ) {
-        return webScrapingService.getScrapingLogs(start,count,orgId);
+        return webScrapingService.getScrapingLogs(start,count,orgId,type);
+    }
+
+    @DeleteMapping
+    public void deleteScrapingLog(
+            @RequestHeader(name = "User-Token") String userToken,
+            @RequestParam("id") Long id
+    ) {
+        webScrapingService.deleteScrapingLog(id);
     }
 }

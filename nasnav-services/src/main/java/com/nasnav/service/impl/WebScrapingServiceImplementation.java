@@ -9,6 +9,7 @@ import com.nasnav.dto.WebScrapingResponse;
 import com.nasnav.dto.WebScrapingRequest;
 import com.nasnav.dto.request.notification.PushMessageDTO;
 import com.nasnav.enumerations.NotificationType;
+import com.nasnav.enumerations.ScrapingTypes;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.NotificationType.SCRAPPING_RESPONSE;
 import static com.nasnav.exceptions.ErrorCodes.SCRAPPING$001;
+import static com.nasnav.exceptions.ErrorCodes.SCRAPPING$002;
 
 /**
  * The type Web scraping service implementation.
@@ -80,7 +82,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
     public void scrapeDataFromUrl(WebScrapingRequest request) throws JsonProcessingException {
         String requestUrl = serverUrl + "/uploaderWebData";
         WebScrapingLog scrapingLog = callAIService(request, requestUrl);
-        scrapingLogRepository.save(completeWebScrapingLog(scrapingLog,"url-based" , getOrganization(request.getOrganizationId()) , request.getUrl()));
+        scrapingLogRepository.save(completeWebScrapingLog(scrapingLog,ScrapingTypes.URL_BASED.getValue(), getOrganization(request.getOrganizationId()) , request.getUrl()));
         notifyOrganization(request.getOrganizationId(), scrapingLog.getLogMessage());
     }
 
@@ -91,14 +93,21 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
         OrganizationEntity organization = getOrganization(orgId);
         String fileName = getFileName(manualCollect, file);
         WebScrapingLog scrapingLog = callAIForFile(scrapFile, prepareUrl(serverUrl , bootName ,organization ));
-        return  scrapingLogRepository.save(completeWebScrapingLog(scrapingLog, "file-based", organization, fileName));
+        return  scrapingLogRepository.save(completeWebScrapingLog(scrapingLog, ScrapingTypes.FILE_BASED.getValue(), organization, fileName));
     }
 
     @Override
-    public PageImpl<WebScrapingLog> getScrapingLogs(int start, int count,Long orgId) {
+    public PageImpl<WebScrapingLog> getScrapingLogs(int start, int count, Long orgId, ScrapingTypes type) {
         Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
-        return scrapingLogRepository.findAllByOrganizationOrderByCreatedAtDesc(getOrganization(orgId),page);
+        return scrapingLogRepository.findAllByOrganizationAndLogTypeOrderByCreatedAtDesc(getOrganization(orgId), type.getValue(), page);
     }
+
+    @Override
+    public void deleteScrapingLog(Long id) {
+        WebScrapingLog  scrapingLog = scrapingLogRepository.findById(id).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,SCRAPPING$002,id));
+        scrapingLogRepository.delete(scrapingLog);
+    }
+
     private String prepareUrl(String endPoint, String chatBot, OrganizationEntity organization) {
         Long orgId = organization.getId();
         String botName = URLEncoder.encode(chatBot, StandardCharsets.UTF_8);
