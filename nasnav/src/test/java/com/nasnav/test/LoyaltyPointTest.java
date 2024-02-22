@@ -276,7 +276,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         var response = template.exchange("/loyalty/points", GET, request, LoyaltyUserPointsResponse.class);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(200, response.getBody().getPoints());
+        assertEquals(BigDecimal.valueOf(200), response.getBody().getPoints());
     }
 
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Loyalty_point_Test_Data_Insert.sql"})
@@ -381,7 +381,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 calculatePoints(config, loyaltyTier,
                 BigDecimal.valueOf(1000L), LoyaltyTransactions.ORDER_ONLINE);
 
-        assertEquals(new BigDecimal("350.00"), points);
+        assertEquals(new BigDecimal("50.00"), points);
     }
 
 

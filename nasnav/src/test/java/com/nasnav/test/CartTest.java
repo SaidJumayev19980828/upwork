@@ -473,7 +473,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 			JSONObject requestBody = createCartCheckoutBody();
 			requestBody.put("requestedPoints", "100");
 			Order body = checkOutCart(requestBody, new BigDecimal("3136.71"), new BigDecimal("3100") ,new BigDecimal("51"));
-			assertEquals(BigDecimal.valueOf(14.29),body.getDiscount());
+			assertEquals(new BigDecimal("14.290"),body.getDiscount());
 	}
 
 	@Test

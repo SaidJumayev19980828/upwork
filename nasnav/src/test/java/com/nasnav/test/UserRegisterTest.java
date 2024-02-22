@@ -282,7 +282,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		Long userId = userApiResponse.getEntityId();
 
 		UserLoyaltyPoints userpoints = userLoyaltyPointsRepository.findByUser(referredUser).get();
-		assertEquals(new BigDecimal("7.00"), userpoints.getBalance());
+		assertEquals(new BigDecimal("1.00"), userpoints.getBalance());
 		}
 
 

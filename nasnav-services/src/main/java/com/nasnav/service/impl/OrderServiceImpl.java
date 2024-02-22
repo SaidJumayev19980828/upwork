@@ -1374,7 +1374,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public MetaOrderEntity createMetaOrder(com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org, BaseUserEntity user) {
 		AddressesEntity userAddress = getAddressById(dto.getAddressId(), user.getId());
-		CartCheckoutDTO checkOutData = getAndValidateCheckoutData(dto, org);
+		CartItemsGroupedById checkOutData = getAndValidateCheckoutData(dto, org);
 		return createOrder( checkOutData, userAddress, dto, org, (UserEntity) user);
 	}
 
@@ -1385,7 +1385,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private CartCheckoutDTO getAndValidateCheckoutData(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, OrganizationEntity org) {
+	private CartItemsGroupedById getAndValidateCheckoutData(com.nasnav.dto.request.cart.CartCheckoutDTO checkoutDto, OrganizationEntity org) {
 		//TODO: this should be moved to checkOut main method, and then passes
 		//the optimized cart to the rest of the logic.
 		optimizeCartDTO userCartItems = optimizedCheckoutDataList(checkoutDto, false);
@@ -1394,17 +1394,11 @@ public class OrderServiceImpl implements OrderService {
 
 		shippingMgrService.validateCartForShipping(userCartItems.getCartCheckoutData(), checkoutDto, org.getId());
 
-		var test =  userCartItems.getCartCheckoutData()
+		return  userCartItems.getCartCheckoutData()
 				.stream()
 				.collect(collectingAndThen(
 						groupingBy(CartCheckoutData::getShopId)
 						, CartItemsGroupedById::new));
-
-		CartCheckoutDTO cartCheckoutDTO = new CartCheckoutDTO();
-		cartCheckoutDTO.setCartCheckoutData(test);
-		cartCheckoutDTO.setDiscount(userCartItems.getDiscount());
-		cartCheckoutDTO.setTotal(userCartItems.getTotal());
-		return cartCheckoutDTO;
 
 	}
 
@@ -1676,13 +1670,11 @@ public class OrderServiceImpl implements OrderService {
 				.map(MetaOrderEntity::getSubOrders)
 				.flatMap(Set::stream)
 				.collect(toSet());
-		Long userId = securityService.getCurrentUser().getId();
+
+		UserEntity userEntity = (UserEntity)securityService.getCurrentUser();
+		Long userId = userEntity.getId();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-
-		SpentPointsInfo data = addPointsDiscount(userId, dto, suborders, org);
-		List<LoyaltyPointTransactionEntity> spentPoints = data.getSpentPoints();
-		List<LoyaltySpentTransactionEntity> spentPointsRef = data.getSpentPointsRef();
-
+		addPointsDiscount(userId, dto, suborders, org);
 		suborders.forEach(subOrder-> {
 			subOrder.setTotal(calculateTotal(subOrder));
 			ordersRepository.save(subOrder);
@@ -1695,9 +1687,7 @@ public class OrderServiceImpl implements OrderService {
 			subMetaOrder.setGrandTotal(calculateTotal(subMetaOrder.getSubOrders()));
 			metaOrderRepo.save(subMetaOrder);
 		}
-		spentPointsRef.forEach(r -> r.setMetaOrder(order));
-		loyaltyPointTransactionRepository.saveAll(spentPoints);
-		loyaltySpendTransactionRepo.saveAll(spentPointsRef);
+		if (dto.getRequestedPoints() != null) loyaltyPointsService.processTransaction(userEntity,dto.getRequestedPoints(),LoyaltyTransactions.SPEND_IN_ORDER,org,null,null,order);
 	}
 
 	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
@@ -1984,11 +1974,11 @@ public class OrderServiceImpl implements OrderService {
 		return subOrder;
 	}
 
-	private MetaOrderEntity createOrder(CartCheckoutDTO shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org, UserEntity user) {
-		return createOrder(shopCartsMap, address, dto, org.getId(), user);
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> CartCheckoutData, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, OrganizationEntity org, UserEntity user) {
+		return createOrder(CartCheckoutData, address, dto, org.getId(), user);
 	}
 
-	private MetaOrderEntity createOrder(CartCheckoutDTO shopCartsMap, AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Long orgId, UserEntity user) {
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> CartCheckoutData , AddressesEntity address, com.nasnav.dto.request.cart.CartCheckoutDTO dto, Long orgId, UserEntity user) {
 
 		OrganizationEntity org = organizationRepository.findById(orgId).get();
 		Optional<PromotionsEntity> promotion =
@@ -1997,34 +1987,40 @@ public class OrderServiceImpl implements OrderService {
 								promoRepo
 										.findByCodeAndOrganization_IdAndActiveNow(promoCode, org.getId()));
 
-		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap.getCartCheckoutData(), org);
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(CartCheckoutData, org);
 		SubordersAndDiscountsInfo data = createSubOrders(cartDividedByShop, address, dto, org);
 
-		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes() ,shopCartsMap.getDiscount(),shopCartsMap.getTotal(),shopCartsMap.getSubTotal());
+		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
 		promotion.ifPresent(order::addPromotion);
 		metaOrderRepo.saveAndFlush(order);
-		if ( dto.getRequestedPoints()  != null &&  dto.getRequestedPoints().compareTo(ZERO) > 0)
-			savePointTransaction(user, dto.getRequestedPoints(), org, order);
+		savePointTransaction(user, dto.getRequestedPoints(), org, order);
 		return order;
 	}
 
 	private void savePointTransaction(UserEntity user , BigDecimal points , OrganizationEntity org ,MetaOrderEntity order){
-		userLoyaltyPointsRepository.save(loyaltyPointsService.processTransaction(user, points, LoyaltyTransactions.ORDER_ONLINE, org, null, null, order));
+		if (points  != null &&  points.compareTo(ZERO) > 0)
+				userLoyaltyPointsRepository.save(loyaltyPointsService.processTransaction(user, points, LoyaltyTransactions.SPEND_IN_ORDER, org, null, null, order));
 	}
 
-	private MetaOrderEntity createMetaOrder(SubordersAndDiscountsInfo data, OrganizationEntity org, UserEntity user, String notes, BigDecimal TotalDiscounts, BigDecimal cartTotal ,BigDecimal cartSubTotal) {
+	private MetaOrderEntity createMetaOrder(SubordersAndDiscountsInfo data, OrganizationEntity org, UserEntity user, String notes, BigDecimal cartSubTotal) {
 		Set<OrdersEntity> subOrders = data.getSubOrders();
 		List<PromotionsEntity> appliedPromos = data.getAppliedPromos().stream().map(AppliedPromo::getEntity).toList();
+
+		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
-		BigDecimal total = cartTotal.add(shippingFeeTotal);
+		BigDecimal total = calculateTotal(subOrders);
+		BigDecimal discounts = calculateDiscounts(subOrders);
+
+
+
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
 		order.setStatus(CLIENT_CONFIRMED.getValue());
 		order.setGrandTotal(total);
-		order.setSubTotal(subTotalCalculation(cartSubTotal, subOrders));
+		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
-		order.setDiscounts(TotalDiscounts);
+		order.setDiscounts(discounts);
 		order.setNotes(notes);
 		subOrders.forEach(order::addSubOrder);
 		appliedPromos.forEach(order::addPromotion);

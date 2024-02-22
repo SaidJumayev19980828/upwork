@@ -197,15 +197,13 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
     @Override
     public LoyaltyUserPointsResponse loyaltyUserPoints() {
         UserEntity user = getCurrentUserWithOrganization();
-        int balance = getUserLoyaltyPointsBalance(user);
-        return new LoyaltyUserPointsResponse(balance);
+        return new LoyaltyUserPointsResponse(getUserLoyaltyPointsBalance(user));
     }
 
     @Override
     public LoyaltyUserPointsResponse loyaltyUserPoints(Long orgId) {
         UserEntity user = getCurrentUserWithOrg(orgId);
-        int balance = getUserLoyaltyPointsBalance(user);
-        return new LoyaltyUserPointsResponse(balance);
+        return new LoyaltyUserPointsResponse(getUserLoyaltyPointsBalance(user));
     }
 
     private UserEntity getCurrentUserWithOrganization() {
@@ -213,8 +211,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
         return getCurrentUserWithOrg(orgId);
     }
 
-    private int getUserLoyaltyPointsBalance(UserEntity user) {
-        return getUserLoyaltyPoints(user).map(points -> points.getBalance().intValueExact()).orElse(0);
+    private BigDecimal getUserLoyaltyPointsBalance(UserEntity user) {
+        return getUserLoyaltyPoints(user).map(UserLoyaltyPoints::getBalance).orElse(ZERO);
     }
 
     private  Optional<UserLoyaltyPoints>  getUserLoyaltyPoints(UserEntity user) {
@@ -236,7 +234,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
                 totalPoints -= negativePt.getReverseTransaction().getPoints().intValue();
             }
         }
-        return new LoyaltyUserPointsResponse(totalPoints);
+        return new LoyaltyUserPointsResponse(ZERO);
     }
 
     @Override
@@ -428,7 +426,8 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
             logger.warn(ORG$LOY$0002.getValue());
             return BigDecimal.ZERO;
         }
-        return localAmount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN);
+//        return localAmount.multiply(coefficient).multiply(from).divide(to, 2, RoundingMode.HALF_EVEN); based on some discussion with frontend devs that was invalid
+        return localAmount.multiply(coefficient);
     }
 
     @Override
