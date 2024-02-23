@@ -1985,7 +1985,9 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity order = createMetaOrder(data, org, user, dto.getNotes());
 		promotion.ifPresent(order::addPromotion);
 		metaOrderRepo.saveAndFlush(order);
-		referralCodeService.withDrawFromReferralWallet(order);
+		if(order.getReferralWithdrawAmount().compareTo(ZERO) > 0) {
+			referralCodeService.withDrawFromReferralWallet(order);
+		}
 		savePointTransaction(user, dto.getRequestedPoints(), org, order);
 		return order;
 	}
