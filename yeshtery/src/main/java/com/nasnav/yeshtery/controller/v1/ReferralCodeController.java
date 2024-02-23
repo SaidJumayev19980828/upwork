@@ -45,10 +45,6 @@ public class ReferralCodeController {
         return referralCodeService.getForUser();
     }
 
-    @GetMapping("/{id}")
-    public ReferralCodeDto get(@PathVariable("id") Long id){
-       return referralCodeService.get(id);
-    }
 
     @GetMapping("/code/{code}")
     public ReferralCodeDto get(@PathVariable("code") String code){
@@ -60,8 +56,6 @@ public class ReferralCodeController {
     public void accept(@PathVariable String referralCode, @RequestParam("referral_token") String token) {
          referralCodeService.validateReferralOtp(token);
     }
-
-
 
 
     @PutMapping
