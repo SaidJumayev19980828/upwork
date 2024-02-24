@@ -1,4 +1,4 @@
-package com.nasnav.integration.smsMis.dto;
+package com.nasnav.integration.smsmisr.dto;
 
 
 public record OTPDto(String mobile, String token, String message) {

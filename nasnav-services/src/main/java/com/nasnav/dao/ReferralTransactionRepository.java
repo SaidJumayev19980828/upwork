@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.persistence.ReferralWallet;
 import com.nasnav.persistence.ReferralTransactions;
 import org.springframework.data.domain.PageImpl;
@@ -20,6 +21,6 @@ public interface ReferralTransactionRepository extends JpaRepository<ReferralTra
     @Query("SELECT SUM(referralTransactions.amount) FROM ReferralTransactions referralTransactions " +
             "WHERE referralTransactions.type = :type" +
             " AND referralTransactions.user.id = :userId")
-    BigDecimal sumAmountByTypeAndUser_Id(@Param("type") String type, @Param("userId") Long userId);
+    BigDecimal sumAmountByTypeAndUser_Id(@Param("type") ReferralTransactionsType type, @Param("userId") Long userId);
 
 }

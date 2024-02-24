@@ -30,7 +30,7 @@ public interface ReferralCodeRepo extends JpaRepository<ReferralCodeEntity, Long
 
         @Query(value = "SELECT count(*) from referral_codes refCode1 " +
                 "JOIN referral_codes refCode2 " +
-                "ON refCode1.referral_code = refCode2.parent_referral_code" +
+                "ON refCode1.referral_code = refCode2.parent_referral_code " +
                 "where refCode1.user_id = :userId and refCode2.status = :status",
                 nativeQuery = true)
         Long countChildReferralCodesByUserIdAndIsActive(Long userId, int status);

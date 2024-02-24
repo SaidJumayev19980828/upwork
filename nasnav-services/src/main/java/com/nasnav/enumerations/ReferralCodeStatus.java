@@ -15,7 +15,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public enum ReferralCodeStatus {
     IN_ACTIVE(1), ACTIVE(2);
 
-    private int value;
+    private final int value;
 
     public static ReferralCodeStatus getStatus(Integer value) {
         return Arrays.stream(ReferralCodeStatus.values())
