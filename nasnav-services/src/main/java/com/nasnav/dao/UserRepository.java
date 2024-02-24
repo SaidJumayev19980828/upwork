@@ -43,10 +43,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	List<UserEntity> findByOrganizationId(Long orgId);
 
-	@Query(value = "SELECT PHONE_NUMBER FROM users where id = :userId and organization_id= :organizationId"
-	, nativeQuery = true)
-	Optional<String> findPhoneNumberByIdAndOrganizationId(Long userId, Long organizationId);
-
 	List<UserEntity> findByOrganizationId(Long orgId, Pageable pageable);
 
 	List<UserEntity> findByOrganizationIdAndUserStatus(Long orgId,Integer userStatus, Pageable pageable);

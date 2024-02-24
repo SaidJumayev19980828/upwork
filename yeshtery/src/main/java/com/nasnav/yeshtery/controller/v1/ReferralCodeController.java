@@ -2,7 +2,6 @@ package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.service.ReferralCodeService;
@@ -55,12 +54,7 @@ public class ReferralCodeController {
     @PostMapping("/accept/{referralCode}")
     public void accept(@PathVariable String referralCode, @RequestParam("referral_token") String token) {
          referralCodeService.validateReferralOtp(token);
-    }
 
-
-    @PutMapping
-    public void update(@RequestBody ReferralCodeDto referralCodeDto) {
-        referralCodeService.update(referralCodeDto);
     }
 
     @GetMapping("/activate/{referralCode}")

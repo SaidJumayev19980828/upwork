@@ -1,15 +1,15 @@
 package com.nasnav.controller;
 
-import com.nasnav.commons.YeshteryConstants;
 import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
+import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.service.ReferralCodeService;
+import com.nasnav.service.ReferralSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(ReferralCodeController.API_PATH)
@@ -21,13 +21,21 @@ public class ReferralCodeController {
     @Autowired
     private ReferralCodeService referralCodeService;
 
+    @Autowired
+    private ReferralSettingsService referralSettingsService;
+
+    @PostMapping(value = "/organization/settings", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+    public ReferralSettingsDto createSettings(@RequestBody ReferralSettingsDto referralSettingsDto){
+        return referralSettingsService.create(referralSettingsDto);
+    }
+
     @GetMapping("/list")
     public PaginatedResponse<ReferralCodeDto> getList(@RequestParam(value = "pageNo", required = false) Integer pageNo,
                                                       @RequestParam(value = "pageSize", required = false) Integer pageSize) {
         return referralCodeService.getList(pageNo, pageSize);
     }
 
-    @GetMapping
+    @GetMapping("/user")
     public ReferralCodeDto get(){
         return referralCodeService.getForUser();
     }
@@ -49,17 +57,17 @@ public class ReferralCodeController {
         return referralCodeService.validateReferralOtp(token);
     }
 
-    @GetMapping("/activate/{referralCode}")
+    @PostMapping("/activate/{referralCode}")
     public void activate(@PathVariable("referralCode") String referralCode){
         referralCodeService.activate(referralCode);
     }
 
-    @GetMapping("/deactivate/{referralCode}")
+    @PostMapping("/deactivate/{referralCode}")
     public void deActivate(@PathVariable("referralCode") String referralCode ){
         referralCodeService.deActivate(referralCode);
     }
 
-    @GetMapping("/referral/stats")
+    @GetMapping("/stats")
     public ReferralStatsDto getStats(){
         return referralCodeService.getStats();
     }

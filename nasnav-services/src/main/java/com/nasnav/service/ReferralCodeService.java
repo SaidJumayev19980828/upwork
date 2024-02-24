@@ -1,21 +1,16 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
-import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
-import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.UserEntity;
-import org.springframework.stereotype.Service;
+
 
 import java.math.BigDecimal;
 import java.util.Set;
 
-import static java.math.RoundingMode.FLOOR;
 
 public interface ReferralCodeService {
 
@@ -23,11 +18,9 @@ public interface ReferralCodeService {
 
     ReferralCodeDto get(String referralCode);
 
-    PaginatedResponse getList(int pageNo, int pageSize);
+    PaginatedResponse<ReferralCodeDto> getList(int pageNo, int pageSize);
 
     void send(String phoneNumber, String parentReferralCode);
-
-    void update(ReferralCodeDto referralCodeDto);
 
     void activate(String referralCode);
     void deActivate(String referralCode);
@@ -47,7 +40,6 @@ public interface ReferralCodeService {
     Long saveReferralTransactionForOrderDiscount(OrdersEntity ordersEntity);
 
     void addReferralDiscountForSubOrders(String referralCode, Set<OrdersEntity> subOrders, Long userId);
-
 
     ReferralStatsDto getStats();
     }

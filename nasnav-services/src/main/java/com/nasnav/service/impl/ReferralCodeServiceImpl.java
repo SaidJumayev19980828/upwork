@@ -6,7 +6,6 @@ import com.nasnav.dao.ReferralCodeRepo;
 import com.nasnav.dao.ReferralSettingsRepo;
 import com.nasnav.dao.ReferralTransactionRepository;
 import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.referral_code.ReferralCodeCreateResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.enumerations.ReferralCodeStatus;
@@ -14,14 +13,13 @@ import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.MobileOTPService;
-import com.nasnav.integration.smsMis.dto.OTPDto;
+import com.nasnav.integration.smsmisr.dto.OTPDto;
 import com.nasnav.mappers.ReferralCodeMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -31,11 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.math.RoundingMode.FLOOR;
@@ -47,16 +43,13 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     private static final Logger logger = LogManager.getLogger("ReferralCodeService");
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     private final ReferralCodeMapper referralCodeMapper;
 
     private final ReferralCodeRepo referralCodeRepo;
 
     private final OrganizationService organizationService;
-
-    private final UserService userService;
 
     private final SecurityService securityService;
 
@@ -77,9 +70,6 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0008))
         );
     }
-    //TODO get wallet amount(earned - Share revenue)
-    //number of user registered with referral
-    // order discounts total
 
     @Override
     public ReferralCodeDto get(String referralCode) {
@@ -126,14 +116,6 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0006);
         }
         referralCodeRepo.save(referralCodeEntity);
-    }
-
-
-    @Override
-    public void update(ReferralCodeDto referralCodeDto) {
-        ReferralCodeEntity existReferralCodeEntity = referralCodeRepo.findById(referralCodeDto.getId())
-                .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0002, referralCodeDto.getId()));
-      referralCodeRepo.save(referralCodeMapper.map(referralCodeDto, existReferralCodeEntity));
     }
 
     @Override
@@ -274,27 +256,20 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
     public ReferralStatsDto getStats(){
         Long currentUserId = securityService.getCurrentUser().getId();
         return ReferralStatsDto.builder()
-                .totalEarningFromReferral(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_SHARE_REVENUE.name(), currentUserId))
-                .numberOfReferred(referralCodeRepo.countChildReferralCodesByUserIdAndIsActive(currentUserId, ReferralCodeStatus.ACTIVE.getValue()))
+                .shareRevenueEarningsFromChildReferrals(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_SHARE_REVENUE, currentUserId))
+                .numberOfActiveChildReferrals(referralCodeRepo.countChildReferralCodesByUserIdAndIsActive(currentUserId, ReferralCodeStatus.ACTIVE.getValue()))
+                .orderDiscountsAwarded(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_DISCOUNT, currentUserId))
                 .build();
     }
 
-    public String generateRandomToken(){
-        return UUID.randomUUID().toString();
-    }
-
-
     private HashMap<ReferralCodeType, BigDecimal> readConfigJsonStr(String jsonStr) {
         try {
-            return objectMapper.readValue(jsonStr, new TypeReference<HashMap<ReferralCodeType, BigDecimal>>() {
+            return objectMapper.readValue(jsonStr, new TypeReference<>() {
             });
         } catch (Exception e) {
             logger.error(e, e);
             throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$JSON$0001, jsonStr);
         }
     }
-
-
-
 
 }

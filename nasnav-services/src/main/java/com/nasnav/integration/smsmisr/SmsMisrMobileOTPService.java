@@ -1,9 +1,8 @@
-package com.nasnav.integration.smsMis;
+package com.nasnav.integration.smsmisr;
 
 import com.nasnav.integration.MobileOTPService;
-import com.nasnav.integration.smsMis.dto.OTPDto;
-import com.nasnav.integration.smsMis.dto.OTPResponse;
-import com.nasnav.service.impl.FileServiceImpl;
+import com.nasnav.integration.smsmisr.dto.OTPDto;
+import com.nasnav.integration.smsmisr.dto.OTPResponse;
 import lombok.RequiredArgsConstructor;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +19,6 @@ import java.net.URI;
 @Service
 @RequiredArgsConstructor
 public class SmsMisrMobileOTPService implements MobileOTPService {
-    private static Logger logger = Logger.getLogger(SmsMisrMobileOTPService.class);
 
     @Value("${smsmisr.endpoint}")
     private String endpoint;
@@ -36,9 +34,6 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
 
     @Value("${smsmisr.sender}")
     private String sender;
-
-    @Value("${smsmisr.template}")
-    private String template;
 
     @Value("${smsmisr.language}")
     private String language;
@@ -57,7 +52,7 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
         if(response.code().equals("1901")) {
             return "Success";
         }
-        return null;
+        return "Fail";
     }
 
     private URI buildUrlParameters(OTPDto otpDto){

@@ -1,8 +1,6 @@
 package com.nasnav.integration;
 
-import com.nasnav.integration.smsMis.dto.OTPDto;
-import com.nasnav.integration.smsMis.dto.OTPResponse;
-import org.springframework.stereotype.Service;
+import com.nasnav.integration.smsmisr.dto.OTPDto;
 
 
 public interface MobileOTPService {

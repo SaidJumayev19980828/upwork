@@ -1016,20 +1016,5 @@ public class UserServiceImpl implements UserService {
 		return updateUserAvatar(userAvatar);
 	}
 
-	@Override
-	public UserEntity getByEmailAndOrganizationId(String email, Long organizationId) throws RuntimeBusinessException{
-		return userRepository.getByEmailAndOrganizationId(email, organizationId);
-
-	}
-
-	public String getMobileByIdAndOrganizationId(Long userId, Long organizationId){
-		return userRepository.findPhoneNumberByIdAndOrganizationId(userId, organizationId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, userId));
-
-
-	}
-
-
-
 
 }
