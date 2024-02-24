@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import com.nasnav.dto.UserFollow;
 import com.nasnav.dto.UserListFollowProjection;
+import com.nasnav.persistence.LoyaltyTierEntity;
 import com.nasnav.persistence.UserEntity;
 
 import org.springframework.data.domain.PageRequest;
@@ -93,6 +94,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 															   @Param("orgId") Long orgId);
 
 	List<UserEntity> findByTier_Id(Long tierId);
+
+	List<UserEntity> findByTier(LoyaltyTierEntity tier);
 
 
 	List<UserEntity> findAllUsersByUserStatus(Integer userStatus,PageRequest  pageRequest);

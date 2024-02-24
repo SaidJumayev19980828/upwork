@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.TierUsersCheck;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.dto.response.LoyaltyPointTransactionDTO;
@@ -129,5 +130,18 @@ public class LoyaltyPointController {
     public String userScan(@RequestHeader(name = "User-Token", required = false) String token,
                            @RequestParam("shop_id") Long shopId) {
         return loyaltyPointsService.generateUserShopPinCode(shopId);
+    }
+
+
+    @DeleteMapping(value = "tier/remove")
+    public void deleteLoyaltyTier(@RequestHeader(name = "User-Token", required = false) String token,
+                                  @RequestParam(value = "tier_id") Long tierId) {
+        loyaltyTierService.deleteExistingTier(tierId);
+    }
+
+    @GetMapping(value = "tier/usersCheck")
+    public TierUsersCheck checkIfUsersExistInTier(@RequestHeader(name = "User-Token", required = false) String token, @RequestParam(value = "tier_id") Long tierId) {
+        return loyaltyTierService.TierUserCheck(tierId);
+
     }
 }

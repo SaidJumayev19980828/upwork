@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.TierUsersCheck;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
@@ -26,5 +27,9 @@ public interface LoyaltyTierService {
     HashMap<LoyaltyTransactions, BigDecimal> readTierJson(String jsonStr);
 
     LoyaltyTierEntity getActiveDefaultTier( Long organizationId);
+
+
+    TierUsersCheck TierUserCheck(Long tierId);
+    void  deleteExistingTier(Long tierId);
 
 }
