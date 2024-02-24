@@ -3,7 +3,9 @@ package com.nasnav.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mysema.commons.lang.Pair;
 import com.nasnav.dao.*;
+import com.nasnav.dto.TierUsersCheck;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.LoyaltyTierDTO;
 import com.nasnav.enumerations.LoyaltyPointType;
@@ -14,6 +16,7 @@ import com.nasnav.response.LoyaltyTierUpdateResponse;
 import com.nasnav.service.LoyaltyTierService;
 import com.nasnav.service.SecurityService;
 
+import org.apache.catalina.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +74,43 @@ public class LoyaltyTierServiceImp implements LoyaltyTierService {
         tierRepository.delete(tier);
     }
 
+    @Override
+    public TierUsersCheck TierUserCheck(Long tierId){
+        List<UserEntity> users =  userRepository.findByTier(getExistingTier(tierId));
+        return buildTierUsersCheck(users);
+    }
+
+    private TierUsersCheck buildTierUsersCheck(List<UserEntity> users){
+        TierUsersCheck check = new TierUsersCheck();
+        check.setUsers(users.stream().map(UserEntity::getRepresentation).toList());
+        check.setSoftDelete(users.isEmpty());
+        return check;
+    }
+
+
+    @Override
+    public void  deleteExistingTier(Long tierId){
+     LoyaltyTierEntity tier = getExistingTier(tierId);
+     List<UserEntity> usersWithTier = getUsersWithTier(tier);
+     if (!usersWithTier.isEmpty()) {
+         downgradeAllUsersTier(usersWithTier,tier);
+     }
+     tierRepository.delete(tier);
+    }
+
+    private void downgradeAllUsersTier(List<UserEntity> users,LoyaltyTierEntity toBeRemoved){
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        LoyaltyTierEntity activeDefaultTier = getActiveDefaultTier(orgId);
+        if (activeDefaultTier.equals(toBeRemoved))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, TIERS$PARAM$0005, activeDefaultTier.getId());
+        users.forEach(u -> {
+            u.setTier(activeDefaultTier);
+        });
+        userRepository.saveAll(users);
+    }
+    private List<UserEntity> getUsersWithTier(LoyaltyTierEntity tier) {
+        return userRepository.findByTier(tier);
+    }
     @Override
     public LoyaltyTierDTO getTierById(Long id) {
         LoyaltyTierEntity e = getExistingTier(id);

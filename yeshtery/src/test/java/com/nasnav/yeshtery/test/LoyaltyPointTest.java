@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.nasnav.dao.*;
+import com.nasnav.dto.TierUsersCheck;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.*;
 import com.nasnav.enumerations.LoyaltyPointType;
@@ -32,9 +33,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.nasnav.exceptions.ErrorCodes.ORG$LOY$0014;
+import static com.nasnav.exceptions.ErrorCodes.TIERS$PARAM$0005;
 import static com.nasnav.yeshtery.test.commons.TestCommons.*;
 import static org.json.JSONObject.NULL;
 import static org.junit.Assert.*;
@@ -92,7 +95,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         assertEquals(OK, responseList.getStatusCode());
         assertEquals(2, responseList.getBody().size());
     }
-    
+
     @Test
     public void deleteLoyaltyConfigTest() {
         var body = createConfigJson()
@@ -108,10 +111,10 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         request = getHttpEntity("abcdefg");
 
-        ResponseEntity<LoyaltyPointDeleteResponse> deleteResponse = template.exchange("/v1/loyalty/config/delete?id="+id1, DELETE, request, LoyaltyPointDeleteResponse.class);
+        ResponseEntity<LoyaltyPointDeleteResponse> deleteResponse = template.exchange("/v1/loyalty/config/delete?id=" + id1, DELETE, request, LoyaltyPointDeleteResponse.class);
 
-        assertEquals(200,deleteResponse.getStatusCodeValue());
-        assertEquals(id1 , deleteResponse.getBody().getLoyaltyId());
+        assertEquals(200, deleteResponse.getStatusCodeValue());
+        assertEquals(id1, deleteResponse.getBody().getLoyaltyId());
         assertTrue(deleteResponse.getBody().isSuccess());
 
         request = getHttpEntity(body, "abcdefg");
@@ -131,8 +134,8 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         JSONObject constraints = json()
                 .put("ORDER_ONLINE",
                         json()
-                        .put("ratio_from", new BigDecimal("7.00"))
-                        .put("ratio_to", new BigDecimal("1.00")));
+                                .put("ratio_from", new BigDecimal("7.00"))
+                                .put("ratio_to", new BigDecimal("1.00")));
         return json()
                 .put("description", "this is a configuration")
                 .put("constraints", constraints)
@@ -146,7 +149,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
     // tire
     @Test
-    public void createTier(){
+    public void createTier() {
         String body = getTierJsonString();
         var request = getHttpEntity(body, "abcdefg");
         var response = template.postForEntity("/v1/loyalty/tier/update", request, String.class);
@@ -175,10 +178,11 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         request = getHttpEntity("abcdefg");
         response = template.exchange("/v1/loyalty/tier/list?org_id=99001", GET, request, String.class);
-        List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>(){});
-        assertEquals(3, resBody.size());
+        List<LoyaltyTierDTO> resBody = mapper.readValue(response.getBody(), new TypeReference<>() {
+        });
+        assertEquals(4, resBody.size());
 
-        LoyaltyTierDTO loyaltyTierDTO = resBody.get(2);
+        LoyaltyTierDTO loyaltyTierDTO = resBody.get(3);
 
         assertEquals("tier test", loyaltyTierDTO.getTierName());
         assertEquals(loyaltyTierDTO.getConstraints().get(LoyaltyTransactions.ORDER_ONLINE).doubleValue(), 0.8);
@@ -195,7 +199,7 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
                 .put("tier_name", "tier test")
                 .put("selling_price", 10)
                 .put("org_id", 99001)
-                .put("constraints", constraints )
+                .put("constraints", constraints)
                 .put("is_active", true)
                 .put("is_special", false)
                 .toString();
@@ -212,12 +216,12 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
 
         Long id = response.getBody().getTierId();
         var changeRequest = getHttpEntity("abcdefg");
-        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id="+id, changeRequest, UserRepresentationObject.class);
+        var changeResponse = template.postForEntity("/v1/loyalty/tier/change_user_tier?org_id=99001&user_id=88&tier_id=" + id, changeRequest, UserRepresentationObject.class);
 
         assertEquals(200, changeResponse.getStatusCodeValue());
         UserEntity user = userRepository.getOne(88L);
 
-        assertEquals(id, changeResponse.getBody().getTierId() );
+        assertEquals(id, changeResponse.getBody().getTierId());
 
     }
 
@@ -245,11 +249,13 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         String jsonStr = "{\"TRANSACTION_A\": \"invalid_value\"}";
         assertThrows(RuntimeBusinessException.class, () -> tierService.readTierJson(jsonStr));
     }
+
     @Test
     public void test_throw_exception_invalid_value_type() {
         String jsonStr = "{\"TRANSACTION_A\": \"invalid_value\"}";
         assertThrows(RuntimeBusinessException.class, () -> tierService.readTierJson(jsonStr));
     }
+
     @Test
     public void test_parse_valid_json_single_key_value_pair() {
         String jsonStr = "{\"PICKUP_FROM_SHOP\": 0.5}";
@@ -257,5 +263,59 @@ public class LoyaltyPointTest extends AbstractTestWithTempBaseDir {
         HashMap<LoyaltyTransactions, BigDecimal> expected = new HashMap<>();
         expected.put(LoyaltyTransactions.PICKUP_FROM_SHOP, new BigDecimal("0.5"));
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void TierUserCheckSuccess() {
+        var request = getHttpEntity("161718");
+
+        ResponseEntity<TierUsersCheck> response = template.exchange("/v1/loyalty/tier/usersCheck?tier_id=4", GET, request, TierUsersCheck.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue(Objects.requireNonNull(response.getBody()).getSoftDelete());
+
+        ResponseEntity<TierUsersCheck> response2 = template.exchange("/v1/loyalty/tier/usersCheck?tier_id=3", GET, request, TierUsersCheck.class);
+        assertEquals(200, response2.getStatusCodeValue());
+        assertFalse(Objects.requireNonNull(response2.getBody()).getSoftDelete());
+
+    }
+
+    @Test
+    public void TierUserCheckUnAuthorize() {
+        var request = getHttpEntity("123");
+        ResponseEntity<TierUsersCheck> response = template.exchange("/v1/loyalty/tier/usersCheck?tier_id=1", GET, request, TierUsersCheck.class);
+        assertEquals(403, response.getStatusCodeValue());
+    }
+
+    @Test
+    public void TierUserCheckInvalidTierId() {
+        var request = getHttpEntity("161718");
+        ResponseEntity<TierUsersCheck> response = template.exchange("/v1/loyalty/tier/usersCheck?tier_id=100", GET, request, TierUsersCheck.class);
+        assertEquals(406, response.getStatusCodeValue());
+    }
+
+    @Test
+    public void removeTierSuccess() {
+        var request = getHttpEntity("161718");
+        var deleteResponse = template.exchange("/v1/loyalty/tier/remove?tier_id=3", DELETE, request, Void.class);
+        assertEquals(200, deleteResponse.getStatusCodeValue());
+
+
+        var deleteResponse2 = template.exchange("/v1/loyalty/tier/remove?tier_id=4", DELETE, request, Void.class);
+        assertEquals(200, deleteResponse2.getStatusCodeValue());
+       }
+
+    @Test
+    public void removeTierFailedBadRequest() {
+        var request = getHttpEntity("161718");
+        var deleteResponse = template.exchange("/v1/loyalty/tier/remove?id=3", DELETE, request, Void.class);
+        assertEquals(400, deleteResponse.getStatusCodeValue());
+    }
+
+    @Test
+    public void removeTierFailed() {
+        var request = getHttpEntity("161718");
+        var deleteResponse = template.exchange("/v1/loyalty/tier/remove?tier_id=1", DELETE, request, String.class);
+        assertEquals(406, deleteResponse.getStatusCodeValue());
+        assertTrue(Objects.requireNonNull(deleteResponse.getBody()).contains(TIERS$PARAM$0005.name()));
     }
 }

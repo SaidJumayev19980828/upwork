@@ -439,6 +439,7 @@ public enum ErrorCodes {
 	,TIERS$PARAM$0002("Cannot update tier with id[%d], only inactive tiers can be update!")
 	,TIERS$PARAM$0003("Missing parameters in given tiers [%s]!")
 	,TIERS$PARAM$0004("Tier [%d] does not belong to the organization [%d]!")
+	,TIERS$PARAM$0005("Can not remove the provided Tier With id [%d] because it is the default tier!")
 
 
 	,REF$PARAM$0001("Invalid referral code type_id[%d]!")
