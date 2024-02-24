@@ -152,6 +152,39 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
     }
 
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_2.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpFailForAlreadyExistReferralCodeForUser(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=abcdfg",
+                request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("There is already Token sent for this user, plz check the SMS or resend token!", message);
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_1.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpFailForNotExistParentReferralCode(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=qweasd",
+                request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("Couldn't find referral code [qweasd] for user!", message);
+    }
+
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_2.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -176,6 +209,39 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(ReferralTransactionsType.ACCEPT_REFERRAL_CODE, referralTransactions.get(0).getType());
 
     }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_5.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void validateOTPAndReferralCodeFailNotExistOtp(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/validateOtp/qweasd",
+                request, String.class);
+        assertEquals(404, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("There is no referral code for user to validate!", message);
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_5.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void validateOTPFailNotEqual(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/validateOtp/qweasd",
+                request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("referral accept token not valid!", message);
+    }
+
 
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_3.sql"})

@@ -25,8 +25,6 @@ public interface ReferralCodeService {
     void activate(String referralCode);
     void deActivate(String referralCode);
 
-    void delete(String referralCode);
-
     ReferralCodeDto validateReferralOtp(String referralOtpToken);
 
     BigDecimal shareRevenueForOrder(OrdersEntity ordersEntity);

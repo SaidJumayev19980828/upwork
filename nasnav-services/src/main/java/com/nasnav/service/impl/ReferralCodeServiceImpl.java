@@ -138,11 +138,6 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         referralCodeRepo.save(existReferralCode);
     }
 
-    @Override
-    public void delete(String referralCode) {
-
-    }
-
     private String generateReferralCode(){
         String referralCode = generate(6);
         while(referralCodeRepo.existsByReferralCode(referralCode)){
@@ -175,13 +170,13 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
     @Override
     @Transactional
     public ReferralCodeDto validateReferralOtp(String referralOtpToken) {
-       ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByAcceptReferralToken(referralOtpToken)
-               .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0003));
-       if(!securityService.getCurrentUser().getId().equals(referralCodeEntity.getUser().getId())) {
-           throw new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0007);
-       }
+        Long currentUserId = securityService.getCurrentUser().getId();
+        Long currentOrganizationId= securityService.getCurrentUserOrganizationId();
+       ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(currentUserId, currentOrganizationId)
+               .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0007));
+
        if(!referralCodeEntity.getAcceptReferralToken().equals(referralOtpToken)) {
-            throw new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0005);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0005);
        }
        referralCodeEntity.setStatus(ReferralCodeStatus.ACTIVE.getValue());
        referralCodeRepo.save(referralCodeEntity);

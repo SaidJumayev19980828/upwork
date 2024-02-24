@@ -446,9 +446,9 @@ public enum ErrorCodes {
 	,REF$PARAM$0002("Couldn't find referral with id [%d]!")
 	,REF$PARAM$0003("Couldn't find referral code [%s] for user!")
 	,REF$PARAM$0004("Invalid referral code Status value[%d]!")
-	,REF$PARAM$0005("referral accept token doesn't exist!")
+	,REF$PARAM$0005("referral accept token not valid!")
 	,REF$PARAM$0006("the OTP not sent successfully!")
-	,REF$PARAM$0007("There is no referral code for user to accept!")
+	,REF$PARAM$0007("There is no referral code for user to validate!")
 	,REF$PARAM$0008("there is no referral code for this user")
 	,REF$PARAM$0009("There is already Token sent for this user, plz check the SMS or resend token!")
 	
