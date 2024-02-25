@@ -1,18 +1,25 @@
 package com.nasnav.yeshtery.test.controllers.yeshtery;
 
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.persistence.ProductEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -21,6 +28,10 @@ import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @NotThreadSafe
 @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
@@ -28,8 +39,13 @@ import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 class ProductFiltersTest extends AbstractTestWithTempBaseDir {
   @Autowired
 	private TestRestTemplate template;
+	@Autowired
+	private MockMvc mockMvc;
 
-  @Test
+	@Mock
+	ProductRepository productRepository;
+
+	@Test
   void testGetProducts() {
 		ResponseEntity<ProductsResponse> response =
 				template.getForEntity("/v1/yeshtery/products", ProductsResponse.class);
@@ -38,6 +54,27 @@ class ProductFiltersTest extends AbstractTestWithTempBaseDir {
   }
 
 	@Test
+	public void get360Product() throws Exception {
+
+		RequestBuilder requestBuilder = MockMvcRequestBuilders
+				.get("/v1/yeshtery/products/360")
+				.accept(MediaType.APPLICATION_JSON);
+
+		MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+		assertEquals(200,result.getResponse().getStatus());
+		assertNotNull(result.getResponse().getContentAsString());
+	}
+
+	@Test
+	public void get360ProductsServiceTest(){
+		List<ProductEntity> products=productRepository.get360Products();
+		assertNotNull(products);
+	}
+
+
+
+		@Test
   void testGetFiltersWithTagsOrgId() {
 
 		ResponseEntity<ProductsFiltersResponse> response =

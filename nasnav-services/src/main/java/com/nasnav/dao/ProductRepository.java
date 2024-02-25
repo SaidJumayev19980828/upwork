@@ -221,5 +221,11 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Modifying
     void detachProductsFromAddon(@Param("addon_id") Long addonId);
 
+    @Query("SELECT product from ProductEntity product where product.search360=true")
+    List<ProductEntity> get360Products();
+
+
+
+
 
 }

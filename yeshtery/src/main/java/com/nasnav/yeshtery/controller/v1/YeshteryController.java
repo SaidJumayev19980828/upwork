@@ -196,6 +196,12 @@ public class YeshteryController {
         return productService.getProducts(productSearchParam);
     }
 
+
+    @GetMapping("products/360")
+    public List<ProductDetailsDTO> get360Products() throws BusinessException {
+        return productService.get360Products();
+    }
+
     @GetMapping(value = "filters", produces = APPLICATION_JSON_VALUE)
     public ProductsFiltersResponse getProductsFilters(ProductSearchParam productSearchParam) throws BusinessException {
         productSearchParam.setYeshtery_products(true);

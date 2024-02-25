@@ -42,6 +42,7 @@ public interface ProductService {
   Map<String, String> parseVariantFeatures(ProductVariantsEntity variant, Integer returnedName);
 
   ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException;
+  List<ProductDetailsDTO> get360Products() throws BusinessException;
 
   ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException;
 

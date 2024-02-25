@@ -40,6 +40,7 @@ import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
+import com.nasnav.shipping.services.mylerz.webclient.dto.Shop;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
@@ -168,6 +169,7 @@ public class ProductServiceImpl implements ProductService {
 
 	@Autowired
 	private ProductServiceTransactions transactions;
+
 
 	@Autowired
 	private SecurityService securityService;
@@ -624,7 +626,15 @@ public class ProductServiceImpl implements ProductService {
 		return getProductResponseFromStocks(result, productsCount, params.include_out_of_stock.booleanValue(), params);
 	}
 
-
+	@Override
+	@Transactional
+	public List<ProductDetailsDTO> get360Products(){
+		List<ProductDetailsDTO> list=new ArrayList<>();
+		for (ProductEntity element : productRepository.get360Products()) {
+			list.add(toProductDetailsDTO(element, false)) ;
+		}
+		return list;
+	}
 
 
 
