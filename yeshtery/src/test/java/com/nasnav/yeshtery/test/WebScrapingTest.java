@@ -1,6 +1,7 @@
 package com.nasnav.yeshtery.test;
 
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.WebScrapingLogRepository;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.exceptions.BusinessException;
@@ -11,6 +12,7 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.WebScrapingLog;
 import com.nasnav.service.CsvExcelDataExportService;
+import com.nasnav.service.FileService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.WebScrapingService;
@@ -149,12 +151,14 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
         // Mock dependencies
         WebScrapingLogRepository scrapingLogRepository = Mockito.mock(WebScrapingLogRepository.class);
         OrganizationService organizationService = Mockito.mock(OrganizationService.class);
+        OrganizationRepository organizationRepository = Mockito.mock(OrganizationRepository.class);
         CsvExcelDataExportService csvExportService = Mockito.mock(CsvExcelDataExportService.class);
         SecurityService security = Mockito.mock(SecurityService.class);
         NotificationService notificationService = Mockito.mock(NotificationService.class);
+        FileService fileService = Mockito.mock(FileService.class);
 
         // Create instance of WebScrapingServiceImplementation
-        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(scrapingLogRepository, organizationService, security, notificationService);
+        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(organizationRepository,scrapingLogRepository, organizationService, security, notificationService,fileService);
 
         // Create mock objects
         Boolean manualCollect = true;
@@ -180,12 +184,14 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
         // Mock dependencies
         WebScrapingLogRepository scrapingLogRepository = Mockito.mock(WebScrapingLogRepository.class);
         OrganizationService organizationService = Mockito.mock(OrganizationService.class);
+        OrganizationRepository organizationRepository = Mockito.mock(OrganizationRepository.class);
         CsvExcelDataExportService csvExportService = Mockito.mock(CsvExcelDataExportService.class);
         SecurityService security = Mockito.mock(SecurityService.class);
         NotificationService notificationService = Mockito.mock(NotificationService.class);
+        FileService fileService = Mockito.mock(FileService.class);
 
         // Create instance of WebScrapingServiceImplementation
-        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(scrapingLogRepository, organizationService, security, notificationService);
+        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(organizationRepository,scrapingLogRepository, organizationService, security, notificationService,fileService);
 
         // Create mock objects
         Boolean manualCollect = true;

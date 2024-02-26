@@ -41,31 +41,44 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.ExtraAttributeDTO;
-import com.nasnav.dto.ExtraAttributeDefinitionDTO;
-import com.nasnav.dto.OrganizationImageUpdateDTO;
-import com.nasnav.dto.OrganizationThemesSettingsDTO;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.PromotionSearchParamDTO;
-import com.nasnav.dto.SeoKeywordsDTO;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.SubAreasRepObj;
-import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsTreeCreationDTO;
-import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.RegisterDto;
+import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.request.organization.OrganizationModificationDTO;
+import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
+import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
-
+import com.nasnav.response.*;
+import com.nasnav.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
-import com.nasnav.dto.request.RegisterDto;
+
+import javax.validation.Valid;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @RequestMapping("/organization")
 @CrossOrigin("*") // allow all origins
@@ -96,6 +109,8 @@ public class OrganizationController {
     private AddressService addressService;
     @Autowired
     private OrganizationService organizationService;
+	@Autowired
+	private WebScrapingService webScrapingService;
 
 
     @PostMapping(value = "register", produces = APPLICATION_JSON_VALUE)
@@ -368,6 +383,15 @@ public class OrganizationController {
                 .header(CONTENT_DISPOSITION, "attachment; filename=images-info.csv")
                 .body(s.toString());
     }
+
+    @PutMapping(value = "create_image")
+    public ResponseEntity<GenerateOrganizationPannerResponse> createImageFromDescription(@RequestHeader(name = "User-Token", required = false) String userToken,@RequestParam(name = "description") String description,
+            @RequestParam(name = "orgId") Long orgId, @RequestParam(name = "oldPath", required = false) String oldPath)
+            throws IOException, BusinessException
+    {
+        return ResponseEntity.ok().body(webScrapingService.callAIImageGenerator(orgId, description,oldPath));
+    }
+
 
     @PostMapping(value = "search/data/sync")
     @ResponseStatus(OK)
