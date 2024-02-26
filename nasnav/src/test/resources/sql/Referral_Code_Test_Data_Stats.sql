@@ -134,8 +134,8 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.referral_settings(id, org_id, constraints, created_at) VALUES (200,99001 , '{"REFERRAL_ACCEPT_REVENUE":20.0,"ORDER_DISCOUNT_PERCENTAGE":0.03,"SHARE_REVENUE_PERCENTAGE":0.04}', now());
 
 -- inserting a wallet for user for referral Codes
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20, 1, 88);
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (501, 20, 1, 89);
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 200.00, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (501, 20.00, 1, 89);
 
 
 -- insert referral code that is valid

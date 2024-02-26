@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.ReferralCodeEntity;
+import com.nasnav.persistence.ReferralTransactions;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,7 +24,6 @@ public interface ReferralCodeRepo extends JpaRepository<ReferralCodeEntity, Long
         Optional<ReferralCodeEntity> findByIdAndOrganization_Id(Long id, Long OrganizationId);
         Page<ReferralCodeEntity> findAllByOrganization_id(Long organizationId, Pageable pageable);
 
-        Optional<ReferralCodeEntity> findByAcceptReferralToken(String acceptToken);
         boolean existsByAcceptReferralToken(String acceptReferralCode);
 
         boolean existsByReferralCode(String referralCode);

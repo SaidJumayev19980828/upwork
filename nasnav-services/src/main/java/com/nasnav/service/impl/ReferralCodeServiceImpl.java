@@ -8,6 +8,7 @@ import com.nasnav.dao.ReferralTransactionRepository;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
+import com.nasnav.dto.referral_code.ReferralTransactionsDto;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
@@ -20,6 +21,7 @@ import com.nasnav.service.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -32,6 +34,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.math.RoundingMode.FLOOR;
@@ -61,6 +64,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     private final ReferralTransactionRepository referralTransactionRepo;
 
+
     @Override
     public ReferralCodeDto getForUser() {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
@@ -86,6 +90,29 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                 referralCodeRepo.findAllByOrganization_id(currentOrganizationId, pageable)
         );
     }
+
+    @Override
+    public PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType referralTransactionsType, int pageNo, int pageSize){
+        Long currentUserId = securityService.getCurrentUser().getId();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("createdAt").descending());
+        Page<ReferralTransactions> result = referralTransactionRepo.getChildsReferralsByTransactionType(currentUserId, referralTransactionsType, pageable);
+
+        return PaginatedResponse.<ReferralTransactionsDto>builder()
+                .totalRecords(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .content(result.getContent()
+                        .stream().map(ref -> ReferralTransactionsDto.builder()
+                                        .no(ref.getId())
+                                .activities(ref.getUser().getFirstName() + " User Registered with your referral")
+                                .createdAt(ref.getCreatedAt())
+                                .amount(ref.getAmount())
+                                .build())
+                        .collect(Collectors.toList())
+                )
+                .build();
+
+    }
+
 
     public void send(String phoneNumber, String parentReferralCode) {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
@@ -254,6 +281,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                 .shareRevenueEarningsFromChildReferrals(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_SHARE_REVENUE, currentUserId))
                 .numberOfActiveChildReferrals(referralCodeRepo.countChildReferralCodesByUserIdAndIsActive(currentUserId, ReferralCodeStatus.ACTIVE.getValue()))
                 .orderDiscountsAwarded(referralTransactionRepo.sumAmountByTypeAndUser_Id(ReferralTransactionsType.ORDER_DISCOUNT, currentUserId))
+                .walletBalance(referralWalletService.getWalletByUserId(currentUserId).getBalance())
                 .build();
     }
 

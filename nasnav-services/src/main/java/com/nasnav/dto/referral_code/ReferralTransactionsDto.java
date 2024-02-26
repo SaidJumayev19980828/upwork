@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
@@ -16,10 +17,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class ReferralStatsDto {
-    private Long numberOfActiveChildReferrals;
-    private BigDecimal shareRevenueEarningsFromChildReferrals;
-    private BigDecimal orderDiscountsAwarded;
-    private BigDecimal walletBalance;
-
+public class ReferralTransactionsDto {
+    private Long no;
+    private LocalDateTime createdAt;
+    private String activities;
+    private BigDecimal amount;
 }

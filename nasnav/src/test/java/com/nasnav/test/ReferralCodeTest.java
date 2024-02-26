@@ -2,8 +2,10 @@ package com.nasnav.test;
 
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
+import com.nasnav.dto.referral_code.ReferralTransactionsDto;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
@@ -19,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -304,6 +306,26 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(1, res.getBody().getNumberOfActiveChildReferrals());
         assertEquals(new BigDecimal("180.00"), res.getBody().getShareRevenueEarningsFromChildReferrals());
         assertEquals(new BigDecimal("96.00"), res.getBody().getOrderDiscountsAwarded());
+        assertEquals(new BigDecimal("200.00"), res.getBody().getWalletBalance());
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Stats.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getChildsAcceptReferrals(){
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<PaginatedResponse<ReferralTransactionsDto>> res = template.exchange(
+                "/referral/childs?type=ACCEPT_REFERRAL_CODE&pageSize=10&pageNo=0",
+                HttpMethod.GET,
+                request,
+                new ParameterizedTypeReference<PaginatedResponse<ReferralTransactionsDto>>(){}
+        );
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(1, res.getBody().getTotalRecords());
+        assertEquals(1, res.getBody().getContent().size());
+        assertEquals(1,res.getBody().getTotalPages());
 
     }
 

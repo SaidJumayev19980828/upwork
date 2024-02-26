@@ -25,6 +25,7 @@ public interface ReferralCodeMapper {
 
     ReferralCodeEntity map(ReferralCodeDto referralCodeDto);
 
+    @Mapping(target = "username", expression = "java(referralCodeEntity.getUser().getFirstName() + \" \" + referralCodeEntity.getUser().getLastName())")
     ReferralCodeDto map(ReferralCodeEntity referralCodeEntity);
 
    List<ReferralCodeDto> map(List<ReferralCodeEntity> referralCodeEntity);

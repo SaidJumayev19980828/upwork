@@ -4,6 +4,8 @@ import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
+import com.nasnav.dto.referral_code.ReferralTransactionsDto;
+import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,15 @@ public class ReferralCodeController {
                                                       @RequestParam(value = "pageSize", required = false) Integer pageSize) {
         return referralCodeService.getList(pageNo, pageSize);
     }
+
+    @GetMapping("/childs")
+    public PaginatedResponse<ReferralTransactionsDto> getChilds(
+                                                      @RequestParam(value = "type") ReferralTransactionsType type,
+                                                    @RequestParam(value = "pageNo", required = false) Integer pageNo,
+                                                      @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+        return referralCodeService.getChilds(type, pageNo, pageSize);
+    }
+
 
     @GetMapping("/user")
     public ReferralCodeDto get(){
@@ -66,6 +77,7 @@ public class ReferralCodeController {
     public void deActivate(@PathVariable("referralCode") String referralCode ){
         referralCodeService.deActivate(referralCode);
     }
+
 
     @GetMapping("/stats")
     public ReferralStatsDto getStats(){

@@ -20,4 +20,5 @@ public class ReferralCodeDto {
     private String referralCode;
     private String parentReferralCode;
     private ReferralCodeStatus status;
+    private String username;
 }
