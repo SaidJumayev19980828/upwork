@@ -1,0 +1,1 @@
+ALTER table tag_graph_nodes add column priority integer default 0;

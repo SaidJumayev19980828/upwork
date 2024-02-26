@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,10 +20,11 @@ public class TagGraphNodeEntity {
 	@JoinColumn(name = "tag_id", nullable = false)
 	private TagsEntity tag;
 	
-	
-	
-	public TagGraphNodeEntity(TagsEntity tag) {
+
+	private Integer priority;
+
+	public TagGraphNodeEntity(TagsEntity tag, Integer priority) {
 		this.tag = tag;
+		this.priority = priority;
 	}
-	
 }

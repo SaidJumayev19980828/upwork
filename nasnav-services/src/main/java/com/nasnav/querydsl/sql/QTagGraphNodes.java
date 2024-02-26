@@ -27,6 +27,7 @@ public class QTagGraphNodes extends com.querydsl.sql.RelationalPathBase<QTagGrap
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final NumberPath<Long> tagId = createNumber("tagId", Long.class);
+    public final NumberPath<Long> priority = createNumber("priority", Long.class);
 
     public final com.querydsl.sql.PrimaryKey<QTagGraphNodes> tagGraphNodesPkey = createPrimaryKey(id);
 
@@ -64,6 +65,7 @@ public class QTagGraphNodes extends com.querydsl.sql.RelationalPathBase<QTagGrap
     public void addMetadata() {
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(tagId, ColumnMetadata.named("tag_id").withIndex(2).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(priority, ColumnMetadata.named("priority").withIndex(3).ofType(Types.BIGINT).withSize(19));
     }
 
 }

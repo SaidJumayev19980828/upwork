@@ -58,12 +58,12 @@ insert into Tags(id, name, alias, category_id, organization_id, metadata) values
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5006,'tag_6', 'tag_6', 206, 99002, '');
 
 
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5001,5001);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5002,5002);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5003,5003);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5004,5004);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5005,5005);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(5006,5006);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5001,5001,1);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5002,5002,2);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5003,5003,3);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5004,5004,5);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5005,5005,6);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(5006,5006,7);
 
 
 

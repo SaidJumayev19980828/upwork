@@ -13,6 +13,8 @@ public class TagsTreeNodeCreationDTO {
 
     @JsonProperty("node_id")
     private Long nodeId;
+    @JsonProperty("priority")
+    private Integer priority;
         
     @JsonProperty(value = "children")
     private List<TagsTreeNodeCreationDTO> children;

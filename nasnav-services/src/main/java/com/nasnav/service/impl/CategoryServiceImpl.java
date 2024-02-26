@@ -641,7 +641,7 @@ public class CategoryServiceImpl implements CategoryService {
 				.map(TagsTreeNodeCreationDTO::getTagId)
 				.map(tagsMap::get)
 				.map(this::verifyTagToBeAddedToTree)
-				.map(TagGraphNodeEntity::new)
+				.map((TagsEntity t) -> new TagGraphNodeEntity(t,node.getPriority()))
 				.map(tagNodesRepo::save)
 				.orElseThrow(() ->
 						new RuntimeBusinessException(
@@ -654,13 +654,16 @@ public class CategoryServiceImpl implements CategoryService {
 
 	private TagGraphNodeEntity checkNodeOriginalTag(TagGraphNodeEntity nodeEntity, TagsTreeNodeCreationDTO dto, Map<Long, TagsEntity> tagsMap) {
     	Long tagId = dto.getTagId();
+		Integer priority =dto.getPriority();
     	if (!nodeEntity.getTag().getId().equals(tagId)) {
     		TagsEntity tag =
 					ofNullable(tagsMap.get(tagId))
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, TAG$TREE$0001,tagId));
 			verifyTagToBeAddedToTree(tag);
     		nodeEntity.setTag(tag);
+
 		}
+		nodeEntity.setPriority(priority);
     	return tagNodesRepo.save(nodeEntity);
 	}
 
@@ -786,7 +789,8 @@ public class CategoryServiceImpl implements CategoryService {
     	dto.setGraphId(tagEntity.getGraphId());    	
     	dto.setMetadata(tagEntity.getMetadata());
     	dto.setName(tagEntity.getName());
-    	dto.setPname(tagEntity.getPname());    	
+    	dto.setPname(tagEntity.getPname());
+		dto.setPriority(tagEntity.getPriority());
     	return dto;
     }
 

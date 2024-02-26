@@ -25,6 +25,7 @@ public class TagsTreeNodeDTO {
     private Long categoryId;
     @JsonProperty(value = "graph_id")
     private Integer graphId;
+    private Integer priority;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<TagsTreeNodeDTO> children;
 

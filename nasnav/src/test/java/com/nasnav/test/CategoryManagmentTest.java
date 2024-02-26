@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -138,6 +139,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
     
 
     @Test
+
     public void createCategorySuccessTest() {
         String body = json()
                 .put("operation", "create")
@@ -566,8 +568,8 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
         String body = json()
                 .put("nodes"
                         , jsonArray()
-                                .put(createTagTreeNode(null, asList(createTagTreeNode(null, null, null)), 5003L))
-                                .put(createTagTreeNode(5005L, null, null))
+                                .put(createTagTreeNode(null, asList(createTagTreeNode(null, null, null,5)), 5003L,8))
+                                .put(createTagTreeNode(5005L, null, null,6))
                 ).toString();
 
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
@@ -593,8 +595,8 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
         String body = json()
                 .put("nodes"
                         , jsonArray()
-                                .put(createTagTreeNode(5003L, asList(createTagTreeNode(5004L, null, null)), 5003L))
-                                .put(createTagTreeNode(5005L, null, null))
+                                .put(createTagTreeNode(5003L, asList(createTagTreeNode(5004L, null, null,33)), 5003L,12))
+                                .put(createTagTreeNode(5005L, null, null,23))
                     ).toString();
 
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
@@ -616,9 +618,9 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
         			, jsonArray()
         				 .put(createTagTreeNode(
         						 	5003L, 
-        						 	asList(createTagTreeNode(5004L, null, null)),
-                                 null))
-        				 .put(createTagTreeNode(5005L, null, null))
+        						 	asList(createTagTreeNode(5004L, null, null,9)),
+                                 null,76))
+        				 .put(createTagTreeNode(5005L, null, null,99))
         					    )        		 		
         		 .toString();
 	}
@@ -648,8 +650,8 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
         			, jsonArray()
         				 .put(createTagTreeNode(
         						 	5003L, 
-        						 	asList(createTagTreeNode(5008L, null, null)),
-                                 null))
+        						 	asList(createTagTreeNode(5008L, null, null,54)),
+                                 null,65))
         					    )
         		 .toString();
 
@@ -672,7 +674,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
         		json()
         		 .put("nodes"
         			, jsonArray()
-        				 .put(createTagTreeNode(5003L, null, null)))
+        				 .put(createTagTreeNode(5003L, null, null,43)))
         		 .toString();
 
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
@@ -706,7 +708,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
     
     
     
-    private JSONObject createTagTreeNode(Long tagId, List<JSONObject> children, Long nodeId) {
+    private JSONObject createTagTreeNode(Long tagId, List<JSONObject> children, Long nodeId,Integer priority) {
     	JSONArray childrenArr = new JSONArray();
     	ofNullable(children)
     	.orElse(emptyList())
@@ -714,6 +716,7 @@ public class CategoryManagmentTest extends AbstractTestWithTempBaseDir {
     	return json()
                 .put("node_id", nodeId)
     			.put("tag_id", tagId)
+                .put("priority",priority)
 			    .put("children", childrenArr);
     }
     

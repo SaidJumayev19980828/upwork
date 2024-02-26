@@ -60,7 +60,7 @@ insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_
 
 insert into product_tags(product_id, tag_id) values(1006, 5006);
 
-insert into tag_graph_nodes values(5003, 5003);
-insert into tag_graph_nodes values(5007, 5007);
+insert into tag_graph_nodes(id,tag_id,priority) values(5003, 5003,3);
+insert into tag_graph_nodes(id,tag_id,priority) values(5007, 5007,4);
 insert into tag_graph_edges values (10001, 5003, 5007)
 

@@ -24,6 +24,7 @@ public class QTagGraphNodeEntity extends EntityPathBase<TagGraphNodeEntity> {
     public static final QTagGraphNodeEntity tagGraphNodeEntity = new QTagGraphNodeEntity("tagGraphNodeEntity");
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
+    public final NumberPath<Integer> priority = createNumber("priority", Integer.class);
 
     public final QTagsEntity tag;
 

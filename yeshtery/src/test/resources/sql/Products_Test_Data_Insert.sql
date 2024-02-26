@@ -96,8 +96,8 @@ INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, remov
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22003, 201, 'squishy things org 3', 'squishy things', 'squishy_things', '{}', 0, 99003);
 INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22004, 202, 'mountain equipment org 3', 'mountain equipment', 'mountain_equipment', '{}', 0, 99003);
 
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50011,22001);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50012,22002);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(50011,22001,23);
+INSERT INTO public.tag_graph_nodes (id, tag_id,priority) VALUES(50012,22002,22);
 
 
 insert into tag_graph_edges(id, parent_id, child_id) values(60012, 50011, 50012);
