@@ -451,7 +451,8 @@ public enum ErrorCodes {
 	,REF$PARAM$0007("There is no referral code for user to validate!")
 	,REF$PARAM$0008("there is no referral code for this user")
 	,REF$PARAM$0009("There is already Token sent for this user, plz check the SMS or resend token!")
-	
+	,REF$PARAM$0010("There is no settings for this organization!")
+
 	,VIDEO$PARAM$0001("Video chat is not enabled for organization with id[%d]!")
 	,VIDEO$PARAM$0002("Invalid user type!")
 	,VIDEO$PARAM$0003("Session not found!")

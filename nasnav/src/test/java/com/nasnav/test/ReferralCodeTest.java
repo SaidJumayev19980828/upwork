@@ -32,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -257,8 +259,37 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(200, res.getStatusCodeValue());
         assertEquals("asdfgh", res.getBody().getReferralCode() );
         assertEquals("abcdfg", res.getBody().getParentReferralCode());
+        assertEquals("user2", res.getBody().getUsername());
         assertEquals(ReferralCodeStatus.ACTIVE, res.getBody().getStatus());
 
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_3.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getOrderDiscountValue() {
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<Map<ReferralCodeType, BigDecimal>> res = template.exchange("/referral/settings/discount_percentage", HttpMethod.GET, request,
+                new ParameterizedTypeReference<>(){});
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(new BigDecimal("3"), res.getBody().get(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE) );
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_3.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getOrderDiscountValueNotFoundForOrganization() {
+        HttpEntity<?> request = getHttpEntity("789");
+
+        ResponseEntity<String> res = template.exchange("/referral/settings/discount_percentage", HttpMethod.GET, request,
+              String.class);
+
+        assertEquals(404, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("There is no settings for this organization!", message);
     }
 
     @Test
@@ -303,7 +334,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 ReferralStatsDto.class);
 
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(1, res.getBody().getNumberOfActiveChildReferrals());
+        assertEquals(2, res.getBody().getNumberOfActiveChildReferrals());
         assertEquals(new BigDecimal("180.00"), res.getBody().getShareRevenueEarningsFromChildReferrals());
         assertEquals(new BigDecimal("96.00"), res.getBody().getOrderDiscountsAwarded());
         assertEquals(new BigDecimal("200.00"), res.getBody().getWalletBalance());
@@ -317,6 +348,28 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         ResponseEntity<PaginatedResponse<ReferralTransactionsDto>> res = template.exchange(
                 "/referral/childs?type=ACCEPT_REFERRAL_CODE&pageSize=10&pageNo=0",
+                HttpMethod.GET,
+                request,
+                new ParameterizedTypeReference<PaginatedResponse<ReferralTransactionsDto>>(){}
+        );
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(2, res.getBody().getTotalRecords());
+        assertEquals(2, res.getBody().getContent().size());
+        assertEquals(1,res.getBody().getTotalPages());
+
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Stats.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getChildsAcceptReferralsWithDate(){
+        HttpEntity<?> request = getHttpEntity("123");
+        String dateFrom = LocalDate.now().plusDays(2).toString();
+        String dateTo = LocalDate.now().plusDays(2).toString();
+
+        ResponseEntity<PaginatedResponse<ReferralTransactionsDto>> res = template.exchange(
+                "/referral/childs?type=ACCEPT_REFERRAL_CODE&pageSize=10&pageNo=0&dateFrom=" + dateFrom + "&dateTo=" + dateTo,
                 HttpMethod.GET,
                 request,
                 new ParameterizedTypeReference<PaginatedResponse<ReferralTransactionsDto>>(){}

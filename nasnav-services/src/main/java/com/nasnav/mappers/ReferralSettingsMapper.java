@@ -27,6 +27,7 @@ public interface ReferralSettingsMapper {
 
     ReferralSettings map(ReferralSettingsDto referralSettingsDto);
 
+    ReferralSettingsDto map(ReferralSettings referralSettings);
 
     default String map(Map<ReferralCodeType, BigDecimal> constraints) throws JsonProcessingException {
             ObjectMapper objectMapper = new ObjectMapper();

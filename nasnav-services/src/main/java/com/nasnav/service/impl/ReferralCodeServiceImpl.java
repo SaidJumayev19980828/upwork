@@ -31,6 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
@@ -92,10 +96,18 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
     }
 
     @Override
-    public PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType referralTransactionsType, int pageNo, int pageSize){
+    public PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType referralTransactionsType, String dateFrom, String dateTo, int pageNo, int pageSize){
         Long currentUserId = securityService.getCurrentUser().getId();
         Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("createdAt").descending());
-        Page<ReferralTransactions> result = referralTransactionRepo.getChildsReferralsByTransactionType(currentUserId, referralTransactionsType, pageable);
+        Page<ReferralTransactions> result;
+        if(dateFrom != null && !dateFrom.isEmpty() && dateTo != null && !dateTo.isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDateTime dateTimeFrom =  LocalDateTime.of(LocalDate.parse(dateFrom, formatter), LocalTime.MIDNIGHT);
+            LocalDateTime dateTimeTo =  LocalDateTime.of(LocalDate.parse(dateTo, formatter), LocalTime.MAX);
+            result = referralTransactionRepo.getChildsReferralsByTransactionType(currentUserId, referralTransactionsType, dateTimeFrom, dateTimeTo, pageable);
+        } else {
+            result = referralTransactionRepo.getChildsReferralsByTransactionType(currentUserId, referralTransactionsType, pageable);
+        }
 
         return PaginatedResponse.<ReferralTransactionsDto>builder()
                 .totalRecords(result.getTotalElements())
@@ -103,7 +115,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                 .content(result.getContent()
                         .stream().map(ref -> ReferralTransactionsDto.builder()
                                         .no(ref.getId())
-                                .activities(ref.getUser().getFirstName() + " User Registered with your referral")
+                                .activities(ref.getUser().getName() + " User Registered with your referral")
                                 .createdAt(ref.getCreatedAt())
                                 .amount(ref.getAmount())
                                 .build())

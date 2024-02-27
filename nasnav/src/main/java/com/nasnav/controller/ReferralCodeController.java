@@ -5,11 +5,17 @@ import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.dto.referral_code.ReferralTransactionsDto;
+import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -31,6 +37,11 @@ public class ReferralCodeController {
         return referralSettingsService.create(referralSettingsDto);
     }
 
+    @GetMapping("/settings/discount_percentage")
+    public Map<ReferralCodeType, BigDecimal> createSettings(){
+        return referralSettingsService.getValue(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE);
+    }
+
     @GetMapping("/list")
     public PaginatedResponse<ReferralCodeDto> getList(@RequestParam(value = "pageNo", required = false) Integer pageNo,
                                                       @RequestParam(value = "pageSize", required = false) Integer pageSize) {
@@ -40,9 +51,11 @@ public class ReferralCodeController {
     @GetMapping("/childs")
     public PaginatedResponse<ReferralTransactionsDto> getChilds(
                                                       @RequestParam(value = "type") ReferralTransactionsType type,
-                                                    @RequestParam(value = "pageNo", required = false) Integer pageNo,
+                                                      @RequestParam(value = "dateFrom", required = false) String dateFrom,
+                                                      @RequestParam(value = "dateTo", required = false) String  dateTo,
+                                                      @RequestParam(value = "pageNo", required = false) Integer pageNo,
                                                       @RequestParam(value = "pageSize", required = false) Integer pageSize) {
-        return referralCodeService.getChilds(type, pageNo, pageSize);
+        return referralCodeService.getChilds(type, dateFrom, dateTo, pageNo, pageSize);
     }
 
 

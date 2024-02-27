@@ -40,6 +40,7 @@ VALUES (90, 'user3@nasnav.com','user3','789', 99003);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (103, '789', now(), null,90);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502, 201);

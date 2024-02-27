@@ -11,6 +11,7 @@ import com.nasnav.persistence.OrdersEntity;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 
@@ -22,7 +23,7 @@ public interface ReferralCodeService {
 
     PaginatedResponse<ReferralCodeDto> getList(int pageNo, int pageSize);
 
-    PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType type, int pageNo, int pageSize);
+    PaginatedResponse<ReferralTransactionsDto> getChilds(ReferralTransactionsType type, String dateFrom, String dateTo, int pageNo, int pageSize);
 
     void send(String phoneNumber, String parentReferralCode);
 
