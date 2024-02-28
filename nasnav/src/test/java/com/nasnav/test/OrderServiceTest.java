@@ -405,21 +405,21 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<OrdersListResponse> response = sendOrdersListRequestWithParamsAndToken("start=1&count=1&details_level=3", token);
 
 		DetailedOrderRepObject body = response.getBody().getOrders().get(0);
-		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L, ZERO);
+		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L, ZERO, false, new BigDecimal("20.00"));
 		assertEquals(expectedBody, body);
 
 		response = sendOrdersListRequestWithParamsAndToken("start=2&count=1&details_level=3", token);
 
 		body = response.getBody().getOrders().get(0);
 
-		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("100.00"));
+		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("100.00"), false, new BigDecimal("20.00"));
 		assertEquals(expectedBody, body);
 
 		response = sendOrdersListRequestWithParamsAndToken("start=3&count=1&details_level=3", token);
 
 		body = response.getBody().getOrders().get(0);
 
-		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
+		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO, true, new BigDecimal("20.00"));
 		assertEquals(expectedBody, body);
 
 	}
@@ -598,7 +598,7 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	
 
 	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity
-			, String status, Long userId, BigDecimal discount) {
+			, String status, Long userId, BigDecimal discount, Boolean isReferralProgram, BigDecimal withdrawAmount) {
 		OrdersEntity entity = helper.getOrderEntityFullData(orderId);
 
 		DetailedOrderRepObject order = new DetailedOrderRepObject();
@@ -612,6 +612,11 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		order.setShippingAddress( null );
 		order.setShopId( entity.getShopsEntity().getId() );
 		order.setStatus( status );
+		if(isReferralProgram) {
+			order.setIsReferralCodeApplied(true);
+			order.setAppliedReferralCode("abcdfg");
+		}
+		order.setIsUsedReferralBalance(withdrawAmount.compareTo(ZERO) > 0);
 		order.setSubtotal( price );
 		order.setTotal( price);		
 		order.setItems( createExpectedItems(price, quantity, discount));

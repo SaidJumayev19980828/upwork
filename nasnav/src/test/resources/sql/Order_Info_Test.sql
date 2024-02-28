@@ -115,7 +115,7 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 
 --inserting meta orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, referral_withdraw_amount) VALUES(310001 , now(),88, 99001, 8, 20.00);
 
 INSERT INTO public.payments(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
     VALUES(null, 'S.C.A.M', 'ssss', 2, now(), 980, 2, 'dfdfdd', 88, 310001);
@@ -129,8 +129,8 @@ VALUES(330002, '', '', 88, '2022-02-01', now(), now(), 99001, 1, '{}'::character
 
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
-VALUES(330003, '', '', 88, '2022-02-02', now() + interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, '{}'::text, 300.00, 0, 300.00, 310001);
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id, applied_referral_code)
+VALUES(330003, '', '', 88, '2022-02-02', now() + interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, '{}'::text, 300.00, 0, 300.00, 310001, 'abcdfg');
 
 
 INSERT INTO public.orders

@@ -38,6 +38,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     
     private LocalDateTime deliveryDate;
     private String status;
+    private Boolean isReferralCodeApplied;
+    private String appliedReferralCode;
+    private Boolean isUsedReferralBalance;
     private Integer totalQuantity;
     private String paymentStatus;
     private AddressRepObj shippingAddress;

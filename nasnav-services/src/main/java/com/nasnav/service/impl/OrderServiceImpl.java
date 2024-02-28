@@ -792,6 +792,13 @@ public class OrderServiceImpl implements OrderService {
 					.reduce(ZERO, BigDecimal::add);
 			representation.setTotalPointAmount(totalPointAmount);
 		}
+		if(order.getAppliedReferralCode() != null && !order.getAppliedReferralCode().isEmpty()) {
+			representation.setIsReferralCodeApplied(true);
+			representation.setAppliedReferralCode(order.getAppliedReferralCode());
+		}
+		if(order.getMetaOrder().getReferralWithdrawAmount().compareTo(ZERO) > 0) {
+			representation.setIsUsedReferralBalance(true);
+		}
 		return representation;
 	}
 
