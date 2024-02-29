@@ -28,7 +28,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '161718', now(), 70, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, '192021', now(), 71, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, '222324', now(), 158, null);
-
+INSERT INTO public.shop_ratings(
+     id,shop_id, user_id, rate, review, submission_date, approved)
+VALUES (5, 501, 88, 5, 'good', now(), false);
 
 
 --inserting Roles

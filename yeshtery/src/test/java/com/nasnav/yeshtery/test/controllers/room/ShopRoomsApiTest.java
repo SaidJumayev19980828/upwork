@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -15,14 +16,20 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.ShopRatingRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.ShopRateDTO;
+import com.nasnav.persistence.ShopRating;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.shipping.services.mylerz.webclient.dto.Shop;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.nasnav.dao.ShopRoomTemplateRepository;
@@ -44,6 +51,15 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 	private ShopRoomMapper mapper;
 	@Autowired
 	private ShopRoomTemplateRepository roomTemplateRepository;
+	@Mock
+	private ShopRatingRepository shopRatingRepository;
+	@Mock
+	private ShopsRepository shopsRepository;
+	@Mock
+	private UserEntity user;
+	@Mock
+	private ShopsEntity shops;
+
 
 	@Test
 	void getRoomsByUserToken() {
@@ -52,6 +68,20 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 				.map(mapper::toResponse).collect(Collectors.toSet());
 		assertUserRooms("user81", rooms);
 		assertUserRooms("user83", Set.of());
+	}
+
+	@Test
+	 void RateReviewShopSuccessfully() {
+		ShopRateDTO requestBody = new ShopRateDTO(   51L,5,"good");
+		HttpCookie cookie = new HttpCookie("User-Token", "user81");
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Cookie", cookie.toString());
+		headers.add("User-Token", "user81");
+		HttpEntity<ShopRateDTO> request = new HttpEntity<>(requestBody,headers);
+
+		ResponseEntity<Void> response =
+				template.exchange("/v1/room/shop/rateShop", POST, request, Void.class);
+		assertEquals(HttpStatus.CREATED, response.getStatusCode());
 	}
 
 	private void assertUserRooms(String userToken, Set<ShopRoomResponse> rooms) {
@@ -252,5 +282,27 @@ class ShopRoomsApiTest extends AbstractTestWithTempBaseDir {
 			String email = template.getSession().getUserCreator().getEmail();
 			assertEquals(userEmail, email);
 		}
+	}
+
+
+	@Test
+	void rateShopServiceTest(){
+		ShopRateDTO shopRateDTO= new ShopRateDTO(501L,5,"good");
+		Optional<ShopsEntity> shopsEntity=shopsRepository.findById(shopRateDTO.getShopId());
+		Assertions.assertNotNull(shopsEntity);
+	}
+
+	@Test
+	 void createShopRateServiceTest(){
+		ShopRateDTO dto= new ShopRateDTO(502L,5,"good");
+		ShopRating rate = new ShopRating();
+		rate.setRate(dto.getRate());
+		rate.setId(2L);
+		rate.setShop(shops);
+		rate.setReview(dto.getReview());
+		rate.setUser(user);
+		rate.setApproved(false);
+		shopRatingRepository.save(rate);
+		Assertions.assertNotNull(shopRatingRepository.findById(rate.getId()));
 	}
 }

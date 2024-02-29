@@ -40,7 +40,6 @@ import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
@@ -54,6 +53,8 @@ public class ShopServiceImpl implements ShopService {
     private SQLQueryFactory queryFactory;
     @Autowired
     private JdbcTemplate template;
+    @Autowired
+    ShopRatingRepository shopRatingRepository;
     private final ShopsRepository shopsRepository;
     private final UserServicesHelper userServicehelper;
     private final ShopServiceHelper shopServiceHelper;
@@ -454,5 +455,29 @@ public class ShopServiceImpl implements ShopService {
                 longitude, latitude, radius, false, searchInTags, productType, count);
         return getLocationShopsCities(param);
     }
-	
+
+    public ShopRateDTO rateShop(ShopRateDTO dto) {
+        BaseUserEntity baseUser = securityService.getCurrentUser();
+        if (baseUser instanceof EmployeeUserEntity) {
+            throw new RuntimeBusinessException(FORBIDDEN, E$USR$0001);
+        }
+        UserEntity user = (UserEntity) baseUser;
+        ShopsEntity shopsEntity = shopsRepository.findById(dto.getShopId())
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, P$VAR$0001, dto.getShopId()));
+       return createShopRate(dto, shopsEntity, user);
+    }
+
+
+    private ShopRateDTO createShopRate(ShopRateDTO dto, ShopsEntity shop, UserEntity user) {
+        ShopRating rate = shopRatingRepository.findByShopIdAndUserId(shop.getId(), user.getId())
+                .orElse(new ShopRating());
+        rate.setRate(dto.getRate());
+        rate.setShop(shop);
+        rate.setReview(dto.getReview());
+        rate.setUser(user);
+        rate.setApproved(false);
+        shopRatingRepository.save(rate);
+        return dto;
+    }
+
 }

@@ -185,6 +185,7 @@ DELETE FROM public.package WHERE id > 99000;
 
 delete from public.loyalty_point_types where id between  31001 and 31999;
 DELETE FROM public.stripe_customer;
+DELETE FROM public.shop_ratings;
 
 
 

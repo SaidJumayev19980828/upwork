@@ -5,6 +5,11 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.ShopRateDTO;
+import com.nasnav.service.ShopService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,10 +27,14 @@ import com.nasnav.service.ShopRoomService;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @RestController
 @RequestMapping(ShopRoomController.API_PATH)
 @RequiredArgsConstructor
 public class ShopRoomController {
+
+	private final ShopService shopService;
     static final String API_PATH = YeshteryConstants.API_PATH + "/room/shop";
 	private final ShopRoomService metaverseRoomService;
 
@@ -63,5 +72,12 @@ public class ShopRoomController {
 	public void deleteRoomTemplate(@RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "shop_id") Long shopId) {
 		metaverseRoomService.deleteTemplate(shopId);
+	}
+
+	@PostMapping(value = "/rateShop", consumes = APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> rateShop(@RequestHeader(name = "User-Token", required = false) String userToken,
+								   @RequestBody ShopRateDTO dto) {
+		shopService.rateShop(dto);
+		return new ResponseEntity<>(dto, HttpStatus.CREATED);
 	}
 }

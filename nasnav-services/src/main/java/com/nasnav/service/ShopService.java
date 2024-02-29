@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.dto.CityIdAndName;
 import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.dto.ShopRateDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.ShopIdAndPriority;
 import com.nasnav.persistence.ShopsEntity;
@@ -71,4 +72,6 @@ public interface ShopService {
 
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     void changeShopsPriority(List<ShopIdAndPriority> dto);
+
+     ShopRateDTO rateShop(ShopRateDTO dto);
 }

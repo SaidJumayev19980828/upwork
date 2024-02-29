@@ -76,6 +76,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/360view/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 			patternOf( "/room/shop/list_for_user"				,GET				, getAllRoles()),
 			patternOf( "/room/shop/session"					,POST				, setOf(CUSTOMER)),
+			patternOf( "/room/shop/rateShop"					,POST				, setOf(CUSTOMER)),
 			patternOf( "/room/shop/template"					,POST				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 			patternOf( "/room/shop"							,DELETE				, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 			patternOf( "/room/event/list_for_user"			,GET			, getAllRoles()),
