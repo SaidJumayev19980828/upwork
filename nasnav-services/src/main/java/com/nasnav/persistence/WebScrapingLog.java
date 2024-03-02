@@ -1,4 +1,5 @@
 package com.nasnav.persistence;
+import com.nasnav.enumerations.ScrapingTypes;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -7,6 +8,8 @@ import lombok.Setter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -36,8 +39,10 @@ public class WebScrapingLog {
     private String statusMessage;
     @Column(name = "request_url", nullable = false, length = 500)
     private String requestUrl;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "log_type", nullable = false, length = 50)
-    private String logType;
+    private ScrapingTypes logType;
     @Column(name = "created_at")
     private ZonedDateTime createdAt;
 

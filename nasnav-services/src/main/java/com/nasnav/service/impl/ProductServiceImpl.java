@@ -230,7 +230,8 @@ public class ProductServiceImpl implements ProductService {
 
 	private final PromotionsService promotionsService;
 
-
+	@Autowired
+	private ObjectMapper mapper;
 	@Autowired
 	public ProductServiceImpl(ProductRepository productRepository, StockRepository stockRepository,
 						  ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
@@ -3491,13 +3492,15 @@ private Supplier<List<PromotionsEntity>> getPromosSupplier(ProductSearchParam pa
 
 @Override
 public VariantUpdateResponse updateVariantV2(
-			VariantUpdateDTO variant,
+			String variantString,
 			MultipartFile[] imgs,
 			Integer[] uploadedImagePriorities,
 			List<Map<String, Long>> updatedImages,
 			Long[] deletedImages
-	) throws BusinessException {
-		Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
+	) throws BusinessException, JsonProcessingException {
+	VariantUpdateDTO variant = mapper.readValue(variantString, VariantUpdateDTO.class);
+
+	Long id = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
 		if (id != null) {
 
 			Operation operation = variant.getOperation();

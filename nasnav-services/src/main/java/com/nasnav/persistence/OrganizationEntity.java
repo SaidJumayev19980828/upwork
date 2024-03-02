@@ -3,6 +3,8 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.enumerations.DiscountStrategies;
+import com.nasnav.enumerations.DiscountStrategiesConverter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -10,7 +12,10 @@ import org.json.JSONObject;
 
 import javax.persistence.*;
 import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "organizations")
@@ -127,11 +132,23 @@ public class OrganizationEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private Set<SubscriptionEntity> subscriptions;
 
+
+    @Convert(converter = DiscountStrategiesConverter.class)
+    @Column(name = "strategies")
+    private Set<DiscountStrategies> discountStrategies;
     public OrganizationEntity() {
         id = null;
         this.ecommerce = 1;
         this.yeshteryState = 0;
         this.enableVideoChat = 0;
+    }
+
+    public  <E extends Enum<E>> Map<E, Boolean> getDiscountStrategies (Set<E> enumValues, Class<E> enumClass) {
+        return Arrays.stream(enumClass.getEnumConstants())
+                .collect(Collectors.toMap(
+                        enumValue -> enumValue,
+                        enumValues::contains
+                ));
     }
 
     public Type getType() {
@@ -151,8 +168,8 @@ public class OrganizationEntity implements BaseEntity {
                 return Type.Unknown;
         }
     }
-    
-    
+
+
 
     @Override
     public String toString() {

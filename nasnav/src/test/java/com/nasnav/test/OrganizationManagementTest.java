@@ -495,6 +495,23 @@ public class OrganizationManagementTest extends AbstractTestWithTempBaseDir {
 
 
     @Test
+    public void updateOrgDiscountStrategies() {
+
+        Map<String,Boolean> strategies = new HashMap<>();
+        strategies.put("PROMO",Boolean.FALSE);
+        strategies.put("LOYALTY", Boolean.FALSE);
+        strategies.put("REFERRAL", Boolean.TRUE);
+        JSONObject body = json()
+                .put("id", 99001)
+                .put("strategies", strategies );
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+
+    @Test
     public void deleteVariantExtraAttribute() {
         //deleting extra attribute which not attached to any variant
         HttpEntity<?> req = getHttpEntity("123456");

@@ -334,12 +334,12 @@ public class ProductsController {
     @PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
     public VariantUpdateResponse updateProductVariantV2(
             @RequestHeader(name = "User-Token", required = false) String token,
-            @RequestPart("var") @Valid VariantUpdateDTO variant,
+            @RequestPart("var") @Valid String variant,
             @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
             @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
             @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
             @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
-    ) throws BusinessException {
+    ) throws BusinessException, JsonProcessingException {
         return productService.updateVariantV2(variant, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
 }

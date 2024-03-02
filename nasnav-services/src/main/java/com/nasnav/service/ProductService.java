@@ -103,12 +103,12 @@ public interface ProductService {
 
 
   public VariantUpdateResponse updateVariantV2(
-          VariantUpdateDTO variant,
+          String variant,
           MultipartFile[] imgs,
           Integer[] uploadedImagePriorities,
           List<Map<String, Long>> updatedImages,
           Long[] deletedImages
-  ) throws BusinessException ;
+  ) throws BusinessException, JsonProcessingException;
 ProductDetailsDTO getProductData(ProductFetchDTO params) throws BusinessException;
 
    ProductsResponse getOutOfStockProducts(ProductSearchParam requestParams) throws BusinessException;

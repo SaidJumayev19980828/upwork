@@ -1,6 +1,5 @@
 package com.nasnav.yeshtery.test;
 
-import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.WebScrapingLogRepository;
 import com.nasnav.dto.response.RestResponsePage;
@@ -24,6 +23,8 @@ import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
 import net.jcip.annotations.NotThreadSafe;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -78,8 +79,31 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
     private MockMvc mockMvc;
 
 
+    @Mock
+    private WebScrapingLogRepository scrapingLogRepository;
+    @Mock
+    private OrganizationService organizationService;
+    @Mock
+    private OrganizationRepository organizationRepository;
+    @Mock
+    private CsvExcelDataExportService csvExportService;
+    @Mock
+    private SecurityService securityService;
+    @Mock
+    private NotificationService notificationService;
+    @Mock
+    private FileService fileService;
+    @Mock
+    private MultipartFile file;
+
+    @InjectMocks
+    private WebScrapingServiceImplementation webScrapingService;
+
+
     private static final String TEST_FILE_DIR = "src/test/resources/files";
     private static final String TEST_FILE = "Master_File.csv";
+
+
 
     @Test
     public void getAllScrapped(){
@@ -147,51 +171,27 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    public void test_scrapeDataFromFile_manualCollectValidFile() throws IOException, BusinessException, SQLException, IllegalAccessException, InvocationTargetException {
-        // Mock dependencies
-        WebScrapingLogRepository scrapingLogRepository = Mockito.mock(WebScrapingLogRepository.class);
-        OrganizationService organizationService = Mockito.mock(OrganizationService.class);
-        OrganizationRepository organizationRepository = Mockito.mock(OrganizationRepository.class);
-        CsvExcelDataExportService csvExportService = Mockito.mock(CsvExcelDataExportService.class);
-        SecurityService security = Mockito.mock(SecurityService.class);
-        NotificationService notificationService = Mockito.mock(NotificationService.class);
-        FileService fileService = Mockito.mock(FileService.class);
+    public void test_scrapeDataFromFile_manualCollectValidFile() throws Exception {
+        String testFileDir = TEST_FILE_DIR;
+        Path file = Paths.get(testFileDir).resolve(TEST_FILE).toAbsolutePath();
 
-        // Create instance of WebScrapingServiceImplementation
-        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(organizationRepository,scrapingLogRepository, organizationService, security, notificationService,fileService);
+        byte[] fileData = Files.readAllBytes(file);
+        MockMultipartFile imgsPart = new MockMultipartFile("file", TEST_FILE, "text/csv", fileData);
+        ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/scraping/file")
+                .file(imgsPart)
+                        .param("manualCollect","true")
+                        .param("bootName","bootName")
+                        .param("orgId","99001")
 
-        // Create mock objects
-        Boolean manualCollect = true;
-        String bootName = "bootName";
-        Long orgId = 99001L;
-        MultipartFile file = Mockito.mock(MultipartFile.class);
+                .header(TOKEN_HEADER, "101112"));
 
-        // Mock method calls
-        Mockito.when(file.getBytes()).thenReturn(new byte[]{});
-        Mockito.when(organizationService.getOrganizationById(orgId)).thenReturn(this.buildOrg());
-        Mockito.when(csvExportService.generateProductsFile(Mockito.any(), Mockito.anyBoolean())).thenReturn(new ByteArrayOutputStream());
-        Mockito.when(scrapingLogRepository.save(Mockito.any())).thenReturn(new WebScrapingLog());
+        result.andExpect(status().is(200));
 
-        // Call the method under test
-        WebScrapingLog result = webScrapingService.scrapeDataFromFile(manualCollect, bootName, orgId, file);
-
-        // Assertions
         assertNotNull(result);
     }
 
     @Test
     public void test_scrapeDataFromFile_saveWebScrapingLog() throws IOException, BusinessException, SQLException, IllegalAccessException, InvocationTargetException {
-        // Mock dependencies
-        WebScrapingLogRepository scrapingLogRepository = Mockito.mock(WebScrapingLogRepository.class);
-        OrganizationService organizationService = Mockito.mock(OrganizationService.class);
-        OrganizationRepository organizationRepository = Mockito.mock(OrganizationRepository.class);
-        CsvExcelDataExportService csvExportService = Mockito.mock(CsvExcelDataExportService.class);
-        SecurityService security = Mockito.mock(SecurityService.class);
-        NotificationService notificationService = Mockito.mock(NotificationService.class);
-        FileService fileService = Mockito.mock(FileService.class);
-
-        // Create instance of WebScrapingServiceImplementation
-        WebScrapingServiceImplementation webScrapingService = new WebScrapingServiceImplementation(organizationRepository,scrapingLogRepository, organizationService, security, notificationService,fileService);
 
         // Create mock objects
         Boolean manualCollect = true;
@@ -205,11 +205,7 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
         Mockito.when(csvExportService.generateProductsFile(Mockito.any(), Mockito.anyBoolean())).thenReturn(new ByteArrayOutputStream());
         Mockito.when(scrapingLogRepository.save(Mockito.any())).thenReturn(new WebScrapingLog());
 
-        // Call the method under test
-        WebScrapingLog result = webScrapingService.scrapeDataFromFile(manualCollect, bootName, orgId, file);
-
-        // Assertions
-        assertNotNull(result);
+        assertThrows(RuntimeBusinessException.class, () -> webScrapingService.scrapeDataFromFile(manualCollect, bootName, orgId, file));
     }
 
     public OrganizationEntity buildOrg(){

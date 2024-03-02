@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.enumerations.DiscountStrategies;
 import com.nasnav.enumerations.VideoChatOrgState;
 import com.nasnav.enumerations.YeshteryState;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -100,5 +101,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Long bankAccountId;
     private String shortDescription;
     private String openingHours;
+    Map<DiscountStrategies,Boolean> strategies;
 }
 

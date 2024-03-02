@@ -12,6 +12,7 @@ import com.nasnav.dto.request.organization.OrganizationModificationDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
+import com.nasnav.enumerations.DiscountStrategies;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.enumerations.SettingsType;
@@ -52,6 +53,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.nasnav.cache.Caches.*;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
@@ -201,10 +203,17 @@ public class OrganizationServiceImpl implements OrganizationService {
         orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
         //Google analytical site id
         orgRepObj.setGoogleAnalyticsSiteId(entity.getGoogleAnalyticsSiteId());
-
+        orgRepObj.setStrategies(entity.getDiscountStrategies(entity.getDiscountStrategies(),DiscountStrategies.class));
         return orgRepObj;
     }
 
+
+    private  <E extends Enum<E>> Set<E> transformToEnumSet(Map<E, Boolean> mapList) {
+        return mapList.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
     private void setDomain(OrganizationRepresentationObject obj) {
         String domain = domainService.getOrganizationDomainAndSubDir(obj.getId());
         obj.setDomain(domain);
@@ -414,6 +423,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         }if (json.isUpdated("googleAnalyticsSiteId")) {
             organization.setGoogleAnalyticsSiteId(json.getGoogleAnalyticsSiteId());
         }
+        if (json.getStrategies() != null)
+           organization.setDiscountStrategies(transformToEnumSet(json.getStrategies()));
     }
 
     private void validateOrganizationNameForCreate(OrganizationCreationDTO json) throws BusinessException {

@@ -32,6 +32,7 @@ public class CitiesEntity implements BaseEntity{
     @JsonIgnore
     private CountriesEntity countriesEntity;
 
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         CitiesRepObj obj = new CitiesRepObj();

@@ -8,13 +8,10 @@ import com.nasnav.dao.WebScrapingLogRepository;
 import com.nasnav.dto.WebScrapingFailure;
 import com.nasnav.dto.WebScrapingRequest;
 import com.nasnav.dto.WebScrapingResponse;
-import com.nasnav.dto.WebScrapingRequest;
 import com.nasnav.dto.request.notification.PushMessageDTO;
-import com.nasnav.enumerations.NotificationType;
 import com.nasnav.enumerations.ScrapingTypes;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.WebScrapingLog;
@@ -27,7 +24,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
@@ -53,6 +49,7 @@ import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.NotificationType.SCRAPPING_RESPONSE;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -88,7 +85,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
     public void scrapeDataFromUrl(WebScrapingRequest request) throws JsonProcessingException {
         String requestUrl = serverUrl + "/uploaderWebData";
         WebScrapingLog scrapingLog = callAIService(request, requestUrl);
-        scrapingLogRepository.save(completeWebScrapingLog(scrapingLog,ScrapingTypes.URL_BASED.getValue(), getOrganization(request.getOrganizationId()) , request.getUrl()));
+        scrapingLogRepository.save(completeWebScrapingLog(scrapingLog,ScrapingTypes.URL_BASED, getOrganization(request.getOrganizationId()) , request.getUrl()));
         notifyOrganization(request.getOrganizationId(), scrapingLog.getLogMessage());
     }
 
@@ -98,14 +95,13 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
         byte[] scrapFile = getScrapFileBytes(manualCollect, file);
         OrganizationEntity organization = getOrganization(orgId);
         String fileName = getFileName(manualCollect, file);
-        WebScrapingLog scrapingLog = callAIForFile(scrapFile, prepareUrl(serverUrl , bootName ,organization ));
-        return  scrapingLogRepository.save(completeWebScrapingLog(scrapingLog, ScrapingTypes.FILE_BASED.getValue(), organization, fileName));
+        return callAIForFile(scrapFile, prepareUrl(serverUrl , bootName ,organization ), organization , fileName);
     }
 
     @Override
     public PageImpl<WebScrapingLog> getScrapingLogs(int start, int count, Long orgId, ScrapingTypes type) {
         Pageable page = new CustomOffsetAndLimitPageRequest(start, count);
-        return scrapingLogRepository.findAllByOrganizationAndLogTypeOrderByCreatedAtDesc(getOrganization(orgId), type.getValue(), page);
+        return scrapingLogRepository.findAllByOrganizationAndLogTypeOrderByCreatedAtDesc(getOrganization(orgId), type, page);
     }
 
     @Override
@@ -173,7 +169,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
 		}
 	}
 
-    private WebScrapingLog callAIForFile(byte[] file, String apiUrl) throws IOException {
+    private WebScrapingLog callAIForFile(byte[] file, String apiUrl ,OrganizationEntity organization ,String fileName) throws IOException {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -193,19 +189,36 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity =
                 new HttpEntity<>(body, headers);
-
         RestTemplate restTemplate = new RestTemplate();
-
         try {
             ResponseEntity<String> responseEntity = restTemplate
                     .postForEntity(apiUrl, requestEntity, String.class);
-            String response = responseEntity.getBody();
-            int statusCode = responseEntity.getStatusCodeValue();
-            return handleSuccess(response, statusCode) ;
+            return processResponse(responseEntity,organization,fileName);
         } catch (Exception e) {
-            log.error("Exception while calling AI service: " + e.getMessage());
-            return buildWebScrapping(e.getMessage() , "Exception while calling AI service", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            failureScraping(e.getMessage(),organization,fileName);
+            throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR , SCRAPPING$003 , e.getMessage());
         }
+    }
+
+
+    private WebScrapingLog processResponse(ResponseEntity<String> responseEntity, OrganizationEntity organization, String fileName) throws JsonProcessingException {
+        String response = responseEntity.getBody();
+        int statusCode = responseEntity.getStatusCodeValue();
+        if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+            saveLog(handleFailureCase(response, statusCode),organization,fileName);
+        }
+        return saveLog(handleSuccess(response, statusCode), organization, fileName);
+
+    }
+
+    private void failureScraping(String exception,OrganizationEntity organization , String fileName){
+        log.error("Exception while calling AI service: " + exception);
+        WebScrapingLog failedLog = buildWebScrapping(exception, "Exception while calling AI service", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        saveLog(failedLog, organization, fileName);
+    }
+
+    private  WebScrapingLog saveLog( WebScrapingLog scrapingLog , OrganizationEntity organization , String fileName ){
+       return scrapingLogRepository.save(completeWebScrapingLog(scrapingLog, ScrapingTypes.FILE_BASED, organization, fileName));
     }
 
     private OrganizationEntity getOrganization(Long orgId) {
@@ -252,7 +265,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
         return buildWebScrapping(response.getMessage() , response.getStatuCode() ,statusCode);
 
     }
-    private WebScrapingLog completeWebScrapingLog(WebScrapingLog  scrapingLog, String type ,OrganizationEntity organization , String url ) {
+    private WebScrapingLog completeWebScrapingLog(WebScrapingLog  scrapingLog, ScrapingTypes type ,OrganizationEntity organization , String url ) {
         scrapingLog.setRequestUrl(url);
         scrapingLog.setOrganization(organization);
         scrapingLog.setLogType(type);

@@ -11,7 +11,6 @@ import java.util.Map;
 import javax.validation.Valid;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.ProductRateDTO;
@@ -280,23 +279,22 @@ public class ProductsController {
             @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
             @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
             @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
-    ) throws BusinessException, JsonMappingException, JsonProcessingException {
-
+    ) throws BusinessException, JsonProcessingException {
         return productService.updateProductVersion2(productJson, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
 
 
 
 
-    @PostMapping(value = "v2/variant", produces = APPLICATION_JSON_VALUE, consumes = MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "v2/variant")
     public VariantUpdateResponse updateProductVariantV2(
             @RequestHeader(name = "User-Token", required = false) String token,
-            @RequestPart("var") @Valid VariantUpdateDTO variant,
+            @RequestPart("var") @Valid String variant,
             @RequestPart(value = "imgs", required = false) @Valid MultipartFile[] imgs,
             @RequestPart(value = "uploaded_image_priorities", required = false) Integer[] uploadedImagePriorities,
             @RequestPart(value = "updated_images", required = false) List<Map<String, Long>> updatedImages,
             @RequestPart(value = "deleted_images", required = false) Long[] deletedImages
-    ) throws BusinessException {
+    ) throws BusinessException, JsonProcessingException {
         return productService.updateVariantV2(variant, imgs, uploadedImagePriorities, updatedImages, deletedImages);
     }
 

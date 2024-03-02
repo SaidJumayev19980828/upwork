@@ -531,6 +531,8 @@ public enum ErrorCodes {
 	,$002$PROMO$("This promo can't be used. Usage limit reached.")
 	,SCRAPPING$001("You should upload Scrapping file if you want the process to be manual")
 	,SCRAPPING$002("No Web Scraping record found for that Organization  with id [%s]")
+	,SCRAPPING$003("An error occurred while processing your file because [%s]. Please check the file format and try again")
+
 	,$001$REFERRAL$("No Referral Wallet Found for that User %d.")
 	;
 

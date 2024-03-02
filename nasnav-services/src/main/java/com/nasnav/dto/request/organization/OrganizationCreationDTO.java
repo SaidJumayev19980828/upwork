@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.BaseJsonDTO;
+import com.nasnav.enumerations.DiscountStrategies;
 import com.nasnav.enumerations.YeshteryState;
 import lombok.Data;
 
 import javax.persistence.Column;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -27,6 +30,8 @@ public class OrganizationCreationDTO extends BaseJsonDTO {
     private String pixelSiteId;
     @JsonProperty("google_analytics_site_id")
     private String googleAnalyticsSiteId;
+
+    Map<DiscountStrategies,Boolean> strategies;
 
     @Override
     protected void initRequiredProperties() {

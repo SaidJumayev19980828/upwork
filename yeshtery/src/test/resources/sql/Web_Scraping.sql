@@ -57,5 +57,5 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.web_scraping_log(
     id, log_message, http_status_code, status_message, request_url, log_type, created_at, org_id)
 VALUES
-    (1, 'Sample Log Message 1', 200, 'OK', 'http://example.com/1', 'INFO', '2024-02-05T12:34:56', 99001),
-    (2, 'Sample Log Message 2', 404, 'Not Found', 'http://example.com/2', 'ERROR', '2024-02-05T12:45:00', 99001);
+    (1, 'Sample Log Message 1', 200, 'OK', 'http://example.com/1', 'file-based', '2024-02-05T12:34:56', 99001),
+    (2, 'Sample Log Message 2', 404, 'Not Found', 'http://example.com/2', 'file-based', '2024-02-05T12:45:00', 99001);
