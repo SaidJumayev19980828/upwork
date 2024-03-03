@@ -197,6 +197,7 @@ public class OrganizationEntity implements BaseEntity {
         obj.setPixelSiteId(getPixelId());
         obj.setPriority(getPriority());
         obj.setGoogleAnalyticsSiteId(getGoogleAnalyticsSiteId());
+        obj.setStrategies(getDiscountStrategies(discountStrategies, DiscountStrategies.class));
         if (yeshteryState != null) {
             obj.setYeshteryState(yeshteryState == 1);
         }
@@ -215,6 +216,7 @@ public class OrganizationEntity implements BaseEntity {
         }
         if(this.bankAccount != null)
             obj.setBankAccountId(this.bankAccount.getId());
+
         return obj;
     }
 

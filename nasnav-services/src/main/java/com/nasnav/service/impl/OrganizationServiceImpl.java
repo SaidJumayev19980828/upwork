@@ -144,7 +144,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationRepository.findAllOrganizations()
                             .stream()
                             .map(org -> (OrganizationRepresentationObject) org.getRepresentation())
-                            .collect(toList());
+                            .toList();
     }
 
 

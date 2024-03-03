@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -12,6 +14,7 @@ import com.nasnav.enumerations.YeshteryState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 import javax.persistence.Column;
 import java.util.List;
@@ -101,6 +104,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private Long bankAccountId;
     private String shortDescription;
     private String openingHours;
-    Map<DiscountStrategies,Boolean> strategies;
+    private Map<DiscountStrategies,Boolean> strategies;
+
 }
 
