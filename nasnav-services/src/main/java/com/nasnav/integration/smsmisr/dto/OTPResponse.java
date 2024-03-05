@@ -1,4 +1,8 @@
 package com.nasnav.integration.smsmisr.dto;
 
-public record OTPResponse(String code, String SMSID, String cost){
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record OTPResponse(@JsonProperty("Code") String code,
+                          @JsonProperty("SMSID") String smsId,
+                          @JsonProperty("Cost") String cost){
 }

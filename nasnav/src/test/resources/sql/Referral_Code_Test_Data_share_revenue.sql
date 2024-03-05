@@ -44,7 +44,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502, 201);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
-VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501, 201);
+VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  502, 201);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
 VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503, 201);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id, user_status)
@@ -114,19 +114,9 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 --inserting meta orders
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , now(),88, 99001, 2);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310034 , now(),88, 99001, 2);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310035 , now(),89, 99001, 2);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310036 , now(),89, 99001, 2);
 
 --inserting orders
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, sub_total, applied_referral_code)
-    values(330033, 88, now(), now(), 99001, 2, 502, 310033,200.00,'abcdfg');
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, sub_total, applied_referral_code)
-values(330034, 88, now(), now(), 99001, 2, 502, 310034,200.00,'abcdfg');
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, sub_total, applied_referral_code)
-values(330035, 89, now(), now(), 99001, 2, 502, 310035,200.00,'asdfgh');
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, sub_total, applied_referral_code)
-values(330036, 89, now(), now(), 99001, 2, 502, 310036,200.00,'asdfgh');
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, sub_total, discounts, applied_referral_code) values(330033, 89, now(), now(), 99001, 2, 502, 310033,200.00, 20.00,'asdfgh');
 
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 2, 200.0, 1);
@@ -134,9 +124,9 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.referral_settings(id, org_id, constraints, created_at) VALUES (200,99001 , '{"REFERRAL_ACCEPT_REVENUE":20.0,"ORDER_DISCOUNT_PERCENTAGE":0.03,"SHARE_REVENUE_PERCENTAGE":0.04}', now());
 
 -- inserting a wallet for user for referral Codes
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 200.00, 1, 88);
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (501, 20.00, 1, 89);
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (502, 20.00, 1, 90);
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (501, 20, 1, 89);
+
 
 
 -- insert referral code that is valid
@@ -144,27 +134,3 @@ INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_i
 VALUES (500, 'abcdfg', 99001, 88, 200, 2, now(), 'qwerty');
 INSERT INTO public.referral_codes(id, referral_code, parent_referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
 VALUES (501, 'asdfgh', 'abcdfg', 99001, 89, 200, 2, now(), 'rtyuiu');
-INSERT INTO public.referral_codes(id, referral_code, parent_referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
-VALUES (502, 'zxcvbn', 'abcdfg', 99001, 90, 200, 2, now() + INTERVAL '2 days', 'rtyuiu');
-
-
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, referral_wallet_id, user_id, referral_id)
-    VALUES(50, 20.00, now(), 'ACCEPT_REFERRAL_CODE', 500, 88, 500);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, referral_wallet_id, user_id, referral_id)
-    VALUES(51, 20.00, now(), 'ACCEPT_REFERRAL_CODE', 501, 89, 501);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, referral_wallet_id, user_id, referral_id)
-VALUES(58, 20.00, now() +  INTERVAL '2 days', 'ACCEPT_REFERRAL_CODE', 502, 90, 502);
-
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-    VALUES(52, 48.00, now(), 'ORDER_DISCOUNT', 88, 330033, 500);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-VALUES(53, 48.00, now(), 'ORDER_DISCOUNT', 88, 330034, 500);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-VALUES(54, 100.00, now(), 'ORDER_DISCOUNT', 89, 330035, 501);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-VALUES(55, 100.00, now(), 'ORDER_DISCOUNT', 89, 330036, 501);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-VALUES(56, 100.00, now(), 'ORDER_SHARE_REVENUE', 88, 330035, 501);
-INSERT INTO public.referral_transactions(id, amount, created_at, referral_transaction_type, user_id, order_id, referral_id)
-VALUES(57, 80.00,  now() +  INTERVAL '2 days', 'ORDER_SHARE_REVENUE', 88, 330036, 502);
-

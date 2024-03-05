@@ -4,7 +4,6 @@ import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
 import com.nasnav.integration.smsmisr.dto.OTPResponse;
 import lombok.RequiredArgsConstructor;
-import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,9 +34,8 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
     @Value("${smsmisr.sender}")
     private String sender;
 
-    @Value("${smsmisr.language}")
-    private String language;
-
+    @Value("${smsmisr.template}")
+    private String template;
 
     private final RestTemplate restTemplate;
 
@@ -49,7 +47,7 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
         HttpEntity<OTPResponse> requestBody = new HttpEntity<>(headers);
         OTPResponse response = restTemplate.postForObject(buildUrlParameters(otpDto), requestBody, OTPResponse.class);
 
-        if(response.code().equals("1901")) {
+        if("4901".equals(response.code())) {
             return "Success";
         }
         return "Fail";
@@ -62,9 +60,8 @@ public class SmsMisrMobileOTPService implements MobileOTPService {
                 .queryParam("password" , password)
                 .queryParam("sender" , sender)
                 .queryParam("mobile" , otpDto.mobile())
-               // .queryParam("template", template)
-                .queryParam("language", language)
-                .queryParam("message" , otpDto.message());
+                .queryParam("template", template)
+                .queryParam("otp" , otpDto.otp());
 
         return builder.build().encode().toUri();
     }

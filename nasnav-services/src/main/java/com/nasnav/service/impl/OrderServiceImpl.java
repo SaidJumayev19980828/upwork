@@ -235,6 +235,10 @@ public class OrderServiceImpl implements OrderService {
 
 	private void updateOrderStatusAndMetaOrderIfNeeded(OrdersEntity order, OrderStatus orderStatus) {
 		updateOrderStatus(order, orderStatus);
+        if(orderStatus.equals(DELIVERED) && StringUtils.isNotBlankOrNull(order.getAppliedReferralCode())){
+
+            referralCodeService.shareRevenueForOrder(order);
+        }
 		MetaOrderEntity metaOrder = order.getMetaOrder();
 		if(isAllOtherOrdersHaveStatus(order.getId(), metaOrder, orderStatus)) {
 			metaOrder.setStatus(orderStatus.getValue());
@@ -643,7 +647,6 @@ public class OrderServiceImpl implements OrderService {
 		clearOrderItemsFromCart(order);
 		if(order.getAppliedReferralCode() != null && !order.getAppliedReferralCode().isEmpty()) {
 			referralCodeService.saveReferralTransactionForOrderDiscount(order);
-			referralCodeService.shareRevenueForOrder(order);
 		}
 		updateOrderStatus(order, FINALIZED);
 		userService.updateUserByTierIdAndOrgId( order.getUserId(), order.getOrganizationEntity().getId());

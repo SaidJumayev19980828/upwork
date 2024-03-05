@@ -6,6 +6,7 @@ import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.dto.referral_code.ReferralTransactionsDto;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
@@ -39,10 +40,12 @@ import java.util.List;
 import java.util.Map;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -101,21 +104,30 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
-    @Transactional
-    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data.sql"})
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_share_revenue.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-    public void shareRevenueForOrder(){
-        OrdersEntity ordersEntity = ordersRepository.findById(330033L).get();
+    public void shareRevenueForOrderWhenOrderStatusUpdatedToDelivered(){
+        Long orderId = 330033L;
+        String userToken = "252627";
 
-        referralCodeService.shareRevenueForOrder(ordersEntity);
+        JSONObject request = new JSONObject();
+        request.put("status", OrderStatus.DELIVERED.name());
+        request.put("order_id", orderId);
+
+        ResponseEntity<String> updateResponse =
+                template.postForEntity("/order/status/update"
+                        , getHttpEntity(request.toString(), userToken)
+                        , String.class);
+
+        assertEquals(OK, updateResponse.getStatusCode());
 
         ReferralWallet referralWallet = referralWalletService.getWalletByUserId(88L);
-        assertEquals(new BigDecimal("28.00"), referralWallet.getBalance());
+        assertEquals(new BigDecimal("27.20"), referralWallet.getBalance());
 
         List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByReferralWallet_Id(500L);
         assertEquals(1, referralTransactions.size());
         assertEquals(ReferralTransactionsType.ORDER_SHARE_REVENUE, referralTransactions.get(0).getType());
-        assertEquals(new BigDecimal("8.00"), referralTransactions.get(0).getAmount());
+        assertEquals(new BigDecimal("7.20"), referralTransactions.get(0).getAmount());
     }
 
     @Test
@@ -152,7 +164,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertNotNull(referralCodeEntity.getAcceptReferralToken());
         assertNotNull(referralCodeEntity.getParentReferralCode());
         assertNotNull(referralCodeEntity.getReferralCode());
-        assertEquals(1, ReferralCodeStatus.IN_ACTIVE.getValue());
+        assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
 
     }
 
@@ -202,7 +214,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(200, res.getStatusCodeValue());
 
         ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
-        assertEquals(ReferralCodeStatus.ACTIVE.getValue(), referralCodeEntity.getStatus());
+        assertEquals(Integer.valueOf(ReferralCodeStatus.ACTIVE.getValue()), referralCodeEntity.getStatus());
 
         ReferralWallet referralWallet = referralWalletRepo.findByUserId(89L).get();
         assertNotNull(referralWallet);
@@ -304,7 +316,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCode("abcdfg").get();
         assertNotNull(referralCodeEntity);
-        assertEquals(ReferralCodeStatus.ACTIVE.getValue(), referralCodeEntity.getStatus());
+        assertEquals(Integer.valueOf(ReferralCodeStatus.ACTIVE.getValue()), referralCodeEntity.getStatus());
 
     }
 
@@ -321,7 +333,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByReferralCode("asdfgh").get();
         assertNotNull(referralCodeEntity);
-        assertEquals(ReferralCodeStatus.IN_ACTIVE.getValue(), referralCodeEntity.getStatus());
+        assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
     }
 
     @Test
@@ -334,7 +346,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
                 ReferralStatsDto.class);
 
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(2, res.getBody().getNumberOfActiveChildReferrals());
+        assertTrue(2L == res.getBody().getNumberOfActiveChildReferrals());
         assertEquals(new BigDecimal("180.00"), res.getBody().getShareRevenueEarningsFromChildReferrals());
         assertEquals(new BigDecimal("96.00"), res.getBody().getOrderDiscountsAwarded());
         assertEquals(new BigDecimal("200.00"), res.getBody().getWalletBalance());
@@ -354,9 +366,29 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         );
 
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(2, res.getBody().getTotalRecords());
+        assertEquals(Long.valueOf(2L), res.getBody().getTotalRecords());
         assertEquals(2, res.getBody().getContent().size());
-        assertEquals(1,res.getBody().getTotalPages());
+        assertEquals(Integer.valueOf(1), res.getBody().getTotalPages());
+
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Stats.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getChildsSharedRevenue(){
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<PaginatedResponse<ReferralTransactionsDto>> res = template.exchange(
+                "/referral/childs?type=ORDER_SHARE_REVENUE&pageSize=10&pageNo=0",
+                HttpMethod.GET,
+                request,
+                new ParameterizedTypeReference<PaginatedResponse<ReferralTransactionsDto>>(){}
+        );
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(Long.valueOf(2L) , res.getBody().getTotalRecords());
+        assertEquals(2 , res.getBody().getContent().size());
+        assertEquals(Integer.valueOf(1) , res.getBody().getTotalPages());
 
     }
 
@@ -376,10 +408,31 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         );
 
         assertEquals(200, res.getStatusCodeValue());
-        assertEquals(1, res.getBody().getTotalRecords());
+        assertEquals(Long.valueOf(1L), res.getBody().getTotalRecords());
         assertEquals(1, res.getBody().getContent().size());
-        assertEquals(1,res.getBody().getTotalPages());
+        assertEquals(Integer.valueOf(1), res.getBody().getTotalPages());
 
     }
 
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Stats.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getChildsSharedRevenueWithDate(){
+        HttpEntity<?> request = getHttpEntity("123");
+        String dateFrom = LocalDate.now().plusDays(2).toString();
+        String dateTo = LocalDate.now().plusDays(2).toString();
+
+        ResponseEntity<PaginatedResponse<ReferralTransactionsDto>> res = template.exchange(
+                "/referral/childs?type=ORDER_SHARE_REVENUE&pageSize=10&pageNo=0&dateFrom=" + dateFrom + "&dateTo=" + dateTo,
+                HttpMethod.GET,
+                request,
+                new ParameterizedTypeReference<PaginatedResponse<ReferralTransactionsDto>>(){}
+        );
+
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(Long.valueOf(1L), res.getBody().getTotalRecords());
+        assertEquals(1, res.getBody().getContent().size());
+        assertEquals(Integer.valueOf(1), res.getBody().getTotalPages());
+
+    }
 }

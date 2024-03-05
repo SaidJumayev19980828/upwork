@@ -115,7 +115,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                 .content(result.getContent()
                         .stream().map(ref -> ReferralTransactionsDto.builder()
                                         .no(ref.getId())
-                                .activities(ref.getUser().getName() + " User Registered with your referral")
+                                .activities(getActivityMessageByType(ref, referralTransactionsType))
                                 .createdAt(ref.getCreatedAt())
                                 .amount(ref.getAmount())
                                 .build())
@@ -125,6 +125,17 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
 
     }
 
+    public String getActivityMessageByType(ReferralTransactions referralTransactions, ReferralTransactionsType type) {
+        if(type.equals(ReferralTransactionsType.ACCEPT_REFERRAL_CODE)) {
+            return referralTransactions.getUser().getName() + " User Registered with your referral";
+        }
+        if(type.equals(ReferralTransactionsType.ORDER_SHARE_REVENUE)) {
+            String username = referralCodeRepo.findByReferralCode(referralTransactions.getReferralCodeEntity().getReferralCode()).get()
+                    .getUser().getName();
+            return "You award share revenue from " + username + " order" ;
+        }
+        return "";
+    }
 
     public void send(String phoneNumber, String parentReferralCode) {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
@@ -139,18 +150,18 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
             existParentReferralCodeEntity= referralCodeRepo.findByReferralCodeAndOrganization_id(parentReferralCode, currentOrganizationId)
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, parentReferralCode));
         }
-       String referralToken = generateReferralCodeToken();
+       String referralOtp = generateReferralCodeToken();
        ReferralCodeEntity referralCodeEntity = new ReferralCodeEntity();
        referralCodeEntity.setUser(user);
        referralCodeEntity.setOrganization(organizationService.getOrganizationById(currentOrganizationId));
        referralCodeEntity.setReferralCode(generateReferralCode());
-       referralCodeEntity.setAcceptReferralToken(referralToken);
+       referralCodeEntity.setAcceptReferralToken(referralOtp);
        referralCodeEntity.setSettings(referralSettingsRepo.findByOrganization_Id(currentOrganizationId).get());
        referralCodeEntity.setStatus(ReferralCodeStatus.IN_ACTIVE.getValue());
        if(existParentReferralCodeEntity != null){
            referralCodeEntity.setParentReferralCode(existParentReferralCodeEntity.getReferralCode());
        }
-        String  responseStatus = mobileOTPService.send(new OTPDto(phoneNumber, referralToken, "Your Referral OTP: " + referralToken));
+        String  responseStatus = mobileOTPService.send(new OTPDto(phoneNumber, referralOtp));
         if(!responseStatus.equals("Success")) {
            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0006);
         }
@@ -250,8 +261,8 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
           parentReferralCode  = referralCodeRepo.findByReferralCodeAndStatus(existingReferralCode.getParentReferralCode(), ReferralCodeStatus.ACTIVE.getValue())
                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0003, ordersEntity.getAppliedReferralCode()));
             BigDecimal shareRevenuePercentage = readConfigJsonStr(existingReferralCode.getSettings().getConstraints()).get(ReferralCodeType.SHARE_REVENUE_PERCENTAGE);
-            shareRevenueAmount = ordersEntity.getSubTotal().multiply(shareRevenuePercentage).setScale(2, RoundingMode.FLOOR);
-            referralWalletService.deposit(ordersEntity.getId(), shareRevenueAmount, parentReferralCode, ReferralTransactionsType.ORDER_SHARE_REVENUE);
+            shareRevenueAmount = (ordersEntity.getSubTotal().subtract(ordersEntity.getDiscounts())).multiply(shareRevenuePercentage).setScale(2, RoundingMode.DOWN);
+            referralWalletService.deposit(ordersEntity.getId(), shareRevenueAmount, parentReferralCode, existingReferralCode, ReferralTransactionsType.ORDER_SHARE_REVENUE);
         }
         return shareRevenueAmount;
     }

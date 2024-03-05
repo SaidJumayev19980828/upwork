@@ -17,7 +17,7 @@ public interface ReferralWalletService {
 
     PageImpl<ReferralWallet> getAll(int start, int count);
 
-    ReferralWallet deposit(Long orderId, BigDecimal amount, ReferralCodeEntity referralCode,ReferralTransactionsType type);
+    ReferralWallet deposit(Long orderId, BigDecimal amount, ReferralCodeEntity parentReferralCode, ReferralCodeEntity referralCode,ReferralTransactionsType type);
 
     ReferralWallet withdraw(UserEntity user, Long orderId, BigDecimal amount, ReferralTransactionsType type);
 
