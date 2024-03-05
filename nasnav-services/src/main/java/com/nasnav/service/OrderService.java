@@ -44,6 +44,8 @@ public interface OrderService {
 
 	DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel);
 
+	OrdersListResponse getOrdersInfoByUserEmailWithinWeek(String userEmail, Integer detailsLevel);
+
 	void finalizeOrder(Long orderId);
 
 	void finalizeYeshteryMetaOrder(MetaOrderEntity metaOrder, Set<OrdersEntity> subOrders);

@@ -1109,6 +1109,26 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	public void getAnyOrderNasnavAdminByUserEmailTest() {
+		ResponseEntity<OrdersListResponse> response = template.exchange("/order/infos/user1@nasnav.com", GET,
+				getHttpEntity("101112"),
+				OrdersListResponse.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertTrue(response.getBody()!=null);
+		assertEquals(4 ,response.getBody().getOrders().size());
+	}
+
+	@Test
+	public void getAnyOrderNasnavAdminByUserEmailTest2() {
+		ResponseEntity<OrdersListResponse> response = template.exchange("/order/infos/user1@nasnav.com", GET,
+				getHttpEntity("252627"),
+				OrdersListResponse.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertTrue(response.getBody()!=null);
+		assertEquals(4 ,response.getBody().getOrders().size());
+	}
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Order_Associated_Promotions.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void getOrderAssociatedPromoCodeIfExist() {

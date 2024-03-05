@@ -44,6 +44,12 @@ public class OrdersController {
     	return orderService.getOrderInfo(orderId, detailsLevel);
     }
 
+	@GetMapping(value = "/infos/{user_email}", produces = APPLICATION_JSON_VALUE)
+	public OrdersListResponse getOrderInfo(    @PathVariable(name = "user_email") String userEmail,
+											   @RequestParam(name = "details_level", required = false) Integer detailsLevel) {
+		return orderService.getOrdersInfoByUserEmailWithinWeek(userEmail, detailsLevel);
+	}
+
 	@GetMapping(value = "/meta_order/info", produces = APPLICATION_JSON_VALUE)
 	public Order getMetaOrderInfo(@RequestHeader(TOKEN_HEADER) String userToken, @RequestParam(name = "id") Long orderId)  {
 		return orderService.getMetaOrder(orderId, false);

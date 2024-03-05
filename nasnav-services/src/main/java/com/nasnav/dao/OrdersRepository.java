@@ -123,7 +123,26 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " and user.id = :userId" )
     Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("userId")Long userId, @Param("orgId")Long orgId);
 
-	
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user"
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH ord.shipment shipment"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
+			+ " WHERE ord.organizationEntity.id = :orgId "
+			+ " and user.email = :userEmail " +
+			" AND ord.creationDate >= CURRENT_DATE - 7 AND ord.creationDate <= CURRENT_DATE " )
+	List<OrdersEntity> findByUserEmailAndOrganizationEntity_IdWithinWeek(@Param("userEmail")String userEmail, @Param("orgId")Long orgId);
+
 	@Query("SELECT ord "
 			+ " FROM OrdersEntity ord "
 			+ " LEFT JOIN FETCH ord.metaOrder meta "
@@ -143,6 +162,25 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " on payment.metaOrderId = meta.id "
 			+ " WHERE ord.id = :orderId " )
 	Optional<OrdersEntity> findFullDataById(@Param("orderId")Long orderId);
+
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.subMetaOrder subMeta "
+			+ " LEFT JOIN FETCH meta.user user "
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH ord.shipment shipment "
+			+ " LEFT JOIN FETCH ord.basketsEntity basket "
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " LEFT JOIN FETCH stock.unit unit "
+			+ " LEFT JOIN PaymentEntity payment "
+			+ " on payment.metaOrderId = meta.id "
+			+ " WHERE user.email = :userEmail AND ord.creationDate >= CURRENT_DATE - 7 AND ord.creationDate <= CURRENT_DATE " )
+	List<OrdersEntity> findFullDataByUserEmailWithinWeek(@Param("userEmail") String userEmail);
 
 
 	@Query("select new com.nasnav.dto.OrderPhoneNumberPair(o.id , u.phoneNumber) from OrdersEntity o join UserEntity u  on o.userId = u.id where o.id in :orderIdList")

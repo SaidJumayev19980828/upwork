@@ -21,7 +21,6 @@ import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
 import com.nasnav.persistence.dto.query.result.StockAdditionalData;
-import com.nasnav.persistence.dto.query.result.CartCheckoutDTO;
 import com.nasnav.persistence.dto.query.result.optimizeCartDTO;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrdersListResponse;
@@ -748,6 +747,25 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, O$0001, orderId));
 	}
 
+	@Override
+	public OrdersListResponse getOrdersInfoByUserEmailWithinWeek(String userEmail, Integer detailsLevel) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		List<OrdersEntity> order = null;
+
+		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
+		 if ( isNasnavAdmin ) {
+			order = ordersRepository.findFullDataByUserEmailWithinWeek(userEmail);
+		} else {
+			order = ordersRepository.findByUserEmailAndOrganizationEntity_IdWithinWeek(userEmail, orgId);
+		}
+
+		return OrdersListResponse.builder()
+				.orders(order.stream()
+					.map(o -> getDetailedOrderInfo(o, finalDetailsLevel))
+					.toList())
+				.build();
+	}
 
 	private Integer getFinalDetailsLevel(Integer detailsLevel) {
 		return (detailsLevel == null || detailsLevel < 0 || detailsLevel > 3) ? ORDER_FULL_DETAILS_LEVEL : detailsLevel;
