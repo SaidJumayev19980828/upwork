@@ -2,24 +2,16 @@ package com.nasnav.service.impl;
 
 import com.nasnav.commons.utils.CustomOffsetAndLimitPageRequest;
 import com.nasnav.dao.*;
-import com.nasnav.dto.EventInterestsProjection;
-import com.nasnav.dto.EventProjection;
-import com.nasnav.dto.EventsNewDTO;
-import com.nasnav.dto.InfluencerDTO;
-import com.nasnav.dto.OrganizationNewDTO;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFetchDTO;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
-import com.nasnav.dto.OrganizationProjection;
 import com.nasnav.enumerations.EventStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.mappers.EventRoomMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.*;
-
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -122,6 +114,22 @@ public class EventServiceImpl implements EventService{
         PageRequest page = getQueryPage(start, count);
         PageImpl<EventEntity> source = eventRepository.getAllEventFilterByDatePageable(dateFilter, page);
         List<EventResponseDto> dtos = source.getContent().stream().map(this::toDto).collect(Collectors.toList());
+        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
+    public PageImpl<EventEntity> getAllEventsHistoryForUser(Integer start, Integer count, Boolean previousEvents)
+    {
+        PageRequest page = getQueryPage(start, count);
+        PageImpl<EventLogsEntity> source;
+        List<EventEntity> dtos;
+        if (previousEvents != null && previousEvents == true) {
+            source = eventLogsRepository.getPreviousEventsForUserPageable(securityService.getCurrentUser().getId(), page);
+        }
+        else {
+            source = eventLogsRepository.getInterestedEventsForUserPageable(securityService.getCurrentUser().getId(), page);
+        }
+        dtos = source.getContent().stream().map(EventLogsEntity::getEvent).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
     }
 

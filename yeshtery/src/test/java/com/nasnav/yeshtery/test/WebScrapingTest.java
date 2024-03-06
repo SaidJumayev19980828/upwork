@@ -1,6 +1,8 @@
 package com.nasnav.yeshtery.test;
 
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.WebScrapingLogRepository;
 import com.nasnav.dto.response.RestResponsePage;
 import com.nasnav.exceptions.BusinessException;
@@ -179,9 +181,9 @@ public class WebScrapingTest  extends AbstractTestWithTempBaseDir {
         MockMultipartFile imgsPart = new MockMultipartFile("file", TEST_FILE, "text/csv", fileData);
         ResultActions result = mockMvc.perform(MockMvcRequestBuilders.multipart("/v1/scraping/file")
                 .file(imgsPart)
-                        .param("manualCollect","true")
-                        .param("bootName","bootName")
-                        .param("orgId","99001")
+                .param("manualCollect","true")
+                .param("bootName","bootName")
+                .param("orgId","99001")
 
                 .header(TOKEN_HEADER, "101112"));
 

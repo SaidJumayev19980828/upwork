@@ -67,3 +67,9 @@ INSERT INTO public.event_requests(id,created_at,starts_at,ends_at,event_id,influ
 INSERT INTO public.event_logs(
 	id, created_at, interested_at, attend_at, event_id, employee_id)
 	VALUES (99,CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day',CURRENT_DATE + INTERVAL '7 day', 101 , 71);
+INSERT INTO public.event_logs(id, created_at, interested_at, attend_at, event_id, user_id)
+VALUES (101, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day', CURRENT_DATE + INTERVAL '7 day', 101, 88);
+INSERT INTO public.event_logs(id, created_at, interested_at, attend_at, event_id, user_id)
+VALUES (103, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day', null, 101, 88);
+INSERT INTO public.event_logs(id, created_at, interested_at, attend_at, event_id, user_id)
+VALUES (102, CURRENT_DATE, CURRENT_DATE + INTERVAL '2 day',CURRENT_DATE + INTERVAL '7 day', 101 , 89);

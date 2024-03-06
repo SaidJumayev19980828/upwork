@@ -106,7 +106,7 @@ public class WebScrapingServiceImplementation implements WebScrapingService {
 
     @Override
     public void deleteScrapingLog(Long id) {
-        WebScrapingLog  scrapingLog = scrapingLogRepository.findById(id).orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,SCRAPPING$002,id));
+        WebScrapingLog  scrapingLog = scrapingLogRepository.findById(id).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,SCRAPPING$002,id));
         scrapingLogRepository.delete(scrapingLog);
     }
 

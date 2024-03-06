@@ -5,18 +5,11 @@ import com.nasnav.dao.EventRepository;
 import com.nasnav.dao.EventRequestsRepository;
 import com.nasnav.dao.InfluencerRepository;
 import com.nasnav.dto.EventsNewDTO;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.RestResponsePage;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EventAttachmentsEntity;
-import com.nasnav.persistence.EventEntity;
-import com.nasnav.persistence.EventLogsEntity;
-import com.nasnav.persistence.EventRequestsEntity;
-import com.nasnav.persistence.InfluencerEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.service.impl.EventServiceImpl;
+import com.nasnav.persistence.*;
 import com.nasnav.yeshtery.test.templates.AbstractTestWithTempBaseDir;
-
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -26,23 +19,15 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
-import static com.nasnav.yeshtery.test.commons.TestCommons.*;
+import static com.nasnav.yeshtery.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.yeshtery.test.commons.TestCommons.json;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -220,6 +205,26 @@ public class EventTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<String> response = template.postForEntity("/v1/event/interset/101",
                 getHttpEntity("", "192021"), String.class);
         assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+
+    @Test
+    public void interestedForUser()
+    {
+        ResponseEntity<PaginatedResponse<EventEntity>> response = template.exchange("/v1/event/listHistoryForUser", HttpMethod.GET,
+                getHttpEntity("123"), new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void previousInterestedForUser()
+    {
+        ResponseEntity<PaginatedResponse<EventEntity>> response = template.exchange("/v1/event/listHistoryForUser?previous_events=true",
+                HttpMethod.GET, getHttpEntity("", "123"), new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test

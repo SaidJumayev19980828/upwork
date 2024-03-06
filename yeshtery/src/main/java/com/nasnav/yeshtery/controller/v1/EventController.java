@@ -1,12 +1,12 @@
 package com.nasnav.yeshtery.controller.v1;
 
 import com.nasnav.commons.YeshteryConstants;
-import com.nasnav.dto.EventProjection;
 import com.nasnav.dto.EventsNewDTO;
 import com.nasnav.dto.request.EventForRequestDTO;
 import com.nasnav.dto.response.EventInterestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventStatus;
+import com.nasnav.persistence.EventEntity;
 import com.nasnav.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
@@ -14,14 +14,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
-import javax.ws.rs.PathParam;
-
-import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+
+import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
 
 @RestController
 @RequestMapping(EventController.API_PATH)
@@ -50,6 +48,15 @@ public class EventController {
                                                        @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
                                                        @RequestParam(required = false) @DateTimeFormat(pattern="yyyy-MM-dd") Date date){
         return eventService.getAllEventsForUser(start, count, date);
+    }
+
+    @GetMapping("/listHistoryForUser")
+    public PageImpl<EventEntity> getEventsHistoryForUser(@RequestHeader(name = "User-Token") String token,
+            @RequestParam(required = false, defaultValue = "0") Integer start,
+            @RequestParam(required = false, defaultValue = DEFAULT_PAGING_COUNT) Integer count,
+            @RequestParam(name = "previous_events", required = false) Boolean previousEvents)
+    {
+        return eventService.getAllEventsHistoryForUser(start, count, previousEvents);
     }
 
     @GetMapping("/list")

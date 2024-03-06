@@ -2,12 +2,10 @@ package com.nasnav.dao;
 
 import com.nasnav.dto.InterestEventInfo;
 import com.nasnav.persistence.EventLogsEntity;
-import com.nasnav.persistence.InfluencerEntity;
-import com.nasnav.persistence.SchedulerTaskEntity;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -22,6 +20,12 @@ public interface EventLogsRepository extends CrudRepository<EventLogsEntity, Lon
     void deleteAllByEvent_Id(Long eventId);
     @Query("select event from EventLogsEntity event where event.event.id =:eventId")
     PageImpl<EventLogsEntity> getAllByEventIdPageable(Long eventId,Pageable page);
+
+    @Query("select event from EventLogsEntity event where event.user.id =:userId and event.interestedAt is Not null and event.event.endsAt > CURRENT_DATE ")
+    PageImpl<EventLogsEntity> getInterestedEventsForUserPageable(Long userId, Pageable page);
+
+    @Query("select event from EventLogsEntity event where event.user.id =:userId and event.attendAt is Not NULL and event.event.endsAt < CURRENT_DATE ")
+    PageImpl<EventLogsEntity> getPreviousEventsForUserPageable(Long userId, Pageable page);
 
     @Query("select COUNT(*) from EventLogsEntity eventLog  JOIN eventLog.event.influencers influencer where influencer.id = :influencerId ")
     int countByEvent_InfluencersContains(Long influencerId);

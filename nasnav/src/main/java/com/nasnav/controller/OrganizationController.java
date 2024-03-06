@@ -1,58 +1,16 @@
 package com.nasnav.controller;
 
-import static com.nasnav.constatnts.DefaultValueStrings.DEFAULT_PAGING_COUNT;
-import static com.nasnav.exceptions.ErrorCodes.ORG$IMG$0003;
-import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.validation.Valid;
-
-import com.nasnav.dto.request.organization.*;
-import com.nasnav.dto.response.*;
-import com.nasnav.persistence.ImageType;
-import com.nasnav.response.*;
-import com.nasnav.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
-import com.nasnav.dto.request.organization.SubAreasUpdateDTO;
+import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ImageType;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
 import lombok.RequiredArgsConstructor;
@@ -259,7 +217,7 @@ public class OrganizationController {
 
     @PostMapping(value = "shipping/service", consumes = APPLICATION_JSON_VALUE)
     public void registerToShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                          @RequestBody ShippingServiceRegistration registration) {
+            @RequestBody ShippingServiceRegistration registration) {
         shippingMngService.registerToShippingService(registration);
     }
 
@@ -427,25 +385,25 @@ public class OrganizationController {
 
     @PostMapping(value = "/add/image/type", produces = APPLICATION_JSON_VALUE)
     public void addImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
-                             @Valid @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+            @Valid @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
         orgService.createImageType(imageTypeDto);
     }
 
     @DeleteMapping(value = "/delete/image/type")
     public void deleteImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                @RequestParam("type_id") Long typeId) throws BusinessException {
+            @RequestParam("type_id") Long typeId) throws BusinessException {
         orgService.deleteImageType(typeId);
     }
 
     @PostMapping(value = "/update/image/type")
     public void updateImageType(@RequestHeader(name = "User-Token", required = false) String userToken,
-                               @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
+            @RequestBody ImageTypeDto imageTypeDto) throws BusinessException {
         orgService.updateImageType(imageTypeDto);
     }
 
     @GetMapping(value = "/images/types")
     public List<ImageType> getImagesType(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                         @RequestParam("org_id") Long organizationId) throws BusinessException {
+            @RequestParam("org_id") Long organizationId) throws BusinessException {
         return orgService.getImagesTypes(organizationId);
     }
 

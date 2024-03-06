@@ -11,18 +11,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.sql.SQLException;
 
 public interface WebScrapingService {
 
     void scrapeDataFromUrl(WebScrapingRequest request) throws JsonProcessingException;
 
-	GenerateOrganizationPannerResponse callAIImageGenerator(Long orgId, String imageDescription,String oldPath) throws IOException, BusinessException;
+	GenerateOrganizationPannerResponse callAIImageGenerator(Long orgId, String imageDescription, String oldPath) throws IOException, BusinessException;
 
     WebScrapingLog scrapeDataFromFile(Boolean manualCollect, String bootName ,Long orgId, MultipartFile file) throws IOException, BusinessException, SQLException, IllegalAccessException, InvocationTargetException;
 
-    PageImpl<WebScrapingLog> getScrapingLogs(int start, int count, Long orgId, ScrapingTypes type);
+	PageImpl<WebScrapingLog> getScrapingLogs(int start, int count, Long orgId, ScrapingTypes type);
 
-    void deleteScrapingLog(Long id);
+	void deleteScrapingLog(Long id);
 }
