@@ -45,6 +45,14 @@ public class PostController {
         return postService.getUserTimeLine(userId, start, count);
     }
 
+    @GetMapping("/filterForUser")
+    public PageImpl<PostResponseDTO> getFilterForUser(
+            @RequestParam(required = false, defaultValue = "0") Integer start, @RequestParam(required = false, defaultValue = "10") Integer count,
+            @RequestParam long userId, @RequestParam(required = false) String type)
+    {
+        return postService.getFilterForUser(userId, start, count, type);
+    }
+
     @GetMapping("/pending")
     public PageImpl<PostResponseDTO> getUserPendingPosts(@RequestHeader(name = "User-Token", required = false) String token,
                                                          @RequestParam(required = false, defaultValue = "0") Integer start,

@@ -4,6 +4,7 @@ import com.nasnav.dao.FollowerRepository;
 import com.nasnav.dao.PostClicksRepository;
 import com.nasnav.dao.PostLikesRepository;
 import com.nasnav.dao.PostRepository;
+import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.UserListFollowProjection;
 import com.nasnav.dto.request.PostCreationDTO;
 import com.nasnav.dto.response.PostResponseDTO;
@@ -228,5 +229,88 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         ResponseEntity<Void> response = template.exchange("/post/saved?start=" + start + "&?count=" + count  , HttpMethod.GET, httpEntity, Void.class);
         assertEquals(403, response.getStatusCode().value());
 
+	}
+
+    @Test
+    public void getForYouUserWithException()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 9999 + "&start=" + start + "&count=" + count + "&type=reviews", HttpMethod.GET, getHttpEntity("abcdefg"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getForYouUserWithNotException()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 9999 + "&start=" + start + "&count=" + count + "&type=reviews", HttpMethod.GET,
+                getHttpEntity("123"), new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getForYouUser()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=following", HttpMethod.GET, getHttpEntity("123"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getForYouUserExplore()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=explore", HttpMethod.GET, getHttpEntity("123"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getForYouUserReview()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=reviews", HttpMethod.GET, getHttpEntity("123"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    public void getForYouUserWithoutType()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count, HttpMethod.GET, getHttpEntity("123"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void getForYouUserWrongType()
+    {
+        int start = 0, count = 10;
+        ResponseEntity<PaginatedResponse<PostResponseDTO>> response = template.exchange(
+                "/post/filterForUser?userId=" + 88 + "&start=" + start + "&count=" + count + "&type=worng", HttpMethod.GET, getHttpEntity("123"),
+                new ParameterizedTypeReference<>()
+                {
+                });
+        assertEquals(200, response.getStatusCode().value());
     }
 }

@@ -11,7 +11,6 @@ import com.nasnav.enumerations.PostType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.service.*;
 import com.nasnav.util.MultipartFileUtils;
@@ -156,6 +155,29 @@ public class PostServiceImpl implements PostService {
         PageImpl<PostEntity> source = postRepository.getAllByUser_IdAndStatus(userId, PostStatus.APPROVED.getValue(), page);
         List<PostResponseDTO> dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+    }
+
+    @Override
+    public PageImpl<PostResponseDTO> getFilterForUser(long userId, Integer start, Integer count, String type)
+    {
+        PageRequest page = getQueryPage(start, count);
+        userRepository.findById(userId).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, E$USR$0001));
+        PageImpl<PostEntity> source = null;
+        List<PostResponseDTO> dtos = new ArrayList<>();
+        if ("explore".equals(type) || type == null) {
+            source = postRepository.getAllByUser_IdAndStatus(userId, PostStatus.APPROVED.getValue(), page);
+        }
+        else if ("reviews".equals(type)) {
+            source = postRepository.getAllByUser_IdAndType(userId, PostType.REVIEW.getValue(), page);
+        }
+        else if ("following".equals(type)) {
+            source = postRepository.getAllByUser_IdAndType(userId, PostType.POST.getValue(), page);
+        }
+        if (source != null){
+            dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).collect(Collectors.toList());
+            return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+        }
+        return new PageImpl<>(dtos);
     }
 
     @Override

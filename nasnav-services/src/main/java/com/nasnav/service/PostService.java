@@ -18,6 +18,7 @@ public interface PostService {
     public void approveOrRejectReview(long postId, PostStatus postStatus);
     public PageImpl<PostResponseDTO> getHomeTimeLine(Integer start, Integer count);
     public PageImpl<PostResponseDTO> getUserTimeLine(long userId, Integer start, Integer count);
+    public PageImpl<PostResponseDTO> getFilterForUser(long userId, Integer start, Integer count,String type);
     public PageImpl<PostResponseDTO> getUserPendingPosts(Integer start, Integer count);
     public PageImpl<PostResponseDTO> getOrgReviews(PostStatus postStatus, Integer start, Integer count);
     public PageImpl<PostResponseDTO> getOrgSharedProducts(Integer start, Integer count);
