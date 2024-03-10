@@ -25,6 +25,9 @@ public class ReferralSettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
+    private String name;
+
     @OneToOne(fetch = LAZY)
     @JoinColumn(name = "org_id")
     private OrganizationEntity organization;

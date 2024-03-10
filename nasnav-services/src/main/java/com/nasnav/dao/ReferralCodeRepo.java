@@ -16,8 +16,9 @@ public interface ReferralCodeRepo extends JpaRepository<ReferralCodeEntity, Long
         Optional<ReferralCodeEntity> findByReferralCodeAndOrganization_id(String referralCode, Long organizationId);
         Optional<ReferralCodeEntity> findByReferralCode(String referralCode);
         Optional<ReferralCodeEntity> findByUser_IdAndOrganization_Id(Long userId, Long organizationId);
+        Optional<ReferralCodeEntity> findByUser_IdAndOrganization_IdAndStatus(Long userId, Long organizationId, Integer status);
 
-        boolean existsByUser_IdAndOrganization_Id(Long userId, Long organizationId);
+        boolean existsByUser_IdAndOrganization_IdAndStatus(Long userId, Long organizationId, Integer Status);
 
         Optional<ReferralCodeEntity> findByReferralCodeAndStatus(String referralCode, Integer status);
 
@@ -34,5 +35,7 @@ public interface ReferralCodeRepo extends JpaRepository<ReferralCodeEntity, Long
                 "where refCode1.user_id = :userId and refCode2.status = :status",
                 nativeQuery = true)
         Long countChildReferralCodesByUserIdAndIsActive(Long userId, int status);
+
+        boolean existsByPhoneNumber(String phoneNumber);
 
 }

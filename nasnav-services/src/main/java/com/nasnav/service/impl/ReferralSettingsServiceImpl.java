@@ -62,7 +62,7 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
 
 
         return Map.of(ORDER_DISCOUNT_PERCENTAGE,
-                referralSettingsMapper.map(referralSettings).getConstraints().get(ORDER_DISCOUNT_PERCENTAGE).multiply(new BigDecimal("100")).stripTrailingZeros());
+                referralSettingsMapper.map(referralSettings).getConstraints().get(ORDER_DISCOUNT_PERCENTAGE).getValue().multiply(new BigDecimal("100")).stripTrailingZeros());
     }
 
 }

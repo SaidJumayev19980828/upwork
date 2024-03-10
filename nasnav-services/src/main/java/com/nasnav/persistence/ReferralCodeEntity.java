@@ -53,6 +53,9 @@ public class ReferralCodeEntity {
     @JoinColumn(name = "settings_id")
     private ReferralSettings settings;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @Column(name = "accept_token")
     private String acceptReferralToken;
 

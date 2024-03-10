@@ -1016,5 +1016,16 @@ public class UserServiceImpl implements UserService {
 		return updateUserAvatar(userAvatar);
 	}
 
+	@Override
+	public void updateUserPhone(Long userId, Long organizationId ,String phone){
+		UserEntity user = userRepository.findByIdAndOrganizationId(userId, organizationId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, userId));
+		if(StringUtils.isBlankOrNull(user.getPhoneNumber()) || !user.getPhoneNumber().equals(phone)){
+			user.setPhoneNumber(phone);
+			userRepository.save(user);
+		}
+	}
+
+
 
 }

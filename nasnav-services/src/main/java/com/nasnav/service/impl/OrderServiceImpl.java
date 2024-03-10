@@ -817,6 +817,12 @@ public class OrderServiceImpl implements OrderService {
 			representation.setIsReferralCodeApplied(true);
 			representation.setAppliedReferralCode(order.getAppliedReferralCode());
 		}
+
+		if(order.getReferralWithdrawAmount().compareTo(ZERO) > 0) {
+			representation.setIsPayedFromReferral(true);
+			representation.setAmountPayedFromReferral(order.getReferralWithdrawAmount());
+		}
+
 		if(order.getMetaOrder().getReferralWithdrawAmount().compareTo(ZERO) > 0) {
 			representation.setIsUsedReferralBalance(true);
 		}
@@ -2068,12 +2074,10 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal total = calculateTotal(subOrders);
 		BigDecimal discounts = calculateDiscounts(subOrders);
 		BigDecimal referralBalanceWithdraw = ZERO;
-		if(data.isPayFromReferralBalance()){
-			referralBalanceWithdraw = referralCodeService.calculateTheWithdrawValueFromReferralBalance(user.getId(), subTotal);
-			if(referralBalanceWithdraw.compareTo(ZERO) > 0) {
-				discounts = discounts.add(referralBalanceWithdraw);
-				total = total.subtract(discounts);
-			}
+		if(data.isPayFromReferralBalance() && referralCodeService.checkIntervalDateForCurrentOrganization(ReferralCodeType.PAY_WITH_REFERRAL_WALLET)){
+			referralBalanceWithdraw = referralCodeService.calculatePayWithReferralOnOrders(subOrders, user.getId(), total, discounts, subTotal);
+			discounts = discounts.add(referralBalanceWithdraw);
+			total = total.subtract(discounts);
 		}
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
@@ -2103,18 +2107,18 @@ public class OrderServiceImpl implements OrderService {
 				.reduce(ZERO, BigDecimal::add);
 	}
 
+	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getSubTotal)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
 	private BigDecimal calculateShippingTotal(Set<OrdersEntity> subOrders) {
 		return subOrders
 				.stream()
 				.map(OrdersEntity::getShipment)
 				.map(ShipmentEntity::getShippingFee)
-				.reduce(ZERO, BigDecimal::add);
-	}
-
-	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
-		return subOrders
-				.stream()
-				.map(OrdersEntity::getSubTotal)
 				.reduce(ZERO, BigDecimal::add);
 	}
 
@@ -2168,7 +2172,7 @@ public class OrderServiceImpl implements OrderService {
 		Long userId = getSuborderUserId(subOrders);
 		SpentPointsInfo spentPointsInfo = addPointsDiscount(userId, dto, subOrders, org);
 
-		if(dto.getReferralCode() != null && !dto.getReferralCode().isEmpty()) {
+		if(StringUtils.isNotBlankOrNull(dto.getReferralCode())  && !dto.isPayFromReferralBalance()) {
 			referralCodeService.addReferralDiscountForSubOrders(dto.getReferralCode(), subOrders, userId);
 		}
 		for(OrdersEntity subOrder : subOrders) {

@@ -413,6 +413,9 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 		body = response.getBody().getOrders().get(0);
 
 		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("100.00"), false, new BigDecimal("20.00"));
+		expectedBody.setAmountPayedFromReferral(new BigDecimal("25.00"));
+		expectedBody.setIsPayedFromReferral(true);
+
 		assertEquals(expectedBody, body);
 
 		response = sendOrdersListRequestWithParamsAndToken("start=3&count=1&details_level=3", token);

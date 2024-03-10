@@ -386,7 +386,7 @@ public class LoyaltyPointsServiceImpl implements LoyaltyPointsService {
             return;
         }
 
-        LoyaltyPointConfigEntity config = loyaltyPointConfigRepo.findActiveConfigTierByTierId(userEntity.getTier().getId()).orElse(null);
+        LoyaltyPointConfigEntity config =loyaltyPointConfigRepo.findActiveConfigTierByTierId(userEntity.getTier().getId()).orElse(null);
         if (config == null) {
             return;
         }

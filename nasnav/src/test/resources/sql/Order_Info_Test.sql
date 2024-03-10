@@ -134,8 +134,8 @@ VALUES(330003, '', '', 88, '2022-02-02', now() + interval '2 day', now(), 99001,
 
 
 INSERT INTO public.orders
-(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)
-VALUES(330004, '', '', 89, '2022-02-03', now() + interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, '{}'::text, 200.00, 0, 200.00, 310001);
+(id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id, referral_withdraw_amount)
+VALUES(330004, '', '', 89, '2022-02-03', now() + interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, '{}'::text, 200.00, 0, 200.00, 310001, 25.00);
 
 INSERT INTO public.orders
 (id,address, "name", user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, basket, sub_total, payment_status, total, meta_order_id)

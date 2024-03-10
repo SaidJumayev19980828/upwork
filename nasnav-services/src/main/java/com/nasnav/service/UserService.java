@@ -61,4 +61,6 @@ public interface UserService extends CommonUserServiceInterface {
 
     UserApiResponse processUserAvatar(ImageBase64 image) throws IOException;
 
+    void updateUserPhone(Long userId, Long organizationId ,String phone);
+
 }

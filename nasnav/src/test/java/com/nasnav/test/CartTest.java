@@ -39,6 +39,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -505,17 +506,36 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	}
 
 	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_1.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithReferralCodeDiscountNotAppliedOutOfRangeDate() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("referralCode", "abcdfg");
+
+		BigDecimal exceptedDiscount = BigDecimal.ZERO;
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+	}
+
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void discountAppliedAndWithdrawValueOnOrderWhencheckingoutAndApplyPayFromReferral() {
+	public void discountAppliedAndWithdrawValueOnOrderWhenCheckingOutAndApplyPayFromReferral() {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("payFromReferralBalance", true);
 
 		BigDecimal exceptedDiscount = new BigDecimal("20.00");
 
 		Order order = checkOutCartForPayFromReferralBalance(requestBody, new BigDecimal("3131"), new BigDecimal("3100") ,new BigDecimal("51"));
+		BigDecimal subOrdersDiscounts = order.getSubOrders().stream()
+				.map(SubOrder::getDiscount)
+				.reduce(ZERO, BigDecimal::add);
+
 
 		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+		assertEquals(0, exceptedDiscount.compareTo(subOrdersDiscounts));
 
 		MetaOrderEntity metaOrderEntity = metaOrderRepo.findById(order.getOrderId()).get();
 		assertEquals(0, exceptedDiscount.compareTo(metaOrderEntity.getReferralWithdrawAmount()));
@@ -524,6 +544,26 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(1, referralTransactions.size());
 		assertEquals(ReferralTransactionsType.ORDER_WITHDRAWAL, referralTransactions.get(0).getType());
 		assertEquals(exceptedDiscount, referralTransactions.get(0).getAmount());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_2.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void discountAppliedAndWithdrawValueOnOrderWhenCheckingOutAndApplyPayFromReferralOutDateOfRange() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("payFromReferralBalance", true);
+
+		BigDecimal exceptedDiscount = ZERO;
+
+		Order order = checkOutCartForPayFromReferralBalance(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+
+		assertEquals(0, exceptedDiscount.compareTo(order.getDiscount()));
+
+		MetaOrderEntity metaOrderEntity = metaOrderRepo.findById(order.getOrderId()).get();
+		assertEquals(0, exceptedDiscount.compareTo(metaOrderEntity.getReferralWithdrawAmount()));
+
+		List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByOrderId(metaOrderEntity.getId());
+		assertEquals(0, referralTransactions.size());
 	}
 
 	@Test
@@ -803,7 +843,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(200, res.getStatusCodeValue());
 
 		Order order =  res.getBody();
-		BigDecimal subOrderSubtTotalSum = getSubOrderSubTotalSum(order);
+		BigDecimal subOrderSubTotalSum = getSubOrderSubTotalSum(order);
 		BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
 
 		assertTrue(order.getOrderId() != null);
@@ -811,7 +851,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(0 ,subTotal.compareTo(order.getSubtotal()));
 		assertEquals(0 ,total.compareTo(order.getTotal()));
 		assertEquals(0 ,order.getShipping().compareTo(subOrderShippingSum));
-		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubtTotalSum));
+		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubTotalSum));
 		assertEquals(USELESS_NOTE, order.getNotes());
 		assertItemDataJsonCreated(order);
 		return order;
@@ -1179,6 +1219,94 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(3, cart.getItems().size());
 		assertTrue("The optimization should pick the stocks from a the given shop even if it is in another city."
 					, asList(601L, 602L, 603L).stream().allMatch(stockIdsAfter::contains));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartWithReferralDiscount() {
+
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("referralCode", "abcdfg");
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		Cart cart = res.getBody().getCart();
+
+		assertEquals(OK, res.getStatusCode());
+		assertEquals(new BigDecimal("243.00"), cart.getDiscount());
+		assertEquals(new BigDecimal("243.00"), cart.getItems()
+				.stream()
+				.map(CartItem::getDiscount)
+				.reduce(ZERO, BigDecimal::add));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_16.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartWithReferralDiscountNotAppliedDateOutOfRange() {
+
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("referralCode", "abcdfg");
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		Cart cart = res.getBody().getCart();
+
+		assertEquals(OK, res.getStatusCode());
+		assertEquals(ZERO, cart.getDiscount());
+		assertEquals(new BigDecimal("0.00"), cart.getItems()
+				.stream()
+				.map(CartItem::getDiscount)
+				.reduce(ZERO, BigDecimal::add));
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartWithPayByReferralWallet() {
+
+		//---------------------------------------------------------------
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("referralCode", "abcdfg");
+		requestJson.put("payFromReferralBalance", true);
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+
+		assertEquals(OK, res.getStatusCode());
+		assertEquals(new BigDecimal("20.00"), cart.getDiscount());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_16.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartWithPayByReferralWalletWithDateIntervalRageOut() {
+
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("referralCode", "abcdfg");
+		requestJson.put("payFromReferralBalance", true);
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+
+		Cart cart = res.getBody().getCart();
+
+		assertEquals(OK, res.getStatusCode());
+		assertEquals(ZERO, cart.getDiscount());
 	}
 
 	@Test

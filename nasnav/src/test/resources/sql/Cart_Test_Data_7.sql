@@ -150,3 +150,27 @@ VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+
+
+INSERT INTO public.referral_settings(id, org_id, constraints, created_at)
+VALUES (
+           200,
+           99001,
+           CONCAT(
+                   '{"REFERRAL_ACCEPT_REVENUE":{"value":20.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
+                   '"ORDER_DISCOUNT_PERCENTAGE":{"value":0.03,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
+                   '"SHARE_REVENUE_PERCENTAGE":{"value":0.04,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
+                   '"PARENT_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
+                   '"CHILD_REGISTRATION":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"},',
+                   '"PAY_WITH_REFERRAL_WALLET":{"value":0.0,"valid_from":"', DATE(NOW()), '","valid_to":"', DATE(NOW() + INTERVAL '3' DAY), '"}}'
+
+               ),
+           NOW()
+       );
+
+-- inserting a wallet for user for referral Codes
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20.00, 1, 88);
+
+-- insert referral code that is valid
+INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, created_at, accept_token)
+VALUES (500, 'abcdfg', 99001, 88, 200, 2, now(), '12345');

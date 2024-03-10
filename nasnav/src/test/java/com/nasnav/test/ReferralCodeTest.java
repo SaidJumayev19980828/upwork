@@ -4,6 +4,7 @@ package com.nasnav.test;
 import com.nasnav.dao.*;
 import com.nasnav.dto.PaginatedResponse;
 import com.nasnav.dto.referral_code.ReferralCodeDto;
+import com.nasnav.dto.referral_code.ReferralConstraints;
 import com.nasnav.dto.referral_code.ReferralStatsDto;
 import com.nasnav.dto.referral_code.ReferralTransactionsDto;
 import com.nasnav.enumerations.OrderStatus;
@@ -15,6 +16,7 @@ import com.nasnav.integration.smsmisr.dto.OTPDto;
 import com.nasnav.persistence.*;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralWalletService;
+import com.nasnav.service.UserService;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -82,16 +84,16 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     @Autowired
     private ReferralSettingsRepo referralSettingsRepo;
 
+    @Autowired
+    private UserService userService;
+
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void createReferralOrganizationSettings(){
         JSONObject body = new JSONObject();
-        Map<ReferralCodeType, BigDecimal> constraints = new HashMap<>();
-        constraints.put(ReferralCodeType.REFERRAL_ACCEPT_REVENUE, new BigDecimal("5.0"));
-        constraints.put(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE, new BigDecimal("0.04"));
-        constraints.put(ReferralCodeType.SHARE_REVENUE_PERCENTAGE,new BigDecimal("0.04"));
-        body.put("constraints", constraints);
+        body.put("name", "Kasbeny We Eksab");
+        body.put("constraints", getReferralCodeTypeReferralConstraintsMap());
 
         HttpEntity<?> request = getHttpEntity(body.toString(),"131415");
 
@@ -101,6 +103,42 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         ReferralSettings referralSettings = referralSettingsRepo.findByOrganization_Id(99001L).get();
         assertNotNull(referralSettings);
+    }
+
+    private static Map<ReferralCodeType, ReferralConstraints> getReferralCodeTypeReferralConstraintsMap() {
+        Map<ReferralCodeType, ReferralConstraints> constraints = new HashMap<>();
+        constraints.put(ReferralCodeType.REFERRAL_ACCEPT_REVENUE,
+                ReferralConstraints.builder()
+                        .value(new BigDecimal("5.0"))
+                        .validFrom(LocalDate.now())
+                        .validTo(LocalDate.now().plusDays(5))
+                        .build()
+    );
+        constraints.put(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE,
+                ReferralConstraints.builder()
+                        .value(new BigDecimal("0.04"))
+                        .validFrom(LocalDate.now())
+                        .validTo(LocalDate.now().plusDays(5))
+                        .build());
+        constraints.put(ReferralCodeType.SHARE_REVENUE_PERCENTAGE,
+                ReferralConstraints.builder()
+                        .value(new BigDecimal("0.04"))
+                        .validFrom(LocalDate.now())
+                        .validTo(LocalDate.now().plusDays(5))
+                        .build());
+        constraints.put(ReferralCodeType.PARENT_REGISTRATION,
+                ReferralConstraints.builder()
+                        .value(new BigDecimal("0.0"))
+                        .validFrom(LocalDate.now())
+                        .validTo(LocalDate.now().plusDays(5))
+                        .build());
+        constraints.put(ReferralCodeType.CHILD_REGISTRATION,
+                ReferralConstraints.builder()
+                        .value(new BigDecimal("0.0"))
+                        .validFrom(LocalDate.now())
+                        .validTo(LocalDate.now().plusDays(5))
+                        .build());
+        return constraints;
     }
 
     @Test
@@ -131,6 +169,31 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_share_revenue_1.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void shareRevenueForOrderWhenOrderStatusUpdatedToDeliveredNotSharedBecauseDateIntervalOut(){
+        Long orderId = 330033L;
+        String userToken = "252627";
+
+        JSONObject request = new JSONObject();
+        request.put("status", OrderStatus.DELIVERED.name());
+        request.put("order_id", orderId);
+
+        ResponseEntity<String> updateResponse =
+                template.postForEntity("/order/status/update"
+                        , getHttpEntity(request.toString(), userToken)
+                        , String.class);
+
+        assertEquals(OK, updateResponse.getStatusCode());
+
+        ReferralWallet referralWallet = referralWalletService.getWalletByUserId(88L);
+        assertEquals(new BigDecimal("20.00"), referralWallet.getBalance());
+
+        List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByReferralWallet_Id(500L);
+        assertEquals(0, referralTransactions.size());
+    }
+
+    @Test
     @Transactional
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -148,9 +211,23 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Transactional
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_8.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void saveOrderDiscountTransactionNotAddedBecauseOutOfDateRange(){
+        Long orderId = 330033L;
+        OrdersEntity ordersEntity = ordersRepository.findById(orderId).get();
+
+        referralCodeService.saveReferralTransactionForOrderDiscount(ordersEntity);
+
+        List<ReferralTransactions> referralTransactions = referralTransactionRepository.findByOrderId(orderId);
+        assertEquals(0, referralTransactions.size());
+    }
+
+    @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_1.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-    public void sendOtpAndreferralCreatedButNotActive(){
+    public void sendOtpAndReferralCreatedButNotActive(){
         when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
 
         HttpEntity<?> request = getHttpEntity("456");
@@ -165,7 +242,42 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertNotNull(referralCodeEntity.getParentReferralCode());
         assertNotNull(referralCodeEntity.getReferralCode());
         assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
+    }
 
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Parent_7.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpForParentRegistrationButOutOfDateRange(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891",
+                request, String.class);
+
+        assertEquals(406, res.getStatusCodeValue());
+
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("Parent Registration ended!", message);
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Parent_7.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpForChildRegistrationButOutOfDateRange(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567891&parentReferralCode=abcdfg",
+                request, String.class);
+
+        assertEquals(406, res.getStatusCodeValue());
+
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("Referral Registration ended!", message);
     }
 
 
@@ -182,7 +294,29 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(406, res.getStatusCodeValue());
         JSONObject jsonObject = new JSONObject(res.getBody());
         String message = jsonObject.getString("message");
-        assertEquals("There is already Token sent for this user, plz check the SMS or resend token!", message);
+        assertEquals("User Already has Referral Code!", message);
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Edit_Phone.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void sendOtpWithAnotherPhoneForAlreadyExistNotValidatedReferralCode(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/sendOtp/?phoneNumber=01234567889&parentReferralCode=abcdfg",
+                request, String.class);
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReferralCodeEntity referralCodeEntity = referralCodeRepo.findByUser_IdAndOrganization_Id(89L, 99001L).get();
+
+        assertEquals("01234567889", referralCodeEntity.getPhoneNumber());
+        assertNotNull(referralCodeEntity.getAcceptReferralToken());
+        assertNotNull(referralCodeEntity.getParentReferralCode());
+        assertNotNull(referralCodeEntity.getReferralCode());
+        assertEquals(Integer.valueOf(ReferralCodeStatus.IN_ACTIVE.getValue()), referralCodeEntity.getStatus());
     }
 
     @Test
@@ -224,7 +358,10 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         assertEquals(1, referralTransactions.size());
         assertEquals(ReferralTransactionsType.ACCEPT_REFERRAL_CODE, referralTransactions.get(0).getType());
 
+        BaseUserEntity user = userService.getUserById(89L);
+        assertEquals(referralCodeEntity.getPhoneNumber(), user.getPhoneNumber());
     }
+
 
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_5.sql"})

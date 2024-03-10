@@ -40,6 +40,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private String status;
     private Boolean isReferralCodeApplied;
     private String appliedReferralCode;
+    private Boolean isPayedFromReferral;
+    private BigDecimal amountPayedFromReferral;
+
     private Boolean isUsedReferralBalance;
     private Integer totalQuantity;
     private String paymentStatus;

@@ -15,17 +15,15 @@ import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
+import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.service.CartOptimizationService;
-import com.nasnav.service.CartService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.service.*;
 import com.nasnav.service.cart.optimizers.*;
 import com.nasnav.shipping.services.mylerz.webclient.dto.Zone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +89,10 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 	@Autowired
 	private  UserRepository userRepository;
+
+	@Autowired
+	private ReferralCodeService referralCodeService;
+
 	@Override
 	public CartOptimizeResponseDTO validateAndOptimizeCart(CartCheckoutDTO dto, boolean yeshteryCart) {
 		validateAndAssignUserAddress(dto);
@@ -153,8 +155,17 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		returnedCart.setSubtotal(cartService.calculateCartTotal(returnedCart));
 		returnedCart.setPromos(promoService.calcPromoDiscountForCart(dto.getPromoCode(), returnedCart));
 		returnedCart.setPoints(loyaltyPointsService.calculateCartPointsDiscount(returnedCart.getItems(), dto.getRequestedPoints(), yeshteryCart));
-
 		returnedCart.setDiscount(returnedCart.getPromos().getTotalDiscount().add(returnedCart.getPoints().getTotalDiscount()));
+		if(StringUtils.isNotEmpty(dto.getReferralCode()) && !dto.isPayFromReferralBalance()) {
+			returnedCart.setDiscount(
+					returnedCart.getDiscount()
+							.add(referralCodeService.calculateReferralDiscountForCartItems(dto.getReferralCode(), returnedCart.getItems(), securityService.getCurrentUser().getId())));
+		}
+		Long userId = securityService.getCurrentUser().getId();
+		if(dto.isPayFromReferralBalance() && referralCodeService.checkIntervalDateForCurrentOrganization(ReferralCodeType.PAY_WITH_REFERRAL_WALLET)) {
+			returnedCart.setDiscount(
+					returnedCart.getDiscount().add(referralCodeService.calculateTheWithdrawValueFromReferralBalance(userId, returnedCart.getSubtotal())));
+		}
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
 		return returnedCart;
 	}
