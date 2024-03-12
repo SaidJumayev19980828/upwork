@@ -56,6 +56,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	Optional<EmployeeUserEntity> findByIdAndOrgIdAndRoles(@Param("id") Long id,
 										@Param("orgId") Long orgId,
 										@Param("roles") Set<String> roles);
+
+
 }
 
 

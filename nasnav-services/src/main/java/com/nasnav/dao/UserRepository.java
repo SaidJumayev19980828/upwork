@@ -113,4 +113,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 			"where u.id <>	:userId" )
 	PageImpl<UserListFollowProjection> findUsersWithFollowerStatus(@Param("userId") Long userId , Pageable pageable);
 
+
+	List<UserEntity> findByEmailContainingIgnoreCaseOrNameContainingIgnoreCase(String email, String username);
+
 }

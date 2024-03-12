@@ -149,6 +149,14 @@ public class UserController {
         return userService.getUserData(id, isEmployee);
     }
 
+    @GetMapping(value = "information", produces = APPLICATION_JSON_VALUE)
+    public List<UserRepresentationObject> getUserDataByAnonymous(
+            @RequestHeader (name = "User-Token", required = false) String userToken,
+            @RequestParam (value = "anonymous") String anonymous
+    ) throws BusinessException{
+        return userService.getUserData(anonymous);
+    }
+
     @GetMapping(value = "list", produces = APPLICATION_JSON_VALUE)
     public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                       @RequestParam (value = "org_id", required = false) Long orgId,

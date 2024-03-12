@@ -63,4 +63,6 @@ public interface UserService extends CommonUserServiceInterface {
 
     void updateUserPhone(Long userId, Long organizationId ,String phone);
 
+    List<UserRepresentationObject> getUserData(String anonymous) ;
+
 }

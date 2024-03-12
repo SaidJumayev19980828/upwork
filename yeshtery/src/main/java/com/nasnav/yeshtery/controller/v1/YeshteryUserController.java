@@ -67,6 +67,15 @@ public class YeshteryUserController {
         return userService.getYeshteryUserData(id, isEmployee);
     }
 
+    @GetMapping(value = "information", produces = APPLICATION_JSON_VALUE)
+    public List<UserRepresentationObject> getUserDataByAnonymous(
+            @RequestHeader (name = "User-Token", required = false) String userToken,
+            @RequestParam (value = "anonymous") String anonymous
+    ) throws BusinessException{
+        return nasnavUserService.getUserData(anonymous);
+    }
+
+
     @PostMapping(value = "change/password", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     public UserApiResponse changePasswordUser(@RequestHeader (name = "User-Token", required = false) String userToken, @RequestBody UserDTOs.ChangePasswordUserObject userJson) {
         return commonUserService.changePasswordUser(userJson);

@@ -1026,6 +1026,11 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	@Override
+	public List<UserRepresentationObject> getUserData(String anonymous) {
+		return userRepository.findByEmailContainingIgnoreCaseOrNameContainingIgnoreCase(anonymous,anonymous)
+				.stream().map(UserEntity::getRepresentation).toList();
+	}
 
 
 }

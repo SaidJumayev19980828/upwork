@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -904,4 +905,19 @@ public class YeshteryUserRegistrationTest extends AbstractTestWithTempBaseDir {
         assertEquals(OK, response.getStatusCode());
         assertEquals(expectedNumberOfUsers, response.getBody().size());
     }
+
+
+    @Test
+    void testFilterUserByAnonymous() {
+        HttpEntity<?> entity = getHttpEntity("77");
+        ResponseEntity<List<UserRepresentationObject>> res = template.exchange(API_PATH +"/user/information?anonymous=" +
+                        "suspended" ,
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<List<UserRepresentationObject>>() {});
+
+        Assertions.assertEquals(200, res.getStatusCodeValue());
+        Assertions.assertEquals(1, Objects.requireNonNull(res.getBody()).size());
+    }
+
 }

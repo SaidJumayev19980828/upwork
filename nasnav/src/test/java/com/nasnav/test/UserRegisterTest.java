@@ -38,6 +38,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
@@ -1186,6 +1187,18 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 
+	@Test
+	public void testFilterUserByAnonymous() {
+		HttpEntity<?> entity = getHttpEntity("77");
+		ResponseEntity<List<UserRepresentationObject>> res = template.exchange("/user/information?anonymous=" +
+						"suspended" ,
+				HttpMethod.GET,
+				entity,
+				new ParameterizedTypeReference<List<UserRepresentationObject>>() {});
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertEquals(1, Objects.requireNonNull(res.getBody()).size());
+	}
 
 	@Test
 	public void testGettingSameUserInfoDifferentTokens() {
