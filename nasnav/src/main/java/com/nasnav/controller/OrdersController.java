@@ -45,8 +45,9 @@ public class OrdersController {
     }
 
 	@GetMapping(value = "/infos/{user_email}", produces = APPLICATION_JSON_VALUE)
-	public OrdersListResponse getOrderInfo(    @PathVariable(name = "user_email") String userEmail,
-											   @RequestParam(name = "details_level", required = false) Integer detailsLevel) {
+	public OrdersListResponse getOrderInfo(@RequestHeader(TOKEN_HEADER) String userToken,
+										   @PathVariable(name = "user_email") String userEmail,
+										   @RequestParam(name = "details_level", required = false) Integer detailsLevel) {
 		return orderService.getOrdersInfoByUserEmailWithinWeek(userEmail, detailsLevel);
 	}
 
