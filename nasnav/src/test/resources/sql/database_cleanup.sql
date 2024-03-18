@@ -4,6 +4,8 @@ DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000
 DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
 DELETE FROM public.user_loyalty_transactions;
+DELETE FROM event_invitees;
+DELETE FROM personal_event;
 DELETE FROM public.user_loyalty_points;
 DELETE FROM public.room_sessions;
 DELETE FROM public.room_templates;

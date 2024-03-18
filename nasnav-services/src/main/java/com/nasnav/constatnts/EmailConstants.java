@@ -66,5 +66,7 @@ public final class EmailConstants {
     public static final String ENTER_QUEUE_CALL_CUSTOMER_TEMPLATE_PATH = "mail_templates/enter_queue_call_customer.html";
     public static final String ENTER_QUEUE_CALL_EMPLOYEE_TEMPLATE_PATH = "mail_templates/enter_queue_call_employee.html";
 
+    public  static final String INVITE_MAIL = "mail_templates/invite_party_event_mail.html";
+
 
 }

@@ -538,7 +538,14 @@ public enum ErrorCodes {
 	,SCRAPPING$003("An error occurred while processing your file because [%s]. Please check the file format and try again")
 
 	,$001$REFERRAL$("No Referral Wallet Found for that User %d.")
-	;
+	,$003d$MODEL$("missing params you should enter barcode or sku."),
+	$004d$MODEL$("missing params you should enter at lest one file."),
+
+	PE_EVENT_$001("No personal event found with the provided ID [%s] and a start date in the future For that User"),
+	PE_EVENT_$002("No personal event found with the provided ID [%s]")
+
+
+			;
 
 	@Getter
 	@JsonValue
