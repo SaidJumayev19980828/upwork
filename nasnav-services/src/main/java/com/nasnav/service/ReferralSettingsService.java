@@ -8,7 +8,11 @@ import java.util.Map;
 
 public interface ReferralSettingsService {
 
+    ReferralSettingsDto get();
+
     ReferralSettingsDto create(ReferralSettingsDto referralSettingsDto);
+
+    void update(ReferralSettingsDto referralSettingsDto);
 
     Map<ReferralCodeType, BigDecimal> getValue(ReferralCodeType referralCodeType);
 

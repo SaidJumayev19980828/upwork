@@ -2075,7 +2075,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal discounts = calculateDiscounts(subOrders);
 		BigDecimal referralBalanceWithdraw = ZERO;
 		if(data.isPayFromReferralBalance() && referralCodeService.checkIntervalDateForCurrentOrganization(ReferralCodeType.PAY_WITH_REFERRAL_WALLET)){
-			referralBalanceWithdraw = referralCodeService.calculatePayWithReferralOnOrders(subOrders, user.getId(), total, discounts, subTotal);
+			referralBalanceWithdraw = referralCodeService.calculatePayWithReferralOnOrders(subOrders, user.getId(), discounts, total, subTotal);
 			discounts = discounts.add(referralBalanceWithdraw);
 			total = total.subtract(discounts);
 		}

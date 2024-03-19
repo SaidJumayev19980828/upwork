@@ -103,6 +103,9 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	private ObjectMapper objectMapper;
 
 	@Autowired
+	private ReferralWalletRepository referralWalletRepo;
+
+	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private EmployeeUserRepository empRepo;
@@ -526,9 +529,9 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("payFromReferralBalance", true);
 
-		BigDecimal exceptedDiscount = new BigDecimal("20.00");
+		BigDecimal exceptedDiscount = new BigDecimal("3151.00");
 
-		Order order = checkOutCartForPayFromReferralBalance(requestBody, new BigDecimal("3131"), new BigDecimal("3100") ,new BigDecimal("51"));
+		Order order = checkOutCartForPayFromReferralBalance(requestBody, new BigDecimal("0.00"), new BigDecimal("3100") ,new BigDecimal("51"));
 		BigDecimal subOrdersDiscounts = order.getSubOrders().stream()
 				.map(SubOrder::getDiscount)
 				.reduce(ZERO, BigDecimal::add);
@@ -544,6 +547,17 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(1, referralTransactions.size());
 		assertEquals(ReferralTransactionsType.ORDER_WITHDRAWAL, referralTransactions.get(0).getType());
 		assertEquals(exceptedDiscount, referralTransactions.get(0).getAmount());
+
+		ReferralWallet referralWallet = referralWalletRepo.findById(500L).get();
+		assertEquals(0, referralWallet.getBalance().compareTo(new BigDecimal("849.00")));
+	}
+
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Referral_Code_Insufficient.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void discountNotAppliedAndWithdrawValueOnOrderWhenCheckingOutAndApplyPayFromReferral() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("payFromReferralBalance", true);
+		checkOutCartForPayFromReferralBalanceThrowsInsufficient(requestBody, new BigDecimal("0.00"), new BigDecimal("3100") ,new BigDecimal("51"));
 	}
 
 	@Test
@@ -855,6 +869,13 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(USELESS_NOTE, order.getNotes());
 		assertItemDataJsonCreated(order);
 		return order;
+	}
+
+	private void checkOutCartForPayFromReferralBalanceThrowsInsufficient(JSONObject requestBody, BigDecimal total, BigDecimal subTotal, BigDecimal shippingFee) {
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(406, res.getStatusCodeValue());
+
 	}
 	private void assertItemDataJsonCreated(Order order) {
 		Set<BasketItem> returnedItems = getBasketItemFromResponse(order);
@@ -1286,8 +1307,24 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		Cart cart = res.getBody().getCart();
 
 		assertEquals(OK, res.getStatusCode());
-		assertEquals(new BigDecimal("20.00"), cart.getDiscount());
+		assertEquals(new BigDecimal("8100.00"), cart.getDiscount());
 	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Insufficient_Wallet.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartWithPayByReferralWalletNotApplied() {
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("referralCode", "abcdfg");
+		requestJson.put("payFromReferralBalance", true);
+
+		String requestBody = requestJson.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res =
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_16.sql"})

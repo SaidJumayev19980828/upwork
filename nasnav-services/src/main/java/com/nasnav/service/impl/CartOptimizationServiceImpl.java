@@ -164,7 +164,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		Long userId = securityService.getCurrentUser().getId();
 		if(dto.isPayFromReferralBalance() && referralCodeService.checkIntervalDateForCurrentOrganization(ReferralCodeType.PAY_WITH_REFERRAL_WALLET)) {
 			returnedCart.setDiscount(
-					returnedCart.getDiscount().add(referralCodeService.calculateTheWithdrawValueFromReferralBalance(userId, returnedCart.getSubtotal())));
+					returnedCart.getDiscount().add(referralCodeService.calculateTheWithdrawValueFromReferralBalance(userId, returnedCart.getSubtotal().subtract(returnedCart.getDiscount()))));
 		}
 		returnedCart.setTotal(returnedCart.getSubtotal().subtract(returnedCart.getDiscount()));
 		return returnedCart;

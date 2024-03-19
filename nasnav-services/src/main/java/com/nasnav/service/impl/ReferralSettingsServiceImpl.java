@@ -18,9 +18,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 import static com.nasnav.enumerations.ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE;
-import static com.nasnav.exceptions.ErrorCodes.REF$PARAM$0009;
 import static com.nasnav.exceptions.ErrorCodes.REF$PARAM$0010;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -38,6 +36,14 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
     private SecurityService securityService;
 
     @Override
+    public ReferralSettingsDto get() {
+        Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
+        ReferralSettings existingReferralSettings = referralSettingsRepo.findByOrganization_Id(currentOrganizationId)
+                .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0010));
+        return referralSettingsMapper.map(existingReferralSettings);
+    }
+
+    @Override
     public ReferralSettingsDto create(ReferralSettingsDto referralSettingsDto) {
         ReferralSettings referralSettings = referralSettingsMapper.map(referralSettingsDto);
 
@@ -50,6 +56,17 @@ public class ReferralSettingsServiceImpl implements ReferralSettingsService {
         return ReferralSettingsDto.builder()
                 .id(referralSettings.getId())
                 .build();
+    }
+
+    @Override
+    public void update(ReferralSettingsDto referralSettingsDto) {
+        Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
+        ReferralSettings existingReferralSettings = referralSettingsRepo.findByOrganization_Id(currentOrganizationId)
+                .orElseThrow(() ->  new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0010));
+
+        ReferralSettings updatedReferralSettings = referralSettingsMapper.map(referralSettingsDto, existingReferralSettings);
+
+        referralSettingsRepo.save(updatedReferralSettings);
     }
 
     @Override

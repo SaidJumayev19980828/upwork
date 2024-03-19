@@ -3,16 +3,14 @@ package com.nasnav.test;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.PaginatedResponse;
-import com.nasnav.dto.referral_code.ReferralCodeDto;
-import com.nasnav.dto.referral_code.ReferralConstraints;
-import com.nasnav.dto.referral_code.ReferralStatsDto;
-import com.nasnav.dto.referral_code.ReferralTransactionsDto;
+import com.nasnav.dto.referral_code.*;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
 import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
+import com.nasnav.mappers.ReferralSettingsMapper;
 import com.nasnav.persistence.*;
 import com.nasnav.service.ReferralCodeService;
 import com.nasnav.service.ReferralWalletService;
@@ -87,6 +85,9 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private ReferralSettingsMapper referralSettingsMapper;
+
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -103,6 +104,48 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
 
         ReferralSettings referralSettings = referralSettingsRepo.findByOrganization_Id(99001L).get();
         assertNotNull(referralSettings);
+    }
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings_Update.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void getReferralOrganizationSettings(){
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<ReferralSettingsDto> res = template.exchange("/referral/organization/settings",HttpMethod.GET
+                ,request, ReferralSettingsDto.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        Map<ReferralCodeType, ReferralConstraints> constraintsMap = res.getBody().getConstraints();
+        assertEquals(new BigDecimal("20.0"), constraintsMap.get(ReferralCodeType.REFERRAL_ACCEPT_REVENUE).getValue());
+        assertEquals(new BigDecimal("0.03"), constraintsMap.get(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE).getValue());
+        assertEquals(new BigDecimal("0.04"), constraintsMap.get(ReferralCodeType.SHARE_REVENUE_PERCENTAGE).getValue());
+
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Settings_Update.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void updateReferralOrganizationSettings(){
+        JSONObject body = new JSONObject();
+        String name = "Kasbeny We Eksab updated";
+        body.put("name", name);
+        body.put("constraints", getReferralCodeTypeReferralConstraintsMap());
+
+        HttpEntity<?> request = getHttpEntity(body.toString(),"131415");
+
+        ResponseEntity<Void> res = template.exchange("/referral/organization/settings", HttpMethod.PUT,
+                request, Void.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReferralSettings referralSettings = referralSettingsRepo.findByOrganization_Id(99001L).get();
+        assertNotNull(referralSettings);
+
+        ReferralSettingsDto referralSettingsDto = referralSettingsMapper.map(referralSettings);
+        assertEquals(name, referralSettings.getName());
+        Map<ReferralCodeType, ReferralConstraints> constraintsMap = referralSettingsDto.getConstraints();
+        assertEquals(new BigDecimal("5"), constraintsMap.get(ReferralCodeType.REFERRAL_ACCEPT_REVENUE).getValue());
+        assertEquals(new BigDecimal("0.04"), constraintsMap.get(ReferralCodeType.ORDER_DISCOUNT_PERCENTAGE).getValue());
+        assertEquals(new BigDecimal("0.04"), constraintsMap.get(ReferralCodeType.SHARE_REVENUE_PERCENTAGE).getValue());
     }
 
     private static Map<ReferralCodeType, ReferralConstraints> getReferralCodeTypeReferralConstraintsMap() {

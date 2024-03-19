@@ -12,8 +12,11 @@ import com.nasnav.dto.referral_code.ReferralSettingsDto;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.persistence.ReferralSettings;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.io.IOException;
+import java.lang.annotation.Target;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -24,6 +27,9 @@ public interface ReferralSettingsMapper {
     ReferralSettings map(ReferralSettingsDto referralSettingsDto);
 
     ReferralSettingsDto map(ReferralSettings referralSettings);
+
+    @Mapping( target = "id", ignore = true )
+    ReferralSettings map(ReferralSettingsDto referralSettingsDto, @MappingTarget ReferralSettings referralSettings);
 
     default String map(Map<ReferralCodeType, ReferralConstraints> constraints) throws JsonProcessingException {
             return getObjectMapper().writeValueAsString(constraints);

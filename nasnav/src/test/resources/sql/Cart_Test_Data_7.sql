@@ -169,7 +169,7 @@ VALUES (
        );
 
 -- inserting a wallet for user for referral Codes
-INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 20.00, 1, 88);
+INSERT INTO public.referral_wallet(id, balance, version, user_id) VALUES (500, 9000.00, 1, 88);
 
 -- insert referral code that is valid
 INSERT INTO public.referral_codes(id, referral_code, org_id, user_id, settings_id, status, created_at, accept_token)

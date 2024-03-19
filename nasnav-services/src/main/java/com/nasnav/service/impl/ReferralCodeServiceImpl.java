@@ -17,6 +17,7 @@ import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
@@ -371,6 +372,9 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
     @Override
     public BigDecimal calculateTheWithdrawValueFromReferralBalance(Long userId, BigDecimal orderAmount){
         ReferralWallet referralWallet = referralWalletService.getWalletByUserId(userId);
+        if(referralWallet.getBalance().compareTo(orderAmount) < 0) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0015);
+        }
         return referralWallet.getBalance().min(orderAmount);
     }
     @Override
@@ -406,26 +410,13 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
     }
 
     public  BigDecimal calculatePayWithReferralOnOrders(Set<OrdersEntity> subOrders, Long userId, BigDecimal discounts, BigDecimal total, BigDecimal subTotal) {
-        BigDecimal referralBalanceWithdraw = calculateTheWithdrawValueFromReferralBalance(userId, subTotal);
+        BigDecimal referralBalanceWithdraw = calculateTheWithdrawValueFromReferralBalance(userId, total.subtract(discounts));
         if(referralBalanceWithdraw.compareTo(ZERO) > 0) {
-            BigDecimal discountForEachSubOrder = referralBalanceWithdraw.divide(BigDecimal.valueOf(subOrders.size())).setScale(2, FLOOR);
-            BigDecimal totalDiscountApplied = BigDecimal.ZERO;
-            int remainingSuborders = subOrders.size();
             for(OrdersEntity order : subOrders) {
-                remainingSuborders--;
-                BigDecimal discountApplied = discountForEachSubOrder.min(order.getSubTotal());
-                order.setDiscounts(order.getDiscounts().add(discountApplied));
-                order.setReferralWithdrawAmount(discountApplied);
-                totalDiscountApplied = totalDiscountApplied.add(discountApplied);
-
-                BigDecimal remainingDiscount = discountForEachSubOrder.subtract(discountApplied);
-                if (remainingDiscount.compareTo(BigDecimal.ZERO) > 0 && remainingSuborders > 0) {
-                    discountForEachSubOrder = (discountForEachSubOrder.add(remainingDiscount))
-                            .divide(BigDecimal.valueOf(remainingSuborders), 2, RoundingMode.FLOOR);
-                }
+                BigDecimal discountToApply = order.getTotal().subtract(order.getDiscounts());
+                order.setDiscounts(order.getDiscounts().add(discountToApply));
+                order.setReferralWithdrawAmount(discountToApply);
             }
-            totalDiscountApplied = totalDiscountApplied.setScale(2, RoundingMode.CEILING);
-            referralBalanceWithdraw =  totalDiscountApplied;
         }
         return referralBalanceWithdraw;
     }

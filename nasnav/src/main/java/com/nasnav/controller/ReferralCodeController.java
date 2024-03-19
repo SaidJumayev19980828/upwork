@@ -32,9 +32,19 @@ public class ReferralCodeController {
     @Autowired
     private ReferralSettingsService referralSettingsService;
 
+    @GetMapping(value = "/organization/settings", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+    public ReferralSettingsDto getSettings(){
+        return referralSettingsService.get();
+    }
+
     @PostMapping(value = "/organization/settings", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
     public ReferralSettingsDto createSettings(@RequestBody ReferralSettingsDto referralSettingsDto){
         return referralSettingsService.create(referralSettingsDto);
+    }
+
+    @PutMapping(value = "/organization/settings", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+    public void updateSettings(@RequestBody ReferralSettingsDto referralSettingsDto){
+         referralSettingsService.update(referralSettingsDto);
     }
 
     @GetMapping("/settings/discount_percentage")
