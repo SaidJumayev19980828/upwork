@@ -32,7 +32,7 @@ public class ReferralCodeController {
     @Autowired
     private ReferralSettingsService referralSettingsService;
 
-    @GetMapping(value = "/organization/settings", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/organization/settings")
     public ReferralSettingsDto getSettings(){
         return referralSettingsService.get();
     }

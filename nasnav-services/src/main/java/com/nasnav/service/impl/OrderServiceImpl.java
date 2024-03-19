@@ -818,7 +818,7 @@ public class OrderServiceImpl implements OrderService {
 			representation.setAppliedReferralCode(order.getAppliedReferralCode());
 		}
 
-		if(order.getReferralWithdrawAmount().compareTo(ZERO) > 0) {
+		if(Objects.nonNull(order.getReferralWithdrawAmount()) && order.getReferralWithdrawAmount().compareTo(ZERO) > 0) {
 			representation.setIsPayedFromReferral(true);
 			representation.setAmountPayedFromReferral(order.getReferralWithdrawAmount());
 		}

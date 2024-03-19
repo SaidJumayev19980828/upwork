@@ -45,7 +45,7 @@ public interface ReferralSettingsMapper {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE));
         javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ISO_LOCAL_DATE));
-        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(javaTimeModule);
         return objectMapper;
     }
 }
