@@ -28,6 +28,8 @@ public interface ReferralCodeService {
 
     void send(String phoneNumber, String parentReferralCode);
 
+    void resend();
+
     void activate(String referralCode);
     void deActivate(String referralCode);
 

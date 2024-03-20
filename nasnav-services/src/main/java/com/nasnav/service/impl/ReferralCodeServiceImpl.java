@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.nasnav.dao.ReferralCodeRepo;
 import com.nasnav.dao.ReferralSettingsRepo;
 import com.nasnav.dao.ReferralTransactionRepository;
@@ -17,7 +16,6 @@ import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
@@ -188,6 +186,18 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         referralCodeRepo.save(referralCodeEntity);
     }
 
+    @Override
+    public void resend() {
+        Long currentOrganizationId = securityService.getCurrentUserOrganizationId();
+        UserEntity user = (UserEntity) securityService.getCurrentUser();
+        ReferralCodeEntity referralCodeEntity =
+                referralCodeRepo.findByUser_IdAndOrganization_IdAndStatus(user.getId(), currentOrganizationId, ReferralCodeStatus.IN_ACTIVE.getValue())
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0008));
+        String responseStatus = mobileOTPService.send(new OTPDto(referralCodeEntity.getPhoneNumber(), referralCodeEntity.getPhoneNumber()));
+        if(!responseStatus.equals("Success")) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0006);
+        }
+    }
 
     public void validateReferralRegistration(String phoneNumber, String parentReferralCode) {
         Long currentOrganizationId = securityService.getCurrentUserOrganizationId();

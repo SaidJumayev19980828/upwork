@@ -8,6 +8,7 @@ import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ReferralCodeStatus;
 import com.nasnav.enumerations.ReferralCodeType;
 import com.nasnav.enumerations.ReferralTransactionsType;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.MobileOTPService;
 import com.nasnav.integration.smsmisr.dto.OTPDto;
 import com.nasnav.mappers.ReferralSettingsMapper;
@@ -95,6 +96,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         JSONObject body = new JSONObject();
         body.put("name", "Kasbeny We Eksab");
         body.put("constraints", getReferralCodeTypeReferralConstraintsMap());
+
 
         HttpEntity<?> request = getHttpEntity(body.toString(),"131415");
 
@@ -288,6 +290,38 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
     }
 
     @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_1.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void resendOtpForInactiveReferralFailedNotFoundReferral(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Success");
+
+        HttpEntity<?> request = getHttpEntity("456");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/resendOtp",
+                request, String.class);
+        assertEquals(404, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("there is no referral code for this user", message);
+    }
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_4.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void resendOtpForInactiveReferralFailed(){
+        when(mobileOTPService.send(any(OTPDto.class))).thenReturn("Failed");
+
+        HttpEntity<?> request = getHttpEntity("123");
+
+        ResponseEntity<String> res = template.postForEntity("/referral/resendOtp",
+                request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+        JSONObject jsonObject = new JSONObject(res.getBody());
+        String message = jsonObject.getString("message");
+        assertEquals("the OTP not sent successfully!", message);
+    }
+
+    @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Parent_7.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void sendOtpForParentRegistrationButOutOfDateRange(){
@@ -304,6 +338,7 @@ public class ReferralCodeTest  extends AbstractTestWithTempBaseDir {
         String message = jsonObject.getString("message");
         assertEquals("Parent Registration ended!", message);
     }
+
 
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Referral_Code_Test_Data_Parent_7.sql"})
