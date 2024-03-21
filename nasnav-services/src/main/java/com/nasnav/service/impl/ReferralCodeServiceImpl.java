@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
@@ -193,7 +194,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         ReferralCodeEntity referralCodeEntity =
                 referralCodeRepo.findByUser_IdAndOrganization_IdAndStatus(user.getId(), currentOrganizationId, ReferralCodeStatus.IN_ACTIVE.getValue())
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, REF$PARAM$0008));
-        String responseStatus = mobileOTPService.send(new OTPDto(referralCodeEntity.getPhoneNumber(), referralCodeEntity.getPhoneNumber()));
+        String responseStatus = mobileOTPService.send(new OTPDto(referralCodeEntity.getPhoneNumber(), referralCodeEntity.getAcceptReferralToken()));
         if(!responseStatus.equals("Success")) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, REF$PARAM$0006);
         }
@@ -347,7 +348,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
         }
         return items.stream()
                 .map( item -> {
-                         BigDecimal referralDiscount = item.getDiscount().add(
+                         BigDecimal referralDiscount = ofNullable(item.getDiscount()).orElse(ZERO).add(
                             item.getPrice()
                                     .multiply(BigDecimal.valueOf(item.getQuantity()))
                                     .multiply(referralConstraints.getValue()).setScale(2, FLOOR));
@@ -426,6 +427,7 @@ public class ReferralCodeServiceImpl implements ReferralCodeService {
                 BigDecimal discountToApply = order.getTotal().subtract(order.getDiscounts());
                 order.setDiscounts(order.getDiscounts().add(discountToApply));
                 order.setReferralWithdrawAmount(discountToApply);
+                order.setTotal(order.getTotal().subtract(discountToApply));
             }
         }
         return referralBalanceWithdraw;
