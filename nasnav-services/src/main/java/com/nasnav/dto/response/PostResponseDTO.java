@@ -7,6 +7,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.PostStatus;
 import com.nasnav.enumerations.PostType;
 import com.nasnav.persistence.PostAttachmentsEntity;
+import com.nasnav.persistence.SubPostEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,10 @@ public class PostResponseDTO {
     private PostType type;
     private OrganizationRepresentationObject organization;
     private UserRepresentationObject user;
+    /**
+     * On its way to being removed due to a change in the Post handling way it will be dealt soon
+     */
+    @Deprecated(since = "21/3", forRemoval = true)
     private Set<ProductDetailsDTO> products;
     private List<PostAttachmentsEntity> attachments;
     private String productName;
@@ -31,5 +36,5 @@ public class PostResponseDTO {
     private Boolean isLiked;
     private LocalDateTime createdAt;
     private Boolean isSaved;
-
+    private Set<SubPostEntity> subPosts;
 }

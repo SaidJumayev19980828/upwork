@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,4 +34,19 @@ public class PostLikesEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private PostEntity post;
+
+
+    @ManyToOne
+    @JoinColumn(name = "sub_post_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @JsonBackReference
+    private SubPostEntity subPost;
+
+    public PostLikesEntity(Long id, LocalDateTime createdAt, UserEntity user, PostEntity post) {
+        this.id = id;
+        this.createdAt = createdAt;
+        this.user = user;
+        this.post = post;
+    }
 }

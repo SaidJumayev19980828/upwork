@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -91,6 +92,13 @@ public class PostEntity {
     private ShopsEntity shop;
 
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonManagedReference
+    private Set<SubPostEntity> subPosts = new HashSet<>();
+
+
     public void addAttachment(PostAttachmentsEntity attachment) {
         if (attachment != null) {
             if (!getAttachments().contains(attachment))
@@ -99,5 +107,11 @@ public class PostEntity {
         }
     }
 
+    public void addSubPost(SubPostEntity subPost) {
+        if (subPost != null) {
+            subPost.setPost(this);
+            getSubPosts().add(subPost);
+        }
+    }
 
 }

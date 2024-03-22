@@ -26,7 +26,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,10 +53,8 @@ public class PostTest extends AbstractTestWithTempBaseDir {
     @Test
     public void createPostTest(){
         PostCreationDTO postCreationDTO = createPostCreationDTO();
-        postCreationDTO.setIsReview(false);
-        HttpCookie cookie = new HttpCookie("User-Token", "123");
+        postCreationDTO.setReview(false);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", cookie.toString());
         headers.add("User-Token", "123");
         HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO,headers);
         ResponseEntity<Void> response = template.postForEntity("/post", request, Void.class);
@@ -68,9 +65,7 @@ public class PostTest extends AbstractTestWithTempBaseDir {
     public void createReviewPostTest(){
        PostCreationDTO postCreationDTO = createPostCreationDTO();
         addAttachment(postCreationDTO);
-        HttpCookie cookie = new HttpCookie("User-Token", "123");
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", cookie.toString());
         headers.add("User-Token", "123");
         HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO,headers);
         ResponseEntity<Void> response = template.postForEntity("/post", request, Void.class);
@@ -79,24 +74,30 @@ public class PostTest extends AbstractTestWithTempBaseDir {
 
     @Test
     public void createPostTestException() {
+        String userToken = "123";
+        String employeeToken = "abcdefg";
         PostCreationDTO postCreationDTO = createPostCreationDTO();
 
+        ResponseEntity<Void> responseEmployee = sendPostRequest(postCreationDTO,employeeToken);
+        assertEquals(HttpStatus.FORBIDDEN, responseEmployee.getStatusCode());
+
+
         postCreationDTO.setShopId(501L);
-        ResponseEntity<Void> response1 = sendPostRequest(postCreationDTO);
+        ResponseEntity<Void> response1 = sendPostRequest(postCreationDTO,userToken);
         assertEquals(HttpStatus.BAD_REQUEST, response1.getStatusCode());
 
         // Set valid shopId but provide empty attachments to trigger 404 Not Found
         postCreationDTO.setShopId(5010L);
         addAttachment(postCreationDTO);
-        ResponseEntity<Void> response2 = sendPostRequest(postCreationDTO);
+        ResponseEntity<Void> response2 = sendPostRequest(postCreationDTO,userToken);
         assertEquals(HttpStatus.NOT_FOUND, response2.getStatusCode());
 
         // Add an invalid productId to trigger 406 Not Acceptable
         Set<Long> productsIds = postCreationDTO.getProductsIds();
         productsIds.add(100000001L);
         postCreationDTO.setProductsIds(productsIds);
-        postCreationDTO.setIsReview(false);
-        ResponseEntity<Void> response3 = sendPostRequest(postCreationDTO);
+        postCreationDTO.setReview(false);
+        ResponseEntity<Void> response3 = sendPostRequest(postCreationDTO,userToken);
         assertEquals(HttpStatus.NOT_ACCEPTABLE, response3.getStatusCode());
 
 
@@ -106,11 +107,13 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         PostCreationDTO postCreationDTO = new PostCreationDTO();
         postCreationDTO.setDescription("description msg");
         postCreationDTO.setOrganizationId(99001L);
-        postCreationDTO.setProductsIds(new HashSet<>(Collections.singletonList(1001L)));
+        Set<Long> productsIds = new HashSet<>();
+        productsIds.add(1001L);
+        postCreationDTO.setProductsIds(productsIds);
         postCreationDTO.setShopId(501L);
         postCreationDTO.setRating((short) 2);
         postCreationDTO.setProductName("test");
-        postCreationDTO.setIsReview(true);
+        postCreationDTO.setReview(true);
         return postCreationDTO;
     }
 
@@ -124,15 +127,12 @@ public class PostTest extends AbstractTestWithTempBaseDir {
         postCreationDTO.setAttachment(attachments);
     }
 
-    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO) {
-        return sendPostRequest(postCreationDTO, new HttpHeaders());
+    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO , String token) {
+        return sendPostRequest(postCreationDTO, new HttpHeaders(),token);
     }
 
-    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO, HttpHeaders headers) {
-        HttpCookie cookie = new HttpCookie("User-Token", "123");
-        headers.add("Cookie", cookie.toString());
-        headers.add("User-Token", "123");
-
+    private ResponseEntity<Void> sendPostRequest(PostCreationDTO postCreationDTO, HttpHeaders headers, String token ) {
+        headers.add("User-Token", token);
         HttpEntity<PostCreationDTO> request = new HttpEntity<>(postCreationDTO, headers);
 
         return template.postForEntity("/post", request, Void.class);

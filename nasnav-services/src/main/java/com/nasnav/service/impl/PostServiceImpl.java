@@ -14,7 +14,8 @@ import com.nasnav.persistence.*;
 import com.nasnav.request.ImageBase64;
 import com.nasnav.service.*;
 import com.nasnav.util.MultipartFileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,34 +33,22 @@ import static com.nasnav.commons.utils.PagingUtils.getQueryPage;
 import static com.nasnav.exceptions.ErrorCodes.*;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class PostServiceImpl implements PostService {
-    @Autowired
-    private PostRepository postRepository;
-    @Autowired
-    private OrganizationRepository organizationRepository;
-    @Autowired
-    private SecurityService securityService;
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private PostLikesRepository postLikesRepository;
-    @Autowired
-    private PostClicksRepository postClicksRepository;
-    @Autowired
-    private ProductService productService;
-    @Autowired
-    private OrganizationService organizationService;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private FollowerServcie followerServcie;
-    @Autowired
-    private AdvertisementRepository advertisementRepository;
-    @Autowired
-    private FileService fileService;
-
-    @Autowired
-    private ShopService shopService;
+    private final PostRepository postRepository;
+    private final OrganizationRepository organizationRepository;
+    private final SecurityService securityService;
+    private final ProductRepository productRepository;
+    private final PostLikesRepository postLikesRepository;
+    private final PostClicksRepository postClicksRepository;
+    private  final ProductService productService;
+    private  final OrganizationService organizationService;
+    private  final UserRepository userRepository;
+    private final FollowerServcie followerServcie;
+    private final AdvertisementRepository advertisementRepository;
+    private final  FileService fileService;
+    private final ShopService shopService;
 
     @Override
     public PostResponseDTO getPostById(long id) throws BusinessException {
@@ -264,24 +253,23 @@ public class PostServiceImpl implements PostService {
         UserEntity user = userRepository.findById(loggedInUser.getId()).orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND,U$0001));
 
         PageImpl<PostEntity> source = postRepository.getAllBySavedByUsersContains(user, page);
-        List<PostResponseDTO> dtos = source.getContent().stream().map(this::fromEntityToPostResponseDto).collect(Collectors.toList());
-        return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
+        List<PostResponseDTO> postResponseList = source.getContent().stream().map(this::fromEntityToPostResponseDto).toList();
+        return new PageImpl<>(postResponseList, source.getPageable(), source.getTotalElements());
 
     }
 
-    private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) throws IOException {
+    private PostEntity fromPostCreationDtoToPostEntity(PostCreationDTO dto) {
         BaseUserEntity loggedInUser = securityService.getCurrentUser();
 
-        if (!(loggedInUser instanceof UserEntity)) {
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
-        }
         List<ProductEntity> products = getProducts(dto);
-
         OrganizationEntity org = getOrganization(dto.getOrganizationId());
 
-        PostEntity entity = buildPostEntity(dto, products, org, (UserEntity) loggedInUser);
+        PostEntity entity = buildPostEntity(dto, org, (UserEntity) loggedInUser);
 
-        if (dto.getIsReview()) {
+        List<SubPostEntity> subPosts = createSubPosts(products);
+        subPosts.forEach(entity::addSubPost);
+
+        if (dto.isReview()) {
             handleReviewAttachments(dto, org, entity);
         }
 
@@ -290,11 +278,23 @@ public class PostServiceImpl implements PostService {
         return entity;
     }
 
+    private List<SubPostEntity> createSubPosts(List<ProductEntity> products) {
+        return products.stream()
+                .map(this::createSubPost)
+                .toList();
+    }
+
+    private SubPostEntity createSubPost(ProductEntity product) {
+        SubPostEntity subPost = new SubPostEntity();
+        subPost.setProduct(product);
+        return subPost;
+    }
+
     private List<ProductEntity> getProducts(PostCreationDTO dto) {
         List<ProductEntity> products = new ArrayList<>();
         OrganizationEntity org = getOrganization(dto.getOrganizationId());
 
-        if (!dto.getIsReview()) {
+        if (!dto.isReview()) {
             dto.getProductsIds().forEach(productId -> {
                 Optional<ProductEntity> product = getProductByIdAndOrganization(productId, org.getId());
                 validateAndAddProduct(products, product);
@@ -305,17 +305,12 @@ public class PostServiceImpl implements PostService {
     }
 
     private OrganizationEntity getOrganization(Long organizationId) {
-        return organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, organizationId));
+        if (organizationId!=null)
+            return organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new RuntimeBusinessException(HttpStatus.NOT_FOUND, G$ORG$0001, organizationId));
+       return securityService.getCurrentUserOrganization();
     }
 
-    private UserEntity getLoggedInUser() {
-        BaseUserEntity loggedInUser = securityService.getCurrentUser();
-        if (!(loggedInUser instanceof UserEntity)) {
-            throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, E$USR$0001);
-        }
-        return (UserEntity) loggedInUser;
-    }
 
     private Optional<ProductEntity> getProductByIdAndOrganization(Long productId, Long orgId) {
         return productRepository.findByIdAndOrganizationId(productId, orgId);
@@ -329,6 +324,10 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    /**
+     *   This method is deprecated because dealing with posts changed to create sub post for each Product
+     */
+    @Deprecated(since = "21/3", forRemoval = true)
     private PostEntity buildPostEntity(PostCreationDTO dto, List<ProductEntity> products, OrganizationEntity org, UserEntity loggedInUser) {
         PostEntity entity = new PostEntity();
         entity.setCreatedAt(LocalDateTime.now());
@@ -341,6 +340,17 @@ public class PostServiceImpl implements PostService {
         return entity;
     }
 
+
+    private PostEntity buildPostEntity(PostCreationDTO dto, OrganizationEntity org, UserEntity loggedInUser) {
+        PostEntity entity = new PostEntity();
+        entity.setCreatedAt(LocalDateTime.now());
+        entity.setDescription(dto.getDescription());
+        entity.setOrganization(org);
+        entity.setUser(loggedInUser);
+        entity.setStatus(PostStatus.APPROVED.getValue());
+        entity.setType(PostType.POST.getValue());
+        return entity;
+    }
     private void handleReviewAttachments(PostCreationDTO dto, OrganizationEntity org, PostEntity post) {
         if (dto.getAttachment()!= null && dto.getAttachment().isEmpty()) {
             throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, POST$REVIEW$ATTACHMENT);
@@ -382,20 +392,8 @@ public class PostServiceImpl implements PostService {
         return fileService.saveFile(attachmentFile ,orgId );
     }
     private PostResponseDTO fromEntityToPostResponseDto(PostEntity entity) {
-        ProductFetchDTO productFetchDTO = new ProductFetchDTO();
-        productFetchDTO.setCheckVariants(false);
-        productFetchDTO.setIncludeOutOfStock(true);
-        productFetchDTO.setOnlyYeshteryProducts(false);
-        Set<ProductDetailsDTO> productDetailsDTOS = new HashSet<>();
-        entity.getProducts().forEach(o -> {
-            try {
-                productFetchDTO.setProductId(o.getId());
-                productDetailsDTOS.add(productService.getProduct(productFetchDTO));
-            } catch (BusinessException e) {
-                e.printStackTrace();
-            }
-        });
         PostResponseDTO dto = new PostResponseDTO();
+        dto.setSubPosts(entity.getSubPosts());
         dto.setId(entity.getId());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setDescription(entity.getDescription());
@@ -404,7 +402,6 @@ public class PostServiceImpl implements PostService {
         dto.setAttachments(entity.getAttachments());
         dto.setLikesCount(postLikesRepository.countAllByPost_Id(entity.getId()));
         dto.setClicksCount(postClicksRepository.getClicksCountByPost(entity.getId()));
-        dto.setProducts(productDetailsDTOS);
 
         dto.setOrganization(organizationService.getOrganizationById(entity.getOrganization().getId(),0));
         dto.setUser(entity.getUser().getRepresentation());
@@ -431,7 +428,30 @@ public class PostServiceImpl implements PostService {
 
 
     private Boolean userSaveThatPost(Set<UserEntity> entity , Long userId) {
-        return entity.stream().filter(user -> user.getId().equals(userId)).findAny().isPresent();
+        return entity.stream().anyMatch(user -> user.getId().equals(userId));
     }
 
+
+    /**
+     * This method is deprecated because dealing with posts changed to create sub post for each Product
+     * @deprecated
+     * @param entity
+     */
+    @Deprecated (since = "21/3", forRemoval = true)
+    private void setProduct(PostEntity entity){
+        ProductFetchDTO productFetchDTO = new ProductFetchDTO();
+        productFetchDTO.setCheckVariants(false);
+        productFetchDTO.setIncludeOutOfStock(true);
+        productFetchDTO.setOnlyYeshteryProducts(false);
+        Set<ProductDetailsDTO> productDetailsDTOs = new HashSet<>();
+        entity.getProducts().forEach(o -> {
+            try {
+                productFetchDTO.setProductId(o.getId());
+                productDetailsDTOs.add(productService.getProduct(productFetchDTO));
+            } catch (BusinessException e) {
+                log.error(e.getErrorMessage());
+            }
+        });
+
+    }
 }
