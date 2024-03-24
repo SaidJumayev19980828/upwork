@@ -92,6 +92,21 @@ public class InfluencerServiceImpl implements InfluencerService {
     }
 
     @Override
+    public Long becomeApprovedInfluencer(List<Long> categoryIds, UserEntity user) {
+        if (categoryIds == null) {
+            categoryIds = new ArrayList<>();
+        }
+        List<CategoriesEntity> categories = categoriesRepository.findAllByIdIn(categoryIds);
+        InfluencerEntity entity = new InfluencerEntity();
+        entity.setApproved(true);
+        entity.setCreatedAt(LocalDateTime.now());
+        entity.setCategories(categories);
+        entity.setUser(user);
+        InfluencerEntity influencer = influencerRepository.save(entity);
+        return influencer.getId();
+    }
+
+    @Override
     public void becomeInfluencerResponse(Long influencerId, boolean action) {
         InfluencerEntity influencer = influencerRepository.findById(influencerId)
                 .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,G$INFLU$0001,influencerId));

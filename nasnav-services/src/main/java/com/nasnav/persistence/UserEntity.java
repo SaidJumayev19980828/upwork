@@ -10,12 +10,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 
 @Data
@@ -102,6 +104,19 @@ public class UserEntity extends BaseUserEntity{
         user.setOrganizationId(userJson.getOrgId());
         user.setUserStatus(NOT_ACTIVATED.getValue());
         user.setPhoneNumber(userJson.getPhoneNumber());
+        return user;
+    }
+
+    public static UserEntity registerActiveUser(UserDTOs.AiInfluencerUserDataObject userJson, PasswordEncoder passwordEncoder) {
+        UserEntity user = new UserEntity();
+        user.setEmail(userJson.getEmail());
+        user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
+        user.setOrganizationId(userJson.getOrgId());
+        user.setUserStatus(ACTIVATED.getValue());
+        user.setPhoneNumber(userJson.getPhoneNumber());
+        if (user.getDateOfBirth() != null) {
+            user.setDateOfBirth(userJson.getDateOfBirth().atStartOfDay());
+        }
         return user;
     }
     

@@ -6,10 +6,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.UserDTOs.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.ImageTypeDto;
-import com.nasnav.dto.request.organization.OrganizationCreationDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.DiscountStrategies;
@@ -30,6 +27,7 @@ import com.nasnav.service.*;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import com.nasnav.service.model.IdAndNamePair;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -42,6 +40,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,7 +77,9 @@ import static org.springframework.http.HttpStatus.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class OrganizationServiceImpl implements OrganizationService {
+    private final PasswordEncoder passwordEncoder;
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -136,6 +137,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     private EmployeeUserRepository employeeUserRepository;
     @Autowired
     ImageTypeRepository imageTypeRepository;
+    @Autowired
+    private InfluencerService influencerService;
+    @Autowired
+    private UserRepository userRepository;
 
     private final Logger classLogger = LogManager.getLogger(OrganizationServiceImpl.class);
 
@@ -1125,6 +1130,21 @@ public class OrganizationServiceImpl implements OrganizationService {
         imageType.setText(imageTypeDto.getText());
         ImageType savedImageType= imageTypeRepository.save(imageType);
         return new ImageTypeResponse(savedImageType.getType_id(),savedImageType.getOrganizationId(),savedImageType.getLabel(),savedImageType.getText());
+    }
+
+    @Override
+    public CreateAiAccountResponse createAIAccount(CreateInfluencerAccountForAiRequest requestBody) {
+        if(organizationRepository.existsById(requestBody.getData().getOrgId())) {
+            UserEntity nasnavUser = UserEntity.registerActiveUser(requestBody.getData(), passwordEncoder);
+            nasnavUser.setName( requestBody.getName());
+            nasnavUser = userRepository.save(nasnavUser);
+            Long influencerId = influencerService.becomeApprovedInfluencer(requestBody.getData().getCategoryIds(), nasnavUser);
+            return new CreateAiAccountResponse(influencerId, nasnavUser.getName(), nasnavUser.getOrganizationId());
+        }
+        else {
+            log.error("The provided organization id is not exist");
+            throw new RuntimeBusinessException(NOT_FOUND, ORG$NOTFOUND, requestBody.getData().getOrgId());
+        }
     }
 
     @Override

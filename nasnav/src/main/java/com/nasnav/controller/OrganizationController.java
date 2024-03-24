@@ -10,6 +10,7 @@ import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.*;
 import com.nasnav.enumerations.ProductFeatureType;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ImageType;
 import com.nasnav.response.*;
 import com.nasnav.service.*;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -69,6 +71,8 @@ public class OrganizationController {
     private OrganizationService organizationService;
 	@Autowired
 	private WebScrapingService webScrapingService;
+    @Autowired
+	private InfluencerService influencerService;
 
 
     @PostMapping(value = "register", produces = APPLICATION_JSON_VALUE)
@@ -405,6 +409,18 @@ public class OrganizationController {
     public List<ImageType> getImagesType(@RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("org_id") Long organizationId) throws BusinessException {
         return orgService.getImagesTypes(organizationId);
+    }
+
+    @PostMapping(value = "/shallow_influencer/create", produces = APPLICATION_JSON_VALUE)
+    public CreateAiAccountResponse createAIAccount(@RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestBody @Valid CreateInfluencerAccountForAiRequest requestBody) throws RuntimeBusinessException {
+        return orgService.createAIAccount(requestBody);
+    }
+
+    @GetMapping(value = "/shallow_influencer/data")
+    public InfluencerDTO getAIAccountData(@RequestHeader(name = "User-Token", required = false) String userToken, Long influencerId)
+            throws RuntimeBusinessException {
+        return influencerService.getInfluencerById(influencerId);
     }
 
 }

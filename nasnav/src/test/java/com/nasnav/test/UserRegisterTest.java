@@ -7,13 +7,13 @@ import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.*;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.dto.request.ActivateOtpDto;
 import com.nasnav.dto.request.PackageRegisteredByUserDTO;
+import com.nasnav.dto.request.organization.CreateInfluencerAccountForAiRequest;
 import com.nasnav.enumerations.LoyaltyPointType;
 import com.nasnav.persistence.*;
+import com.nasnav.response.CreateAiAccountResponse;
 import com.nasnav.response.RecoveryUserResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -111,17 +111,17 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 	@Autowired
 	private AddressRepository addressRepo;
-	
+
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-	
+
 	@Autowired
 	private UserTokenRepository userTokenRepo;
 	@Autowired
 	UserOtpRepository userOtpRepository;
 	@Autowired
 	private UserSubscriptionRepository subsRepo;
-	
+
 	@MockBean
 	private MailService mailService;
 
@@ -150,8 +150,8 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	public void clearCache(){
 		adminService.invalidateCaches();
 	}
-	
-	
+
+
 	@Before
 	public void setupLoginUser() {
 		if (organization == null) {
@@ -180,22 +180,22 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		persistentUser.setAllowReward(false);
 		return persistentUser;
 	}
-	
-	
+
+
 
 	private OrganizationEntity createOrganization() {
 		OrganizationEntity org = new OrganizationEntity();
 		org.setId(getNewDummyOrgId());
 		org.setName("Test Organization");
-		org.setDescription("Test Organization Description");	
+		org.setDescription("Test Organization Description");
 		org.setThemeId(0);
 		org.setEcommerce(1);
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;
 	}
-	
-	
+
+
 	/**
 	 * Dummy organizations that we can use in tests have id's between 99000 and 99999
 	 * */
@@ -219,7 +219,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		}
 	}
 
-	
+
 
 	public void testSameEmailAndOrgId() {
 		HttpEntity<Object> userJson = getHttpEntity(
@@ -293,7 +293,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				organization.getId() + "&employee=false", String.class);
         log.debug("###############{}", response.getBody());
 		Assert.assertTrue(response.getBody().contains("U$EMP$0004"));
-		
+
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
@@ -365,23 +365,23 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
 						organization.getId() + "&employee=false", String.class);
 		Assert.assertTrue(response.getBody().contains("UXACTVX0001"));
-		
+
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void testSendResetPasswordTokenForNoPassedMail() {
 		ResponseEntity<String> response = getResponseFromGet("/user/recover?email=&org_id=12&employee=false", String.class);
 		Assert.assertTrue(response.getBody().contains("U$EMP$0004"));
-		
+
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
+
 	private void assertResetTocken(String token) {
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}", null);
@@ -389,7 +389,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		
+
 		Assert.assertEquals(OK.value(), response.getStatusCode().value());
 
 		userJson = getHttpEntity(
@@ -399,10 +399,10 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 
 		// Delete this user
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
-	
+
 	@Test
 	public void testPasswordShouldBeReset() {
 
@@ -428,7 +428,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), otp, persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
-		
+
 		ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 		Assert.assertEquals(200, recoveryResponse.getStatusCodeValue());
 		String token = recoveryResponse.getBody().getResetToken();
@@ -446,7 +446,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		String otp = userOtpRepository.findByUserAndType(persistentUser, OtpType.RESET_PASSWORD).map(BaseUserOtpEntity::getOtp).orElse(null);
 		ActivateOtpDto activationBody = new ActivateOtpDto(persistentUser.getEmail(), "invalid otp", persistentUser.getOrganizationId());
 		HttpEntity<ActivateOtpDto> request = new HttpEntity<ActivateOtpDto>(activationBody);
-		
+
 		ResponseEntity<RecoveryUserResponse> recoveryResponse = template.postForEntity("/user/recovery/otp-verify", request, RecoveryUserResponse.class);
 		Assert.assertEquals(400, recoveryResponse.getStatusCodeValue());
 
@@ -474,15 +474,15 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		
+
 		Assert.assertTrue(response.getBody().getStatus().contains(INVALID_PARAMETERS));
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void testSetInvalidPassword() {
 
@@ -495,7 +495,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 		ResponseEntity<String> response = template.postForEntity("/user/recover", userJson, String.class);
 
-		
+
 		Assert.assertTrue(response.getBody().contains("U$LOG$0005"));
 		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -518,42 +518,42 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 
-	
+
 	@Test
 	public void testUserShouldLogin() {
 		//try to get new password to use it for login
-		String newPassword = "New_Password"; 		
+		String newPassword = "New_Password";
 		resetUserPassword(newPassword);
-		
-		String request = createLoginJson(newPassword);		
+
+		String request = createLoginJson(newPassword);
 		HttpEntity<Object> userJson = getHttpEntity(request, null);
-		
+
 		//---------------------------------------------------------------------
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
-		
+
 		Optional<String> login1Token = extractAuthTokenFromCookies(response);
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 		assertTrue(response.getHeaders().get("Set-Cookie").get(0) != null);
 		assertTrue(login1Token.isPresent());
-		
+
 		//---------------------------------------------------------------------
 		ResponseEntity<UserApiResponse> response2 = template.postForEntity("/user/login", userJson, UserApiResponse.class);
-		
+
 		Optional<String> login2Token = extractAuthTokenFromCookies(response2);
-		
+
 		Assert.assertEquals(200, response2.getStatusCode().value());
 		assertTrue(response2.getHeaders().get("Set-Cookie").get(0) != null);
 		assertTrue(login2Token.isPresent());
-		
+
 		//---------------------------------------------------------------------
 		assertNotEquals(login1Token.get(), login2Token.get());
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	@Test
 	public void testUsingExpiredToken() {
 		ResponseEntity<String> response = template.exchange("/admin/list_organizations", GET, getHttpEntity("", "889966"), String.class);
@@ -561,7 +561,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 
-	
+
 
 
 	private String createLoginJson(String newPassword) {
@@ -573,7 +573,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	}
 
 
-	
+
 
 	@Test
 	public void testUserLogout() {
@@ -581,38 +581,38 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		assertTrue(userTokenRepo.existsByToken(token));
 		long userTokensCountBefore = userTokenRepo.countByUserEntity_Id(88005L);
 		assertTrue("we assume the user has multiple tokens in the test", userTokensCountBefore > 1);
-		
+
 		//--------------------------------------------------
 		HttpEntity<?> entity = getHttpEntity( token );
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/logout", entity, UserApiResponse.class);
 		long userTokensCountAfter = userTokenRepo.countByUserEntity_Id(88005L);
-		
+
 		//--------------------------------------------------		
 		Assert.assertEquals(200, response.getStatusCode().value());
-		assertFalse(userTokenRepo.existsByToken(token));		
+		assertFalse(userTokenRepo.existsByToken(token));
 		assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
 		log.debug(response.getHeaders().get("Set-Cookie").get(0));
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	@Test
 	public void testUsingSemiExpiredToken() {
 		String token = "875488";
 		UserTokensEntity tokenEntityBefore = userTokenRepo.findByToken(token);
 		assertNotNull(tokenEntityBefore);
 		LocalDateTime tokenUpdateTimeBefore = tokenEntityBefore.getUpdateTime();
-		
+
 		ResponseEntity<String> response = template.exchange("/product/images?product_id=1234", GET, getHttpEntity("", token), String.class);
         Assert.assertEquals(406, response.getStatusCodeValue());
-        
+
         UserTokensEntity tokenEntityAfter = userTokenRepo.findByToken(token);
 		assertNotNull(tokenEntityAfter);
 		LocalDateTime tokenUpdateTimeAfter = tokenEntityAfter.getUpdateTime();
-		
+
 		assertTrue("After using a token, and if it is nearly expired, its expiration should be renewed", tokenUpdateTimeAfter.isAfter(tokenUpdateTimeBefore));
 	}
 
@@ -641,17 +641,17 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void testUserShouldLoginUppercaseEmail() {
 		//try to get new password to use it for login
-		String newPassword = "New_Password"; 
-		
+		String newPassword = "New_Password";
+
 		resetUserPassword(newPassword);
 
 		// login using the new password and email with different character case
@@ -661,36 +661,36 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	@Test
 	public void testUserSameEmailDifferentOrgShouldLogin() {
-		
+
 		// login using the new password
 		JSONObject request = new JSONObject();
 		request.put("email", "user1@nasnav.com");
 		request.put("password", "12345678");
 		request.put("org_id", 99001L);
-		
+
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login"
 																, getHttpEntity(request.toString(), null)
 																, UserApiResponse.class);
 
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 
 	@Test
 	public void testInvalidCredentialsLogin() {
@@ -699,17 +699,17 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				+ "\t\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + "}", null);
 
 		ResponseEntity<String> response = template.postForEntity("/user/login", userJson, String.class);
-		
+
 		Assert.assertTrue(response.getBody().contains("U$LOG$0002"));
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void testInvalidOrgIdLogin() {
 		//try to get new password to use it for login
-		String newPassword = "New_Password"; 		
+		String newPassword = "New_Password";
 		resetUserPassword(newPassword);
 
 		// login using the new password
@@ -720,8 +720,8 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		Assert.assertTrue(response.getBody().contains("U$LOG$0002"));
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 	}
-	
-	
+
+
 
 	@Test
 	public void testInvalidJsonForLogin() {
@@ -731,7 +731,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		
+
 		Assert.assertTrue(response.getBody().getStatus().contains(ResponseStatus.INVALID_PARAMETERS));
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -742,33 +742,33 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		headers.setContentType(APPLICATION_JSON);
 		return template.exchange(URL, HttpMethod.GET, new HttpEntity<>(headers), classRef);
 	}
-	
-	
-	
-	
 
-	
+
+
+
+
+
 	@Test
 	public void testCustomerLoginByEmailUsedByCustomerAndEmployee() {
 		//try to get new password to use it for login
 		String email = "user2@nasnav.com";
-		String password = "12345678"; 
-		
+		String password = "12345678";
+
 		String request = new JSONObject()
 								.put("password", password)
 								.put("email", email)
 								.put("org_id", 99001L)
 								.put("employee", false)
 								.toString();
-		
+
 		// login using the new password
 		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
-		ResponseEntity<UserApiResponse> response = 
+		ResponseEntity<UserApiResponse> response =
 				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
-		
+
 		//-------------------------------------------------------------------
 		Assert.assertEquals(200, response.getStatusCode().value());
-		
+
 		String token = response.getBody().getToken();
 		boolean userLoggedIn = userRepository.existsByAuthenticationToken( token);
 		assertTrue("the logged in user should be the customer user, "
@@ -801,7 +801,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	@Test
 	public void newUserRegisterTest() throws MessagingException, IOException {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl).toString();   
+		String body = createUserRegisterV2Request(redirectUrl).toString();
 		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
@@ -900,16 +900,16 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 						, Mockito.anyString()
 						, Mockito.anyMap());
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	@Test
 	public void activationEmailResendTest() throws MessagingException, IOException {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		
-		JSONObject body = createActivationResendRequest(redirectUrl); 
+
+		JSONObject body = createActivationResendRequest(redirectUrl);
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
@@ -925,7 +925,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 
 	@Test
 	public void activationEmailResendOtpTest() throws MessagingException, IOException {
-		
+
 		JSONObject body = createActivationResendRequest(null);
 		body.put("activation_method", "OTP");
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
@@ -940,16 +940,16 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void activationEmailResendDeactivatedButNotTokenTest() throws MessagingException, IOException {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		
-		JSONObject body = createActivationResendRequest(redirectUrl); 
+
+		JSONObject body = createActivationResendRequest(redirectUrl);
 		body.put("email", "no.token.man@nasnav.com");
-		
+
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
@@ -962,17 +962,17 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void activationEmailResendInvalidRedirectTest() throws MessagingException, IOException {
 		String redirectUrl = "bla\bla? nasnav.org/dummy_org/login?redirect=checkout";
-		
-		JSONObject body = createActivationResendRequest(redirectUrl); 
+
+		JSONObject body = createActivationResendRequest(redirectUrl);
 		body.put("email", "no.token.man@nasnav.com");
-		
+
 		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
@@ -986,8 +986,8 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
-	
-	
+
+
 	//TODO: test activation email resend : non-existing email for organization
 	//TODO: test activation email resend : employee user
 	//TODO: test activation email resend : too soon
@@ -1000,7 +1000,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				.put("org_id", 99001)
 				.put("redirect_url", redirectUrl);
 	}
-	
+
 
 
 	@Test
@@ -1061,7 +1061,7 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 	public void activateAccountTest() {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl).toString();   
+		String body = createUserRegisterV2Request(redirectUrl).toString();
 		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
@@ -1069,26 +1069,26 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
 
 		String activationUrl = format("/user/v2/register/activate?token=%s&redirect=%s", user.getResetPasswordToken(), redirectUrl);
-		
+
 		ResponseEntity<RedirectView> activationRes = template.getForEntity(activationUrl, RedirectView.class);
 
-		user = userRepository.findById(response.getBody().getEntityId()).get();		
+		user = userRepository.findById(response.getBody().getEntityId()).get();
 		String exepctedtUrl = format("https://nasnav.org/dummy_org/login?redirect=checkout&auth_token=%s", user.getAuthenticationToken());
 		Assert.assertEquals(exepctedtUrl , activationRes.getHeaders().getLocation().toString());
-		
+
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
 		assertNull(user.getResetPasswordToken());
 	}
-	
-	
+
+
 	//TODO: activation email redirect is not in nasnav domain but in organization domains
-	
-	
+
+
 	@Test
 	public void activateAccountNoRedirectTest() {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl).toString();   
+		String body = createUserRegisterV2Request(redirectUrl).toString();
 		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
@@ -1096,58 +1096,58 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
 
 		String activationUrl = format("/user/v2/register/activate?token=%s", user.getResetPasswordToken(), redirectUrl);
-		
+
 		@SuppressWarnings("unused")
 		ResponseEntity<String> activationRes = template.postForEntity(activationUrl, getHttpEntity(""), String.class);
 
-		user = userRepository.findById(response.getBody().getEntityId()).get();		
-		
+		user = userRepository.findById(response.getBody().getEntityId()).get();
+
 		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
 		assertNull(user.getResetPasswordToken());
-		
+
 		//TODO: add assertion for returned login response 
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	@Test
 	public void registerAccountTestInvalidRedirect() {
 		String redirectUrl = "https://HACKER.BAD/hacking";
-		String body = createUserRegisterV2Request(redirectUrl).toString();  
-		
+		String body = createUserRegisterV2Request(redirectUrl).toString();
+
 		HttpEntity<Object> userJson = getHttpEntity(body);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
-		
+
 		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void activateAccountTestInvalidRedirect() {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl).toString();  
+		String body = createUserRegisterV2Request(redirectUrl).toString();
 		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
 
-		
+
 		//try activating the account
 		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
 
 		String invalidRedirectUrl = "https://HACKER.BAD/hacking";
 		String activationUrl = format("/user/v2/register/activate?token=%s&redirect=%s", user.getResetPasswordToken(), invalidRedirectUrl);
-		
+
 		ResponseEntity<RedirectView> activationRes = template.getForEntity(activationUrl, RedirectView.class);
 		Assert.assertEquals( 406, activationRes.getStatusCodeValue());
-		
-		user = userRepository.findById(response.getBody().getEntityId()).get();		
-		
+
+		user = userRepository.findById(response.getBody().getEntityId()).get();
+
 		Assert.assertEquals(NOT_ACTIVATED.getValue(), user.getUserStatus());
 		Assert.assertNotNull(user.getResetPasswordToken());
 	}
@@ -1683,6 +1683,93 @@ public class UserRegisterTest extends AbstractTestWithTempBaseDir {
 				.put("org_id", 99001)
 				.put("confirmation_flag", true)
 				.put("redirect_url", redirectUrl);
+	}
+
+	@Test
+	public void newUserOrganizationAiRegisterAuthErrorTest() {
+		CreateInfluencerAccountForAiRequest requestBody = new CreateInfluencerAccountForAiRequest();
+		UserDTOs.AiInfluencerUserDataObject data = new UserDTOs.AiInfluencerUserDataObject();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test.com";
+		data.password = "password";
+		requestBody.setData(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody, "123222");
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/organization/shallow_influencer/create", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(401, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserOrganizationAiRegisterMissingDataTest() {
+		CreateInfluencerAccountForAiRequest requestBody = new CreateInfluencerAccountForAiRequest();
+		UserDTOs.AiInfluencerUserDataObject data = new UserDTOs.AiInfluencerUserDataObject();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test.com";
+		data.password = "password";
+		requestBody.setData(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/organization/shallow_influencer/create", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserOrganizationAiRegisterWrongDataTest() {
+		CreateInfluencerAccountForAiRequest requestBody = new CreateInfluencerAccountForAiRequest();
+		requestBody.setName("name");
+		UserDTOs.AiInfluencerUserDataObject data = new UserDTOs.AiInfluencerUserDataObject();
+		data.orgId = Long.parseLong("99001111");
+		data.email = "test@nasnav.com";
+		data.password = "password";
+		requestBody.setData(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/organization/shallow_influencer/create", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(404, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserOrganizationAiRegisterErrorEmailFormateTest() {
+		CreateInfluencerAccountForAiRequest requestBody = new CreateInfluencerAccountForAiRequest();
+		requestBody.setName("name");
+		UserDTOs.AiInfluencerUserDataObject data = new UserDTOs.AiInfluencerUserDataObject();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test.com";
+		data.password = "password";
+		requestBody.setData(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/organization/shallow_influencer/create", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(400, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void newUserOrganizationAiRegisterTest() {
+		CreateInfluencerAccountForAiRequest requestBody = new CreateInfluencerAccountForAiRequest();
+		requestBody.setName("name");
+		UserDTOs.AiInfluencerUserDataObject data = new UserDTOs.AiInfluencerUserDataObject();
+		data.orgId = Long.parseLong("99001");
+		data.email = "test@nasnav.com";
+		data.password = "password";
+		requestBody.setData(data);
+		HttpEntity<Object> json = getHttpEntity(requestBody, "123");
+		ResponseEntity<CreateAiAccountResponse> response = template.postForEntity("/organization/shallow_influencer/create", json,
+				CreateAiAccountResponse.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+	}
+	@Test
+	public void getOrganizationAiUserDataTest() {
+		HttpEntity<?> json = getHttpEntity("123");
+		ResponseEntity<InfluencerDTO> response = template.exchange("/organization/shallow_influencer/data?influencerId=101",GET, json,
+				InfluencerDTO.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+	}
+	@Test
+	public void getOrganizationAiUserDataNotFoundTest() {
+		HttpEntity<?> json = getHttpEntity("123");
+		ResponseEntity<InfluencerDTO> response = template.exchange("/organization/shallow_influencer/data?influencerId=0",GET, json,
+				InfluencerDTO.class);
+		Assert.assertEquals(404, response.getStatusCodeValue());
 	}
 
 }

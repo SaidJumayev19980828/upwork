@@ -8,7 +8,11 @@ import com.nasnav.enumerations.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.Value;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public class UserDTOs {
 
@@ -30,6 +34,27 @@ public class UserDTOs {
         @JsonProperty("date_of_birth")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         private String dateOfBirth;
+    }
+
+    @Getter
+    @Schema(name = "User Registration Data")
+    public static class AiInfluencerUserDataObject
+    {
+        @Schema(example = "testuser@nasnav.com", required = true)
+        @Email
+        public String email;
+        public String password;
+        @Schema(example = "123", required = true)
+        @JsonProperty(value = "org_id",required = true)
+        @NotNull
+        public Long orgId;
+
+        @JsonProperty("phone_number")
+        private String phoneNumber;
+        @JsonProperty("date_of_birth")
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        private LocalDate dateOfBirth;
+        List<Long> categoryIds;
     }
 
     @Getter

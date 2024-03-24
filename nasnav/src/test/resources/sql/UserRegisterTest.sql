@@ -102,3 +102,6 @@ INSERT INTO public.package(id,name,description,price,period_in_days,currency_iso
 
 INSERT INTO public.package_registered(id, creator_employee_id, org_id, package_id, registered_date) values (200, 159, 99001, 99001, now());
 
+INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (100,now(),159,false);
+INSERT INTO public.influencers(id,created_at,employee_user_id,approved) values (101,now(),160,true);
+

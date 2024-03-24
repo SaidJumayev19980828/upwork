@@ -7,7 +7,9 @@ import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.request.EventOrganiseRequestDTO;
 import com.nasnav.dto.response.EventResponseDto;
 import com.nasnav.enumerations.EventRequestStatus;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.InfluencerEntity;
+import com.nasnav.persistence.UserEntity;
 import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDate;
@@ -19,6 +21,7 @@ public interface InfluencerService {
     PageImpl<InfluencerDTO> getAllInfluencers(Integer start, Integer count, Boolean status);
     List<InfluencerDTO> getAllInfluencersByOrg(Long orgId);
     void becomeInfluencerRequest(List<Long> categoryIds);
+    Long becomeApprovedInfluencer(List<Long> categoryIds, UserEntity user);
 
     /**
      * init with false

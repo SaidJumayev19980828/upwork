@@ -2,20 +2,14 @@ package com.nasnav.service;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.RegisterDto;
-import com.nasnav.dto.request.organization.ImageTypeDto;
-import com.nasnav.dto.request.organization.OrganizationCreationDTO;
-import com.nasnav.dto.request.organization.OrganizationModificationDTO;
-import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.request.organization.*;
 import com.nasnav.dto.response.YeshteryOrganizationDTO;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ImageType;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.request.SitemapParams;
-import com.nasnav.response.DomainOrgIdResponse;
-import com.nasnav.response.ImageTypeResponse;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.*;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -83,4 +77,6 @@ public interface OrganizationService {
     void updateImageType(ImageTypeDto imageTypeDto);
 
     List<ImageType> getImagesTypes(Long organizationId);
+
+    CreateAiAccountResponse createAIAccount(CreateInfluencerAccountForAiRequest requestBody);
 }
