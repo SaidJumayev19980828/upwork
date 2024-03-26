@@ -12,11 +12,7 @@ import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.ErrorResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
-import com.nasnav.service.CartService;
-import com.nasnav.service.LoyaltyPointsService;
-import com.nasnav.service.OrderService;
-import com.nasnav.service.PromotionsService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.service.*;
 import com.nasnav.service.helpers.CartServiceHelper;
 import com.nasnav.service.impl.CartServiceImpl;
 import com.nasnav.test.commons.test_templates.AbstractTestWithTempBaseDir;
@@ -33,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -41,6 +38,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -48,6 +46,8 @@ import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.PaymentStatus.COD_REQUESTED;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0003;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_ID;
 import static com.nasnav.service.helpers.CartServiceHelper.ADDITIONAL_DATA_PRODUCT_TYPE;
@@ -58,8 +58,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -110,12 +109,17 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 	@Autowired
 	private EmployeeUserRepository empRepo;
 
+	@Autowired
+	private UserOtpRepository userOtpRepository;
+
 	@Mock
 	private CartServiceImpl cartServiceMock;
 
 	@Autowired
 	private ReferralTransactionRepository referralTransactionRepository;
 
+	@MockBean
+	private MailService mailService;
 
 	@Test
 	public void getCartNoAuthz() {
@@ -606,16 +610,6 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		
 		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
-	}
-
-	@Test
-	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_15.sql"})
-	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void checkoutWithEmployeeToken() {
-		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
-		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
-		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
-		assertEquals(200, res.getStatusCodeValue());
 	}
 
 	@Test
@@ -1536,6 +1530,7 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		body.put("notes", "come after dinner");
 		body.put("customerId",88L);
 		body.put("requestedPoints", "0");
+		body.put("otp", "123456");
 
 		return body;
 	}
@@ -1562,6 +1557,76 @@ public class CartTest extends AbstractTestWithTempBaseDir {
 		assertEquals(3, items.size());
 		assertTrue("The optimization should pick stocks from warehouse only"
 					, asList(613L, 614L, 615L).stream().allMatch(orderStocks::contains));	
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void initiateCheckout() throws MessagingException, IOException {
+		doNothing()
+				.when(mailService).send(
+						any(String.class), any(String.class), any(String.class), any(String.class), any(Map.class)
+				);
+		HttpEntity<?> request = getHttpEntity( "101112");
+		ResponseEntity<String> res = template.postForEntity("/cart/store-checkout/initiate?user_id=" + 88, request, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		UserEntity userEntity = userRepository.findById(88L).get();
+		UserOtpEntity userOtp = userOtpRepository.findByUser(userEntity).orElse(null);
+		assertNotNull(userOtp);
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void initiateCheckoutUserNotFound() {
+		HttpEntity<?> request = getHttpEntity( "101112");
+		ResponseEntity<String> res = template.postForEntity("/cart/store-checkout/initiate?user_id=" + 888, request, String.class);
+		assertEquals(404, res.getStatusCodeValue());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void initiateCheckoutMailNotSent() throws MessagingException, IOException {
+		doThrow(RuntimeBusinessException.class)
+				.when(mailService).send(
+						any(String.class), any(String.class), any(String.class), any(String.class), any(Map.class)
+				);
+		HttpEntity<?> request = getHttpEntity( "101112");
+		ResponseEntity<String> res = template.postForEntity("/cart/store-checkout/initiate?user_id=" + 88, request, String.class);
+		assertEquals(500, res.getStatusCodeValue());
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout_1.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void completeCheckout()  {
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+
+		ResponseEntity<Order> res = template.postForEntity("/cart/store-checkout/complete", request, Order.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		assertEquals(FINALIZED.toString(), res.getBody().getStatus());
+		res.getBody().getSubOrders().forEach( subOrder -> {
+					assertEquals(FINALIZED.toString(), subOrder.getStatus());
+				}
+		);
+		assertEquals(COD_REQUESTED.toString(), res.getBody().getPaymentStatus());
+
+	}
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_Store_Checkout_1.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void completeCheckoutNotValidOtp()  {
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTestForEmployeeUser();
+		requestBody.put("otp", "654321");
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "101112");
+
+		ResponseEntity<Order> res = template.postForEntity("/cart/store-checkout/complete", request, Order.class);
+		assertEquals(400, res.getStatusCodeValue());
 	}
 
 	@Test

@@ -178,6 +178,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			patternOf( "/integration/**"										, setOf(NASNAV_ADMIN))
 			,patternOf( "/cart/checkout", POST ,getAllRoles()),
 			patternOf( "/cart/{userId:\\d+}"		,GET						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+			patternOf( "/cart/store-checkout/**"	 ,POST					, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, ORGANIZATION_EMPLOYEE, STORE_EMPLOYEE, STORE_MANAGER)),
 			patternOf( "/cart/**"											, setOf(CUSTOMER )),
 			patternOf( "/pickup/**"											, setOf(CUSTOMER)),
 			patternOf( "/wishlist/{userId:\\d+}"		,GET					, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),

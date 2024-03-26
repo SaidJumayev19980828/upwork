@@ -11,6 +11,7 @@ import com.nasnav.dto.response.OrderConfirmResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.OrdersListResponse;
@@ -40,13 +41,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
@@ -1428,12 +1429,43 @@ public class OrderServiceTest extends AbstractTestWithTempBaseDir {
 			, Mockito.anyString()
 			, Mockito.anyMap());
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+	@Test(expected = BusinessException.class)
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void validateOrderForPaymentOrderIdInvalid() throws BusinessException {
+		orderService.validateOrderForPaymentCoD(1L);
+	}
+
+	@Test(expected = BusinessException.class)
+	@Transactional
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void validateOrderForPaymentOrderOrganizationCodPaymentNotAvailable() throws BusinessException {
+		orderService.validateOrderForPaymentCoD(310002L);
+	}
+
+	@Test(expected = BusinessException.class)
+	@Transactional
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_16.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void validateOrderForPaymentOrderOrganizationOneOfOrderIsForPickup() throws BusinessException {
+		orderService.validateOrderForPaymentCoD(310002L);
+	}
+
+	@Test(expected = BusinessException.class)
+	@Transactional
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void validateOrderForPaymentOrderOrganizationPaymentCreated() throws BusinessException {
+		PaymentEntity payment = orderService.validateOrderForPaymentCoD(310002L);
+		assertEquals("COD", payment.getOperator());
+		assertEquals(PaymentStatus.COD_REQUESTED, payment.getStatus());
+	}
+
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})

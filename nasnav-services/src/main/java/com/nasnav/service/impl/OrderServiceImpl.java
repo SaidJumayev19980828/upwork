@@ -17,6 +17,9 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.mappers.impl.promotionToDTO;
+import com.nasnav.payments.misc.Commons;
+import com.nasnav.payments.misc.Gateway;
+import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
@@ -37,6 +40,7 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +73,8 @@ import static com.nasnav.enumerations.ShippingStatus.REQUESTED;
 import static com.nasnav.enumerations.SortingWay.DESC;
 import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.payments.cod.CodCommons.COD_OPERATOR;
+import static com.nasnav.payments.cod.CodCommons.isCodAvailableForService;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
@@ -81,6 +87,8 @@ import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final Logger orderServiceLogger = LogManager.getLogger(OrderServiceImpl.class);
 
 	private static final String DEFAULT_REJECTION_MESSAGE =
 			"We are very sorry to inform you that we were unable to fulfill your order due to some issues."
@@ -187,6 +195,11 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private  UserRepository userRepository;
 
+	@Autowired
+	private Commons paymentCommons;
+
+	@Autowired
+	private MetaOrderRepository metaOrdersRepository;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -1716,6 +1729,42 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getRequestedPoints() != null) loyaltyPointsService.processTransaction(userEntity,dto.getRequestedPoints(),LoyaltyTransactions.SPEND_IN_ORDER,org,null,null,order);
 	}
 
+	@Override
+	public PaymentEntity validateOrderForPaymentCoD(Long metaOrderId) throws BusinessException {
+		Optional<MetaOrderEntity> metaOrderOpt = metaOrdersRepository.findById(metaOrderId);
+		if (!metaOrderOpt.isPresent()) {
+			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+
+		OrderService.OrderValue orderValue = getMetaOrderTotalValue(metaOrderId);
+		if (orderValue == null) {
+			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+		// check if CoD is available
+		if (paymentCommons.getPaymentAccount(metaOrderId, Gateway.COD) == null) {
+			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+		for (OrdersEntity subOrder: ordersRepository.findByMetaOrderId(metaOrderId)) {
+			if (subOrder.getShipment() != null && !isCodAvailableForService(subOrder.getShipment().getShippingServiceId())) {
+				orderServiceLogger.warn("Sub-order ({}) marked for pickup, COD not allowed.", subOrder.getId());
+				throw new BusinessException("At least one of the sub-orders marked for pickup", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+			}
+		}
+
+		PaymentEntity payment = new PaymentEntity();
+		payment.setOperator(COD_OPERATOR);
+		payment.setUid(Tools.getOrderUid(metaOrderId, orderServiceLogger));
+		payment.setExecuted(new Date());
+		payment.setStatus(PaymentStatus.COD_REQUESTED);
+		payment.setAmount(orderValue.amount);
+		payment.setCurrency(orderValue.currency);
+		// TODO: this shall probably be changed to logged-in user rather than the meta-order owner later on
+		payment.setUserId(metaOrderOpt.get().getUser().getId());
+		payment.setMetaOrderId(metaOrderId);
+
+		return payment;
+	}
+
 	private Set<MetaOrderEntity> createMetaOrders(CartItemsGroupedByOrgId checkOutData, com.nasnav.dto.request.cart.CartCheckoutDTO dto) {
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 		AddressesEntity address = getAddressById(dto.getAddressId(), user.getId());
@@ -2178,6 +2227,7 @@ public class OrderServiceImpl implements OrderService {
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 			subOrder.setTotal(calculateTotal(subOrder));
+			subOrder.setCreatedByEmployeeId(dto.getCreatedByEmployeeId());
 			ordersRepository.save(subOrder);
 		}
 		return new SubordersAndDiscountsInfo(subOrders, promoDiscountData.getAppliedPromos(), spentPointsInfo, dto.isPayFromReferralBalance());

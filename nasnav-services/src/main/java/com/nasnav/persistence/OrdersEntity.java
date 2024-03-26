@@ -132,6 +132,9 @@ public class OrdersEntity implements BaseEntity{
 	@Column(name = "referral_withdraw_amount")
 	private BigDecimal referralWithdrawAmount;
 
+	@Column(name = "created_by_employee_id")
+	private Long createdByEmployeeId;
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();

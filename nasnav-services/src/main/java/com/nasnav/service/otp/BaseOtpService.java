@@ -58,7 +58,9 @@ public abstract class BaseOtpService<U extends DefaultBusinessEntity<Long>, O ex
                 && currentDate.before(expiration)) {
             userOTPRepository.delete(userOtp);
         } else {
-            if (attempts >= appConfig.otpMaxRetries) userOTPRepository.delete(userOtp);
+            if (attempts >= appConfig.otpMaxRetries) {
+                userOTPRepository.delete(userOtp);
+            }
             throw new RuntimeBusinessException(ErrorCodes.OTP$INVALID.getValue(), HttpStatus.BAD_REQUEST.name(), HttpStatus.BAD_REQUEST);
         }
     }

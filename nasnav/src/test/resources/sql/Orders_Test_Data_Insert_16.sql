@@ -148,7 +148,7 @@ INSERT INTO public.shipment
 VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
-VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+VALUES(330032, 'PICKUP', '{"Shop Id":502}' , now(), now(), 0, 12.0);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)

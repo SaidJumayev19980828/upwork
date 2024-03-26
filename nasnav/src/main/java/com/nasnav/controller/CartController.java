@@ -6,6 +6,7 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CartCheckoutService;
 import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CartService;
@@ -86,6 +87,18 @@ public class CartController {
 	@PostMapping(value = "/checkout", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(TOKEN_HEADER) String userToken, @RequestBody CartCheckoutDTO dto) {
 		return cartCheckoutService.checkoutCart(dto);
+	}
+
+	@PostMapping(value = "/store-checkout/initiate", produces= APPLICATION_JSON_VALUE)
+	public void initiateCheckout(@RequestHeader(TOKEN_HEADER) String userToken,
+								 @RequestParam("user_id") Long userId) {
+		 cartCheckoutService.initiateCheckout(userId);
+	}
+
+	@PostMapping(value = "/store-checkout/complete", consumes = APPLICATION_JSON_VALUE, produces= APPLICATION_JSON_VALUE)
+	public Order checkoutComplete(@RequestHeader(TOKEN_HEADER) String userToken,
+								  @RequestBody CartCheckoutDTO dto) throws BusinessException {
+		return cartCheckoutService.completeCheckout(dto);
 	}
 
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)

@@ -101,4 +101,6 @@ public interface OrderService {
 	MetaOrderEntity createYeshteryMetaOrder(CartCheckoutDTO dto);
 
 	Order createYeshteryOrder(CartCheckoutDTO dto);
+
+	PaymentEntity validateOrderForPaymentCoD(Long metaOrderId) throws BusinessException;
 }

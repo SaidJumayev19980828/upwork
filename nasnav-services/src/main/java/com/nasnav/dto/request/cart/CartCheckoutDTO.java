@@ -1,5 +1,6 @@
 package com.nasnav.dto.request.cart;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -25,4 +26,8 @@ public class CartCheckoutDTO {
     private String referralCode;
 
     private boolean payFromReferralBalance = false;
+    private String otp;
+
+    @JsonIgnore
+    private Long createdByEmployeeId;
 }
