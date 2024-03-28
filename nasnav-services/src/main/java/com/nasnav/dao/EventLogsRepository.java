@@ -21,11 +21,11 @@ public interface EventLogsRepository extends CrudRepository<EventLogsEntity, Lon
     @Query("select event from EventLogsEntity event where event.event.id =:eventId")
     PageImpl<EventLogsEntity> getAllByEventIdPageable(Long eventId,Pageable page);
 
-    @Query("select event from EventLogsEntity event where event.user.id =:userId and event.interestedAt is Not null and event.event.status  <>:status ")
-    PageImpl<EventLogsEntity> getInterestedEventsForUserPageable(Long userId, int status, Pageable page);
+    @Query("select event from EventLogsEntity event where (event.user.id =:userId or event.employee.id =:userId) and event.interestedAt is Not null and event.event.endsAt >= CURRENT_DATE ")
+    PageImpl<EventLogsEntity> getInterestedEventsForUserPageable(Long userId, Pageable page);
 
-    @Query("select event from EventLogsEntity event where event.user.id =:userId and event.attendAt is Not NULL and event.event.status =:status ")
-    PageImpl<EventLogsEntity> getPreviousEventsForUserPageable(Long userId, int status, Pageable page);
+    @Query("select event from EventLogsEntity event where (event.user.id =:userId or event.employee.id =:userId) and event.event.endsAt < CURRENT_DATE ")
+    PageImpl<EventLogsEntity> getPreviousEventsForUserPageable(Long userId, Pageable page);
 
     @Query("select COUNT(*) from EventLogsEntity eventLog  JOIN eventLog.event.influencers influencer where influencer.id = :influencerId ")
     int countByEvent_InfluencersContains(Long influencerId);

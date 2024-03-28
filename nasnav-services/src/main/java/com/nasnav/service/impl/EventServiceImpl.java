@@ -124,12 +124,10 @@ public class EventServiceImpl implements EventService{
         PageImpl<EventLogsEntity> source;
         List<EventEntity> dtos;
         if (previousEvents != null && previousEvents) {
-            source = eventLogsRepository.getPreviousEventsForUserPageable(securityService.getCurrentUser().getId(), EventStatus.ENDED.getValue(),
-                    page);
+            source = eventLogsRepository.getPreviousEventsForUserPageable(securityService.getCurrentUser().getId(), page);
         }
         else {
-            source = eventLogsRepository.getInterestedEventsForUserPageable(securityService.getCurrentUser().getId(), EventStatus.ENDED.getValue(),
-                    page);
+            source = eventLogsRepository.getInterestedEventsForUserPageable(securityService.getCurrentUser().getId(), page);
         }
         dtos = source.getContent().stream().map(EventLogsEntity::getEvent).collect(Collectors.toList());
         return new PageImpl<>(dtos, source.getPageable(), source.getTotalElements());
